@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# PostToolUse hook (matcher: Edit|Write|Bash)
+# Enforces four-stage workflow gate — blocks source edits if planning skills incomplete.
+
+# jq is required for JSON parsing
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"message":"⚠️ jq not found — dev-cycle-check.sh skipped"}}'
+  exit 0
+fi
+
+# Wrap everything in a function so any failure is caught
+main() {
+  # Read JSON from stdin
+  input=$(cat)
+
+  # --- Determine file path or command based on tool type ---
+  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_response.filePath // ""')
+  command_str=""
+
+  if [[ -z "$file_path" ]]; then
+    # Bash tool — extract command
+    command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+    [[ -z "$command_str" ]] && exit 0
+  fi
+
+  # --- Resolve config file by walking up from $PWD ---
+  config_file=""
+  search_dir="$PWD"
+  while true; do
+    if [[ -f "$search_dir/.dev-workflows.json" ]]; then
+      config_file="$search_dir/.dev-workflows.json"
+      break
+    fi
+    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+      break
+    fi
+    search_dir=$(dirname "$search_dir")
+  done
+
+  # --- Read config values with defaults ---
+  src_pattern="/src/"
+  src_exclude_pattern='__tests__|\.test\.'
+  required_planning="brainstorming write-spec writing-plans"
+  state_file="/tmp/.dev-workflows-state"
+  trivial_file="/tmp/.dev-workflows-trivial"
+
+  if [[ -n "$config_file" ]]; then
+    src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
+    src_exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config_file")
+    custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file")
+    [[ -n "$custom_planning" ]] && required_planning="$custom_planning"
+    cfg_state=$(jq -r '.state.state_file // ""' "$config_file")
+    [[ -n "$cfg_state" ]] && state_file="$cfg_state"
+    cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file")
+    [[ -n "$cfg_trivial" ]] && trivial_file="$cfg_trivial"
+  fi
+
+  # Env var overrides
+  state_file="${DEV_WORKFLOWS_STATE_FILE:-$state_file}"
+
+  # --- Check if file/command matches src_pattern ---
+  if [[ -n "$file_path" ]]; then
+    # Edit/Write tool — check file path
+    if ! printf '%s' "$file_path" | grep -q "$src_pattern"; then
+      exit 0
+    fi
+    # Check exclude pattern (test files)
+    if printf '%s' "$file_path" | grep -qE "$src_exclude_pattern"; then
+      exit 0
+    fi
+  else
+    # Bash tool — check if command string contains src_pattern
+    if ! printf '%s' "$command_str" | grep -q "$src_pattern"; then
+      exit 0
+    fi
+    # Check exclude pattern for Bash commands too
+    if printf '%s' "$command_str" | grep -qE "$src_exclude_pattern"; then
+      exit 0
+    fi
+  fi
+
+  # --- Check trivial file override ---
+  if [[ -f "$trivial_file" ]]; then
+    exit 0
+  fi
+
+  # --- Read state file and determine stage ---
+  completed_skills=""
+  if [[ -f "$state_file" ]]; then
+    completed_skills=$(cat "$state_file")
+  fi
+
+  # Helper: check if a skill is in the completed list
+  has_skill() {
+    printf '%s\n' "$completed_skills" | grep -qx "$1" 2>/dev/null
+  }
+
+  # --- Phase skip detection ---
+  # If finalization skills are done but code-review is not
+  finalization_skills="documentation tech-debt verification-before-completion"
+  has_finalization=false
+  for fs in $finalization_skills; do
+    if has_skill "$fs"; then
+      has_finalization=true
+      break
+    fi
+  done
+
+  if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
+    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code-review. Consider running code-review first."}}'
+    exit 0
+  fi
+
+  # --- Check required planning skills ---
+  missing_skills=""
+  for skill in $required_planning; do
+    if ! has_skill "$skill"; then
+      if [[ -n "$missing_skills" ]]; then
+        missing_skills="$missing_skills $skill"
+      else
+        missing_skills="$skill"
+      fi
+    fi
+  done
+
+  # --- Four-stage gate ---
+  if [[ -n "$missing_skills" ]]; then
+    # Stage A: missing planning skills — HARD STOP
+    missing_display=""
+    for ms in $missing_skills; do
+      missing_display="${missing_display}❌ ${ms}\\n"
+    done
+    printf '{"hookSpecificOutput":{"message":"🚫 HARD STOP — Planning incomplete. Missing skills:\\n%s\\nRun the missing planning skills before editing source code."}}' "$missing_display"
+    exit 0
+  fi
+
+  if ! has_skill "code-review"; then
+    # Stage B: all planning done, no code-review
+    printf '{"hookSpecificOutput":{"message":"✅ Planning complete. Remember to run code-review after implementation."}}'
+    exit 0
+  fi
+
+  if ! has_skill "verification-before-completion"; then
+    # Stage C: has code-review, no verification
+    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run verification-before-completion when ready."}}'
+    exit 0
+  fi
+
+  # Stage D: all phases complete
+  printf '{"hookSpecificOutput":{"message":"✅ All workflow phases complete. Proceed freely."}}'
+  exit 0
+}
+
+# Run main, catch any errors
+if ! main; then
+  printf '{"hookSpecificOutput":{"message":"⚠️ dev-cycle-check.sh encountered an error — continuing without blocking."}}'
+  exit 0
+fi
