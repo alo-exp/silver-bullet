@@ -78,13 +78,39 @@ brew install jq    # macOS
 apt install jq     # Linux
 ```
 
-### 2. Install Silver Bullet
+### 2. (Optional) Install DevOps plugins
+
+If you'll use the `devops-cycle` workflow, these optional plugins provide context-aware
+enrichment. Silver Bullet's skill router automatically selects the best plugin for
+your IaC toolchain and cloud provider. None are required — the workflow works without them.
+
+```
+/plugin marketplace add hashicorp/agent-skills          # Terraform, Packer
+/plugin marketplace add awslabs/agent-plugins           # AWS architecture, serverless, databases
+/plugin marketplace add pulumi/agent-skills             # Pulumi programs, IaC migration
+/plugin marketplace add ahmedasmar/devops-claude-skills  # k8s, CI/CD, GitOps, monitoring, cost optimization
+/plugin marketplace add wshobson/agents                 # Kubernetes operations, Helm, multi-agent teams
+```
+
+| Plugin | Best for |
+|--------|----------|
+| `hashicorp/agent-skills` | Terraform HCL authoring, module design, provider development, Packer images |
+| `awslabs/agent-plugins` | AWS architecture, serverless (Lambda/API GW), databases, CDK/CloudFormation |
+| `pulumi/agent-skills` | Pulumi programs, ComponentResource, Automation API, IaC migration (TF/CDK/CF/ARM → Pulumi) |
+| `ahmedasmar/devops-claude-skills` | Terraform/Terragrunt, k8s troubleshooting, AWS cost optimization, CI/CD pipelines, GitOps (ArgoCD/Flux), monitoring/observability |
+| `wshobson/agents` | Kubernetes manifests/Helm/GitOps/security, multi-agent orchestration |
+
+During `/using-silver-bullet` setup, Silver Bullet detects which of these are installed
+and stores the results in `.silver-bullet.json`. The `devops-cycle` workflow then uses
+the `/devops-skill-router` to invoke the best available skill at each trigger point.
+
+### 3. Install Silver Bullet
 
 ```
 /plugin install alo-exp/silver-bullet
 ```
 
-### 3. Initialize your project
+### 4. Initialize your project
 
 Open your project in Claude Code and run:
 

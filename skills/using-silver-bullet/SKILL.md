@@ -230,7 +230,51 @@ Store the user's answer as `WORKFLOW_TYPE`:
 - Answer "1" / "application" / "app" → `WORKFLOW_TYPE = full-dev-cycle`
 - Answer "2" / "devops" / "infra" / "infrastructure" → `WORKFLOW_TYPE = devops-cycle`
 
-Proceed to Phase 3 with `WORKFLOW_TYPE` set.
+Proceed to step 2.7 if `WORKFLOW_TYPE == devops-cycle`, otherwise skip to Phase 3.
+
+### 2.7 Detect DevOps plugins (devops-cycle only)
+
+Skip this step entirely if `WORKFLOW_TYPE` is `full-dev-cycle`.
+
+Probe for each of the 5 optional DevOps plugins. For each, use the Bash tool to
+check if its skills directory exists. Store the results as `DEVOPS_PLUGINS`.
+
+```bash
+# HashiCorp agent-skills
+ls ~/.claude/plugins/cache/*/agent-skills/*/skills/terraform-code-generation/SKILL.md 2>/dev/null | head -1
+
+# AWS agent-plugins
+ls ~/.claude/plugins/cache/*/agent-plugins/*/skills/deploy-on-aws/SKILL.md 2>/dev/null | head -1
+
+# Pulumi agent-skills
+ls ~/.claude/plugins/cache/*/agent-skills/*/skills/pulumi-best-practices/SKILL.md 2>/dev/null | head -1
+
+# DevOps Claude Skills (ahmedasmar)
+ls ~/.claude/plugins/cache/*/devops-claude-skills/*/skills/iac-terraform/SKILL.md 2>/dev/null | head -1
+
+# wshobson/agents (kubernetes-operations)
+ls ~/.claude/plugins/cache/*/agents/*/plugins/kubernetes-operations/skills/*/SKILL.md 2>/dev/null | head -1
+```
+
+If a probe returns a path → that plugin is detected (`true`). If empty → `false`.
+
+Present a summary to the user:
+
+```
+DevOps plugins detected:
+  ✅ HashiCorp agent-skills (Terraform, Packer)
+  ✅ AWS agent-plugins (deploy, serverless, databases)
+  ❌ Pulumi agent-skills — optional: /plugin marketplace add pulumi/agent-skills
+  ✅ DevOps Claude Skills (Terraform, k8s, CI/CD, monitoring)
+  ❌ wshobson/agents — optional: /plugin marketplace add wshobson/agents
+
+These are optional. The devops-cycle workflow works without them
+but uses them for context-aware enrichment when available.
+```
+
+Store the detection results in `DEVOPS_PLUGINS` for use in Phase 3.4 (config writing).
+
+Proceed to Phase 3.
 
 ---
 
@@ -302,6 +346,17 @@ Perform these replacements:
 Also set:
 - `src_pattern` to the detected/confirmed source pattern (replacing the default `/src/` if different).
 - `active_workflow` to the value of `WORKFLOW_TYPE` from step 2.6 (replacing the default `full-dev-cycle` if `devops-cycle` was selected).
+- If `WORKFLOW_TYPE == devops-cycle` and `DEVOPS_PLUGINS` was gathered in step 2.7, add
+  a `devops_plugins` section to the config with the detection results:
+  ```json
+  "devops_plugins": {
+    "hashicorp": true/false,
+    "awslabs": true/false,
+    "pulumi": true/false,
+    "devops-skills": true/false,
+    "wshobson": true/false
+  }
+  ```
 
 Write the result to `.silver-bullet.json` in the project root using the Write tool.
 

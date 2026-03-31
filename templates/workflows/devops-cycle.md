@@ -82,6 +82,13 @@ cannot wait for full cycle without extending outage.
    - If this phase introduces an **architectural decision**: write an ADR inline
      (structure: title, status, context, decision, consequences) before moving to blast radius.
 
+   **Contextual enrichment** (optional — uses `/devops-skill-router` if DevOps plugins installed):
+   After capturing decisions, check if a matching DevOps plugin skill exists for the
+   IaC toolchain and cloud provider discussed. If available, invoke it for best-practice
+   guidance that feeds into quality gates. E.g., Terraform work → HashiCorp's
+   `terraform-code-generation`; AWS deploy → `deploy-on-aws`; k8s → `kubernetes-operations`.
+   If no plugin is available, proceed without — this is an enrichment, not a gate.
+
 ---
 
 ### BLAST RADIUS
@@ -116,6 +123,11 @@ cannot wait for full cycle without extending outage.
    - Wave 5: CI/CD pipeline updates (depends on all above)
    → Produces: `.planning/{phase}-RESEARCH.md`, `.planning/{phase}-{N}-PLAN.md`
 
+   **Contextual enrichment** (optional — uses `/devops-skill-router`):
+   For AWS deployments, invoke `deploy-on-aws` for architecture recommendations.
+   For k8s work, invoke `kubernetes-operations` for manifest best practices.
+   These feed into the GSD plan as additional constraints, not replacements.
+
 ---
 
 ### EXECUTE
@@ -129,6 +141,12 @@ cannot wait for full cycle without extending outage.
    - Commit atomically per task
    → Produces: atomic git commits (one per task), `.planning/{phase}-{N}-SUMMARY.md`
 
+   **Contextual enrichment** (optional — uses `/devops-skill-router`):
+   When generating IaC code within GSD tasks, prefer the vendor-specific skill:
+   HashiCorp skills for `.tf` files, Pulumi skills for Pulumi programs,
+   awslabs skills for CDK/CloudFormation. The skill router determines which
+   plugin to use based on the file type and toolchain.
+
 ---
 
 ### VERIFY
@@ -141,6 +159,11 @@ cannot wait for full cycle without extending outage.
    - Rollback procedure tested in lower environment
    - Runbook updated to reflect actual applied state
    → Produces: `.planning/{phase}-VERIFICATION.md`
+
+   **Contextual enrichment** (optional — uses `/devops-skill-router`):
+   For k8s deployments, use `k8s-troubleshooter` for pod/cluster diagnostics.
+   For monitoring setup, use `monitoring-observability` for SLO validation.
+   For AWS, use `aws-cost-optimization` to flag wasteful resources.
 
 9. `/code-review` — Peer IaC code quality review.                                     **REQUIRED** ← DO NOT SKIP
    `superpowers:code-reviewer` — Run code-reviewer subagent immediately after.
@@ -193,6 +216,10 @@ cannot wait for full cycle without extending outage.
     - Integration tests (Terratest, BATS, Helm test)
     - End-to-end tests (smoke tests against deployed environments)
     - Drift detection schedule
+
+    **Contextual enrichment** (optional — uses `/devops-skill-router`):
+    Use `ci-cd` skill for pipeline-specific test integration.
+    Use `gitops-workflows` if the project uses ArgoCD/Flux.
 
 17. **Tech-debt notes** (inline) — Append identified debt to `docs/tech-debt.md`.
     Format: `| Item | Severity | Effort | Phase introduced |`. Create file if needed.
