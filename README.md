@@ -252,4 +252,4 @@ hooks/session-start
 
 ## License
 
-MIT — [Alo Labs](https://alolabs.dev)
+MIT — [Ālo Labs](https://alolabs.dev)
