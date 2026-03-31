@@ -1,0 +1,12 @@
+{
+  "name": "dev-workflows",
+  "version": "1.0.0",
+  "description": "Enforced development workflows for Claude Code — full dev cycle, code review, TDD, deployment gates.",
+  "author": "Ālo Labs <info@alolabs.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alo-exp/dev-workflows.git"
+  },
+  "keywords": ["claude-code", "plugin", "dev-workflow", "enforcement"]
+}

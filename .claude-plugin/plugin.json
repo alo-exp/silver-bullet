@@ -1,0 +1,18 @@
+{
+  "name": "dev-workflows",
+  "description": "Enforced development workflows leveraging Superpowers and Engineering plugins. Full dev cycle, code review, TDD, deployment gates, and more.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ālo Labs",
+    "email": "info@alolabs.dev"
+  },
+  "homepage": "https://github.com/alo-exp/dev-workflows",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alo-exp/dev-workflows.git"
+  },
+  "license": "MIT",
+  "keywords": ["dev-workflow", "enforcement", "tdd", "code-review", "deploy-gate", "ci-cd"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

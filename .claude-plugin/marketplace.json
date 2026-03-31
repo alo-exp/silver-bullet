@@ -1,0 +1,21 @@
+{
+  "marketplace": "Ālo Labs",
+  "category": "workflows",
+  "featured": true,
+  "dependencies": {
+    "plugins": [
+      {
+        "name": "superpowers",
+        "source": "obra/superpowers",
+        "url": "https://github.com/obra/superpowers",
+        "required": true
+      },
+      {
+        "name": "engineering",
+        "source": "anthropics/knowledge-work-plugins",
+        "url": "https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering",
+        "required": true
+      }
+    ]
+  }
+}
