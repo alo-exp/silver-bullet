@@ -1,12 +1,12 @@
 # Silver Bullet
 
-**The silver bullet for AI-driven software engineering.**
+**AI-native Software Engineering Process Orchestrator**
 
 > *"There is no single development, in either technology or management technique, which by itself promises even one order-of-magnitude improvement..."* — Fred Brooks, 1986
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code plugin that makes Claude follow a structured 31-step development cycle — every time, without exception. It solves the #1 problem with AI coding agents: they skip steps. Even when your CLAUDE.md says "always brainstorm first," Claude will rationalize its way past it ("this is simple enough to just code directly"). This plugin makes that impossible.
+Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into a single orchestrated workflow — then enforces it with 7 layers of compliance so Claude can never skip steps.
 
 ## How It Works
 
@@ -14,17 +14,7 @@ When you edit source code without completing the planning phase, you see this:
 
 ```
 🚫 HARD STOP — Planning incomplete. Missing skills:
-❌ brainstorming
-❌ write-spec
-❌ modularity
-❌ reusability
-❌ scalability
-❌ security
-❌ reliability
-❌ usability
-❌ testability
-❌ extensibility
-❌ writing-plans
+❌ quality-gates
 Run the missing planning skills before editing source code.
 ```
 
@@ -35,27 +25,51 @@ When you try to `git commit` before completing the full workflow:
 
 You are attempting to commit/push/deploy but these required steps are missing:
   ❌ /code-review
+  ❌ /receiving-code-review
   ❌ /testing-strategy
   ❌ /documentation
-  ❌ /verification-before-completion
+  ❌ /finishing-a-development-branch
+  ❌ /deploy-checklist
 Complete ALL required workflow steps before finalizing.
 ```
 
 On every single tool use, you see progress:
 
 ```
-Silver Bullet: 12 steps | PLANNING 11/11 | EXECUTION 1/1 | REVIEW 0/3 | FINALIZATION 0/3 | Next: /code-review
+Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/2 | FINALIZATION 0/4 | Next: /receiving-code-review
 ```
 
 There is no way to skip steps without the plugin telling Claude (and you) exactly what's missing.
+
+## Two Workflows
+
+Silver Bullet supports two workflow modes, selected during project initialization:
+
+| Workflow | For | Steps | Unique features |
+|----------|-----|-------|-----------------|
+| `full-dev-cycle` | Application development (web, API, CLI, library) | 19 | GSD wave execution, 8 quality dimensions, TDD |
+| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 23 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path |
+
+Both workflows use GSD as the primary execution engine and Silver Bullet skills for quality gates, code review, and finalization.
+
+## The Four-Plugin Ecosystem
+
+| Plugin | Role | Key capabilities |
+|--------|------|-----------------|
+| **GSD** (primary) | Multi-agent execution | Fresh 200K-token context per agent, wave-based parallel execution, dependency graphs, atomic per-task commits, context rot prevention |
+| **Superpowers** | Code review + branch management | Brainstorming, code-review, receiving-code-review, git worktrees, verification |
+| **Engineering** | Testing + docs + deploy | testing-strategy, documentation, deploy-checklist, debugging, architecture |
+| **Design** | Design system + UX | design-system, ux-copy, accessibility-review, design-critique |
 
 ## Install
 
 ### 1. Install prerequisites
 
 ```
+npx get-shit-done-cc@latest
 /plugin install obra/superpowers
 /plugin install anthropics/knowledge-work-plugins/tree/main/engineering
+/plugin install anthropics/knowledge-work-plugins/tree/main/design
 ```
 
 Install `jq` if you don't have it:
@@ -79,86 +93,75 @@ Open your project in Claude Code and run:
 ```
 
 This will:
-- Check that all dependencies are installed
+- Check that all 4 plugin dependencies are installed
 - Auto-detect your project name, tech stack, and source directory
+- Ask whether this is an application or DevOps/infrastructure project
 - Create a `CLAUDE.md` with enforcement rules
 - Create `.silver-bullet.json` with your project config
-- Create `docs/workflows/full-dev-cycle.md` with the 31-step workflow
+- Copy the appropriate workflow file(s) to `docs/workflows/`
 - Create placeholder docs (`docs/Master-PRD.md`, etc.)
 - Commit everything
 
 That's it. Enforcement is now active.
 
-## The 31-Step Workflow
+## Full Dev Cycle (19 Steps)
 
-### PLANNING (must complete before any source code edit)
+### INITIALIZATION
+| # | Step | Source | Required |
+|---|------|--------|----------|
+| 1 | Worktree decision | Inline | No |
+| 2 | `/gsd:new-project` | GSD | If new project |
 
-| # | Skill | Required | What it does |
-|---|-------|----------|-------------|
-| 1 | `/using-superpowers` | Yes | Establish available skills for the session |
-| 2 | `/using-git-worktrees` | No | Ask if you should use an isolated worktree |
-| 3 | `/brainstorming` | **Yes** | Explore intent, constraints, and approaches |
-| 4 | `/write-spec` | **Yes** | Write or update spec in `docs/specs/` |
-| 5 | `/design-system` | If needed | Visual/UI design |
-| 6 | `/ux-copy` | If needed | Review UX copy |
-| 7 | `/architecture` | If needed | ADR for architectural decisions |
-| 8 | `/system-design` | If needed | Service/component design |
-| 9 | `/modularity` | **Yes** | Small, focused modules; file size limits |
-| 10 | `/reusability` | **Yes** | DRY, composable components, no duplication |
-| 11 | `/scalability` | **Yes** | Stateless, efficient data access, async |
-| 12 | `/security` | **Yes** | OWASP, input validation, secrets management |
-| 13 | `/reliability` | **Yes** | Fault tolerance, retries, graceful degradation |
-| 14 | `/usability` | **Yes** | Intuitive APIs, clear errors, accessibility |
-| 15 | `/testability` | **Yes** | Injectable deps, pure functions, test seams |
-| 16 | `/extensibility` | **Yes** | Open-closed, versioned, backward-compatible |
-| 17 | `/writing-plans` | **Yes** | Create detailed implementation plan |
+### PER-PHASE LOOP (repeat for each phase in ROADMAP)
+| # | Step | Source | Required |
+|---|------|--------|----------|
+| 3 | `/gsd:discuss-phase` | GSD | **Yes** |
+| 4 | `/quality-gates` | Silver Bullet | **Yes** |
+| 5 | `/gsd:plan-phase` | GSD | **Yes** |
+| 6 | `/gsd:execute-phase` | GSD | **Yes** |
+| 7 | `/gsd:verify-work` | GSD | **Yes** |
+| 8 | `/code-review` + code-reviewer | Superpowers | **Yes** |
+| 9 | `/requesting-code-review` | Superpowers | No |
+| 10 | `/receiving-code-review` | Superpowers | **Yes** |
+| 11-12 | Post-review plan + execute | GSD | If needed |
 
-### EXECUTION
-
-| # | Skill | Required | What it does |
-|---|-------|----------|-------------|
-| 18 | `/executing-plans` | **Yes** | Execute using TDD + subagent-driven development |
-
-### REVIEW (must complete before deploy)
-
-| # | Skill | Required | What it does |
-|---|-------|----------|-------------|
-| 19 | `/code-review` | **Yes** | Self-review + code-reviewer subagent |
-| 20 | `/requesting-code-review` | No | Request external/peer review |
-| 21 | `/receiving-code-review` | **Yes** | Accept/reject all review items |
-| 22 | `/writing-plans` | No | Plan to address accepted review items |
-| 23 | `/executing-plans` | No | Implement the review-driven plan |
-| 24 | `/testing-strategy` | **Yes** | Define best test strategy |
-| 25 | `/systematic-debugging` + `/debug` | If needed | Use both for any bug |
-
-### FINALIZATION (must complete before deploy)
-
-| # | Skill | Required | What it does |
-|---|-------|----------|-------------|
-| 26 | `/tech-debt` | No | Identify and document technical debt |
-| 27 | `/documentation` | **Yes** | Update/create project docs |
-| 28 | `/verification-before-completion` | **Yes** | Produce evidence before claiming done |
-| 29 | `/finishing-a-development-branch` | **Yes** | Merge prep + cleanup |
+### FINALIZATION
+| # | Step | Source | Required |
+|---|------|--------|----------|
+| 13 | `/testing-strategy` | Engineering | **Yes** |
+| 14 | Tech-debt notes | Inline | No |
+| 15 | `/documentation` | Engineering | **Yes** |
+| 16 | `/finishing-a-development-branch` | Superpowers | **Yes** |
 
 ### DEPLOYMENT
+| # | Step | Source | Required |
+|---|------|--------|----------|
+| 17 | CI/CD pipeline | Inline | **Yes** |
+| 18 | `/deploy-checklist` | Engineering | **Yes** |
+| 19 | `/gsd:ship` | GSD | **Yes** |
 
-| # | Skill | Required | What it does |
-|---|-------|----------|-------------|
-| 30 | CICD pipeline | **Yes** | Use existing or set up before deploying |
-| 31 | `/deploy-checklist` | **Yes** | Pre-deployment verification gate |
+## DevOps Cycle (23 Steps)
 
-## Six Layers of Enforcement
+Same structure as full-dev-cycle with these additions:
+- **Incident fast path** at the top for emergency production changes
+- **`/blast-radius`** assessment before quality gates (maps change scope, dependencies, failure scenarios, rollback plan)
+- **`/devops-quality-gates`** — 7 IaC-adapted quality dimensions (usability excluded)
+- **Environment promotion** section (dev → staging → prod)
+- `.yml`/`.yaml` files are NOT exempt from enforcement (they are infrastructure code)
+
+## Seven Layers of Enforcement
 
 The plugin doesn't rely on Claude reading instructions. It enforces compliance through hooks that fire automatically:
 
 | Layer | How it works |
 |-------|-------------|
-| **1. HARD STOP gate** | `dev-cycle-check.sh` fires on every Edit/Write/Bash. If planning skills are incomplete and you're touching source code, it outputs a HARD STOP message. |
-| **2. Compliance status** | `compliance-status.sh` fires on every tool use. Shows a one-line progress score so Claude always knows where it stands. |
-| **3. Phase gates** | `dev-cycle-check.sh` enforces PLANNING -> EXECUTION -> REVIEW -> FINALIZATION ordering. Detects phase skips. |
-| **4. Completion audit** | `completion-audit.sh` fires on every Bash command. Detects `git commit`, `git push`, `gh pr create`, and `deploy` commands and blocks them if the workflow is incomplete. |
-| **5. Redundant instructions** | The same rules appear in `CLAUDE.md`, the workflow file, and the hook messages. Claude can't miss them. |
-| **6. Anti-rationalization** | Explicit language in CLAUDE.md and the workflow file that blocks common excuses: "it's simple enough," "I already covered this," "not applicable." |
+| **1. Skill tracker** | `record-skill.sh` fires on every Skill tool invocation. Records completed skills to state file. |
+| **2. Stage enforcer** | `dev-cycle-check.sh` fires on every Edit/Write/Bash. HARD STOP if quality gates incomplete and you're touching source code. |
+| **3. Compliance status** | `compliance-status.sh` fires on every tool use. Shows progress score so Claude always knows where it stands. |
+| **4. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
+| **5. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
+| **6. GSD context monitor** | GSD's own hook warns at ≤35% tokens remaining, escalates at ≤25%. |
+| **7. Redundant instructions + anti-rationalization** | CLAUDE.md + workflow file both enforce; explicit rules against skipping, combining, or implicitly covering steps. |
 
 ## Customization
 
@@ -166,6 +169,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
+  "version": "0.2.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -173,28 +177,19 @@ Edit `.silver-bullet.json` in your project root:
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": [
-      "brainstorming", "write-spec",
-      "modularity", "reusability", "scalability", "security",
-      "reliability", "usability", "testability", "extensibility",
-      "writing-plans"
+    "required_planning": ["quality-gates"],
+    "required_deploy": [
+      "code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
+      "finishing-a-development-branch", "deploy-checklist"
     ],
-    "required_deploy": ["brainstorming", "write-spec", "code-review", "verification-before-completion"],
     "all_tracked": [
-      "using-superpowers", "brainstorming", "write-spec", "design-system",
-      "ux-copy", "architecture", "system-design",
-      "modularity", "reusability", "scalability", "security",
-      "reliability", "usability", "testability", "extensibility",
-      "writing-plans", "executing-plans", "code-review",
-      "requesting-code-review", "receiving-code-review", "testing-strategy",
-      "systematic-debugging", "debug", "tech-debt", "documentation",
-      "verification-before-completion", "finishing-a-development-branch",
-      "deploy-checklist"
+      "quality-gates", "blast-radius", "devops-quality-gates",
+      "design-system", "ux-copy", "architecture", "system-design",
+      "code-review", "requesting-code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
+      "finishing-a-development-branch", "deploy-checklist"
     ]
-  },
-  "state": {
-    "state_file": "/tmp/.silver-bullet-state",
-    "trivial_file": "/tmp/.silver-bullet-trivial"
   }
 }
 ```
@@ -205,9 +200,10 @@ Edit `.silver-bullet.json` in your project root:
 |-------|-----------------|---------|
 | `src_pattern` | Which file paths trigger enforcement | `/src/` |
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
-| `required_planning` | Skills that must run before code edits | brainstorming, write-spec, 8 quality-ilities, writing-plans |
-| `required_deploy` | Skills that must run before commit/push/deploy | brainstorming, write-spec, code-review, verification-before-completion |
-| `all_tracked` | All skills that get recorded | 28 skills (see above) |
+| `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
+| `required_planning` | Skills that must run before code edits | `quality-gates` |
+| `required_deploy` | Skills that must run before commit/push/deploy | code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist |
+| `all_tracked` | All skills that get recorded | 13 skills (see above) |
 
 ## Trivial Changes
 
@@ -218,6 +214,8 @@ touch /tmp/.silver-bullet-trivial
 ```
 
 You can also run this manually if Claude doesn't detect a trivial change. The flag is automatically cleaned up on the next session start.
+
+**Note**: In `devops-cycle` mode, `.yml`, `.yaml`, `.json`, and `.toml` files are infrastructure code and are NOT auto-exempted from enforcement.
 
 ## For CI/CD Pipelines
 
@@ -251,6 +249,10 @@ It detects the existing config and asks if you want to refresh templates while p
 
 **"Engineering plugin not found"** — Run `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`.
 
+**"Design plugin not found"** — Run `/plugin install anthropics/knowledge-work-plugins/tree/main/design`.
+
+**"GSD plugin not found"** — Run `npx get-shit-done-cc@latest`.
+
 **Hooks not firing** — Make sure you ran `/using-silver-bullet` in the project. Check that `.silver-bullet.json` exists in your project root.
 
 **Wrong files triggering enforcement** — Edit `src_pattern` in `.silver-bullet.json` to match your project's source directory (e.g., `/app/` or `/lib/`).
@@ -264,20 +266,25 @@ Plugin hooks (fire automatically)          Project files (created by /using-silv
 ─────────────────────────────────          ───────────────────────────────────────────────
 hooks/record-skill.sh                      .silver-bullet.json (config)
   → records skill invocations              CLAUDE.md (enforcement rules)
-                                           docs/workflows/full-dev-cycle.md (31 steps)
-hooks/dev-cycle-check.sh
-  → HARD STOP if planning incomplete       State files (ephemeral, in /tmp/)
-                                           ─────────────────────────────────
-hooks/compliance-status.sh                 /tmp/.silver-bullet-state (skill log)
-  → progress score on every tool use       /tmp/.silver-bullet-trivial (bypass flag)
-
+                                           docs/workflows/full-dev-cycle.md (19 steps)
+hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (23 steps)
+  → HARD STOP if planning incomplete
+                                           State files (ephemeral, in /tmp/)
+hooks/compliance-status.sh                 ─────────────────────────────────
+  → progress score on every tool use       /tmp/.silver-bullet-state (skill log)
+                                           /tmp/.silver-bullet-trivial (bypass flag)
 hooks/completion-audit.sh
   → blocks commit/push/deploy
 
 hooks/session-start
-  → injects Superpowers context
+  → injects Superpowers + Design context
+
+External enforcement (GSD's own hooks)
+──────────────────────────────────────
+GSD workflow guard → warns on edits outside /gsd:* commands
+GSD context monitor → warns at ≤35% tokens, escalates at ≤25%
 ```
 
 ## License
 
-MIT — [Ālo Labs](https://alolabs.dev)
+MIT — [Alo Labs](https://alolabs.dev)

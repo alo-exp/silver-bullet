@@ -43,7 +43,7 @@ fi
 STATE_FILE="${STATE_FILE:-/tmp/.silver-bullet-state}"
 
 # --- Tracked skills list ---
-DEFAULT_TRACKED="using-superpowers brainstorming write-spec design-system ux-copy architecture system-design modularity reusability scalability security reliability usability testability extensibility writing-plans executing-plans code-review requesting-code-review receiving-code-review testing-strategy systematic-debugging debug tech-debt documentation verification-before-completion finishing-a-development-branch deploy-checklist"
+DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist"
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then

@@ -1,5 +1,5 @@
 {
-  "marketplace": "Ālo Labs",
+  "marketplace": "Alo Labs",
   "category": "workflows",
   "featured": true,
   "dependencies": {
@@ -14,6 +14,25 @@
         "name": "engineering",
         "source": "anthropics/knowledge-work-plugins",
         "url": "https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering",
+        "required": true
+      },
+      {
+        "name": "design",
+        "source": "anthropics/knowledge-work-plugins",
+        "url": "https://github.com/anthropics/knowledge-work-plugins/tree/main/design",
+        "required": true
+      }
+    ],
+    "tools": [
+      {
+        "name": "gsd",
+        "install": "npx get-shit-done-cc@latest",
+        "url": "https://github.com/gsd-build/get-shit-done",
+        "required": true
+      },
+      {
+        "name": "jq",
+        "install": "brew install jq (macOS) / apt install jq (Linux)",
         "required": true
       }
     ]

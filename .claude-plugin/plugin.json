@@ -1,9 +1,9 @@
 {
   "name": "silver-bullet",
-  "description": "The silver bullet for AI-driven software engineering. Enforced 31-step development workflow with 8 quality-ility gates, leveraging Superpowers and Engineering plugins.",
-  "version": "0.1.0",
+  "description": "AI-native Software Engineering Process Orchestrator. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 19-step (app) and 23-step (DevOps) workflows with 7 layers of compliance.",
+  "version": "0.2.0",
   "author": {
-    "name": "Ālo Labs",
+    "name": "Alo Labs",
     "email": "info@alolabs.dev"
   },
   "homepage": "https://github.com/alo-exp/silver-bullet",
@@ -12,7 +12,7 @@
     "url": "https://github.com/alo-exp/silver-bullet.git"
   },
   "license": "MIT",
-  "keywords": ["silver-bullet", "enforcement", "tdd", "code-review", "deploy-gate", "ci-cd"],
+  "keywords": ["silver-bullet", "enforcement", "orchestrator", "gsd", "devops", "quality-gates", "deploy-gate", "ci-cd"],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"
 }

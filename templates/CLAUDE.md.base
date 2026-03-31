@@ -36,8 +36,10 @@ Seven layers enforce compliance:
    explicit rules against skipping, combining, or implicitly covering steps
 
 **Trivial changes** (typos, copy fixes, config tweaks): Automatically
-detected by hooks. Small edits (<300 chars) and non-logic files (.json,
-.yml, .md, .css, etc.) skip enforcement per-edit. No action needed.
+detected by hooks. Small edits (<300 chars) and non-logic files (.md,
+.txt, .css, .svg, etc.) skip enforcement per-edit. No action needed.
+**Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
+`.toml` files are infrastructure code and are NOT auto-exempted.
 
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>

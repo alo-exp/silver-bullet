@@ -74,14 +74,14 @@ if [[ -f "$trivial_file" ]]; then
 fi
 
 # --- Build required skills list ---
-DEFAULT_REQUIRED="brainstorming write-spec code-review verification-before-completion testing-strategy documentation"
+DEFAULT_REQUIRED="code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist"
 
 if [[ -z "$required_deploy" && -z "$config_file" ]]; then
   # No config at all — use defaults
   required_skills="$DEFAULT_REQUIRED"
 else
   # Config exists: merge required_deploy + mandatory finalization skills (deduplicated)
-  mandatory="testing-strategy documentation verification-before-completion"
+  mandatory="testing-strategy documentation finishing-a-development-branch deploy-checklist"
   all_skills="$required_deploy $mandatory"
 
   # Deduplicate

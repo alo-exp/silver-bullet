@@ -16,7 +16,7 @@
       "finishing-a-development-branch", "deploy-checklist"
     ],
     "all_tracked": [
-      "quality-gates",
+      "quality-gates", "blast-radius", "devops-quality-gates",
       "design-system", "ux-copy",
       "architecture", "system-design",
       "code-review", "requesting-code-review", "receiving-code-review",

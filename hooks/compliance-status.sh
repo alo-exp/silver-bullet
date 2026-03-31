@@ -63,11 +63,13 @@ fi
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
   (.state.state_file // "/tmp/.silver-bullet-state"),
-  ((.skills.required_planning // ["brainstorming","write-spec","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","writing-plans"]) | join(" "))
+  ((.skills.required_planning // ["quality-gates"]) | join(" ")),
+  (.project.active_workflow // "full-dev-cycle")
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 
 # Env var override
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -77,7 +79,7 @@ if [[ ! -f "$state_file" ]]; then
   # Count totals
   plan_total=0
   for _ in $required_planning; do ((plan_total++)) || true; done
-  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | PLANNING 0/%d | EXECUTION 0/1 | REVIEW 0/3 | FINALIZATION 0/3 | Next: /%s"}}' \
+  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | PLANNING 0/%d | REVIEW 0/2 | FINALIZATION 0/4 | Next: /%s"}}' \
     "$plan_total" \
     "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
   exit 0
@@ -105,17 +107,10 @@ for skill in $required_planning; do
   fi
 done
 
-# --- EXECUTION phase ---
-exec_done=0
-exec_total=1
-if has_skill "executing-plans"; then
-  exec_done=1
-fi
-
-# --- REVIEW phase (hardcoded for v1 — future: make configurable via config keys) ---
-review_skills="code-review receiving-code-review testing-strategy"
+# --- REVIEW phase ---
+review_skills="code-review receiving-code-review"
 review_done=0
-review_total=3
+review_total=2
 first_missing_review=""
 for skill in $review_skills; do
   if has_skill "$skill"; then
@@ -125,10 +120,10 @@ for skill in $review_skills; do
   fi
 done
 
-# --- FINALIZATION phase (hardcoded for v1 — future: make configurable via config keys) ---
-final_skills="documentation verification-before-completion finishing-a-development-branch"
+# --- FINALIZATION phase ---
+final_skills="testing-strategy documentation finishing-a-development-branch deploy-checklist"
 final_done=0
-final_total=3
+final_total=4
 first_missing_final=""
 for skill in $final_skills; do
   if has_skill "$skill"; then
@@ -142,8 +137,6 @@ done
 next_skill=""
 if [[ -n "$first_missing_plan" ]]; then
   next_skill="$first_missing_plan"
-elif [[ $exec_done -eq 0 ]]; then
-  next_skill="executing-plans"
 elif [[ -n "$first_missing_review" ]]; then
   next_skill="$first_missing_review"
 elif [[ -n "$first_missing_final" ]]; then
@@ -151,7 +144,7 @@ elif [[ -n "$first_missing_final" ]]; then
 fi
 
 # --- Build output ---
-msg="Silver Bullet: ${total_steps} steps | PLANNING ${plan_done}/${plan_total} | EXECUTION ${exec_done}/${exec_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total}"
+msg="Silver Bullet: ${total_steps} steps | PLANNING ${plan_done}/${plan_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total}"
 if [[ -n "$next_skill" ]]; then
   msg="${msg} | Next: /${next_skill}"
 fi

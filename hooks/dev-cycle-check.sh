@@ -46,13 +46,15 @@ main() {
   # --- Read config values with defaults ---
   src_pattern="/src/"
   src_exclude_pattern='__tests__|\.test\.'
-  required_planning="brainstorming write-spec modularity reusability scalability security reliability usability testability extensibility writing-plans"
+  required_planning="quality-gates"
+  active_workflow="full-dev-cycle"
   state_file="/tmp/.silver-bullet-state"
   trivial_file="/tmp/.silver-bullet-trivial"
 
   if [[ -n "$config_file" ]]; then
     src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
     src_exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config_file")
+    active_workflow=$(jq -r '.project.active_workflow // "full-dev-cycle"' "$config_file")
     custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file")
     [[ -n "$custom_planning" ]] && required_planning="$custom_planning"
     cfg_state=$(jq -r '.state.state_file // ""' "$config_file")
@@ -93,12 +95,22 @@ main() {
   # --- Auto-detect trivial changes (per-edit, no persistent bypass) ---
   if [[ -n "$file_path" ]]; then
     # Non-logic file extensions inside src/ are trivial
-    case "$file_path" in
-      *.json|*.yml|*.yaml|*.md|*.txt|*.css|*.svg|*.env|*.env.*|*.toml|*.ini|*.cfg|*.conf|*.lock)
-        printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
-        exit 0
-        ;;
-    esac
+    # EXCEPTION: In devops-cycle, .yml/.yaml/.json are infrastructure code — NOT exempt
+    if [[ "$active_workflow" == "devops-cycle" ]]; then
+      case "$file_path" in
+        *.md|*.txt|*.css|*.svg|*.env|*.env.*|*.ini|*.cfg|*.conf|*.lock)
+          printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+          exit 0
+          ;;
+      esac
+    else
+      case "$file_path" in
+        *.json|*.yml|*.yaml|*.md|*.txt|*.css|*.svg|*.env|*.env.*|*.toml|*.ini|*.cfg|*.conf|*.lock)
+          printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+          exit 0
+          ;;
+      esac
+    fi
 
     # Small Edit tool changes (combined old+new < 300 chars) are trivial
     tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
@@ -148,7 +160,7 @@ main() {
   fi
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
-  finalization_skills="documentation tech-debt verification-before-completion"
+  finalization_skills="documentation testing-strategy finishing-a-development-branch"
   has_finalization=false
   for fs in $finalization_skills; do
     if has_skill "$fs"; then
@@ -168,9 +180,9 @@ main() {
     exit 0
   fi
 
-  if ! has_skill "verification-before-completion"; then
-    # Stage C: has code-review, no verification
-    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run verification-before-completion when ready."}}'
+  if ! has_skill "finishing-a-development-branch"; then
+    # Stage C: has code-review, finalization remaining
+    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /testing-strategy, /documentation, /finishing-a-development-branch when ready."}}'
     exit 0
   fi
 

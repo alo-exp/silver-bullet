@@ -12,13 +12,28 @@ rm -f /tmp/.silver-bullet-trivial 2>/dev/null
 command -v jq >/dev/null 2>&1 || exit 0
 
 # Locate the Superpowers using-superpowers SKILL.md (glob, not find — faster and more restrictive)
-skill_file=$(ls ~/.claude/plugins/cache/*/superpowers/*/skills/using-superpowers/SKILL.md 2>/dev/null | head -1)
+sp_file=$(ls ~/.claude/plugins/cache/*/superpowers/*/skills/using-superpowers/SKILL.md 2>/dev/null | head -1)
 
-# If not found, silent no-op
-[[ -z "${skill_file:-}" ]] && exit 0
+# Locate Design plugin design-system SKILL.md
+design_file=$(ls ~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md 2>/dev/null | head -1)
+[[ -z "${design_file:-}" ]] && design_file=$(ls ~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md 2>/dev/null | head -1)
 
-# Read content and escape for JSON
-content=$(jq -Rs . < "$skill_file")
+# Build combined context
+combined=""
+if [[ -n "${sp_file:-}" ]]; then
+  combined=$(cat "$sp_file")
+fi
+if [[ -n "${design_file:-}" ]]; then
+  combined="${combined:+$combined
 
-# Output hook response with additional context
+---
+
+}Design plugin detected. Use /design:design-system and /design:ux-copy when the workflow requires UI/UX work."
+fi
+
+# If nothing found, silent no-op
+[[ -z "$combined" ]] && exit 0
+
+# Escape for JSON and output
+content=$(printf '%s' "$combined" | jq -Rs .)
 printf '{"hookSpecificOutput":{"additionalContext":%s}}' "$content"

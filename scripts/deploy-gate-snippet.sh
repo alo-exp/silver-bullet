@@ -37,7 +37,7 @@ done
 # --- Read config (gracefully degrade if jq is absent) ---
 STATE_FILE="/tmp/.silver-bullet-state"
 TRIVIAL_FILE="/tmp/.silver-bullet-trivial"
-REQUIRED_DEPLOY="brainstorming write-spec code-review verification-before-completion"
+REQUIRED_DEPLOY="code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
