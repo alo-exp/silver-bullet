@@ -11,6 +11,51 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 
 ---
 
+## Phase −1: Session Init
+
+Run this phase exactly once per session. Skip if the session state file `/tmp/.silver-bullet-session-init` already exists.
+
+```bash
+test -f /tmp/.silver-bullet-session-init && echo "ALREADY_DONE" || echo "NEEDED"
+```
+
+If `ALREADY_DONE` → skip to Phase 0.
+
+If `NEEDED`:
+
+### −1.1 Load project context
+
+Use the Read tool to read each of the following files **if they exist** (check with Bash `test -f` first):
+
+1. `README.md` — project overview and usage
+2. `CONTEXT.md` — project-specific context
+3. `CLAUDE.md` — Claude-specific instructions and active workflow
+
+### −1.2 Load docs
+
+Check if a `docs/` directory exists:
+```bash
+test -d docs && echo "EXISTS" || echo "NONE"
+```
+
+If it exists, use the Glob tool to find all markdown files:
+```
+docs/**/*.md
+```
+
+Read each file found using the Read tool.
+
+### −1.3 Compact context
+
+Use the Bash tool to run:
+```bash
+touch /tmp/.silver-bullet-session-init
+```
+
+Then invoke `/compact` via the Skill tool to compact the loaded context before proceeding.
+
+---
+
 ## Phase 0: Update Check
 
 1. Use the Bash tool to check if `.silver-bullet.json` exists in the current project root:
