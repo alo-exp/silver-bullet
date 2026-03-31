@@ -112,7 +112,7 @@ if has_skill "executing-plans"; then
   exec_done=1
 fi
 
-# --- REVIEW phase ---
+# --- REVIEW phase (hardcoded for v1 — future: make configurable via config keys) ---
 review_skills="code-review receiving-code-review testing-strategy"
 review_done=0
 review_total=3
@@ -125,7 +125,7 @@ for skill in $review_skills; do
   fi
 done
 
-# --- FINALIZATION phase ---
+# --- FINALIZATION phase (hardcoded for v1 — future: make configurable via config keys) ---
 final_skills="documentation verification-before-completion finishing-a-development-branch"
 final_done=0
 final_total=3

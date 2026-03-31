@@ -6,7 +6,7 @@ set -euo pipefail
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ jq not found — dev-cycle-check.sh skipped"}}'
+  printf '{"hookSpecificOutput":{"message":"⚠️ Dev Workflows hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
 
@@ -97,22 +97,6 @@ main() {
     printf '%s\n' "$completed_skills" | grep -qx "$1" 2>/dev/null
   }
 
-  # --- Phase skip detection ---
-  # If finalization skills are done but code-review is not
-  finalization_skills="documentation tech-debt verification-before-completion"
-  has_finalization=false
-  for fs in $finalization_skills; do
-    if has_skill "$fs"; then
-      has_finalization=true
-      break
-    fi
-  done
-
-  if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
-    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code-review. Consider running code-review first."}}'
-    exit 0
-  fi
-
   # --- Check required planning skills ---
   missing_skills=""
   for skill in $required_planning; do
@@ -133,6 +117,21 @@ main() {
       missing_display="${missing_display}❌ ${ms}\\n"
     done
     printf '{"hookSpecificOutput":{"message":"🚫 HARD STOP — Planning incomplete. Missing skills:\\n%s\\nRun the missing planning skills before editing source code."}}' "$missing_display"
+    exit 0
+  fi
+
+  # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
+  finalization_skills="documentation tech-debt verification-before-completion"
+  has_finalization=false
+  for fs in $finalization_skills; do
+    if has_skill "$fs"; then
+      has_finalization=true
+      break
+    fi
+  done
+
+  if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
+    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code-review. Consider running code-review first."}}'
     exit 0
   fi
 

@@ -6,7 +6,7 @@ set -euo pipefail
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ jq not found — record-skill.sh skipped"}}'
+  printf '{"hookSpecificOutput":{"message":"⚠️ Dev Workflows hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
 

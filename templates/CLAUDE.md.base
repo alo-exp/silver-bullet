@@ -24,13 +24,14 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Five layers enforce compliance:
+Six layers enforce compliance:
 
-1. **Pre-commit hook** — Blocks commits missing doc sync or with failing tests
-2. **Pre-push hook** — Blocks pushes without Co-Authored-By footer
-3. **PostToolUse — Skill tracker** — Records every skill invocation
-4. **PostToolUse — Stage enforcer** — HARD STOP if planning incomplete
-5. **Deploy gate** — BLOCKS deployment unless required skills invoked
+1. **PostToolUse — Skill tracker** — Records every skill invocation
+2. **PostToolUse — Stage enforcer** — HARD STOP if planning incomplete
+3. **PostToolUse — Compliance status** — Shows progress on every tool use
+4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if incomplete
+5. **Redundant instructions** — Workflow file + CLAUDE.md both enforce rules
+6. **Anti-rationalization** — Explicit rules against skipping/combining steps
 
 **Trivial changes**: `touch /tmp/.dev-workflows-trivial`
 
