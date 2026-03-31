@@ -114,7 +114,7 @@ dev-workflows/
 │   ├── CLAUDE.md.base       # Project CLAUDE.md template
 │   ├── dev-workflows.config.json.default  # Config template
 │   └── workflows/
-│       └── full-dev-cycle.md # 23-step workflow definition
+│       └── full-dev-cycle.md # 24-step workflow definition
 ├── docs/                    # Project documentation
 ├── package.json             # Metadata only (no npm dependencies)
 ├── README.md

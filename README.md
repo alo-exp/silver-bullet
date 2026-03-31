@@ -2,7 +2,7 @@
 
 **Enforced development workflows for Claude Code.**
 
-Dev Workflows is a Claude Code plugin that makes Claude follow a structured 23-step development cycle — every time, without exception. It solves the #1 problem with AI coding agents: they skip steps. Even when your CLAUDE.md says "always brainstorm first," Claude will rationalize its way past it ("this is simple enough to just code directly"). This plugin makes that impossible.
+Dev Workflows is a Claude Code plugin that makes Claude follow a structured 24-step development cycle — every time, without exception. It solves the #1 problem with AI coding agents: they skip steps. Even when your CLAUDE.md says "always brainstorm first," Claude will rationalize its way past it ("this is simple enough to just code directly"). This plugin makes that impossible.
 
 ## How It Works
 
@@ -12,6 +12,7 @@ When you edit source code without completing the planning phase, you see this:
 🚫 HARD STOP — Planning incomplete. Missing skills:
 ❌ brainstorming
 ❌ write-spec
+❌ modularity
 ❌ writing-plans
 Run the missing planning skills before editing source code.
 ```
@@ -32,7 +33,7 @@ Complete ALL required workflow steps before finalizing.
 On every single tool use, you see progress:
 
 ```
-Dev Workflows: 5 steps | PLANNING 3/3 | EXECUTION 1/1 | REVIEW 0/3 | FINALIZATION 0/3 | Next: /code-review
+Dev Workflows: 5 steps | PLANNING 4/4 | EXECUTION 1/1 | REVIEW 0/3 | FINALIZATION 0/3 | Next: /code-review
 ```
 
 There is no way to skip steps without the plugin telling Claude (and you) exactly what's missing.
@@ -71,13 +72,13 @@ This will:
 - Auto-detect your project name, tech stack, and source directory
 - Create a `CLAUDE.md` with enforcement rules
 - Create `.dev-workflows.json` with your project config
-- Create `docs/workflows/full-dev-cycle.md` with the 23-step workflow
+- Create `docs/workflows/full-dev-cycle.md` with the 24-step workflow
 - Create placeholder docs (`docs/Master-PRD.md`, etc.)
 - Commit everything
 
 That's it. Enforcement is now active.
 
-## The 23-Step Workflow
+## The 24-Step Workflow
 
 ### PLANNING (must complete before any source code edit)
 
@@ -91,41 +92,42 @@ That's it. Enforcement is now active.
 | 6 | `/ux-copy` | If needed | Review UX copy |
 | 7 | `/architecture` | If needed | ADR for architectural decisions |
 | 8 | `/system-design` | If needed | Service/component design |
-| 9 | `/writing-plans` | **Yes** | Create detailed implementation plan |
+| 9 | `/modularity` | **Yes** | Verify modular design before planning |
+| 10 | `/writing-plans` | **Yes** | Create detailed implementation plan |
 
 ### EXECUTION
 
 | # | Skill | Required | What it does |
 |---|-------|----------|-------------|
-| 10 | `/executing-plans` | **Yes** | Execute using TDD + subagent-driven development |
+| 11 | `/executing-plans` | **Yes** | Execute using TDD + subagent-driven development |
 
 ### REVIEW (must complete before deploy)
 
 | # | Skill | Required | What it does |
 |---|-------|----------|-------------|
-| 11 | `/code-review` | **Yes** | Self-review + code-reviewer subagent |
-| 12 | `/requesting-code-review` | No | Request external/peer review |
-| 13 | `/receiving-code-review` | **Yes** | Accept/reject all review items |
-| 14 | `/writing-plans` | No | Plan to address accepted review items |
-| 15 | `/executing-plans` | No | Implement the review-driven plan |
-| 16 | `/testing-strategy` | **Yes** | Define best test strategy |
-| 17 | `/systematic-debugging` + `/debug` | If needed | Use both for any bug |
+| 12 | `/code-review` | **Yes** | Self-review + code-reviewer subagent |
+| 13 | `/requesting-code-review` | No | Request external/peer review |
+| 14 | `/receiving-code-review` | **Yes** | Accept/reject all review items |
+| 15 | `/writing-plans` | No | Plan to address accepted review items |
+| 16 | `/executing-plans` | No | Implement the review-driven plan |
+| 17 | `/testing-strategy` | **Yes** | Define best test strategy |
+| 18 | `/systematic-debugging` + `/debug` | If needed | Use both for any bug |
 
 ### FINALIZATION (must complete before deploy)
 
 | # | Skill | Required | What it does |
 |---|-------|----------|-------------|
-| 18 | `/tech-debt` | No | Identify and document technical debt |
-| 19 | `/documentation` | **Yes** | Update/create project docs |
-| 20 | `/verification-before-completion` | **Yes** | Produce evidence before claiming done |
-| 21 | `/finishing-a-development-branch` | **Yes** | Merge prep + cleanup |
+| 19 | `/tech-debt` | No | Identify and document technical debt |
+| 20 | `/documentation` | **Yes** | Update/create project docs |
+| 21 | `/verification-before-completion` | **Yes** | Produce evidence before claiming done |
+| 22 | `/finishing-a-development-branch` | **Yes** | Merge prep + cleanup |
 
 ### DEPLOYMENT
 
 | # | Skill | Required | What it does |
 |---|-------|----------|-------------|
-| 22 | CICD pipeline | **Yes** | Use existing or set up before deploying |
-| 23 | `/deploy-checklist` | **Yes** | Pre-deployment verification gate |
+| 23 | CICD pipeline | **Yes** | Use existing or set up before deploying |
+| 24 | `/deploy-checklist` | **Yes** | Pre-deployment verification gate |
 
 ## Six Layers of Enforcement
 
@@ -153,11 +155,11 @@ Edit `.dev-workflows.json` in your project root:
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": ["brainstorming", "write-spec", "writing-plans"],
+    "required_planning": ["brainstorming", "write-spec", "modularity", "writing-plans"],
     "required_deploy": ["brainstorming", "write-spec", "code-review", "verification-before-completion"],
     "all_tracked": [
       "using-superpowers", "brainstorming", "write-spec", "design-system",
-      "ux-copy", "architecture", "system-design", "writing-plans",
+      "ux-copy", "architecture", "system-design", "modularity", "writing-plans",
       "executing-plans", "code-review", "requesting-code-review",
       "receiving-code-review", "testing-strategy", "systematic-debugging",
       "debug", "tech-debt", "documentation", "verification-before-completion",
@@ -177,9 +179,9 @@ Edit `.dev-workflows.json` in your project root:
 |-------|-----------------|---------|
 | `src_pattern` | Which file paths trigger enforcement | `/src/` |
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
-| `required_planning` | Skills that must run before code edits | brainstorming, write-spec, writing-plans |
+| `required_planning` | Skills that must run before code edits | brainstorming, write-spec, modularity, writing-plans |
 | `required_deploy` | Skills that must run before commit/push/deploy | brainstorming, write-spec, code-review, verification-before-completion |
-| `all_tracked` | All skills that get recorded | 20 skills (see above) |
+| `all_tracked` | All skills that get recorded | 21 skills (see above) |
 
 ## Trivial Changes
 
@@ -236,7 +238,7 @@ Plugin hooks (fire automatically)          Project files (created by /using-dev-
 ─────────────────────────────────          ───────────────────────────────────────────────
 hooks/record-skill.sh                      .dev-workflows.json (config)
   → records skill invocations              CLAUDE.md (enforcement rules)
-                                           docs/workflows/full-dev-cycle.md (23 steps)
+                                           docs/workflows/full-dev-cycle.md (24 steps)
 hooks/dev-cycle-check.sh
   → HARD STOP if planning incomplete       State files (ephemeral, in /tmp/)
                                            ─────────────────────────────────

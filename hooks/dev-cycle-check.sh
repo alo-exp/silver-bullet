@@ -46,7 +46,7 @@ main() {
   # --- Read config values with defaults ---
   src_pattern="/src/"
   src_exclude_pattern='__tests__|\.test\.'
-  required_planning="brainstorming write-spec writing-plans"
+  required_planning="brainstorming write-spec modularity writing-plans"
   state_file="/tmp/.dev-workflows-state"
   trivial_file="/tmp/.dev-workflows-trivial"
 

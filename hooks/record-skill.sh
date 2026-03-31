@@ -43,7 +43,7 @@ fi
 STATE_FILE="${STATE_FILE:-/tmp/.dev-workflows-state}"
 
 # --- Tracked skills list ---
-DEFAULT_TRACKED="using-superpowers brainstorming write-spec design-system ux-copy architecture system-design writing-plans executing-plans code-review requesting-code-review receiving-code-review testing-strategy systematic-debugging debug tech-debt documentation verification-before-completion finishing-a-development-branch deploy-checklist"
+DEFAULT_TRACKED="using-superpowers brainstorming write-spec design-system ux-copy architecture system-design modularity writing-plans executing-plans code-review requesting-code-review receiving-code-review testing-strategy systematic-debugging debug tech-debt documentation verification-before-completion finishing-a-development-branch deploy-checklist"
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then

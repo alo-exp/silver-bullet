@@ -63,7 +63,7 @@ fi
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
   (.state.state_file // "/tmp/.dev-workflows-state"),
-  ((.skills.required_planning // ["brainstorming","write-spec","writing-plans"]) | join(" "))
+  ((.skills.required_planning // ["brainstorming","write-spec","modularity","writing-plans"]) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')

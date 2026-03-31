@@ -8,7 +8,7 @@ Teams new to AI-driven software engineering have no guardrails to ensure quality
 
 ## Solution
 
-A Claude Code plugin that enforces a structured 23-step development cycle through six layers of automated compliance enforcement. The plugin tracks skill invocations via hooks and blocks progress when required steps are missing.
+A Claude Code plugin that enforces a structured 24-step development cycle through six layers of automated compliance enforcement. The plugin tracks skill invocations via hooks and blocks progress when required steps are missing.
 
 ## Target Users
 
