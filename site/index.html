@@ -479,7 +479,7 @@ footer .footer-links{display:flex;gap:24px}
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
     <ul class="nav-links">
       <li><a href="#problem">Problem</a></li>
-      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#solution">How It Works</a></li>
       <li><a href="#quality-gates">Quality Gates</a></li>
       <li><a href="#enforcement">Enforcement</a></li>
       <li><a href="#workflow">Workflow</a></li>
@@ -519,12 +519,6 @@ footer .footer-links{display:flex;gap:24px}
     </div>
 
     <p class="tagline mt-3">Brooks was right. Until now.</p>
-
-    <div class="hero-pills">
-      <span class="hero-pill">31 Steps</span>
-      <span class="hero-pill">8 Quality Gates</span>
-      <span class="hero-pill">6 Enforcement Layers</span>
-    </div>
 
   </div>
 </section>
@@ -571,7 +565,12 @@ footer .footer-links{display:flex;gap:24px}
     <h2 class="section-title">Enforcement, Not Suggestion</h2>
     <p class="section-desc centered">Silver Bullet is a Claude Code plugin that wraps every session in a <strong>31-step enforced workflow</strong>. It doesn't ask Claude to follow a process — it makes skipping one impossible.</p>
 
-    <div class="feature-grid mt-6 fade-in">
+    <div class="hero-pills mb-4 fade-in">
+      <span class="hero-pill">31 Steps</span>
+      <span class="hero-pill">8 Quality Gates</span>
+      <span class="hero-pill">6 Enforcement Layers</span>
+    </div>
+    <div class="feature-grid mt-4 fade-in">
       <div class="feature-card">
         <div class="feature-icon">&#9881;</div>
         <h3>Hook-Based Enforcement</h3>
@@ -873,7 +872,6 @@ footer .footer-links{display:flex;gap:24px}
         <div><span class="comment"># 1. Install prerequisites</span></div>
         <div><span class="cmd">/plugin install</span> <span class="flag">obra/superpowers</span></div>
         <div><span class="cmd">/plugin install</span> <span class="flag">anthropics/knowledge-work-plugins/tree/main/engineering</span></div>
-        <div><span class="cmd">brew install</span> jq</div>
         <div>&nbsp;</div>
         <div><span class="comment"># 2. Install Silver Bullet</span></div>
         <div><span class="cmd">/plugin install</span> <span class="flag">alo-exp/silver-bullet</span></div>
@@ -932,13 +930,13 @@ function applyTheme(dark) {
 function toggleTheme() {
   applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
 }
-// Init: dark by default, honour saved preference
+// Init: light by default, honour saved preference
 (function(){
   const saved = localStorage.getItem('silver-bullet-theme');
   if (saved) {
     applyTheme(saved === 'dark');
   } else {
-    applyTheme(true); // dark by default
+    applyTheme(false); // light by default
   }
 })();
 
