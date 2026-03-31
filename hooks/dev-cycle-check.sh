@@ -158,8 +158,6 @@ main() {
 
 # Run main, catch any errors
 if ! main; then
-  # shellcheck disable=SC2317
   printf '{"hookSpecificOutput":{"message":"⚠️ dev-cycle-check.sh encountered an error — continuing without blocking."}}'
-  # shellcheck disable=SC2317
   exit 0
 fi

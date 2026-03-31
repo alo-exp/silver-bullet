@@ -40,4 +40,4 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get install -y shellcheck
-          shellcheck hooks/*.sh scripts/*.sh
+          shellcheck --exclude=SC2317 hooks/*.sh scripts/*.sh

@@ -19,7 +19,6 @@ set -euo pipefail
 # When run standalone, bash treats return outside a function as exit.
 ###############################################################################
 
-# shellcheck disable=SC2317  # return/exit fallback pattern triggers false positive
 # --- Resolve .dev-workflows.json by walking up from $PWD ---
 _dw_config_file=""
 _dw_search_dir="$PWD"
