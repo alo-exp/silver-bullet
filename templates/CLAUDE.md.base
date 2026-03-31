@@ -24,14 +24,16 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Six layers enforce compliance:
+Seven layers enforce compliance:
 
-1. **PostToolUse — Skill tracker** — Records every skill invocation
-2. **PostToolUse — Stage enforcer** — HARD STOP if planning incomplete
+1. **PostToolUse — Skill tracker** — Records every Silver Bullet skill invocation
+2. **PostToolUse — Stage enforcer** — HARD STOP if quality gates incomplete before plan
 3. **PostToolUse — Compliance status** — Shows progress on every tool use
-4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if incomplete
-5. **Redundant instructions** — Workflow file + CLAUDE.md both enforce rules
-6. **Anti-rationalization** — Explicit rules against skipping/combining steps
+4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if required skills missing
+5. **GSD workflow guard** — Detects file edits made outside a `/gsd:*` command and warns
+6. **GSD context monitor** — Warns at ≤35% tokens remaining, escalates at ≤25%
+7. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
+   explicit rules against skipping, combining, or implicitly covering steps
 
 **Trivial changes** (typos, copy fixes, config tweaks): Automatically
 detected by hooks. Small edits (<300 chars) and non-logic files (.json,
@@ -63,18 +65,19 @@ You MUST NOT:
 - Combine or implicitly cover steps ("I did code review while writing")
 - Claim a step is "not applicable" without explicit user approval
 - Proceed to the next phase before completing the current phase
-- Claim work is complete without running /verification-before-completion
+- Claim work is complete without running `/gsd:verify-work`
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
 2. State why
 3. Wait for explicit user approval before proceeding
 
-"I already covered this" is NOT valid. Each skill MUST be explicitly
-invoked via the Skill tool — implicit coverage does not count because
-the enforcement hooks track Skill tool invocations, not your judgment.
+"I already covered this" is NOT valid. Each Silver Bullet skill MUST be
+explicitly invoked via the Skill tool — implicit coverage does not count
+because the enforcement hooks track Skill tool invocations, not your judgment.
+GSD steps MUST be invoked as slash commands in the correct phase order.
 
 **Rules**:
 - Do NOT stop until the final outcome is achieved
-- Always use /systematic-debugging + /debug for ANY bug
+- Always use `/gsd:debug` for ANY bug encountered during execution
 - Always strictly adhere to this CLAUDE.md 100%

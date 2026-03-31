@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -7,17 +7,22 @@
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": ["brainstorming", "write-spec", "modularity", "reusability", "scalability", "security", "reliability", "usability", "testability", "extensibility", "writing-plans"],
-    "required_deploy": ["brainstorming", "write-spec", "code-review", "verification-before-completion"],
+    "required_planning": [
+      "modularity", "reusability", "scalability", "security",
+      "reliability", "usability", "testability", "extensibility"
+    ],
+    "required_deploy": [
+      "code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
+      "finishing-a-development-branch", "deploy-checklist"
+    ],
     "all_tracked": [
-      "using-superpowers", "brainstorming", "write-spec", "design-system",
-      "ux-copy", "architecture", "system-design",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
-      "writing-plans",
-      "executing-plans", "code-review", "requesting-code-review",
-      "receiving-code-review", "testing-strategy", "systematic-debugging",
-      "debug", "tech-debt", "documentation", "verification-before-completion",
+      "design-system", "ux-copy",
+      "architecture", "system-design",
+      "code-review", "requesting-code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist"
     ]
   },

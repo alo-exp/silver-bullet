@@ -95,7 +95,20 @@ If no files found, output exactly:
 
 STOP. Do not proceed.
 
-### 1.3 Engineering plugin
+### 1.3 Design plugin
+
+Use the Glob tool to search for Design plugin skills in these paths:
+- `~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md`
+- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
+
+Expand `~` to the user's home directory.
+
+If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, output exactly:
+> ❌ Design plugin not found. Install: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
+
+STOP. Do not proceed.
+
+### 1.4 Engineering plugin
 
 Use the Glob tool to search for Engineering plugin skills in these paths:
 - `~/.claude/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
@@ -108,7 +121,19 @@ If no files found in any of those patterns, try invoking `/engineering:documenta
 
 STOP. Do not proceed.
 
-### 1.4 v1 incompatibility check
+### 1.5 GSD plugin
+
+Use the Bash tool to check if GSD commands are installed:
+```bash
+test -f "$HOME/.claude/commands/gsd/new-project.md" && echo "EXISTS" || echo "NOT_FOUND"
+```
+
+If `NOT_FOUND`, output exactly:
+> ❌ GSD plugin not found. Install: `npx get-shit-done-cc@latest`
+
+STOP. Do not proceed.
+
+### 1.6 v1 incompatibility check
 
 Use the Read tool to read `.claude/settings.json` in the project root. If the file does not exist, skip this check.
 
@@ -316,9 +341,11 @@ EOF
 
 If the commit fails due to a pre-commit hook, read the error output, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-#### 3.8 Activate Superpowers
+#### 3.8 Activate plugins
 
-Invoke `/using-superpowers` via the Skill tool to establish available skills for the session.
+Invoke `/using-superpowers` via the Skill tool to establish available Superpowers skills for
+the session. GSD commands (`/gsd:*`) and Design plugin skills (`/design:*`) are available
+immediately as slash commands — no activation step required for those.
 
 #### 3.9 Done
 
