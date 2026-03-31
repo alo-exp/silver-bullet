@@ -9,7 +9,7 @@
 At the very start of any new session, perform these steps automatically:
 
 1. **Switch to Opus 4.6 (1M context)** if not already selected.
-2. **Read all project docs** — this file, docs/context.md, and 100% of docs/.
+2. **Read all project docs** — this file and 100% of docs/.
 3. **Compact the context** — run /compact to free context for the task.
 4. **Switch back to original model** if it was changed in step 1.
 
