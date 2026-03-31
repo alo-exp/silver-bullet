@@ -69,6 +69,8 @@ config_vals=$(jq -r '[
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
+# active_workflow is read for future per-workflow status formatting
+# shellcheck disable=SC2034
 active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 
 # Env var override
