@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+###############################################################################
+# Deploy Gate Snippet — Dev Workflows
+#
+# Copy-paste this snippet into your deploy / CI script to block deployment
+# unless all required workflow skills were invoked during the current session.
+#
+# Usage:
+#   source /path/to/deploy-gate-snippet.sh          # strict mode
+#   source /path/to/deploy-gate-snippet.sh --skip-workflow-check  # bypass
+#
+# The script reads .dev-workflows.json (walking up from $PWD) for config.
+# If no config is found it falls back to sensible defaults.
+###############################################################################
+
+# --- Resolve .dev-workflows.json by walking up from $PWD ---
+_dw_config_file=""
+_dw_search_dir="$PWD"
+while true; do
+  if [[ -f "$_dw_search_dir/.dev-workflows.json" ]]; then
+    _dw_config_file="$_dw_search_dir/.dev-workflows.json"
+    break
+  fi
+  # Stop at .git boundary or filesystem root
+  if [[ -d "$_dw_search_dir/.git" ]] || [[ "$_dw_search_dir" == "/" ]]; then
+    break
+  fi
+  _dw_search_dir=$(dirname "$_dw_search_dir")
+done
+
+# --- Read config (gracefully degrade if jq is absent) ---
+STATE_FILE="/tmp/.dev-workflows-state"
+TRIVIAL_FILE="/tmp/.dev-workflows-trivial"
+REQUIRED_DEPLOY="brainstorming write-spec code-review verification-before-completion"
+
+if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
+  _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
+  [[ -n "$_val" ]] && STATE_FILE="$_val"
+
+  _val=$(jq -r '.state.trivial_file // ""' "$_dw_config_file")
+  [[ -n "$_val" ]] && TRIVIAL_FILE="$_val"
+
+  _val=$(jq -r '(.skills.required_deploy // []) | join(" ")' "$_dw_config_file")
+  [[ -n "$_val" ]] && REQUIRED_DEPLOY="$_val"
+fi
+
+# --- Gate logic ---
+
+# 1. Trivial-change fast path
+if [[ -f "$TRIVIAL_FILE" ]]; then
+  echo "[deploy-gate] ℹ️  Trivial change detected — workflow check skipped."
+  rm -f "$STATE_FILE" "$TRIVIAL_FILE"
+  exit 0
+fi
+
+# 2. Explicit bypass flag
+if [[ "${1:-}" == "--skip-workflow-check" ]]; then
+  echo "[deploy-gate] ⚠️  Workflow check bypassed via --skip-workflow-check."
+  exit 0
+fi
+
+# 3. State file must exist
+if [[ ! -f "$STATE_FILE" ]]; then
+  echo "[deploy-gate] ❌ No workflow state file found at $STATE_FILE."
+  echo "    Did you run through the dev workflow skills before deploying?"
+  exit 1
+fi
+
+# 4. Check required skills
+_missing=()
+for _skill in $REQUIRED_DEPLOY; do
+  if ! grep -qx "$_skill" "$STATE_FILE" 2>/dev/null; then
+    _missing+=("$_skill")
+  fi
+done
+
+if [[ ${#_missing[@]} -gt 0 ]]; then
+  echo "[deploy-gate] ❌ Missing required workflow skills:"
+  for _m in "${_missing[@]}"; do
+    echo "    - $_m"
+  done
+  echo "    Complete these skills before deploying."
+  exit 1
+fi
+
+# 5. All clear
+echo "[deploy-gate] ✅ All required workflow skills completed. Proceeding with deploy."
+rm -f "$STATE_FILE" "$TRIVIAL_FILE"
+exit 0
