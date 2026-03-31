@@ -1,0 +1,43 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json templates/dev-workflows.config.json.default package.json; do
+            jq empty "$f" || { echo "Invalid JSON: $f"; exit 1; }
+            echo "Valid: $f"
+          done
+
+      - name: Check hook executability
+        run: |
+          for f in hooks/session-start hooks/*.sh scripts/*.sh; do
+            test -x "$f" || { echo "Not executable: $f"; exit 1; }
+            echo "Executable: $f"
+          done
+
+      - name: Verify hooks.json references exist
+        run: |
+          jq -r '.. | .command? // empty' hooks/hooks.json | while read -r cmd; do
+            # Extract script path relative to hooks/
+            script=$(echo "$cmd" | sed 's|"${CLAUDE_PLUGIN_ROOT}/||;s|"||g')
+            test -f "$script" || { echo "Missing: $script"; exit 1; }
+            echo "Found: $script"
+          done
+
+      - name: Check template placeholders
+        run: |
+          grep -q '{{PROJECT_NAME}}' templates/CLAUDE.md.base || { echo "Missing PROJECT_NAME placeholder"; exit 1; }
+          grep -q '{{TECH_STACK}}' templates/CLAUDE.md.base || { echo "Missing TECH_STACK placeholder"; exit 1; }
+          grep -q '{{GIT_REPO}}' templates/CLAUDE.md.base || { echo "Missing GIT_REPO placeholder"; exit 1; }
+          grep -q '{{PROJECT_NAME}}' templates/dev-workflows.config.json.default || { echo "Missing PROJECT_NAME in config"; exit 1; }
+          echo "All placeholders present"
+
+      - name: Lint shell scripts
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck hooks/*.sh scripts/*.sh
