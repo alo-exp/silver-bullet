@@ -12,18 +12,17 @@ command -v jq >/dev/null 2>&1 || exit 0
 cat >/dev/null
 
 # --- Resolve config file with caching ---
-hash_cmd="md5sum"
+# Compute PWD hash for cache key (avoid word-splitting by branching explicitly)
+pwd_hash=""
 if command -v md5 >/dev/null 2>&1; then
-  hash_cmd="md5 -q"
-elif ! command -v md5sum >/dev/null 2>&1; then
-  # No hashing available — fall back to direct walk without cache
-  hash_cmd=""
+  pwd_hash=$(printf '%s' "$PWD" | md5 -q)
+elif command -v md5sum >/dev/null 2>&1; then
+  pwd_hash=$(printf '%s' "$PWD" | md5sum | cut -d' ' -f1)
 fi
 
 config_file=""
 
-if [[ -n "$hash_cmd" ]]; then
-  pwd_hash=$(printf '%s' "$PWD" | $hash_cmd | cut -d' ' -f1)
+if [[ -n "$pwd_hash" ]]; then
   cache_file="/tmp/.dev-workflows-config-path-${pwd_hash}"
 
   # Check cache
@@ -51,8 +50,9 @@ if [[ -z "$config_file" ]]; then
     search_dir=$(dirname "$search_dir")
   done
 
-  # Cache result (even empty means "no config here")
-  if [[ -n "${cache_file:-}" ]]; then
+  # Cache result
+  if [[ -n "${pwd_hash:-}" ]]; then
+    cache_file="/tmp/.dev-workflows-config-path-${pwd_hash}"
     printf '%s' "$config_file" > "$cache_file"
   fi
 fi

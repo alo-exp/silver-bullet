@@ -39,7 +39,7 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/compliance-status.sh\"",
-            "async": false
+            "async": true
           }
         ]
       },

@@ -5,11 +5,14 @@ set -euo pipefail
 # Write-always, idempotent — always injects, doesn't detect prior runs.
 # This script does NOT read stdin.
 
+# Clean up trivial-change bypass from previous session
+rm -f /tmp/.dev-workflows-trivial 2>/dev/null
+
 # Best-effort: silently exit if jq is unavailable
 command -v jq >/dev/null 2>&1 || exit 0
 
-# Locate the Superpowers using-superpowers SKILL.md
-skill_file=$(find ~/.claude/plugins/cache -path "*/superpowers/*/skills/using-superpowers/SKILL.md" 2>/dev/null | head -1)
+# Locate the Superpowers using-superpowers SKILL.md (glob, not find — faster and more restrictive)
+skill_file=$(ls ~/.claude/plugins/cache/*/superpowers/*/skills/using-superpowers/SKILL.md 2>/dev/null | head -1)
 
 # If not found, silent no-op
 [[ -z "${skill_file:-}" ]] && exit 0

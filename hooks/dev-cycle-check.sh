@@ -25,9 +25,13 @@ main() {
     [[ -z "$command_str" ]] && exit 0
   fi
 
-  # --- Resolve config file by walking up from $PWD ---
+  # --- Resolve config file by walking up from file's directory (or $PWD for Bash) ---
   config_file=""
-  search_dir="$PWD"
+  if [[ -n "$file_path" ]]; then
+    search_dir=$(dirname "$file_path")
+  else
+    search_dir="$PWD"
+  fi
   while true; do
     if [[ -f "$search_dir/.dev-workflows.json" ]]; then
       config_file="$search_dir/.dev-workflows.json"

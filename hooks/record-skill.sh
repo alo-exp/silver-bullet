@@ -68,6 +68,7 @@ if [[ "$is_tracked" == false ]]; then
 fi
 
 # --- Record skill (no duplicates) ---
+mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
 touch "$STATE_FILE"
 if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
   printf '%s\n' "$skill" >> "$STATE_FILE"

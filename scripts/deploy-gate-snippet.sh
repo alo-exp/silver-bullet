@@ -8,11 +8,15 @@ set -euo pipefail
 # unless all required workflow skills were invoked during the current session.
 #
 # Usage:
-#   source /path/to/deploy-gate-snippet.sh          # strict mode
-#   source /path/to/deploy-gate-snippet.sh --skip-workflow-check  # bypass
+#   bash /path/to/deploy-gate-snippet.sh             # standalone (recommended)
+#   source /path/to/deploy-gate-snippet.sh           # sourced in deploy script
+#   bash /path/to/deploy-gate-snippet.sh --skip-workflow-check  # bypass
 #
 # The script reads .dev-workflows.json (walking up from $PWD) for config.
 # If no config is found it falls back to sensible defaults.
+#
+# Note: Uses return (not exit) so sourcing doesn't kill the caller's shell.
+# When run standalone, bash treats return outside a function as exit.
 ###############################################################################
 
 # --- Resolve .dev-workflows.json by walking up from $PWD ---
@@ -52,20 +56,20 @@ fi
 if [[ -f "$TRIVIAL_FILE" ]]; then
   echo "[deploy-gate] ℹ️  Trivial change detected — workflow check skipped."
   rm -f "$STATE_FILE" "$TRIVIAL_FILE"
-  exit 0
+  return 0 2>/dev/null || exit 0
 fi
 
 # 2. Explicit bypass flag
 if [[ "${1:-}" == "--skip-workflow-check" ]]; then
   echo "[deploy-gate] ⚠️  Workflow check bypassed via --skip-workflow-check."
-  exit 0
+  return 0 2>/dev/null || exit 0
 fi
 
 # 3. State file must exist
 if [[ ! -f "$STATE_FILE" ]]; then
   echo "[deploy-gate] ❌ No workflow state file found at $STATE_FILE."
   echo "    Did you run through the dev workflow skills before deploying?"
-  exit 1
+  return 1 2>/dev/null || exit 1
 fi
 
 # 4. Check required skills
@@ -82,7 +86,7 @@ if [[ ${#_missing[@]} -gt 0 ]]; then
     echo "    - $_m"
   done
   echo "    Complete these skills before deploying."
-  exit 1
+  return 1 2>/dev/null || exit 1
 fi
 
 # 5. All clear
