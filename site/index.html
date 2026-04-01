@@ -532,6 +532,53 @@ section:nth-child(even){background:var(--section-alt)}
   font-family:var(--font-sans);margin-left:8px;
 }
 
+/* ───── COMPARISON SECTION ───── */
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.compare-grid{grid-template-columns:1fr}}
+.compare-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:32px;
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.compare-card.winner{
+  border-color:rgba(99,102,241,.4);
+  background:linear-gradient(135deg,var(--bg-card),rgba(99,102,241,.04));
+  box-shadow:0 0 40px rgba(99,102,241,.08);
+}
+.compare-card .compare-name{
+  font-size:1.2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px;
+}
+.compare-card .compare-role{
+  font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);margin-bottom:20px;
+}
+.compare-card .compare-score{
+  display:flex;align-items:baseline;gap:6px;margin-bottom:8px;
+}
+.compare-card .score-num{
+  font-size:2.4rem;font-weight:900;letter-spacing:-.04em;font-family:var(--font-mono);
+}
+.compare-card .score-label{
+  font-size:.75rem;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+}
+.compare-bar-track{
+  height:6px;background:var(--border);border-radius:999px;margin-bottom:24px;overflow:hidden;
+}
+.compare-bar-fill{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transition:width .8s ease-out;
+}
+.compare-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.compare-items li{
+  font-size:.85rem;color:var(--text-secondary);
+  display:flex;align-items:flex-start;gap:8px;line-height:1.4;
+}
+.compare-items li .ci{flex-shrink:0;margin-top:1px;font-weight:700}
+.ci-yes{color:var(--green)}
+.ci-no{color:var(--text-dim)}
+.compare-missing{font-size:.8rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
+
 /* ───── CALLOUT ───── */
 .callout{
   background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(167,139,250,.05));
@@ -591,6 +638,7 @@ footer .footer-links{display:flex;gap:24px}
       <li><a href="#enforcement">Enforcement</a></li>
       <li><a href="#workflow">Workflow</a></li>
       <li><a href="#install">Install</a></li>
+      <li><a href="compare.html">Compare</a></li>
     </ul>
     <div style="display:flex;align-items:center;gap:10px">
       <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="
@@ -648,7 +696,7 @@ footer .footer-links{display:flex;gap:24px}
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Problem</div>
-      <h2 class="section-title">AI Agents Skip Steps &mdash; and Lose Context</h2>
+      <h2 class="section-title">AI Agents Skip Steps &mdash; And Lose Context</h2>
       <p class="section-desc centered">Even when your CLAUDE.md explicitly says &ldquo;always plan first,&rdquo; Claude rationalizes its way past it. And as context fills, quality silently degrades.</p>
     </div>
     <div class="grid grid-4 mt-6">
@@ -904,6 +952,100 @@ footer .footer-links{display:flex;gap:24px}
   </div>
 </section>
 
+<!-- ────── COMPARE ────── -->
+<section id="compare">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">How It Compares</div>
+      <h2 class="section-title">GSD Executes. Superpowers Plans. Silver Bullet Enforces Both.</h2>
+      <p class="section-desc centered">GSD and Superpowers are two of the best standalone plugins in the ecosystem. Silver Bullet includes them both &mdash; and adds everything they can&rsquo;t do alone.</p>
+    </div>
+
+    <div class="compare-grid mt-6">
+
+      <div class="compare-card fade-in">
+        <div class="compare-name">GSD</div>
+        <div class="compare-role">Execution Engine</div>
+        <div class="compare-score">
+          <span class="score-num" style="color:var(--text-dim)">52</span>
+          <span class="score-label">/ 265 weighted score</span>
+        </div>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill" style="width:20%;background:linear-gradient(90deg,var(--cyan),#0e7490)"></div>
+        </div>
+        <ul class="compare-items">
+          <li><span class="ci ci-yes">✓</span> Fresh 200K context per agent</li>
+          <li><span class="ci ci-yes">✓</span> Wave-based parallel execution</li>
+          <li><span class="ci ci-yes">✓</span> Atomic per-task commits</li>
+          <li><span class="ci ci-yes">✓</span> Dependency graph for task ordering</li>
+          <li><span class="ci ci-yes">✓</span> Context rot prevention</li>
+          <li><span class="ci ci-no">–</span> No planning / spec skills</li>
+          <li><span class="ci ci-no">–</span> No quality gates or enforcement</li>
+          <li><span class="ci ci-no">–</span> No code review or finalization</li>
+          <li><span class="ci ci-no">–</span> No DevOps / IaC workflow</li>
+          <li><span class="ci ci-no">–</span> No PostToolUse enforcement hooks</li>
+        </ul>
+        <div class="compare-missing">Best for: teams that only need parallel agent execution with no process enforcement.</div>
+      </div>
+
+      <div class="compare-card fade-in">
+        <div class="compare-name">Superpowers</div>
+        <div class="compare-role">Skills Library</div>
+        <div class="compare-score">
+          <span class="score-num" style="color:var(--text-dim)">58</span>
+          <span class="score-label">/ 265 weighted score</span>
+        </div>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill" style="width:22%;background:linear-gradient(90deg,var(--accent3),#9d174d)"></div>
+        </div>
+        <ul class="compare-items">
+          <li><span class="ci ci-yes">✓</span> Brainstorming &amp; spec writing</li>
+          <li><span class="ci ci-yes">✓</span> Implementation plan writing</li>
+          <li><span class="ci ci-yes">✓</span> Structured code review</li>
+          <li><span class="ci ci-yes">✓</span> Testing strategy &amp; documentation</li>
+          <li><span class="ci ci-yes">✓</span> Branch finishing &amp; standup</li>
+          <li><span class="ci ci-no">–</span> No workflow enforcement</li>
+          <li><span class="ci ci-no">–</span> No quality gates or blast radius</li>
+          <li><span class="ci ci-no">–</span> No parallel execution engine</li>
+          <li><span class="ci ci-no">–</span> No DevOps / IaC workflow</li>
+          <li><span class="ci ci-no">–</span> No PostToolUse enforcement hooks</li>
+        </ul>
+        <div class="compare-missing">Best for: teams that want a skills library and are comfortable self-enforcing the process.</div>
+      </div>
+
+      <div class="compare-card winner fade-in">
+        <div class="compare-name" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</div>
+        <div class="compare-role" style="color:var(--accent-light)">Process Orchestrator</div>
+        <div class="compare-score">
+          <span class="score-num" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">265</span>
+          <span class="score-label">weighted score</span>
+        </div>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill" style="width:100%"></div>
+        </div>
+        <ul class="compare-items">
+          <li><span class="ci ci-yes">✓</span> Includes GSD (execution engine)</li>
+          <li><span class="ci ci-yes">✓</span> Includes Superpowers (skills)</li>
+          <li><span class="ci ci-yes">✓</span> 7-layer PostToolUse enforcement</li>
+          <li><span class="ci ci-yes">✓</span> 8 quality dimensions + hard-stop gate</li>
+          <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
+          <li><span class="ci ci-yes">✓</span> 19-step app + 23-step DevOps workflows</li>
+          <li><span class="ci ci-yes">✓</span> Phase gates — no step can be skipped</li>
+          <li><span class="ci ci-yes">✓</span> 5 optional DevOps plugin integrations</li>
+          <li><span class="ci ci-yes">✓</span> SENTINEL-audited, input-sanitized</li>
+          <li><span class="ci ci-yes">✓</span> Automatic project-type detection</li>
+        </ul>
+        <div class="compare-missing" style="border-color:rgba(99,102,241,.2);color:var(--accent-light)">The complete enforced system. Everything above, working together.</div>
+      </div>
+
+    </div>
+
+    <div class="text-center mt-6 fade-in">
+      <a href="compare.html" class="btn btn-outline">Full Feature Comparison &rarr;</a>
+    </div>
+  </div>
+</section>
+
 <!-- ────── HOW IT WORKS ────── -->
 <section id="how-it-works">
   <div class="container">
@@ -1040,7 +1182,7 @@ footer .footer-links{display:flex;gap:24px}
   <div class="container">
     <div class="text-center">
       <div class="section-label">Live Enforcement</div>
-      <h2 class="section-title">See It In Action</h2>
+      <h2 class="section-title">See It in Action</h2>
       <p class="section-desc centered">These are the actual messages Claude receives from the enforcement hooks. Every message is a hard block &mdash; not a warning.</p>
     </div>
 
@@ -1225,7 +1367,7 @@ footer .footer-links{display:flex;gap:24px}
 <section id="install">
   <div class="container text-center">
     <div class="section-label">Installation</div>
-    <h2 class="section-title">Get Started in 2 Minutes</h2>
+    <h2 class="section-title">Get Started in Two Minutes</h2>
     <p class="section-desc centered">Install the four core plugins, add Silver Bullet, and initialize. For DevOps projects, optionally add leading IaC plugins for contextual enrichment.</p>
 
     <div class="install-block mt-4 fade-in">
@@ -1266,7 +1408,7 @@ footer .footer-links{display:flex;gap:24px}
 <section class="cta-section" style="padding:80px 0">
   <div class="container text-center">
     <div class="section-label">Get Started</div>
-    <h2 class="section-title fade-in">The AI-native software engineering<br>&amp; DevOps process orchestrator.</h2>
+    <h2 class="section-title fade-in">The AI-Native Software Engineering<br>&amp; DevOps Process Orchestrator.</h2>
     <p class="section-desc centered fade-in">Stop hoping your AI agent follows the process. Silver Bullet orchestrates the best agentic workflows for both app development and infrastructure, enforces every step, and ships the way it was meant to be built.</p>
     <a href="#install" class="btn btn-primary fade-in" style="font-size:1rem;padding:16px 36px">Install Silver Bullet &darr;</a>
   </div>

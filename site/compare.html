@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silver Bullet vs GSD vs Superpowers — Full Comparison</title>
+<meta name="description" content="Full feature comparison: Silver Bullet vs GSD (get-shit-done-cc) vs Superpowers. 85 features across 11 categories. Scores, category breakdown, and when to use each.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f8f9fc;--bg-card:#ffffff;--bg-code:#f1f5f9;
+  --bg-hero:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 50%,#fdf2f8 100%);
+  --accent:#4f46e5;--accent-light:#6366f1;--accent-glow:rgba(99,102,241,.1);
+  --accent2:#7c3aed;--accent3:#db2777;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#e2e8f0;--border-hover:#cbd5e1;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.08);
+  --shadow-glow:0 0 40px rgba(99,102,241,.06);
+  --nav-bg:rgba(248,249,252,.9);--nav-mobile-bg:rgba(248,249,252,.98);
+  --section-alt:rgba(241,245,249,.6);
+  --table-row-hover:rgba(99,102,241,.03);
+}
+[data-theme="dark"]{
+  --bg-page:#0a0a0f;--bg-card:#12121a;--bg-code:#1a1a2e;
+  --bg-hero:linear-gradient(135deg,#0a0a1a 0%,#0f0f2e 40%,#1a0a2e 100%);
+  --accent:#6366f1;--accent-light:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --accent2:#a78bfa;--accent3:#f472b6;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-dim:#64748b;
+  --border:#1e293b;--border-hover:#334155;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.4);
+  --shadow-glow:0 0 40px rgba(99,102,241,.08);
+  --nav-bg:rgba(10,10,15,.85);--nav-mobile-bg:rgba(10,10,15,.97);
+  --section-alt:rgba(18,18,26,.4);
+}
+body,nav,section,.score-card,.feat-table td,.feat-table th{
+  transition:background .25s,background-color .25s,border-color .25s,color .25s;
+}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.text-center{text-align:center}
+.mt-2{margin-top:16px}.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}.mt-8{margin-top:64px}
+.tag{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;letter-spacing:.03em}
+.tag-purple{background:rgba(99,102,241,.15);color:var(--accent-light)}
+.tag-green{background:rgba(52,211,153,.12);color:var(--green)}
+.tag-cyan{background:rgba(34,211,238,.12);color:var(--cyan)}
+.tag-pink{background:rgba(244,114,182,.12);color:var(--accent3)}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+nav .logo{font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.02em;text-decoration:none}
+nav .nav-links{display:flex;gap:28px;list-style:none}
+nav .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s}
+nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-cta{background:var(--accent);color:#fff;padding:8px 20px;border-radius:999px;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+nav .nav-cta:hover{background:var(--accent-light);box-shadow:0 0 20px rgba(99,102,241,.3)}
+.nav-toggle{display:none;background:none;border:none;color:var(--text-primary);font-size:1.5rem;cursor:pointer}
+@media(max-width:768px){
+  nav .nav-links{display:none}
+  .nav-toggle{display:block}
+  nav .nav-links.active{display:flex;flex-direction:column;position:absolute;top:64px;left:0;right:0;background:var(--nav-mobile-bg);padding:20px 24px;gap:16px;border-bottom:1px solid var(--border)}
+}
+
+/* ── HERO ── */
+.hero{background:var(--bg-hero);padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.08) 0%,transparent 70%)}
+.hero .container{position:relative;z-index:1}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);text-decoration:none;font-size:.85rem;font-weight:500;margin-bottom:32px;transition:color .2s}
+.back-link:hover{color:var(--accent-light)}
+.section-label{text-transform:uppercase;font-size:.75rem;font-weight:700;letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px}
+.section-title{font-size:clamp(1.8rem,3vw,2.5rem);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;line-height:1.2}
+.section-desc{font-size:1rem;color:var(--text-secondary);max-width:600px;margin-bottom:48px}
+.section-desc.centered{margin-left:auto;margin-right:auto}
+section{padding:72px 0}
+section:nth-child(even){background:var(--section-alt)}
+
+/* ── SCORE CARDS ── */
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.score-grid{grid-template-columns:1fr}}
+.score-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s}
+.score-card.winner{border-color:rgba(99,102,241,.4);background:linear-gradient(135deg,var(--bg-card),rgba(99,102,241,.04));box-shadow:0 0 40px rgba(99,102,241,.08)}
+.score-card .sc-name{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.score-card .sc-role{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:20px}
+.score-card .sc-num{font-size:3rem;font-weight:900;letter-spacing:-.04em;font-family:var(--font-mono);line-height:1}
+.score-card .sc-denom{font-size:1rem;color:var(--text-dim);font-weight:600;margin-left:4px}
+.score-card .sc-ticks{font-size:.8rem;color:var(--text-dim);margin-top:4px;margin-bottom:16px}
+.bar-track{height:8px;background:var(--border);border-radius:999px;margin-bottom:24px;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;transition:width 1s ease-out}
+.sc-verdict{font-size:.875rem;color:var(--text-secondary);line-height:1.6;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ── CATEGORY BREAKDOWN ── */
+.cat-table{width:100%;border-collapse:collapse;margin-top:8px}
+.cat-table th{text-align:left;padding:10px 16px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.cat-table td{padding:12px 16px;font-size:.875rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.cat-table tr:hover td{background:var(--table-row-hover)}
+.cat-table td:first-child{font-weight:600;color:var(--text-primary)}
+.cat-table td.score-cell{font-family:var(--font-mono);font-weight:700}
+.score-winner{color:var(--accent-light)}
+.score-mid{color:var(--text-secondary)}
+.score-low{color:var(--text-dim)}
+.mini-bar{display:inline-block;height:6px;border-radius:999px;vertical-align:middle;margin-left:8px}
+
+/* ── FEATURE TABLE ── */
+.feat-section{margin-bottom:48px}
+.feat-category-header{
+  background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(167,139,250,.04));
+  border:1px solid rgba(99,102,241,.15);border-radius:var(--radius);
+  padding:14px 20px;margin-bottom:4px;
+  font-size:.9rem;font-weight:700;color:var(--text-primary);
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.feat-category-header .cat-scores{display:flex;gap:16px;font-family:var(--font-mono);font-size:.8rem}
+.feat-table{width:100%;border-collapse:collapse;margin-bottom:32px}
+.feat-table th{text-align:left;padding:8px 16px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.feat-table th.plat-col{text-align:center;min-width:100px}
+.feat-table td{padding:10px 16px;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text-secondary)}
+.feat-table td:first-child{color:var(--text-primary);font-weight:500}
+.feat-table td:nth-child(2){font-size:.7rem;text-align:center;font-family:var(--font-mono);color:var(--text-dim)}
+.feat-table td.tick-col{text-align:center;font-size:1rem}
+.feat-table tr:hover td{background:var(--table-row-hover)}
+.tick-yes{color:var(--green)}
+.tick-no{color:var(--border-hover)}
+.prio-critical{color:var(--red);font-weight:700}
+.prio-high{color:var(--amber)}
+.prio-medium{color:var(--text-secondary)}
+.prio-low{color:var(--text-dim)}
+
+/* ── WHEN TO USE ── */
+.when-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.when-grid{grid-template-columns:1fr}}
+.when-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s}
+.when-card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.when-card .when-role{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:16px}
+.when-card ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.when-card ul li{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.when-card ul li::before{content:'→';color:var(--accent-light);font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:48px 0;color:var(--text-dim);font-size:.85rem}
+footer .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+footer .footer-links{display:flex;gap:24px}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Silver Bullet</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="index.html#problem">Problem</a></li>
+      <li><a href="index.html#solution">How It Works</a></li>
+      <li><a href="index.html#ecosystem">Ecosystem</a></li>
+      <li><a href="index.html#workflow">Workflow</a></li>
+      <li><a href="index.html#install">Install</a></li>
+      <li><a href="compare.html" style="color:var(--accent-light)">Compare</a></li>
+    </ul>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent-light)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+        <span id="theme-icon">&#9728;&#65039;</span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="container text-center">
+    <a href="index.html" class="back-link">&#8592; Back to Silver Bullet</a>
+    <div class="section-label">Feature Comparison</div>
+    <h1 class="section-title" style="font-size:clamp(2rem,4vw,3rem);max-width:800px;margin:0 auto 16px">Silver Bullet vs GSD vs Superpowers</h1>
+    <p class="section-desc centered">GSD and Superpowers are two of the best standalone Claude Code plugins in the ecosystem. Silver Bullet includes them both &mdash; and adds everything neither does alone: enforced workflows, quality gates, blast radius assessment, and a seven-layer compliance engine.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <span class="tag tag-purple">85 Features</span>
+      <span class="tag tag-purple">11 Categories</span>
+      <span class="tag tag-green">Weighted Scoring</span>
+      <span class="tag tag-cyan">Critical / High / Medium / Low</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCORES ── -->
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Weighted Scores</div>
+      <h2 class="section-title">The Capability Gap</h2>
+      <p class="section-desc centered">Scores are weighted by feature priority: Critical&nbsp;=&nbsp;5&times;, High&nbsp;=&nbsp;3&times;, Medium&nbsp;=&nbsp;2&times;, Low&nbsp;=&nbsp;1&times;. A higher score means broader, more important coverage.</p>
+    </div>
+    <div class="score-grid mt-6">
+
+      <div class="score-card">
+        <div class="sc-name">GSD</div>
+        <div class="sc-role">get-shit-done-cc &mdash; Execution Engine</div>
+        <div>
+          <span class="sc-num" style="color:var(--cyan)">52</span><span class="sc-denom">pts</span>
+        </div>
+        <div class="sc-ticks">15 / 85 features</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:20%;background:linear-gradient(90deg,var(--cyan),#0e7490)"></div>
+        </div>
+        <div class="sc-verdict">GSD is the best execution engine in the Claude Code ecosystem. It solves context rot at the architectural level with fresh 200K contexts per task, wave-based parallelism, and atomic commits. It does not provide planning, code review, quality gates, or workflow enforcement.</div>
+      </div>
+
+      <div class="score-card">
+        <div class="sc-name">Superpowers</div>
+        <div class="sc-role">obra/superpowers &mdash; Skills Library</div>
+        <div>
+          <span class="sc-num" style="color:var(--accent3)">58</span><span class="sc-denom">pts</span>
+        </div>
+        <div class="sc-ticks">18 / 85 features</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:22%;background:linear-gradient(90deg,var(--accent3),#9d174d)"></div>
+        </div>
+        <div class="sc-verdict">Superpowers is the most-used community skills library. It covers the human-review workflow: brainstorming, spec writing, code review, testing strategy, and branch management. It relies entirely on Claude following instructions &mdash; there is no enforcement mechanism.</div>
+      </div>
+
+      <div class="score-card winner">
+        <div class="sc-name" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</div>
+        <div class="sc-role" style="color:var(--accent-light)">Process Orchestrator</div>
+        <div>
+          <span class="sc-num" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">265</span><span class="sc-denom">pts</span>
+        </div>
+        <div class="sc-ticks">82 / 85 features</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:100%"></div>
+        </div>
+        <div class="sc-verdict">Silver Bullet is the orchestration layer. It includes GSD and Superpowers as dependencies, adds Engineering and Design plugins, wraps everything in seven enforcement layers, and provides two dedicated workflows (19-step app dev, 23-step DevOps) with hard-stop quality gates.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CATEGORY BREAKDOWN ── -->
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Category Breakdown</div>
+      <h2 class="section-title">Where Each Tool Leads</h2>
+      <p class="section-desc centered">Silver Bullet dominates every category. GSD leads in execution. Superpowers leads in planning and review skills.</p>
+    </div>
+    <div class="mt-6">
+      <table class="cat-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th class="text-center">Silver Bullet</th>
+            <th class="text-center">Superpowers</th>
+            <th class="text-center">GSD</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Workflow Orchestration</td>
+            <td class="score-cell score-winner text-center">8/10<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-low text-center">0/10</td>
+            <td class="score-cell score-mid text-center">4/10</td>
+          </tr>
+          <tr>
+            <td>2. Planning &amp; Spec</td>
+            <td class="score-cell score-winner text-center">7/7<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">3/7</td>
+            <td class="score-cell score-mid text-center">3/7</td>
+          </tr>
+          <tr>
+            <td>3. Execution Engine</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">4/8</td>
+            <td class="score-cell score-winner text-center">6/8</td>
+          </tr>
+          <tr>
+            <td>4. Quality Enforcement</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-low text-center">0/8</td>
+            <td class="score-cell score-low text-center">0/8</td>
+          </tr>
+          <tr>
+            <td>5. Code Review &amp; Verification</td>
+            <td class="score-cell score-winner text-center">7/7<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">4/7</td>
+            <td class="score-cell score-low text-center">0/7</td>
+          </tr>
+          <tr>
+            <td>6. Finalization &amp; Deployment</td>
+            <td class="score-cell score-winner text-center">7/7<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">4/7</td>
+            <td class="score-cell score-low text-center">0/7</td>
+          </tr>
+          <tr>
+            <td>7. Enforcement Mechanism</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-low text-center">0/8</td>
+            <td class="score-cell score-low text-center">0/8</td>
+          </tr>
+          <tr>
+            <td>8. DevOps &amp; IaC Support</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-low text-center">0/8</td>
+            <td class="score-cell score-low text-center">0/8</td>
+          </tr>
+          <tr>
+            <td>9. Security</td>
+            <td class="score-cell score-winner text-center">6/6<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">1/6</td>
+            <td class="score-cell score-low text-center">0/6</td>
+          </tr>
+          <tr>
+            <td>10. Plugin Ecosystem &amp; Integration</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-low text-center">0/8</td>
+            <td class="score-cell score-low text-center">0/8</td>
+          </tr>
+          <tr>
+            <td>11. Developer Experience</td>
+            <td class="score-cell score-winner text-center">8/8<div class="mini-bar" style="width:60px;background:var(--accent-light)"></div></td>
+            <td class="score-cell score-mid text-center">2/8</td>
+            <td class="score-cell score-mid text-center">2/8</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── FULL FEATURE TABLE ── -->
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Full Feature Matrix</div>
+      <h2 class="section-title">All 85 Features</h2>
+      <p class="section-desc centered">Every feature, every category, every tool. Priority weights used in scoring: <span style="color:var(--red);font-weight:700">Critical&nbsp;5&times;</span> &nbsp;<span style="color:var(--amber);font-weight:600">High&nbsp;3&times;</span> &nbsp;<span style="color:var(--text-secondary)">Medium&nbsp;2&times;</span> &nbsp;<span style="color:var(--text-dim)">Low&nbsp;1&times;</span></p>
+    </div>
+
+    <div class="mt-6">
+
+      <!-- Category 1 -->
+      <div class="feat-category-header">
+        <span>1. Workflow Orchestration</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-dim)">SP: 0</span>
+          <span style="color:var(--text-dim)">GSD: 4</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Enforced end-to-end development workflow</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Multi-step phase sequencing</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Phase gate enforcement (cannot skip steps)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Multiple workflow modes (app dev + DevOps)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Incident fast path / emergency bypass</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Per-phase loop (discuss → plan → execute → verify → review)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Environment promotion workflow (dev → staging → prod)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Wave-based parallel execution</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Dependency graph for task ordering</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Atomic per-task commits</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 2 -->
+      <div class="feat-category-header">
+        <span>2. Planning &amp; Spec</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 7</span>
+          <span style="color:var(--text-secondary)">SP: 3</span>
+          <span style="color:var(--text-secondary)">GSD: 3</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Structured brainstorming / ideation skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Spec / PRD writing skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Implementation plan writing</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>File-based planning state (.planning/ dir)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Architecture decision records (ADR)</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>System design skill</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Project type auto-detection (app vs DevOps)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 3 -->
+      <div class="feat-category-header">
+        <span>3. Execution Engine</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-secondary)">SP: 4</span>
+          <span style="color:var(--accent-light)">GSD: 6</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Fresh 200K-token context per agent</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Multi-agent parallel execution</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Sub-agent dispatching skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Git worktree isolation per agent</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Context rot prevention (monitor + reboot)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Test-driven development skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Systematic debugging skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Plan execution skill (follow written plans)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 4 -->
+      <div class="feat-category-header">
+        <span>4. Quality Enforcement</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-dim)">SP: 0</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Automated quality gate checks</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>8 quality dimensions (modularity, security, scalability, etc.)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>DevOps-specific quality gates (7 dimensions)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Hard-stop gate for quality failures</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Blast radius assessment before changes</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>CRITICAL/HIGH/MEDIUM/LOW blast rating with enforcement</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Rollback plan required for high-risk changes</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>CAB review gate for critical changes</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 5 -->
+      <div class="feat-category-header">
+        <span>5. Code Review &amp; Verification</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 7</span>
+          <span style="color:var(--text-secondary)">SP: 4</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Structured code review skill</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Receiving code review skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Pre-completion verification skill</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Compliance status tracking across phases</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Completion audit (all required skills run?)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Testing strategy skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Test-driven development enforcement</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 6 -->
+      <div class="feat-category-header">
+        <span>6. Finalization &amp; Deployment</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 7</span>
+          <span style="color:var(--text-secondary)">SP: 4</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Documentation skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Finishing a development branch skill</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Deploy checklist skill</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Required deploy skills tracked and enforced</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Deployment to production workflow</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Ship confirmation step</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Standup / activity summary skill</td><td class="prio-low">Low</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 7 -->
+      <div class="feat-category-header">
+        <span>7. Enforcement Mechanism</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-dim)">SP: 0</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>PostToolUse hooks for real-time enforcement</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Multiple independent enforcement layers (4+)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Skill usage tracking (record-skill hook)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Phase gate check hook (dev-cycle-check)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Compliance status hook</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Completion audit hook</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Anti-rationalization instructions in CLAUDE.md</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>YAML / config files treated as infrastructure (not auto-exempt)</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 8 -->
+      <div class="feat-category-header">
+        <span>8. DevOps &amp; IaC Support</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-dim)">SP: 0</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Dedicated DevOps workflow (23-step)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>IaC-specific quality gates</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Blast radius assessment for infra changes</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Context-aware DevOps skill routing</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>HashiCorp / Terraform plugin integration</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>AWS plugin integration</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Pulumi plugin integration</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>5 optional DevOps plugin integrations</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 9 -->
+      <div class="feat-category-header">
+        <span>9. Security</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 6</span>
+          <span style="color:var(--text-dim)">SP: 1</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Security skill / review</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>SENTINEL-audited skill code</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Input sanitization (project name, URLs, stack)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Template injection protection in CLAUDE.md</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Pinned dependency versions (no @latest)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Allowed bash commands allowlist</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 10 -->
+      <div class="feat-category-header">
+        <span>10. Plugin Ecosystem &amp; Integration</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-dim)">SP: 0</span>
+          <span style="color:var(--text-dim)">GSD: 0</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Integrates GSD execution engine</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Integrates Superpowers skills library</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Integrates Engineering plugin skills</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Integrates Design plugin skills</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Optional DevOps plugin ecosystem (5 plugins)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Session-start context injection (all plugins)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Project initialization skill (setup &amp; config)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Plugin detection at init time</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Category 11 -->
+      <div class="feat-category-header">
+        <span>11. Developer Experience</span>
+        <span class="cat-scores">
+          <span style="color:var(--accent-light)">SB: 8</span>
+          <span style="color:var(--text-secondary)">SP: 2</span>
+          <span style="color:var(--text-secondary)">GSD: 2</span>
+        </span>
+      </div>
+      <table class="feat-table">
+        <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
+        <tbody>
+          <tr><td>Single-command install</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+          <tr><td>Automatic CLAUDE.md generation</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>silver-bullet.config.json for project config</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Active workflow switchable (app vs devops)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Trivial change exemption (avoid false positives)</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Clear error messages when gates block</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Marketplace / plugin.json metadata</td><td class="prio-low">Low</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Changelog and versioning (v0.2.0+)</td><td class="prio-low">Low</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-yes">✔</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── WHEN TO USE ── -->
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Decision Guide</div>
+      <h2 class="section-title">When to Use Each</h2>
+      <p class="section-desc centered">All three are excellent. The right choice depends on what you need.</p>
+    </div>
+    <div class="when-grid mt-6">
+
+      <div class="when-card">
+        <h3>GSD</h3>
+        <div class="when-role">get-shit-done-cc</div>
+        <ul>
+          <li>You only need parallel execution with fresh contexts</li>
+          <li>Your team already has a process and just needs better throughput</li>
+          <li>You want atomic per-task commits without full workflow overhead</li>
+          <li>You're comfortable self-enforcing planning and review</li>
+        </ul>
+      </div>
+
+      <div class="when-card">
+        <h3>Superpowers</h3>
+        <div class="when-role">obra/superpowers</div>
+        <ul>
+          <li>You want a curated skills library without enforcement overhead</li>
+          <li>You need brainstorming, spec, code review, and branch management</li>
+          <li>Your team is disciplined and doesn't need automated gates</li>
+          <li>You want individual skills à la carte, not a full workflow</li>
+        </ul>
+      </div>
+
+      <div class="when-card" style="border-color:rgba(99,102,241,.3);background:linear-gradient(135deg,var(--bg-card),rgba(99,102,241,.03))">
+        <h3 style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</h3>
+        <div class="when-role" style="color:var(--accent-light)">Process Orchestrator</div>
+        <ul>
+          <li>You want the complete enforced process — not just tools</li>
+          <li>You need GSD + Superpowers + quality gates + DevOps, all working together</li>
+          <li>Your AI keeps skipping steps despite CLAUDE.md instructions</li>
+          <li>You're shipping infrastructure and need blast radius enforcement</li>
+          <li>You want seven independent enforcement layers — no single point of bypass</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="text-center mt-6">
+      <a href="index.html#install" class="btn" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.3)">Install Silver Bullet &darr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span></div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">
+        Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('theme-icon').textContent=dark?'☀️':'🌙';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){
+  const saved=localStorage.getItem('silver-bullet-theme');
+  applyTheme(saved?saved==='dark':false);
+})();
+</script>
+</body>
+</html>
