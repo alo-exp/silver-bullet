@@ -610,6 +610,7 @@ footer a:hover{color:var(--accent-light)}
 footer .footer-links{display:flex;gap:24px}
 
 /* ───── ALPHA BADGE ───── */
+.logo-wrapper{position:relative;display:inline-block}
 .alpha-badge{
   display:inline-block;
   background:rgba(99,102,241,.1);
@@ -617,9 +618,8 @@ footer .footer-links{display:flex;gap:24px}
   color:var(--accent-light);
   font-size:.55rem;font-weight:700;letter-spacing:.08em;
   padding:3px 7px;border-radius:6px;
-  vertical-align:super;
   font-family:var(--font-sans);font-style:normal;line-height:1;
-  position:relative;top:-.1em;
+  position:absolute;top:0;left:100%;margin-left:1px;transform:translateY(-55%);
 }
 
 /* ───── ANIMATIONS ───── */
@@ -662,7 +662,7 @@ footer .footer-links{display:flex;gap:24px}
   .hero .brooks-block{max-width:100%;gap:14px}
   .hero .brooks-photo{width:56px;height:56px}
   .hero .brooks-quote,.hero .brooks-attr{max-width:100%;padding-left:12px}
-  .hero .cta-group{flex-direction:column;align-items:center}
+  .hero .cta-group{flex-direction:column;align-items:center;gap:20px}
   .btn{width:100%;max-width:300px;justify-content:center}
   .feature-grid{grid-template-columns:1fr}
   .install-block{max-width:100%}
@@ -722,7 +722,7 @@ footer .footer-links{display:flex;gap:24px}
 <section class="hero text-center">
   <div class="container">
     <div class="version-badge"><span class="dot"></span> AI-native Software Engineering &amp; DevOps Process Orchestrator</div>
-    <h1><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></h1>
+    <h1><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></h1>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
