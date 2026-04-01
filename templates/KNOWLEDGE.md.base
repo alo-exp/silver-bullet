@@ -1,0 +1,52 @@
+# {{PROJECT_NAME}} — Project Knowledge
+
+> Gateway index and accumulated project intelligence.
+> Claude reads this at session startup. Claude updates Part 2 at step 15 (documentation).
+> **Never delete or edit prior entries.** All additions are append-only with date stamps.
+
+---
+
+## Part 1 — Gateway Index
+
+| Doc | Path | Status |
+|-----|------|--------|
+| Master PRD | `docs/Master-PRD.md` | draft |
+| Architecture | `docs/Architecture-and-Design.md` | draft |
+| Testing Strategy | `docs/Testing-Strategy-and-Plan.md` | draft |
+| CI/CD | `docs/CICD.md` | draft |
+| Active Workflow | `docs/workflows/full-dev-cycle.md` | active |
+| Specs | `docs/specs/` | 0 specs |
+| Task Log | `docs/CHANGELOG.md` | — |
+| Session Logs | `docs/sessions/` | 0 sessions |
+| Git Repo | {{GIT_REPO}} | — |
+
+**Running virtual cost total:** $0.00 (estimated)
+
+---
+
+## Part 2 — Accumulated Intelligence
+
+> Each entry: `YYYY-MM-DD — <note>`. Append below existing entries. Never edit above.
+
+### Architecture patterns
+
+*(none yet)*
+
+### Known gotchas
+
+*(none yet)*
+
+### Key decisions
+
+*(none yet)*
+
+### Recurring patterns
+
+*(none yet)*
+
+### Open questions
+
+*(none yet)*
+
+> To add: append `YYYY-MM-DD — <question>`
+> To resolve: append `[RESOLVED YYYY-MM-DD]: <resolution>` below the original question

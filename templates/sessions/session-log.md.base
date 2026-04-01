@@ -1,0 +1,46 @@
+# Session Log — YYYY-MM-DD
+
+**Date:** YYYY-MM-DD
+**Mode:** interactive | autonomous
+**Model:** claude-sonnet-4-6 | claude-opus-4-6
+**Virtual cost:** ~$X.XX (estimated, Model, complexity-tier)
+
+---
+
+## Task
+
+One sentence description of what was asked.
+
+## Approach
+
+How it was tackled. Key decisions made.
+
+## Files changed
+
+- `path/to/file` — what changed
+
+## Skills invoked
+
+In order: skill-name, skill-name, ...
+
+## Agent Teams dispatched
+
+- Steps N–M: [dimension] agents × N (worktree isolated) | doc agents (main worktree)
+
+## Autonomous decisions
+
+*(interactive mode: n/a)*
+
+## Needs human review
+
+*(none)*
+
+## Outcome
+
+What was produced. Commits: abc1234, ...
+
+## KNOWLEDGE.md additions
+
+- Architecture patterns: (none | described)
+- Known gotchas: (none | described)
+- Key decisions: (none | described)
