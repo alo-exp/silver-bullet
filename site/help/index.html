@@ -105,6 +105,16 @@ footer a{color:var(--text-secondary);text-decoration:none}
 footer a:hover{color:var(--accent-light)}
 .footer-links{display:flex;gap:24px}
 @media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+/* SEARCH RESULTS */
+#search-results-section{padding:40px 0}
+.sr-list{display:flex;flex-direction:column;gap:12px;max-width:680px;margin:0 auto}
+.sr-item{display:flex;flex-direction:column;gap:4px;padding:20px 24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:inherit;transition:all .2s}
+.sr-item:hover{border-color:var(--accent);box-shadow:var(--shadow-glow);transform:translateY(-2px)}
+.sr-page{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.sr-title{font-size:1rem;font-weight:700;color:var(--text-primary)}
+.sr-excerpt{font-size:.875rem;color:var(--text-secondary);line-height:1.5}
+.sr-none{text-align:center;color:var(--text-dim);padding:48px 0;font-size:.95rem}
+.sr-heading{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:24px;text-align:center}
 </style>
 </head>
 <body>
@@ -129,11 +139,20 @@ footer a:hover{color:var(--accent-light)}
     <p>Everything you need to get productive with Silver Bullet — from first install to complex DevOps workflows.</p>
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Search topics, commands, concepts…" id="search-input" oninput="filterCards(this.value)">
+      <input type="text" placeholder="Search topics, commands, concepts…" id="search-input" autocomplete="off">
     </div>
   </div>
 </section>
 
+<!-- SEARCH RESULTS (shown when typing) -->
+<div id="search-results-section" style="display:none">
+  <div class="container">
+    <p class="sr-heading">Search results</p>
+    <div class="sr-list" id="search-results-list"></div>
+  </div>
+</div>
+
+<div id="main-help-content">
 <!-- QUICK LINKS -->
 <section style="padding:40px 0">
   <div class="container">
@@ -250,6 +269,7 @@ footer a:hover{color:var(--accent-light)}
     </div>
   </div>
 </section>
+</div><!-- #main-help-content -->
 
 <!-- CALLOUT -->
 <section style="padding:64px 0;background:var(--section-alt)">
@@ -278,6 +298,7 @@ footer a:hover{color:var(--accent-light)}
   </div>
 </footer>
 
+<script src="search.js"></script>
 <script>
 function applyTheme(dark){
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
@@ -286,16 +307,6 @@ function applyTheme(dark){
 }
 function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
 (function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s?s==='dark':false)})();
-
-function filterCards(q){
-  const cards=document.querySelectorAll('#help-grid .help-card');
-  const term=q.toLowerCase().trim();
-  cards.forEach(c=>{
-    const kw=(c.dataset.keywords||'').toLowerCase();
-    const txt=c.textContent.toLowerCase();
-    c.style.display=(!term||kw.includes(term)||txt.includes(term))?'':'none';
-  });
-}
 </script>
 </body>
 </html>
