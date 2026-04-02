@@ -36,5 +36,13 @@
   "state": {
     "state_file": "/tmp/.silver-bullet-state",
     "trivial_file": "/tmp/.silver-bullet-trivial"
+  },
+  "semantic_compression": {
+    "enabled": true,
+    "context_budget_kb": 50,
+    "min_file_size_bytes": 3072,
+    "chunk_size_bytes": 1024,
+    "top_chunks_per_file": 3,
+    "debug": false
   }
 }
