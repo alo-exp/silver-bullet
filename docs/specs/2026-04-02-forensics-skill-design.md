@@ -11,10 +11,11 @@
 
 Silver Bullet has no structured post-mortem capability. When an autonomous session stalls, a task produces wrong output, or a completed session leaves things in a broken state, the only recourse is manually scanning session logs and git history. The existing `superpowers:systematic-debugging` skill handles live bugs during execution — it is not designed for root-cause investigation of completed sessions, abandoned sessions, or verification failures where the cause is unknown.
 
-**Scope**: `/forensics` covers three invocation contexts:
-1. **Post-session** — session completed or was abandoned; investigate what went wrong
-2. **Verification failure** — `/gsd:verify-work` (step 7) fails or produces suspect output; investigate root cause before retrying
-3. **Mid-session stall** — autonomous session has stalled and the operator wants to understand why before resuming
+**Scope**: `/forensics` covers four invocation contexts:
+1. **Completed session** — session finished but left things in a broken or unexpected state
+2. **Abandoned session** — session was cancelled, timed out, or interrupted before completion
+3. **Verification failure** — `/gsd:verify-work` (step 7) fails or produces suspect output; investigate root cause before retrying
+4. **Mid-session stall** — autonomous session has stalled and the operator wants to understand why before resuming
 
 All three require the same structured investigation. The boundary with `superpowers:systematic-debugging` is the type of failure: debugging is for a live bug with an active error; forensics is for any situation where the cause is unknown and must be reconstructed from evidence.
 
@@ -35,7 +36,7 @@ The forensics skill is a SKILL.md that guides Claude through a symptom-driven in
 | `docs/workflows/full-dev-cycle.md` | Modify | Add forensics invocation point in VERIFY section |
 | `templates/workflows/full-dev-cycle.md` | Modify | Same addition (kept in sync with docs/ copy) |
 
-The skill is invoked via the Skill tool as `/forensics` with an optional slug argument (e.g., `/forensics autonomous-stall-2026-04-02`). The slug defaults to `<failure-type>-<YYYY-MM-DD>` if not supplied. A user-supplied slug is used verbatim; no date suffix is appended.
+The skill is invoked via the Skill tool as `/forensics` with an optional slug argument (e.g., `/forensics autonomous-stall-2026-04-02`). The slug defaults to `<failure-type>-<YYYY-MM-DD>` if not supplied. A user-supplied slug is used verbatim; no date suffix is appended. If the user-supplied slug contains characters invalid in a filename (spaces, forward slashes, colons), replace each with a hyphen before use.
 
 **Required SKILL.md frontmatter:**
 ```yaml
@@ -89,7 +90,7 @@ Classification is logged as the first line of the post-mortem document.
 ### Path 1 — Session-level (stall / timeout / incomplete)
 
 1. Read full session log from `<project-root>/docs/sessions/` — extract Mode, Autonomous decisions, Needs human review, Outcome
-2. Check sentinel artifacts: was `/tmp/.silver-bullet-timeout` set? What was the last tool use before stall?
+2. Check sentinel artifacts: was `/tmp/.silver-bullet-timeout` set? What was the last tool use before stall? If the sentinel file is absent, note "No sentinel detected" in Evidence Gathered and proceed — absence does not rule out stall; rely on session log and git history.
 3. Run `git log --oneline` scoped to session date — how many commits landed vs. planned?
 4. Read `.planning/ROADMAP.md` to enumerate planned phases. For each phase listed, check whether `.planning/{phase}-VERIFICATION.md` exists — its presence indicates the phase completed verification; its absence indicates the phase did not complete.
 5. Identify: last confirmed progress point, where execution diverged, whether it was a blocker, stall, or external kill
@@ -176,7 +177,7 @@ Saved to `<project-root>/docs/forensics/YYYY-MM-DD-<slug>.md` after the investig
 <one sentence on how to avoid this class of failure in future>
 ```
 
-The `<project-root>/docs/forensics/` directory is created on first use: the SKILL.md instructs Claude to run `mkdir -p <project-root>/docs/forensics/` via a Bash tool call before writing the report. No hook handles this — it is an inline instruction in the skill. The slug defaults to `<failure-type>-<YYYY-MM-DD>` if not supplied as an argument.
+The `<project-root>/docs/forensics/` directory is created on first use: the SKILL.md instructs Claude to run `mkdir -p <project-root>/docs/forensics/` via a Bash tool call before writing the report. No hook handles this — it is an inline instruction in the skill. Before writing, apply slug collision detection as specified in Edge Cases.
 
 ---
 
@@ -240,6 +241,8 @@ before the `**Agent Team scope for steps 8 + 10**` note. Exact before/after:
 
 The same before/after applies to both `docs/workflows/full-dev-cycle.md` and
 `templates/workflows/full-dev-cycle.md` — both files are kept in sync.
+
+Note: this anchor text (the produces line + blank line + Agent Team note) appears exactly once in each file, in the VERIFY section. The edit is unambiguous.
 
 ---
 
