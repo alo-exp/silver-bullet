@@ -76,7 +76,8 @@ the enforcement hooks track Skill tool invocations, not your judgment.
 
 **Rules**:
 - Do NOT stop until the final outcome is achieved
-- Always use /systematic-debugging + /debug for ANY bug
+- Always use /systematic-debugging + /debug for ANY bug encountered during execution
+- Always use /forensics for root-cause investigation of completed sessions, abandoned sessions, or verification failures
 - Always strictly adhere to this CLAUDE.md 100%
 
 ## 3a. Review Loop Enforcement
