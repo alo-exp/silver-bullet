@@ -59,7 +59,7 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-log-init.sh\"",
-            "async": true
+            "async": false
           }
         ]
       },
@@ -69,6 +69,16 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
+            "async": false
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/timeout-check.sh\"",
             "async": false
           }
         ]
