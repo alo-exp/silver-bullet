@@ -7,6 +7,15 @@ description: Initialize Silver Bullet enforcement for a project — checks depen
 
 This skill initializes Silver Bullet enforcement for a project. Follow each phase in order. Do NOT skip phases unless explicitly instructed below.
 
+## Non-Destructive Guarantee
+
+**This skill MUST NOT destroy existing project content.** Rules:
+- **Never overwrite existing docs** (`docs/*.md`) — only create if absent
+- **Backup before overwrite** — if CLAUDE.md or workflow files must be replaced (update mode), copy the original to `*.backup` first
+- **Never delete files or directories** in the project (only `/tmp/` state files are deleted)
+- **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
+- **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
+
 **Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/using-silver-bullet/SKILL.md`, so the plugin root is two directories up from this file's location.
 
 ---
@@ -269,9 +278,11 @@ If Phase 0 determined this is an update:
 3. If user says "yes":
    a. Read `.silver-bullet.json` to get the current `project.name` and `project.src_pattern` values.
    b. Read the template `${PLUGIN_ROOT}/templates/CLAUDE.md.base` using the Read tool. Replace `{{PROJECT_NAME}}` with the project name from config, replace `{{TECH_STACK}}` and `{{GIT_REPO}}` with values from config or re-detect them using Phase 2 steps.
-   c. Write the rendered `CLAUDE.md` to the project root using the Write tool.
-   d. Read `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` and write it to `docs/workflows/full-dev-cycle.md`.
-   e. Output: "Templates refreshed. Config preserved."
+   c. **Backup before overwrite**: If `CLAUDE.md` exists, copy it to `CLAUDE.md.backup` before writing.
+      Write the rendered `CLAUDE.md` to the project root using the Write tool.
+   d. **Backup before overwrite**: If `docs/workflows/full-dev-cycle.md` exists, copy it to `docs/workflows/full-dev-cycle.md.backup`.
+      Read `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` and write it to `docs/workflows/full-dev-cycle.md`.
+   e. Output: "Templates refreshed. Config preserved. Backups: CLAUDE.md.backup, docs/workflows/*.backup"
    f. Exit. Do NOT re-run the commit or `/using-superpowers` steps.
 
 ### Fresh setup
@@ -403,11 +414,18 @@ Write the result to `.silver-bullet.json` in the project root using the Write to
 
 Read `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` using the Read tool.
 
+**Non-destructive**: If `docs/workflows/full-dev-cycle.md` already exists, back it up
+to `docs/workflows/full-dev-cycle.md.backup` before writing.
+
 Write the contents to `docs/workflows/full-dev-cycle.md` using the Write tool.
 
-#### 3.6 Create placeholder docs
+#### 3.6 Create placeholder docs (NON-DESTRUCTIVE)
 
-Create the following files in `docs/` using the Write tool. Each file should contain only a title and a TODO body:
+**CRITICAL: Do NOT overwrite existing files.** For each file below, check if it already
+exists first (`test -f <path>`). Only create the file if it does NOT exist. If it exists,
+skip it silently — the user's existing content takes priority over placeholder templates.
+
+Create the following files in `docs/` using the Write tool — **only if they do not already exist**. Each placeholder file should contain only a title and a TODO body:
 
 **`docs/Master-PRD.md`**:
 ```markdown
@@ -437,11 +455,11 @@ TODO — Define testing strategy, coverage goals, and test plan here.
 TODO — Document CI/CD pipeline configuration and deployment process here.
 ```
 
-**`docs/KNOWLEDGE.md`**:
+**`docs/KNOWLEDGE.md`** (only if it does not already exist):
 
 Read `${PLUGIN_ROOT}/templates/KNOWLEDGE.md.base` using the Read tool. Replace `{{PROJECT_NAME}}` with the confirmed project name and `{{GIT_REPO}}` with the confirmed repo URL. Write to `docs/KNOWLEDGE.md`.
 
-**`docs/CHANGELOG.md`** (task log — distinct from root-level CHANGELOG.md if present):
+**`docs/CHANGELOG.md`** (only if it does not already exist — task log, distinct from root-level CHANGELOG.md if present):
 
 Read `${PLUGIN_ROOT}/templates/CHANGELOG-project.md.base` using the Read tool. Write as-is to `docs/CHANGELOG.md`.
 
