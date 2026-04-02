@@ -49,8 +49,8 @@ Silver Bullet supports two workflow modes, selected during project initializatio
 
 | Workflow | For | Steps | Unique features |
 |----------|-----|-------|-----------------|
-| `full-dev-cycle` | Application development (web, API, CLI, library) | 19 | GSD wave execution, 8 quality dimensions, TDD |
-| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 23 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path |
+| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 8 quality dimensions, TDD, release notes |
+| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 24 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, release notes |
 
 Both workflows use GSD as the primary execution engine and Silver Bullet skills for quality gates, code review, and finalization.
 
@@ -132,7 +132,7 @@ This will:
 
 That's it. Enforcement is now active.
 
-## Full Dev Cycle (19 Steps)
+## Full Dev Cycle (20 Steps)
 
 ### INITIALIZATION
 | # | Step | Source | Required |
@@ -149,7 +149,7 @@ That's it. Enforcement is now active.
 | 6 | `/gsd:execute-phase` | GSD | **Yes** |
 | 7 | `/gsd:verify-work` | GSD | **Yes** |
 | 8 | `/code-review` + code-reviewer | Superpowers | **Yes** |
-| 9 | `/requesting-code-review` | Superpowers | No |
+| 9 | `/requesting-code-review` | Superpowers | **Yes** |
 | 10 | `/receiving-code-review` | Superpowers | **Yes** |
 | 11-12 | Post-review plan + execute | GSD | If needed |
 
@@ -164,11 +164,16 @@ That's it. Enforcement is now active.
 ### DEPLOYMENT
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 17 | CI/CD pipeline | Inline | **Yes** |
+| 17 | CI/CD pipeline (CI must be green) | Inline | **Yes** |
 | 18 | `/deploy-checklist` | Engineering | **Yes** |
 | 19 | `/gsd:ship` | GSD | **Yes** |
 
-## DevOps Cycle (23 Steps)
+### RELEASE
+| # | Step | Source | Required |
+|---|------|--------|----------|
+| 20 | `/release-notes` | Silver Bullet | **Yes** |
+
+## DevOps Cycle (24 Steps)
 
 Same structure as full-dev-cycle with these additions:
 - **Incident fast path** at the top for emergency production changes
@@ -185,6 +190,7 @@ Skills installed by this plugin that extend the workflow:
 |-------|-------------|
 | `/quality-gates` | Before planning — checks all 8 quality dimensions |
 | `/forensics` | After a completed, failed, or abandoned session — structured post-mortem investigation |
+| `/release-notes` | After `/gsd:ship` — generates release notes and creates GitHub Release |
 
 ### `/forensics`
 
@@ -237,16 +243,18 @@ Edit `.silver-bullet.json` in your project root:
   "skills": {
     "required_planning": ["quality-gates"],
     "required_deploy": [
-      "code-review", "receiving-code-review",
+      "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist"
+      "finishing-a-development-branch", "deploy-checklist",
+      "release-notes"
     ],
     "all_tracked": [
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy", "architecture", "system-design",
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist"
+      "finishing-a-development-branch", "deploy-checklist",
+      "release-notes"
     ]
   },
   "devops_plugins": {
@@ -271,8 +279,8 @@ Edit `.silver-bullet.json` in your project root:
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `quality-gates` |
-| `required_deploy` | Skills that must run before commit/push/deploy | code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist |
-| `all_tracked` | All skills that get recorded | 14 skills (see above) |
+| `required_deploy` | Skills that must run before commit/push/deploy | code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, release-notes |
+| `all_tracked` | All skills that get recorded | 16 skills (see above) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
 ## Trivial Changes
@@ -336,8 +344,8 @@ Plugin hooks (fire automatically)          Project files (created by /using-silv
 ─────────────────────────────────          ───────────────────────────────────────────────
 hooks/record-skill.sh                      .silver-bullet.json (config)
   → records skill invocations              CLAUDE.md (enforcement rules)
-                                           docs/workflows/full-dev-cycle.md (19 steps)
-hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (23 steps)
+                                           docs/workflows/full-dev-cycle.md (20 steps)
+hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (24 steps)
   → HARD STOP if planning incomplete
                                            State files (ephemeral, in /tmp/)
 hooks/compliance-status.sh                 ─────────────────────────────────

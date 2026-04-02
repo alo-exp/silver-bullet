@@ -23,17 +23,17 @@ Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of c
 
 > Run once at the very start of the session, before any project work.
 
-Ask:
-> Run this session **interactively** or **autonomously**?
-> - **Interactive** (default) — I pause at decision points and phase gates
-> - **Autonomous** — I drive start to finish, surface blockers at the end
+Announce:
+> This session runs **autonomously** by default. I drive start to finish and
+> surface blockers at the end. Say **interactive** if you want me to pause at
+> decision points and phase gates.
 
-Write choice to `/tmp/.silver-bullet-mode`:
+Write mode to `/tmp/.silver-bullet-mode`:
 ```bash
-echo "interactive" > /tmp/.silver-bullet-mode   # or "autonomous"
+echo "autonomous" > /tmp/.silver-bullet-mode   # or "interactive" if requested
 ```
 
-**If autonomous was chosen**, ask one follow-up before proceeding:
+**Unless interactive was chosen**, ask one follow-up before proceeding:
 
 > Any decision points you want to pre-answer? Common ones:
 > - Model routing — Planning phase: Sonnet or Opus?
@@ -182,7 +182,7 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
    **Review loop rule**: re-dispatch reviewer until it returns ✅ Approved. Max 3 iterations
    before surfacing remaining issues to user. Never stop early on "minor" issues.
 
-9. `/requesting-code-review` — Request external or peer review.
+9. `/requesting-code-review` — Request external or peer review.                      **REQUIRED** ← DO NOT SKIP
 
 10. `/receiving-code-review` — Triage and accept/reject all items from 8–9.          **REQUIRED** ← DO NOT SKIP
 
@@ -212,6 +212,7 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 
 15. `/documentation` — Update or create all project documentation.                   **REQUIRED** ← DO NOT SKIP
     Minimum required files:
+    - `README.md` — MUST reflect current version, features, and changes before release
     - `docs/Master-PRD.md`
     - `docs/Architecture-and-Design.md`
     - `docs/Testing-Strategy-and-Plan.md`
@@ -255,11 +256,13 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
       or stack defaults: `npm test` / `pytest` / `cargo test` / `go test ./...`)
     - Check CI: `gh run list --limit 1 --json status,conclusion`
     - **Autonomous mode**: poll every 30 seconds, up to 20 retries (10 min max).
-      On timeout: log blocker under "Needs human review", surface in completion summary,
-      then proceed.
+      On timeout: log blocker under "Needs human review", surface to user, **STOP
+      deployment steps**. Do NOT proceed to `/deploy-checklist` while CI status is unknown.
     - **Interactive mode**: show status. If `in_progress`: inform user, wait for
       confirmation to re-check or proceed.
-    - If CI red: log failure, invoke `/gsd:debug`.
+    - **CI MUST be green.** If CI is red: invoke `/gsd:debug`, fix the issue, re-push,
+      and re-check CI. Do NOT proceed to `/deploy-checklist` while CI is failing.
+      Repeat fix-push-check until CI passes.
     - **Missing ci.yml rule**: if `.github/workflows/ci.yml` is absent at this step,
       Claude must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
       surface missing file to user, stop deployment steps.
@@ -274,6 +277,16 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 
 19. `/gsd:ship` — Create PR from verified, deployed work.                            **REQUIRED** ← DO NOT SKIP
     → Produces: pull request with phase summaries and requirement coverage.
+
+---
+
+## RELEASE
+
+20. `/release-notes` — Generate release notes and create GitHub Release.              **REQUIRED** ← DO NOT SKIP
+    → Produces: git tag, GitHub Release with structured notes (features, fixes,
+    breaking changes). README must have been updated in step 15 before this step
+    can proceed. For GitHub repos, uses `gh release create`. For non-GitHub repos,
+    outputs notes for manual publishing.
 
 **Autonomous completion cleanup** (run after outputting structured summary):
 ```bash

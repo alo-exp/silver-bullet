@@ -74,7 +74,7 @@ if [[ -f "$trivial_file" ]]; then
 fi
 
 # --- Build required skills list ---
-DEFAULT_REQUIRED="code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist"
+DEFAULT_REQUIRED="code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist release-notes"
 
 if [[ -z "$required_deploy" && -z "$config_file" ]]; then
   # No config at all — use defaults

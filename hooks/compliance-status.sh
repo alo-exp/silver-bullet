@@ -81,7 +81,7 @@ if [[ ! -f "$state_file" ]]; then
   # Count totals
   plan_total=0
   for _ in $required_planning; do ((plan_total++)) || true; done
-  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | PLANNING 0/%d | REVIEW 0/2 | FINALIZATION 0/4 | Next: /%s"}}' \
+  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
     "$plan_total" \
     "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
   exit 0
@@ -110,9 +110,9 @@ for skill in $required_planning; do
 done
 
 # --- REVIEW phase ---
-review_skills="code-review receiving-code-review"
+review_skills="code-review requesting-code-review receiving-code-review"
 review_done=0
-review_total=2
+review_total=3
 first_missing_review=""
 for skill in $review_skills; do
   if has_skill "$skill"; then
@@ -135,6 +135,19 @@ for skill in $final_skills; do
   fi
 done
 
+# --- RELEASE phase ---
+release_skills="release-notes"
+release_done=0
+release_total=1
+first_missing_release=""
+for skill in $release_skills; do
+  if has_skill "$skill"; then
+    ((release_done++)) || true
+  elif [[ -z "$first_missing_release" ]]; then
+    first_missing_release="$skill"
+  fi
+done
+
 # --- Find NEXT required skill (first missing across phases in order) ---
 next_skill=""
 if [[ -n "$first_missing_plan" ]]; then
@@ -143,10 +156,12 @@ elif [[ -n "$first_missing_review" ]]; then
   next_skill="$first_missing_review"
 elif [[ -n "$first_missing_final" ]]; then
   next_skill="$first_missing_final"
+elif [[ -n "$first_missing_release" ]]; then
+  next_skill="$first_missing_release"
 fi
 
 # --- Build output ---
-msg="Silver Bullet: ${total_steps} steps | PLANNING ${plan_done}/${plan_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total}"
+msg="Silver Bullet: ${total_steps} steps | PLANNING ${plan_done}/${plan_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total} | RELEASE ${release_done}/${release_total}"
 if [[ -n "$next_skill" ]]; then
   msg="${msg} | Next: /${next_skill}"
 fi

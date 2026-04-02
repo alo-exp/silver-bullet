@@ -11,9 +11,10 @@
       "quality-gates"
     ],
     "required_deploy": [
-      "code-review", "receiving-code-review",
+      "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist"
+      "finishing-a-development-branch", "deploy-checklist",
+      "release-notes"
     ],
     "all_tracked": [
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
@@ -21,7 +22,8 @@
       "architecture", "system-design",
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist"
+      "finishing-a-development-branch", "deploy-checklist",
+      "release-notes"
     ]
   },
   "devops_plugins": {

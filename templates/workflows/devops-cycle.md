@@ -174,7 +174,7 @@ cannot wait for full cycle without extending outage.
    - Resources missing encryption, backups, or monitoring
    - Plan output reviewed, not just source files
 
-10. `/requesting-code-review` — Request external or peer review.
+10. `/requesting-code-review` — Request external or peer review.                     **REQUIRED** ← DO NOT SKIP
 
 11. `/receiving-code-review` — Triage and accept/reject all items from 9–10.          **REQUIRED** ← DO NOT SKIP
 
@@ -226,6 +226,7 @@ cannot wait for full cycle without extending outage.
 
 18. `/documentation` — Update or create all project documentation.                    **REQUIRED** ← DO NOT SKIP
     Minimum required files:
+    - `README.md` — MUST reflect current version, features, and changes before release
     - `docs/Master-PRD.md` (or `docs/Infra-PRD.md` for pure infra projects)
     - `docs/Architecture-and-Design.md`
     - `docs/Testing-Strategy-and-Plan.md`
@@ -243,6 +244,11 @@ cannot wait for full cycle without extending outage.
 20. **CI/CD pipeline** — Use existing pipeline or set one up before deploying.        **REQUIRED** ← DO NOT SKIP
     - Infrastructure pipelines MUST enforce: plan → review → apply (never auto-apply to prod)
     - Plan output MUST be stored as a pipeline artifact for audit
+    - **CI MUST be green.** Check: `gh run list --limit 1 --json status,conclusion`
+    - Autonomous mode: poll every 30 seconds, up to 20 retries (10 min max).
+      On timeout: log blocker, surface to user, **STOP deployment steps**.
+    - If CI is red: invoke `/gsd:debug`, fix the issue, re-push, re-check.
+      Do NOT proceed to `/deploy-checklist` while CI is failing.
 
 21. `/deploy-checklist` — Pre-deployment verification gate.                           **REQUIRED** ← DO NOT SKIP
     DevOps additions to standard checklist:
@@ -262,6 +268,14 @@ cannot wait for full cycle without extending outage.
 23. `/gsd:ship` — Create PR from verified, deployed work.                             **REQUIRED** ← DO NOT SKIP
     → Produces: pull request with phase summaries, blast radius ratings, and
     requirement coverage. Include post-apply drift detection results.
+
+---
+
+## RELEASE
+
+24. `/release-notes` — Generate release notes and create GitHub Release.              **REQUIRED** ← DO NOT SKIP
+    → Produces: git tag, GitHub Release with structured notes. README must have
+    been updated in step 18 before this step can proceed.
 
 ---
 
