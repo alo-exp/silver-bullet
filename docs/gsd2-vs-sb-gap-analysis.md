@@ -184,7 +184,7 @@ Still no runtime dashboards, no per-task cost metrics, no HTML build reports, no
 | Build reports (HTML) | ❌ None | ✅ Per-task metrics + DAG |
 | Post-mortem forensics | ✅ `/forensics` skill — session logs + git history (v0.3.0) | ✅ Runtime forensics — full execution state |
 | Cross-session knowledge base | ⚠️ KNOWLEDGE.md template (manually updated at step 15) | ✅ Auto-updated after every task |
-| Semantic context compression | ❌ Full file loading | ✅ TF-IDF ranked chunking |
+| Semantic context compression | ✅ TF-IDF ranked chunking (PostToolUse hook, pure shell, cache-backed, source-priority) | ✅ TF-IDF ranked chunking |
 
 ---
 
@@ -194,5 +194,6 @@ GSD v1 + Silver Bullet **enforces** the right workflow on Claude. GSD-2 **is** t
 
 ---
 
-*Generated: 2026-04-02 | Based on GSD-2 v2.58.0 (gsd-pi) and Silver Bullet v0.3.0*
+*Generated: 2026-04-02 | Based on GSD-2 v2.58.0 (gsd-pi) and Silver Bullet v0.4.0*
 *v0.3.0 updates: `/forensics` closes the post-mortem forensics gap; session logging added to observability; KNOWLEDGE.md template partially closes the cross-session knowledge base gap.*
+*v0.4.0 updates: Semantic context compression (TF-IDF PostToolUse hook, pure shell, cache-backed, source-priority) closes the semantic context compression gap.*

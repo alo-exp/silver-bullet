@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### New: Semantic context compression
+
+- New PostToolUse hook (`hooks/semantic-compress.sh`) that fires on GSD phase transitions and injects ranked context into the next prompt via `hookSpecificOutput.additionalContext`
+- TF-IDF ranking of source and doc file chunks against the active phase goal — highest-relevance chunks are injected, lowest are dropped, keeping context tight
+- Pure shell implementation (awk + sort) — no external dependencies beyond standard POSIX tools
+- Cache-backed: MD5 hash of file mtimes + phase goal used as cache key; repeated calls within the same phase are instant
+- Source files prioritised over doc files in ranking; configurable score weighting
+- Configurable via `.silver-bullet.json` `semantic_compression` block (enable/disable, chunk size, max chunks injected, min score threshold, include/exclude globs)
+- New scripts: `scripts/extract-phase-goal.sh`, `scripts/tfidf-rank.sh`, `scripts/semantic-compress.sh`
+- 31 tests across 5 test suites covering TF-IDF scoring, caching, phase-goal extraction, hook wiring, and end-to-end integration
+
 ## 0.2.0 (2026-04-01)
 
 ### Major: GSD integration as primary execution engine
