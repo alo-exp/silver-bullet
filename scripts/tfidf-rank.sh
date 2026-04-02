@@ -61,8 +61,7 @@ total=$(wc -l < "$TMP_CHUNKS" | tr -d ' ')
 # If empty query, output chunks with score 0 preserving order (unescape \n → space for readability)
 if [[ -z "$QUERY" ]]; then
   while IFS=$'\t' read -r cf cs ce ct; do
-    display="${ct//\\n/ }"
-    printf '0\t%s\t%s\t%s\t%s\n' "$cf" "$cs" "$ce" "$display"
+    printf '0\t%s\t%s\t%s\t%s\n' "$cf" "$cs" "$ce" "$ct"
   done < "$TMP_CHUNKS"
   exit 0
 fi
@@ -78,14 +77,16 @@ BEGIN {
   file  = $1
   start = $2
   end   = $3
-  # Field 4 is escaped chunk text; replace \n escape sequences with space for scoring
-  escaped = $4
-  gsub(/\\n/, " ", escaped)
-  text = tolower(escaped)
+  # Field 4: original escaped text (original case, \n two-char sequences preserved)
+  raw     = $4
+  escaped = raw
+  gsub(/\\n/, " ", escaped)    # space-join for term-frequency counting
+  text = tolower(escaped)      # lowercase for scoring only
   chunks_file[NR]  = file
   chunks_start[NR] = start
   chunks_end[NR]   = end
-  chunks_text[NR]  = text
+  chunks_text[NR]  = text      # lowercased, space-joined (scoring only)
+  chunks_raw[NR]   = raw       # original case, \n-escaped (output)
   for (i = 1; i <= n; i++) {
     term = tolower(qterms[i])
     if (length(term) < 2) continue
@@ -108,7 +109,7 @@ END {
       idf = (df[term] > 0) ? log(total / df[term]) : 0
       score += tf * idf
     }
-    printf "%.6f\t%s\t%s\t%s\t%s\n", score, chunks_file[i], chunks_start[i], chunks_end[i], text
+    printf "%.6f\t%s\t%s\t%s\t%s\n", score, chunks_file[i], chunks_start[i], chunks_end[i], chunks_raw[i]
   }
 }
 ' "$TMP_CHUNKS" | sort -t$'\t' -k1 -rn

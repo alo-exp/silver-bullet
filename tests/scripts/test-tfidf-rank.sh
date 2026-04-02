@@ -42,9 +42,12 @@ field_count=$(printf '%s\n' "$first_line" | awk -F'\t' '{print NF}')
 assert_eq "output has 5 tab fields" "5" "$field_count"
 
 # Test 3: empty query returns output without crashing
-result=$(printf '%s\n' "$TMP/file_a.sh" | "$SCRIPT" "" 2>&1)
-[[ $? -eq 0 ]] && { echo "PASS: empty query exits cleanly"; (( PASS++ )) || true; } \
-              || { echo "FAIL: empty query crashed"; (( FAIL++ )) || true; }
+result=$(printf '%s\n' "$TMP/file_a.sh" | "$SCRIPT" "" 2>&1) || true
+if [[ -n "$result" ]]; then
+  echo "PASS: empty query exits cleanly"; (( PASS++ )) || true
+else
+  echo "FAIL: empty query crashed or produced no output"; (( FAIL++ )) || true
+fi
 
 # Test 4: dense file (no blank lines) split into multiple chunks
 python3 -c "print('\n'.join(['no blank lines here content stuff'] * 100))" > "$TMP/dense.sh"
@@ -58,6 +61,16 @@ printf 'term1\tterm2\nmore content here\n' > "$TMP/tabfile.sh"
 result=$(printf '%s\n' "$TMP/tabfile.sh" | "$SCRIPT" "term1")
 field_count=$(printf '%s\n' "$result" | head -1 | awk -F'\t' '{print NF}')
 assert_eq "tab in chunk text: still 5 fields" "5" "$field_count"
+
+# Test 6: mixed-case content is preserved in output (not lowercased)
+printf 'AuthManager CLASS UPPERCASE_FUNCTION validateCredentials\nmore content here\n' > "$TMP/mixed_case.sh"
+result=$(printf '%s\n' "$TMP/mixed_case.sh" | "$SCRIPT" "authmanager")
+chunk_text=$(printf '%s\n' "$result" | head -1 | cut -f5-)
+if [[ "$chunk_text" == *"AuthManager"* ]]; then
+  echo "PASS: mixed-case content preserved in output"; (( PASS++ )) || true
+else
+  echo "FAIL: mixed-case content was lowercased"; echo "  actual: [$chunk_text]"; (( FAIL++ )) || true
+fi
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

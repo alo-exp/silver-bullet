@@ -176,6 +176,7 @@ score_and_add() {
     start=$(printf '%s' "$scored_line" | cut -f3)
     end=$(printf '%s' "$scored_line" | cut -f4)
     chunk_text=$(printf '%s' "$scored_line" | cut -f5-)
+    chunk_text="${chunk_text//\\n/$'\n'}"  # unescape \n sequences → real newlines
     local rel="${file#$REPO_ROOT/}"
     local key; key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
