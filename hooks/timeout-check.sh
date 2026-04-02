@@ -7,7 +7,7 @@ set -euo pipefail
 # macOS-only for stale-flag check (uses stat -f %m). Non-macOS: exits 0 silently.
 
 # Consume stdin (required to avoid broken pipe)
-input=$(cat)
+cat > /dev/null
 
 # Mode gate: only act in autonomous mode
 mode_file_content=$(cat /tmp/.silver-bullet-mode 2>/dev/null || echo "interactive")

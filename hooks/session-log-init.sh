@@ -45,7 +45,7 @@ fi
 
 # --- Step 5: Mode detection + dedup guard (combined) ---
 today=$(date '+%Y-%m-%d')
-existing=$(ls "$sessions_dir/${today}"*.md 2>/dev/null | head -1 || true)
+existing=$(find "$sessions_dir" -maxdepth 1 -name "${today}*.md" -print 2>/dev/null | head -1 || true)
 
 if [[ -n "$existing" ]]; then
   # Extract mode from existing log
