@@ -23,17 +23,17 @@ Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of c
 
 > Run once at the very start of the session, before any project work.
 
-Announce:
-> This session runs **autonomously** by default. I drive start to finish and
-> surface blockers at the end. Say **interactive** if you want me to pause at
-> decision points and phase gates.
+Ask:
+> Run this session **interactively** or **autonomously**?
+> - **Interactive** (default) — I pause at decision points and phase gates
+> - **Autonomous** — I drive start to finish, surface blockers at the end
 
-Write mode to `/tmp/.silver-bullet-mode`:
+Write choice to `/tmp/.silver-bullet-mode`:
 ```bash
-echo "autonomous" > /tmp/.silver-bullet-mode   # or "interactive" if requested
+echo "interactive" > /tmp/.silver-bullet-mode   # or "autonomous"
 ```
 
-**Unless interactive was chosen**, ask one follow-up before proceeding:
+**If autonomous was chosen**, ask one follow-up before proceeding:
 
 > Any decision points you want to pre-answer? Common ones:
 > - Model routing — Planning phase: Sonnet or Opus?

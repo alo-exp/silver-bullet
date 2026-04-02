@@ -96,20 +96,21 @@ Maximum 3 iterations before surfacing to the user for guidance — but you MUST 
 
 ## 4. Session Mode
 
-At the start of every session, announce:
+At the start of every session, before any work begins, ask:
 
-> This session runs **autonomously** by default. I drive start to finish and
-> surface blockers at the end. Say **interactive** if you want me to pause at
-> decision points and phase gates.
+> Run this session **interactively** or **autonomously**?
+> - **Interactive** (default) — I pause at decision points and phase gates
+> - **Autonomous** — I drive start to finish and surface blockers at the end
 
-Write the mode:
+Write the choice:
 ```bash
+echo "interactive" > /tmp/.silver-bullet-mode
+# or
 echo "autonomous" > /tmp/.silver-bullet-mode
-# or "interactive" if the user requests it
 ```
 
-**Fallback**: if `/tmp/.silver-bullet-mode` is unreadable at any point, default to autonomous
-and log "Mode fallback: defaulted to autonomous" in the session log.
+**Fallback**: if `/tmp/.silver-bullet-mode` is unreadable at any point, default to interactive
+and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**
 - Phase gates removed — proceed without approval pauses
