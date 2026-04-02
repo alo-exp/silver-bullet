@@ -4,15 +4,13 @@ set -euo pipefail
 # PostToolUse hook (matcher: Bash)
 # Fires when Claude writes the session mode to /tmp/.silver-bullet-mode.
 # Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
-# /tmp/.silver-bullet-session-log-path so Step 15 (documentation) can fill it in.
-# Note: hook infers mode by checking for "autonomous" in the command string.
-# Known edge case: two-step writes (touch then echo) may fire the hook twice —
-# dedup guard prevents a second session log.
+# /tmp/.silver-bullet-session-log-path so the documentation step can fill it in.
+# In autonomous mode: also launches a 10-minute background sentinel.
 
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 [[ -z "$cmd" ]] && exit 0
 
 # Only fire when command touches .silver-bullet-mode
@@ -37,21 +35,72 @@ fi
 sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
 mkdir -p "$sessions_dir"
 
-# --- Dedup: one session log per calendar day ---
+# --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
+if [[ -f /tmp/.silver-bullet-sentinel-pid ]]; then
+  old_pid=$(cat /tmp/.silver-bullet-sentinel-pid)
+  kill "$old_pid" 2>/dev/null || true
+  rm -f /tmp/.silver-bullet-sentinel-pid /tmp/.silver-bullet-timeout \
+        /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+fi
+
+# --- Step 5: Mode detection + dedup guard (combined) ---
 today=$(date '+%Y-%m-%d')
 existing=$(ls "$sessions_dir/${today}"*.md 2>/dev/null | head -1 || true)
+
 if [[ -n "$existing" ]]; then
+  # Extract mode from existing log
+  mode=$(grep '^\*\*Mode:\*\*' "$existing" 2>/dev/null | awk '{print $NF}' | tr -d ' ') || true
+  mode="${mode:-interactive}"
+
+  # Add missing new sections at correct skeleton positions (idempotency for pre-update logs)
+  # Helper: insert section_header + placeholder immediately before anchor line
+  _insert_before() {
+    local file="$1" anchor="$2" header="$3" placeholder="$4"
+    local tmp
+    tmp=$(mktemp)
+    awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
+      $0 == anch { printf "%s\n\n%s\n\n", hdr, ph }
+      { print }
+    ' "$file" > "$tmp" && mv "$tmp" "$file"
+  }
+  if ! grep -q "^## Pre-answers$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Task" "## Pre-answers" \
+      "(filled at Step 0 by Claude if autonomous mode)"
+  fi
+  if ! grep -q "^## Skills flagged at discovery$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skills flagged at discovery" "(filled at DISCUSS phase)"
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skill gap check (post-plan)" "(filled after plan is written)"
+  elif ! grep -q "^## Skill gap check" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skill gap check (post-plan)" "(filled after plan is written)"
+  fi
+
+  # Re-launch sentinel if autonomous (second-terminal re-trigger)
+  if [[ "$mode" == "autonomous" ]]; then
+    date +%s > /tmp/.silver-bullet-session-start-time
+    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > /tmp/.silver-bullet-timeout) &
+    sentinel_pid=$!
+    disown "$sentinel_pid"
+    echo "$sentinel_pid" > /tmp/.silver-bullet-sentinel-pid
+    # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
+    _note_tmp=$(mktemp)
+    awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
+      "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing"
+  fi
+
   printf '%s' "$existing" > /tmp/.silver-bullet-session-log-path
   printf '{"hookSpecificOutput":{"message":"ℹ️ Session log already exists: %s"}}' \
     "$(basename "$existing")"
   exit 0
 fi
 
-# --- Extract mode from command ---
+# No existing log — extract mode from command string
 mode="interactive"
 printf '%s' "$cmd" | grep -q "autonomous" && mode="autonomous"
 
-# --- Create session log ---
+# --- Step 6: Create session log ---
 timestamp=$(date '+%H-%M-%S')
 log_file="$sessions_dir/${today}-${timestamp}.md"
 
@@ -60,30 +109,42 @@ cat > "$log_file" << LOGEOF
 
 **Date:** ${today}
 **Mode:** ${mode}
-**Model:** (filled at step 15)
-**Virtual cost:** (filled at step 15)
+**Model:** (filled at documentation step)
+**Virtual cost:** (filled at documentation step)
 
 ---
 
+## Pre-answers
+
+(filled at Step 0 by Claude if autonomous mode)
+
 ## Task
 
-(filled at step 15)
+(filled at documentation step)
 
 ## Approach
 
-(filled at step 15)
+(filled at documentation step)
 
 ## Files changed
 
-(filled at step 15)
+(filled at documentation step)
 
 ## Skills invoked
 
-(filled at step 15)
+(filled at documentation step)
+
+## Skills flagged at discovery
+
+(filled at DISCUSS phase)
+
+## Skill gap check (post-plan)
+
+(filled after plan is written)
 
 ## Agent Teams dispatched
 
-(filled at step 15)
+(filled at documentation step)
 
 ## Autonomous decisions
 
@@ -95,12 +156,23 @@ cat > "$log_file" << LOGEOF
 
 ## Outcome
 
-(filled at step 15)
+(filled at documentation step)
 
 ## KNOWLEDGE.md additions
 
-(filled at step 15)
+(filled at documentation step)
 LOGEOF
+
+# --- Step 7: Write session start timestamp ---
+date +%s > /tmp/.silver-bullet-session-start-time
+
+# --- Step 8: Launch sentinel (autonomous mode only) ---
+if [[ "$mode" == "autonomous" ]]; then
+  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > /tmp/.silver-bullet-timeout) &
+  sentinel_pid=$!
+  disown "$sentinel_pid"
+  echo "$sentinel_pid" > /tmp/.silver-bullet-sentinel-pid
+fi
 
 printf '%s' "$log_file" > /tmp/.silver-bullet-session-log-path
 printf '{"hookSpecificOutput":{"message":"📋 Session log created: docs/sessions/%s"}}' \

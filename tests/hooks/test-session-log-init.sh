@@ -44,4 +44,108 @@ else
 fi
 
 rm -rf "$SESSION_LOG_DIR"
+
+# Test 4: autonomous mode — sentinel PID file created
+SESSION_LOG_DIR4="/tmp/sb-test-sessions-t4-$$"
+mkdir -p "$SESSION_LOG_DIR4"
+run_hook4() {
+  local cmd="$1"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd" \
+    | PROJECT_ROOT_OVERRIDE="$(dirname "$SESSION_LOG_DIR4")" \
+      SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR4" \
+      SENTINEL_SLEEP_OVERRIDE="3600" \
+      bash "$HOOK"
+}
+rm -f /tmp/.silver-bullet-sentinel-pid
+run_hook4 "echo autonomous > /tmp/.silver-bullet-mode" > /dev/null
+if [[ -f /tmp/.silver-bullet-sentinel-pid ]]; then
+  printf 'PASS: autonomous mode creates sentinel PID file\n'
+  # Clean up sentinel
+  kill "$(cat /tmp/.silver-bullet-sentinel-pid)" 2>/dev/null || true
+  rm -f /tmp/.silver-bullet-sentinel-pid /tmp/.silver-bullet-timeout \
+        /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+else
+  printf 'FAIL: expected sentinel PID file, not found\n'
+  rm -rf "$SESSION_LOG_DIR4"
+  exit 1
+fi
+rm -rf "$SESSION_LOG_DIR4"
+
+# Test 5: interactive mode — sentinel PID file NOT created
+SESSION_LOG_DIR5="/tmp/sb-test-sessions-t5-$$"
+mkdir -p "$SESSION_LOG_DIR5"
+run_hook5() {
+  local cmd="$1"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd" \
+    | PROJECT_ROOT_OVERRIDE="$(dirname "$SESSION_LOG_DIR5")" \
+      SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR5" \
+      bash "$HOOK"
+}
+rm -f /tmp/.silver-bullet-sentinel-pid
+run_hook5 "echo interactive > /tmp/.silver-bullet-mode" > /dev/null
+if [[ ! -f /tmp/.silver-bullet-sentinel-pid ]]; then
+  printf 'PASS: interactive mode does not create sentinel PID file\n'
+else
+  printf 'FAIL: interactive mode should not create sentinel PID file\n'
+  kill "$(cat /tmp/.silver-bullet-sentinel-pid)" 2>/dev/null || true
+  rm -f /tmp/.silver-bullet-sentinel-pid
+  rm -rf "$SESSION_LOG_DIR5"
+  exit 1
+fi
+rm -rf "$SESSION_LOG_DIR5"
+
+# Test 6: re-init (dedup path) with autonomous mode re-launches sentinel
+SESSION_LOG_DIR6="/tmp/sb-test-sessions-t6-$$"
+mkdir -p "$SESSION_LOG_DIR6"
+run_hook6() {
+  local cmd="$1"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd" \
+    | PROJECT_ROOT_OVERRIDE="$(dirname "$SESSION_LOG_DIR6")" \
+      SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR6" \
+      SENTINEL_SLEEP_OVERRIDE="3600" \
+      bash "$HOOK"
+}
+rm -f /tmp/.silver-bullet-sentinel-pid /tmp/.silver-bullet-timeout \
+      /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+# First trigger: creates log + sentinel
+run_hook6 "echo autonomous > /tmp/.silver-bullet-mode" > /dev/null
+pid1=$(cat /tmp/.silver-bullet-sentinel-pid 2>/dev/null || echo "")
+# Second trigger: dedup path should kill old sentinel and re-launch
+run_hook6 "echo autonomous > /tmp/.silver-bullet-mode" > /dev/null
+pid2=$(cat /tmp/.silver-bullet-sentinel-pid 2>/dev/null || echo "")
+if [[ -n "$pid2" ]] && [[ "$pid2" != "$pid1" ]]; then
+  printf 'PASS: dedup path re-launches sentinel with new PID\n'
+else
+  printf 'FAIL: expected new sentinel PID after re-init, got pid1=%s pid2=%s\n' "$pid1" "$pid2"
+  rm -rf "$SESSION_LOG_DIR6"
+  exit 1
+fi
+kill "$pid2" 2>/dev/null || true
+rm -f /tmp/.silver-bullet-sentinel-pid /tmp/.silver-bullet-timeout \
+      /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+rm -rf "$SESSION_LOG_DIR6"
+
+# Test 7: new skeleton has ## Pre-answers section
+SESSION_LOG_DIR7="/tmp/sb-test-sessions-t7-$$"
+mkdir -p "$SESSION_LOG_DIR7"
+run_hook7() {
+  local cmd="$1"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd" \
+    | PROJECT_ROOT_OVERRIDE="$(dirname "$SESSION_LOG_DIR7")" \
+      SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR7" \
+      bash "$HOOK"
+}
+run_hook7 "echo interactive > /tmp/.silver-bullet-mode" > /dev/null
+log_file=$(ls "$SESSION_LOG_DIR7"/*.md 2>/dev/null | head -1)
+if grep -q "## Pre-answers" "$log_file" && \
+   grep -q "## Skills flagged at discovery" "$log_file" && \
+   grep -q "## Skill gap check" "$log_file"; then
+  printf 'PASS: skeleton contains all three new sections\n'
+else
+  printf 'FAIL: skeleton missing one or more new sections\n'
+  rm -rf "$SESSION_LOG_DIR7"
+  exit 1
+fi
+rm -rf "$SESSION_LOG_DIR7"
+
 printf 'All tests passed.\n'
