@@ -303,4 +303,5 @@ Every review loop in this workflow (spec review, plan review, code review, verif
   that track Skill tool invocations. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
+- For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
 - For trivial changes (typos, copy fixes, config tweaks): `touch /tmp/.silver-bullet-trivial`
