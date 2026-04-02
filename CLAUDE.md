@@ -79,6 +79,18 @@ the enforcement hooks track Skill tool invocations, not your judgment.
 - Always use /systematic-debugging + /debug for ANY bug
 - Always strictly adhere to this CLAUDE.md 100%
 
+## 3a. Review Loop Enforcement
+
+Every review loop (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns ✅ Approved**. There are NO exceptions.
+
+You MUST NOT:
+- Stop a review loop because "issues are minor"
+- Stop because "it's close enough"
+- Accept a partial fix and move on without re-dispatching
+- Count a round as approved unless the reviewer explicitly outputs `✅ Approved`
+
+Maximum 3 iterations before surfacing to the user for guidance — but you MUST reach that maximum before giving up, not stop early. If iteration 3 still returns issues, surface to the user with the remaining issue list and wait for direction.
+
 ## 4. Session Mode
 
 At the start of every session, before any work begins, ask:

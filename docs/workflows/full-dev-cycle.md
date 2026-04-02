@@ -131,6 +131,8 @@ Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete pl
 8. `/code-review` — Peer code quality review (security, perf, correctness,           **REQUIRED** ← DO NOT SKIP
    readability — distinct from GSD's goal verification).
    `superpowers:code-reviewer` — Run code-reviewer subagent immediately after.
+   **Review loop rule**: re-dispatch reviewer until it returns ✅ Approved. Max 3 iterations
+   before surfacing remaining issues to user. Never stop early on "minor" issues.
 
 9. `/requesting-code-review` — Request external or peer review.
 
@@ -224,6 +226,17 @@ Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete pl
 
 19. `/gsd:ship` — Create PR from verified, deployed work.                            **REQUIRED** ← DO NOT SKIP
     → Produces: pull request with phase summaries and requirement coverage.
+
+---
+
+## Review Loop Enforcement
+
+Every review loop in this workflow (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns ✅ Approved**. No exceptions.
+
+- Never stop because "issues are minor" or "close enough"
+- Never count a round as approved unless reviewer explicitly outputs `✅ Approved`
+- Maximum 3 iterations before surfacing to user — but MUST reach that maximum, not stop early
+- If iteration 3 still returns issues: surface the issue list to the user and wait for direction
 
 ---
 
