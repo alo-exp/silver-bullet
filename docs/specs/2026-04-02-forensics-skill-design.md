@@ -92,7 +92,7 @@ Classification is logged as the first line of the post-mortem document.
 1. Read full session log from `<project-root>/docs/sessions/` — extract Mode, Autonomous decisions, Needs human review, Outcome
 2. Check sentinel artifacts: was `/tmp/.silver-bullet-timeout` set? What was the last tool use before stall? If the sentinel file is absent, note "No sentinel detected" in Evidence Gathered and proceed — absence does not rule out stall; rely on session log and git history.
 3. Run `git log --oneline` scoped to session date — how many commits landed vs. planned?
-4. Read `.planning/ROADMAP.md` to enumerate planned phases. For each phase listed, check whether `.planning/{phase}-VERIFICATION.md` exists — its presence indicates the phase completed verification; its absence indicates the phase did not complete.
+4. Read `.planning/ROADMAP.md` to enumerate planned phases. For each phase listed, check whether `.planning/{phase}-VERIFICATION.md` exists — its presence indicates the phase completed verification; its absence indicates the phase did not complete. (If `.planning/ROADMAP.md` is absent, note this in Evidence Gathered and skip phase-completion checks.)
 5. Identify: last confirmed progress point, where execution diverged, whether it was a blocker, stall, or external kill
 6. Classify root cause as one of:
    - *Pre-answer gap* — a decision point was reached with no pre-answer and no autonomous fallback
