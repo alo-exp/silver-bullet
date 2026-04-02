@@ -114,10 +114,13 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - Clarifying questions suppressed — make best-judgment calls, log each as "Autonomous decision"
 - **Genuine blockers first** (missing credentials, ambiguous destructive operations): these take
   precedence over all other rules — queue under "Needs human review", skip, surface in summary
-- **Anti-stall** (non-blocker stalls only): a stall = the same tool call with identical args
-  producing the same result 2+ times consecutively, OR 3+ tool calls in one step with no new
-  state change (no file written, no new decision, no new information). On stall: make
-  best-judgment decision, move on, log it.
+- **Anti-stall** (non-blocker stalls only): a stall = any of these three conditions:
+  1. Same tool call with identical args producing the same result 2+ times consecutively
+  2. 3+ tool calls in one step with no new state change (no file written, no decision, no new info)
+  3. Per-step budget: >10 tool calls in one step AND no file written (Write/Edit resets counter)
+     AND no autonomous decision logged since step began. Counter resets on Write/Edit, on any
+     decision log event, and when a new `/gsd:` command or skill is invoked (new step boundary).
+  On any stall: make best-judgment decision, move on, log under "Autonomous decisions".
 - All Agent Team dispatches use `run_in_background: true`
 - On completion: output structured summary (phases done, autonomous decisions, blockers queued,
   agents dispatched, commits made, virtual cost)
