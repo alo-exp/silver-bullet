@@ -65,12 +65,12 @@ file_mtime() {
 # Get phase goal — extract-phase-goal.sh uses .planning/ relative to CWD
 phase_goal=""
 if [[ -d "$REPO_ROOT/.planning" ]]; then
-  phase_goal=$(cd "$REPO_ROOT" && "$SCRIPTS_DIR/extract-phase-goal.sh" 2>/dev/null || true)
+  phase_goal=$(cd "$REPO_ROOT" || exit 1; "$SCRIPTS_DIR/extract-phase-goal.sh" 2>/dev/null) || phase_goal=""
 fi
 
 # If goal is empty AND no planning files exist (dir exists but empty), exit cleanly
 if [[ -z "${phase_goal:-}" ]]; then
-  planning_files=$(ls "$REPO_ROOT/.planning/"*-CONTEXT.md "$REPO_ROOT/.planning/"*-RESEARCH.md "$REPO_ROOT/.planning/"*-PLAN.md 2>/dev/null | head -1 || true)
+  planning_files=$(find "$REPO_ROOT/.planning" -maxdepth 1 \( -name '*-CONTEXT.md' -o -name '*-RESEARCH.md' -o -name '*-PLAN.md' \) 2>/dev/null | head -1 || true)
   [[ -z "$planning_files" ]] && exit 0
 fi
 
@@ -135,7 +135,7 @@ used_bytes=0
 add_block() {
   local rel="$1" content="$2" label="${3:-}"
   local block
-  block=$(printf '### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
+  block=$(printf $'### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
   local block_bytes=${#block}
   if (( used_bytes + block_bytes <= budget_bytes )); then
     output+="$block"
@@ -147,14 +147,14 @@ add_block() {
 
 # Small source files in full (source first — priority over docs)
 for f in "${SMALL_SRC[@]+"${SMALL_SRC[@]}"}"; do
-  rel="${f#$REPO_ROOT/}"
+  rel="${f#"$REPO_ROOT"/}"
   content=$(cat "$f")
   add_block "$rel" "$content" || break
 done
 
 # Small doc files in full
 for f in "${SMALL_DOC[@]+"${SMALL_DOC[@]}"}"; do
-  rel="${f#$REPO_ROOT/}"
+  rel="${f#"$REPO_ROOT"/}"
   content=$(cat "$f")
   add_block "$rel" "$content" || break
 done
@@ -177,13 +177,15 @@ score_and_add() {
     end=$(printf '%s' "$scored_line" | cut -f4)
     chunk_text=$(printf '%s' "$scored_line" | cut -f5-)
     chunk_text="${chunk_text//\\n/$'\n'}"  # unescape \n sequences → real newlines
-    local rel="${file#$REPO_ROOT/}"
+    local rel="${file#"$REPO_ROOT"/}"
     local key; key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
     cnt=$(grep -Fm1 "^${key}=" "$TMP_COUNTS" 2>/dev/null | cut -d= -f2 || echo 0)
     if [[ $cnt -ge $top_n ]]; then continue; fi
     if add_block "$rel" "$chunk_text" "lines ${start}-${end}"; then
-      grep -Fv "^${key}=" "$TMP_COUNTS" > "${TMP_COUNTS}.tmp" 2>/dev/null && mv "${TMP_COUNTS}.tmp" "$TMP_COUNTS" || true
+      if grep -Fv "^${key}=" "$TMP_COUNTS" > "${TMP_COUNTS}.tmp" 2>/dev/null; then
+        mv "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
+      fi
       printf '%s=%s\n' "$key" "$(( cnt + 1 ))" >> "$TMP_COUNTS"
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
     fi
@@ -197,7 +199,7 @@ if [[ -n "$phase_goal" ]]; then
 else
   # Empty goal fallback: include first 30 lines of each large file (source first)
   for f in "${LARGE_SRC[@]+"${LARGE_SRC[@]}"}" "${LARGE_DOC[@]+"${LARGE_DOC[@]}"}"; do
-    rel="${f#$REPO_ROOT/}"
+    rel="${f#"$REPO_ROOT"/}"
     content=$(head -30 "$f" 2>/dev/null || true)
     add_block "$rel" "$content" "first 30 lines" || break
   done
