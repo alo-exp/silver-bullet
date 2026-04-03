@@ -93,7 +93,7 @@ You MUST NOT:
 - Count a loop as done unless the reviewer explicitly outputs `✅ Approved` on two consecutive passes
 - Count a single clean pass as done
 
-Maximum 6 iterations before surfacing to the user for guidance — but you MUST reach that maximum before giving up, not stop early. If iteration 6 still has not produced two consecutive clean passes, surface to the user with the remaining issue list and wait for direction.
+The loop is self-limiting: it ends when two consecutive clean passes are produced. Surface to the user only if the reviewer raises an issue it cannot resolve (e.g. requires a decision, a missing dependency, or an external constraint).
 
 ## 4. Session Mode
 

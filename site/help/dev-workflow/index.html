@@ -346,7 +346,7 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="callout callout-info">
         <span class="callout-icon">🔄</span>
-        <div class="callout-body"><strong>Review loop rule:</strong> The code-reviewer must be re-dispatched until it returns ✅ Approved on <strong>two consecutive passes</strong>. A single clean pass is not sufficient. Never stop because issues look minor. Maximum 6 iterations before surfacing remaining issues to the user for direction.</div>
+        <div class="callout-body"><strong>Review loop rule:</strong> The code-reviewer must be re-dispatched until it returns ✅ Approved on <strong>two consecutive passes</strong>. A single clean pass is not sufficient. The loop is self-limiting — it ends naturally when two consecutive passes are clean. Surface to the user only if the reviewer raises something it cannot resolve.</div>
       </div>
 
       <div class="step-card required">
@@ -481,8 +481,8 @@ footer a:hover{color:var(--accent-light)}
         <li>Never stop because issues look minor or "close enough"</li>
         <li>Never count a loop as done unless the reviewer outputs ✅ Approved on <strong>two consecutive passes</strong></li>
         <li>A single ✅ Approved is not sufficient — the next pass must also be clean</li>
-        <li>Maximum 6 iterations before surfacing to the user — but <strong>must reach that maximum</strong>, not stop early</li>
-        <li>If iteration 6 still has not produced two consecutive clean passes: surface the full issue list and wait for user direction</li>
+        <li>The loop is self-limiting — it ends naturally when two consecutive passes are clean</li>
+        <li>Surface to the user only if the reviewer raises an issue it cannot resolve (missing decision, external dependency, or constraint)</li>
       </ul>
 
       <h2 id="anti-skip">Anti-Skip Rules</h2>
