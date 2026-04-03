@@ -362,7 +362,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">7</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment first</strong> (dev or equivalent), verifies health, then moves to the next environment. Never apply to production before verifying in staging. For each resource change within a wave: run plan/dry-run output, confirm before apply, verify resource health after apply, commit atomically per task.</p>
+          <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment only</strong> (dev or equivalent). Higher environments (staging, production) are promoted in the Environment Promotion section (steps 14–15) after all phases complete. For each resource change within a wave: run plan/dry-run output, confirm before apply, verify resource health after apply, commit atomically per task.</p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
       </div>
@@ -397,7 +397,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
           <div class="step-meta"><span class="step-title">/code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Peer IaC code quality review with infrastructure-specific focus: hardcoded values that should be variables, missing tags/labels, security groups that are too permissive, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files. Followed immediately by <code>superpowers:code-reviewer</code> subagent.</p>
+          <p class="step-desc">Peer IaC code quality review with infrastructure-specific focus: hardcoded values that should be variables, missing tags/labels, security groups that are too permissive, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files. Followed immediately by <code>superpowers:code-reviewer</code> subagent. Review loop: re-dispatch until ✅ Approved TWICE IN A ROW. Self-limiting.</p>
         </div>
       </div>
 

@@ -133,8 +133,9 @@ cannot wait for full cycle without extending outage.
 ### EXECUTE
 
 7. `/gsd:execute-phase` — Wave-based parallel execution. Each wave applies to the     **REQUIRED** ← DO NOT SKIP
-   lowest environment first (dev or equivalent), verifies health, then moves to the
-   next environment. Never apply to prod before verifying in staging.
+   **lowest environment only** (dev or equivalent). Higher environments (staging, prod)
+   are promoted in the ENVIRONMENT PROMOTION section (steps 14–15) after all phases
+   complete. Never apply to prod before verifying in staging.
    For each resource change within a wave:
    - Run plan/dry-run output and confirm before apply
    - Verify resource health after apply
@@ -167,6 +168,8 @@ cannot wait for full cycle without extending outage.
 
 9. `/code-review` — Peer IaC code quality review.                                     **REQUIRED** ← DO NOT SKIP
    `superpowers:code-reviewer` — Run code-reviewer subagent immediately after.
+   **Review loop rule**: re-dispatch reviewer until it returns ✅ Approved TWICE IN A ROW.
+   A single clean pass is not sufficient. The loop is self-limiting.
    IaC-specific review focus:
    - Hardcoded values that should be variables
    - Missing tags/labels
@@ -276,6 +279,17 @@ cannot wait for full cycle without extending outage.
 24. `/create-release` — Generate release notes and create GitHub Release.             **REQUIRED** ← DO NOT SKIP
     → Produces: git tag, GitHub Release with structured notes. README must have
     been updated in step 18 before this step can proceed.
+
+---
+
+## Review Loop Enforcement
+
+Every review loop in this workflow (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns ✅ Approved TWICE IN A ROW**. A single clean pass is not sufficient. No exceptions.
+
+- Never stop because "issues are minor" or "close enough"
+- Never count a loop as done unless the reviewer outputs `✅ Approved` on two consecutive passes
+- The loop is self-limiting — it ends naturally when two consecutive passes are clean
+- Surface to the user only if the reviewer raises an issue it cannot resolve
 
 ---
 

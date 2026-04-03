@@ -112,7 +112,8 @@ done
 # --- REVIEW phase ---
 review_skills="code-review requesting-code-review receiving-code-review"
 review_done=0
-review_total=3
+review_total=0
+for _ in $review_skills; do ((review_total++)) || true; done
 first_missing_review=""
 for skill in $review_skills; do
   if has_skill "$skill"; then
@@ -125,7 +126,8 @@ done
 # --- FINALIZATION phase ---
 final_skills="testing-strategy documentation finishing-a-development-branch deploy-checklist"
 final_done=0
-final_total=4
+final_total=0
+for _ in $final_skills; do ((final_total++)) || true; done
 first_missing_final=""
 for skill in $final_skills; do
   if has_skill "$skill"; then
@@ -138,7 +140,8 @@ done
 # --- RELEASE phase ---
 release_skills="create-release"
 release_done=0
-release_total=1
+release_total=0
+for _ in $release_skills; do ((release_total++)) || true; done
 first_missing_release=""
 for skill in $release_skills; do
   if has_skill "$skill"; then

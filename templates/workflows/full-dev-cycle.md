@@ -167,7 +167,9 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
    → Produces: `.planning/{phase}-VERIFICATION.md`, `.planning/{phase}-UAT.md`
 
    **If step 7 fails or output is suspect:** invoke `/forensics` before retrying.
-   Identify root cause first, then re-run the failing phase from the beginning.
+   Identify root cause first. Then:
+   - If root cause is implementation: re-run steps 6–7 only (execute + verify).
+   - If root cause is design/plan: return to step 3 (discuss) for the same phase.
    Do not advance to step 8 until step 7 passes. Blind retries compound failures.
 
    **Agent Team scope for steps 8 + 10**: Steps 8 and 10 may use parallel agents

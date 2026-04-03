@@ -26,6 +26,23 @@ Do not execute other shell commands.
 
 ---
 
+## Step 0 — Release Readiness Check
+
+Before determining version, verify the working tree is releasable:
+
+1. Check for uncommitted changes: `git status --porcelain`
+   - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."
+2. Check for unpushed commits: `git log @{upstream}..HEAD --oneline 2>/dev/null`
+   - If non-empty: **STOP**. "Unpushed commits. Push to remote before creating release."
+3. If `.silver-bullet.json` has `verify_commands`, run each:
+   ```
+   jq -r '.verify_commands[]' .silver-bullet.json 2>/dev/null
+   ```
+   If any command fails: **STOP**. "Tests failing. Fix before release."
+   If `verify_commands` is absent, skip this check silently.
+
+---
+
 ## Step 1 — Determine Version Range
 
 1. Find the last tag: `git describe --tags --abbrev=0 2>/dev/null`

@@ -160,7 +160,7 @@ main() {
   fi
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
-  finalization_skills="documentation testing-strategy finishing-a-development-branch"
+  finalization_skills="documentation testing-strategy finishing-a-development-branch deploy-checklist"
   has_finalization=false
   for fs in $finalization_skills; do
     if has_skill "$fs"; then

@@ -328,7 +328,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">7</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:verify-work</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails or output looks suspect, invoke <code>/forensics</code> before retrying.</p>
+          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/forensics</code> first. If root cause is implementation, re-run steps 6–7 only. If root cause is design/plan, return to step 3.</p>
           <div class="step-output">→ Produces: .planning/{phase}-VERIFICATION.md, .planning/{phase}-UAT.md</div>
         </div>
       </div>

@@ -196,6 +196,18 @@ ROOT CAUSE: <one sentence> — <path taken> — <confidence: high/medium/low>
 
 ## Recommended Next Steps
 
+Based on the root cause classification, use the appropriate follow-up:
+
+| Classification | Next action |
+|----------------|-------------|
+| Pre-answer gap / Plan ambiguity | Return to `/gsd:discuss-phase` to clarify, then re-plan |
+| Implementation drift | Use `/gsd:debug` on the drifted commits, then re-execute |
+| Anti-stall trigger / Genuine blocker | Log under "Needs human review", use `/gsd:resume-work` |
+| Upstream dependency | Resolve dependency, then re-run `/gsd:execute-phase` |
+| Verification gap | Re-run `/gsd:verify-work` with corrected test/check criteria |
+| External kill / Timeout | Use `/gsd:resume-work` to continue from last checkpoint |
+| Unknown | Escalate to user with evidence gathered above |
+
 - [ ] <action 1>
 - [ ] <action 2>
 
