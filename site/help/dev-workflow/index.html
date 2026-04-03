@@ -346,7 +346,7 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="callout callout-info">
         <span class="callout-icon">🔄</span>
-        <div class="callout-body"><strong>Review loop rule:</strong> The code-reviewer must be re-dispatched until it explicitly returns "✅ Approved". Never stop because issues look minor. Maximum 3 iterations before surfacing remaining issues to the user for direction.</div>
+        <div class="callout-body"><strong>Review loop rule:</strong> The code-reviewer must be re-dispatched until it returns ✅ Approved on <strong>two consecutive passes</strong>. A single clean pass is not sufficient. Never stop because issues look minor. Maximum 6 iterations before surfacing remaining issues to the user for direction.</div>
       </div>
 
       <div class="step-card required">

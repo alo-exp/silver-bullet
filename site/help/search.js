@@ -88,7 +88,7 @@ var IDX = [
     text:'Goal-backward verification against requirements and UAT. Asks whether what was built achieves the phase goal not just did tasks complete. Use /forensics before retrying if verification fails or output is suspect.' },
   { page:'Dev Workflow', url:'/help/dev-workflow/', anchor:'code-review',
     title:'Steps 8–10 — Code review',
-    text:'/code-review peer quality review security performance correctness readability. superpowers:code-reviewer automated reviewer subagent dispatched immediately after must return approved. /requesting-code-review external peer. /receiving-code-review triage accept reject. Review loop max 3 iterations.' },
+    text:'/code-review peer quality review security performance correctness readability. superpowers:code-reviewer automated reviewer subagent dispatched immediately after must return approved TWICE IN A ROW two consecutive passes. /requesting-code-review external peer. /receiving-code-review triage accept reject. Review loop max 6 iterations total.' },
   { page:'Dev Workflow', url:'/help/dev-workflow/', anchor:'finalization',
     title:'Steps 13–16 — Finalization',
     text:'/testing-strategy test pyramid coverage goals tooling. Tech-debt notes docs/tech-debt.md. /documentation update README PRD-Overview Architecture Testing CICD KNOWLEDGE CHANGELOG. README must be updated here before release step 20. /finishing-a-development-branch rebase cleanup.' },
