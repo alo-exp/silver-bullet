@@ -192,6 +192,8 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#finalization">Finalization</a></li>
         <li><a href="#deployment">CI/CD + Deploy</a></li>
         <li><a href="#ship-release">Ship + Release</a></li>
+        <li class="sidebar-section">Rules</li>
+        <li><a href="#review-loop">Review Loop Rule</a></li>
       </ul>
     </aside>
 
@@ -561,6 +563,17 @@ footer a:hover{color:var(--accent-light)}
           <div class="step-output">→ Produces: git tag, GitHub Release, structured release notes</div>
         </div>
       </div>
+
+      <div class="divider"></div>
+
+      <h2 id="review-loop">Review Loop Enforcement Rule</h2>
+      <p>Every review loop in the workflow (spec review, plan review, code review, verification) <strong>must iterate until the reviewer returns Approved TWICE IN A ROW</strong>. A single clean pass is not sufficient.</p>
+      <ul>
+        <li>Never stop because issues look minor or "close enough"</li>
+        <li>Never count a loop as done unless the reviewer outputs Approved on two consecutive passes</li>
+        <li>The loop is self-limiting — it ends naturally when two consecutive passes are clean</li>
+        <li>Surface to the user only if the reviewer raises an issue it cannot resolve</li>
+      </ul>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

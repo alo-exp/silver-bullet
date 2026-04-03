@@ -23,7 +23,7 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git push` (push tag or commits)
-- `git remote get-url origin` (detect GitHub repo)
+- `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
