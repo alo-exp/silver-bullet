@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "project": {
     "name": "silver-bullet",
     "src_pattern": "/src/",
@@ -7,23 +7,42 @@
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": ["brainstorming", "write-spec", "modularity", "reusability", "scalability", "security", "reliability", "usability", "testability", "extensibility", "writing-plans"],
-    "required_deploy": ["brainstorming", "write-spec", "code-review", "requesting-code-review", "verification-before-completion", "create-release"],
+    "required_planning": [
+      "quality-gates"
+    ],
+    "required_deploy": [
+      "code-review", "requesting-code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
+      "finishing-a-development-branch", "deploy-checklist",
+      "create-release"
+    ],
     "all_tracked": [
-      "using-superpowers", "brainstorming", "write-spec", "design-system",
-      "ux-copy", "architecture", "system-design",
-      "modularity", "reusability", "scalability", "security",
-      "reliability", "usability", "testability", "extensibility",
-      "writing-plans",
-      "executing-plans", "code-review", "requesting-code-review",
-      "receiving-code-review", "testing-strategy", "systematic-debugging",
-      "debug", "tech-debt", "documentation", "verification-before-completion",
+      "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
+      "design-system", "ux-copy",
+      "architecture", "system-design",
+      "code-review", "requesting-code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "create-release"
     ]
   },
+  "devops_plugins": {
+    "hashicorp": false,
+    "awslabs": false,
+    "pulumi": false,
+    "devops-skills": false,
+    "wshobson": false
+  },
   "state": {
     "state_file": "/tmp/.silver-bullet-state",
     "trivial_file": "/tmp/.silver-bullet-trivial"
+  },
+  "semantic_compression": {
+    "enabled": true,
+    "context_budget_kb": 50,
+    "min_file_size_bytes": 3072,
+    "chunk_size_bytes": 1024,
+    "top_chunks_per_file": 3,
+    "debug": false
   }
 }

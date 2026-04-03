@@ -66,6 +66,15 @@ cannot wait for full cycle without extending outage.
 
 ---
 
+### MODEL ROUTING (once per session)
+
+Before DISCUSS begins, ask:
+> Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
+
+Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete planning output.
+
+---
+
 ### DISCUSS
 
 3. `/gsd:discuss-phase` — Capture implementation decisions, gray areas, and           **REQUIRED** ← DO NOT SKIP
@@ -123,6 +132,13 @@ cannot wait for full cycle without extending outage.
    - Wave 5: CI/CD pipeline updates (depends on all above)
    → Produces: `.planning/{phase}-RESEARCH.md`, `.planning/{phase}-{N}-PLAN.md`
 
+   **Skill gap check (post-plan):** After the plan is written, cross-reference all installed
+   skills (both sources, including `all_tracked`) against the plan content. Flag any skill
+   covering a concern not explicitly in the plan.
+   - Interactive: ask whether to add the flagged skill
+   - Autonomous: add to plan or log omission as autonomous decision
+   Write results to `## Skill gap check (post-plan)` in the session log.
+
    **Contextual enrichment** (optional — uses `/devops-skill-router`):
    For AWS deployments, invoke `deploy-on-aws` for architecture recommendations.
    For k8s work, invoke `kubernetes-operations` for manifest best practices.
@@ -160,6 +176,12 @@ cannot wait for full cycle without extending outage.
    - Rollback procedure tested in lower environment
    - Runbook updated to reflect actual applied state
    → Produces: `.planning/{phase}-VERIFICATION.md`
+
+   **If step 8 fails or output is suspect:** invoke `/forensics` before retrying.
+   Identify root cause first. Then:
+   - If root cause is implementation: re-run steps 7–8 only (execute + verify).
+   - If root cause is design/plan: return to step 3 (discuss) for the same phase.
+   Do not advance to step 9 until step 8 passes. Blind retries compound failures.
 
    **Contextual enrichment** (optional — uses `/devops-skill-router`):
    For k8s deployments, use `k8s-troubleshooter` for pod/cluster diagnostics.
@@ -236,6 +258,28 @@ cannot wait for full cycle without extending outage.
     - `docs/Runbooks.md` (DevOps-specific: one section per phase/component)
     - `docs/CICD.md`
 
+    **Additional required at this step:**
+    - Update `docs/KNOWLEDGE.md` Part 2: append dated entries to Architecture patterns,
+      Known gotchas, Key decisions, Recurring patterns, Open questions as applicable.
+      Resolved questions: append `[RESOLVED YYYY-MM-DD]: <resolution>` below original.
+    - Update `docs/CHANGELOG.md`: prepend a new entry (newest first):
+      ```
+      ## YYYY-MM-DD — <task-slug>
+      **What**: one sentence
+      **Commits**: <hashes>
+      **Skills run**: <list>
+      **Virtual cost**: ~$X.XX (Model, complexity)
+      **KNOWLEDGE.md**: updated (<sections>) | no changes
+      ```
+      Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
+      medium 5–15 files or 300–1000 lines; complex > 15 files or architectural.
+      Sonnet base rate; Opus ≈ 3× multiplier.
+    - Complete the session log: read path from `/tmp/.silver-bullet-session-log-path`,
+      edit that file to fill in Task, Approach, Files changed, Skills invoked,
+      Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions,
+      Model, Virtual cost. If `/tmp/.silver-bullet-session-log-path` is missing,
+      create `docs/sessions/<today>-manual.md` from the session log template.
+
 19. `/finishing-a-development-branch` — Branch rebase, cleanup, and merge prep.       **REQUIRED** ← DO NOT SKIP
 
 ---
@@ -304,3 +348,24 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.
 - For trivial changes (typos, comment fixes in non-logic files): `touch /tmp/.silver-bullet-trivial`.
   This does NOT apply to YAML/JSON files in this workflow.
+- For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
+
+---
+
+## GSD / Superpowers Ownership Rules
+
+GSD is the authoritative execution orchestrator. Superpowers provides design and review
+capabilities only. Where both tools could apply, GSD wins.
+
+| Concern | Owner | Rule |
+|---------|-------|------|
+| Requirements | GSD | `.planning/REQUIREMENTS.md` is the single source of truth. Superpowers must NOT maintain a separate requirements list. |
+| Planning | GSD | Use `/gsd:plan-phase` for all plans. When Superpowers' `brainstorming` skill offers to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**. |
+| Execution | GSD | Always use `/gsd:execute-phase` (wave-based). **NEVER** use `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work. |
+| Design specs | Superpowers | Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`. Superpowers' default path (`docs/superpowers/specs/`) is NOT used — always override it. |
+| Code review | Superpowers | `/requesting-code-review`, `/receiving-code-review`, `superpowers:code-reviewer` are used for review only, never for execution. |
+
+**Override Superpowers defaults in every session:**
+- Spec save path: `docs/specs/` (not `docs/superpowers/specs/`)
+- After brainstorming completes: invoke `/gsd:plan-phase` (not `writing-plans`)
+- For execution: `/gsd:execute-phase` (not `subagent-driven-development`)

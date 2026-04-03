@@ -352,6 +352,7 @@ footer a:hover{color:var(--accent-light)}
             <li class="wave-item"><span class="wave-num">Wave 5</span><span class="wave-desc">CI/CD pipeline updates — depends on all above</span></li>
           </ul>
           <div class="step-output">→ Produces: .planning/{phase}-RESEARCH.md, .planning/{phase}-{N}-PLAN.md</div>
+          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>Skill gap check (post-plan):</strong> After the plan is written, cross-reference all installed skills against the plan content. Flag any skill covering a concern not explicitly in the plan.</p>
         </div>
       </div>
 
@@ -387,6 +388,7 @@ footer a:hover{color:var(--accent-light)}
             <li>Runbook updated to reflect actual applied state</li>
           </ul>
           <div class="step-output" style="margin-top:8px">→ Produces: .planning/{phase}-VERIFICATION.md</div>
+          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>If step 8 fails:</strong> invoke <code>/forensics</code> before retrying. If root cause is implementation: re-run steps 7–8 only. If root cause is design/plan: return to step 3 (discuss).</p>
         </div>
       </div>
 
@@ -488,7 +490,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">18</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Update or create all documentation. Minimum required: README, docs/PRD-Overview.md (or docs/Infra-PRD.md for pure infra projects), docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, <strong>docs/Runbooks.md</strong> (DevOps-specific: one section per phase/component), docs/CICD.md.</p>
+          <p class="step-desc">Update or create all documentation. Minimum required: README, docs/PRD-Overview.md (or docs/Infra-PRD.md for pure infra projects), docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, <strong>docs/Runbooks.md</strong> (DevOps-specific: one section per phase/component), docs/CICD.md. Also update <strong>docs/KNOWLEDGE.md</strong> (architecture patterns, gotchas, decisions), <strong>docs/CHANGELOG.md</strong> (prepend new entry), and complete the <strong>session log</strong>.</p>
         </div>
       </div>
 

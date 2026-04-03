@@ -55,7 +55,7 @@
 - 8 individual quality gate skills collapsed into `/quality-gates` aggregate (individual files kept for modularity)
 
 ### New: DevOps workflow
-- `devops-cycle.md` — 23-step workflow for infrastructure/DevOps work
+- `devops-cycle.md` — 24-step workflow for infrastructure/DevOps work
 - `/blast-radius` skill — pre-change risk analysis with LOW/MEDIUM/HIGH/CRITICAL gate
 - `/devops-quality-gates` skill — 7 IaC-adapted quality dimensions (usability excluded)
 - Incident fast path for emergency production changes

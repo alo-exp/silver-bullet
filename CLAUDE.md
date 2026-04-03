@@ -24,18 +24,22 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Six layers enforce compliance:
+Seven layers enforce compliance:
 
-1. **PostToolUse — Skill tracker** — Records every skill invocation
-2. **PostToolUse — Stage enforcer** — HARD STOP if planning incomplete
+1. **PostToolUse — Skill tracker** — Records every Silver Bullet skill invocation
+2. **PostToolUse — Stage enforcer** — HARD STOP if quality gates incomplete before plan
 3. **PostToolUse — Compliance status** — Shows progress on every tool use
-4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if incomplete
-5. **Redundant instructions** — Workflow file + CLAUDE.md both enforce rules
-6. **Anti-rationalization** — Explicit rules against skipping/combining steps
+4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if required skills missing
+5. **GSD workflow guard** — Detects file edits made outside a `/gsd:*` command and warns
+6. **GSD context monitor** — Warns at ≤35% tokens remaining, escalates at ≤25%
+7. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
+   explicit rules against skipping, combining, or implicitly covering steps
 
 **Trivial changes** (typos, copy fixes, config tweaks): Automatically
-detected by hooks. Small edits (<300 chars) and non-logic files (.json,
-.yml, .md, .css, etc.) skip enforcement per-edit. No action needed.
+detected by hooks. Small edits (<300 chars) and non-logic files (.md,
+.txt, .css, .svg, etc.) skip enforcement per-edit. No action needed.
+**Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
+`.toml` files are infrastructure code and are NOT auto-exempted.
 
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
@@ -47,7 +51,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 The active workflow is loaded from `docs/workflows/`. Claude MUST read
 the active workflow file before starting any non-trivial task.
 
-**Default**: `docs/workflows/full-dev-cycle.md`
+**Active**: `docs/workflows/full-dev-cycle.md`
 
 **Skill not found rule**: If a skill listed in the workflow cannot be
 invoked, STOP and notify the user immediately. Do NOT silently skip.
@@ -63,21 +67,22 @@ You MUST NOT:
 - Combine or implicitly cover steps ("I did code review while writing")
 - Claim a step is "not applicable" without explicit user approval
 - Proceed to the next phase before completing the current phase
-- Claim work is complete without running /verification-before-completion
+- Claim work is complete without running `/gsd:verify-work`
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
 2. State why
 3. Wait for explicit user approval before proceeding
 
-"I already covered this" is NOT valid. Each skill MUST be explicitly
-invoked via the Skill tool — implicit coverage does not count because
-the enforcement hooks track Skill tool invocations, not your judgment.
+"I already covered this" is NOT valid. Each Silver Bullet skill MUST be
+explicitly invoked via the Skill tool — implicit coverage does not count
+because the enforcement hooks track Skill tool invocations, not your judgment.
+GSD steps MUST be invoked as slash commands in the correct phase order.
 
 **Rules**:
 - Do NOT stop until the final outcome is achieved
-- Always use /systematic-debugging + /debug for ANY bug encountered during execution
-- Always use /forensics for root-cause investigation of completed sessions, abandoned sessions, or verification failures
+- Always use `/gsd:debug` for ANY bug encountered during execution
+- Always use `/forensics` for root-cause investigation of completed sessions, abandoned sessions, or verification failures
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
 - README.md MUST be updated to reflect current version, features, and changes before release. /create-release will block if README is stale.
 - Always strictly adhere to this CLAUDE.md 100%
@@ -148,3 +153,37 @@ If Opus permitted: switch to `claude-opus-4-6` for that phase, return to Sonnet 
 **Autonomous mode**: stay Sonnet. Escalate silently to Opus only if a planning step produces
 measurably incomplete output: fewer than 5 lines, contains `TBD`/`[TODO]`/`...` placeholders,
 or a step expected to produce a file produces none. Log escalation as an autonomous decision.
+
+---
+
+## 6. GSD / Superpowers Ownership Rules
+
+GSD is the authoritative execution orchestrator. Superpowers provides design and review
+capabilities only. Where both tools could apply, **GSD wins**.
+
+**Hard rules — no exceptions:**
+
+- **Execution**: Always use `/gsd:execute-phase` (wave-based). NEVER use
+  `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work.
+- **Planning**: Always use `/gsd:plan-phase`. When Superpowers' `brainstorming` skill offers
+  to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**.
+- **Requirements**: `.planning/REQUIREMENTS.md` is the single source of truth (owned by GSD).
+  Superpowers must NOT create or maintain a separate requirements list.
+- **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
+  Superpowers' default path (`docs/superpowers/specs/`) is overridden — use `docs/specs/`.
+- **Code review**: Superpowers' review skills (`/requesting-code-review`,
+  `/receiving-code-review`, `superpowers:code-reviewer`) are used for review only.
+
+---
+
+## 7. File Safety Rules
+
+These rules apply to ALL file operations, in every context and session mode.
+
+- **Never overwrite, rename, move, or delete** any existing project file without first
+  communicating the objective to the user and obtaining explicit permission.
+- Permission may be requested for a logical group of files in one prompt (e.g., "I need to
+  update these 3 template files to apply the new workflow — proceed?"), but the intent and
+  scope must be clear before any file is touched.
+- **When in doubt: skip and inform**, never act and apologize.
+- This applies to Silver Bullet setup, template refresh, and all agent/subagent operations.
