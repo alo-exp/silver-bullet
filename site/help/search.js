@@ -25,6 +25,9 @@ var IDX = [
   { page:'Getting Started', url:'/help/getting-started/', anchor:'first-run',
     title:'Your first workflow run — 6 steps',
     text:'1 Open Claude Code choose mode. 2 /gsd:discuss-phase describe what to build. 3 /quality-gates 8 dimensions must pass. 4 /gsd:plan-phase research task plan. 5 /gsd:execute-phase parallel wave execution atomic commits. 6 verify review ship.' },
+  { page:'Getting Started', url:'/help/getting-started/', anchor:'whats-next',
+    title:'What\'s Next — Core Concepts, Dev Workflow, DevOps Workflow, Reference',
+    text:'Next steps after getting started. Links to Core Concepts deep dive, Full Dev Workflow details, DevOps IaC workflow, and command reference.' },
 
   // ── CONCEPTS ──────────────────────────────────────────────────
   { page:'Core Concepts', url:'/help/concepts/', anchor:'skills',
