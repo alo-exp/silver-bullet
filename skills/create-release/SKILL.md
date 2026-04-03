@@ -18,6 +18,7 @@ Shell execution is limited to:
 - `git status --porcelain` (check for uncommitted changes)
 - `git rev-parse --abbrev-ref @{upstream}` (check upstream tracking)
 - `git log` (with flags as specified below)
+- `git rev-list` (find initial commit when no tags exist)
 - `git describe --tags --abbrev=0` (find last tag)
 - `git tag -l` (list tags)
 - `git tag` (create tag)
