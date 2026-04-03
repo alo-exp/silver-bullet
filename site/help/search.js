@@ -145,6 +145,9 @@ var IDX = [
   { page:'DevOps Workflow', url:'/help/devops-workflow/', anchor:'ship-release',
     title:'Steps 23–24 — Ship and Release',
     text:'/gsd:ship creates PR with blast radius ratings requirement coverage post-apply drift detection results. /create-release generates git tag GitHub Release structured notes README must be updated before this step.' },
+  { page:'DevOps Workflow', url:'/help/devops-workflow/', anchor:'review-loop',
+    title:'Review loop enforcement — approved twice in a row',
+    text:'Every review loop must iterate until reviewer returns approved TWICE IN A ROW. A single clean pass is not sufficient. Self-limiting — loop ends naturally when two consecutive clean passes produced. Surface to user only if reviewer raises something it cannot resolve.' },
 
   // ── REFERENCE ─────────────────────────────────────────────────
   { page:'Reference', url:'/help/reference/', anchor:'gsd-commands',
