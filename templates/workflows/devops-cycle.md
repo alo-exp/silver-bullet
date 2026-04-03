@@ -43,6 +43,42 @@ cannot wait for full cycle without extending outage.
 
 ---
 
+## STEP 0: SESSION MODE
+
+> Run once at the very start of the session, before any project work.
+
+Ask:
+> Run this session **interactively** or **autonomously**?
+> - **Interactive** (default) — I pause at decision points and phase gates
+> - **Autonomous** — I drive start to finish, surface blockers at the end
+
+Write choice to `/tmp/.silver-bullet-mode`:
+```bash
+echo "interactive" > /tmp/.silver-bullet-mode   # or "autonomous"
+```
+
+**If autonomous was chosen**, ask one follow-up before proceeding:
+
+> Any decision points you want to pre-answer? Common ones:
+> - Model routing — Planning phase: Sonnet or Opus?
+> - Worktree: use one for this task, or work on main?
+> - Agent Teams: use worktree isolation, or main worktree throughout?
+> Leave blank to use defaults (Sonnet, main, isolated).
+
+Write answers into the `## Pre-answers` section of the session log immediately. Format each answer as:
+`- Model routing — Planning: <value>`
+`- Worktree: <value>`
+`- Agent Teams: <value>`
+
+Omit any key the user left blank (default applies). Read pre-answers mid-session from the log
+at `/tmp/.silver-bullet-session-log-path`, stripping the leading `- ` before splitting on `:`.
+Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
+
+**Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
+use defaults: Sonnet, main, isolated.
+
+---
+
 ## PROJECT INITIALIZATION
 
 > Run once per project. Skip entirely if `.planning/PROJECT.md` already exists.
@@ -72,6 +108,21 @@ Before DISCUSS begins, ask:
 > Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
 
 Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete planning output.
+
+---
+
+### SKILL DISCOVERY (once per task, before DISCUSS)
+
+Scan installed skills from two sources:
+1. `~/.claude/skills/` — flat `.md` files
+2. `~/.claude/plugins/cache/` — glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
+
+Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
+current task description. Surface candidates:
+> Skills that may apply to this task: `/blast-radius` — infra change; `/devops-skill-router` — IaC toolchain
+
+If no matches or both directories absent/empty: log "Skill discovery: no candidates surfaced."
+Write results to `## Skills flagged at discovery` in the session log. **Do not invoke yet.**
 
 ---
 
@@ -279,6 +330,8 @@ Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete pl
       Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions,
       Model, Virtual cost. If `/tmp/.silver-bullet-session-log-path` is missing,
       create `docs/sessions/<today>-manual.md` from the session log template.
+    - Documentation agents writing to `docs/` run in the **main worktree only**
+      (no `isolation: "worktree"`). Only implementation-touching agents use worktree isolation.
 
 19. `/finishing-a-development-branch` — Branch rebase, cleanup, and merge prep.       **REQUIRED** ← DO NOT SKIP
 
@@ -323,6 +376,13 @@ Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete pl
 24. `/create-release` — Generate release notes and create GitHub Release.             **REQUIRED** ← DO NOT SKIP
     → Produces: git tag, GitHub Release with structured notes. README must have
     been updated in step 18 before this step can proceed.
+
+**Autonomous completion cleanup** (run after outputting structured summary):
+```bash
+rm -f /tmp/.silver-bullet-timeout /tmp/.silver-bullet-sentinel-pid \
+      /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+```
+This clears the timeout sentinel so `timeout-check.sh` stops warning.
 
 ---
 

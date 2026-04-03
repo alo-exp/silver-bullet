@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
-  "description": "AI-native Software Engineering Process Orchestrator. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 19-step (app) and 23-step (DevOps) workflows with 7 layers of compliance.",
-  "version": "0.4.1",
+  "description": "AI-native Software Engineering Process Orchestrator. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 20-step (app) and 24-step (DevOps) workflows with 7 layers of compliance.",
+  "version": "0.6.0",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
