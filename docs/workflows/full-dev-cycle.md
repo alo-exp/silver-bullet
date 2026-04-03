@@ -284,7 +284,7 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 
 ## RELEASE
 
-20. `/release-notes` — Generate release notes and create GitHub Release.              **REQUIRED** ← DO NOT SKIP
+20. `/create-release` — Generate release notes and create GitHub Release.             **REQUIRED** ← DO NOT SKIP
     → Produces: git tag, GitHub Release with structured notes (features, fixes,
     breaking changes). README must have been updated in step 15 before this step
     can proceed. For GitHub repos, uses `gh release create`. For non-GitHub repos,

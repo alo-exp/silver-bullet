@@ -171,7 +171,7 @@ That's it. Enforcement is now active.
 ### RELEASE
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 20 | `/release-notes` | Silver Bullet | **Yes** |
+| 20 | `/create-release` | Silver Bullet | **Yes** |
 
 ## DevOps Cycle (24 Steps)
 
@@ -194,7 +194,7 @@ Skills installed by this plugin that extend the workflow:
 | `/devops-quality-gates` | Before planning (DevOps) — 7 IaC-adapted quality dimensions (usability excluded) |
 | `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
 | `/forensics` | After a completed, failed, or abandoned session — structured post-mortem investigation |
-| `/release-notes` | After `/gsd:ship` — generates release notes and creates GitHub Release |
+| `/create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
 
 ### `/forensics`
 
@@ -258,7 +258,7 @@ Edit `.silver-bullet.json` in your project root:
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "release-notes"
+      "create-release"
     ],
     "all_tracked": [
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
@@ -266,7 +266,7 @@ Edit `.silver-bullet.json` in your project root:
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "release-notes"
+      "create-release"
     ]
   },
   "devops_plugins": {
@@ -291,7 +291,7 @@ Edit `.silver-bullet.json` in your project root:
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `quality-gates` |
-| `required_deploy` | Skills that must run before commit/push/deploy | code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, release-notes |
+| `required_deploy` | Skills that must run before commit/push/deploy | code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, create-release |
 | `all_tracked` | All skills that get recorded | 16 skills (see above) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 

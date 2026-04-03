@@ -79,7 +79,7 @@ the enforcement hooks track Skill tool invocations, not your judgment.
 - Always use /systematic-debugging + /debug for ANY bug encountered during execution
 - Always use /forensics for root-cause investigation of completed sessions, abandoned sessions, or verification failures
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- README.md MUST be updated to reflect current version, features, and changes before release. /release-notes will block if README is stale.
+- README.md MUST be updated to reflect current version, features, and changes before release. /create-release will block if README is stale.
 - Always strictly adhere to this CLAUDE.md 100%
 
 ## 3a. Review Loop Enforcement

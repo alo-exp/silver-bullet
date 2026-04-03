@@ -260,7 +260,7 @@ footer a:hover{color:var(--accent-light)}
             <td>Pre-deployment verification gate. Checks rollback plan, monitoring, stakeholder sign-off, CI status.</td>
           </tr>
           <tr>
-            <td>/release-notes<span class="badge-small badge-req">Required</span></td>
+            <td>/create-release<span class="badge-small badge-req">Required</span></td>
             <td>After ship</td>
             <td>Generates git tag and GitHub Release. Checks README is current before proceeding.</td>
           </tr>
@@ -534,7 +534,7 @@ touch /tmp/.silver-bullet-trivial
 /opt/homebrew/bin/gh run list --limit 1 --json status,conclusion,name,headBranch
 
 <span class="comment"># Full finalization + release sequence</span>
-/testing-strategy → /documentation → /finishing-a-development-branch → /deploy-checklist → /gsd:ship → /release-notes</div>
+/testing-strategy → /documentation → /finishing-a-development-branch → /deploy-checklist → /gsd:ship → /create-release</div>
 
       <h3>Model Routing Guidance</h3>
       <p>Silver Bullet uses <strong>claude-sonnet-4-6</strong> by default. You're asked about Opus at two transition points only:</p>

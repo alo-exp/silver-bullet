@@ -8,7 +8,7 @@
   },
   "skills": {
     "required_planning": ["brainstorming", "write-spec", "modularity", "reusability", "scalability", "security", "reliability", "usability", "testability", "extensibility", "writing-plans"],
-    "required_deploy": ["brainstorming", "write-spec", "code-review", "requesting-code-review", "verification-before-completion", "release-notes"],
+    "required_deploy": ["brainstorming", "write-spec", "code-review", "requesting-code-review", "verification-before-completion", "create-release"],
     "all_tracked": [
       "using-superpowers", "brainstorming", "write-spec", "design-system",
       "ux-copy", "architecture", "system-design",
@@ -19,7 +19,7 @@
       "receiving-code-review", "testing-strategy", "systematic-debugging",
       "debug", "tech-debt", "documentation", "verification-before-completion",
       "finishing-a-development-branch", "deploy-checklist",
-      "release-notes"
+      "create-release"
     ]
   },
   "state": {

@@ -102,7 +102,7 @@ var IDX = [
     title:'Step 19 — Ship — /gsd:ship',
     text:'Create pull request from verified deployed work. Auto-generated PR body with phase summaries requirement coverage verification links. Produces pull request on GitHub.' },
   { page:'Dev Workflow', url:'/help/dev-workflow/', anchor:'release',
-    title:'Step 20 — Release — /release-notes',
+    title:'Step 20 — Release — /create-release',
     text:'Generate release notes and create GitHub Release. Checks README is current before proceeding. Produces git tag GitHub Release structured notes features fixes breaking changes changelog entry.' },
   { page:'Dev Workflow', url:'/help/dev-workflow/', anchor:'review-loop',
     title:'Review loop enforcement — approved twice in a row',
@@ -144,7 +144,7 @@ var IDX = [
     text:'Infrastructure pipelines must enforce plan review apply. Never auto-apply to production. Plan output stored as artifact for audit. CI must be green. Production apply one resource group at a time if blast radius HIGH. Monitor dashboards during and 15 minutes after.' },
   { page:'DevOps Workflow', url:'/help/devops-workflow/', anchor:'ship-release',
     title:'Steps 23–24 — Ship and Release',
-    text:'/gsd:ship creates PR with blast radius ratings requirement coverage post-apply drift detection results. /release-notes generates git tag GitHub Release structured notes README must be updated before this step.' },
+    text:'/gsd:ship creates PR with blast radius ratings requirement coverage post-apply drift detection results. /create-release generates git tag GitHub Release structured notes README must be updated before this step.' },
 
   // ── REFERENCE ─────────────────────────────────────────────────
   { page:'Reference', url:'/help/reference/', anchor:'gsd-commands',
@@ -152,7 +152,7 @@ var IDX = [
     text:'/gsd:new-project initialize project requirements roadmap. /gsd:discuss-phase capture decisions. /gsd:plan-phase research task plan. /gsd:execute-phase wave-based parallel execution. /gsd:verify-work goal-backward verification. /gsd:ship create PR. /gsd:next where am I advance to next step. /gsd:debug systematic debugging. /gsd:help.' },
   { page:'Reference', url:'/help/reference/', anchor:'sb-skills',
     title:'Silver Bullet skills catalog',
-    text:'/quality-gates /blast-radius /devops-quality-gates /deploy-checklist /release-notes /testing-strategy /documentation /finishing-a-development-branch /forensics /using-silver-bullet.' },
+    text:'/quality-gates /blast-radius /devops-quality-gates /deploy-checklist /create-release /testing-strategy /documentation /finishing-a-development-branch /forensics /using-silver-bullet.' },
   { page:'Reference', url:'/help/reference/', anchor:'sp-skills',
     title:'Superpowers skills used in Silver Bullet',
     text:'/brainstorming /system-design /design-system /ux-copy /code-review /requesting-code-review /receiving-code-review superpowers:code-reviewer. Used for design and review only never for execution.' },
@@ -176,7 +176,7 @@ var IDX = [
     text:'/tmp/.silver-bullet-mode interactive or autonomous. /tmp/.silver-bullet-session-log-path current session log. /tmp/.silver-bullet-trivial bypass enforcement one commit. /tmp/.silver-bullet-session-init session init done sentinel. /tmp/.silver-bullet-timeout timeout sentinel.' },
   { page:'Reference', url:'/help/reference/', anchor:'shortcuts',
     title:'Useful shortcuts and command sequences',
-    text:'Start new feature: /gsd:discuss-phase /quality-gates /gsd:plan-phase /gsd:execute-phase. Continue where left off: /gsd:next. Debug: /gsd:debug. Trivial bypass: touch /tmp/.silver-bullet-trivial. Check CI: gh run list. Full finalization: /testing-strategy /documentation /finishing-a-development-branch /deploy-checklist /gsd:ship /release-notes.' },
+    text:'Start new feature: /gsd:discuss-phase /quality-gates /gsd:plan-phase /gsd:execute-phase. Continue where left off: /gsd:next. Debug: /gsd:debug. Trivial bypass: touch /tmp/.silver-bullet-trivial. Check CI: gh run list. Full finalization: /testing-strategy /documentation /finishing-a-development-branch /deploy-checklist /gsd:ship /create-release.' },
 ];
 
 function _score(entry, terms) {

@@ -273,7 +273,7 @@ cannot wait for full cycle without extending outage.
 
 ## RELEASE
 
-24. `/release-notes` — Generate release notes and create GitHub Release.              **REQUIRED** ← DO NOT SKIP
+24. `/create-release` — Generate release notes and create GitHub Release.             **REQUIRED** ← DO NOT SKIP
     → Produces: git tag, GitHub Release with structured notes. README must have
     been updated in step 18 before this step can proceed.
 

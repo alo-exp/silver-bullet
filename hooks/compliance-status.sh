@@ -136,7 +136,7 @@ for skill in $final_skills; do
 done
 
 # --- RELEASE phase ---
-release_skills="release-notes"
+release_skills="create-release"
 release_done=0
 release_total=1
 first_missing_release=""
