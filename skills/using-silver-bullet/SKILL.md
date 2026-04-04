@@ -605,14 +605,19 @@ Also set `src_pattern` to the detected/confirmed source pattern (replacing the d
 
 Write the result to `.silver-bullet.json` in the project root using the Write tool.
 
-#### 3.5 Copy workflow file
+#### 3.5 Copy workflow files
 
-Read `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` using the Read tool.
+Copy both workflow templates to `docs/workflows/`:
 
-**Non-destructive**: If `docs/workflows/full-dev-cycle.md` already exists, back it up
-to `docs/workflows/full-dev-cycle.md.backup` before writing.
+1. Read `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` using the Read tool.
+   **Non-destructive**: If `docs/workflows/full-dev-cycle.md` already exists, back it up
+   to `docs/workflows/full-dev-cycle.md.backup` before writing.
+   Write the contents to `docs/workflows/full-dev-cycle.md` using the Write tool.
 
-Write the contents to `docs/workflows/full-dev-cycle.md` using the Write tool.
+2. Read `${PLUGIN_ROOT}/templates/workflows/devops-cycle.md` using the Read tool.
+   **Non-destructive**: If `docs/workflows/devops-cycle.md` already exists, back it up
+   to `docs/workflows/devops-cycle.md.backup` before writing.
+   Write the contents to `docs/workflows/devops-cycle.md` using the Write tool.
 
 #### 3.6 Create placeholder docs (NON-DESTRUCTIVE)
 
