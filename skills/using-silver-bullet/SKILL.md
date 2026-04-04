@@ -1,6 +1,6 @@
 ---
 name: using-silver-bullet
-description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds CLAUDE.md + config + workflow files
+description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
 ---
 
 # /using-silver-bullet — Project Setup
@@ -289,48 +289,74 @@ Look right? (yes / edit)
 If Phase 0 determined this is an update:
 
 1. Invoke `/using-superpowers` via the Skill tool to activate Superpowers skills.
-2. Output:
-   > Silver Bullet already configured. All skills active.
-   > To refresh templates (CLAUDE.md, workflow file), ask explicitly: "refresh silver bullet templates".
-3. Exit. **Do NOT touch any project files.** This is the idempotent path — safe to run at the
-   start of every session without side effects.
+2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
+   - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
+   - Replace `{{TECH_STACK}}` with the detected tech stack
+   - Replace `{{GIT_REPO}}` with the repo URL from `git remote get-url origin`
+   - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
+3. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
+4. Run conflict detection (same as step 3.1c below).
+5. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 **Template refresh (only when user explicitly requests it):**
 
 If the user asks to refresh templates:
 1. List the files that would be updated and what each change achieves, e.g.:
    > I'll update these files from the plugin templates:
-   > - `CLAUDE.md` — refresh Silver Bullet workflow sections
+   > - `silver-bullet.md` — refresh Silver Bullet enforcement rules (SB-owned, safe to overwrite)
    > - `docs/workflows/full-dev-cycle.md` — pull latest workflow steps
    > Proceed? (yes / no)
 2. Only proceed on explicit "yes".
-4. For `CLAUDE.md`: **never replace** — only update the `## 2. Active Workflow` and Silver Bullet
-   sections using the Edit tool. Read the existing file first, then apply targeted section updates.
-   If a full replace is truly needed, ask a second confirmation: "This will overwrite your entire
-   CLAUDE.md. Are you sure? (yes / no)". Only proceed on explicit "yes".
-5. **Backup before any overwrite**: copy the original to `<file>.backup` first.
+3. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements (SB-owned, no confirmation needed).
+4. Verify `CLAUDE.md` contains the reference line mentioning "silver-bullet.md". If not, add it at top.
+5. **Backup before any overwrite of workflow files**: copy the original to `<file>.backup` first.
 6. Read `.silver-bullet.json` to carry forward `project.name`, `project.src_pattern` customizations.
-7. Output: "Templates refreshed. Backups created at: [list]". Exit.
+7. Output: "Templates refreshed. silver-bullet.md updated. Backups created at: [list]". Exit.
 
 ### Fresh setup
 
 If this is a fresh setup:
 
-#### 3.1 Handle existing CLAUDE.md
+#### 3.1a Write silver-bullet.md
+
+Write `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base`. This is always safe — it's a new file owned by Silver Bullet.
+
+Perform these placeholder replacements:
+- `{{PROJECT_NAME}}` → the detected/confirmed project name
+- `{{TECH_STACK}}` → the detected/confirmed tech stack
+- `{{GIT_REPO}}` → the detected/confirmed repo URL
+- `{{ACTIVE_WORKFLOW}}` → `full-dev-cycle` (default)
+
+#### 3.1b Handle CLAUDE.md
 
 Check if `CLAUDE.md` exists in the project root (use Bash: `test -f CLAUDE.md`).
 
-If it exists, **default to Append** — inform the user and proceed unless they object:
-> Existing CLAUDE.md found. I'll append the Silver Bullet Active Workflow section to it.
-> Type "replace" if you want to overwrite the entire file instead (your existing content will be lost).
+**If NO existing CLAUDE.md**: Write from `${PLUGIN_ROOT}/templates/CLAUDE.md.base` with the same placeholder replacements as above. No user interaction needed.
 
-Wait for the user's response. If no objection → proceed with append.
+**If existing CLAUDE.md**: Add reference line at the very top of the file (before any other content):
+```
+> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**
+```
+But ONLY if the file does not already contain the string "silver-bullet.md". Then run conflict detection (step 3.1c).
 
-If user explicitly types "replace": ask once more —
-> This will permanently overwrite your existing CLAUDE.md. Are you sure? (yes / no)
-Only proceed on explicit "yes". On anything else → fall back to append.
+#### 3.1c Conflict detection (only when existing CLAUDE.md found)
 
-Remember the user's choice for step 3.3.
+Scan `CLAUDE.md` for patterns that conflict with `silver-bullet.md` rules. Check for these conflict patterns:
+
+1. **Model routing overrides**: regex `claude-opus|claude-sonnet|model.*routing` (conflicts with SB Section 5)
+2. **Execution preferences**: regex `execute-phase|subagent-driven|executing-plans` (conflicts with SB Section 6)
+3. **Review loop overrides**: regex `review.*loop|approved.*twice|consecutive.*pass` (conflicts with SB Section 3a)
+4. **Workflow overrides**: regex `active.*workflow|workflow.*override` (conflicts with SB Section 2)
+5. **Session mode overrides**: regex `interactive|autonomous.*mode|session.*mode` (conflicts with SB Section 4)
+
+For each match found, present it to the user interactively:
+```
+Potential conflict found in CLAUDE.md:
+  Line {N}: {matched text}
+  This may conflict with Silver Bullet's {section name}.
+  Remove this line from CLAUDE.md? (yes / no / skip-all)
+```
+If user says "yes", use Edit tool to remove the line. If "no", leave it. If "skip-all", stop checking further conflicts.
 
 #### 3.2 Create directories
 
@@ -534,7 +560,9 @@ jobs:
 
 Also update `.silver-bullet.json` to add a `"verify_commands"` field matching the generated CI commands, for local use by the CI polling gate at step 17.
 
-#### 3.3 Write CLAUDE.md
+#### 3.3 Write CLAUDE.md (only when no existing CLAUDE.md)
+
+This step only applies when NO existing `CLAUDE.md` was found in step 3.1b (the "write from template" path). If an existing `CLAUDE.md` was found, it was already handled in step 3.1b (reference line added) and 3.1c (conflict detection) — skip this step.
 
 Read the template file at `${PLUGIN_ROOT}/templates/CLAUDE.md.base` using the Read tool.
 
@@ -543,12 +571,7 @@ Perform these replacements in the template content:
 - `{{TECH_STACK}}` → the detected/confirmed tech stack
 - `{{GIT_REPO}}` → the detected/confirmed repo URL
 
-If user chose **replace** (or no existing CLAUDE.md exists):
-- Write the fully rendered template to `CLAUDE.md` in the project root using the Write tool.
-
-If user chose **append**:
-- Extract only the "## 2. Active Workflow" section from the rendered template.
-- Use the Edit tool or Write tool to append this section to the end of the existing `CLAUDE.md`, preceded by a blank line separator.
+Write the fully rendered template to `CLAUDE.md` in the project root using the Write tool.
 
 #### 3.4 Write config
 
@@ -659,7 +682,7 @@ mkdir -p docs/sessions && touch docs/sessions/.gitkeep
 
 Run via Bash tool:
 ```bash
-git add CLAUDE.md .silver-bullet.json docs/
+git add silver-bullet.md CLAUDE.md .silver-bullet.json docs/
 git commit -m "$(cat <<'EOF'
 feat: initialize Silver Bullet enforcement
 
