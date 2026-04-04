@@ -41,7 +41,7 @@ Silver Bullet NEVER modifies upstream plugin files. Implement the change in Silv
 
 See CLAUDE.md §8 for details."
     json_msg=$(printf '%s' "$msg" | jq -Rs '.')
-    printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+    printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_msg" "$json_msg"
     exit 0
   fi
 
@@ -182,7 +182,9 @@ See CLAUDE.md §8 for details."
     for ms in $missing_skills; do
       missing_display="${missing_display}❌ ${ms}\\n"
     done
-    printf '{"hookSpecificOutput":{"message":"🚫 HARD STOP — Planning incomplete. Missing skills:\\n%s\\nRun the missing planning skills before editing source code."}}' "$missing_display"
+    stage_a_msg=$(printf '🚫 HARD STOP — Planning incomplete. Missing skills:\n%s\nRun the missing planning skills before editing source code.' "$missing_display")
+    json_stage_a=$(printf '%s' "$stage_a_msg" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_stage_a" "$json_stage_a"
     exit 0
   fi
 
@@ -203,7 +205,9 @@ See CLAUDE.md §8 for details."
 
   if ! has_skill "code-review"; then
     # Stage B: all planning done, no code-review — BLOCK source edits
-    printf '{"hookSpecificOutput":{"blockToolUse":true,"message":"🚫 BLOCKED — Code review required before further source edits. Planning is complete but you must run /code-review before editing source code. Non-source operations (reading, commits, skill invocations) are still allowed."}}'
+    block_msg="🚫 BLOCKED — Code review required before further source edits. Planning is complete but you must run /code-review before editing source code. Non-source operations (reading, commits, skill invocations) are still allowed."
+    json_block=$(printf '%s' "$block_msg" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_block" "$json_block"
     exit 0
   fi
 

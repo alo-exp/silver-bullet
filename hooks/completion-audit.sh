@@ -166,12 +166,12 @@ if [[ -n "$missing" && -n "$release_missing" ]]; then
   done
   msg=$(printf '🛑 RELEASE BLOCKED — Workflow incomplete AND §9 Quality Gate incomplete.\n\nMissing workflow steps:\n%s\nMissing quality gate stages: %s\n\nComplete ALL workflow steps first, then run the 4-stage quality gate.\nDo NOT proceed with this release.' "$missing_lines" "$release_missing")
   json_msg=$(printf '%s' "$msg" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+  printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_msg" "$json_msg"
   exit 0
 elif [[ -n "$release_missing" ]]; then
   msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, SENTINEL, Content Refresh) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing")
   json_msg=$(printf '%s' "$msg" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+  printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_msg" "$json_msg"
   exit 0
 fi
 
@@ -187,7 +187,7 @@ if [[ -n "$missing" ]]; then
   # Escape for JSON
   json_msg=$(printf '%s' "$msg" | jq -Rs '.')
 
-  printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+  printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_msg" "$json_msg"
 else
   printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
 fi

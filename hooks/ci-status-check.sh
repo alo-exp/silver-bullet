@@ -3,7 +3,7 @@ set -euo pipefail
 
 # PostToolUse hook (matcher: Bash)
 # After git commit or push, checks last completed CI run status.
-# BLOCKING on failure — outputs blockToolUse:true and instructs immediate /gsd:debug.
+# BLOCKING on failure — outputs decision:block and instructs immediate /gsd:debug.
 # Non-blocking for in_progress (informational only).
 # Scoped to current branch when possible to avoid cross-branch false positives.
 
@@ -53,7 +53,7 @@ Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed"
 
   json_msg=$(printf '%s' "$msg" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+  printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_msg" "$json_msg"
 
 elif [[ "$status" == "in_progress" ]]; then
   printf '{"hookSpecificOutput":{"message":"ℹ️ CI in progress. Step 17 will poll for result before deploy."}}'
