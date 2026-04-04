@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into a single orchestrated workflow — then enforces it with 7 layers of compliance so Claude can never skip steps.
 
-**Current version: v0.7.4** — PreToolUse hooks (unbypassable `permissionDecision: "deny"`), cross-plugin consistency audit in §9 quality gate, SENTINEL moved to final stage. Hooks enforce compliance at the platform level even in bypass-permissions mode.
+**Current version: v0.7.6** — Persistent permission mode configuration. Setup configures `defaultMode` in `.claude/settings.local.json` to eliminate repeated permission prompts across sessions.
 
 ## How It Works
 
