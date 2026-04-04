@@ -30,7 +30,7 @@ main() {
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
   plugin_cache="${HOME}/.claude/plugins/cache"
-  if [[ -n "$file_path" ]] && printf '%s' "$file_path" | grep -q "$plugin_cache"; then
+  if [[ -n "$file_path" ]] && [[ "$file_path" == "$plugin_cache"/* ]]; then
     msg="🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION — You are attempting to edit a file inside the plugin cache:
 $(basename "$file_path")
 

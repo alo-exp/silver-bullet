@@ -56,6 +56,7 @@ done
 
 # --- Read config values ---
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
 required_deploy=""

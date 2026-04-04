@@ -495,8 +495,8 @@ updated (Architecture patterns, Key decisions) | no changes
       <div class="divider"></div>
 
       <!-- TEMP FILES -->
-      <h2 id="temp-files">Temp / State Files (/tmp/)</h2>
-      <p>These files live in <code>/tmp/</code> and are cleared between system restarts. They store session state for hooks.</p>
+      <h2 id="temp-files">State Files (~/.claude/.silver-bullet/)</h2>
+      <p>These files live in <code>~/.claude/.silver-bullet/</code> with restricted permissions (0700). They store session state for hooks.</p>
 
       <table class="ref-table">
         <thead><tr><th>File</th><th>Purpose</th></tr></thead>

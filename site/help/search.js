@@ -213,7 +213,7 @@ var IDX = [
     title:'Documentation files in docs/',
     text:'docs/ PRD-Overview.md Architecture-and-Design.md Testing-Strategy-and-Plan.md CICD.md KNOWLEDGE.md CHANGELOG.md Runbooks.md DevOps tech-debt.md specs/ design specs from Superpowers workflows/ sessions/ per-session logs.' },
   { page:'Reference', url:'/help/reference/', anchor:'temp-files',
-    title:'Temp and state files in /tmp/',
+    title:'State files in ~/.claude/.silver-bullet/',
     text:'~/.claude/.silver-bullet/mode interactive or autonomous. ~/.claude/.silver-bullet/session-log-path current session log. ~/.claude/.silver-bullet/trivial bypass enforcement one commit. ~/.claude/.silver-bullet/session-init session init done sentinel. ~/.claude/.silver-bullet/timeout timeout sentinel.' },
   { page:'Reference', url:'/help/reference/', anchor:'shortcuts',
     title:'Useful shortcuts and command sequences',

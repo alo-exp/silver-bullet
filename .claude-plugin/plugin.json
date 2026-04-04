@@ -1,6 +1,6 @@
 {
   "name": "silver-bullet",
-  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 20-step (app) and 24-step (DevOps) workflows with 8 layers of compliance.",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 20-step (app) and 24-step (DevOps) workflows with 7 layers of compliance.",
   "version": "0.6.1",
   "author": {
     "name": "Alo Labs",

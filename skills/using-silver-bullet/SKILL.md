@@ -12,7 +12,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 **This skill MUST NOT destroy existing project content.** Rules:
 - **Never overwrite existing docs** (`docs/*.md`) — only create if absent
 - **Backup before overwrite** — if CLAUDE.md or workflow files must be replaced (update mode), copy the original to `*.backup` first
-- **Never delete files or directories** in the project (only `/tmp/` state files are deleted)
+- **Never delete files or directories** in the project (only `~/.claude/.silver-bullet/` state files are deleted)
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
