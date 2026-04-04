@@ -8,6 +8,14 @@
 
 ---
 
+> **Post-Audit Remediation Note (2026-04-04):** All findings from this audit have been
+> addressed. FINDING-5.1 (world-readable `/tmp/` state files) was remediated by migrating
+> all state to `~/.claude/.silver-bullet/` with `umask 0077`. FINDING-5.2 (silent jq bypass)
+> was remediated by adding visible warnings in session-start and completion-audit hooks.
+> Historical `/tmp/` references in finding descriptions below reflect the pre-fix state.
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
@@ -31,7 +39,7 @@
 
 ## Executive Summary
 
-Silver Bullet is a Claude Code plugin with 15 skills, 8 enforcement hooks, 4 utility scripts, and 2 workflow templates. The plugin enforces software engineering process compliance through shell-based PostToolUse hooks that read/write state files in `/tmp/`.
+Silver Bullet is a Claude Code plugin with 15 skills, 7 enforcement hooks, 4 utility scripts, and 2 workflow templates. The plugin enforces software engineering process compliance through shell-based PostToolUse hooks that read/write state files in `~/.claude/.silver-bullet/` (user-scoped, 0700 permissions).
 
 **Overall Security Posture:** Acceptable with conditions
 **Deployment Recommendation:** Deploy with mitigations
@@ -85,7 +93,7 @@ Full-text scan of all 30+ target files for encoding signatures:
 2. **Character manipulation:** No suspicious variations. Name is distinctive and not a typosquat of any known plugin.
 3. **Scope confusion:** No namespace impersonation detected.
 4. **Author field:** "Alo Labs" — consistent across plugin.json, package.json, README.
-5. **Description consistency:** Description claims "20-step (app) and 24-step (DevOps) workflows with 8 layers of compliance." Verified against actual workflow files — accurate.
+5. **Description consistency:** Description claims "20-step (app) and 24-step (DevOps) workflows with 7 layers of compliance." Verified against actual workflow files — accurate.
 
 **Metadata integrity: CLEAN.** No impersonation signals detected.
 
@@ -253,7 +261,7 @@ No API keys, tokens, passwords, connection strings, or private key markers found
 │                 4. User deploys with no enforcement active    │
 │ PoC Payload   : [SAFE_POC] Uninstall jq, then run a full    │
 │                 workflow — all gates silently pass            │
-│ Impact        : Complete enforcement bypass — all 8 layers    │
+│ Impact        : Complete enforcement bypass — all 7 layers    │
 │                 disabled silently                             │
 │ Remediation   : Emit a visible warning when jq is missing    │
 │                 instead of exit 0. Use blockToolUse:true to  │
@@ -453,7 +461,7 @@ CHAIN_CVSS: 7.5 (maximum of individual scores + chain amplification)
 **CWE:** CWE-280 — Improper Handling of Insufficient Permissions
 **Confidence:** CONFIRMED — 7 hook scripts contain `command -v jq >/dev/null 2>&1 || exit 0`
 
-**Description:** Every enforcement hook silently exits 0 when `jq` is unavailable. This disables all 8 enforcement layers without any user notification — the user believes enforcement is active when it is completely absent.
+**Description:** Every enforcement hook silently exits 0 when `jq` is unavailable. This disables all 7 enforcement layers without any user notification — the user believes enforcement is active when it is completely absent.
 
 **Impact:** Silent total bypass of workflow enforcement. User deploys code believing all gates passed.
 

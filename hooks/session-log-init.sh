@@ -24,8 +24,8 @@ input=$(cat)
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 [[ -z "$cmd" ]] && exit 0
 
-# Only fire when command touches .silver-bullet-mode
-printf '%s' "$cmd" | grep -q '\.silver-bullet-mode' || exit 0
+# Only fire when command touches the session mode file
+printf '%s' "$cmd" | grep -qE '\.silver-bullet(/mode|-mode)' || exit 0
 
 # --- Locate project root (allow override for testing) ---
 project_root="${PROJECT_ROOT_OVERRIDE:-}"
@@ -91,7 +91,7 @@ if [[ -n "$existing" ]]; then
   # Re-launch sentinel if autonomous (second-terminal re-trigger)
   if [[ "$mode" == "autonomous" ]]; then
     date +%s > "$SB_DIR"/session-start-time
-    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) &
+    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
     disown "$sentinel_pid"
     echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid
@@ -179,7 +179,7 @@ date +%s > "$SB_DIR"/session-start-time
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
 if [[ "$mode" == "autonomous" ]]; then
-  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) &
+  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
   disown "$sentinel_pid"
   echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid

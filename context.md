@@ -17,12 +17,12 @@ Silver Bullet is an AI-native software engineering and DevOps process orchestrat
 - **5 optional DevOps plugins**: HashiCorp, AWS Labs, Pulumi, DevOps Skills (ahmedasmar), wshobson/agents
 
 Two enforced workflows:
-- `full-dev-cycle` — 19-step app development workflow with 8 quality dimensions
-- `devops-cycle` — 23-step IaC/DevOps workflow with blast radius assessment and 7 IaC-adapted quality gates
+- `full-dev-cycle` — 20-step app development workflow with 8 quality dimensions
+- `devops-cycle` — 24-step IaC/DevOps workflow with blast radius assessment and 7 IaC-adapted quality gates
 
 7 enforcement layers: 4 PostToolUse hooks + GSD workflow guard + GSD context monitor + redundant CLAUDE.md instructions
 
-**Current version:** v0.2.0 (ALPHA)
+**Current version:** v0.6.1
 
 ---
 
@@ -31,7 +31,7 @@ Two enforced workflows:
 ### Site (https://sb.alolabs.dev)
 
 - Added DevOps plugin cards (5-column grid): HashiCorp, AWS Labs, Pulumi, DevOps Skills, wshobson/agents
-- Added workflow tab switcher showing both 19-step and 23-step cycles with full step tables
+- Added workflow tab switcher showing both 20-step and 24-step cycles with full step tables
 - Added ALPHA superscript badge on the Silver Bullet h1 title (styled to match MultAI site)
 - Title-cased all headings site-wide
 - Added Compare nav link and standalone `/compare` page
@@ -75,8 +75,8 @@ Two enforced workflows:
 | `docs/gsd2-vs-sb-gap-analysis.md` | GSD-2 vs SB capability gap |
 | `docs/Architecture-and-Design.md` | Architecture docs |
 | `docs/Master-PRD.md` | Product requirements |
-| `templates/workflows/full-dev-cycle.md` | 19-step dev workflow |
-| `templates/workflows/devops-cycle.md` | 23-step DevOps workflow |
+| `templates/workflows/full-dev-cycle.md` | 20-step dev workflow |
+| `templates/workflows/devops-cycle.md` | 24-step DevOps workflow |
 | `skills/using-silver-bullet/SKILL.md` | Onboarding skill |
 | `CLAUDE.md.template` | Template for generated CLAUDE.md |
 

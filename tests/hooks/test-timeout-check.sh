@@ -3,13 +3,16 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$SCRIPT_DIR/../../hooks/timeout-check.sh"
 
+# Ensure state directory exists
+mkdir -p "${HOME}/.claude/.silver-bullet"
+
 # Helpers
-write_mode() { echo "$1" > /tmp/.silver-bullet-mode; }
-write_start_time() { date +%s > /tmp/.silver-bullet-session-start-time; }
+write_mode() { echo "$1" > "${HOME}/.claude/.silver-bullet/mode"; }
+write_start_time() { date +%s > "${HOME}/.claude/.silver-bullet/session-start-time"; }
 cleanup_tmp() {
-  rm -f /tmp/.silver-bullet-mode /tmp/.silver-bullet-session-start-time \
-        /tmp/.silver-bullet-timeout /tmp/.silver-bullet-timeout-warn-count \
-        /tmp/.sb-test-timeout-flag-$$
+  rm -f "${HOME}/.claude/.silver-bullet/mode" "${HOME}/.claude/.silver-bullet/session-start-time" \
+        "${HOME}/.claude/.silver-bullet/timeout" "${HOME}/.claude/.silver-bullet/timeout-warn-count" \
+        "/tmp/.sb-test-timeout-flag-$$"
 }
 
 run_hook() {
@@ -25,7 +28,7 @@ write_mode "autonomous"
 write_start_time
 sleep 1  # ensure flag mtime >= session-start-time
 touch /tmp/.sb-test-timeout-flag-$$
-rm -f /tmp/.silver-bullet-timeout-warn-count
+rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
 out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
 if printf '%s' "$out" | grep -q "Autonomous session"; then
   printf 'PASS: current flag + autonomous → warning on call 1\n'
@@ -77,7 +80,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   touch /tmp/.sb-test-timeout-flag-$$
   sleep 1
   write_start_time  # session started AFTER flag was written → flag is stale
-  rm -f /tmp/.silver-bullet-timeout-warn-count
+  rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if [[ -z "$out" ]]; then
     printf 'PASS: stale flag → silent\n'
@@ -97,10 +100,10 @@ if [[ "$(uname)" == "Darwin" ]]; then
   write_start_time
   sleep 1
   touch /tmp/.sb-test-timeout-flag-$$
-  rm -f /tmp/.silver-bullet-timeout-warn-count
+  rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
   # Pre-populate warn-count=4 with mtime BEFORE session-start-time (stale)
-  echo "4" > /tmp/.silver-bullet-timeout-warn-count
-  touch -t 202001010000 /tmp/.silver-bullet-timeout-warn-count
+  echo "4" > "${HOME}/.claude/.silver-bullet/timeout-warn-count"
+  touch -t 202001010000 "${HOME}/.claude/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if printf '%s' "$out" | grep -q "Autonomous session"; then
     printf 'PASS: stale warn-count resets to 0 → warning fires on first call\n'
