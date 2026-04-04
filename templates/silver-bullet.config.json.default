@@ -11,6 +11,7 @@
       "quality-gates"
     ],
     "required_deploy": [
+      "quality-gates",
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
