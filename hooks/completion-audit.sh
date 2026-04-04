@@ -133,7 +133,7 @@ if [[ -n "$missing" ]]; then
     missing_lines="${missing_lines}  ❌ /${skill}\n"
   done
 
-  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to commit/push/deploy but these required steps are missing:\n%bComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines")
+  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to commit/push/deploy but these required steps are missing:\n%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines")
 
   # Escape for JSON
   json_msg=$(printf '%s' "$msg" | jq -Rs '.')

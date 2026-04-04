@@ -207,8 +207,10 @@ fi
 
 if [[ -z "$output" ]]; then exit 0; fi
 
-header="## Semantic Context (auto-compressed — phase: ${phase_goal:-no active phase})\n\n"
-full_output=$(printf '%b' "${header}${output}")
+header="## Semantic Context (auto-compressed — phase: ${phase_goal:-no active phase})"
+full_output="${header}
+
+${output}"
 json_output=$(printf '%s' "$full_output" | jq -Rs '{"hookSpecificOutput":{"additionalContext":.}}')
 
 printf '%s' "$json_output" > "$cache_file"
