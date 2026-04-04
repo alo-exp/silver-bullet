@@ -183,7 +183,7 @@ if [[ -n "$missing" && -n "$release_missing" ]]; then
   emit_block "$msg"
   exit 0
 elif [[ -n "$release_missing" ]]; then
-  msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, SENTINEL, Content Refresh) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing")
+  msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, Content Refresh, SENTINEL) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing")
   emit_block "$msg"
   exit 0
 fi
