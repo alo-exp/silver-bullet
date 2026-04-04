@@ -142,6 +142,18 @@ Also suppress ALL other confirmation-asking behaviors for the remainder of the s
 Use defaults for any skipped questions. Log each suppressed question under
 "Autonomous decisions" with note "(bypass-permissions)".
 
+**Persistent permission mode**: If the user reports that Claude Code keeps asking
+for permissions despite setting bypass-permissions, the issue is that the UI toggle
+only applies to the current session. To persist it, add to `.claude/settings.local.json`:
+```json
+{"permissions":{"defaultMode":"bypassPermissions"}}
+```
+Or for safer auto-approval (recommended for non-isolated environments):
+```json
+{"permissions":{"defaultMode":"auto"}}
+```
+This is a Claude Code platform setting, not a Silver Bullet setting.
+
 At the start of every session, before any work begins, ask:
 
 > Run this session **interactively** or **autonomously**?

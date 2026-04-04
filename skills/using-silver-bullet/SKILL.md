@@ -277,8 +277,28 @@ Detected:
 Look right? (yes / edit)
 ```
 
-- If user says "yes" or equivalent → proceed to Phase 3.
-- If user says "edit" → ask which fields to change, accept new values, then proceed to Phase 3.
+- If user says "yes" or equivalent → proceed to step 2.6.
+- If user says "edit" → ask which fields to change, accept new values, then proceed to step 2.6.
+
+### 2.6 Configure permission mode
+
+Check if `.claude/settings.local.json` has a `permissions.defaultMode` set:
+```bash
+test -f .claude/settings.local.json && jq -r '.permissions.defaultMode // "NOT_SET"' .claude/settings.local.json 2>/dev/null || echo "NOT_SET"
+```
+
+If `NOT_SET`:
+> Silver Bullet works best with auto-approve permissions. Choose:
+> 1. **auto** (recommended) — auto-approves most tool calls, prompts only for protected paths
+> 2. **bypassPermissions** — approves everything, only for isolated environments
+> 3. **Skip** — keep current permission settings
+
+If user chooses `auto` or `bypassPermissions`:
+- Read `.claude/settings.local.json` (create if absent with `{"permissions":{}}`)
+- Use Edit/Write to set `permissions.defaultMode` to the chosen value
+- This persists across sessions — no more repeated permission prompts
+
+If already set to `auto` or `bypassPermissions` → skip silently.
 
 ---
 
