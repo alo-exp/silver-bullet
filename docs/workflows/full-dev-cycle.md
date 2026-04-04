@@ -306,6 +306,7 @@ This clears the timeout sentinel so `timeout-check.sh` stops warning.
 Every review loop in this workflow (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns ✅ Approved TWICE IN A ROW**. A single clean pass is not sufficient. No exceptions.
 
 - Never stop because "issues are minor" or "close enough"
+- Never accept a partial fix and move on without re-dispatching
 - Never count a loop as done unless the reviewer outputs `✅ Approved` on two consecutive passes
 - The loop is self-limiting — it ends naturally when two consecutive passes are clean
 - Surface to the user only if the reviewer raises an issue it cannot resolve
