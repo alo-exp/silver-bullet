@@ -14,7 +14,8 @@
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "create-release"
+      "create-release",
+      "verification-before-completion"
     ],
     "all_tracked": [
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
@@ -26,7 +27,8 @@
       "create-release",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
-      "forensics", "using-silver-bullet"
+      "forensics", "using-silver-bullet",
+      "verification-before-completion"
     ]
   },
   "devops_plugins": {
