@@ -8,7 +8,7 @@
 
 ## What Silver Bullet Is
 
-Silver Bullet is an AI-native software engineering and DevOps process orchestrator for Claude Code. It combines:
+Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps, built for Claude Code. It combines:
 
 - **GSD v1** (`npx get-shit-done-cc@^1.30.0`) — execution engine: wave-based parallel execution, fresh 200K context per agent, atomic commits, context rot prevention
 - **Superpowers** (`/plugin marketplace add obra/superpowers`) — community skills: code review, branch management, testing strategy, cross-session memory
