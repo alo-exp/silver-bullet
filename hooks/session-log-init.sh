@@ -4,11 +4,14 @@ set -euo pipefail
 # PostToolUse hook (matcher: Bash)
 # Fires when Claude writes the session mode to ~/.claude/.silver-bullet/mode.
 # Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
-# ${HOME}/.claude/.silver-bullet/session-log-path so the documentation step can fill it in.
+# ~/.claude/.silver-bullet/session-log-path so the documentation step can fill it in.
 # In autonomous mode: also launches a 10-minute background sentinel.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
+
+# User-scoped state directory (avoids world-readable /tmp/)
+SB_DIR="${HOME}/.claude/.silver-bullet"
 
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -39,11 +42,11 @@ sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
 mkdir -p "$sessions_dir"
 
 # --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
-if [[ -f ${HOME}/.claude/.silver-bullet/sentinel-pid ]]; then
-  old_pid=$(cat ${HOME}/.claude/.silver-bullet/sentinel-pid)
+if [[ -f "$SB_DIR"/sentinel-pid ]]; then
+  old_pid=$(cat "$SB_DIR"/sentinel-pid)
   kill "$old_pid" 2>/dev/null || true
-  rm -f ${HOME}/.claude/.silver-bullet/sentinel-pid ${HOME}/.claude/.silver-bullet/timeout \
-        ${HOME}/.claude/.silver-bullet/session-start-time ${HOME}/.claude/.silver-bullet/timeout-warn-count
+  rm -f "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
+        "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count
 fi
 
 # --- Step 5: Mode detection + dedup guard (combined) ---
@@ -82,18 +85,18 @@ if [[ -n "$existing" ]]; then
 
   # Re-launch sentinel if autonomous (second-terminal re-trigger)
   if [[ "$mode" == "autonomous" ]]; then
-    date +%s > ${HOME}/.claude/.silver-bullet/session-start-time
-    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > ${HOME}/.claude/.silver-bullet/timeout) &
+    date +%s > "$SB_DIR"/session-start-time
+    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) &
     sentinel_pid=$!
     disown "$sentinel_pid"
-    echo "$sentinel_pid" > ${HOME}/.claude/.silver-bullet/sentinel-pid
+    echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
       "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing"
   fi
 
-  printf '%s' "$existing" > ${HOME}/.claude/.silver-bullet/session-log-path
+  printf '%s' "$existing" > "$SB_DIR"/session-log-path
   printf '{"hookSpecificOutput":{"message":"ℹ️ Session log already exists: %s"}}' \
     "$(basename "$existing")"
   exit 0
@@ -167,16 +170,16 @@ cat > "$log_file" << LOGEOF
 LOGEOF
 
 # --- Step 7: Write session start timestamp ---
-date +%s > ${HOME}/.claude/.silver-bullet/session-start-time
+date +%s > "$SB_DIR"/session-start-time
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
 if [[ "$mode" == "autonomous" ]]; then
-  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > ${HOME}/.claude/.silver-bullet/timeout) &
+  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) &
   sentinel_pid=$!
   disown "$sentinel_pid"
-  echo "$sentinel_pid" > ${HOME}/.claude/.silver-bullet/sentinel-pid
+  echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid
 fi
 
-printf '%s' "$log_file" > ${HOME}/.claude/.silver-bullet/session-log-path
+printf '%s' "$log_file" > "$SB_DIR"/session-log-path
 printf '{"hookSpecificOutput":{"message":"📋 Session log created: docs/sessions/%s"}}' \
   "$(basename "$log_file")"
