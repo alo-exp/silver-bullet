@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.6.2
+**Current version:** v0.7.0
 **Active phase:** Phase 1 — Separate silver-bullet.md from CLAUDE.md
 **Current plan:** 01-01 (COMPLETE)
 
