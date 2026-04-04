@@ -332,6 +332,14 @@ the state file (`~/.claude/.silver-bullet/state`). Required markers:
 - Stage 3: `quality-gate-stage-3` (recorded per instructions above)
 - Stage 4: `quality-gate-stage-4` (recorded per instructions above)
 
+**Session reset:** The `session-start` hook clears all quality-gate-stage-* and
+gsd-* markers from the state file at the beginning of every session. This ensures
+each release cycle must earn its own quality gate pass — stale markers from a
+previous release cannot satisfy the gate for a new release.
+
+> **Anti-Skip:** You are violating this rule if you release without running all 4 stages
+> in the CURRENT session. Stale markers from a prior session are automatically cleared.
+
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface
 to the user before proceeding to the next stage.

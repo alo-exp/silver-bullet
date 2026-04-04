@@ -12,6 +12,16 @@ umask 0077
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
+# Reset workflow state for fresh session — each session must earn its own compliance
+state_file="${SB_STATE_DIR}/state"
+if [[ -f "$state_file" ]]; then
+  # Remove quality-gate stage markers (force fresh §9 gate per release cycle)
+  # Remove GSD command markers (force fresh workflow per session)
+  # Keep skill invocation records (they accumulate across the workflow)
+  sed -i '' '/^quality-gate-stage-/d; /^gsd-/d' "$state_file" 2>/dev/null || \
+    sed -i '/^quality-gate-stage-/d; /^gsd-/d' "$state_file" 2>/dev/null || true
+fi
+
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default
 trivial_file="${SB_STATE_DIR}/trivial"
