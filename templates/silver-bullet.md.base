@@ -232,13 +232,14 @@ Run all three review skills in sequence, then fix all issues. Repeat until clean
 Review the entire plugin for cross-file inconsistencies, redundancies, and contradictions.
 
 1. Dispatch parallel Explore agents across four dimensions:
-   - Workflows (full-dev-cycle.md vs devops-cycle.md vs CLAUDE.md)
+   - Workflows (full-dev-cycle.md vs devops-cycle.md vs CLAUDE.md vs silver-bullet.md)
    - Skills (all SKILL.md files — obsolete references, redundant work, contradictions)
    - Hooks + config (.sh files, hooks.json, .silver-bullet.json, templates)
    - Help site + README (HTML pages, search.js, README.md — step counts, paths, versions)
 2. Fix all genuine issues found
 3. **Loop**: repeat until two consecutive audit passes find zero issues
 4. Run `/superpowers:verification-before-completion` — verify with fresh evidence
+5. Record stage completion: `echo "quality-gate-stage-2" >> ~/.claude/.silver-bullet/state`
 
 ### Stage 3 — Security Audit (SENTINEL)
 
@@ -249,6 +250,7 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 3. Re-run the audit
 4. **Loop**: repeat until two consecutive audit passes find zero issues
 5. Run `/superpowers:verification-before-completion` — verify with fresh evidence
+6. Record stage completion: `echo "quality-gate-stage-3" >> ~/.claude/.silver-bullet/state`
 
 ### Stage 4 — Public-Facing Content Refresh
 
@@ -264,13 +266,17 @@ Verify and update all user-visible surfaces to reflect the current state.
 2. Fix all discrepancies
 3. Run `/superpowers:verification-before-completion` — verify with fresh evidence
 4. Push and confirm CI green
+5. Record stage completion: `echo "quality-gate-stage-4" >> ~/.claude/.silver-bullet/state`
 
 ### Pre-Release Gate Enforcement
 
-The completion audit hook (`hooks/completion-audit.sh`) blocks `/create-release`
-until all required workflow skills are recorded. The four stages above are
-**process requirements** enforced by this file — Claude MUST execute them
-in order before invoking `/create-release`.
+The completion audit hook (`hooks/completion-audit.sh`) blocks `gh release create`
+until all required workflow skills AND quality gate stage markers are recorded in
+the state file (`~/.claude/.silver-bullet/state`). Required markers:
+- Stage 1: `code-review`, `requesting-code-review`, `receiving-code-review` (recorded automatically by record-skill hook)
+- Stage 2: `quality-gate-stage-2` (recorded manually per instructions above)
+- Stage 3: `quality-gate-stage-3` (recorded manually per instructions above)
+- Stage 4: `quality-gate-stage-4` (recorded manually per instructions above)
 
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface

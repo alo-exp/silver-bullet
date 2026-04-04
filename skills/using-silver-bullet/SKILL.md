@@ -294,10 +294,10 @@ If Phase 0 determined this is an update:
    - Replace `{{TECH_STACK}}` with the detected tech stack
    - Replace `{{GIT_REPO}}` with the repo URL from `git remote get-url origin`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. **Strip any SB-owned sections from CLAUDE.md** (migration from pre-v0.7.0). Check for headings matching `## N.` where N is 0–9 (including `## 3a.`). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that don't mention silver-bullet.md.
+3. **Strip any SB-owned sections from CLAUDE.md** (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that don't mention silver-bullet.md.
 4. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
+6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 **Template refresh (only when user explicitly requests it):**
 
@@ -338,11 +338,11 @@ Check if `CLAUDE.md` exists in the project root (use Bash: `test -f CLAUDE.md`).
 
 **Step 1 — Strip SB-owned sections from CLAUDE.md:**
 
-Silver Bullet sections are identified by headings matching `## N.` where N is 0–9 (including `## 3a.`). These sections start at the heading and end just before the next `## ` heading or end-of-file.
+Silver Bullet sections are identified by headings matching `## N. <Known SB Title>` where N is 0–9 (including `## 3a.`). Known titles include: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release. These sections start at the heading and end just before the next `## ` heading or end-of-file.
 
 Use the Bash tool to detect SB sections:
 ```bash
-grep -nE '^## [0-9]+[a-z]?\.' CLAUDE.md || echo "NO_SB_SECTIONS"
+grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|GSD|File Safety|Third-Party|Pre-Release)' CLAUDE.md || echo "NO_SB_SECTIONS"
 ```
 
 If `NO_SB_SECTIONS` → skip to Step 2.
