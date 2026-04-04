@@ -28,6 +28,23 @@ main() {
     [[ -z "$command_str" ]] && exit 0
   fi
 
+  # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
+  plugin_cache="${HOME}/.claude/plugins/cache"
+  if [[ -n "$file_path" ]] && printf '%s' "$file_path" | grep -q "$plugin_cache"; then
+    msg="🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION — You are attempting to edit a file inside the plugin cache:
+$(basename "$file_path")
+
+Silver Bullet NEVER modifies upstream plugin files. Implement the change in Silver Bullet's own layer instead:
+  • Workflow instruction (templates/workflows/*.md)
+  • Hook (hooks/*.sh)
+  • Silver Bullet skill (skills/*/SKILL.md)
+
+See CLAUDE.md §8 for details."
+    json_msg=$(printf '%s' "$msg" | jq -Rs '.')
+    printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+    exit 0
+  fi
+
   # --- Resolve config file by walking up from file's directory (or $PWD for Bash) ---
   config_file=""
   if [[ -n "$file_path" ]]; then
