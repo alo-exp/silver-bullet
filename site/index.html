@@ -1376,6 +1376,7 @@ footer .footer-links{display:flex;gap:24px}
           <tr><td>17</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
           <tr><td>18</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>19</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>20</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/create-release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1414,16 +1415,19 @@ footer .footer-links{display:flex;gap:24px}
           <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Environment promotion &mdash; dev &rarr; staging &rarr; prod</td></tr>
-          <tr><td>14</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Environment promotion gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>14</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Promote to next environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>15</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Verify promoted environment</td><td>GSD</td><td><span class="step-required">Required</span></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>15</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/testing-strategy</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>15a</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>Contextual enrichment (CI/CD, GitOps)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>Tech-debt notes (inline)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/documentation</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>19</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>20</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>21</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/testing-strategy</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>16a</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>Contextual enrichment (CI/CD, GitOps)</td><td>DevOps Plugins</td><td></td></tr>
+          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>Tech-debt notes (inline)</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/documentation</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>20</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>22</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>23</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>24</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/create-release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
         </tbody>
       </table>
     </div>
