@@ -5,7 +5,7 @@
 **Active phase:** Phase 1 — Separate silver-bullet.md from CLAUDE.md
 **Current plan:** 01-01 (COMPLETE)
 
-Last activity: 2026-04-05 - Completed 01-01-PLAN.md (separate silver-bullet.md from CLAUDE.md)
+Last activity: 2026-04-05 - Completed quick task 260405-5e0: Close enforcement gaps for skip-risk instructions
 
 ## Decisions
 
@@ -13,6 +13,12 @@ Last activity: 2026-04-05 - Completed 01-01-PLAN.md (separate silver-bullet.md f
 - CLAUDE.md.base reduced to 16-line project scaffold with silver-bullet.md reference
 - Conflict detection scans 5 pattern categories interactively
 - Update mode overwrites silver-bullet.md (SB-owned) without confirmation
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260405-5e0 | Close enforcement gaps for skip-risk instructions | 2026-04-05 | f97d109 | Verified | [260405-5e0-close-enforcement-gaps-for-skip-risk-ins](./quick/260405-5e0-close-enforcement-gaps-for-skip-risk-ins/) |
 
 ## Performance Metrics
 
