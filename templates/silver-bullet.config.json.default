@@ -23,7 +23,10 @@
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "create-release"
+      "create-release",
+      "modularity", "reusability", "scalability", "security",
+      "reliability", "usability", "testability", "extensibility",
+      "forensics", "using-silver-bullet"
     ]
   },
   "devops_plugins": {
