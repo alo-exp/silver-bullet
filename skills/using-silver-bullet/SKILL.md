@@ -294,8 +294,9 @@ If Phase 0 determined this is an update:
    - Replace `{{TECH_STACK}}` with the detected tech stack
    - Replace `{{GIT_REPO}}` with the repo URL from `git remote get-url origin`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
-4. Run conflict detection (same as step 3.1c below).
+3. **Strip any SB-owned sections from CLAUDE.md** (migration from pre-v0.7.0). Check for headings matching `## N.` where N is 0–9 (including `## 3a.`). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that don't mention silver-bullet.md.
+4. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
+5. Run conflict detection (same as step 3.1c below).
 5. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 **Template refresh (only when user explicitly requests it):**
@@ -333,11 +334,35 @@ Check if `CLAUDE.md` exists in the project root (use Bash: `test -f CLAUDE.md`).
 
 **If NO existing CLAUDE.md**: Write from `${PLUGIN_ROOT}/templates/CLAUDE.md.base` with the same placeholder replacements as above. No user interaction needed.
 
-**If existing CLAUDE.md**: Add reference line at the very top of the file (before any other content):
+**If existing CLAUDE.md**: First, strip any existing Silver Bullet sections (migration from pre-v0.7.0). Then add the reference line and run conflict detection.
+
+**Step 1 — Strip SB-owned sections from CLAUDE.md:**
+
+Silver Bullet sections are identified by headings matching `## N.` where N is 0–9 (including `## 3a.`). These sections start at the heading and end just before the next `## ` heading or end-of-file.
+
+Use the Bash tool to detect SB sections:
+```bash
+grep -nE '^## [0-9]+[a-z]?\.' CLAUDE.md || echo "NO_SB_SECTIONS"
+```
+
+If `NO_SB_SECTIONS` → skip to Step 2.
+
+If sections found:
+1. Read CLAUDE.md fully
+2. Identify each SB section (from `## N.` heading to just before the next `## ` heading or EOF)
+3. Also remove the old-style enforcement reference line if present: `> **Always adhere strictly to this file — it overrides all defaults.**` (note: this is the pre-separation version that does NOT mention silver-bullet.md)
+4. Remove these sections using the Edit tool, preserving all non-SB content (project overview, project-specific rules, user-added sections)
+5. Clean up any resulting double-blank-lines to single-blank-lines
+
+**Step 2 — Add reference line:**
+
+Add at the very top of the file (before any other content):
 ```
 > **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**
 ```
-But ONLY if the file does not already contain the string "silver-bullet.md". Then run conflict detection (step 3.1c).
+But ONLY if the file does not already contain the string "silver-bullet.md".
+
+Then run conflict detection (step 3.1c).
 
 #### 3.1c Conflict detection (only when existing CLAUDE.md found)
 

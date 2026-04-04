@@ -22,6 +22,7 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 
 # Check if command matches completion patterns (word boundaries, case-insensitive for deploy)
 is_completion=false
+is_release=false
 if printf '%s' "$cmd" | grep -qE '\bgit commit\b'; then
   is_completion=true
 elif printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
@@ -30,6 +31,9 @@ elif printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
   is_completion=true
 elif printf '%s' "$cmd" | grep -iqE '\bdeploy\b'; then
   is_completion=true
+elif printf '%s' "$cmd" | grep -qE '\bgh release create\b'; then
+  is_completion=true
+  is_release=true
 fi
 
 [[ "$is_completion" == false ]] && exit 0
@@ -124,6 +128,31 @@ if [[ -f "$state_file" ]]; then
 else
   # No state file — all skills are missing
   missing="$required_skills"
+fi
+
+# --- §9 Pre-Release Quality Gate check (only for gh release create) ---
+release_missing=""
+if [[ "${is_release:-false}" == true && -f "$state_file" ]]; then
+  state_contents=$(cat "$state_file")
+  # Stage 1: Code Review Triad evidence
+  for rs in code-review requesting-code-review receiving-code-review; do
+    if ! printf '%s\n' "$state_contents" | grep -qx "$rs" 2>/dev/null; then
+      release_missing="${release_missing:+$release_missing }stage1:$rs"
+    fi
+  done
+  # Stage 2-4 evidence: check for quality-gate stage markers
+  for stage in quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
+    if ! printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
+      release_missing="${release_missing:+$release_missing }$stage"
+    fi
+  done
+fi
+
+if [[ -n "$release_missing" ]]; then
+  msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, SENTINEL, Content Refresh) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing")
+  json_msg=$(printf '%s' "$msg" | jq -Rs '.')
+  printf '{"hookSpecificOutput":{"blockToolUse":true,"message":%s}}' "$json_msg"
+  exit 0
 fi
 
 # --- Output result ---
