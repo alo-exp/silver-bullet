@@ -189,8 +189,8 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="issue-card">
         <h4>Compliance status shows wrong progress</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>/tmp/.silver-bullet-state</code> may be stale from a previous session.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm /tmp/.silver-bullet-state</code>. It will be recreated on the next skill invocation.</p>
+        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>~/.claude/.silver-bullet/state</code> may be stale from a previous session.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm ~/.claude/.silver-bullet/state</code>. It will be recreated on the next skill invocation.</p>
       </div>
 
       <div class="divider"></div>
@@ -220,7 +220,7 @@ footer a:hover{color:var(--accent-light)}
       <div class="issue-card">
         <h4>"GSD plugin not found"</h4>
         <p class="ic-cause"><strong>Cause:</strong> GSD (Get Shit Done) is the primary execution engine. Without it, no workflow commands work.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>npx get-shit-done-cc@^1.30.0</code> to install GSD.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>npx get-shit-done-cc@1.30.0</code> to install GSD.</p>
       </div>
 
       <div class="callout callout-tip">
@@ -332,7 +332,7 @@ footer a:hover{color:var(--accent-light)}
       <div class="issue-card">
         <h4>Bypassing enforcement for trivial changes</h4>
         <p class="ic-cause"><strong>Cause:</strong> You need to make a small fix (typo, comment, config tweak) without running the full workflow.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>touch /tmp/.silver-bullet-trivial</code> before committing. This bypasses enforcement for one commit. The flag is automatically cleaned up on the next session start. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are never trivial.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>touch ~/.claude/.silver-bullet/trivial</code> before committing. This bypasses enforcement for one commit. The flag is automatically cleaned up on the next session start. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are never trivial.</p>
       </div>
 
       <div class="callout callout-warn">

@@ -4,8 +4,14 @@ set -euo pipefail
 # PostToolUse hook (matcher: Bash)
 # Detects git commit/push/deploy commands and blocks if workflow is incomplete.
 
-# jq is required — silent exit if missing
-command -v jq >/dev/null 2>&1 || exit 0
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# jq is required — warn visibly if missing
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"message":"⚠️ completion-audit SKIPPED — jq not installed. Enforcement inactive."}}'
+  exit 0
+fi
 
 # Read JSON from stdin
 input=$(cat)
@@ -49,27 +55,32 @@ done
 [[ -z "$config_file" ]] && exit 0
 
 # --- Read config values ---
-state_file="/tmp/.silver-bullet-state"
-trivial_file="/tmp/.silver-bullet-trivial"
+SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+state_file="${SB_STATE_DIR}/state"
+trivial_file="${SB_STATE_DIR}/trivial"
 required_deploy=""
 
 if [[ -n "$config_file" ]]; then
-  config_vals=$(jq -r '[
-    (.state.state_file // "/tmp/.silver-bullet-state"),
-    (.state.trivial_file // "/tmp/.silver-bullet-trivial"),
+  sb_default_state="${SB_STATE_DIR}/state"
+  sb_default_trivial="${SB_STATE_DIR}/trivial"
+  config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+    (.state.state_file // $ds),
+    (.state.trivial_file // $dt),
     ((.skills.required_deploy // []) | join(" "))
   ] | join("\n")' "$config_file")
 
   state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+  state_file="${state_file/#\~/$HOME}"
   trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
+  trivial_file="${trivial_file/#\~/$HOME}"
   required_deploy=$(printf '%s' "$config_vals" | sed -n '3p')
 fi
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
-# --- Check trivial file override ---
-if [[ -f "$trivial_file" ]]; then
+# --- Check trivial file override (reject symlinks for safety) ---
+if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0
 fi
 

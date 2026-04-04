@@ -59,7 +59,7 @@ use `$PWD` as the project root and note "Project root not confirmed" in Evidence
 1. Most recent session log in `<project-root>/docs/sessions/` — glob `docs/sessions/*.md`,
    sort by name descending, take first
 2. `git log --oneline -10`
-3. Presence of `/tmp/.silver-bullet-timeout` (was sentinel triggered?)
+3. Presence of `~/.claude/.silver-bullet/timeout` (was sentinel triggered?)
 4. `.planning/` directory — any incomplete phase markers
 
 ### Step 2c — Classification
@@ -81,7 +81,7 @@ writing the post-mortem. Then proceed to the matching path section below.
 
 1. Read full session log from `<project-root>/docs/sessions/` — extract Mode, Autonomous
    decisions, Needs human review, Outcome
-2. Check sentinel artifacts: was `/tmp/.silver-bullet-timeout` set? What was the last
+2. Check sentinel artifacts: was `~/.claude/.silver-bullet/timeout` set? What was the last
    tool use before stall? If the sentinel file is absent, note "No sentinel detected"
    in Evidence Gathered and proceed — absence does not rule out stall; rely on session
    log and git history.

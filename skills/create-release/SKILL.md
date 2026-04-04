@@ -79,6 +79,11 @@ without asking).
 git log <last-tag>..HEAD --pretty=format:"%h %s" --no-merges
 ```
 
+**Sanitize commit subjects** before use in release notes: escape markdown special
+characters (`*`, `_`, `[`, `]`, `(`, `)`, `#`, `` ` ``, `<`, `>`) with backslash
+prefix, or wrap each description in backtick code spans. This prevents markdown
+injection via crafted commit messages.
+
 Categorize each commit by its conventional commit prefix:
 
 | Prefix | Category |

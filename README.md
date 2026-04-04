@@ -68,7 +68,7 @@ Both workflows use GSD as the primary execution engine and Silver Bullet skills 
 ### 1. Install prerequisites
 
 ```
-npx get-shit-done-cc@^1.30.0
+npx get-shit-done-cc@1.30.0
 /plugin install obra/superpowers
 /plugin install anthropics/knowledge-work-plugins/tree/main/engineering
 /plugin install anthropics/knowledge-work-plugins/tree/main/design
@@ -277,8 +277,8 @@ Edit `.silver-bullet.json` in your project root:
     "wshobson": false
   },
   "state": {
-    "state_file": "/tmp/.silver-bullet-state",
-    "trivial_file": "/tmp/.silver-bullet-trivial"
+    "state_file": "~/.claude/.silver-bullet/state",
+    "trivial_file": "~/.claude/.silver-bullet/trivial"
   }
 }
 ```
@@ -300,7 +300,7 @@ Edit `.silver-bullet.json` in your project root:
 For typo fixes, copy edits, and config tweaks that don't need the full workflow, Claude will automatically detect the change is trivial and bypass enforcement by running:
 
 ```bash
-touch /tmp/.silver-bullet-trivial
+touch ~/.claude/.silver-bullet/trivial
 ```
 
 You can also run this manually if Claude doesn't detect a trivial change. The flag is automatically cleaned up on the next session start.
@@ -341,7 +341,7 @@ It detects the existing config and asks if you want to refresh templates while p
 
 **"Design plugin not found"** — Run `/plugin install anthropics/knowledge-work-plugins/tree/main/design`.
 
-**"GSD plugin not found"** — Run `npx get-shit-done-cc@^1.30.0`.
+**"GSD plugin not found"** — Run `npx get-shit-done-cc@1.30.0`.
 
 **Hooks not firing** — Make sure you ran `/using-silver-bullet` in the project. Check that `.silver-bullet.json` exists in your project root.
 
@@ -361,10 +361,10 @@ hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (24 st
   → HARD STOP if planning incomplete
                                            State files (ephemeral, in /tmp/)
 hooks/compliance-status.sh                 ─────────────────────────────────
-  → progress score on every tool use       /tmp/.silver-bullet-state (skill log)
-                                           /tmp/.silver-bullet-trivial (bypass flag)
-hooks/completion-audit.sh                  /tmp/.silver-bullet-mode (interactive|autonomous)
-  → blocks commit/push/deploy              /tmp/.silver-bullet-session-log-path
+  → progress score on every tool use       ~/.claude/.silver-bullet/state (skill log)
+                                           ~/.claude/.silver-bullet/trivial (bypass flag)
+hooks/completion-audit.sh                  ~/.claude/.silver-bullet/mode (interactive|autonomous)
+  → blocks commit/push/deploy              ~/.claude/.silver-bullet/session-log-path
 
 Support hooks (fire automatically)
 ───────────────────────────────────

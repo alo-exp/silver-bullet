@@ -34,8 +34,8 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "/tmp/.silver-bullet-state",
-    "trivial_file": "/tmp/.silver-bullet-trivial"
+    "state_file": "~/.claude/.silver-bullet/state",
+    "trivial_file": "~/.claude/.silver-bullet/trivial"
   },
   "semantic_compression": {
     "enabled": true,

@@ -7,6 +7,7 @@ set -euo pipefail
 # Non-blocking for in_progress (informational only).
 # Scoped to current branch when possible to avoid cross-branch false positives.
 
+# jq required — session-start already warns visibly if missing
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)

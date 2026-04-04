@@ -5,7 +5,10 @@ set -euo pipefail
 # Shows a compact compliance progress score on every tool use.
 # PERFORMANCE CRITICAL: must complete in <100ms. Minimal I/O.
 
-# jq is required — silent exit if missing (don't slow down every tool use)
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# jq is required — silent exit if missing (session-start already warned visibly)
 command -v jq >/dev/null 2>&1 || exit 0
 
 # Consume stdin (required by hook protocol)
@@ -23,7 +26,7 @@ fi
 config_file=""
 
 if [[ -n "$pwd_hash" ]]; then
-  cache_file="/tmp/.silver-bullet-config-path-${pwd_hash}"
+  cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
 
   # Check cache
   if [[ -f "$cache_file" ]]; then
@@ -52,7 +55,7 @@ if [[ -z "$config_file" ]]; then
 
   # Cache result
   if [[ -n "${pwd_hash:-}" ]]; then
-    cache_file="/tmp/.silver-bullet-config-path-${pwd_hash}"
+    cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
     printf '%s' "$config_file" > "$cache_file"
   fi
 fi
@@ -62,12 +65,14 @@ fi
 
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
-  (.state.state_file // "/tmp/.silver-bullet-state"),
+  (.state.state_file // "~/.claude/.silver-bullet/state"),
   ((.skills.required_planning // ["quality-gates"]) | join(" ")),
   (.project.active_workflow // "full-dev-cycle")
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+# Expand ~ to $HOME (jq returns literal tilde from config)
+state_file="${state_file/#\~/$HOME}"
 required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
 # active_workflow is read for future per-workflow status formatting
 # shellcheck disable=SC2034

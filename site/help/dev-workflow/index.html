@@ -218,8 +218,8 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,#64748b,#475569)">0</div>
         <div>
           <div class="step-meta"><span class="step-title">Session Mode Selection</span></div>
-          <p class="step-desc">Claude asks: "Run interactively or autonomously?" Your answer is written to <code>/tmp/.silver-bullet-mode</code> and read by hooks throughout the session.</p>
-          <div class="step-output">→ Writes: /tmp/.silver-bullet-mode</div>
+          <p class="step-desc">Claude asks: "Run interactively or autonomously?" Your answer is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session.</p>
+          <div class="step-output">→ Writes: ~/.claude/.silver-bullet/mode</div>
         </div>
       </div>
 
@@ -412,7 +412,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">15</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Update or create all project documentation. Minimum required: README (must reflect current version), docs/PRD-Overview.md, docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, docs/CICD.md. Also updates KNOWLEDGE.md and CHANGELOG.md. <strong>README must be updated here before Step 20 (release) can proceed.</strong> Also required: complete the session log file (path stored at <code>/tmp/.silver-bullet-session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions, and Virtual cost. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
+          <p class="step-desc">Update or create all project documentation. Minimum required: README (must reflect current version), docs/PRD-Overview.md, docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, docs/CICD.md. Also updates KNOWLEDGE.md and CHANGELOG.md. <strong>README must be updated here before Step 20 (release) can proceed.</strong> Also required: complete the session log file (path stored at <code>~/.claude/.silver-bullet-session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions, and Virtual cost. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
         </div>
       </div>
 

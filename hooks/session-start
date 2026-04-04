@@ -5,9 +5,16 @@ set -euo pipefail
 # Write-always, idempotent — always injects, doesn't detect prior runs.
 # This script does NOT read stdin.
 
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# Ensure user-scoped state directory exists
+SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
+
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default
-trivial_file="/tmp/.silver-bullet-trivial"
+trivial_file="${SB_STATE_DIR}/trivial"
 if command -v jq >/dev/null 2>&1; then
   search_dir="$PWD"
   while true; do
@@ -22,8 +29,11 @@ if command -v jq >/dev/null 2>&1; then
 fi
 rm -f "$trivial_file" 2>/dev/null
 
-# Best-effort: silently exit if jq is unavailable
-command -v jq >/dev/null 2>&1 || exit 0
+# Warn visibly if jq is unavailable — enforcement will be disabled
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"message":"❌ Silver Bullet DISABLED — jq is required for all enforcement hooks. Install: brew install jq (macOS) / apt install jq (Linux). Without jq, quality gates, completion audit, and CI checks are inactive."}}'
+  exit 0
+fi
 
 # Locate the Superpowers using-superpowers SKILL.md (glob, not find — faster and more restrictive)
 sp_file=$(ls ~/.claude/plugins/cache/*/superpowers/*/skills/using-superpowers/SKILL.md 2>/dev/null | head -1)

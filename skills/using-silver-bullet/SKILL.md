@@ -22,10 +22,10 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 
 ## Phase −1: Session Init
 
-Run this phase exactly once per session. Skip if the session state file `/tmp/.silver-bullet-session-init` already exists.
+Run this phase exactly once per session. Skip if the session state file `~/.claude/.silver-bullet/session-init` already exists.
 
 ```bash
-test -f /tmp/.silver-bullet-session-init && echo "ALREADY_DONE" || echo "NEEDED"
+test -f ~/.claude/.silver-bullet/session-init && echo "ALREADY_DONE" || echo "NEEDED"
 ```
 
 If `ALREADY_DONE` → skip to Phase 0.
@@ -58,7 +58,7 @@ Read each file found using the Read tool.
 
 Use the Bash tool to run:
 ```bash
-touch /tmp/.silver-bullet-session-init
+touch ~/.claude/.silver-bullet/session-init
 ```
 
 Then invoke `/compact` via the Skill tool to compact the loaded context before proceeding.

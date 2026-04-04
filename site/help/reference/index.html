@@ -402,7 +402,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SESSION LOG -->
       <h2 id="session-log">Session Log Format</h2>
-      <p>A session log is created at the start of every session at <code>docs/sessions/YYYY-MM-DD-{task-slug}.md</code>. The path is written to <code>/tmp/.silver-bullet-session-log-path</code> for hooks to access.</p>
+      <p>A session log is created at the start of every session at <code>docs/sessions/YYYY-MM-DD-{task-slug}.md</code>. The path is written to <code>~/.claude/.silver-bullet/session-log-path</code> for hooks to access.</p>
 
       <div class="code-block"><span class="comment"># Session: {task-slug}</span>
 
@@ -501,11 +501,11 @@ updated (Architecture patterns, Key decisions) | no changes
       <table class="ref-table">
         <thead><tr><th>File</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>/tmp/.silver-bullet-mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
-          <tr><td>/tmp/.silver-bullet-session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
-          <tr><td>/tmp/.silver-bullet-trivial</td><td>Presence signals that the next commit is a trivial change. Bypass workflow enforcement for one commit.</td></tr>
-          <tr><td>/tmp/.silver-bullet-session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
-          <tr><td>/tmp/.silver-bullet-timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/trivial</td><td>Presence signals that the next commit is a trivial change. Bypass workflow enforcement for one commit.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
         </tbody>
       </table>
 
@@ -528,7 +528,7 @@ updated (Architecture patterns, Key decisions) | no changes
 /gsd:verify-work → /code-review → /requesting-code-review → /receiving-code-review
 
 <span class="comment"># Mark next commit as trivial (no enforcement)</span>
-touch /tmp/.silver-bullet-trivial
+touch ~/.claude/.silver-bullet/trivial
 
 <span class="comment"># Check CI status</span>
 /opt/homebrew/bin/gh run list --limit 1 --json status,conclusion,name,headBranch

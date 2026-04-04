@@ -4,6 +4,9 @@ set -euo pipefail
 # PostToolUse hook (matcher: Edit|Write|Bash)
 # Enforces four-stage workflow gate — blocks source edits if planning skills incomplete.
 
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
@@ -48,8 +51,9 @@ main() {
   src_exclude_pattern='__tests__|\.test\.'
   required_planning="quality-gates"
   active_workflow="full-dev-cycle"
-  state_file="/tmp/.silver-bullet-state"
-  trivial_file="/tmp/.silver-bullet-trivial"
+  SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+  state_file="${SB_STATE_DIR}/state"
+  trivial_file="${SB_STATE_DIR}/trivial"
 
   if [[ -n "$config_file" ]]; then
     src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
@@ -58,9 +62,9 @@ main() {
     custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file")
     [[ -n "$custom_planning" ]] && required_planning="$custom_planning"
     cfg_state=$(jq -r '.state.state_file // ""' "$config_file")
-    [[ -n "$cfg_state" ]] && state_file="$cfg_state"
+    [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
     cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file")
-    [[ -n "$cfg_trivial" ]] && trivial_file="$cfg_trivial"
+    [[ -n "$cfg_trivial" ]] && trivial_file="${cfg_trivial/#\~/$HOME}"
   fi
 
   # Env var overrides

@@ -35,16 +35,17 @@ while true; do
 done
 
 # --- Read config (gracefully degrade if jq is absent) ---
-STATE_FILE="/tmp/.silver-bullet-state"
-TRIVIAL_FILE="/tmp/.silver-bullet-trivial"
+_SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+STATE_FILE="${_SB_STATE_DIR}/state"
+TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
 REQUIRED_DEPLOY="code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
-  [[ -n "$_val" ]] && STATE_FILE="$_val"
+  [[ -n "$_val" ]] && STATE_FILE="${_val/#\~/$HOME}"
 
   _val=$(jq -r '.state.trivial_file // ""' "$_dw_config_file")
-  [[ -n "$_val" ]] && TRIVIAL_FILE="$_val"
+  [[ -n "$_val" ]] && TRIVIAL_FILE="${_val/#\~/$HOME}"
 
   _val=$(jq -r '(.skills.required_deploy // []) | join(" ")' "$_dw_config_file")
   [[ -n "$_val" ]] && REQUIRED_DEPLOY="$_val"
@@ -53,9 +54,11 @@ fi
 # --- Gate logic ---
 
 # 1. Trivial-change fast path
-if [[ -f "$TRIVIAL_FILE" ]]; then
+if [[ -f "$TRIVIAL_FILE" && ! -L "$TRIVIAL_FILE" ]]; then
   echo "[deploy-gate] ℹ️  Trivial change detected — workflow check skipped."
-  rm -f "$STATE_FILE" "$TRIVIAL_FILE"
+  # Safety: only delete regular files (not symlinks)
+  [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]] && rm -f "$STATE_FILE"
+  rm -f "$TRIVIAL_FILE"
   return 0 2>/dev/null || exit 0
 fi
 

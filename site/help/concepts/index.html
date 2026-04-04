@@ -229,7 +229,7 @@ footer a:hover{color:var(--accent-light)}
       <h3>Support Hooks (4 + session start)</h3>
       <ul>
         <li><strong>Semantic compression</strong> — Runs after each Skill invocation; TF-IDF-ranks your codebase and injects relevant context. See <a href="#semantic-context">Semantic Context Compression</a>.</li>
-        <li><strong>Session log init</strong> — Creates the session log file on first Bash use; stores path in <code>/tmp/.silver-bullet-session-log-path</code>.</li>
+        <li><strong>Session log init</strong> — Creates the session log file on first Bash use; stores path in <code>~/.claude/.silver-bullet/session-log-path</code>.</li>
         <li><strong>CI status check</strong> — Intercepts push/deploy Bash commands and verifies CI is green before allowing them to proceed.</li>
         <li><strong>Timeout check</strong> — Monitors for stall conditions and surfaces a timeout sentinel to break infinite loops.</li>
         <li><strong>Session start</strong> — Runs once at session open (on <code>startup</code>, <code>/clear</code>, or <code>/compact</code>); injects Superpowers and Design plugin context.</li>
@@ -242,7 +242,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h3 id="trivial-changes">Trivial Changes</h3>
       <p>Not every edit needs a full workflow. For small, non-logic changes (typos, copy fixes, config tweaks), you can bypass workflow enforcement with:</p>
-      <div class="code-block"><span class="cmd">touch /tmp/.silver-bullet-trivial</span></div>
+      <div class="code-block"><span class="cmd">touch ~/.claude/.silver-bullet/trivial</span></div>
       <p>This tells the hooks to skip enforcement for the next commit. Use it sparingly — it exists for genuine trivial changes, not as a shortcut for skipping review.</p>
 
       <div class="divider"></div>
@@ -399,7 +399,7 @@ footer a:hover{color:var(--accent-light)}
         </div>
       </div>
 
-      <p>The mode is written to <code>/tmp/.silver-bullet-mode</code> and read by hooks throughout the session. If the file is missing or unreadable at any point, the system defaults to <strong>Interactive</strong>.</p>
+      <p>The mode is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session. If the file is missing or unreadable at any point, the system defaults to <strong>Interactive</strong>.</p>
 
       <h3>Autonomous Mode Safeguards</h3>
       <p>Even in autonomous mode, Silver Bullet has three stall-detection rules to prevent infinite loops:</p>

@@ -52,9 +52,9 @@ Ask:
 > - **Interactive** (default) — I pause at decision points and phase gates
 > - **Autonomous** — I drive start to finish, surface blockers at the end
 
-Write choice to `/tmp/.silver-bullet-mode`:
+Write choice to `~/.claude/.silver-bullet/mode`:
 ```bash
-echo "interactive" > /tmp/.silver-bullet-mode   # or "autonomous"
+echo "interactive" > ~/.claude/.silver-bullet/mode   # or "autonomous"
 ```
 
 **If autonomous was chosen**, ask one follow-up before proceeding:
@@ -71,7 +71,7 @@ Write answers into the `## Pre-answers` section of the session log immediately. 
 `- Agent Teams: <value>`
 
 Omit any key the user left blank (default applies). Read pre-answers mid-session from the log
-at `/tmp/.silver-bullet-session-log-path`, stripping the leading `- ` before splitting on `:`.
+at `~/.claude/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
 Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
 
 **Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
@@ -325,10 +325,10 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
       Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
       medium 5–15 files or 300–1000 lines; complex > 15 files or architectural.
       Sonnet base rate; Opus ≈ 3× multiplier.
-    - Complete the session log: read path from `/tmp/.silver-bullet-session-log-path`,
+    - Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
       edit that file to fill in Task, Approach, Files changed, Skills invoked,
       Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions,
-      Model, Virtual cost. If `/tmp/.silver-bullet-session-log-path` is missing,
+      Model, Virtual cost. If `~/.claude/.silver-bullet/session-log-path` is missing,
       create `docs/sessions/<today>-manual.md` from the session log template.
     - Documentation agents writing to `docs/` run in the **main worktree only**
       (no `isolation: "worktree"`). Only implementation-touching agents use worktree isolation.
@@ -379,8 +379,8 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 
 **Autonomous completion cleanup** (run after outputting structured summary):
 ```bash
-rm -f /tmp/.silver-bullet-timeout /tmp/.silver-bullet-sentinel-pid \
-      /tmp/.silver-bullet-session-start-time /tmp/.silver-bullet-timeout-warn-count
+rm -f ~/.claude/.silver-bullet/timeout ~/.claude/.silver-bullet/sentinel-pid \
+      ~/.claude/.silver-bullet/session-start-time ~/.claude/.silver-bullet/timeout-warn-count
 ```
 This clears the timeout sentinel so `timeout-check.sh` stops warning.
 
@@ -406,7 +406,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** — they are NOT exempt from this workflow.
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.
-- For trivial changes (typos, comment fixes in non-logic files): `touch /tmp/.silver-bullet-trivial`.
+- For trivial changes (typos, comment fixes in non-logic files): `touch ~/.claude/.silver-bullet/trivial`.
   This does NOT apply to YAML/JSON files in this workflow.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
 

@@ -112,12 +112,12 @@ At the start of every session, before any work begins, ask:
 
 Write the choice:
 ```bash
-echo "interactive" > /tmp/.silver-bullet-mode
+echo "interactive" > ~/.claude/.silver-bullet/mode
 # or
-echo "autonomous" > /tmp/.silver-bullet-mode
+echo "autonomous" > ~/.claude/.silver-bullet/mode
 ```
 
-**Fallback**: if `/tmp/.silver-bullet-mode` is unreadable at any point, default to interactive
+**Fallback**: if `~/.claude/.silver-bullet/mode` is unreadable at any point, default to interactive
 and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**

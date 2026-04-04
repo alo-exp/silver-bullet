@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # PostToolUse hook (matcher: .*, async: false)
-# Checks for /tmp/.silver-bullet-timeout flag set by session-log-init.sh sentinel.
+# Checks for ${HOME}/.claude/.silver-bullet/timeout flag set by session-log-init.sh sentinel.
 # Emits a non-blocking warning in autonomous mode when the flag is current.
 # Supports macOS (stat -f %m) and Linux (stat --format=%Y).
 
@@ -10,11 +10,11 @@ set -euo pipefail
 cat > /dev/null
 
 # Mode gate: only act in autonomous mode
-mode_file_content=$(cat /tmp/.silver-bullet-mode 2>/dev/null || echo "interactive")
+mode_file_content=$(cat ${HOME}/.claude/.silver-bullet/mode 2>/dev/null || echo "interactive")
 [[ "$mode_file_content" != "autonomous" ]] && exit 0
 
 # Check for timeout flag (allow override for testing)
-flag_file="${TIMEOUT_FLAG_OVERRIDE:-/tmp/.silver-bullet-timeout}"
+flag_file="${TIMEOUT_FLAG_OVERRIDE:-${HOME}/.claude/.silver-bullet/timeout}"
 [[ -f "$flag_file" ]] || exit 0
 
 # Platform-aware stat helper: returns file mtime as epoch seconds
@@ -27,13 +27,13 @@ _mtime() {
 }
 
 # Stale-flag check
-session_start=$(cat /tmp/.silver-bullet-session-start-time 2>/dev/null || echo "")
+session_start=$(cat ${HOME}/.claude/.silver-bullet/session-start-time 2>/dev/null || echo "")
 [[ -z "$session_start" ]] && exit 0
 flag_mtime=$(_mtime "$flag_file") || exit 0
 [[ "$flag_mtime" -lt "$session_start" ]] && exit 0
 
 # Rate-limiting
-count_file="/tmp/.silver-bullet-timeout-warn-count"
+count_file="${HOME}/.claude/.silver-bullet/timeout-warn-count"
 count=0
 if [[ -f "$count_file" ]]; then
   count_mtime=$(_mtime "$count_file") || count_mtime=0

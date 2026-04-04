@@ -4,6 +4,9 @@ set -euo pipefail
 # PostToolUse hook (matcher: Skill)
 # Tracks skill invocations to a state file for workflow enforcement.
 
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
@@ -36,11 +39,15 @@ while true; do
 done
 
 # --- State file (env var override first, then config, then default) ---
+SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-}"
 if [[ -z "$STATE_FILE" && -n "$config_file" ]]; then
   STATE_FILE=$(jq -r '.state.state_file // ""' "$config_file")
+  # Expand ~ to $HOME (config stores literal tilde)
+  STATE_FILE="${STATE_FILE/#\~/$HOME}"
 fi
-STATE_FILE="${STATE_FILE:-/tmp/.silver-bullet-state}"
+STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 
 # --- Tracked skills list ---
 DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release"

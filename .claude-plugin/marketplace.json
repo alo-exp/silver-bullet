@@ -26,7 +26,7 @@
     "tools": [
       {
         "name": "gsd",
-        "install": "npx get-shit-done-cc@^1.30.0",
+        "install": "npx get-shit-done-cc@1.30.0",
         "url": "https://github.com/gsd-build/get-shit-done",
         "required": true
       },
