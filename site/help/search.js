@@ -167,6 +167,26 @@ var IDX = [
     title:'Review loop enforcement — approved twice in a row',
     text:'Every review loop must iterate until reviewer returns approved TWICE IN A ROW. A single clean pass is not sufficient. Self-limiting — loop ends naturally when two consecutive clean passes produced. Surface to user only if reviewer raises something it cannot resolve.' },
 
+  // ── TROUBLESHOOTING ───────────────────────────────────────────
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'hooks',
+    title:'Hook failures — jq missing, permissions, hooks not firing',
+    text:'jq command not found install jq. Permission denied on hook scripts chmod +x hooks. Hooks not firing run /using-silver-bullet to create config. Compliance status wrong progress delete /tmp/.silver-bullet-state stale state file.' },
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'skills',
+    title:'Skill not found — missing plugins',
+    text:'Superpowers plugin not found /plugin install obra/superpowers. Engineering plugin /plugin install anthropics/knowledge-work-plugins/tree/main/engineering. Design plugin. GSD not found npx get-shit-done-cc. Skill discovery scans ~/.claude/skills/ and plugins cache.' },
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'ci',
+    title:'CI gate issues — blocked push, red CI, no workflow',
+    text:'CI check blocks push but CI green ensure gh CLI installed and authenticated. CI red Silver Bullet hard stop fix failure first use /gsd:debug. No CI workflow exists run /using-silver-bullet to auto-generate ci.yml.' },
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'recovery',
+    title:'Recovery from failed sessions — timeout, verification loop, corrupted planning',
+    text:'Session timed out start new session run /gsd:next to find where you left off. Use /forensics to investigate. Verification failed stuck in loop invoke /forensics identify root cause. .planning/ directory corrupted delete phase files re-run /gsd:discuss-phase.' },
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'config',
+    title:'Configuration issues — wrong files, outdated config, CLAUDE.md conflicts',
+    text:'Wrong files triggering enforcement edit src_pattern in .silver-bullet.json. Test files triggering update src_exclude_pattern. Config outdated run /using-silver-bullet refresh. CLAUDE.md conflicts use Append mode during setup.' },
+  { page:'Troubleshooting', url:'/help/troubleshooting/', anchor:'enforcement',
+    title:'Understanding enforcement — hard stop, completion blocked, trivial bypass',
+    text:'HARD STOP planning incomplete run /quality-gates before editing source. COMPLETION BLOCKED workflow incomplete check missing steps run /gsd:next. Trivial change bypass touch /tmp/.silver-bullet-trivial for typos. DevOps yaml json files never trivial.' },
+
   // ── REFERENCE ─────────────────────────────────────────────────
   { page:'Reference', url:'/help/reference/', anchor:'gsd-commands',
     title:'GSD commands — /gsd:*',

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Troubleshooting — Silver Bullet Help</title>
+<meta name="description" content="Troubleshoot common Silver Bullet issues: hook failures, skill not found errors, CI gate problems, failed session recovery, configuration issues, and enforcement bypass.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f8f9fc;--bg-card:#ffffff;--bg-code:#f1f5f9;
+  --bg-hero:linear-gradient(135deg,#fef2f2 0%,#fff7ed 50%,#fefce8 100%);
+  --accent:#4f46e5;--accent-light:#6366f1;--accent-glow:rgba(99,102,241,.1);
+  --accent2:#7c3aed;--accent3:#db2777;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#e2e8f0;--border-hover:#cbd5e1;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(220,38,38,.06);
+  --nav-bg:rgba(248,249,252,.9);
+  --section-alt:rgba(241,245,249,.6);
+}
+[data-theme="dark"]{
+  --bg-page:#0a0a0f;--bg-card:#12121a;--bg-code:#1a1a2e;
+  --bg-hero:linear-gradient(135deg,#1a0a0a 0%,#1a0f05 50%,#1a1a05 100%);
+  --accent:#6366f1;--accent-light:#818cf8;--accent-glow:rgba(99,102,241,.15);
+  --accent2:#a78bfa;--accent3:#f472b6;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-dim:#64748b;
+  --border:#1e293b;--border-hover:#334155;
+  --shadow-glow:0 0 40px rgba(248,113,113,.08);
+  --nav-bg:rgba(10,10,15,.85);
+  --section-alt:rgba(18,18,26,.4);
+}
+body,nav{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.06) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(220,38,38,.1);color:var(--red);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px;margin-top:8px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2)}
+.callout-tip{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2)}
+.callout-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.callout-stop{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.code-block .cmd{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* ISSUE CARDS */
+.issue-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.issue-card h4{font-size:.9rem;font-weight:700;margin-bottom:8px;color:var(--red)}
+.issue-card .ic-cause{font-size:.84rem;color:var(--text-secondary);margin-bottom:10px}
+.issue-card .ic-fix{font-size:.84rem;color:var(--text-secondary)}
+.issue-card .ic-fix strong{color:var(--green)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:200px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+/* NAV SEARCH */
+.nav-search-wrap{position:relative}
+.nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.82rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
+.nav-search-input:focus{border-color:var(--accent);width:240px}
+.nav-search-input::placeholder{color:var(--text-dim)}
+.nav-search-results{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:200;max-height:420px;overflow-y:auto;display:none}
+.nav-search-results.open{display:block}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.78rem;color:var(--text-dim);line-height:1.4}
+@media(max-width:768px){.nav-search-wrap{display:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span> Troubleshooting</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-search-wrap">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off">
+        <div class="nav-search-results" id="nav-search-results"></div>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav"><a href="../">Help Center</a><span>/</span><span>Troubleshooting</span></div>
+    <h1>Troubleshooting</h1>
+    <p>Common issues, their causes, and how to fix them. If your problem is not listed here, open an issue on <a href="https://github.com/alo-exp/silver-bullet/issues" style="color:var(--accent-light);text-decoration:underline">GitHub</a>.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">Common Issues</li>
+        <li><a href="#hooks">Hook Failures</a></li>
+        <li><a href="#skills">Skill Not Found</a></li>
+        <li><a href="#ci">CI Gate Issues</a></li>
+        <li class="sidebar-section">Recovery</li>
+        <li><a href="#recovery">Failed Sessions</a></li>
+        <li><a href="#config">Configuration</a></li>
+        <li><a href="#enforcement">Enforcement</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <!-- HOOK FAILURES -->
+      <h2 id="hooks">Hook Failures</h2>
+      <p>Silver Bullet hooks fire automatically on every tool use. When a hook fails, you may see errors in the Claude Code output or unexpected behavior.</p>
+
+      <div class="issue-card">
+        <h4>"jq: command not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>jq</code> JSON processor is not installed. Most hooks use <code>jq</code> to read <code>.silver-bullet.json</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install jq: <code>brew install jq</code> (macOS) or <code>apt install jq</code> (Linux).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Permission denied" on hook scripts</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Hook shell scripts lost their executable permission, often after a git clone on certain filesystems.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>chmod +x hooks/*.sh hooks/session-start</code> from the plugin cache directory (usually <code>~/.claude/plugins/cache/alo-exp/silver-bullet/hooks/</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Hooks not firing at all</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet was not initialized in this project, or <code>.silver-bullet.json</code> is missing from the project root.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/using-silver-bullet</code> in your project. This creates the config file and activates enforcement.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Compliance status shows wrong progress</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>/tmp/.silver-bullet-state</code> may be stale from a previous session.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm /tmp/.silver-bullet-state</code>. It will be recreated on the next skill invocation.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SKILL NOT FOUND -->
+      <h2 id="skills">Skill Not Found</h2>
+      <p>When Claude cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
+
+      <div class="issue-card">
+        <h4>"Superpowers plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The Superpowers plugin is not installed. Silver Bullet requires it for code review and branch management skills.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install obra/superpowers</code> in Claude Code.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Engineering plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The Engineering plugin provides <code>/testing-strategy</code>, <code>/documentation</code>, and <code>/deploy-checklist</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</code>.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Design plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The Design plugin provides <code>/design-system</code> and <code>/ux-copy</code> for UI work.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install anthropics/knowledge-work-plugins/tree/main/design</code>.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"GSD plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> GSD (Get Shit Done) is the primary execution engine. Without it, no workflow commands work.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>npx get-shit-done-cc@^1.30.0</code> to install GSD.</p>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <div class="callout-body"><strong>Skill discovery:</strong> At the start of each workflow phase, Silver Bullet scans <code>~/.claude/skills/</code> and <code>~/.claude/plugins/cache/</code> to find all available skills. If a skill was recently installed, start a new session for it to be discovered.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CI GATE ISSUES -->
+      <h2 id="ci">CI Gate Issues</h2>
+      <p>The CI gate hook (<code>ci-status-check.sh</code>) blocks deployment when CI is failing. This is a hard stop by design.</p>
+
+      <div class="issue-card">
+        <h4>CI check blocks push but CI is actually green</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The hook checks GitHub Actions via <code>gh run list</code>. If <code>gh</code> is not authenticated or not installed, the check may fail.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Ensure GitHub CLI is installed (<code>brew install gh</code>) and authenticated (<code>gh auth login</code>). On macOS, use <code>/opt/homebrew/bin/gh</code> if the bare <code>gh</code> command fails.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>CI is red and Silver Bullet won't let me proceed</h4>
+        <p class="ic-cause"><strong>Cause:</strong> This is intentional. The CI gate emits a hard stop (<code>blockToolUse: true</code>) when CI is failing.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/gsd:debug</code> to investigate. The workflow cannot proceed until CI is green.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>No CI workflow exists yet</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The project does not have a <code>.github/workflows/ci.yml</code> file. The CI hook gracefully skips when no CI is configured.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/using-silver-bullet</code> which auto-generates a CI workflow based on your tech stack (Node, Python, Go, Rust, and 8 more).</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- RECOVERY -->
+      <h2 id="recovery">Recovery from Failed Sessions</h2>
+      <p>When a session crashes, times out, or is abandoned, use these steps to recover.</p>
+
+      <div class="issue-card">
+        <h4>Session timed out or was interrupted</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Context window exhaustion, network interruption, or the autonomous mode timeout sentinel fired.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Start a new session and run <code>/gsd:next</code> to find where you left off. GSD tracks progress in <code>.planning/</code> files that persist across sessions. Then use <code>/forensics</code> to investigate what went wrong.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Verification failed and I'm stuck in a loop</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/gsd:verify-work</code> failed and the workflow is retrying steps 6-7 (execute + verify) repeatedly.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/forensics</code> to identify the root cause. If the root cause is in the plan or design (not implementation), return to step 3 (discuss) rather than re-executing.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>.planning/ directory is corrupted or missing files</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Manual edits to planning files, or a merge conflict left files in a bad state.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/gsd:next</code> to diagnose the current state. If unrecoverable, delete the phase-specific files (e.g., <code>.planning/phase-1-PLAN.md</code>) and re-run the phase from <code>/gsd:discuss-phase</code>.</p>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-body"><strong>Session logs:</strong> Every session writes a log to <code>docs/sessions/YYYY-MM-DD-task-slug.md</code>. Check recent session logs to understand what happened before the failure.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CONFIGURATION -->
+      <h2 id="config">Configuration Issues</h2>
+      <p>Most configuration problems stem from <code>.silver-bullet.json</code> being outdated or having incorrect values.</p>
+
+      <div class="issue-card">
+        <h4>Wrong files triggering enforcement</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>src_pattern</code> in <code>.silver-bullet.json</code> does not match your project structure. Default is <code>/src/</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Edit <code>.silver-bullet.json</code> and change <code>src_pattern</code> to match your source directory (e.g., <code>/app/</code>, <code>/lib/</code>, <code>/packages/</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Test files triggering enforcement</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>src_exclude_pattern</code> does not match your test file naming convention.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Edit <code>.silver-bullet.json</code> and update <code>src_exclude_pattern</code>. Default is <code>__tests__|\.test\.</code>. Add your patterns with pipe separators (e.g., <code>__tests__|\.test\.|\.spec\.</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Config is outdated (old skill names, wrong version)</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>.silver-bullet.json</code> was created by an older version and has not been regenerated.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/using-silver-bullet</code> and choose to refresh the config. It will preserve your project-specific values while updating the schema and skill lists.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>CLAUDE.md conflicts with project instructions</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet's <code>CLAUDE.md</code> may override or conflict with your existing project instructions.</p>
+        <p class="ic-fix"><strong>Fix:</strong> During <code>/using-silver-bullet</code> setup, choose <strong>Append</strong> mode for existing projects. This adds Silver Bullet rules below your existing instructions. Both sets of rules will be active.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ENFORCEMENT -->
+      <h2 id="enforcement">Understanding Enforcement</h2>
+      <p>Silver Bullet's enforcement is designed to be strict. Here is how to work with it, not against it.</p>
+
+      <div class="issue-card">
+        <h4>"HARD STOP — Planning incomplete"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You are editing source files before completing quality gates. The stage enforcer hook blocks this.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/quality-gates</code> (dev workflow) or <code>/blast-radius</code> + <code>/devops-quality-gates</code> (DevOps workflow) before editing source code.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"COMPLETION BLOCKED — Workflow incomplete"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You are trying to <code>git commit</code>, <code>git push</code>, or deploy before completing all required workflow steps.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing skill explicitly. Use <code>/gsd:next</code> to find the next required step.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Bypassing enforcement for trivial changes</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You need to make a small fix (typo, comment, config tweak) without running the full workflow.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>touch /tmp/.silver-bullet-trivial</code> before committing. This bypasses enforcement for one commit. The flag is automatically cleaned up on the next session start. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are never trivial.</p>
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-body"><strong>Do not abuse the trivial change bypass.</strong> It exists for genuine typos and copy fixes, not as a shortcut for skipping review. Frequent use defeats the purpose of enforcement.</div>
+      </div>
+
+      <!-- PAGE NAV -->
+      <div class="page-nav-bottom">
+        <a href="../reference/">
+          <span class="pnb-label">Previous</span>
+          <span class="pnb-title">Reference</span>
+        </a>
+        <a href="../getting-started/" style="text-align:right">
+          <span class="pnb-label">Start Over</span>
+          <span class="pnb-title">Getting Started</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../">Help Home</a>
+        <a href="../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="../search.js"></script>
+<script>
+function applyTheme(dark){document.documentElement.setAttribute('data-theme',dark?'dark':'light');document.getElementById('theme-btn').textContent=dark?'☀️':'🌙';localStorage.setItem('silver-bullet-theme',dark?'dark':'light')}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s?s==='dark':false)})();
+const headings=document.querySelectorAll('.doc-content h2[id]');
+const links=document.querySelectorAll('.sidebar-nav a');
+window.addEventListener('scroll',()=>{let curr='';headings.forEach(h=>{if(window.scrollY>=h.offsetTop-100)curr=h.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+curr)})},{passive:true});
+</script>
+</body>
+</html>
