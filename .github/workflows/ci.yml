@@ -34,7 +34,7 @@ jobs:
           grep -q '{{PROJECT_NAME}}' templates/CLAUDE.md.base || { echo "Missing PROJECT_NAME placeholder"; exit 1; }
           grep -q '{{TECH_STACK}}' templates/CLAUDE.md.base || { echo "Missing TECH_STACK placeholder"; exit 1; }
           grep -q '{{GIT_REPO}}' templates/CLAUDE.md.base || { echo "Missing GIT_REPO placeholder"; exit 1; }
-          grep -q '{{ACTIVE_WORKFLOW}}' templates/CLAUDE.md.base || { echo "Missing ACTIVE_WORKFLOW placeholder"; exit 1; }
+          grep -q '{{ACTIVE_WORKFLOW}}' templates/silver-bullet.md.base || { echo "Missing ACTIVE_WORKFLOW placeholder in silver-bullet.md.base"; exit 1; }
           grep -q '{{PROJECT_NAME}}' templates/silver-bullet.config.json.default || { echo "Missing PROJECT_NAME in config"; exit 1; }
           echo "All placeholders present"
 
