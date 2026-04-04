@@ -1125,22 +1125,22 @@ footer .footer-links{display:flex;gap:24px}
       <div class="layer-card fade-in">
         <div class="layer-num">1</div>
         <div>
-          <h3>HARD STOP Gate</h3>
-          <p>A PostToolUse hook fires after every file edit. If the quality gates haven&rsquo;t been completed, a hard-stop error lists exactly what&rsquo;s missing.</p>
+          <h3>Skill Tracker</h3>
+          <p>A PostToolUse hook fires on every Skill invocation, recording completed steps to a state file. This is the ground truth that every other enforcement layer reads from.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
         <div class="layer-num">2</div>
         <div>
-          <h3>Compliance Status</h3>
-          <p>Every tool use triggers a progress display: current phase, completed steps, total score, and the next required action. Compliance is always visible &mdash; there&rsquo;s no hiding from it.</p>
+          <h3>Stage Enforcer</h3>
+          <p>A PostToolUse hook fires on every file edit. HARD STOP if quality gates are incomplete. Enforces strict phase ordering: DISCUSS &rarr; QUALITY GATES &rarr; PLAN &rarr; EXECUTE &rarr; VERIFY.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
         <div class="layer-num">3</div>
         <div>
-          <h3>Phase Gates</h3>
-          <p>Enforces strict phase ordering: DISCUSS &rarr; QUALITY GATES &rarr; PLAN &rarr; EXECUTE &rarr; VERIFY. You cannot enter the next phase until all required steps in the current phase are complete.</p>
+          <h3>Compliance Status</h3>
+          <p>Every tool use triggers a progress display: current phase, completed steps, total score, and the next required action. Compliance is always visible &mdash; there&rsquo;s no hiding from it.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
