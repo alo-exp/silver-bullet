@@ -82,7 +82,7 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 **Rules**:
 - Do NOT stop until the final outcome is achieved
 - Always use `/gsd:debug` for ANY bug encountered during execution
-- Always use `/forensics` for root-cause investigation of completed sessions, abandoned sessions, or verification failures
+- Always use `/forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
 - `README.md` MUST be updated to reflect current version, features, and changes before release. `/create-release` will block if README is stale.
 - Always strictly adhere to this file and CLAUDE.md 100%
@@ -209,6 +209,8 @@ capabilities only. Where both tools could apply, **GSD wins**.
 
 - **Execution**: Always use `/gsd:execute-phase` (wave-based). NEVER use
   `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work.
+  "Project work" means implementation and planning. Code review, design review, and security
+  audit are NOT execution — Superpowers review skills are used for those per the workflow.
 - **Planning**: Always use `/gsd:plan-phase`. When Superpowers' `brainstorming` skill offers
   to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**.
 - **Requirements**: `.planning/REQUIREMENTS.md` is the single source of truth (owned by GSD).
