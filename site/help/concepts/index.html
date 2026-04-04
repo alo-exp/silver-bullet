@@ -334,7 +334,7 @@ footer a:hover{color:var(--accent-light)}
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet installs 6 enforcement mechanisms of its own. GSD adds 2 more — a workflow guard and a context monitor — for 8 independent enforcement points in total:</p>
+      <p>Silver Bullet installs 5 enforcement layers of its own. GSD adds 2 more — a workflow guard and a context monitor — for 7 independent enforcement layers in total:</p>
 
       <div class="layer-list">
         <div class="layer-card">
@@ -368,15 +368,22 @@ footer a:hover{color:var(--accent-light)}
         <div class="layer-card">
           <div class="layer-num">5</div>
           <div>
-            <h4>Redundant Instructions</h4>
-            <p>The workflow is described in both the workflow file (<code>docs/workflows/full-dev-cycle.md</code>) and <code>CLAUDE.md</code>. Even if one file is missing or outdated, the other enforces the same rules.</p>
+            <h4>Redundant Instructions + Anti-Rationalization</h4>
+            <p>The workflow is described in both the workflow file and <code>CLAUDE.md</code>. Explicit rules prohibit Claude from deciding a step is &ldquo;not applicable&rdquo; without user approval, or claiming it &ldquo;already covered&rdquo; a skill without actually invoking it.</p>
           </div>
         </div>
         <div class="layer-card">
           <div class="layer-num">6</div>
           <div>
-            <h4>Anti-Rationalization</h4>
-            <p>Explicit rules in CLAUDE.md prohibit Claude from deciding a step is "not applicable" without user approval, or claiming it "already covered" a skill without actually invoking it.</p>
+            <h4>GSD Workflow Guard</h4>
+            <p>GSD&rsquo;s own hook detects file edits made outside a <code>/gsd:*</code> command and warns immediately. Independent of Silver Bullet&rsquo;s hooks.</p>
+          </div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-num">7</div>
+          <div>
+            <h4>GSD Context Monitor</h4>
+            <p>Warns when token budget drops to &le;35% and escalates at &le;25%. Prevents context rot before it degrades output quality.</p>
           </div>
         </div>
       </div>
