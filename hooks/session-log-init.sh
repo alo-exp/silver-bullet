@@ -59,9 +59,10 @@ today=$(date '+%Y-%m-%d')
 existing=$(find "$sessions_dir" -maxdepth 1 -name "${today}*.md" -print 2>/dev/null | head -1 || true)
 
 if [[ -n "$existing" ]]; then
-  # Extract mode from existing log
+  # Extract mode from existing log; validate against allowlist (security: log file could be tampered)
   mode=$(grep '^\*\*Mode:\*\*' "$existing" 2>/dev/null | awk '{print $NF}' | tr -d ' ') || true
   mode="${mode:-interactive}"
+  [[ "$mode" == "autonomous" ]] || mode="interactive"
 
   # Add missing new sections at correct skeleton positions (idempotency for pre-update logs)
   # Helper: insert section_header + placeholder immediately before anchor line

@@ -61,6 +61,13 @@ if command -v jq >/dev/null 2>&1; then
     search_dir=$(dirname "$search_dir")
   done
 fi
+# Security (SB-002/SB-003): validate trivial_file stays within ~/.claude/ before deletion
+# Prevents path traversal via malicious .silver-bullet.json; reject symlinks too
+case "$trivial_file" in
+  "$HOME"/.claude/*) ;;
+  *) trivial_file="${SB_STATE_DIR}/trivial" ;;
+esac
+[[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
 rm -f "$trivial_file" 2>/dev/null
 
 # Warn visibly if jq is unavailable — enforcement will be disabled

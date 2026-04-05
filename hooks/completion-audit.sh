@@ -314,10 +314,10 @@ elif [[ -n "$missing" ]]; then
   emit_block "$msg"
 elif [[ -n "$ordering_issues" ]]; then
   msg=$(printf '⚠️  ORDERING WARNING — All skills recorded but Code Review Triad ran out of order:\n%s\nConsider re-running the triad in the correct sequence before merging.' "$ordering_issues")
-  printf '{"hookSpecificOutput":{"message":"%s"}}' "$(printf '%s' "$msg" | jq -Rs '.' | tr -d '"')"
+  jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
 elif [[ -n "$artifact_warnings" ]]; then
   msg=$(printf '⚠️  ARTIFACT WARNING — Skills recorded but expected output files are missing. This may indicate vacuous skill invocation (calling a skill without doing the work):\n\n%s\nProceed only if these artifacts exist under a different path. Enforcement is invocation-based, not outcome-based.' "$artifact_warnings")
-  printf '{"hookSpecificOutput":{"message":"%s"}}' "$(printf '%s' "$msg" | jq -Rs '.' | tr -d '"')"
+  jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
 else
   printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
 fi
