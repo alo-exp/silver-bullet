@@ -1553,13 +1553,13 @@ function applyTheme(dark) {
 function toggleTheme() {
   applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
 }
-// Init: light by default, honour saved preference
+// Init: honour saved preference, fall back to system setting
 (function(){
   const saved = localStorage.getItem('silver-bullet-theme');
   if (saved) {
     applyTheme(saved === 'dark');
   } else {
-    applyTheme(false); // light by default
+    applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
   }
 })();
 
