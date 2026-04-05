@@ -362,17 +362,16 @@ The `/create-release` skill will not be invoked until all four stages pass.
 
 Run all three review skills in sequence, then fix all issues. Repeat until clean.
 
-1. Invoke `/requesting-code-review`
-2. Invoke `/code-review` (or `superpowers:code-reviewer`)
-3. Invoke `/receiving-code-review` on the combined feedback from steps 1-2
-4. Fix all accepted issues
-5. **Loop**: repeat steps 1-4 until `/receiving-code-review` produces zero accepted items
-6. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
+1. Invoke `/requesting-code-review` (which dispatches `superpowers:code-reviewer` via the Agent tool)
+2. Invoke `/receiving-code-review` on the feedback from step 1
+3. Fix all accepted issues
+4. **Loop**: repeat steps 1-3 until `/receiving-code-review` produces zero accepted items
+5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Running verification commands manually is NOT a substitute for invoking this skill.
    You need BOTH: (a) run the actual verification commands, AND (b) invoke the skill so
    `record-skill.sh` tracks it. If you ran tests/CI/checks but did not invoke the skill,
    you have NOT completed this step. Do NOT record the stage marker until BOTH are done.
-7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
+6. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
 
 ### Stage 2 — Big-Picture Consistency Audit
 

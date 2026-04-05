@@ -659,7 +659,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 ## Enforcement Rules
 
 - **GSD steps** are enforced by instruction (this file + CLAUDE.md) and GSD's own hooks.
-  GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY order per phase.
+  GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
   that track Skill tool invocations. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
