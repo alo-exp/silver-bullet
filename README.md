@@ -291,7 +291,7 @@ Edit `.silver-bullet.json` in your project root:
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `quality-gates` |
 | `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | quality-gates, code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, create-release, verification-before-completion, test-driven-development, tech-debt |
-| `all_tracked` | All skills that get recorded | 31 skills (see above) |
+| `all_tracked` | All skills that get recorded | 42 skills (see above) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
 > **Two-tier enforcement**: `git commit` and `git push` only require `required_planning` skills (default: `quality-gates`). The full `required_deploy` list is only checked at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked.
