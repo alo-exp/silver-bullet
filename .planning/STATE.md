@@ -1,26 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.7.0
-milestone_name: milestone
+milestone: v0.9.0
+milestone_name: GSD-Mainstay Retrofitting
 current_plan: Not started
-status: "Phase 02 shipped — pushed to main, no PR (branching_strategy: none)"
-last_updated: "2026-04-05T01:12:34.667Z"
+status: "Defining requirements"
+last_updated: "2026-04-05T12:00:00.000Z"
 last_activity: 2026-04-05
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.7.4
-**Active phase:** Phase 2 — Skill Enforcement Expansion
-**Current plan:** Not started
+**Current version:** v0.8.0
+**Active phase:** Not started (defining requirements)
+**Current plan:** —
 
-Last activity: 2026-04-05
+Last activity: 2026-04-05 — Milestone v0.9.0 started
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-04-05)
+
+**Core value:** Complete orchestration layer that owns the user experience and delegates execution to GSD
+**Current focus:** v0.9.0 GSD-Mainstay Retrofitting
 
 ## Decisions
 
@@ -29,22 +36,22 @@ Last activity: 2026-04-05
 - Conflict detection scans 5 pattern categories interactively
 - Update mode overwrites silver-bullet.md (SB-owned) without confirmation
 - §9 Stage 3 is Content Refresh (security runs last as Stage 4), Stage 2 has 5-dimension cross-plugin audit
-- [Phase 02-skill-enforcement-expansion]: test-driven-development and tech-debt added to required_deploy (hard enforcement gates for all dev work)
-- [Phase 02-skill-enforcement-expansion]: accessibility-review and incident-response in all_tracked only (conditional skills — not universally required)
+- [Phase 02-skill-enforcement-expansion]: test-driven-development and tech-debt added to required_deploy
+- [Phase 02-skill-enforcement-expansion]: accessibility-review and incident-response in all_tracked only
+- [v0.9.0] GSD owns execution, SB owns orchestration + quality enforcement
+- [v0.9.0] Forensics: evolve with GSD-awareness routing, not remove
+- [v0.9.0] 20 core + select utility GSD commands guided; admin commands not guided
 
-### Quick Tasks Completed
+## Accumulated Context
 
-| # | Description | Date | Commit | Status | Directory |
-|---|-------------|------|--------|--------|-----------|
-| 260405-5e0 | Close enforcement gaps for skip-risk instructions | 2026-04-05 | f97d109 | Verified | [260405-5e0-close-enforcement-gaps-for-skip-risk-ins](./quick/260405-5e0-close-enforcement-gaps-for-skip-risk-ins/) |
-| 260405-6v2 | Bypass-permissions detection and GSD structure | 2026-04-05 | 045ab74 | Verified | [260405-6v2-bypass-permissions-detection-and-gsd-str](./quick/260405-6v2-bypass-permissions-detection-and-gsd-str/) |
-| 260405-80o | Migrate blocking hooks to PreToolUse with permissionDecision:deny | 2026-04-05 | 81a28e6 | Verified | [260405-80o-migrate-blocking-hooks-to-pretooluse-wit](./quick/260405-80o-migrate-blocking-hooks-to-pretooluse-wit/) |
-| 260405-8gd | Revise quality gate §9 — cross-plugin audit dimension and stage reorder | 2026-04-05 | 571caf5 | Verified | [260405-8gd-revise-quality-gate-cross-plugin-audit-p](./quick/260405-8gd-revise-quality-gate-cross-plugin-audit-p/) |
+- GSD v1.32.0 has ~60 commands, wave-based parallel execution, 15+ subagent types
+- Superpowers v5.0.5 has 14 skills (TDD, code review, debugging, branch mgmt)
+- Engineering has 6 skills, Design has 6 skills (gap-fillers)
+- SB forensics is session-level (timeout, stall); GSD forensics is workflow-level (plan drift, execution anomalies) — complementary, not redundant
+- Current workflow files are enforcement checklists (~340 lines each), need to become orchestration guides (~600-700 lines each)
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 01    | 01   | 464s     | 4     | 8     |
-| 02    | 02   | 1min     | 2     | 2     |
-| Phase 02-skill-enforcement-expansion P01 | 89 | 3 tasks | 3 files |
+| (v0.9.0 phases pending) |
