@@ -737,8 +737,8 @@ the main guided flow but provide essential support for common situations.
 | `/gsd:debug` | Spawns parallel debug agents to diagnose issues and find root causes | For IaC: diagnose Terraform state drift, failed applies, resource conflicts, permission errors |
 | `/gsd:quick` | Executes small ad-hoc tasks with GSD guarantees (atomic commits, state tracking) | For quick infra fixes: security group rule updates, tag corrections, variable changes |
 | `/gsd:fast` | Executes trivial tasks inline without subagent overhead | Fix a typo in a Terraform variable description, update a tag value, correct a comment |
-| `/gsd:resume` | Restores full project context from STATE.md and planning artifacts | Starting a new session on an existing infrastructure project |
-| `/gsd:pause` | Creates structured handoff files preserving complete work state | Stopping mid-phase and need to resume in a new session |
+| `/gsd:resume-work` | Restores full project context from STATE.md and planning artifacts | Starting a new session on an existing infrastructure project |
+| `/gsd:pause-work` | Creates structured handoff files preserving complete work state | Stopping mid-phase and need to resume in a new session |
 | `/gsd:progress` | Summarizes recent work and routes to the next action | Check overall milestone progress and what phase is next |
 | `/gsd:next` | Detects current state and auto-advances to the next logical step | Unsure what step comes next — let GSD figure it out |
 | `/gsd:add-phase` | Adds a new phase to the end of the current milestone | Discovered a new infrastructure layer needed after roadmap was created |
