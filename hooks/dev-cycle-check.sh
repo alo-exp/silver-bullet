@@ -221,20 +221,20 @@ See CLAUDE.md §8 for details."
     fi
   done
 
-  if [[ "$has_finalization" == true ]] && ! has_skill "requesting-code-review"; then
-    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code review. Consider running /requesting-code-review first."}}'
+  if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
+    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code-review. Consider running code-review first."}}'
     exit 0
   fi
 
-  if ! has_skill "requesting-code-review"; then
-    # Stage B: all planning done, no code review — BLOCK source edits
-    block_msg="🚫 BLOCKED — Code review required before further source edits. Planning is complete but you must run /requesting-code-review before editing source code. Non-source operations (reading, commits, skill invocations) are still allowed."
+  if ! has_skill "code-review"; then
+    # Stage B: all planning done, no code-review — BLOCK source edits
+    block_msg="🚫 BLOCKED — Code review required before further source edits. Planning is complete but you must run /code-review before editing source code. Non-source operations (reading, commits, skill invocations) are still allowed."
     emit_block "$block_msg"
     exit 0
   fi
 
   if ! has_skill "finishing-a-development-branch"; then
-    # Stage C: has requesting-code-review, finalization remaining
+    # Stage C: has code-review, finalization remaining
     printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /testing-strategy, /tech-debt, /documentation, /finishing-a-development-branch, /deploy-checklist when ready."}}'
     exit 0
   fi

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
-<meta name="description" content="Silver Bullet is an agentic process orchestrator for Claude Code. Two enforced workflows: 19-step dev cycle and 23-step DevOps cycle. Combines GSD, Superpowers, Engineering, Design, and 5 leading DevOps plugins into one enforced system.">
+<meta name="description" content="Silver Bullet is an agentic process orchestrator for Claude Code. Two enforced workflows: 20-step dev cycle and 24-step DevOps cycle. Combines GSD, Superpowers, Engineering, Design, and 5 leading DevOps plugins into one enforced system.">
 <meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps">
 <meta property="og:description" content="The agentic process orchestrator for AI-native software engineering and DevOps. Two enforced workflows. GSD + Superpowers + Engineering + Design + 5 leading DevOps plugins. Brooks was right. Until now.">
 <meta property="og:type" content="website">
@@ -748,7 +748,7 @@ footer .footer-links{display:flex;gap:24px}
     <div class="hero-pills">
       <span class="hero-pill">9 Best-in-Class Plugins</span>
       <span class="hero-pill">Two Enforced Workflows</span>
-      <span class="hero-pill">19 + 23 Steps</span>
+      <span class="hero-pill">20 + 24 Steps</span>
       <span class="hero-pill">7 Enforcement Layers</span>
     </div>
   </div>
@@ -804,7 +804,7 @@ footer .footer-links{display:flex;gap:24px}
     <div class="hero-pills mb-4 fade-in">
       <span class="hero-pill">9 Best-in-Class Plugins</span>
       <span class="hero-pill">Two Enforced Workflows</span>
-      <span class="hero-pill">19 + 23 Steps</span>
+      <span class="hero-pill">20 + 24 Steps</span>
       <span class="hero-pill">7 Enforcement Layers</span>
     </div>
     <div class="feature-grid mt-4 fade-in">
@@ -821,7 +821,7 @@ footer .footer-links{display:flex;gap:24px}
       <div class="feature-card">
         <div class="feature-icon">&#129536;</div>
         <h3>Two Workflow Modes</h3>
-        <p>19-step <strong>full-dev-cycle</strong> for app development with 8 quality dimensions. 23-step <strong>devops-cycle</strong> for IaC/infrastructure with blast radius assessment and 7 IaC-adapted quality gates.</p>
+        <p>20-step <strong>full-dev-cycle</strong> for app development with 8 quality dimensions. 24-step <strong>devops-cycle</strong> for IaC/infrastructure with blast radius assessment and 7 IaC-adapted quality gates.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">&#128274;</div>
@@ -1091,7 +1091,7 @@ footer .footer-links{display:flex;gap:24px}
           <li><span class="ci ci-yes">✓</span> 7-layer PostToolUse enforcement</li>
           <li><span class="ci ci-yes">✓</span> 8 quality dimensions + hard-stop gate</li>
           <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
-          <li><span class="ci ci-yes">✓</span> 19-step app + 23-step DevOps workflows</li>
+          <li><span class="ci ci-yes">✓</span> 20-step app + 24-step DevOps workflows</li>
           <li><span class="ci ci-yes">✓</span> Phase gates — no step can be skipped</li>
           <li><span class="ci ci-yes">✓</span> 5 optional DevOps plugin integrations</li>
           <li><span class="ci ci-yes">✓</span> SENTINEL-audited, input-sanitized</li>
@@ -1289,6 +1289,7 @@ footer .footer-links{display:flex;gap:24px}
 <span class="stop">&#129521; COMPLETION BLOCKED</span>
 <span class="dim">&mdash; Workflow incomplete.</span>
 
+<span class="cross">&#10007;</span> <span class="accent">/code-review</span>
 <span class="cross">&#10007;</span> <span class="accent">/requesting-code-review</span>
 <span class="cross">&#10007;</span> <span class="accent">/testing-strategy</span>
 <span class="cross">&#10007;</span> <span class="accent">/documentation</span>
@@ -1336,8 +1337,8 @@ footer .footer-links{display:flex;gap:24px}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('dev')">Full Dev Cycle <span style="opacity:.6">(19 steps)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps Cycle <span style="opacity:.6">(23 steps)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('dev')">Full Dev Cycle <span style="opacity:.6">(20 steps)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps Cycle <span style="opacity:.6">(24 steps)</span></button>
     </div>
 
     <div id="workflow-dev" class="workflow-panel active" style="overflow-x:auto">
@@ -1363,8 +1364,8 @@ footer .footer-links{display:flex;gap:24px}
           <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/forensics (on failure)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review + code-reviewer agent</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review (structured quality review)</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (dispatches code-reviewer agent)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>11</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td>12</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
@@ -1409,8 +1410,8 @@ footer .footer-links{display:flex;gap:24px}
           <tr><td>7a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
           <tr><td>8</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>8a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review + code-reviewer agent</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review</td><td>Superpowers</td><td></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review (structured quality review)</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (dispatches code-reviewer agent)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
@@ -1469,7 +1470,7 @@ footer .footer-links{display:flex;gap:24px}
       <div class="callout fade-in">
         <div class="callout-icon">&#9889;</div>
         <p><strong>Enforcement starts immediately.</strong><br>
-        After running <code>/using-silver-bullet</code>, hooks are active and the workflow is live. For app projects, the 19-step full-dev-cycle activates. For DevOps projects, the 23-step devops-cycle activates with blast radius assessment, IaC-adapted quality gates, and automatic detection of installed DevOps plugins.</p>
+        After running <code>/using-silver-bullet</code>, hooks are active and the workflow is live. For app projects, the 20-step full-dev-cycle activates. For DevOps projects, the 24-step devops-cycle activates with blast radius assessment, IaC-adapted quality gates, and automatic detection of installed DevOps plugins.</p>
       </div>
     </div>
   </div>

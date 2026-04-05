@@ -14,14 +14,14 @@ This document maps Silver Bullet's actual workflow coverage against the complete
 
 ## Coverage Map
 
-Silver Bullet's two workflows — `full-dev-cycle` (19 steps) and `devops-cycle` (23 steps) — are evaluated against 12 SDLC phases.
+Silver Bullet's two workflows — `full-dev-cycle` (20 steps) and `devops-cycle` (24 steps) — are evaluated against 12 SDLC phases.
 
 | SDLC Phase | Coverage | Status |
 |------------|----------|--------|
 | 1. Discovery & Requirements | AI-generated from conversation (`/gsd:new-project`) | ⚠️ Partial |
 | 2. Architecture & Design | Conditional: ADR inline, `/system-design`, Design plugin | ⚠️ Partial |
 | 3. Development | Full GSD execution engine (plan/execute/verify) | ✅ Strong |
-| 4. Code Review | `/requesting-code-review` (dispatches `superpowers:code-reviewer`) + `/receiving-code-review` | ✅ Strong |
+| 4. Code Review | `/code-review` (Engineering) + `/requesting-code-review` (dispatches `superpowers:code-reviewer`) + `/receiving-code-review` | ✅ Strong |
 | 5. Security | Design-time checklist via `/quality-gates` (security dimension) | ⚠️ Partial |
 | 6. Testing | `/testing-strategy` defines strategy; no execution gate | ⚠️ Partial |
 | 7. Quality Gates | 8 dimensions enforced at design phase; IaC variant + blast radius | ✅ Strong |

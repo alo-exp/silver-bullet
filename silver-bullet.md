@@ -309,7 +309,7 @@ Bullet owns what to do and when; GSD owns how.
   Superpowers must NOT create or maintain a separate requirements list.
 - **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
   Superpowers' default path (`docs/superpowers/specs/`) is overridden — use `docs/specs/`.
-- **Code review**: Superpowers' review skills (`/requesting-code-review`,
+- **Code review**: Engineering's `/code-review` and Superpowers' review skills (`/requesting-code-review`,
   `/receiving-code-review`, `superpowers:code-reviewer`) are used for review only.
 
 > **Anti-Skip:** You are violating this rule if you use superpowers:executing-plans or superpowers:subagent-driven-development for project execution. The compliance-status hook shows "GSD owns execution" as a constant reminder.
@@ -362,16 +362,17 @@ The `/create-release` skill will not be invoked until all four stages pass.
 
 Run all three review skills in sequence, then fix all issues. Repeat until clean.
 
-1. Invoke `/requesting-code-review` (which dispatches `superpowers:code-reviewer` via the Agent tool)
-2. Invoke `/receiving-code-review` on the feedback from step 1
-3. Fix all accepted issues
-4. **Loop**: repeat steps 1-3 until `/receiving-code-review` produces zero accepted items
-5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
+1. Invoke `/code-review` (Engineering) — structured quality review: security, performance, correctness, maintainability
+2. Invoke `/requesting-code-review` — dispatches `superpowers:code-reviewer` automated reviewer
+3. Invoke `/receiving-code-review` — triage combined feedback from steps 1-2
+4. Fix all accepted issues
+5. **Loop**: repeat steps 1-4 until `/receiving-code-review` produces zero accepted items
+6. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Running verification commands manually is NOT a substitute for invoking this skill.
    You need BOTH: (a) run the actual verification commands, AND (b) invoke the skill so
    `record-skill.sh` tracks it. If you ran tests/CI/checks but did not invoke the skill,
    you have NOT completed this step. Do NOT record the stage marker until BOTH are done.
-6. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
+7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
 
 ### Stage 2 — Big-Picture Consistency Audit
 

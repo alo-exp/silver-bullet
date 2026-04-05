@@ -85,6 +85,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .badge-cond{background:rgba(251,191,36,.1);color:var(--amber)}
 .badge-gsd{background:rgba(99,102,241,.12);color:var(--accent-light)}
 .badge-sp{background:rgba(5,150,105,.12);color:var(--green)}
+.badge-eng{background:rgba(251,191,36,.12);color:var(--amber)}
 .badge-do{background:rgba(8,145,178,.12);color:var(--cyan)}
 /* CODE BLOCK */
 .code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
@@ -322,6 +323,11 @@ footer a:hover{color:var(--accent-light)}
             <td>User-facing text and messaging decisions. Only required for phases with UI work.</td>
           </tr>
           <tr>
+            <td>/code-review<span class="badge-small badge-eng">ENG</span><span class="badge-small badge-req">Required</span></td>
+            <td>Code Review</td>
+            <td>Structured peer code quality review: security (SQL injection, XSS, CSRF, auth flaws), performance (N+1, unbounded queries), correctness (edge cases, race conditions), maintainability. Run before /requesting-code-review.</td>
+          </tr>
+          <tr>
             <td>/requesting-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
             <td>Code Review</td>
             <td>Dispatches <code>superpowers:code-reviewer</code> for peer code quality review: security, performance, correctness, readability. Loop until 2 consecutive ✅ Approved passes.</td>
@@ -536,7 +542,7 @@ updated (Architecture patterns, Key decisions) | no changes
 /gsd:debug
 
 <span class="comment"># Verify and ship after execution</span>
-/gsd:verify-work → /requesting-code-review → /receiving-code-review
+/gsd:verify-work → /code-review → /requesting-code-review → /receiving-code-review
 
 <span class="comment"># Mark next commit as trivial (no enforcement)</span>
 touch ~/.claude/.silver-bullet/trivial

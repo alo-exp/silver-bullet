@@ -73,6 +73,7 @@ As SB drives the workflow, check off each step:
 - [ ] `/test-driven-development` invoked BEFORE implementation code
 - [ ] `/gsd:execute-phase` invoked (commits produced)
 - [ ] `/gsd:verify-work` invoked (UAT tests presented)
+- [ ] `/code-review` invoked (structured quality review: security, performance, correctness)
 - [ ] `/requesting-code-review` invoked (dispatches `superpowers:code-reviewer`, 2 consecutive approvals)
 - [ ] `/receiving-code-review` invoked
 
@@ -128,6 +129,7 @@ cat ~/.claude/.silver-bullet/state | sort -u
 
 **Required skills in state file:**
 - [ ] `quality-gates`
+- [ ] `code-review`
 - [ ] `requesting-code-review`
 - [ ] `receiving-code-review`
 - [ ] `testing-strategy`

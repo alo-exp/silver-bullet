@@ -282,6 +282,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong><code>/system-design</code></strong> — Architecture decisions for new services or components</li>
         <li><strong><code>/design-system</code></strong> — UI component and design token decisions (UI work only)</li>
         <li><strong><code>/ux-copy</code></strong> — User-facing text and messaging decisions (UI work only)</li>
+        <li><strong><code>/code-review</code></strong> — Structured peer code quality review: security (SQL injection, XSS, auth flaws), performance (N+1, unbounded queries), correctness (edge cases, race conditions), and maintainability. Run before dispatching the automated reviewer. From Engineering plugin.</li>
         <li><strong><code>/requesting-code-review</code></strong> — Dispatches <code>superpowers:code-reviewer</code> for peer code quality review (security, performance, readability). Loop until 2 consecutive approvals.</li>
         <li><strong><code>/receiving-code-review</code></strong> — Triage all feedback: accept or reject each item with reasoning before fixing</li>
       </ul>
@@ -300,7 +301,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>Planning</td><td><span class="owner-gsd">GSD</span></td><td>Use <code>/gsd:plan-phase</code> for all plans. When Superpowers' brainstorming offers to hand off to <code>writing-plans</code>, redirect to <code>/gsd:plan-phase</code>.</td></tr>
           <tr><td>Execution</td><td><span class="owner-gsd">GSD</span></td><td>Always use <code>/gsd:execute-phase</code> (wave-based). Never use <code>superpowers:subagent-driven-development</code> for project work.</td></tr>
           <tr><td>Design specs</td><td><span class="owner-sp">Superpowers</span></td><td>Save to <code>docs/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code>. The default Superpowers path (<code>docs/superpowers/specs/</code>) is not used.</td></tr>
-          <tr><td>Code review</td><td><span class="owner-sp">Superpowers</span></td><td><code>/requesting-code-review</code>, <code>/receiving-code-review</code>, and <code>superpowers:code-reviewer</code> are for review only, never execution.</td></tr>
+          <tr><td>Code review</td><td><span class="owner-sp">Superpowers + Engineering</span></td><td><code>/code-review</code> (Engineering), <code>/requesting-code-review</code>, <code>/receiving-code-review</code>, and <code>superpowers:code-reviewer</code> are for review only, never execution.</td></tr>
         </tbody>
       </table>
 

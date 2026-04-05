@@ -440,25 +440,34 @@ For AWS, use `aws-cost-optimization` to flag wasteful resources.
 
 **What it does:** Peer IaC code quality review focused on infrastructure-specific concerns.
 
-`/requesting-code-review`                                                                **REQUIRED** -- DO NOT SKIP
-Dispatches `superpowers:code-reviewer` via the Agent tool for IaC peer code quality review.
+**Commands (all required, in order):**
 
-**Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
-A single clean pass is not sufficient. The loop is self-limiting.
+1. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
+   Structured peer code quality review (security, performance, correctness, readability).
+   For IaC: covers hardcoded values, overly permissive security groups, missing encryption,
+   unencrypted storage, missing tags, and resource-level access control gaps.
+   Run this before dispatching the automated reviewer.
 
-IaC-specific review focus:
-- Hardcoded values that should be variables
-- Missing tags/labels
-- Security group rules that are too permissive
-- Resources missing encryption, backups, or monitoring
-- Plan output reviewed, not just source files
+2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+   Dispatches `superpowers:code-reviewer` via the Agent tool for IaC peer code quality review.
+
+   **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
+   A single clean pass is not sufficient. The loop is self-limiting.
+
+   IaC-specific review focus:
+   - Hardcoded values that should be variables
+   - Missing tags/labels
+   - Security group rules that are too permissive
+   - Resources missing encryption, backups, or monitoring
+   - Plan output reviewed, not just source files
+
+3. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
+   Triage and accept/reject all items from review.
 
 **What to expect:** The code reviewer examines all IaC changes with infrastructure-specific
-lenses. It runs at least twice. Common findings: hardcoded AMI IDs, missing Name tags,
-overly permissive `0.0.0.0/0` ingress rules, unencrypted storage. Typical duration: 3-8
-minutes per review pass.
-
-`/receiving-code-review` -- Triage and accept/reject all items from review.               **REQUIRED** -- DO NOT SKIP
+lenses. It runs at least twice (requiring two consecutive approvals). Common findings:
+hardcoded AMI IDs, missing Name tags, overly permissive `0.0.0.0/0` ingress rules,
+unencrypted storage. Typical duration: 3-8 minutes per review pass.
 
 **If it fails:** Address each finding individually. For disagreements on review findings,
 document the rationale for accepting or rejecting. The review loop continues until two

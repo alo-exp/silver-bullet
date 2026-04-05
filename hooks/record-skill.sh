@@ -56,7 +56,7 @@ case "$STATE_FILE" in
 esac
 
 # --- Tracked skills list ---
-DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release"
+DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release"
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then

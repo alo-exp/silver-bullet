@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Software Engineering Workflow — Silver Bullet Help</title>
-<meta name="description" content="The complete 19-step Silver Bullet software engineering workflow: Discuss, Quality Gates, Plan, Execute, Verify, Code Review, Finalization, CI/CD, Ship, and Release.">
+<meta name="description" content="The complete 20-step Silver Bullet software engineering workflow: Discuss, Quality Gates, Plan, Execute, Verify, Code Review, Finalization, CI/CD, Ship, and Release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -98,6 +98,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .badge-required{background:rgba(239,68,68,.1);color:var(--red)}
 .badge-gsd{background:rgba(99,102,241,.12);color:var(--accent-light)}
 .badge-sp{background:rgba(5,150,105,.12);color:var(--green)}
+.badge-eng{background:rgba(251,191,36,.12);color:var(--amber)}
 .badge-cond{background:rgba(251,191,36,.1);color:var(--amber)}
 /* PHASE HEADER */
 .phase-header{padding:12px 20px;border-radius:var(--radius-sm);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;margin-top:32px}
@@ -159,7 +160,7 @@ footer a:hover{color:var(--accent-light)}
   <div class="container">
     <div class="breadcrumb-nav"><a href="../">Help Center</a><span>/</span><span>Dev Workflow</span></div>
     <h1>Software Engineering Workflow</h1>
-    <p>The complete 19-step application development cycle — from session mode through requirements, planning, parallel execution, verification, code review, and release.</p>
+    <p>The complete 20-step application development cycle — from session mode through requirements, planning, parallel execution, verification, code review, and release.</p>
   </div>
 </div>
 
@@ -178,13 +179,13 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#plan">Step 5: Plan</a></li>
         <li><a href="#execute">Step 6: Execute</a></li>
         <li><a href="#verify">Step 7: Verify</a></li>
-        <li><a href="#code-review">Steps 8–9: Code Review</a></li>
-        <li><a href="#post-review">Steps 10–11: Post-review</a></li>
-        <li><a href="#finalization">Steps 12–15: Finalization</a></li>
-        <li><a href="#deployment">Step 16: CI/CD</a></li>
-        <li><a href="#deploy-check">Step 17: Deploy Checklist</a></li>
-        <li><a href="#ship">Step 18: Ship</a></li>
-        <li><a href="#release">Step 19: Release</a></li>
+        <li><a href="#code-review">Steps 8–10: Code Review</a></li>
+        <li><a href="#post-review">Steps 11–12: Post-review</a></li>
+        <li><a href="#finalization">Steps 13–16: Finalization</a></li>
+        <li><a href="#deployment">Step 17: CI/CD</a></li>
+        <li><a href="#deploy-check">Step 18: Deploy Checklist</a></li>
+        <li><a href="#ship">Step 19: Ship</a></li>
+        <li><a href="#release">Step 20: Release</a></li>
         <li class="sidebar-section">Rules</li>
         <li><a href="#review-loop">Review Loop Rule</a></li>
         <li><a href="#anti-skip">Anti-skip rules</a></li>
@@ -197,7 +198,7 @@ footer a:hover{color:var(--accent-light)}
       <p>The Silver Bullet software engineering workflow has three sections:</p>
       <ol>
         <li><strong>Project initialization</strong> — runs once per project to produce requirements and a roadmap</li>
-        <li><strong>Per-phase loop</strong> — repeats for every phase in the roadmap (Steps 3–11)</li>
+        <li><strong>Per-phase loop</strong> — repeats for every phase in the roadmap (Steps 3–12)</li>
         <li><strong>Finalization, deployment, and release</strong> — runs once after all phases are complete</li>
       </ol>
 
@@ -252,7 +253,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- PER-PHASE LOOP -->
       <h2>Per-Phase Loop</h2>
-      <p>Repeat Steps 3–11 for each phase in <code>.planning/ROADMAP.md</code>. All phases must complete before moving to Finalization.</p>
+      <p>Repeat Steps 3–12 for each phase in <code>.planning/ROADMAP.md</code>. All phases must complete before moving to Finalization.</p>
 
       <!-- DISCUSS -->
       <div class="phase-header phase-discuss">Phase: Discuss</div>
@@ -339,6 +340,14 @@ footer a:hover{color:var(--accent-light)}
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
+          <div class="step-meta"><span class="step-title">/code-review</span><span class="badge badge-eng">Engineering</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Structured peer code quality review: security (SQL injection, XSS, CSRF, auth flaws), performance (N+1 queries, unbounded results), correctness (edge cases, race conditions), and maintainability. Run this before dispatching the automated reviewer. Distinct from GSD's goal verification — this reviews the code quality itself.</p>
+        </div>
+      </div>
+
+      <div class="step-card required">
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
+        <div>
           <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Dispatches <code>superpowers:code-reviewer</code> as an automated reviewer subagent for peer code quality review: security, performance, correctness, and readability. Distinct from GSD's goal verification — this reviews the code itself, not whether it achieves the goal.</p>
         </div>
@@ -350,20 +359,20 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
           <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Triages all feedback from Step 8. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 10–11).</p>
+          <p class="step-desc">Triages all feedback from Step 9. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 11–12).</p>
         </div>
       </div>
 
       <!-- POST-REVIEW -->
       <div class="phase-header phase-exec" id="post-review">Post-Review Execution (conditional)</div>
 
-      <p>Only runs if items were accepted in Step 9. Otherwise, loop back to Step 3 for the next phase.</p>
+      <p>Only runs if items were accepted in Step 10. Otherwise, loop back to Step 3 for the next phase.</p>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">10</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">11</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:plan-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Creates a plan to address the accepted review items. Same planning rigor as Step 5.</p>
@@ -371,7 +380,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">11</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">12</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implements the review-driven plan with atomic commits. Same execution model as Step 6.</p>
@@ -385,7 +394,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Runs <strong>once</strong> after all phases in the roadmap are complete.</p>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">12</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">13</div>
         <div>
           <div class="step-meta"><span class="step-title">/testing-strategy</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Define the test strategy: test pyramid structure, coverage goals, test classification (unit/integration/E2E), and tooling decisions. This is a design document, not test execution.</p>
@@ -393,7 +402,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">13</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">14</div>
         <div>
           <div class="step-meta"><span class="step-title">/tech-debt</span> <span class="badge-required">Required</span></div>
           <p class="step-desc">Invoke <code>/tech-debt</code> to identify, categorize, and prioritize technical debt introduced or surfaced during this work. Appends structured items to <code>docs/tech-debt.md</code> using the format: <code>| Item | Severity | Effort | Phase introduced |</code>. Creates the file if needed.</p>
@@ -401,15 +410,15 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">14</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">15</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Update or create all project documentation. Minimum required: README (must reflect current version), docs/PRD-Overview.md, docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, docs/CICD.md. Also updates KNOWLEDGE.md and CHANGELOG.md. <strong>README must be updated here before Step 19 (release) can proceed.</strong> Also required: complete the session log file (path stored at <code>~/.claude/.silver-bullet-session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions, and Virtual cost. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
+          <p class="step-desc">Update or create all project documentation. Minimum required: README (must reflect current version), docs/PRD-Overview.md, docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, docs/CICD.md. Also updates KNOWLEDGE.md and CHANGELOG.md. <strong>README must be updated here before Step 20 (release) can proceed.</strong> Also required: complete the session log file (path stored at <code>~/.claude/.silver-bullet-session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, KNOWLEDGE.md additions, and Virtual cost. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
         </div>
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">15</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">16</div>
         <div>
           <div class="step-meta"><span class="step-title">/finishing-a-development-branch</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Branch rebase, cleanup, and merge preparation. Ensures the branch is ready to ship: rebased on main, no merge conflicts, commits squashed if needed.</p>
@@ -422,15 +431,15 @@ footer a:hover{color:var(--accent-light)}
       <h2 id="deployment">Deployment</h2>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">16</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">17</div>
         <div>
           <div class="step-meta"><span class="step-title">CI/CD pipeline</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">CI must be green before any deployment step. Run local verify commands first, then check CI status with <code>gh run list --limit 1 --json status,conclusion</code>. In Interactive mode, Claude shows status and waits for confirmation. In Autonomous mode, Claude polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to Step 17 while CI is failing.</p>
+          <p class="step-desc">CI must be green before any deployment step. Run local verify commands first, then check CI status with <code>gh run list --limit 1 --json status,conclusion</code>. In Interactive mode, Claude shows status and waits for confirmation. In Autonomous mode, Claude polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to Step 18 while CI is failing.</p>
         </div>
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)" id="deploy-check">17</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)" id="deploy-check">18</div>
         <div>
           <div class="step-meta"><span class="step-title">/deploy-checklist</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Pre-deployment verification gate. A structured checklist run before any deployment — confirms rollback plan, monitoring, and stakeholder sign-off are in place.</p>
@@ -443,7 +452,7 @@ footer a:hover{color:var(--accent-light)}
       <h2 id="ship">Ship</h2>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">18</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">19</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:ship</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request from the verified, deployed work. The PR body is auto-generated with phase summaries and requirement coverage. Includes links to verification and UAT results.</p>
@@ -457,10 +466,10 @@ footer a:hover{color:var(--accent-light)}
       <h2 id="release">Release</h2>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">19</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">20</div>
         <div>
           <div class="step-meta"><span class="step-title">/create-release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Generates structured release notes and creates the GitHub Release. README must have been updated in Step 14 — this step checks and blocks if README is stale. Produces a git tag, GitHub Release with features/fixes/breaking changes, and changelog entry.</p>
+          <p class="step-desc">Generates structured release notes and creates the GitHub Release. README must have been updated in Step 15 — this step checks and blocks if README is stale. Produces a git tag, GitHub Release with features/fixes/breaking changes, and changelog entry.</p>
           <div class="step-output">→ Produces: git tag, GitHub Release, structured release notes</div>
         </div>
       </div>

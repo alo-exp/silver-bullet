@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DevOps &amp; IaC Workflow — Silver Bullet Help</title>
-<meta name="description" content="The complete 23-step Silver Bullet DevOps workflow: Incident Fast Path, Blast Radius, DevOps Quality Gates, IaC execution, Environment Promotion, and Release.">
+<meta name="description" content="The complete 24-step Silver Bullet DevOps workflow: Incident Fast Path, Blast Radius, DevOps Quality Gates, IaC execution, Environment Promotion, and Release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -96,6 +96,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .badge-required{background:rgba(239,68,68,.1);color:var(--red)}
 .badge-gsd{background:rgba(99,102,241,.12);color:var(--accent-light)}
 .badge-sp{background:rgba(5,150,105,.12);color:var(--green)}
+.badge-eng{background:rgba(251,191,36,.12);color:var(--amber)}
 .badge-cond{background:rgba(251,191,36,.1);color:var(--amber)}
 .badge-devops{background:rgba(8,145,178,.12);color:var(--cyan)}
 /* PHASE HEADERS */
@@ -165,7 +166,7 @@ footer a:hover{color:var(--accent-light)}
   <div class="container">
     <div class="breadcrumb-nav"><a href="../">Help Center</a><span>/</span><span>DevOps Workflow</span></div>
     <h1>DevOps &amp; IaC Workflow</h1>
-    <p>The 23-step infrastructure workflow with Incident Fast Path, Blast Radius assessment, IaC-adapted quality gates, environment promotion, and production deployment.</p>
+    <p>The 24-step infrastructure workflow with Incident Fast Path, Blast Radius assessment, IaC-adapted quality gates, environment promotion, and production deployment.</p>
   </div>
 </div>
 
@@ -187,7 +188,7 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#plan">Step 6: Plan</a></li>
         <li><a href="#execute">Step 7: Execute</a></li>
         <li><a href="#verify">Step 8: Verify</a></li>
-        <li><a href="#code-review">Steps 9–10: Code Review</a></li>
+        <li><a href="#code-review">Steps 9–11: Code Review</a></li>
         <li class="sidebar-section">After Phases</li>
         <li><a href="#promotion">Env Promotion</a></li>
         <li><a href="#finalization">Finalization</a></li>
@@ -276,7 +277,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- PER-PHASE LOOP -->
       <h2>Per-Phase Loop</h2>
-      <p>Repeat Steps 3–12 for each phase. Use <code>/gsd:next</code> to confirm which phase is current.</p>
+      <p>Repeat Steps 3–13 for each phase. Use <code>/gsd:next</code> to confirm which phase is current.</p>
 
       <!-- DISCUSS -->
       <div class="phase-header" style="background:rgba(8,145,178,.1);color:var(--cyan)" id="discuss">
@@ -416,32 +417,40 @@ footer a:hover{color:var(--accent-light)}
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Dispatches <code>superpowers:code-reviewer</code> for IaC peer code quality review: hardcoded values that should be variables, missing tags/labels, security groups that are too permissive, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files. Review loop: re-dispatch until ✅ Approved TWICE IN A ROW. Self-limiting.</p>
+          <div class="step-meta"><span class="step-title">/code-review</span><span class="badge badge-eng">Engineering</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Structured peer code quality review for IaC: hardcoded values that should be variables, overly permissive security groups, missing encryption or backups, missing tags, and resource-level access control gaps. Run this before dispatching the automated reviewer.</p>
         </div>
       </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
+          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Dispatches <code>superpowers:code-reviewer</code> for IaC peer code quality review: hardcoded values that should be variables, missing tags/labels, security groups that are too permissive, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files. Review loop: re-dispatch until ✅ Approved TWICE IN A ROW. Self-limiting.</p>
+        </div>
+      </div>
+
+      <div class="step-card required">
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">11</div>
+        <div>
           <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Triage all feedback. Accepted items become the input for post-review execution (Steps 11–12).</p>
+          <p class="step-desc">Triage all feedback. Accepted items become the input for post-review execution (Steps 12–13).</p>
         </div>
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">11</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">12</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:plan-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
-          <p class="step-desc">Plan to address accepted review items. Only runs if items were accepted in Step 10.</p>
+          <p class="step-desc">Plan to address accepted review items. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">12</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">13</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
-          <p class="step-desc">Implement the review-driven plan with atomic commits. Only runs if items were accepted in Step 10.</p>
+          <p class="step-desc">Implement the review-driven plan with atomic commits. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
 
@@ -457,7 +466,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">13</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">14</div>
         <div>
           <div class="step-meta"><span class="step-title">Promote to next environment</span></div>
           <p class="step-desc">Re-run <code>/gsd:execute-phase</code> targeting the next environment using environment-specific tfvars or values files. Never rewrite infrastructure definitions — only the inputs change between environments.</p>
@@ -465,7 +474,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">14</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">15</div>
         <div>
           <div class="step-meta"><span class="step-title">Verify promoted environment</span></div>
           <p class="step-desc">Re-run <code>/gsd:verify-work</code> for the promoted environment. Health checks, drift detection, and monitoring verification are mandatory before promoting to production.</p>
@@ -479,7 +488,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Runs once after all phases complete in all environments.</p>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">15</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">16</div>
         <div>
           <div class="step-meta"><span class="step-title">/testing-strategy</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Define the IaC test strategy: unit tests (module validation, policy-as-code with conftest/OPA), integration tests (Terratest, BATS, Helm test), end-to-end tests (smoke tests against deployed environments), and drift detection schedule.</p>
@@ -487,7 +496,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">16</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">17</div>
         <div>
           <div class="step-meta"><span class="step-title">/tech-debt</span> <span class="badge-required">Required</span></div>
           <p class="step-desc">Invoke <code>/tech-debt</code> to identify, categorize, and prioritize infrastructure technical debt. Appends structured items to <code>docs/tech-debt.md</code>. Format: <code>| Item | Severity | Effort | Phase introduced |</code></p>
@@ -495,7 +504,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">17</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">18</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Update or create all documentation. Minimum required: README, docs/PRD-Overview.md (or docs/Infra-PRD.md for pure infra projects), docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, <strong>docs/Runbooks.md</strong> (DevOps-specific: one section per phase/component), docs/CICD.md. Also update <strong>docs/KNOWLEDGE.md</strong> (architecture patterns, gotchas, decisions), <strong>docs/CHANGELOG.md</strong> (prepend new entry), and complete the <strong>session log</strong>.</p>
@@ -503,10 +512,10 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">18</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">19</div>
         <div>
           <div class="step-meta"><span class="step-title">/finishing-a-development-branch</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Branch rebase, cleanup, and merge preparation. Same as the app workflow Step 15.</p>
+          <p class="step-desc">Branch rebase, cleanup, and merge preparation. Same as the app workflow Step 16.</p>
         </div>
       </div>
 
@@ -521,15 +530,15 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">19</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">20</div>
         <div>
           <div class="step-meta"><span class="step-title">CI/CD pipeline</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">CI must be green before deploying. Check with <code>gh run list --limit 1 --json status,conclusion</code>. In Autonomous mode, polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to Step 20 while CI is failing.</p>
+          <p class="step-desc">CI must be green before deploying. Check with <code>gh run list --limit 1 --json status,conclusion</code>. In Autonomous mode, polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to Step 21 while CI is failing.</p>
         </div>
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">20</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">21</div>
         <div>
           <div class="step-meta"><span class="step-title">/deploy-checklist</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Pre-deployment verification gate with DevOps-specific additions:</p>
@@ -544,7 +553,7 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">21</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">22</div>
         <div>
           <div class="step-meta"><span class="step-title">Production apply</span></div>
           <p class="step-desc">Execute plan in production. Apply one resource group at a time if blast radius is HIGH. Monitor dashboards during apply and for 15 minutes after completion.</p>
@@ -557,7 +566,7 @@ footer a:hover{color:var(--accent-light)}
       <h2 id="ship-release">Ship + Release</h2>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">22</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">23</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:ship</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request. For DevOps work, the PR body includes phase summaries, blast radius ratings, requirement coverage, and post-apply drift detection results.</p>
@@ -566,10 +575,10 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">23</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent3),#9d174d)">24</div>
         <div>
           <div class="step-meta"><span class="step-title">/create-release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Generates release notes and creates the GitHub Release. README must have been updated in Step 17 before this step can proceed. Tag, release notes, and changelog entry are produced.</p>
+          <p class="step-desc">Generates release notes and creates the GitHub Release. README must have been updated in Step 18 before this step can proceed. Tag, release notes, and changelog entry are produced.</p>
           <div class="step-output">→ Produces: git tag, GitHub Release, structured release notes</div>
         </div>
       </div>

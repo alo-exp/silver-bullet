@@ -335,14 +335,19 @@ review feedback.
 
 **Commands (all required, in order):**
 
-1. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+1. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
+   Structured peer code quality review (security, performance, correctness, readability).
+   Covers SQL injection, XSS, N+1 queries, race conditions, edge cases, and maintainability.
+   Run this before dispatching the automated reviewer.
+
+2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
    Dispatches `superpowers:code-reviewer` via the Agent tool to perform peer code quality
    review (security, performance, correctness, readability).
    **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
    A single clean pass is not sufficient. The loop is self-limiting -- it ends naturally
    when two consecutive passes are clean. Never stop early on "minor" issues.
 
-2. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
+3. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
    Triage and accept/reject all items from the review above.
 
 **What to expect:** A thorough multi-pass review process. The automated reviewer runs at
