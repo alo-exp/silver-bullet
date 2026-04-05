@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
+    .add-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .add-form input[type="text"] { flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+    .add-form button { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+    .add-form button:hover { background: #1d4ed8; }
+    .todo-list { list-style: none; }
+    .todo-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6; }
+    .todo-item label { flex: 1; cursor: pointer; }
+    .todo-item.completed label { text-decoration: line-through; color: #9ca3af; }
+    .todo-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; }
+    .delete-btn:hover { color: #dc2626; }
+    .empty { color: #9ca3af; text-align: center; padding: 2rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Todos</h1>
+  <form class="add-form" id="addForm">
+    <input type="text" id="titleInput" placeholder="What needs to be done?" required aria-label="New todo title">
+    <button type="submit">Add</button>
+  </form>
+  <ul class="todo-list" id="todoList" role="list" aria-label="Todo items"></ul>
+
+  <script>
+    const API = '/api/todos';
+    const todoList = document.getElementById('todoList');
+    const addForm = document.getElementById('addForm');
+    const titleInput = document.getElementById('titleInput');
+
+    async function loadTodos() {
+      const res = await fetch(API);
+      const todos = await res.json();
+      renderTodos(todos);
+    }
+
+    function renderTodos(todos) {
+      if (todos.length === 0) {
+        todoList.innerHTML = '<li class="empty">No todos yet. Add one above!</li>';
+        return;
+      }
+      todoList.innerHTML = todos.map(todo => `
+        <li class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+          <input type="checkbox" ${todo.completed ? 'checked' : ''} aria-label="Mark ${todo.title} as ${todo.completed ? 'incomplete' : 'complete'}">
+          <label>${escapeHtml(todo.title)}</label>
+          <button class="delete-btn" aria-label="Delete ${todo.title}">&times;</button>
+        </li>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = titleInput.value.trim();
+      if (!title) return;
+      await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      titleInput.value = '';
+      loadTodos();
+    });
+
+    todoList.addEventListener('change', async (e) => {
+      if (e.target.type === 'checkbox') {
+        const id = e.target.closest('.todo-item').dataset.id;
+        await fetch(`${API}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completed: e.target.checked })
+        });
+        loadTodos();
+      }
+    });
+
+    todoList.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = e.target.closest('.todo-item').dataset.id;
+        await fetch(`${API}/${id}`, { method: 'DELETE' });
+        loadTodos();
+      }
+    });
+
+    loadTodos();
+  </script>
+</body>
+</html>

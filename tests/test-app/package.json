@@ -1,0 +1,18 @@
+{
+  "name": "sb-test-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal todo app for Silver Bullet E2E smoke testing",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --forceExit --detectOpenHandles"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
