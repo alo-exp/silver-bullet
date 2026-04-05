@@ -78,8 +78,10 @@ To reset the workflow state, remove the file from your terminal (not from Claude
   elif [[ -n "$command_str" ]]; then
     # Bash write to .silver-bullet/state, /branch, or /trivial → block
     # Matches: echo x >> path, printf x > path, tee path — but not reads (cat, grep)
+    # Whitelist: quality-gate-stage-N appends are legitimate (§9 pre-release gate recording)
     if printf '%s' "$command_str" | grep -qE '\.silver-bullet/(state|branch|trivial)' && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)'; then
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
+       ! printf '%s' "$command_str" | grep -qE '\bquality-gate-stage-[1-4]\b'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
 Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.

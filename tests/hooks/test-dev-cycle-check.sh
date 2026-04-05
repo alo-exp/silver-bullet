@@ -69,6 +69,15 @@ run_hook_write() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
+run_hook_bash() {
+  local event="$1"
+  local cmd="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg c "$cmd" \
+    '{hook_event_name: $e, tool_name: "Bash", tool_input: {command: $c}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
@@ -269,6 +278,20 @@ echo "blast-radius" > "$TMPSTATE"
 echo "devops-quality-gates" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_blocks "devops: Stage B — needs code-review even with blast-radius+devops-quality-gates" "$out"
+teardown
+
+# Tests 16-17: State file tamper detection
+echo "--- Group 8: State tamper detection ---"
+setup
+# Test 16: General write to state file is blocked
+out=$(run_hook_bash "PreToolUse" "echo 'fake-skill' >> ~/.claude/.silver-bullet/state")
+assert_blocks "tamper: arbitrary state write is blocked" "$out"
+teardown
+
+setup
+# Test 17: quality-gate-stage-N write is ALLOWED (§9 gate recording whitelist)
+out=$(run_hook_bash "PreToolUse" "echo 'quality-gate-stage-1' >> ~/.claude/.silver-bullet/state")
+assert_passes "tamper: quality-gate-stage-N recording is allowed (whitelist)" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
