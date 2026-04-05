@@ -7,7 +7,7 @@ let db;
 function getDb() {
   if (!db) {
     db = new Database(':memory:');
-    db.pragma('journal_mode = WAL');
+    db.pragma('journal_mode = WAL'); // no-op on :memory:, kept for parity if switched to file-backed DB
     db.pragma('foreign_keys = ON');
     initSchema(db);
   }

@@ -12,7 +12,7 @@ Run this before any Silver Bullet release to validate the full workflow works en
 ```bash
 cd tests/test-app/
 npm install
-npm test                    # Verify: 27 tests pass
+npm test                    # Verify: 28 tests pass
 node src/server.js &        # Verify: "Todo app running at http://localhost:3456"
 curl localhost:3456/api/todos   # Verify: returns []
 kill %1                     # Stop server

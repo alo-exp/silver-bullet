@@ -3,6 +3,19 @@ const { getDb } = require('../db/database');
 
 const router = express.Router();
 
+// Validates a due_date string: must match YYYY-MM-DD and be a real calendar date.
+// JavaScript's Date constructor silently rolls over invalid days (e.g. 2025-02-30
+// becomes 2025-03-02), so we round-trip the parsed date back to confirm it matches.
+function isValidDueDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return false;
+  const yyyy = parsed.getUTCFullYear();
+  const mm = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(parsed.getUTCDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}` === value;
+}
+
 // GET /api/todos — list all todos (supports ?overdue=true filter)
 router.get('/', (req, res) => {
   const db = getDb();
@@ -44,7 +57,7 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Title must be 500 characters or less' });
   }
   if (due_date !== undefined && due_date !== null) {
-    if (typeof due_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(due_date) || isNaN(new Date(due_date).getTime())) {
+    if (!isValidDueDate(due_date)) {
       return res.status(400).json({ error: 'due_date must be a valid date in YYYY-MM-DD format' });
     }
   }
@@ -83,7 +96,7 @@ router.put('/:id', (req, res) => {
     if (due_date === null || due_date === '') {
       updates.due_date = null;
     } else {
-      if (typeof due_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(due_date) || isNaN(new Date(due_date).getTime())) {
+      if (!isValidDueDate(due_date)) {
         return res.status(400).json({ error: 'due_date must be a valid date in YYYY-MM-DD format' });
       }
       updates.due_date = due_date;

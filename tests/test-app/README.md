@@ -13,7 +13,7 @@ Minimal todo API used as a test fixture for Silver Bullet's end-to-end smoke tes
 
 ```bash
 npm install
-npm test        # Run tests (27 tests)
+npm test        # Run tests (28 tests)
 npm start       # Server at http://localhost:3456
 ```
 

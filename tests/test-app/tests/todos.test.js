@@ -222,6 +222,15 @@ describe('Due date support', () => {
     expect(body.error).toMatch(/due_date/i);
   });
 
+  test('rejects rolled-over calendar date (e.g. 2025-02-30)', async () => {
+    const { status, body } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Overflow date', due_date: '2025-02-30' }),
+    });
+    expect(status).toBe(400);
+    expect(body.error).toMatch(/due_date/i);
+  });
+
   test('updates due date on existing todo', async () => {
     const { body: created } = await api('/api/todos', {
       method: 'POST',
