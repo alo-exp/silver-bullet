@@ -116,7 +116,8 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
    - If this phase introduces an **architectural decision**: write an ADR inline
      (structure: title, status, context, decision, consequences) before moving to PLAN.
    - If this phase introduces a **new service or major component**: `/system-design`
-   - If this phase involves **UI work**: `/design-system` + `/ux-copy`
+   - If this phase involves **UI work**: `/design-system` + `/ux-copy` + `/accessibility-review`
+     (WCAG 2.1 AA audit against the phase's UI deliverables)   **REQUIRED when UI work** ← DO NOT SKIP
 
    **Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,
    architecture, system-design), ask once before beginning them:
@@ -157,7 +158,11 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 ### EXECUTE
 
 6. `/gsd:execute-phase` — Wave-based parallel execution with atomic commit per task. **REQUIRED** ← DO NOT SKIP
-   TDD principles apply per task within GSD execution.
+
+   `/test-driven-development` — Before writing any implementation code: establish      **REQUIRED** ← DO NOT SKIP
+   red-green-refactor discipline. Write the failing test first, make it pass,
+   then refactor. TDD applies per task within each GSD wave.
+
    → Produces: atomic git commits (one per task), `.planning/{phase}-{N}-SUMMARY.md`
 
    Each GSD wave dispatches Agent Teams for independent implementation units
@@ -215,7 +220,8 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 13. `/testing-strategy` — Define test strategy: pyramid, coverage goals,             **REQUIRED** ← DO NOT SKIP
     test classification, tooling decisions.
 
-14. **Tech-debt notes** (inline) — Append identified debt to `docs/tech-debt.md`.
+14. `/tech-debt` — Identify, categorize, and prioritize technical debt introduced    **REQUIRED** ← DO NOT SKIP
+    or surfaced during this work. Append structured items to `docs/tech-debt.md`.
     Format: `| Item | Severity | Effort | Phase introduced |`. Create file if needed.
 
 15. `/documentation` — Update or create all project documentation.                   **REQUIRED** ← DO NOT SKIP
