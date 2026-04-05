@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.7.0
 milestone_name: milestone
-current_plan: Not started
-status: "Phase 02 shipped — pushed to main, no PR (branching_strategy: none)"
-last_updated: "2026-04-05T01:12:34.667Z"
+current_plan: 01-01 complete
+status: "Phase 01-workflow-file-rewrites Plan 01 complete"
+last_updated: "2026-04-05T03:05:28Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 2
@@ -17,10 +17,10 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.7.4
-**Active phase:** Phase 2 — Skill Enforcement Expansion
-**Current plan:** Not started
+**Active phase:** Phase 01 — Workflow File Rewrites
+**Current plan:** 01-01 complete
 
-Last activity: 2026-04-05
+Last activity: 2026-04-05 — Completed 01-01: rewrite full-dev-cycle.md
 
 ## Decisions
 
@@ -31,6 +31,9 @@ Last activity: 2026-04-05
 - §9 Stage 3 is Content Refresh (security runs last as Stage 4), Stage 2 has 5-dimension cross-plugin audit
 - [Phase 02-skill-enforcement-expansion]: test-driven-development and tech-debt added to required_deploy (hard enforcement gates for all dev work)
 - [Phase 02-skill-enforcement-expansion]: accessibility-review and incident-response in all_tracked only (conditional skills — not universally required)
+- [Phase 01-workflow-file-rewrites]: Used tables for brownfield detection and utility commands for scannable reference
+- [Phase 01-workflow-file-rewrites]: Code review commands grouped under single section rather than numbered steps
+- [Phase 01-workflow-file-rewrites]: Autonomous mode documented inline at each step per D-14
 
 ### Quick Tasks Completed
 
@@ -48,3 +51,4 @@ Last activity: 2026-04-05
 | 01    | 01   | 464s     | 4     | 8     |
 | 02    | 02   | 1min     | 2     | 2     |
 | Phase 02-skill-enforcement-expansion P01 | 89 | 3 tasks | 3 files |
+| 01-workflow-file-rewrites | 01 | 503s | 1 | 1 |
