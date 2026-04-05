@@ -16,10 +16,10 @@
 
 ### Instruction Overhaul (INST)
 
-- [ ] **INST-01**: silver-bullet.md contains GSD process knowledge — Claude understands what each GSD step does without reading GSD's own docs
-- [ ] **INST-02**: silver-bullet.md includes hand-holding instructions — what Claude should say/show the user at each workflow transition
-- [ ] **INST-03**: silver-bullet.md includes utility command awareness — when to suggest /gsd:debug, /gsd:quick, etc. based on context
-- [ ] **INST-04**: All existing enforcement rules (§0-§9) remain intact and functional in the restructured silver-bullet.md
+- [x] **INST-01**: silver-bullet.md contains GSD process knowledge — Claude understands what each GSD step does without reading GSD's own docs
+- [x] **INST-02**: silver-bullet.md includes hand-holding instructions — what Claude should say/show the user at each workflow transition
+- [x] **INST-03**: silver-bullet.md includes utility command awareness — when to suggest /gsd:debug, /gsd:quick, etc. based on context
+- [x] **INST-04**: All existing enforcement rules (§0-§9) remain intact and functional in the restructured silver-bullet.md
 
 ### Deduplication (DEDUP)
 
@@ -89,10 +89,10 @@
 | ORCH-04 | Phase 1 | Pending |
 | ORCH-05 | Phase 1 | Pending |
 | ORCH-06 | Phase 1 | Pending |
-| INST-01 | Phase 2 | Pending |
-| INST-02 | Phase 2 | Pending |
-| INST-03 | Phase 2 | Pending |
-| INST-04 | Phase 2 | Pending |
+| INST-01 | Phase 2 | Complete |
+| INST-02 | Phase 2 | Complete |
+| INST-03 | Phase 2 | Complete |
+| INST-04 | Phase 2 | Complete |
 | DEDUP-01 | Phase 3 | Pending |
 | DEDUP-02 | Phase 3 | Pending |
 | DEDUP-03 | Phase 3 | Pending |
