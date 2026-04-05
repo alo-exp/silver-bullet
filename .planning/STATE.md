@@ -1,11 +1,26 @@
+---
+gsd_state_version: 1.0
+milestone: v0.7.0
+milestone_name: milestone
+current_plan: 2
+status: in_progress
+last_updated: "2026-04-05T00:43:10.956Z"
+last_activity: 2026-04-05
+progress:
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
+---
+
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.7.4
-**Active phase:** Phase 1 — Separate silver-bullet.md from CLAUDE.md
-**Current plan:** 01-01 (COMPLETE)
+**Active phase:** Phase 2 — Skill Enforcement Expansion
+**Current plan:** 2
 
-Last activity: 2026-04-05 - Completed quick task 260405-8gd: Revise quality gate §9 — cross-plugin audit dimension and stage reorder
+Last activity: 2026-04-05
 
 ## Decisions
 
@@ -14,6 +29,8 @@ Last activity: 2026-04-05 - Completed quick task 260405-8gd: Revise quality gate
 - Conflict detection scans 5 pattern categories interactively
 - Update mode overwrites silver-bullet.md (SB-owned) without confirmation
 - §9 Stage 3 is Content Refresh (security runs last as Stage 4), Stage 2 has 5-dimension cross-plugin audit
+- [Phase 02-skill-enforcement-expansion]: test-driven-development and tech-debt added to required_deploy (hard enforcement gates for all dev work)
+- [Phase 02-skill-enforcement-expansion]: accessibility-review and incident-response in all_tracked only (conditional skills — not universally required)
 
 ### Quick Tasks Completed
 
@@ -29,3 +46,5 @@ Last activity: 2026-04-05 - Completed quick task 260405-8gd: Revise quality gate
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 01    | 01   | 464s     | 4     | 8     |
+| 02    | 02   | 1min     | 2     | 2     |
+| Phase 02-skill-enforcement-expansion P01 | 89 | 3 tasks | 3 files |

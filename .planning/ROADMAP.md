@@ -30,11 +30,11 @@ Plans:
 
 **Requirements:** [SB-R2]
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — full-dev-cycle workflow (3 skill gates) + .silver-bullet.json (4 skills added)
-- [ ] 02-02-PLAN.md — devops-cycle workflow (3 skill gates, incident-response step renumbering)
+- [x] 02-01-PLAN.md — full-dev-cycle workflow (3 skill gates) + .silver-bullet.json (4 skills added)
+- [x] 02-02-PLAN.md — devops-cycle workflow (3 skill gates, incident-response step renumbering)
 
 **Success Criteria:**
 - `test-driven-development` is a REQUIRED step in EXECUTE for both full-dev-cycle and devops-cycle workflows
