@@ -6,9 +6,9 @@
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into a single orchestrated workflow — then enforces it with 7 layers of compliance so Claude can never skip steps.
+Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 7 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.8.0** — Skill Enforcement Expansion. Four gap-filling skills promoted from informal to explicitly enforced workflow gates: `test-driven-development` (EXECUTE), `tech-debt` (FINALIZATION), `accessibility-review` (UI work), `incident-response` (DevOps Incident Fast Path).
+**Current version: v0.9.0** — GSD-Mainstay Retrofitting. Silver Bullet now guides users through 100% of GSD's process with zero prior GSD knowledge required. Workflow files rewritten as comprehensive orchestration guides with what/expect/fail for every step, GSD process knowledge embedded in enforcement instructions, forensics evolved with GSD-awareness routing, and smooth dev-to-DevOps transitions.
 
 ## How It Works
 
@@ -49,10 +49,10 @@ Silver Bullet supports two workflow modes, selected during project initializatio
 
 | Workflow | For | Steps | Unique features |
 |----------|-----|-------|-----------------|
-| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 8 quality dimensions, TDD, release notes |
-| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 24 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, release notes |
+| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 8 quality dimensions, TDD, dev-to-DevOps transition, release notes |
+| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 24 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, DevOps-to-dev transition, release notes |
 
-Both workflows use GSD as the primary execution engine and Silver Bullet skills for quality gates, code review, and finalization.
+Both workflows use GSD as the primary execution engine. Silver Bullet guides you through every step with explanations of what each command does, what to expect, and what to do if something fails. Smooth transitions between the two workflows are built in -- after shipping an app, SB offers to set up infrastructure; after deploying infrastructure, SB offers to continue feature development.
 
 ## The Four-Plugin Ecosystem
 
@@ -193,27 +193,21 @@ Skills installed by this plugin that extend the workflow:
 | `/blast-radius` | Before planning (DevOps) — maps change scope, dependencies, and rollback plan |
 | `/devops-quality-gates` | Before planning (DevOps) — 7 IaC-adapted quality dimensions (usability excluded) |
 | `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
-| `/forensics` | After a completed, failed, or abandoned session — structured post-mortem investigation |
+| `/forensics` | After a completed, failed, or abandoned session — routes to GSD forensics for workflow issues, handles session-level issues directly |
 | `/create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
 
 ### `/forensics`
 
 When a session produces wrong output, stalls, or is abandoned, `/forensics` guides Claude through structured root-cause investigation rather than blind retrying.
 
-**Four invocation contexts:**
-- Session completed but left things broken
-- Session abandoned, timed out, or interrupted
-- `/gsd:verify-work` (step 7) fails or produces suspect output
-- Autonomous session has stalled mid-run
+**GSD-aware routing (v0.9.0):** Before running its own investigation, `/forensics` checks whether the issue is a GSD-workflow-level problem (plan drift, execution anomalies, stuck loops, missing artifacts). If so, it routes to `/gsd:forensics` which specializes in `.planning/` artifact analysis. Session-level issues (timeout, stall, SB enforcement failures) remain handled by SB's forensics directly.
 
-**Three investigation paths:**
+**Three investigation paths (for session-level issues):**
 1. **Session-level** — Timeout flag, session log, git history → classifies as pre-answer gap, anti-stall trigger, genuine blocker, external kill, or unknown
 2. **Task-level** — Plan vs. diff comparison, test failures → classifies as plan ambiguity, implementation drift, upstream dependency, or verification gap
 3. **General** — Open-ended; delegates to Path 1 or 2 after one targeted follow-up
 
 **Output:** Saves a `docs/forensics/YYYY-MM-DD-<slug>.md` report with symptom, evidence, root cause, contributing factors, next steps, and prevention.
-
-**Workflow integration:** The step 7 VERIFY gate now instructs Claude to invoke `/forensics` before retrying on any verification failure. The Enforcement Rules section and CLAUDE.md Section 3 both reference it alongside the debugging rule.
 
 ---
 
