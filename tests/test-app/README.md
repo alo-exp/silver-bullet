@@ -13,7 +13,7 @@ Minimal todo API used as a test fixture for Silver Bullet's end-to-end smoke tes
 
 ```bash
 npm install
-npm test        # Run tests (17 tests)
+npm test        # Run tests (27 tests)
 npm start       # Server at http://localhost:3456
 ```
 
@@ -28,8 +28,9 @@ See `../e2e-smoke-test.md` for the full protocol.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | /api/todos | List all todos |
+| GET | /api/todos?overdue=true | List only overdue (incomplete, past due_date) todos |
 | GET | /api/todos/:id | Get one todo |
-| POST | /api/todos | Create todo (`{ title }`) |
-| PUT | /api/todos/:id | Update todo (`{ title?, completed? }`) |
+| POST | /api/todos | Create todo (`{ title, due_date? }`) |
+| PUT | /api/todos/:id | Update todo (`{ title?, completed?, due_date? }`) |
 | DELETE | /api/todos/:id | Delete todo |
 | GET | /api/health | Health check |

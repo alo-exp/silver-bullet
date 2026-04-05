@@ -193,3 +193,123 @@ describe('DELETE /api/todos/:id', () => {
     expect(status).toBe(404);
   });
 });
+
+describe('Due date support', () => {
+  test('creates a todo with a due date', async () => {
+    const { status, body } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'With due date', due_date: '2025-12-31' }),
+    });
+    expect(status).toBe(201);
+    expect(body.due_date).toBe('2025-12-31');
+  });
+
+  test('creates a todo without a due date (null)', async () => {
+    const { status, body } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'No due date' }),
+    });
+    expect(status).toBe(201);
+    expect(body.due_date).toBeNull();
+  });
+
+  test('rejects invalid due date format', async () => {
+    const { status, body } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Bad date', due_date: 'not-a-date' }),
+    });
+    expect(status).toBe(400);
+    expect(body.error).toMatch(/due_date/i);
+  });
+
+  test('updates due date on existing todo', async () => {
+    const { body: created } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Update me' }),
+    });
+    const { status, body } = await api(`/api/todos/${created.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ due_date: '2025-06-15' }),
+    });
+    expect(status).toBe(200);
+    expect(body.due_date).toBe('2025-06-15');
+  });
+
+  test('clears due date by setting to null', async () => {
+    const { body: created } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Clear me', due_date: '2025-06-15' }),
+    });
+    const { status, body } = await api(`/api/todos/${created.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ due_date: null }),
+    });
+    expect(status).toBe(200);
+    expect(body.due_date).toBeNull();
+  });
+
+  test('returns due_date in GET /api/todos response', async () => {
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Check field', due_date: '2025-03-01' }),
+    });
+    const { body: todos } = await api('/api/todos');
+    expect(todos[0]).toHaveProperty('due_date');
+    expect(todos[0].due_date).toBe('2025-03-01');
+  });
+
+  test('returns due_date in GET /api/todos/:id response', async () => {
+    const { body: created } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Single get', due_date: '2025-04-01' }),
+    });
+    const { body } = await api(`/api/todos/${created.id}`);
+    expect(body.due_date).toBe('2025-04-01');
+  });
+});
+
+describe('Overdue filter', () => {
+  test('filters overdue todos', async () => {
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Overdue task', due_date: '2020-01-01' }),
+    });
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Future task', due_date: '2099-12-31' }),
+    });
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'No date task' }),
+    });
+    const { body } = await api('/api/todos?overdue=true');
+    expect(body).toHaveLength(1);
+    expect(body[0].title).toBe('Overdue task');
+  });
+
+  test('excludes completed overdue todos from filter', async () => {
+    const { body: created } = await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Done overdue', due_date: '2020-01-01' }),
+    });
+    await api(`/api/todos/${created.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ completed: true }),
+    });
+    const { body } = await api('/api/todos?overdue=true');
+    expect(body).toHaveLength(0);
+  });
+
+  test('returns all todos without overdue param', async () => {
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Task 1', due_date: '2020-01-01' }),
+    });
+    await api('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Task 2', due_date: '2099-12-31' }),
+    });
+    const { body } = await api('/api/todos');
+    expect(body).toHaveLength(2);
+  });
+});

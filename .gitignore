@@ -10,3 +10,4 @@ tests/test-app/.silver-bullet.json
 tests/test-app/silver-bullet.md
 tests/test-app/CLAUDE.md
 tests/test-app/docs/
+tests/test-app/.github/

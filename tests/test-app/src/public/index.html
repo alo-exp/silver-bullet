@@ -10,6 +10,7 @@
     h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
     .add-form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
     .add-form input[type="text"] { flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
+    .add-form input[type="date"] { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
     .add-form button { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
     .add-form button:hover { background: #1d4ed8; }
     .todo-list { list-style: none; }
@@ -19,6 +20,13 @@
     .todo-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
     .delete-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; }
     .delete-btn:hover { color: #dc2626; }
+    .due-date { font-size: 0.8rem; color: #6b7280; white-space: nowrap; }
+    .todo-item.overdue { border-left: 3px solid #ef4444; padding-left: calc(0.75rem - 3px); }
+    .due-date.overdue { color: #ef4444; font-weight: 600; }
+    .filters { margin-bottom: 1rem; }
+    .filter-btn { padding: 0.4rem 0.8rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer; font-size: 0.85rem; color: #374151; }
+    .filter-btn:hover { background: #f9fafb; }
+    .filter-btn.active { background: #ef4444; color: white; border-color: #ef4444; }
     .empty { color: #9ca3af; text-align: center; padding: 2rem 0; }
   </style>
 </head>
@@ -26,8 +34,12 @@
   <h1>Todos</h1>
   <form class="add-form" id="addForm">
     <input type="text" id="titleInput" placeholder="What needs to be done?" required aria-label="New todo title">
+    <input type="date" id="dueDateInput" aria-label="Due date (optional)">
     <button type="submit">Add</button>
   </form>
+  <div class="filters" id="filters">
+    <button class="filter-btn" id="filterOverdue">Show Overdue</button>
+  </div>
   <ul class="todo-list" id="todoList" role="list" aria-label="Todo items"></ul>
 
   <script>
@@ -35,11 +47,27 @@
     const todoList = document.getElementById('todoList');
     const addForm = document.getElementById('addForm');
     const titleInput = document.getElementById('titleInput');
+    const dueDateInput = document.getElementById('dueDateInput');
+    const filterOverdueBtn = document.getElementById('filterOverdue');
+    let showOverdueOnly = false;
 
     async function loadTodos() {
-      const res = await fetch(API);
+      const url = showOverdueOnly ? `${API}?overdue=true` : API;
+      const res = await fetch(url);
       const todos = await res.json();
       renderTodos(todos);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function isOverdue(todo) {
+      if (!todo.due_date || todo.completed) return false;
+      const today = new Date().toISOString().split('T')[0];
+      return todo.due_date < today;
     }
 
     function renderTodos(todos) {
@@ -48,10 +76,11 @@
         return;
       }
       todoList.innerHTML = todos.map(todo => `
-        <li class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
-          <input type="checkbox" ${todo.completed ? 'checked' : ''} aria-label="Mark ${todo.title} as ${todo.completed ? 'incomplete' : 'complete'}">
+        <li class="todo-item ${todo.completed ? 'completed' : ''} ${isOverdue(todo) ? 'overdue' : ''}" data-id="${todo.id}">
+          <input type="checkbox" ${todo.completed ? 'checked' : ''} aria-label="Mark ${escapeHtml(todo.title)} as ${todo.completed ? 'incomplete' : 'complete'}">
           <label>${escapeHtml(todo.title)}</label>
-          <button class="delete-btn" aria-label="Delete ${todo.title}">&times;</button>
+          ${todo.due_date ? `<span class="due-date ${isOverdue(todo) ? 'overdue' : ''}">${formatDate(todo.due_date)}</span>` : ''}
+          <button class="delete-btn" aria-label="Delete ${escapeHtml(todo.title)}">&times;</button>
         </li>
       `).join('');
     }
@@ -66,12 +95,21 @@
       e.preventDefault();
       const title = titleInput.value.trim();
       if (!title) return;
+      const due_date = dueDateInput.value || null;
       await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title })
+        body: JSON.stringify({ title, due_date })
       });
       titleInput.value = '';
+      dueDateInput.value = '';
+      loadTodos();
+    });
+
+    filterOverdueBtn.addEventListener('click', () => {
+      showOverdueOnly = !showOverdueOnly;
+      filterOverdueBtn.classList.toggle('active', showOverdueOnly);
+      filterOverdueBtn.textContent = showOverdueOnly ? 'Show All' : 'Show Overdue';
       loadTodos();
     });
 
