@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+# Tests for hooks/dev-cycle-check.sh
+# Tests the four-stage workflow gate: A (no planning), B (no code-review),
+# C (code-review done, finalization remaining), D (all complete)
+
+set -euo pipefail
+
+HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/dev-cycle-check.sh"
+PASS=0
+FAIL=0
+
+# ── Test infrastructure ───────────────────────────────────────────────────────
+# State files MUST be within ~/.claude/ due to security path validation in hooks.
+SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+mkdir -p "$SB_TEST_DIR"
+TEST_RUN_ID="$$"
+
+cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"; }
+trap cleanup_all EXIT
+
+setup() {
+  TMPDIR_TEST=$(mktemp -d)
+  TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
+  TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
+  TMPFILE="${TMPDIR_TEST}/src/app.js"
+  rm -f "$TMPSTATE"
+  mkdir -p "$(dirname "$TMPFILE")"
+  touch "$TMPFILE"
+  cat > "$TMPCFG" << EOF
+{
+  "project": {
+    "src_pattern": "/src/",
+    "src_exclude_pattern": "__tests__|\\\\.test\\\\.",
+    "active_workflow": "full-dev-cycle"
+  },
+  "skills": { "required_planning": ["quality-gates"] },
+  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
+}
+EOF
+  export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+}
+
+teardown() {
+  rm -rf "$TMPDIR_TEST"
+  rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+}
+
+run_hook_edit() {
+  local event="$1"
+  local filepath="$2"
+  local old_str="${3:-old content}"
+  local new_str="${4:-new content}"
+  local input
+  input=$(jq -n \
+    --arg e "$event" \
+    --arg f "$filepath" \
+    --arg o "$old_str" \
+    --arg n "$new_str" \
+    '{hook_event_name: $e, tool_name: "Edit", tool_input: {file_path: $f, old_string: $o, new_string: $n}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_write() {
+  local event="$1"
+  local filepath="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg f "$filepath" \
+    '{hook_event_name: $e, tool_name: "Write", tool_input: {file_path: $f}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+is_blocked() {
+  local output="$1"
+  [[ -z "$output" ]] && return 1
+  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+}
+
+assert_blocks() {
+  local label="$1"
+  local output="$2"
+  if is_blocked "$output"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected block, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_passes() {
+  local label="$1"
+  local output="$2"
+  if ! is_blocked "$output"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected pass, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_contains() {
+  local label="$1"
+  local output="$2"
+  local needle="$3"
+  if printf '%s' "$output" | grep -q "$needle"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected '$needle' in: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+echo "=== dev-cycle-check.sh tests ==="
+
+# Test 1: Stage A — no planning skills → HARD STOP on src edit
+echo "--- Group 1: Stage A (no planning) ---"
+setup
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "Stage A: source edit blocked without quality-gates" "$out"
+assert_contains "Stage A block message mentions HARD STOP" "$out" "HARD STOP"
+teardown
+
+# Test 2: Stage A — no planning → HARD STOP on Write to src
+setup
+out=$(run_hook_write "PreToolUse" "$TMPFILE")
+assert_blocks "Stage A: Write to src blocked without quality-gates" "$out"
+teardown
+
+# Test 3: Stage A — non-src file passes even without planning
+setup
+out=$(run_hook_edit "PreToolUse" "${TMPDIR_TEST}/README.md" "old" "new")
+assert_passes "non-src file passes without quality-gates" "$out"
+teardown
+
+# Test 4: Stage A — test file passes even without planning
+setup
+TEST_FILE="${TMPDIR_TEST}/src/app.test.js"
+mkdir -p "$(dirname "$TEST_FILE")"
+touch "$TEST_FILE"
+out=$(run_hook_edit "PreToolUse" "$TEST_FILE" "old content" "new content")
+assert_passes "test file passes without planning (excluded by src_exclude_pattern)" "$out"
+teardown
+
+# Test 5: Stage B — planning done but no code-review → BLOCK
+echo "--- Group 2: Stage B (planning done, no code-review) ---"
+setup
+echo "quality-gates" > "$TMPSTATE"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "Stage B: src edit blocked after planning, before code-review" "$out"
+assert_contains "Stage B block message mentions code-review" "$out" "code-review"
+teardown
+
+# Test 6: Phase-skip detection — finalization before code-review
+setup
+echo "quality-gates" > "$TMPSTATE"
+echo "testing-strategy" >> "$TMPSTATE"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+# Should mention phase skip AND be blocked at Stage B (no code-review)
+assert_blocks "Phase-skip: finalization before code-review is blocked" "$out"
+teardown
+
+# Test 7: Stage C — code-review done, finalization remaining → ALLOW with hint
+echo "--- Group 3: Stage C (code-review done) ---"
+setup
+echo "quality-gates" > "$TMPSTATE"
+echo "code-review" >> "$TMPSTATE"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "Stage C: src edit allowed after code-review (finalization remaining)" "$out"
+assert_contains "Stage C hint mentions finalization" "$out" "Finalization remaining"
+teardown
+
+# Test 8: Stage D — all phases complete → ALLOW
+echo "--- Group 4: Stage D (all complete) ---"
+setup
+cat > "$TMPSTATE" << 'EOF'
+quality-gates
+code-review
+requesting-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+EOF
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "Stage D: src edit allowed when all phases complete" "$out"
+teardown
+
+# Test 9: Small edit bypass (< 100 chars combined)
+echo "--- Group 5: Trivial bypass ---"
+setup
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "typo" "typoo")  # 10 chars combined
+assert_passes "small edit (<100 chars) bypasses enforcement" "$out"
+teardown
+
+# Test 10: Large edit does NOT bypass enforcement (>= 100 chars combined)
+setup
+old_str="this is old content that is long enough to exceed the threshold value for sure"
+new_str="this is new content that is long enough to exceed the threshold value for sure too"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "$old_str" "$new_str")
+assert_blocks "large edit (>=100 chars) enforces gate normally" "$out"
+teardown
+
+# Test 11: Non-logic file extension bypasses enforcement
+setup
+CSS_FILE="${TMPDIR_TEST}/src/styles.css"
+touch "$CSS_FILE"
+out=$(run_hook_edit "PreToolUse" "$CSS_FILE" "old" "new")
+assert_passes "CSS file bypasses enforcement (non-logic extension)" "$out"
+teardown
+
+# Test 12: Trivial file bypass
+setup
+touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "trivial file bypass works" "$out"
+teardown
+
+# Test 13: Plugin cache boundary — blocks edits to ~/.claude/plugins/cache
+echo "--- Group 6: Plugin boundary ---"
+setup
+# Simulate a path within the plugin cache
+PLUGIN_PATH="${HOME}/.claude/plugins/cache/test-plugin/skill/SKILL.md"
+out=$(run_hook_edit "PreToolUse" "$PLUGIN_PATH" "old" "new")
+assert_blocks "plugin cache edit is blocked (§8 boundary)" "$out"
+assert_contains "boundary block mentions THIRD-PARTY PLUGIN" "$out" "THIRD-PARTY PLUGIN BOUNDARY"
+teardown
+
+# Test 14: DevOps workflow uses blast-radius as required_planning
+echo "--- Group 7: DevOps workflow ---"
+setup
+cat > "$TMPCFG" << 'EOF'
+{
+  "project": {
+    "src_pattern": "/src/",
+    "src_exclude_pattern": "__tests__|\\.test\\.",
+    "active_workflow": "devops-cycle"
+  },
+  "skills": { "required_planning": [] },
+  "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
+}
+EOF
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
+rm -f "${TMPCFG}.bak"
+# Only quality-gates in state (wrong for devops)
+echo "quality-gates" > "$TMPSTATE"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "devops: edit blocked with quality-gates (need blast-radius+devops-quality-gates)" "$out"
+teardown
+
+# Test 15: DevOps workflow passes with blast-radius + devops-quality-gates
+setup
+cat > "$TMPCFG" << 'EOF'
+{
+  "project": {
+    "src_pattern": "/src/",
+    "src_exclude_pattern": "__tests__|\\.test\\.",
+    "active_workflow": "devops-cycle"
+  },
+  "skills": { "required_planning": [] },
+  "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
+}
+EOF
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
+rm -f "${TMPCFG}.bak"
+echo "blast-radius" > "$TMPSTATE"
+echo "devops-quality-gates" >> "$TMPSTATE"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "devops: Stage B — needs code-review even with blast-radius+devops-quality-gates" "$out"
+teardown
+
+# ── Results ───────────────────────────────────────────────────────────────────
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+[[ $FAIL -eq 0 ]] && exit 0 || exit 1

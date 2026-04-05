@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.10.0",
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -31,7 +31,10 @@
       "reliability", "usability", "testability", "extensibility",
       "forensics", "using-silver-bullet",
       "verification-before-completion",
-      "test-driven-development", "tech-debt", "accessibility-review", "incident-response"
+      "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
+      "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
+      "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-debug",
+      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase"
     ]
   },
   "devops_plugins": {

@@ -3,13 +3,23 @@ set -euo pipefail
 
 # PostToolUse hook (matcher: Bash)
 # Detects git commit/push/deploy commands and blocks if workflow is incomplete.
+#
+# TWO-TIER ENFORCEMENT:
+#   Intermediate commits (git commit, git push to feature branches):
+#     → Only require required_planning skills (default: quality-gates)
+#     → Allows GSD execute-phase to make atomic commits during development
+#   Final delivery (gh pr create, deploy, gh release create):
+#     → Require full required_deploy skill list
+#
+# This prevents the deadlock where GSD's execution subagents cannot commit
+# because finalization skills (code-review, testing-strategy, etc.) aren't done yet.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
 # jq is required — warn visibly if missing
 if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ completion-audit SKIPPED — jq not installed. Enforcement inactive."}}'
+  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
   exit 0
 fi
 
@@ -35,13 +45,18 @@ emit_block() {
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 [[ -z "$cmd" ]] && exit 0
 
-# Check if command matches completion patterns (word boundaries, case-insensitive for deploy)
+# ── Classify the command ──────────────────────────────────────────────────────
+# is_intermediate: git commit / git push (atomic commits during development)
+# is_completion:   gh pr create / deploy / gh release create (final delivery gates)
+# is_release:      gh release create (also requires §9 quality-gate stages)
+is_intermediate=false
 is_completion=false
 is_release=false
+
 if printf '%s' "$cmd" | grep -qE '\bgit commit\b'; then
-  is_completion=true
+  is_intermediate=true
 elif printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
-  is_completion=true
+  is_intermediate=true
 elif printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
   is_completion=true
 elif printf '%s' "$cmd" | grep -iqE '\bdeploy\b'; then
@@ -51,12 +66,13 @@ elif printf '%s' "$cmd" | grep -qE '\bgh release create\b'; then
   is_release=true
 fi
 
-[[ "$is_completion" == false ]] && exit 0
+# Skip commands that don't match any gate
+[[ "$is_intermediate" == false && "$is_completion" == false ]] && exit 0
 
-# --- Error handler: on any failure past this point, warn and exit 0 ---
-trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ completion-audit.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
+# ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
+trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  completion-audit.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
-# --- Resolve config file by walking up from $PWD ---
+# ── Resolve config file by walking up from $PWD ──────────────────────────────
 config_file=""
 search_dir="$PWD"
 while true; do
@@ -73,28 +89,32 @@ done
 # No config → project not set up with Silver Bullet — silent exit
 [[ -z "$config_file" ]] && exit 0
 
-# --- Read config values ---
+# ── Read config values ────────────────────────────────────────────────────────
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
-required_deploy=""
+required_planning_cfg=""
+required_deploy_cfg=""
+active_workflow="full-dev-cycle"
 
-if [[ -n "$config_file" ]]; then
-  sb_default_state="${SB_STATE_DIR}/state"
-  sb_default_trivial="${SB_STATE_DIR}/trivial"
-  config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
-    (.state.state_file // $ds),
-    (.state.trivial_file // $dt),
-    ((.skills.required_deploy // []) | join(" "))
-  ] | join("\n")' "$config_file")
+sb_default_state="${SB_STATE_DIR}/state"
+sb_default_trivial="${SB_STATE_DIR}/trivial"
+config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+  (.state.state_file // $ds),
+  (.state.trivial_file // $dt),
+  ((.skills.required_planning // []) | join(" ")),
+  ((.skills.required_deploy // []) | join(" ")),
+  (.project.active_workflow // "full-dev-cycle")
+] | join("\n")' "$config_file")
 
-  state_file=$(printf '%s' "$config_vals" | sed -n '1p')
-  state_file="${state_file/#\~/$HOME}"
-  trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
-  trivial_file="${trivial_file/#\~/$HOME}"
-  required_deploy=$(printf '%s' "$config_vals" | sed -n '3p')
-fi
+state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+state_file="${state_file/#\~/$HOME}"
+trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
+trivial_file="${trivial_file/#\~/$HOME}"
+required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
+required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -109,71 +129,168 @@ case "$trivial_file" in
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 
-# --- Check trivial file override (reject symlinks for safety) ---
+# ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
 if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0
 fi
 
-# --- Build required skills list ---
+# ── Detect current git branch ─────────────────────────────────────────────────
+current_branch=""
+current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+# Validate branch name: only allow safe characters
+if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+  current_branch=""
+fi
+on_main=false
+if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
+  on_main=true
+fi
+
+# ── Read state file ───────────────────────────────────────────────────────────
+state_contents=""
+[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+
+has_skill() {
+  printf '%s\n' "$state_contents" | grep -qx "$1" 2>/dev/null
+}
+
+# Line number of a skill in the state file (for ordering checks); 0 if absent
+skill_line() {
+  local line
+  line=$(printf '%s\n' "$state_contents" | grep -nx "^${1}$" | head -1 | cut -d: -f1)
+  printf '%s' "${line:-0}"
+}
+
+# ── TIER 1: Intermediate commit check (git commit / git push) ─────────────────
+if [[ "$is_intermediate" == true ]]; then
+  # Determine planning skills required for intermediate commits
+  # DevOps workflow requires blast-radius + devops-quality-gates instead of quality-gates
+  if [[ "$active_workflow" == "devops-cycle" ]]; then
+    DEFAULT_PLANNING="blast-radius devops-quality-gates"
+  else
+    DEFAULT_PLANNING="quality-gates"
+  fi
+  planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
+
+  missing_planning=""
+  for skill in $planning_skills; do
+    if ! has_skill "$skill"; then
+      missing_planning="${missing_planning:+$missing_planning }$skill"
+    fi
+  done
+
+  if [[ -n "$missing_planning" ]]; then
+    missing_lines=""
+    for skill in $missing_planning; do
+      missing_lines="${missing_lines}  ❌ /${skill}\n"
+    done
+    msg=$(printf '🚫 COMMIT BLOCKED — Planning incomplete.\n\nYou must complete these planning steps before any commits:\n%s\nRun the missing planning skills first, then commit.' "$missing_lines")
+    emit_block "$msg"
+    exit 0
+  fi
+
+  # Planning is done — intermediate commits are allowed
+  printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Intermediate commit allowed."}}'
+  exit 0
+fi
+
+# ── TIER 2: Final delivery check (gh pr create / deploy / release) ────────────
+
+# Build required skills list
 DEFAULT_REQUIRED="quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt"
 
-if [[ -z "$required_deploy" && -z "$config_file" ]]; then
-  # No config at all — use defaults
-  required_skills="$DEFAULT_REQUIRED"
-else
-  # Config exists: merge required_deploy + mandatory finalization skills (deduplicated)
-  mandatory="testing-strategy documentation finishing-a-development-branch deploy-checklist"
-  all_skills="$required_deploy $mandatory"
-
-  # Deduplicate
-  required_skills=""
-  for skill in $all_skills; do
-    already=false
-    for existing in $required_skills; do
-      if [[ "$existing" == "$skill" ]]; then
-        already=true
-        break
-      fi
-    done
-    if [[ "$already" == false ]]; then
-      required_skills="${required_skills:+$required_skills }$skill"
-    fi
-  done
+# DevOps workflow substitutes quality-gates with blast-radius + devops-quality-gates
+if [[ "$active_workflow" == "devops-cycle" ]]; then
+  DEFAULT_REQUIRED="blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt"
 fi
 
-# --- Check state file for required skills ---
+# Merge required_deploy from config + mandatory finalization skills (deduplicated)
+mandatory="testing-strategy documentation finishing-a-development-branch deploy-checklist"
+
+# When on main/master branch, finishing-a-development-branch is not applicable
+if [[ "$on_main" == true ]]; then
+  mandatory="testing-strategy documentation deploy-checklist"
+  # Remove from DEFAULT_REQUIRED and from any config-supplied required_deploy
+  DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
+  required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
+fi
+
+if [[ -n "$required_deploy_cfg" ]]; then
+  all_skills="$required_deploy_cfg $mandatory"
+else
+  all_skills="$DEFAULT_REQUIRED"
+fi
+
+# Deduplicate
+required_skills=""
+for skill in $all_skills; do
+  already=false
+  for existing in $required_skills; do
+    if [[ "$existing" == "$skill" ]]; then
+      already=true
+      break
+    fi
+  done
+  if [[ "$already" == false ]]; then
+    required_skills="${required_skills:+$required_skills }$skill"
+  fi
+done
+
+# ── Check required skills ─────────────────────────────────────────────────────
 missing=""
-if [[ -f "$state_file" ]]; then
-  state_contents=$(cat "$state_file")
-  for skill in $required_skills; do
-    if ! printf '%s\n' "$state_contents" | grep -qx "$skill" 2>/dev/null; then
-      missing="${missing:+$missing }$skill"
-    fi
-  done
-else
-  # No state file — all skills are missing
-  missing="$required_skills"
-fi
+for skill in $required_skills; do
+  if ! has_skill "$skill"; then
+    missing="${missing:+$missing }$skill"
+  fi
+done
 
-# --- §9 Pre-Release Quality Gate check (only for gh release create) ---
-release_missing=""
-if [[ "${is_release:-false}" == true ]]; then
-  if [[ -f "$state_file" ]]; then
-    state_contents=$(cat "$state_file")
-    # All 4 stages use explicit markers (symmetric recording)
-    for stage in quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
-      if ! printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
-        release_missing="${release_missing:+$release_missing }$stage"
-      fi
-    done
-  else
-    # No state file at all — all stages missing
-    release_missing="quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4"
+# ── Check code review triad ordering ─────────────────────────────────────────
+# Enforce: code-review must precede requesting-code-review,
+#          requesting-code-review must precede receiving-code-review
+ordering_issues=""
+if has_skill "code-review" && has_skill "requesting-code-review"; then
+  cr_line=$(skill_line "code-review")
+  req_line=$(skill_line "requesting-code-review")
+  if [[ "$cr_line" -gt 0 && "$req_line" -gt 0 && "$req_line" -lt "$cr_line" ]]; then
+    ordering_issues="${ordering_issues}  ⚠️  /requesting-code-review was run BEFORE /code-review (wrong order)\n"
+  fi
+fi
+if has_skill "requesting-code-review" && has_skill "receiving-code-review"; then
+  req_line=$(skill_line "requesting-code-review")
+  recv_line=$(skill_line "receiving-code-review")
+  if [[ "$req_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$req_line" ]]; then
+    ordering_issues="${ordering_issues}  ⚠️  /receiving-code-review was run BEFORE /requesting-code-review (wrong order)\n"
   fi
 fi
 
-# --- Output result ---
-# Combine both missing-skills and release-gate messages if both apply
+# ── Artifact existence check (non-blocking, informational) ───────────────────
+# Verifies that key GSD phases produced expected output files.
+# These checks prove the work was done, not just that the skill was invoked.
+artifact_warnings=""
+project_root=$(dirname "$config_file")
+
+# gsd-execute-phase should produce .planning/STATE.md
+if has_skill "gsd-execute-phase" && [[ ! -f "$project_root/.planning/STATE.md" ]]; then
+  artifact_warnings="${artifact_warnings}  ⚠️  /gsd:execute-phase was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
+fi
+
+# gsd-verify-work should produce VERIFICATION.md
+if has_skill "gsd-verify-work" && [[ ! -f "$project_root/VERIFICATION.md" ]] && \
+   [[ ! -f "$project_root/.planning/VERIFICATION.md" ]]; then
+  artifact_warnings="${artifact_warnings}  ⚠️  /gsd:verify-work was recorded but VERIFICATION.md is absent — was verification actually completed?\n"
+fi
+
+# ── §9 Pre-Release Quality Gate check (only for gh release create) ────────────
+release_missing=""
+if [[ "${is_release:-false}" == true ]]; then
+  for stage in quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
+    if ! printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
+      release_missing="${release_missing:+$release_missing }$stage"
+    fi
+  done
+fi
+
+# ── Output result ─────────────────────────────────────────────────────────────
 if [[ -n "$missing" && -n "$release_missing" ]]; then
   missing_lines=""
   for skill in $missing; do
@@ -186,18 +303,21 @@ elif [[ -n "$release_missing" ]]; then
   msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, Content Refresh, SENTINEL) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing")
   emit_block "$msg"
   exit 0
-fi
-
-if [[ -n "$missing" ]]; then
-  # Build missing list
+elif [[ -n "$missing" ]]; then
   missing_lines=""
   for skill in $missing; do
     missing_lines="${missing_lines}  ❌ /${skill}\n"
   done
-
-  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to commit/push/deploy but these required steps are missing:\n%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines")
-
+  ordering_note=""
+  [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
+  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines" "$ordering_note")
   emit_block "$msg"
+elif [[ -n "$ordering_issues" ]]; then
+  msg=$(printf '⚠️  ORDERING WARNING — All skills recorded but Code Review Triad ran out of order:\n%s\nConsider re-running the triad in the correct sequence before merging.' "$ordering_issues")
+  printf '{"hookSpecificOutput":{"message":"%s"}}' "$(printf '%s' "$msg" | jq -Rs '.' | tr -d '"')"
+elif [[ -n "$artifact_warnings" ]]; then
+  msg=$(printf '⚠️  ARTIFACT WARNING — Skills recorded but expected output files are missing. This may indicate vacuous skill invocation (calling a skill without doing the work):\n\n%s\nProceed only if these artifacts exist under a different path. Enforcement is invocation-based, not outcome-based.' "$artifact_warnings")
+  printf '{"hookSpecificOutput":{"message":"%s"}}' "$(printf '%s' "$msg" | jq -Rs '.' | tr -d '"')"
 else
   printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
 fi

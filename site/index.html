@@ -799,7 +799,7 @@ footer .footer-links{display:flex;gap:24px}
   <div class="container text-center">
     <div class="section-label">The Orchestrator</div>
     <h2 class="section-title">Orchestrate. Enforce. Ship.</h2>
-    <p class="section-desc centered">Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps. It curates nine best-in-class plugins and wraps them in a seven-layer enforcement engine &mdash; with two dedicated workflows for app development and infrastructure.</p>
+    <p class="section-desc centered">Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps. It curates nine best-in-class plugins and wraps them in a six-layer technical enforcement engine plus documentation layer &mdash; with two dedicated workflows for app development and infrastructure.</p>
 
     <div class="hero-pills mb-4 fade-in">
       <span class="hero-pill">9 Best-in-Class Plugins</span>
@@ -920,7 +920,7 @@ footer .footer-links{display:flex;gap:24px}
     <div class="mt-6">
       <div class="callout fade-in">
         <div class="callout-icon">&#127760;</div>
-        <p><strong>Silver Bullet is the orchestration layer.</strong> It defines the order these plugins are invoked, enforces that none are skipped, injects quality gate criteria into GSD&rsquo;s planning agents, and adds the seven-layer compliance enforcement that none of these plugins provide on their own.</p>
+        <p><strong>Silver Bullet is the orchestration layer.</strong> It defines the order these plugins are invoked, enforces that none are skipped, injects quality gate criteria into GSD&rsquo;s planning agents, and adds the six-layer compliance enforcement that none of these plugins provide on their own.</p>
       </div>
     </div>
 
@@ -1088,7 +1088,7 @@ footer .footer-links{display:flex;gap:24px}
         <ul class="compare-items">
           <li><span class="ci ci-yes">✓</span> Includes GSD (execution engine)</li>
           <li><span class="ci ci-yes">✓</span> Includes Superpowers (skills)</li>
-          <li><span class="ci ci-yes">✓</span> 7-layer PostToolUse enforcement</li>
+          <li><span class="ci ci-yes">✓</span> 6-layer technical enforcement + documentation layer</li>
           <li><span class="ci ci-yes">✓</span> 8 quality dimensions + hard-stop gate</li>
           <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
           <li><span class="ci ci-yes">✓</span> 20-step app + 24-step DevOps workflows</li>
@@ -1117,8 +1117,8 @@ footer .footer-links{display:flex;gap:24px}
   <div class="container">
     <div class="text-center">
       <div class="section-label">Architecture</div>
-      <h2 class="section-title">Seven Layers of Enforcement</h2>
-      <p class="section-desc centered">Four PostToolUse hooks, two GSD runtime hooks, and redundant instruction enforcement. Each layer is independently sufficient. Together, they make bypassing the workflow practically impossible.</p>
+      <h2 class="section-title">Six Technical Layers Plus Documentation</h2>
+      <p class="section-desc centered">Four PostToolUse hooks, a CI status check, session management, and redundant instruction enforcement. Each layer is independently sufficient. Together, they make bypassing the workflow extremely difficult to do by accident.</p>
     </div>
 
     <div class="grid grid-2 mt-6">
@@ -1153,15 +1153,15 @@ footer .footer-links{display:flex;gap:24px}
       <div class="layer-card fade-in">
         <div class="layer-num">5</div>
         <div>
-          <h3>GSD Workflow Guard</h3>
-          <p>GSD&rsquo;s own hook detects file edits made outside a <code>/gsd:*</code> command and warns immediately. A second enforcement layer on the execution side, independent of Silver Bullet&rsquo;s hooks.</p>
+          <h3>CI Status Check</h3>
+          <p>A PreToolUse hook intercepts <code>git push</code> commands and verifies that the most recent CI run for the branch is green before allowing the push. Broken builds cannot be pushed.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
         <div class="layer-num">6</div>
         <div>
-          <h3>GSD Context Monitor</h3>
-          <p>GSD&rsquo;s context monitor warns when token budget drops to &le;35% and escalates at &le;25%. Prevents context rot before it degrades output quality &mdash; a runtime safeguard no other plugin provides.</p>
+          <h3>Session Management</h3>
+          <p>A SessionStart hook tracks the current git branch. When the branch changes between sessions, the full skill-recording state resets &mdash; preventing skills from Feature A from satisfying enforcement for Feature B.</p>
         </div>
       </div>
       <div class="layer-card fade-in" style="grid-column:1/-1">

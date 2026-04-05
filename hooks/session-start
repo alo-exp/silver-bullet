@@ -12,12 +12,37 @@ umask 0077
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
-# Reset workflow state for fresh session — each session must earn its own compliance
+# ── Branch-scoped state reset ─────────────────────────────────────────────────
+# Skill recordings are scoped to a git branch. When the branch changes between
+# sessions, the full state is cleared — forcing a fresh workflow for the new branch.
+# This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
+#
+# Within the same branch: quality-gate-stage-* and gsd-* markers are reset on each
+# session start (forcing fresh §9 gate and GSD tracking per session), but skill
+# recordings accumulate (so mid-feature work across multiple sessions is preserved).
 state_file="${SB_STATE_DIR}/state"
-if [[ -f "$state_file" ]]; then
+branch_file="${SB_STATE_DIR}/branch"
+
+# Detect current git branch (safe: validates characters, falls back to empty)
+current_branch=""
+current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+  current_branch=""
+fi
+
+# Compare with stored branch
+stored_branch=""
+[[ -f "$branch_file" ]] && stored_branch=$(cat "$branch_file" 2>/dev/null || true)
+
+if [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
+  # Branch changed — full state reset for fresh workflow
+  rm -f "$state_file" 2>/dev/null || true
+  printf '%s' "$current_branch" > "$branch_file"
+elif [[ -f "$state_file" ]]; then
+  # Same branch — reset session-specific markers only
   # Remove quality-gate stage markers (force fresh §9 gate per release cycle)
-  # Remove GSD command markers (force fresh workflow per session)
-  # Keep skill invocation records (they accumulate across the workflow)
+  # Remove GSD command markers (force fresh workflow tracking per session)
+  # Keep skill invocation records (accumulate within the same branch/feature)
   sed -i.bak '/^quality-gate-stage-/d; /^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
 fi
 

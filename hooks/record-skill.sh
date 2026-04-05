@@ -20,8 +20,13 @@ input=$(cat)
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
 [[ -z "$skill" ]] && exit 0
 
-# Strip namespace prefixes (superpowers:, engineering:, design:, context7-plugin:, etc.)
-skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
+# GSD commands (gsd:discuss-phase, gsd:plan-phase, etc.) are tracked with gsd- prefix
+# Other namespace prefixes (superpowers:, engineering:, design:, etc.) are stripped
+if printf '%s' "$skill" | grep -qE '^gsd:'; then
+  skill=$(printf '%s' "$skill" | sed 's/^gsd:/gsd-/')
+else
+  skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
+fi
 
 # --- Resolve config file by walking up from $PWD ---
 config_file=""
@@ -56,7 +61,9 @@ case "$STATE_FILE" in
 esac
 
 # --- Tracked skills list ---
-DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release"
+# GSD command phases (tracked as gsd-* markers for compliance visibility)
+# These are recorded when /gsd:* commands fire via the Skill tool
+DEFAULT_TRACKED="quality-gates blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then

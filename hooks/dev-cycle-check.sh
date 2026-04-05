@@ -59,6 +59,37 @@ See CLAUDE.md §8 for details."
     exit 0
   fi
 
+  # --- State file tamper prevention (SB-008) ──────────────────────────────────
+  # Block direct Edit/Write to Silver Bullet state files and Bash write patterns.
+  # This prevents bypassing enforcement by manipulating the state file directly.
+  SB_STATE_DIR_EARLY="${HOME}/.claude/.silver-bullet"
+
+  if [[ -n "$file_path" ]]; then
+    # Edit/Write targeting the state directory → hard block
+    if [[ "$file_path" == "${SB_STATE_DIR_EARLY}/"* ]]; then
+      emit_block "🚫 STATE TAMPER BLOCKED — Direct edits to Silver Bullet state files are not permitted.
+
+Skills are recorded automatically when invoked via the Skill tool. Modifying state files directly bypasses workflow enforcement.
+
+To reset the workflow state, remove the file from your terminal (not from Claude):
+  rm ~/.claude/.silver-bullet/state"
+      exit 0
+    fi
+  elif [[ -n "$command_str" ]]; then
+    # Bash write to .silver-bullet/state, /branch, or /trivial → block
+    # Matches: echo x >> path, printf x > path, tee path — but not reads (cat, grep)
+    if printf '%s' "$command_str" | grep -qE '\.silver-bullet/(state|branch|trivial)' && \
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)'; then
+      emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
+
+Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
+
+To reset workflow state intentionally, run in your terminal:
+  rm ~/.claude/.silver-bullet/state"
+      exit 0
+    fi
+  fi
+
   # --- Resolve config file by walking up from file's directory (or $PWD for Bash) ---
   config_file=""
   if [[ -n "$file_path" ]]; then
@@ -80,7 +111,7 @@ See CLAUDE.md §8 for details."
   # --- Read config values with defaults ---
   src_pattern="/src/"
   src_exclude_pattern='__tests__|\.test\.'
-  required_planning="quality-gates"
+  required_planning=""   # resolved below after reading active_workflow
   active_workflow="full-dev-cycle"
   SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
   state_file="${SB_STATE_DIR}/state"
@@ -100,6 +131,16 @@ See CLAUDE.md §8 for details."
     [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
     cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file")
     [[ -n "$cfg_trivial" ]] && trivial_file="${cfg_trivial/#\~/$HOME}"
+  fi
+
+  # Set default required_planning based on workflow if not overridden by config
+  # DevOps workflow: blast-radius and devops-quality-gates replace quality-gates
+  if [[ -z "$required_planning" ]]; then
+    if [[ "$active_workflow" == "devops-cycle" ]]; then
+      required_planning="blast-radius devops-quality-gates"
+    else
+      required_planning="quality-gates"
+    fi
   fi
 
   # Env var overrides
@@ -163,13 +204,14 @@ See CLAUDE.md §8 for details."
       esac
     fi
 
-    # Small Edit tool changes (combined old+new < 300 chars) are trivial
+    # Small Edit tool changes (combined old+new < 100 chars) are trivial (typo fixes)
+    # Threshold reduced from 300 to 100 to prevent bypassing enforcement via incremental changes
     tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
     if [[ "$tool_name" == "Edit" ]]; then
       old_str_len=$(printf '%s' "$input" | jq -r '.tool_input.old_string // "" | length')
       new_str_len=$(printf '%s' "$input" | jq -r '.tool_input.new_string // "" | length')
       combined_len=$((old_str_len + new_str_len))
-      if [[ $combined_len -gt 0 && $combined_len -lt 300 ]]; then
+      if [[ $combined_len -gt 0 && $combined_len -lt 100 ]]; then
         printf '{"hookSpecificOutput":{"message":"ℹ️ Small edit (%d chars) — enforcement skipped for this edit."}}'  "$combined_len"
         exit 0
       fi
@@ -222,7 +264,8 @@ See CLAUDE.md §8 for details."
   done
 
   if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
-    printf '{"hookSpecificOutput":{"message":"⚠️ Phase skip detected: finalization skills invoked before code-review. Consider running code-review first."}}'
+    phase_skip_msg=$(printf '🚫 BLOCKED — Phase skip detected: finalization skills invoked before /code-review.\n\nYou must run /code-review BEFORE finalization steps (testing-strategy, documentation, etc.). This order is mandatory.\n\nRun /code-review now before continuing to edit source code.')
+    emit_block "$phase_skip_msg"
     exit 0
   fi
 

@@ -22,19 +22,33 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Seven layers enforce compliance:
+Six technical layers plus one documentation layer enforce compliance:
 
-1. **PostToolUse — Skill tracker** — Records every Silver Bullet skill invocation
-2. **PostToolUse — Stage enforcer** — HARD STOP if quality gates incomplete before plan
-3. **PostToolUse — Compliance status** — Shows progress on every tool use
-4. **PostToolUse — Completion audit** — Blocks commit/push/deploy if required skills missing
-5. **GSD workflow guard** — Detects file edits made outside a `/gsd:*` command and warns
-6. **GSD context monitor** — Warns at ≤35% tokens remaining, escalates at ≤25%
+1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
+2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
+3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
+4. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
+5. **CI status check** (Pre+PostToolUse/Bash) — Blocks further commits and actions when CI is failing
+6. **Session management** (PostToolUse/Bash) — Session logging, autonomous mode timeout detection, branch-scoped state reset
 7. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
    explicit rules against skipping, combining, or implicitly covering steps
 
+**Enforcement model**: Hooks are **invocation-based**, not outcome-based.
+`record-skill.sh` records that a skill was *called*; it cannot verify
+the skill produced a meaningful result. You are responsible for actually
+doing the work each skill requires — not just invoking it. Vacuous
+invocation (calling a skill and dismissing its output) satisfies the
+hook technically but violates the workflow intent and will be caught
+during code review or verification.
+
+**GSD command visibility**: GSD commands (`/gsd:discuss-phase`, etc.)
+are tracked via their Skill tool invocations and recorded as `gsd-*`
+markers in the state file. The compliance status shows `GSD N/5` for
+the 5 core phases. However, recording only proves invocation — it does
+not verify GSD phases completed successfully.
+
 **Trivial changes** (typos, copy fixes, config tweaks): Automatically
-detected by hooks. Small edits (<300 chars) and non-logic files (.md,
+detected by hooks. Small edits (<100 chars) and non-logic files (.md,
 .txt, .css, .svg, etc.) skip enforcement per-edit. No action needed.
 **Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
 `.toml` files are infrastructure code and are NOT auto-exempted.
