@@ -378,9 +378,9 @@ The `/create-release` skill will not be invoked until all four stages pass.
 
 Run all three review skills in sequence, then fix all issues. Repeat until clean.
 
-1. Invoke `/requesting-code-review`
-2. Invoke `/code-review` (or `superpowers:code-reviewer`)
-3. Invoke `/receiving-code-review` on the combined feedback from steps 1-2
+1. Invoke `/code-review` (Engineering) — structured quality review: security, performance, correctness, maintainability
+2. Invoke `/requesting-code-review` — dispatches `superpowers:code-reviewer` automated reviewer
+3. Invoke `/receiving-code-review` — triage combined feedback from steps 1-2
 4. Fix all accepted issues
 5. **Loop**: repeat steps 1-4 until `/receiving-code-review` produces zero accepted items
 6. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.

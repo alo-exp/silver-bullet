@@ -607,8 +607,6 @@ jobs:
 
 **Other**: prompt user to specify verify commands. Store in `.silver-bullet.json` under `"verify_commands": ["cmd1", "cmd2"]`.
 
-Also update `.silver-bullet.json` to add a `"verify_commands"` field matching the generated CI commands, for local use by the CI polling gate at step 17.
-
 #### 3.3 Write CLAUDE.md (only when no existing CLAUDE.md)
 
 This step only applies when NO existing `CLAUDE.md` was found in step 3.1b (the "write from template" path). If an existing `CLAUDE.md` was found, it was already handled in step 3.1b (reference line added) and 3.1c (conflict detection) — skip this step.

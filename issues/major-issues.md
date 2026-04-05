@@ -1,7 +1,7 @@
 # Silver Bullet — Major Issues Analysis
 
 *Based on exhaustive review of every file in the repository, evaluated against the 10 stated goals.*
-*Generated: 2026-04-06 | Silver Bullet v0.9.2*
+*Generated: 2026-04-06 | Silver Bullet v0.9.2 → Resolved in v0.10.0*
 
 ---
 
