@@ -17,7 +17,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/blast-radius`, `/devops-quality-gates`, `/code-review`, etc. |
+| Silver Bullet skills | Skill tool -- `/blast-radius`, `/devops-quality-gates`, `/forensics`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -440,8 +440,8 @@ For AWS, use `aws-cost-optimization` to flag wasteful resources.
 
 **What it does:** Peer IaC code quality review focused on infrastructure-specific concerns.
 
-`/code-review`                                                                           **REQUIRED** -- DO NOT SKIP
-`superpowers:code-reviewer` -- Run code-reviewer subagent immediately after.
+`/requesting-code-review`                                                                **REQUIRED** -- DO NOT SKIP
+Dispatches `superpowers:code-reviewer` via the Agent tool for IaC peer code quality review.
 
 **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
 A single clean pass is not sufficient. The loop is self-limiting.
@@ -457,8 +457,6 @@ IaC-specific review focus:
 lenses. It runs at least twice. Common findings: hardcoded AMI IDs, missing Name tags,
 overly permissive `0.0.0.0/0` ingress rules, unencrypted storage. Typical duration: 3-8
 minutes per review pass.
-
-`/requesting-code-review`                                                                **REQUIRED** -- DO NOT SKIP
 
 `/receiving-code-review` -- Triage and accept/reject all items from review.               **REQUIRED** -- DO NOT SKIP
 
@@ -767,7 +765,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 - **GSD steps** are enforced by instruction (this file + CLAUDE.md) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
-- **Silver Bullet skills** (blast-radius, devops-quality-gates, code-review, etc.) are enforced
+- **Silver Bullet skills** (blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
   by PostToolUse hooks that track Skill tool invocations. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.

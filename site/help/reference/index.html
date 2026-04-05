@@ -322,24 +322,19 @@ footer a:hover{color:var(--accent-light)}
             <td>User-facing text and messaging decisions. Only required for phases with UI work.</td>
           </tr>
           <tr>
-            <td>/code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
-            <td>After Verify</td>
-            <td>Peer code quality review: security, performance, correctness, readability. Followed immediately by <code>superpowers:code-reviewer</code> subagent.</td>
-          </tr>
-          <tr>
             <td>/requesting-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
             <td>Code Review</td>
-            <td>Format and send the code review request to external/peer reviewers.</td>
+            <td>Dispatches <code>superpowers:code-reviewer</code> for peer code quality review: security, performance, correctness, readability. Loop until 2 consecutive ✅ Approved passes.</td>
           </tr>
           <tr>
             <td>/receiving-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
             <td>Code Review</td>
-            <td>Triage all review feedback. Accept or reject each item with reasoning.</td>
+            <td>Triage all review feedback. Accept or reject each item with reasoning before fixing.</td>
           </tr>
           <tr>
             <td>superpowers:code-reviewer</td>
-            <td>After /code-review</td>
-            <td>Automated reviewer subagent dispatched immediately after /code-review. Must return ✅ Approved on two consecutive passes before proceeding. Self-limiting — loop ends naturally when two clean passes are produced.</td>
+            <td>Code Review (via /requesting-code-review)</td>
+            <td>Automated reviewer subagent dispatched by /requesting-code-review. Must return ✅ Approved on two consecutive passes before proceeding. Self-limiting — loop ends naturally when two clean passes are produced.</td>
           </tr>
         </tbody>
       </table>
@@ -541,7 +536,7 @@ updated (Architecture patterns, Key decisions) | no changes
 /gsd:debug
 
 <span class="comment"># Verify and ship after execution</span>
-/gsd:verify-work → /code-review → /requesting-code-review → /receiving-code-review
+/gsd:verify-work → /requesting-code-review → /receiving-code-review
 
 <span class="comment"># Mark next commit as trivial (no enforcement)</span>
 touch ~/.claude/.silver-bullet/trivial

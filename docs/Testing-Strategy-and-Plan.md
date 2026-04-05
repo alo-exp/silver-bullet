@@ -64,10 +64,10 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
 ### Priority 3: `dev-cycle-check.sh` unit tests (score 24)
 Create `tests/hooks/test-dev-cycle-check.sh` with 7 cases:
 1. Stage A blocks if `quality-gates` absent from state
-2. Phase-skip detection: finalization skill present but no `code-review` → BLOCKED
-3. Stage B: planning done, no `code-review` → BLOCKED
-4. Stage C: `code-review` present, finalization hint includes `/tech-debt`
-5. Stage C: `tech-debt` out-of-order (before `code-review`) → phase-skip BLOCKED
+2. Phase-skip detection: finalization skill present but no `requesting-code-review` → BLOCKED
+3. Stage B: planning done, no `requesting-code-review` → BLOCKED
+4. Stage C: `requesting-code-review` present, finalization hint includes `/tech-debt`
+5. Stage C: `tech-debt` out-of-order (before `requesting-code-review`) → phase-skip BLOCKED
 6. Stage D: all required skills present → silent pass
 7. Trivial file present → never blocks regardless of state
 

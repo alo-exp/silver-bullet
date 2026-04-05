@@ -21,7 +21,7 @@ Silver Bullet's two workflows — `full-dev-cycle` (19 steps) and `devops-cycle`
 | 1. Discovery & Requirements | AI-generated from conversation (`/gsd:new-project`) | ⚠️ Partial |
 | 2. Architecture & Design | Conditional: ADR inline, `/system-design`, Design plugin | ⚠️ Partial |
 | 3. Development | Full GSD execution engine (plan/execute/verify) | ✅ Strong |
-| 4. Code Review | `/code-review` + reviewer subagent + receiving review | ✅ Strong |
+| 4. Code Review | `/requesting-code-review` (dispatches `superpowers:code-reviewer`) + `/receiving-code-review` | ✅ Strong |
 | 5. Security | Design-time checklist via `/quality-gates` (security dimension) | ⚠️ Partial |
 | 6. Testing | `/testing-strategy` defines strategy; no execution gate | ⚠️ Partial |
 | 7. Quality Gates | 8 dimensions enforced at design phase; IaC variant + blast radius | ✅ Strong |

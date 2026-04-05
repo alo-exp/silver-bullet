@@ -12,7 +12,7 @@
     ],
     "required_deploy": [
       "quality-gates",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "create-release",
@@ -23,7 +23,7 @@
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy",
       "architecture", "system-design",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "create-release",

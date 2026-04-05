@@ -12,7 +12,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/quality-gates`, `/code-review`, etc. |
+| Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |
 | Gap-filling skills | Skill tool -- `/testing-strategy`, `/documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
@@ -335,20 +335,15 @@ review feedback.
 
 **Commands (all required, in order):**
 
-1. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
-   Peer code quality review covering security, performance, correctness, and readability.
-
-2. `superpowers:code-reviewer`                                                   **REQUIRED** -- DO NOT SKIP
-   Run code-reviewer subagent immediately after `/code-review`.
+1. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+   Dispatches `superpowers:code-reviewer` via the Agent tool to perform peer code quality
+   review (security, performance, correctness, readability).
    **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
    A single clean pass is not sufficient. The loop is self-limiting -- it ends naturally
    when two consecutive passes are clean. Never stop early on "minor" issues.
 
-3. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
-   Request external or peer review.
-
-4. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
-   Triage and accept/reject all items from the reviews above.
+2. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
+   Triage and accept/reject all items from the review above.
 
 **What to expect:** A thorough multi-pass review process. The automated reviewer runs at
 least twice (requiring two consecutive approvals). External review is requested and all

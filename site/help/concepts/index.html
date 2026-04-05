@@ -203,7 +203,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Inside Claude Code, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
       <div class="code-block"><span class="cmd">/quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
-<span class="cmd">/code-review</span>             <span class="comment"># invokes the code-review skill</span></div>
+<span class="cmd">/requesting-code-review</span>  <span class="comment"># dispatches code-reviewer subagent for peer review</span></div>
 
       <div class="callout callout-warn">
         <span class="callout-icon">⚠️</span>
@@ -282,8 +282,8 @@ footer a:hover{color:var(--accent-light)}
         <li><strong><code>/system-design</code></strong> — Architecture decisions for new services or components</li>
         <li><strong><code>/design-system</code></strong> — UI component and design token decisions (UI work only)</li>
         <li><strong><code>/ux-copy</code></strong> — User-facing text and messaging decisions (UI work only)</li>
-        <li><strong><code>/code-review</code></strong> — Peer code quality review (security, performance, readability)</li>
-        <li><strong><code>superpowers:code-reviewer</code></strong> — Automated reviewer subagent dispatched after manual review</li>
+        <li><strong><code>/requesting-code-review</code></strong> — Dispatches <code>superpowers:code-reviewer</code> for peer code quality review (security, performance, readability). Loop until 2 consecutive approvals.</li>
+        <li><strong><code>/receiving-code-review</code></strong> — Triage all feedback: accept or reject each item with reasoning before fixing</li>
       </ul>
 
       <div class="divider"></div>

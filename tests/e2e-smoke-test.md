@@ -73,9 +73,7 @@ As SB drives the workflow, check off each step:
 - [ ] `/test-driven-development` invoked BEFORE implementation code
 - [ ] `/gsd:execute-phase` invoked (commits produced)
 - [ ] `/gsd:verify-work` invoked (UAT tests presented)
-- [ ] `/code-review` invoked
-- [ ] `superpowers:code-reviewer` ran with 2 consecutive approvals
-- [ ] `/requesting-code-review` invoked
+- [ ] `/requesting-code-review` invoked (dispatches `superpowers:code-reviewer`, 2 consecutive approvals)
 - [ ] `/receiving-code-review` invoked
 
 ### Finalization
@@ -130,7 +128,6 @@ cat ~/.claude/.silver-bullet/state | sort -u
 
 **Required skills in state file:**
 - [ ] `quality-gates`
-- [ ] `code-review`
 - [ ] `requesting-code-review`
 - [ ] `receiving-code-review`
 - [ ] `testing-strategy`
@@ -144,7 +141,7 @@ cat ~/.claude/.silver-bullet/state | sort -u
 
 **Compliance status should show all phases complete:**
 ```
-Silver Bullet: N steps | PLANNING 1/1 | REVIEW 3/3 | FINALIZATION 4/4 | RELEASE 1/1
+Silver Bullet: N steps | PLANNING 1/1 | REVIEW 2/2 | FINALIZATION 4/4 | RELEASE 1/1
 ```
 
 ---

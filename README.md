@@ -26,7 +26,7 @@ When you try to `git commit` before completing the full workflow:
 🛑 COMPLETION BLOCKED — Workflow incomplete.
 
 You are attempting to commit/push/deploy but these required steps are missing:
-  ❌ /code-review
+  ❌ /requesting-code-review
   ❌ /receiving-code-review
   ❌ /testing-strategy
   ❌ /documentation
@@ -59,7 +59,7 @@ Both workflows use GSD as the primary execution engine. Silver Bullet guides you
 | Plugin | Role | Key capabilities |
 |--------|------|-----------------|
 | **GSD** (primary) | Multi-agent execution | Fresh 200K-token context per agent, wave-based parallel execution, dependency graphs, atomic per-task commits, context rot prevention |
-| **Superpowers** | Code review + branch management | Brainstorming, code-review, receiving-code-review, git worktrees, verification |
+| **Superpowers** | Code review + branch management | Brainstorming, requesting-code-review, receiving-code-review, git worktrees, verification |
 | **Engineering** | Testing + docs + deploy | testing-strategy, documentation, deploy-checklist, debugging, architecture |
 | **Design** | Design system + UX | design-system, ux-copy, accessibility-review, design-critique |
 
@@ -132,7 +132,7 @@ This will:
 
 That's it. Enforcement is now active.
 
-## Full Dev Cycle (20 Steps)
+## Full Dev Cycle (19 Steps)
 
 ### INITIALIZATION
 | # | Step | Source | Required |
@@ -148,32 +148,31 @@ That's it. Enforcement is now active.
 | 5 | `/gsd:plan-phase` | GSD | **Yes** |
 | 6 | `/gsd:execute-phase` | GSD | **Yes** |
 | 7 | `/gsd:verify-work` | GSD | **Yes** |
-| 8 | `/code-review` + code-reviewer | Superpowers | **Yes** |
-| 9 | `/requesting-code-review` | Superpowers | **Yes** |
-| 10 | `/receiving-code-review` | Superpowers | **Yes** |
-| 11-12 | Post-review plan + execute | GSD | If needed |
+| 8 | `/requesting-code-review` (dispatches code-reviewer) | Superpowers | **Yes** |
+| 9 | `/receiving-code-review` | Superpowers | **Yes** |
+| 10-11 | Post-review plan + execute | GSD | If needed |
 
 ### FINALIZATION
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 13 | `/testing-strategy` | Engineering | **Yes** |
-| 14 | `/tech-debt` | Engineering | **Yes** |
-| 15 | `/documentation` | Engineering | **Yes** |
-| 16 | `/finishing-a-development-branch` | Superpowers | **Yes** |
+| 12 | `/testing-strategy` | Engineering | **Yes** |
+| 13 | `/tech-debt` | Engineering | **Yes** |
+| 14 | `/documentation` | Engineering | **Yes** |
+| 15 | `/finishing-a-development-branch` | Superpowers | **Yes** |
 
 ### DEPLOYMENT
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 17 | CI/CD pipeline (CI must be green) | Inline | **Yes** |
-| 18 | `/deploy-checklist` | Engineering | **Yes** |
-| 19 | `/gsd:ship` | GSD | **Yes** |
+| 16 | CI/CD pipeline (CI must be green) | Inline | **Yes** |
+| 17 | `/deploy-checklist` | Engineering | **Yes** |
+| 18 | `/gsd:ship` | GSD | **Yes** |
 
 ### RELEASE
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 20 | `/create-release` | Silver Bullet | **Yes** |
+| 19 | `/create-release` | Silver Bullet | **Yes** |
 
-## DevOps Cycle (24 Steps)
+## DevOps Cycle (23 Steps)
 
 Same structure as full-dev-cycle with these additions:
 - **Incident fast path** at the top for emergency production changes
@@ -242,7 +241,7 @@ Edit `.silver-bullet.json` in your project root:
     "required_planning": ["quality-gates"],
     "required_deploy": [
       "quality-gates",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "create-release",
@@ -253,7 +252,7 @@ Edit `.silver-bullet.json` in your project root:
       "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy",
       "architecture", "system-design",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "create-release",
@@ -286,7 +285,7 @@ Edit `.silver-bullet.json` in your project root:
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `quality-gates` |
-| `required_deploy` | Skills that must run before commit/push/deploy | code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, create-release |
+| `required_deploy` | Skills that must run before commit/push/deploy | requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, create-release |
 | `all_tracked` | All skills that get recorded | 16 skills (see above) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
