@@ -225,7 +225,7 @@ See CLAUDE.md §8 for details."
 
   if ! has_skill "finishing-a-development-branch"; then
     # Stage C: has code-review, finalization remaining
-    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /testing-strategy, /documentation, /finishing-a-development-branch, /deploy-checklist when ready."}}'
+    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /testing-strategy, /tech-debt, /documentation, /finishing-a-development-branch, /deploy-checklist when ready."}}'
     exit 0
   fi
 
