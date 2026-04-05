@@ -56,6 +56,80 @@ invoked, STOP and notify the user immediately. Do NOT silently skip.
 
 > **Anti-Skip:** You are violating this rule if you start a non-trivial task without a Read call to the active workflow file. The compliance-status hook will show your progress — if it shows 0 steps, you have not read the workflow.
 
+### Hand-Holding at Transitions
+
+At each workflow transition, proactively narrate to the user:
+
+| Transition | What to say |
+|------------|-------------|
+| Session start -> DISCUSS | "Starting the planning phase. I'll ask questions to understand what you want to build before any code is written." |
+| DISCUSS -> QUALITY GATES | "Discussion complete -- CONTEXT.md captured your decisions. Running quality gates next to validate the approach before planning." |
+| QUALITY GATES -> PLAN | "Quality gates passed. Now creating execution plans -- these break your phase into concrete tasks with verification criteria." |
+| PLAN -> EXECUTE | "Plans created. Executing now -- each task produces atomic commits. You'll see progress as files are created/modified." |
+| EXECUTE -> VERIFY | "Execution complete. Running verification to confirm everything works end-to-end against the phase requirements." |
+| VERIFY -> REVIEW | "Verification passed. Running code review -- security, performance, correctness checks before we finalize." |
+| Last phase VERIFY -> FINALIZE | "All phases complete. Moving to finalization -- testing strategy, tech debt, documentation, and branch cleanup." |
+| FINALIZE -> SHIP | "Finalization complete. Shipping now -- CI verification, deploy checklist, then PR creation." |
+
+### 2a. Workflow Transitions
+
+Two workflows exist: `full-dev-cycle` (application development) and `devops-cycle`
+(infrastructure). Transitions happen after RELEASE:
+
+**Dev -> DevOps:** After shipping an application release, if IaC files are present,
+deploy checklist flagged gaps, or user requests it -- offer to switch `active_workflow`
+in `.silver-bullet.json` to `devops-cycle`.
+
+**DevOps -> Dev:** After deploying infrastructure, offer to switch back to
+`full-dev-cycle` for the next milestone of feature development.
+
+**What is preserved:** Everything -- `.planning/` artifacts, `.silver-bullet.json`
+config, state, git history. Only `active_workflow` changes.
+
+### 2b. GSD Process Knowledge
+
+Claude reads this once at session start and can explain any step to the user
+without consulting GSD workflow files.
+
+**Core Workflow Commands (per-phase loop):**
+
+| Command | What it does | Produces |
+|---------|-------------|----------|
+| `/gsd:new-project` | Deep questioning about vision, optional research, requirements scoping, roadmap generation | PROJECT.md, REQUIREMENTS.md, ROADMAP.md |
+| `/gsd:new-milestone` | Loads previous context, gathers goals for new milestone, defines scoped requirements | Fresh ROADMAP.md carrying forward accumulated context |
+| `/gsd:discuss-phase` | Conversational requirements gathering for current phase -- asks questions, captures decisions | CONTEXT.md with locked decisions (D-01, D-02...) |
+| `/gsd:plan-phase` | Decomposes phase into parallel-optimized plans with 2-3 tasks each, dependency graphs, verification criteria | PLAN.md files with wave structure |
+| `/gsd:execute-phase` | Wave-based execution -- spawns subagents per plan, atomic commits per task, auto-resumes incomplete plans | Committed code + SUMMARY.md per plan |
+| `/gsd:verify-work` | Checks must-haves, runs automated tests, validates artifacts exist and connect correctly | VERIFICATION.md with pass/fail per truth |
+| `/gsd:ship` | Runs deployment checklist, pushes to remote, confirms CI green, creates PR with auto-generated body | Deployed, CI-green codebase + pull request |
+
+**Project Lifecycle Commands:**
+
+| Command | What it does | When to use |
+|---------|-------------|-------------|
+| `/gsd:map-codebase` | Analyzes existing codebase into 7 structured docs (stack, architecture, patterns, etc.) | Brownfield projects before /gsd:new-project |
+| `/gsd:autonomous` | Drives remaining phases end-to-end (discuss, plan, execute per phase) | Multi-phase autonomous execution |
+| `/gsd:audit-milestone` | Aggregates phase verifications, checks cross-phase integration, requirements coverage | End of milestone before completing |
+| `/gsd:complete-milestone` | Marks milestone done, creates MILESTONES.md record, archives artifacts, tags release | After all phases verified and shipped |
+| `/gsd:add-phase` | Appends new phase to end of current milestone roadmap | Discovered work not in original roadmap |
+| `/gsd:insert-phase` | Inserts decimal phase between existing (e.g., 3.1 between 3 and 4) | Urgent fix before next planned phase |
+| `/gsd:review` | Cross-AI peer review -- invokes Gemini, Codex, CodeRabbit independently | Adversarial review before execution |
+| `/gsd:next` | Detects current state, auto-advances to next logical step | Unsure what comes next |
+
+### 2c. Utility Command Awareness
+
+Suggest these commands based on context -- do not wait for the user to ask.
+
+| Context trigger | Suggest | Why |
+|----------------|---------|-----|
+| Execution fails, tests break, unexpected error | `/gsd:debug` | Spawns parallel agents to diagnose root cause |
+| User mentions a small change outside the current phase | `/gsd:quick` | Handles ad-hoc tasks with atomic commits + state tracking |
+| Change is truly trivial (typo, config value, 3 files max) | `/gsd:fast` | Inline execution, no subagent overhead |
+| New session on existing project | `/gsd:resume-work` | Restores full context from STATE.md + HANDOFF.json |
+| User wants to stop mid-work | `/gsd:pause-work` | Creates handoff files for clean session resume |
+| User asks "where are we?" or "what's left?" | `/gsd:progress` | Rich progress report with next actions |
+| User seems unsure what step is next | `/gsd:next` | Auto-advances to the next logical step |
+
 ---
 
 ## 3. NON-NEGOTIABLE RULES
@@ -219,6 +293,9 @@ or a step expected to produce a file produces none. Log escalation as an autonom
 
 GSD is the authoritative execution orchestrator. Superpowers provides design and review
 capabilities only. Where both tools could apply, **GSD wins**.
+
+Silver Bullet orchestrates the user experience and delegates execution to GSD. Silver
+Bullet owns what to do and when; GSD owns how.
 
 **Hard rules — no exceptions:**
 
