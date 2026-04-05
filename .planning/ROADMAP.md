@@ -30,11 +30,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. All 20 guided GSD commands appear at their appropriate workflow points with context; utility commands (/gsd:debug, /gsd:quick, /gsd:resume-work, etc.) appear with "when to use" guidance
   4. After completing a release step, the workflow detects infrastructure needs and offers to switch between dev and DevOps cycles while preserving all planning artifacts
   5. Non-GSD skills (design-system, ux-copy, accessibility-review, etc.) are triggered at specific workflow points with clear conditions
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Rewrite full-dev-cycle.md as comprehensive orchestration guide (wave 1)
+- [ ] 01-02-PLAN.md -- Rewrite devops-cycle.md as comprehensive orchestration guide (wave 1)
+- [ ] 01-03-PLAN.md -- Template parity: copy rewritten workflows to templates/ (wave 2)
 
 ### Phase 2: silver-bullet.md Overhaul
 **Goal**: Claude has internalized GSD process knowledge within silver-bullet.md so it can guide users through workflow transitions, suggest appropriate utility commands, and explain what is happening -- all without reading GSD plugin files
@@ -97,7 +98,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Workflow File Rewrites | 0/2 | Not started | - |
+| 1. Workflow File Rewrites | 0/3 | Planned | - |
 | 2. silver-bullet.md Overhaul | 0/1 | Not started | - |
 | 3. Skill Evolution | 0/1 | Not started | - |
 | 4. Template Parity & Hook Verification | 0/1 | Not started | - |
