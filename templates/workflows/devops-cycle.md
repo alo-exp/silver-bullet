@@ -33,13 +33,15 @@ cannot wait for full cycle without extending outage.
 
 **Fast path steps**:
 
-1. Document the incident: what is broken, what the proposed change is, expected outcome.
-2. `/blast-radius` — Required even in incidents. A rushed unreviewed change can make
+1. `/incident-response` — Invoke immediately. Establish severity classification,       **REQUIRED** ← DO NOT SKIP
+   owner assignment, comms channel, and timeline tracking before any change is made.
+2. Document the incident: what is broken, what the proposed change is, expected outcome.
+3. `/blast-radius` — Required even in incidents. A rushed unreviewed change can make
    incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.
-3. Apply the minimal change in the lowest affected environment first, verify, then promote.
-4. Create a post-incident review task: full cycle review of the emergency change after
+4. Apply the minimal change in the lowest affected environment first, verify, then promote.
+5. Create a post-incident review task: full cycle review of the emergency change after
    the incident resolves, including `/devops-quality-gates` retroactively.
-5. Commit with `[HOTFIX]` prefix and reference the incident ticket.
+6. Commit with `[HOTFIX]` prefix and reference the incident ticket.
 
 ---
 
@@ -203,6 +205,11 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
    **lowest environment only** (dev or equivalent). Higher environments (staging, prod)
    are promoted in the ENVIRONMENT PROMOTION section (steps 14–15) after all phases
    complete. Never apply to prod before verifying in staging.
+
+   `/test-driven-development` — Before writing IaC implementation: establish           **REQUIRED** ← DO NOT SKIP
+   test-first discipline. For Terraform: Terratest / conftest / OPA.
+   For Helm: helm test / BATS. TDD applies per task within each GSD wave.
+
    For each resource change within a wave:
    - Run plan/dry-run output and confirm before apply
    - Verify resource health after apply
@@ -297,7 +304,8 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
     Use `ci-cd` skill for pipeline-specific test integration.
     Use `gitops-workflows` if the project uses ArgoCD/Flux.
 
-17. **Tech-debt notes** (inline) — Append identified debt to `docs/tech-debt.md`.
+17. `/tech-debt` — Identify, categorize, and prioritize technical debt introduced    **REQUIRED** ← DO NOT SKIP
+    or surfaced during this work. Append structured items to `docs/tech-debt.md`.
     Format: `| Item | Severity | Effort | Phase introduced |`. Create file if needed.
 
 18. `/documentation` — Update or create all project documentation.                    **REQUIRED** ← DO NOT SKIP
