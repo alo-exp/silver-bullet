@@ -108,9 +108,18 @@ if [[ -n "$existing" ]]; then
   exit 0
 fi
 
-# No existing log — extract mode from command string
-mode="interactive"
-printf '%s' "$cmd" | grep -q "autonomous" && mode="autonomous"
+# No existing log — read mode from mode file (ground truth)
+mode_file="${SB_DIR}/mode"
+if [[ -f "$mode_file" && ! -L "$mode_file" ]]; then
+  mode=$(cat "$mode_file" 2>/dev/null || echo "interactive")
+  # Validate against allowlist
+  case "$mode" in
+    interactive|autonomous) ;;
+    *) mode="interactive" ;;
+  esac
+else
+  mode="interactive"
+fi
 
 # --- Step 6: Create session log ---
 timestamp=$(date '+%H-%M-%S')

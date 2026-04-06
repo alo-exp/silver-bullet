@@ -30,9 +30,15 @@ if [[ -n "$pwd_hash" ]]; then
 
   # Check cache
   if [[ -f "$cache_file" ]]; then
-    cached_path=$(cat "$cache_file")
+    cached_path=$(sed -n '1p' "$cache_file")
+    cached_mtime=$(sed -n '2p' "$cache_file")
     if [[ -n "$cached_path" && -f "$cached_path" ]]; then
-      config_file="$cached_path"
+      current_mtime=$(stat -f '%m' "$cached_path" 2>/dev/null || stat -c '%Y' "$cached_path" 2>/dev/null || echo "0")
+      if [[ "$cached_mtime" == "$current_mtime" ]]; then
+        config_file="$cached_path"
+      else
+        rm -f "$cache_file"
+      fi
     else
       rm -f "$cache_file"
     fi
@@ -56,7 +62,8 @@ if [[ -z "$config_file" ]]; then
   # Cache result
   if [[ -n "${pwd_hash:-}" ]]; then
     cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
-    printf '%s' "$config_file" > "$cache_file"
+    config_mtime=$(stat -f '%m' "$config_file" 2>/dev/null || stat -c '%Y' "$config_file" 2>/dev/null || echo "0")
+    printf '%s\n%s' "$config_file" "$config_mtime" > "$cache_file"
   fi
 fi
 

@@ -2,7 +2,7 @@
   "version": "0.10.0",
   "project": {
     "name": "silver-bullet",
-    "src_pattern": "/src/",
+    "src_pattern": "/hooks/|/skills/|/templates/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
     "active_workflow": "full-dev-cycle"
   },

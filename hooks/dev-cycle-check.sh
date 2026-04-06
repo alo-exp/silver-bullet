@@ -164,7 +164,7 @@ To reset workflow state intentionally, run in your terminal:
   if [[ -n "$config_file" ]]; then
     src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
     # Validate src_pattern: only allow safe path-segment patterns (prevents regex injection)
-    if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.-]*/?$'; then
+    if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$'; then
       src_pattern="/src/"
     fi
     src_exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config_file")
