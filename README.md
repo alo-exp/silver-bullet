@@ -189,6 +189,7 @@ Skills installed by this plugin that extend the workflow:
 
 | Skill | When to use |
 |-------|-------------|
+| `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
 | `/silver:init` | Once per project — initializes CLAUDE.md, config, CI, and docs scaffold |
 | `/quality-gates` | Before planning (dev) — checks all 8 quality dimensions in parallel |
 | `/blast-radius` | Before planning (DevOps) — maps change scope, dependencies, and rollback plan |

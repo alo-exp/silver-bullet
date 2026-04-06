@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **Added** `/silver` dispatcher skill — routes freeform text to the best SB or GSD skill
 - **Renamed** `/using-silver-bullet` skill to `/silver:init` — shorter namespaced name
 
 ## 0.11.0 (2026-04-06)
