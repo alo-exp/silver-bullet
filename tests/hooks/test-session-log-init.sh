@@ -57,6 +57,8 @@ run_hook4() {
       bash "$HOOK"
 }
 rm -f ${HOME}/.claude/.silver-bullet/sentinel-pid
+# F-17 fix: hook reads the mode FILE, not the command string — pre-write the mode
+printf 'autonomous' > ${HOME}/.claude/.silver-bullet/mode
 run_hook4 "echo autonomous > ${HOME}/.claude/.silver-bullet/mode" > /dev/null
 if [[ -f ${HOME}/.claude/.silver-bullet/sentinel-pid ]]; then
   printf 'PASS: autonomous mode creates sentinel PID file\n'
@@ -82,6 +84,8 @@ run_hook5() {
       bash "$HOOK"
 }
 rm -f ${HOME}/.claude/.silver-bullet/sentinel-pid
+# F-17 fix: hook reads the mode FILE — pre-write interactive mode
+printf 'interactive' > ${HOME}/.claude/.silver-bullet/mode
 run_hook5 "echo interactive > ${HOME}/.claude/.silver-bullet/mode" > /dev/null
 if [[ ! -f ${HOME}/.claude/.silver-bullet/sentinel-pid ]]; then
   printf 'PASS: interactive mode does not create sentinel PID file\n'
@@ -107,6 +111,8 @@ run_hook6() {
 }
 rm -f ${HOME}/.claude/.silver-bullet/sentinel-pid ${HOME}/.claude/.silver-bullet/timeout \
       ${HOME}/.claude/.silver-bullet/session-start-time ${HOME}/.claude/.silver-bullet/timeout-warn-count
+# F-17 fix: hook reads the mode FILE — pre-write autonomous mode
+printf 'autonomous' > ${HOME}/.claude/.silver-bullet/mode
 # First trigger: creates log + sentinel
 run_hook6 "echo autonomous > ${HOME}/.claude/.silver-bullet/mode" > /dev/null
 pid1=$(cat ${HOME}/.claude/.silver-bullet/sentinel-pid 2>/dev/null || echo "")
