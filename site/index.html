@@ -200,8 +200,11 @@ nav .nav-cta:hover{
 .hero h1{
   font-size:clamp(2.2rem,5vw,4rem);font-weight:900;
   line-height:1.05;letter-spacing:-.04em;
-  max-width:800px;margin:0 auto 56px;
+  max-width:800px;margin:0 auto 16px;
 }
+.hero-h1-inner{display:inline-flex;align-items:center;gap:24px;}
+.hero-bullet{height:100px;width:auto;}
+.hero-tagline-caps{font-size:.82rem;font-weight:700;letter-spacing:.22em;color:var(--accent-light);margin:0 auto 80px;}
 .hero h1 .gradient{
   background:linear-gradient(to left,#374151 0%,#7a8ea0 50%,#d4dce6 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
@@ -656,7 +659,9 @@ footer .footer-links{display:flex;gap:24px}
 @media(max-width:768px){
   section{padding:72px 0}
   .hero{padding:110px 20px 72px}
-  .hero h1{margin-bottom:36px}
+  .hero h1{margin-bottom:12px}
+  .hero .hero-tagline-caps{margin-bottom:60px;letter-spacing:.18em}
+  .hero-bullet{height:76px}
   .hero .version-badge{font-size:.72rem;padding:5px 12px}
   .hero .tagline{font-size:1.1rem;margin-bottom:40px}
   .hero .subtitle{font-size:.95rem;margin-bottom:36px}
@@ -678,6 +683,8 @@ footer .footer-links{display:flex;gap:24px}
 @media(max-width:600px){
   section{padding:60px 0}
   .hero{padding:96px 16px 64px}
+  .hero-bullet{height:60px}
+  .hero-h1-inner{gap:14px}
   .hero .brooks-block{max-width:100%;gap:14px}
   .hero .brooks-photo{width:56px;height:56px}
   .hero .brooks-quote,.hero .brooks-attr{max-width:100%;padding-left:12px}
@@ -746,7 +753,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <section class="hero text-center">
   <div class="container">
     <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</div>
-    <h1><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></h1>
+    <h1><span class="hero-h1-inner"><img src="bullet.png" alt="" class="hero-bullet" aria-hidden="true"><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></span></h1>
+    <p class="hero-tagline-caps">ORCHESTRATE. ENFORCE. SHIP.</p>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
