@@ -137,7 +137,7 @@ run_session_log_init() {
 
 run_session_start() {
   local input='{"hook_event_name":"SessionStart"}'
-  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/session-start.sh" 2>/dev/null )
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/session-start" 2>/dev/null )
 }
 
 # --- Assertions ---
