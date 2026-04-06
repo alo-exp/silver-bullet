@@ -74,14 +74,14 @@ See CLAUDE.md §8 for details."
     if [[ -n "$file_path" ]]; then
       # Edit/Write targeting hooks directory or hooks.json
       if [[ "$file_path" == "${sb_hooks_dir}/"* ]] || [[ "$file_path" == "${CLAUDE_PLUGIN_ROOT}/hooks.json" ]]; then
-        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
+        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
       fi
     elif [[ -n "$command_str" ]]; then
       # Bash write commands targeting hooks directory or hooks.json
       if printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
          printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bpython3?\b|\bnode\b|\bruby\b|\bperl\b|\binstall\b)'; then
-        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
+        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
       fi
     fi
@@ -91,12 +91,12 @@ See CLAUDE.md §8 for details."
   if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
     if [[ -n "$file_path" ]] && printf '%s' "$file_path" | grep -qE '/silver-bullet[^/]*/hooks/'; then
-      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
+      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
     if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE '/silver-bullet[^/]*/hooks/' && \
        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bpython3?\b|\bnode\b|\bruby\b|\bperl\b|\binstall\b)'; then
-      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
+      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
   fi

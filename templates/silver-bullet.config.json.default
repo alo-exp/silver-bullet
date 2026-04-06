@@ -30,7 +30,7 @@
       "create-release",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
-      "forensics", "using-silver-bullet",
+      "forensics", "silver-init",
       "verification-before-completion",
       "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",

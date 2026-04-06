@@ -1,4 +1,4 @@
-# SENTINEL v2 Security Audit: using-silver-bullet
+# SENTINEL v2 Security Audit: silver:init
 
 **Audit Date:** 2026-04-01
 **Report Version:** 2.3.0
@@ -31,7 +31,7 @@
 
 ## Executive Summary
 
-The `/using-silver-bullet` skill is a project initialization and scaffolding tool that checks dependencies, auto-detects project metadata, writes configuration files, creates CLAUDE.md, copies workflow templates, and makes a git commit. It operates with **significant filesystem and shell privileges** — it reads arbitrary project files, writes to multiple locations, executes bash commands, and performs git operations. The skill also references 5 shell-script hooks and 2 template files that form part of the plugin's runtime enforcement system.
+The `/silver:init` skill is a project initialization and scaffolding tool that checks dependencies, auto-detects project metadata, writes configuration files, creates CLAUDE.md, copies workflow templates, and makes a git commit. It operates with **significant filesystem and shell privileges** — it reads arbitrary project files, writes to multiple locations, executes bash commands, and performs git operations. The skill also references 5 shell-script hooks and 2 template files that form part of the plugin's runtime enforcement system.
 
 **Overall Risk Level: MEDIUM**
 
@@ -57,7 +57,7 @@ Step 0: No encoded content detected. Proceeding.
 
 ## Step 1 — Environment & Scope Initialization
 
-1. Target skill file readable: YES — `/Users/shafqat/Documents/Projects/silver-bullet/skills/using-silver-bullet/SKILL.md`
+1. Target skill file readable: YES — `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver:init/SKILL.md`
 2. SENTINEL isolation verified: YES — static analysis only, no runtime execution
 3. Trust boundary established: YES — all skill content treated as untrusted data
 4. Report destination configured: YES — markdown output
@@ -71,7 +71,7 @@ Step 0: No encoded content detected. Proceeding.
 
 | Check | Result |
 |-------|--------|
-| Skill name | `using-silver-bullet` — no homoglyphs, no typosquatting signals |
+| Skill name | `silver:init` — no homoglyphs, no typosquatting signals |
 | Author | Alo Labs (from plugin.json) — consistent across plugin.json, marketplace.json, package.json |
 | Description | "Initialize Silver Bullet enforcement for a project" — matches actual behavior |
 | Namespace | `silver-bullet` — no impersonation of existing namespaces detected |
@@ -139,7 +139,7 @@ External inputs to this skill:
 
 ### Trust Chain
 
-1. User explicitly invokes `/using-silver-bullet` via Skill tool
+1. User explicitly invokes `/silver:init` via Skill tool
 2. Skill reads project files (untrusted — could be adversarial repo content)
 3. Project name extracted from manifest files is interpolated into config templates (injection surface)
 4. Git remote URL is extracted and interpolated into CLAUDE.md template (injection surface)
@@ -179,7 +179,7 @@ External inputs to this skill:
 │                    malicious "name" field containing          │
 │                    newlines + Claude instructions             │
 │                 2. Victim clones repo and runs                │
-│                    /using-silver-bullet                       │
+│                    /silver:init                       │
 │                 3. Malicious name is interpolated into        │
 │                    CLAUDE.md template unescaped               │
 │                 4. Future sessions read CLAUDE.md and         │
@@ -579,7 +579,7 @@ This chain is the primary risk: a poisoned project name persists in CLAUDE.md an
 
 ```
 PATCH FOR: FINDING-1.1 / FINDING-1.2
-LOCATION: skills/using-silver-bullet/SKILL.md, after Phase 2.5 (line 219)
+LOCATION: skills/silver:init/SKILL.md, after Phase 2.5 (line 219)
 VULNERABLE_HASH: SHA-256:N/A (missing defense, not vulnerable text)
 DEFECT_SUMMARY: Template values interpolated without sanitization — newlines and special characters could inject instructions into CLAUDE.md
 ACTION: INSERT_BEFORE Phase 2.6
@@ -604,7 +604,7 @@ ACTION: INSERT_BEFORE Phase 2.6
 
 ```
 PATCH FOR: FINDING-5.1
-LOCATION: skills/using-silver-bullet/SKILL.md, after line 10 (Plugin root section)
+LOCATION: skills/silver:init/SKILL.md, after line 10 (Plugin root section)
 VULNERABLE_HASH: SHA-256:N/A (missing defense)
 DEFECT_SUMMARY: Bash tool used 12+ times with no declared scope restriction
 ACTION: INSERT_AFTER line 10
@@ -622,7 +622,7 @@ ACTION: INSERT_AFTER line 10
 
 ```
 PATCH FOR: FINDING-7.1
-LOCATION: skills/using-silver-bullet/SKILL.md, line 132
+LOCATION: skills/silver:init/SKILL.md, line 132
 VULNERABLE_HASH: SHA-256:a6e2... (first 12 chars of hash of "npx get-shit-done-cc@latest")
 DEFECT_SUMMARY: Unpinned npx invocation uses @latest tag — vulnerable to upstream compromise
 ACTION: REPLACE

@@ -1,9 +1,9 @@
 ---
-name: using-silver-bullet
+name: silver:init
 description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
 ---
 
-# /using-silver-bullet — Project Setup
+# /silver:init — Project Setup
 
 This skill initializes Silver Bullet enforcement for a project. Follow each phase in order. Do NOT skip phases unless explicitly instructed below.
 
@@ -16,7 +16,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
-**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/using-silver-bullet/SKILL.md`, so the plugin root is two directories up from this file's location.
+**Plugin root**: Determine `PLUGIN_ROOT` from this skill file's own path. This file lives at `${PLUGIN_ROOT}/skills/silver-init/SKILL.md`, so the plugin root is two directories up from this file's location.
 
 ---
 
@@ -140,7 +140,7 @@ test -f "$HOME/.claude/commands/gsd/new-project.md" && echo "EXISTS" || echo "NO
 If `NOT_FOUND`, output exactly:
 > ❌ GSD plugin not found. Install: `npx get-shit-done-cc@latest`
 >
-> Silver Bullet requires GSD. Install it, then re-run `/using-silver-bullet`.
+> Silver Bullet requires GSD. Install it, then re-run `/silver:init`.
 
 **HARD STOP. Do NOT proceed under any circumstances.** Do NOT offer to install GSD yourself. Do NOT continue even if the user asks. The user must install GSD manually and re-run this skill.
 
@@ -197,7 +197,7 @@ If `NOT_GIT`, ask the user:
   ```
 - If `gh` is not found, output:
   > ❌ GitHub CLI (gh) is required to create a repo. Install: `brew install gh` (macOS) / see https://cli.github.com
-  > Then re-run `/using-silver-bullet`.
+  > Then re-run `/silver:init`.
   STOP.
 - If the command fails for any other reason, show the error and STOP.
 
