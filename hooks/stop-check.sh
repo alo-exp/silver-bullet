@@ -17,8 +17,8 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# Read JSON from stdin
-input=$(cat)
+# Read JSON from stdin (consumed per hook protocol; content not used by stop-check)
+cat >/dev/null
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  stop-check.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
