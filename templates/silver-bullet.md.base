@@ -16,6 +16,8 @@ At the very start of any new session, perform these steps automatically:
 3. **Compact the context** — run /compact to free context for the task.
 4. **Switch back to original model** if it was changed in step 1.
 
+> **compactPrompt**: Your `.silver-bullet.json` includes a `compactPrompt` key that instructs the compaction LLM to preserve these rules verbatim. If you customized it or removed it, re-add: `"compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions."`
+
 > **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip /compact. Evidence: no Read tool calls for docs/ files in session start.
 
 ---
