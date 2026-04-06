@@ -257,7 +257,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
-      <p>Skills required by Silver Bullet's workflows. Quality gates, blast radius, forensics, release notes, and <code>/using-silver-bullet</code> are Silver Bullet's own. Deploy checklist, testing strategy, documentation, and finishing-a-development-branch come from Superpowers and Engineering plugins that Silver Bullet enforces.</p>
+      <p>Skills required by Silver Bullet's workflows. Quality gates, blast radius, forensics, release notes, and <code>/using-silver-bullet</code> are Silver Bullet's own. Deploy checklist, testing strategy, tech debt, documentation, and finishing-a-development-branch come from Superpowers and Engineering plugins that Silver Bullet enforces.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -278,6 +278,11 @@ footer a:hover{color:var(--accent-light)}
             <td>IaC-adapted quality gates — 7 dimensions (usability excluded). Same base framework as /quality-gates, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention. Dispatches 7 parallel agents.</td>
           </tr>
           <tr>
+            <td>/accessibility-review<span class="badge-small badge-cond">UI only</span><span class="badge-small badge-req">Required</span></td>
+            <td>Discuss (UI phases)</td>
+            <td>WCAG 2.1 AA compliance review. Required for any phase that introduces or modifies user-facing UI. Checks colour contrast, keyboard nav, screen reader compatibility, focus management.</td>
+          </tr>
+          <tr>
             <td>/deploy-checklist<span class="badge-small badge-req">Required</span></td>
             <td>Before ship</td>
             <td>Pre-deployment verification gate. Checks rollback plan, monitoring, stakeholder sign-off, CI status.</td>
@@ -293,6 +298,11 @@ footer a:hover{color:var(--accent-light)}
             <td>Define test pyramid, coverage goals, tooling. Produces testing strategy document.</td>
           </tr>
           <tr>
+            <td>/tech-debt<span class="badge-small badge-req">Required</span></td>
+            <td>Finalization</td>
+            <td>Identify, categorize, and prioritize technical debt introduced or surfaced during the work. Appends structured items to <code>docs/tech-debt.md</code>: <code>| Item | Severity | Effort | Phase introduced |</code>.</td>
+          </tr>
+          <tr>
             <td>/documentation<span class="badge-small badge-req">Required</span></td>
             <td>Finalization</td>
             <td>Update or create all project docs: README, PRD-Overview, Architecture, Testing, CICD, KNOWLEDGE, CHANGELOG.</td>
@@ -300,7 +310,12 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>/finishing-a-development-branch<span class="badge-small badge-req">Required</span></td>
             <td>Finalization</td>
-            <td>Branch rebase, cleanup, and merge preparation.</td>
+            <td>Branch rebase, cleanup, and merge preparation. Skipped automatically when working directly on <code>main</code>/<code>master</code>.</td>
+          </tr>
+          <tr>
+            <td>/incident-response<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td>
+            <td>Incident Fast Path (Step 1)</td>
+            <td>Establish severity, timeline, communication plan, and rollback criteria before touching anything. Required first step for any active production incident.</td>
           </tr>
           <tr>
             <td>/forensics</td>
@@ -342,6 +357,11 @@ footer a:hover{color:var(--accent-light)}
             <td>/ux-copy<span class="badge-small badge-sp">SP</span><span class="badge-small badge-cond">Cond</span></td>
             <td>Discuss (UI work)</td>
             <td>User-facing text and messaging decisions. Only required for phases with UI work.</td>
+          </tr>
+          <tr>
+            <td>/test-driven-development<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
+            <td>Execute (before writing code)</td>
+            <td>Red-green-refactor discipline. Invoke before writing any implementation code in /gsd:execute-phase. Write a failing test first, then implement until it passes, then refactor. Required in both dev and DevOps (Terratest / conftest / OPA / BATS for IaC).</td>
           </tr>
           <tr>
             <td>/code-review<span class="badge-small badge-eng">ENG</span><span class="badge-small badge-req">Required</span></td>

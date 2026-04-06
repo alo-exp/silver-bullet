@@ -354,35 +354,35 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Seven independent enforcement layers — 4 PostToolUse hooks from Silver Bullet, 2 runtime hooks from GSD, plus redundant instructions that reinforce the same rules across multiple files:</p>
+      <p>Seven independent enforcement layers — 4 Pre+PostToolUse hooks from Silver Bullet, 2 runtime hooks from GSD, plus redundant instructions that reinforce the same rules across multiple files:</p>
 
       <div class="layer-list">
         <div class="layer-card">
           <div class="layer-num">1</div>
           <div>
-            <h4>PostToolUse — Skill Tracker</h4>
+            <h4>Pre+PostToolUse — Skill Tracker</h4>
             <p>Records every Skill tool invocation in the session state file. The source of truth for which required steps have been completed.</p>
           </div>
         </div>
         <div class="layer-card">
           <div class="layer-num">2</div>
           <div>
-            <h4>PostToolUse — Stage Enforcer</h4>
+            <h4>Pre+PostToolUse — Stage Enforcer</h4>
             <p>Reads session state and issues a HARD STOP if Claude attempts to advance to the next phase before completing the current one (e.g., starting PLAN before /quality-gates passes).</p>
           </div>
         </div>
         <div class="layer-card">
           <div class="layer-num">3</div>
           <div>
-            <h4>PostToolUse — Compliance Status</h4>
+            <h4>Pre+PostToolUse — Compliance Status</h4>
             <p>After every tool use, outputs a progress indicator showing which required steps are complete and which are pending. Keeps you informed without being obtrusive.</p>
           </div>
         </div>
         <div class="layer-card">
           <div class="layer-num">4</div>
           <div>
-            <h4>PostToolUse — Completion Audit</h4>
-            <p>Intercepts every <code>git commit</code>, <code>git push</code>, and deploy command. Checks the skill tracker — if required skills are missing, the command is blocked with a specific list of what's incomplete.</p>
+            <h4>Pre+PostToolUse — Completion Audit</h4>
+            <p>Intercepts <code>git commit</code>, <code>git push</code>, and deploy commands. Uses a two-tier check: <strong>commits and pushes</strong> only require quality gates to have run; <strong>PR creation, deploys, and releases</strong> require the full required skill list. Blocks with a specific list of what's incomplete. Registers as PreToolUse so blocking is unbypassable — even in bypass-permissions mode.</p>
           </div>
         </div>
         <div class="layer-card">
@@ -429,11 +429,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>The mode is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session. If the file is missing or unreadable at any point, the system defaults to <strong>Interactive</strong>.</p>
 
       <h3>Autonomous Mode Safeguards</h3>
-      <p>Even in autonomous mode, Silver Bullet has three stall-detection rules to prevent infinite loops:</p>
+      <p>Even in autonomous mode, Silver Bullet has stall-detection to prevent infinite loops. Two independent tiers run in parallel:</p>
       <ul>
-        <li>The same tool call with identical arguments producing the same result 2+ times consecutively</li>
-        <li>3+ tool calls in one step with no new state change (no file written, no decision made)</li>
-        <li>More than 10 tool calls in one step without writing a file or logging an autonomous decision</li>
+        <li><strong>Wall-clock sentinel:</strong> If no skill has been recorded in the last 10 minutes, a timeout warning fires.</li>
+        <li><strong>Call-count tier:</strong> Warns at 30, 60, and 100+ tool calls since the last skill invocation — escalating in urgency at each threshold.</li>
+        <li><strong>Identical-call guard:</strong> The same tool call with identical arguments producing the same result 2+ times consecutively is treated as a stall.</li>
       </ul>
       <p>On any stall: Claude makes a best-judgment call, moves on, and logs the decision for review.</p>
 

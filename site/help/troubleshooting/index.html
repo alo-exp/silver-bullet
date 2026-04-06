@@ -343,8 +343,21 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="issue-card">
         <h4>"COMPLETION BLOCKED — Workflow incomplete"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> You are trying to <code>git commit</code>, <code>git push</code>, or deploy before completing all required workflow steps.</p>
+        <p class="ic-cause"><strong>Cause:</strong> You are trying to create a PR, deploy, or create a release before completing all required workflow steps.</p>
         <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing skill explicitly. Use <code>/gsd:next</code> to find the next required step.</p>
+        <p class="ic-fix"><strong>Note on commits vs releases:</strong> Enforcement uses two tiers. <code>git commit</code> and <code>git push</code> only require quality gates to have run. <code>gh pr create</code>, deploys, and releases require the full required skill list. If commits work but release is blocked, that's expected — you haven't completed the full workflow yet.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"finishing-a-development-branch blocked on main"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/finishing-a-development-branch</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> This step is automatically skipped when you're on <code>main</code> or <code>master</code>. If enforcement is still blocking, verify your branch name with <code>git branch --show-current</code>.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Compliance status shows wrong progress after switching branches</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The session state file is branch-scoped and resets when you switch branches. Skills recorded on the previous branch don't carry over.</p>
+        <p class="ic-fix"><strong>Fix:</strong> This is expected behaviour — each branch tracks its own workflow progress independently. Start a new session on the new branch and run the required skills for that branch's work.</p>
       </div>
 
       <div class="issue-card">
