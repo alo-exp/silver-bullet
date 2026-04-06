@@ -461,22 +461,16 @@ result=$(printf '{"hook_event_name":"PostToolUse","tool_input":{"command":"git p
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `record-skill.sh` have an existing test file?**
-   - What we know: `test-record-skill.sh` exists in `tests/hooks/`
-   - What's unclear: Coverage depth — does it test idempotency and all edge cases?
-   - Recommendation: Read `test-record-skill.sh` during planning to determine if gaps exist
+   - **RESOLVED:** Yes, `test-record-skill.sh` exists in `tests/hooks/`. Integration tests in `test-skill-tracking-scenarios.sh` additionally cover idempotency (Scenario 3) and progressive recording (Scenario 5). Coverage is sufficient.
 
 2. **Should the integration test suite run in CI?**
-   - What we know: `.planning/config.json` has no CI configuration; existing tests run manually
-   - What's unclear: Whether CI (GitHub Actions) is configured for this repo and whether tests should gate PRs
-   - Recommendation: Add a `npm test`-style entry or a Makefile target; CI integration is optional for this phase
+   - **RESOLVED:** No CI is configured for this repo. Tests run manually via `bash tests/run-all-tests.sh`. CI integration is out of scope for Phase 8. A coverage matrix (`tests/integration/coverage-matrix.sh`) is added to verify all hooks have tests.
 
 3. **Is `timeout-check.sh` covered by existing tests?**
-   - What we know: `test-timeout-check.sh` exists in `tests/hooks/`
-   - What's unclear: Coverage of all timeout scenarios
-   - Recommendation: Read during planning; include in integration scenarios if gaps found
+   - **RESOLVED:** Yes, `test-timeout-check.sh` exists in `tests/hooks/` with unit-level coverage. Timeout scenarios are timing-dependent and not suitable for deterministic integration tests. Unit test coverage is sufficient.
 
 ---
 
@@ -484,11 +478,11 @@ result=$(printf '{"hook_event_name":"PostToolUse","tool_input":{"command":"git p
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| bash | All test scripts | ✓ | zsh 5.x (bash compat) | — |
-| jq | All hooks and tests | ✓ | (system) | None — required |
-| git | session-start, branch detection tests | ✓ | (system) | — |
-| mktemp | Test isolation | ✓ | (system) | — |
-| claude CLI | Option A (rejected) | ✓ at ~/.local/bin/claude v2.1.79 | 2.1.79 | N/A — not using |
+| bash | All test scripts | yes | zsh 5.x (bash compat) | -- |
+| jq | All hooks and tests | yes | (system) | None -- required |
+| git | session-start, branch detection tests | yes | (system) | -- |
+| mktemp | Test isolation | yes | (system) | -- |
+| claude CLI | Option A (rejected) | yes at ~/.local/bin/claude v2.1.79 | 2.1.79 | N/A -- not using |
 
 **Missing dependencies with no fallback:** None.
 
@@ -501,38 +495,38 @@ result=$(printf '{"hook_event_name":"PostToolUse","tool_input":{"command":"git p
 | Property | Value |
 |----------|-------|
 | Framework | bash (custom assert helpers, existing pattern) |
-| Config file | none — self-contained scripts |
+| Config file | none -- self-contained scripts |
 | Quick run command | `bash tests/integration/run-all.sh` |
 | Full suite command | `bash tests/integration/run-all.sh && bash tests/integration/coverage-matrix.sh` |
 
-### Phase Requirements → Test Map
+### Phase Requirements -> Test Map
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| ENF-HARNESS-01 | forbidden-skill-check covers all 5 paths | integration | `bash tests/integration/scenarios/scenario-forbidden-skill.sh` | No — Wave 0 |
-| ENF-HARNESS-02 | dev-cycle-check covers all stages + bypass paths | integration | `bash tests/integration/scenarios/scenario-dev-cycle-gate.sh` | No — Wave 0 |
-| ENF-HARNESS-03 | completion-audit covers Tier1 + Tier2 + ordering | integration | `bash tests/integration/scenarios/scenario-completion-audit.sh` | No — Wave 0 |
-| ENF-HARNESS-04 | stop-check covers block/allow/trivial/release | integration | `bash tests/integration/scenarios/scenario-stop-check.sh` | No — Wave 0 |
-| ENF-HARNESS-05 | prompt-reminder covers context injection + bypass | integration | `bash tests/integration/scenarios/scenario-prompt-reminder.sh` | No — Wave 0 |
-| ENF-HARNESS-06 | session-start covers branch reset + marker cleanup | integration | `bash tests/integration/scenarios/scenario-session-start.sh` | No — Wave 0 |
-| ENF-HARNESS-07 | ci-status-check covers all CI outcomes via env override | integration | `bash tests/integration/scenarios/scenario-ci-status-check.sh` | No — Wave 0 |
-| ENF-HARNESS-08 | compliance-status covers counts + cache | integration | `bash tests/integration/scenarios/scenario-compliance-status.sh` | No — Wave 0 |
-| ENF-HARNESS-09 | Coverage matrix confirms 100% hook×path coverage | gate | `bash tests/integration/coverage-matrix.sh` | No — Wave 0 |
-| ENF-HARNESS-10 | Master runner discovers and runs all scenarios | orchestration | `bash tests/integration/run-all.sh` | No — Wave 0 |
+| ENF-HARNESS-01 | forbidden-skill-check covers all 5 paths | integration | `bash tests/integration/scenarios/scenario-forbidden-skill.sh` | No -- Wave 0 |
+| ENF-HARNESS-02 | dev-cycle-check covers all stages + bypass paths | integration | `bash tests/integration/scenarios/scenario-dev-cycle-gate.sh` | No -- Wave 0 |
+| ENF-HARNESS-03 | completion-audit covers Tier1 + Tier2 + ordering | integration | `bash tests/integration/scenarios/scenario-completion-audit.sh` | No -- Wave 0 |
+| ENF-HARNESS-04 | stop-check covers block/allow/trivial/release | integration | `bash tests/integration/scenarios/scenario-stop-check.sh` | No -- Wave 0 |
+| ENF-HARNESS-05 | prompt-reminder covers context injection + bypass | integration | `bash tests/integration/scenarios/scenario-prompt-reminder.sh` | No -- Wave 0 |
+| ENF-HARNESS-06 | session-start covers branch reset + marker cleanup | integration | `bash tests/integration/scenarios/scenario-session-start.sh` | No -- Wave 0 |
+| ENF-HARNESS-07 | ci-status-check covers all CI outcomes via env override | integration | `bash tests/integration/scenarios/scenario-ci-status-check.sh` | No -- Wave 0 |
+| ENF-HARNESS-08 | compliance-status covers counts + cache | integration | `bash tests/integration/scenarios/scenario-compliance-status.sh` | No -- Wave 0 |
+| ENF-HARNESS-09 | Coverage matrix confirms 100% hook x path coverage | gate | `bash tests/integration/coverage-matrix.sh` | No -- Wave 0 |
+| ENF-HARNESS-10 | Master runner discovers and runs all scenarios | orchestration | `bash tests/integration/run-all.sh` | No -- Wave 0 |
 
 ### Sampling Rate
 
-- **Per task commit:** `bash tests/integration/run-all.sh` (fast — no LLM calls)
+- **Per task commit:** `bash tests/integration/run-all.sh` (fast -- no LLM calls)
 - **Per wave merge:** `bash tests/integration/run-all.sh && bash tests/integration/coverage-matrix.sh`
 - **Phase gate:** Full suite green before `/gsd-verify-work`
 
 ### Wave 0 Gaps
 
-- [ ] `tests/integration/run-all.sh` — master runner
-- [ ] `tests/integration/coverage-matrix.sh` — coverage gate
-- [ ] `tests/integration/helpers/common.sh` — shared assert helpers, setup/teardown
-- [ ] `tests/integration/helpers/fixtures.sh` — JSON payload builders
-- [ ] `tests/integration/scenarios/scenario-*.sh` — one per hook group (8 files)
+- [ ] `tests/integration/run-all.sh` -- master runner
+- [ ] `tests/integration/coverage-matrix.sh` -- coverage gate
+- [ ] `tests/integration/helpers/common.sh` -- shared assert helpers, setup/teardown
+- [ ] `tests/integration/helpers/fixtures.sh` -- JSON payload builders
+- [ ] `tests/integration/scenarios/scenario-*.sh` -- one per hook group (8 files)
 
 ---
 
@@ -551,14 +545,14 @@ No ASVS categories apply to a bash test harness.
 ## Sources
 
 ### Primary (HIGH confidence)
-- [code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless) — `--bare` flag behavior, hook loading in `-p` mode
-- `tests/hooks/` (13 existing test files) — proven test pattern for this codebase
-- `hooks/hooks.json` — definitive list of all registered hooks and matchers
-- All hook scripts in `hooks/` — hook input/output contracts and enforcement logic
+- [code.claude.com/docs/en/headless](https://code.claude.com/docs/en/headless) -- `--bare` flag behavior, hook loading in `-p` mode
+- `tests/hooks/` (13 existing test files) -- proven test pattern for this codebase
+- `hooks/hooks.json` -- definitive list of all registered hooks and matchers
+- All hook scripts in `hooks/` -- hook input/output contracts and enforcement logic
 
 ### Secondary (MEDIUM confidence)
-- [github.com/anthropics/claude-code/issues/6305](https://github.com/anthropics/claude-code/issues/6305) — PreToolUse/PostToolUse not firing report (open issue)
-- [github.com/anthropics/claude-code/issues/7535](https://github.com/anthropics/claude-code/issues/7535) — In-process hooks in headless mode closed as NOT PLANNED
+- [github.com/anthropics/claude-code/issues/6305](https://github.com/anthropics/claude-code/issues/6305) -- PreToolUse/PostToolUse not firing report (open issue)
+- [github.com/anthropics/claude-code/issues/7535](https://github.com/anthropics/claude-code/issues/7535) -- In-process hooks in headless mode closed as NOT PLANNED
 
 ### Tertiary (LOW confidence)
 - None used
@@ -568,10 +562,10 @@ No ASVS categories apply to a bash test harness.
 ## Metadata
 
 **Confidence breakdown:**
-- Architecture (direct JSON pipe pattern): HIGH — proven in 13 existing test files
-- Feasibility ruling (Option D over Option A): HIGH — supported by official docs + GitHub issues
-- Hook coverage table: HIGH — derived directly from reading hook source code
-- Pitfalls: HIGH — derived from reading hook source code security checks
+- Architecture (direct JSON pipe pattern): HIGH -- proven in 13 existing test files
+- Feasibility ruling (Option D over Option A): HIGH -- supported by official docs + GitHub issues
+- Hook coverage table: HIGH -- derived directly from reading hook source code
+- Pitfalls: HIGH -- derived from reading hook source code security checks
 
 **Research date:** 2026-04-06
 **Valid until:** 2026-05-06 (Claude Code hooks API is stable; test pattern is internal)
