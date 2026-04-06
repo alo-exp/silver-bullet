@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 5. Documentation & Public-Facing | 0/1 | Not started | - |
 | 6. Enforcement Techniques | 0/2 | Planned | - |
 | 7. Close Enforcement Audit Gaps | 0/4 | Planned | - |
-| 8. Enforcement Test Harness | 0/2 | Planned | - |
+| 8. Enforcement Test Harness | 1/2 | In Progress|  |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
 
@@ -135,8 +135,8 @@ Plans:
 **Goal:** Automated integration test suite that validates multi-hook enforcement scenarios (planning gates, workflow completion, skill tracking, session management) replacing manual e2e-smoke-test enforcement checks with deterministic JSON-pipe tests
 **Requirements**: ENF-HARNESS-01, ENF-HARNESS-02, ENF-HARNESS-03, ENF-HARNESS-04, ENF-HARNESS-05, ENF-HARNESS-06, ENF-HARNESS-07, ENF-HARNESS-08, ENF-HARNESS-10
 **Depends on:** Phase 7
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 08-01-PLAN.md -- Integration test helpers, planning gate scenarios, workflow completion scenarios
+- [x] 08-01-PLAN.md -- Integration test helpers, planning gate scenarios, workflow completion scenarios
 - [ ] 08-02-PLAN.md -- Skill tracking scenarios, session scenarios, unified test runner, smoke test doc update
