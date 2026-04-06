@@ -93,7 +93,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -103,6 +103,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. Template Parity & Hook Verification | 0/1 | Not started | - |
 | 5. Documentation & Public-Facing | 0/1 | Not started | - |
 | 6. Enforcement Techniques | 0/2 | Planned | - |
+| 7. Close Enforcement Audit Gaps | 0/4 | Planned | - |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
 
@@ -114,3 +115,16 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 Plans:
 - [ ] 06-01-PLAN.md -- Create Stop hook, UserPromptSubmit hook, register in hooks.json, add compactPrompt to config template
 - [ ] 06-02-PLAN.md -- Extend dev-cycle-check.sh hook self-protection, add tests for new hooks, create enforcement techniques reference doc
+
+### Phase 7: Close All Enforcement Audit Gaps
+
+**Goal:** Close all 16 actionable enforcement gaps (F-01, F-03 through F-20 excluding F-02/F-10/F-12/F-14) from the adversarial audit. Convert bypass paths to hard or soft enforcement with tests for all new hook scripts.
+**Requirements**: ENF-F01, ENF-F03, ENF-F04, ENF-F05, ENF-F06, ENF-F07, ENF-F08, ENF-F09, ENF-F11, ENF-F13, ENF-F15, ENF-F16, ENF-F17, ENF-F18, ENF-F19, ENF-F20, ENF-TESTS
+**Depends on:** Phase 6
+**Plans:** 4 plans
+
+Plans:
+- [ ] 07-01-PLAN.md -- New forbidden-skill-check.sh hook, SubagentStop registration, stop-check.sh quality-gate-stage check, completion-audit.sh gh pr merge, ci-status-check.sh extended patterns
+- [ ] 07-02-PLAN.md -- dev-cycle-check.sh hardening: plugin cache Bash check, scripting language bypass, branch mismatch warning, generalized tamper regex, destructive command warning
+- [ ] 07-03-PLAN.md -- Stage falsification prevention, stage-after-workflow ordering, compliance-status.sh mtime cache, session-log-init.sh mode fix, src_pattern update
+- [ ] 07-04-PLAN.md -- Review loop proxy enforcement (F-01), test suites for all new enforcement code
