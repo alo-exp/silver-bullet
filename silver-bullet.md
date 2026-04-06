@@ -22,7 +22,7 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Six technical layers plus one documentation layer enforce compliance:
+Ten enforcement layers enforce compliance:
 
 1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
@@ -30,8 +30,11 @@ Six technical layers plus one documentation layer enforce compliance:
 4. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
 5. **CI status check** (Pre+PostToolUse/Bash) — Blocks further commits and actions when CI is failing
 6. **Session management** (PostToolUse/Bash) — Session logging, autonomous mode timeout detection, branch-scoped state reset
-7. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
-   explicit rules against skipping, combining, or implicitly covering steps
+7. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_deploy skills are missing
+8. **UserPromptSubmit reminder** (UserPromptSubmit) — Re-injects missing skills list before every user message
+9. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
+10. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
+    explicit rules against skipping, combining, or implicitly covering steps
 
 **Enforcement model**: Hooks are **invocation-based**, not outcome-based.
 `record-skill.sh` records that a skill was *called*; it cannot verify
