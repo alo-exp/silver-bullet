@@ -95,11 +95,11 @@ state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
 # ── Build required skills list (Tier 2: full required_deploy list) ────────────
-DEFAULT_REQUIRED="quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt"
+DEFAULT_REQUIRED="quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
 
 # DevOps workflow substitutes quality-gates with blast-radius + devops-quality-gates
 if [[ "$active_workflow" == "devops-cycle" ]]; then
-  DEFAULT_REQUIRED="blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt"
+  DEFAULT_REQUIRED="blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
 fi
 
 # Mandatory finalization skills

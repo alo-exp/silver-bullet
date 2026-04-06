@@ -120,10 +120,16 @@ To reset the workflow state, remove the file from your terminal (not from Claude
   elif [[ -n "$command_str" ]]; then
     # Bash write to .silver-bullet/state, /branch, or /trivial → block
     # Matches: echo x >> path, printf x > path, tee path — but not reads (cat, grep)
-    # Whitelist: quality-gate-stage-N appends are legitimate (§9 pre-release gate recording)
-    if printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial)' && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
-       ! printf '%s' "$command_str" | grep -qE '\b(quality-gate-stage-[1-4]|verification-before-completion-stage-[1-4]|review-loop-pass-[12])\b'; then
+    # Whitelist: quality-gate-stage-N and verification-before-completion-stage-N appends are
+    # legitimate (§9 pre-release gate recording). Match only the exact single-marker append
+    # pattern to prevent multiline injection that bundles additional skill names.
+    is_whitelisted_append=false
+    if printf '%s' "$command_str" | grep -qE "^echo ['\"]?(quality-gate-stage-[1-4]|verification-before-completion-stage-[1-4]|review-loop-pass-[12])['\"]? >> ~/\.claude/[^/]+/state$"; then
+      is_whitelisted_append=true
+    fi
+    if [[ "$is_whitelisted_append" == false ]] && \
+       printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial)' && \
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
 Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
@@ -212,7 +218,8 @@ To reset workflow state intentionally, run in your terminal:
     stored_branch=$(cat "$branch_file" 2>/dev/null || true)
     current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
     if [[ -n "$stored_branch" && -n "$current_branch" && "$stored_branch" != "$current_branch" ]]; then
-      printf '{"hookSpecificOutput":{"message":"Warning: Branch mismatch -- state recorded for [%s] but current branch is [%s]. Run /compact to reset."}}' "$stored_branch" "$current_branch"
+      jq -n --arg s "$stored_branch" --arg c "$current_branch" \
+        '{"hookSpecificOutput":{"message":"Warning: Branch mismatch -- state recorded for [\($s)] but current branch is [\($c)]. Run /compact to reset."}}'
       # Warning only -- do not exit, let the rest of the hook proceed
     fi
   fi

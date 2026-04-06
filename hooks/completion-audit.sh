@@ -352,6 +352,7 @@ elif [[ -n "$missing" ]]; then
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
   msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines" "$ordering_note")
   emit_block "$msg"
+  exit 0
 elif [[ -n "$stage_ordering_issues" ]]; then
   msg=$(printf '⚠️  STAGE ORDERING WARNING — Quality gate stage markers recorded without required preceding verification:\n%s\nEach quality-gate-stage-N must be preceded by verification-before-completion-stage-N.' "$stage_ordering_issues")
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
