@@ -371,6 +371,15 @@ hooks/compliance-status.sh                 ────────────�
 hooks/completion-audit.sh                  ~/.claude/.silver-bullet/mode (interactive|autonomous)
   → blocks commit/push/deploy              ~/.claude/.silver-bullet/session-log-path
 
+hooks/stop-check.sh
+  → blocks task-complete if skills missing (fires on Stop/SubagentStop)
+
+hooks/prompt-reminder.sh
+  → re-injects missing skills + core rules before every user message
+
+hooks/forbidden-skill-check.sh
+  → blocks deprecated/forbidden skills (PreToolUse/Skill)
+
 Support hooks (fire automatically)
 ───────────────────────────────────
 hooks/semantic-compress.sh
@@ -386,7 +395,7 @@ hooks/timeout-check.sh
   → monitors for stall conditions
 
 hooks/session-start
-  → injects Superpowers + Design context at session open
+  → injects Superpowers + Design context; injects core-rules.md at session open
 
 External enforcement (GSD's own hooks)
 ──────────────────────────────────────
