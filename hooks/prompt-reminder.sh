@@ -97,10 +97,23 @@ done
 # ── Load core enforcement rules (Tier 2 rule injection — survives compaction) ──
 # Read core-rules.md from the same directory as this script so rules are
 # re-injected before every user prompt, not just at session start.
+# Security: core-rules.md is co-located with hook scripts in the plugin directory.
+# An attacker who can write to the plugin directory can already modify the hooks
+# themselves, so external-file read does not add meaningful attack surface on
+# single-user developer systems. File must reside under the same plugin root.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 core_rules_file="${script_dir}/core-rules.md"
 if [[ ! -f "$core_rules_file" ]] && [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
   core_rules_file="${CLAUDE_PLUGIN_ROOT}/hooks/core-rules.md"
+fi
+# Security: verify core-rules.md is actually within the plugin directory (path traversal defense)
+resolved_rules=""
+if [[ -f "$core_rules_file" ]]; then
+  resolved_rules="$(cd "$(dirname "$core_rules_file")" && pwd)/$(basename "$core_rules_file")"
+fi
+if [[ -n "$resolved_rules" && "$resolved_rules" != "${script_dir}"* ]]; then
+  # Path resolved outside plugin directory — reject silently
+  core_rules_file=""
 fi
 
 # ── Emit additionalContext ────────────────────────────────────────────────────

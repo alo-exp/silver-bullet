@@ -86,11 +86,20 @@ design_file=$(ls ~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.m
 # Locate SB core-rules.md (rules file installed alongside this hook)
 # This is the SB equivalent of ~/.claude/core-values.yml — re-injected every session
 # so enforcement rules survive context compaction.
+# Security: co-located with hooks; plugin-dir write access implies hook modification
+# access anyway. Path traversal defense: verify file resolves within plugin directory.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 core_rules_file="${script_dir}/core-rules.md"
 # Fallback: try CLAUDE_PLUGIN_ROOT if script_dir heuristic fails
 if [[ ! -f "$core_rules_file" ]] && [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
   core_rules_file="${CLAUDE_PLUGIN_ROOT}/hooks/core-rules.md"
+fi
+# Path traversal defense: reject if resolved path escapes plugin directory
+if [[ -f "$core_rules_file" ]]; then
+  _resolved_rules="$(cd "$(dirname "$core_rules_file")" && pwd)/$(basename "$core_rules_file")"
+  if [[ "$_resolved_rules" != "${script_dir}"* ]]; then
+    core_rules_file=""
+  fi
 fi
 
 # Build combined context

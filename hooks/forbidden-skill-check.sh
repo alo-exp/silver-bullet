@@ -31,9 +31,12 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  forbidden-skill-che
 raw_skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
 [[ -z "$raw_skill" ]] && exit 0
 
-# Strip namespace prefix (e.g. "superpowers:executing-plans" → "executing-plans")
-# Threat T-07-01: strip before matching to prevent namespace bypass
-skill_name=$(printf '%s' "$raw_skill" | sed 's/^[a-zA-Z0-9_-]*://')
+# Strip all namespace prefixes (e.g. "outer:inner:executing-plans" → "executing-plans")
+# Threat T-07-01: greedy strip prevents double-namespace bypass (SENTINEL finding)
+skill_name="$raw_skill"
+while [[ "$skill_name" == *:* ]]; do
+  skill_name="${skill_name#*:}"
+done
 
 # ── Hardcoded forbidden list ──────────────────────────────────────────────────
 FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
