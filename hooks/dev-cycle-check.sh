@@ -57,6 +57,13 @@ Silver Bullet NEVER modifies upstream plugin files. Implement the change in Silv
 See CLAUDE.md §8 for details."
     emit_block "$msg"
     exit 0
+  elif [[ -n "$command_str" ]]; then
+    # F-07: Block Bash commands that write to the plugin cache (bypass via shell instead of Edit/Write)
+    if printf '%s' "$command_str" | grep -qE "$plugin_cache" && \
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bpython3?\b|\bnode\b|\bruby\b|\bperl\b|\binstall\b)'; then
+      emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
+      exit 0
+    fi
   fi
 
   # --- Silver Bullet hook self-protection ─────────────────────────────────────
@@ -73,7 +80,7 @@ See CLAUDE.md §8 for details."
     elif [[ -n "$command_str" ]]; then
       # Bash write commands targeting hooks directory or hooks.json
       if printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
-         printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b)'; then
+         printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bpython3?\b|\bnode\b|\bruby\b|\bperl\b|\binstall\b)'; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
         exit 0
       fi
@@ -88,7 +95,7 @@ See CLAUDE.md §8 for details."
       exit 0
     fi
     if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE '/silver-bullet[^/]*/hooks/' && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b)'; then
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bpython3?\b|\bnode\b|\bruby\b|\bperl\b|\binstall\b)'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /using-silver-bullet."
       exit 0
     fi
