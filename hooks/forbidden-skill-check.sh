@@ -38,6 +38,10 @@ while [[ "$skill_name" == *:* ]]; do
   skill_name="${skill_name#*:}"
 done
 
+# Invariant: if raw_skill was non-empty but contained only colons, skill_name
+# is now empty. Empty skill_name safely matches no forbidden entry.
+[[ -z "$skill_name" ]] && exit 0
+
 # ── Hardcoded forbidden list ──────────────────────────────────────────────────
 FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
 
@@ -75,7 +79,7 @@ if [[ -n "$forbidden_cfg" ]]; then
   while IFS= read -r entry; do
     [[ -z "$entry" ]] && continue
     if [[ "$skill_name" == "$entry" ]]; then
-      reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /gsd:execute-phase for execution and /gsd:plan-phase for planning. See silver-bullet.md section 6."
+      reason="FORBIDDEN SKILL -- ${skill_name} is blocked by project configuration. See .silver-bullet.json skills.forbidden."
       json_reason=$(printf '%s' "$reason" | jq -Rs '.')
       printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
       exit 0

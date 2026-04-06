@@ -36,12 +36,21 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   rm -f "$TMPSTATE"
+  # Init a git repo so branch-detection tests work (hook silently handles no-git too)
+  git -C "$TMPDIR_TEST" init -q
+  git -C "$TMPDIR_TEST" config user.email "test@test.com"
+  git -C "$TMPDIR_TEST" config user.name "Test"
+  touch "$TMPDIR_TEST/.gitkeep"
+  git -C "$TMPDIR_TEST" add .gitkeep
+  git -C "$TMPDIR_TEST" commit -q -m "init" 2>/dev/null || true
+  git -C "$TMPDIR_TEST" checkout -q -b feature/test 2>/dev/null || true
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE"
+  rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 }
 
 run_hook() {
@@ -143,6 +152,34 @@ rm -f "$TMPSTATE"
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook)
 assert_empty "trivial file present -> silent exit, no output" "$out"
+teardown
+
+# Test 6: Main branch -> finishing-a-development-branch NOT in missing (TD-02)
+echo "--- Test 6: Main branch -> finishing-a-development-branch not in missing ---"
+setup
+write_cfg
+# Switch to main branch
+git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
+# Record only quality-gates (leave code-review and others missing) so 'Missing:' appears,
+# but finishing-a-development-branch should be exempt on main and not appear in the list
+echo "quality-gates" > "$TMPSTATE"
+out=$(run_hook)
+assert_contains "on main: output contains 'Missing:'" "$out" "Missing:"
+assert_not_contains "on main: finishing-a-development-branch NOT in missing" "$out" "finishing-a-development-branch"
+teardown
+
+# Test 7: Path traversal in CLAUDE_PLUGIN_ROOT -> evil core-rules.md not injected (TD-06)
+echo "--- Test 7: Path traversal in CLAUDE_PLUGIN_ROOT -> evil core-rules not injected ---"
+setup
+write_cfg
+echo "quality-gates" > "$TMPSTATE"
+# Create a core-rules.md outside the plugin dir with a canary string
+evil_dir=$(mktemp -d)
+echo "CANARY_EVIL_RULES" > "$evil_dir/core-rules.md"
+# Set CLAUDE_PLUGIN_ROOT to the evil dir and run hook
+out=$(cd "$TMPDIR_TEST" && CLAUDE_PLUGIN_ROOT="$evil_dir" bash "$HOOK" 2>/dev/null)
+assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANARY_EVIL_RULES"
+rm -rf "$evil_dir"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

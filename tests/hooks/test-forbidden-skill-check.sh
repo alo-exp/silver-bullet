@@ -141,6 +141,13 @@ out=$(run_hook '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input"
 assert_blocks "custom forbidden skill from config -> permissionDecision deny" "$out"
 teardown
 
+# Test 6: Double-namespace bypass blocked (TD-03)
+echo "--- Test 6: Double-namespace bypass blocked ---"
+setup
+out=$(run_hook '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"outer:inner:executing-plans"}}')
+assert_blocks "outer:inner:executing-plans -> permissionDecision deny" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
