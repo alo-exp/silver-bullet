@@ -141,8 +141,47 @@ for skill in $required_skills; do
   fi
 done
 
+# ── Check quality-gate-stage markers (F-16) ───────────────────────────────────
+# Apply when: create-release is in required_skills OR any stage marker is already present
+release_context=false
+for skill in $required_skills; do
+  if [[ "$skill" == "create-release" ]]; then
+    release_context=true
+    break
+  fi
+done
+if [[ "$release_context" == false ]]; then
+  for stage in quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
+    if printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
+      release_context=true
+      break
+    fi
+  done
+fi
+
+release_missing=""
+if [[ "$release_context" == true ]]; then
+  for stage in quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
+    if ! printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
+      release_missing="${release_missing:+$release_missing }$stage"
+    fi
+  done
+fi
+
 # ── Output result ─────────────────────────────────────────────────────────────
-if [[ -n "$missing" ]]; then
+if [[ -n "$missing" && -n "$release_missing" ]]; then
+  missing_lines=""
+  for skill in $missing; do
+    missing_lines="${missing_lines}  - ${skill}\n"
+  done
+  reason=$(printf 'Cannot complete -- missing required skills:\n%s\nAlso missing quality gate stages: %s\n\nComplete all required skills and all 4 quality gate stages before declaring task complete.' "$missing_lines" "$release_missing")
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"decision":"block","reason":%s}' "$json_reason"
+elif [[ -n "$release_missing" ]]; then
+  reason=$(printf 'Cannot complete -- quality gate stages incomplete: %s\n\nComplete all 4 stages before declaring task complete.' "$release_missing")
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"decision":"block","reason":%s}' "$json_reason"
+elif [[ -n "$missing" ]]; then
   missing_lines=""
   for skill in $missing; do
     missing_lines="${missing_lines}  - ${skill}\n"

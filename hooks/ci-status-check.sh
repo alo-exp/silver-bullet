@@ -33,8 +33,8 @@ emit_block() {
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 [[ -z "$cmd" ]] && exit 0
 
-# Only fire on commit or push
-printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b' || exit 0
+# Only fire on commit, push, PR create/merge, or release create
+printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
 
 # gh CLI required for real runs; test override bypasses it
 if [[ -n "${GH_STATUS_OVERRIDE:-}" ]]; then

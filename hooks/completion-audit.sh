@@ -59,6 +59,8 @@ elif printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
   is_intermediate=true
 elif printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
   is_completion=true
+elif printf '%s' "$cmd" | grep -qE '\bgh pr merge\b'; then
+  is_completion=true
 elif printf '%s' "$cmd" | grep -iqE '\bdeploy\b'; then
   is_completion=true
 elif printf '%s' "$cmd" | grep -qE '\bgh release create\b'; then
