@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## 0.12.1 (2026-04-07)
+
+### Added
+- `/silver:update` skill — one-command plugin updater: checks GitHub for latest release, shows changelog diff, confirms, clones new version into cache, and updates plugin registry
+
+### Fixed
+- `/silver` skill: removed unsupported `allowed-tools` frontmatter field that prevented the skill from loading in Claude Desktop
+- Architecture section: 10th enforcement layer card now flows in 2-column grid (removed erroneous `grid-column:1/-1`)
+
 ## 0.12.0 (2026-04-07)
 
 ### Added
