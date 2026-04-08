@@ -203,6 +203,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#agents">Agent Teams</a></li>
         <li><a href="#semantic-context">Semantic Context</a></li>
         <li><a href="#file-structure">File Structure</a></li>
+        <li class="sidebar-section">Routing &amp; Behavior</li>
+        <li><a href="#routing-logic">Routing Logic</a></li>
+        <li><a href="#verification">Verification Before Completion</a></li>
+        <li><a href="#preferences">User Workflow Preferences</a></li>
+        <li><a href="#session-startup">Session Startup</a></li>
       </ul>
     </aside>
 
@@ -517,6 +522,74 @@ docs/
   specs/                     <span class="comment"># Detailed design specs (Superpowers)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span></div>
+
+      <div class="divider"></div>
+
+      <h2 id="routing-logic">Routing Logic</h2>
+      <p><code>/silver</code> is the single entry point for all Silver Bullet work. Every message is classified before routing — using complexity triage (Trivial / Simple / Fuzzy / Complex) and a full intent-matching table — so the right workflow always fires. The <strong>§2g bare instruction interception</strong> rule means you don't need to invoke <code>/silver</code> explicitly: typing a plain work request triggers it automatically.</p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="git-branch"></i></div>
+          <h4><a href="routing-logic.html" style="color:var(--accent-light);text-decoration:none">Routing Logic →</a></h4>
+          <p>Complexity triage decision tree, full 7-workflow routing table, §2g bare instruction interception, and ship disambiguation.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="filter"></i></div>
+          <h4>Complexity Triage</h4>
+          <p>Trivial → silver:fast. Fuzzy → silver:explore first. Simple → direct workflow. Complex → explore + brainstorm. Prevents over-engineering trivial changes.</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="verification">Verification Before Completion</h2>
+      <p><code>gsd-verify-work</code> is a non-skippable gate that runs before any workflow completes. It is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="check-circle-2"></i></div>
+          <h4><a href="verification.html" style="color:var(--accent-light);text-decoration:none">Verification Before Completion →</a></h4>
+          <p>What gsd-verify-work checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="shield-check"></i></div>
+          <h4>Non-Skippable Gates</h4>
+          <p>Three gates are permanently non-skippable: <code>silver:security</code>, <code>silver:quality-gates</code> pre-ship, and <code>gsd-verify-work</code>. No §10 preference can waive them.</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="preferences">User Workflow Preferences</h2>
+      <p>§10 of <code>silver-bullet.md</code> stores per-project routing preferences — permanent step skips, lightweight alternative substitutions, and workflow customizations recorded after using the step-skip protocol. Changes are always written to both <code>silver-bullet.md</code> and <code>templates/silver-bullet.md.base</code> atomically.</p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="sliders-horizontal"></i></div>
+          <h4><a href="preferences.html" style="color:var(--accent-light);text-decoration:none">User Workflow Preferences →</a></h4>
+          <p>How §10 routing preferences work, the step-skip protocol, which gates can and cannot be permanently waived, and how preferences are recorded.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="pencil-line"></i></div>
+          <h4>Step-Skip Protocol</h4>
+          <p>When asked to skip a step, Silver Bullet explains why it exists, offers lettered options (skip / lightweight alternative / show current state), and records permanent decisions in §10 only after explicit confirmation.</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="session-startup">Session Startup</h2>
+      <p>At the start of every new session, Silver Bullet automatically performs five steps: switch to Opus 4.6 (1M context), read all project docs, compact the context, switch back to the original model, and check for updates to Silver Bullet, GSD, plugins, and MultAI. This is the §0 startup sequence.</p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="play-circle"></i></div>
+          <h4><a href="session-startup.html" style="color:var(--accent-light);text-decoration:none">Session Startup →</a></h4>
+          <p>The full §0 5-step automatic initialization sequence: model switching, doc loading, context compaction, and version checks for all four components.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="refresh-cw"></i></div>
+          <h4>Automatic Updates</h4>
+          <p>Silver Bullet, GSD, Superpowers/Design/Engineering plugins, and MultAI are each version-checked at session start. Outdated components surface an update prompt before work begins.</p>
+        </div>
+      </div>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
