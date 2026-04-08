@@ -146,8 +146,8 @@ Plans:
 **Goal:** silver:init initializes and updates all dependencies (SB, GSD, Superpowers), SB derives position from GSD STATE.md, users get rich progress narration at every step, and all option prompts use lettered A/B/C format
 **Requirements**: REQ-1, REQ-2, REQ-3, REQ-4
 **Depends on:** Phase 8
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 09-01-PLAN.md — Version freshness check in silver:init + lettered options across all SB skills
-- [ ] 09-02-PLAN.md — GSD state delegation, progress banners, autonomous commentary, lettered options in silver-bullet.md
+- [x] 09-01-PLAN.md — Version freshness check in silver:init + lettered options across all SB skills
+- [x] 09-02-PLAN.md — GSD state delegation, progress banners, autonomous commentary, lettered options in silver-bullet.md

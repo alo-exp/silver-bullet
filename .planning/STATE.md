@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.9.0
 milestone_name: milestone
-current_plan: Phase 8 complete — verified
-status: Phase 8 complete — pending milestone review
-stopped_at: Completed Phase 08 (comprehensive-sb-enforcement-test-harness)
-last_updated: "2026-04-06T13:00:00.000Z"
-last_activity: 2026-04-06
+current_plan: 1
+status: Executing Phase 9
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-04-08T06:30:37.448Z"
+last_activity: 2026-04-08
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 9
+  completed_phases: 6
+  total_plans: 17
+  completed_plans: 14
+  percent: 82
 ---
 
 # Project State
@@ -22,13 +22,14 @@ progress:
 **Active phase:** Phase 1 -- Workflow File Rewrites (executed, pending verify)
 **Current plan:** 1
 
-Last activity: 2026-04-07 — Completed quick task 260407-2a8: Create /silver router skill that routes to best SB or GSD skill
+Last activity: 2026-04-08
 
 ## Roadmap Evolution
 
 - Phase 6 added: implement enforcement techniques from AI-Native SDLC Playbook and document all enforcement mechanisms
 - Phase 7 added: close all enforcement audit gaps from ENFORCEMENT-AUDIT.md findings F-01 through F-20
 - Phase 8 added: Comprehensive SB enforcement test harness using Claude Code CLI against test-app
+- Phase 9 added: Silver Bullet core improvements: init with GSD+Superpowers, GSD state delegation, guided UX, lettered option bullets
 
 ## Decisions
 
