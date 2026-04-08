@@ -49,7 +49,7 @@ When the user requests skipping any step:
 
 Invoke `silver:intel` (gsd-intel) via the Skill tool. Purpose: orient in the codebase — understand current infra topology before blast-radius analysis.
 
-If no intel files exist: invoke `silver:scan` via the Skill tool for rapid structure assessment.
+If no intel files exist: invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
 
 ## Step 1: Blast Radius Analysis
 

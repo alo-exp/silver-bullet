@@ -85,7 +85,7 @@ After gsd-forensics completes and outputs diagnosis:
 
 All paths converge here. Before writing any fix code:
 
-Invoke `silver:tdd` via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This ensures the fix is verifiable and the bug cannot silently regress.
+Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This ensures the fix is verifiable and the bug cannot silently regress.
 
 **Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
 

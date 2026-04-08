@@ -44,7 +44,7 @@ When the user requests skipping any step:
 
 Invoke `silver:intel` (gsd-intel) via the Skill tool to understand existing UI patterns and component hierarchy.
 
-If brownfield project, also invoke `silver:scan` via the Skill tool for rapid structure assessment.
+If brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
@@ -102,7 +102,7 @@ If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
 If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
 
 **TDD for component logic:**
-Invoke `silver:tdd` via the Skill tool for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
+Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
 
 ## Step 8: Code Review
 

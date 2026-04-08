@@ -39,7 +39,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
 
-**Non-skippable gates:** `silver:quality-gates` pre-release (Step 0), `gsd-verify-work` (embedded in milestone audit), `gsd-ship` (Step 7) must succeed before Step 8.
+**Non-skippable gates:** `silver:security` (Step 2c), `silver:quality-gates` pre-release (Step 0), `gsd-verify-work` (embedded in milestone audit), `gsd-ship` (Step 7) must succeed before Step 8.
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
@@ -54,6 +54,10 @@ Invoke `gsd-audit-uat` via the Skill tool. Purpose: cross-phase UAT — surface 
 Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone completion vs original intent — are all committed features shipped?
 
 **After audit:** check for gaps.
+
+## Step 2c: Security Hard Gate
+
+Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
 
 ## Step 2b: Gap-Closure Loop (conditional, max 2 iterations)
 

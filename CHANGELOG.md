@@ -11,19 +11,9 @@
 - /silver router expanded: 17+ routes, complexity triage, ship disambiguation, conflict resolution
 - silver:init: MultAI + Anthropic Engineering + PM plugin checks, project-type detection, gsd-autonomous mode note
 - §0 session startup: MultAI update check alongside GSD/Superpowers
-- Comprehensive enforcement test harness: 191 tests, 12/12 hooks covered, 3 test suites
-- Phase 9: silver:init initializes GSD+Superpowers with version freshness, lettered option prompts throughout
-- Unified test runner (tests/run-all-tests.sh) + hook coverage matrix
-
-### Fixed
-- All 16 enforcement audit gaps from adversarial audit (F-01 through F-20)
-- PreToolUse blocking with permissionDecision:deny for enforcement hooks
-- Stage falsification prevention and quality gate stage ordering
-- Review loop pass markers for Tier 2 delivery enforcement
+- Unified test runner (tests/run-all-tests.sh)
 
 ### Infrastructure
-- 191 automated integration tests across 6 test files
-- Hook coverage matrix verifying all hooks have test coverage
 - GSD state delegation: SB reads .planning/STATE.md instead of maintaining own state
 
 ## 0.12.1 (2026-04-07)

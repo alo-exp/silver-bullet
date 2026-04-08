@@ -180,6 +180,8 @@ STOP. Do not proceed.
 
 ### 1.7 Anthropic Engineering plugin
 
+> **Intentional deviation from spec §3:** The spec says all three dependency plugins (MultAI, Engineering, PM) require an offer-to-install gate. In practice, MultAI is a hard STOP because silver:research and multi-AI perspectives are non-functional without it. Engineering and PM degrade gracefully — their skills are invoked conditionally (silver:ui, silver:feature product-brainstorm) and the workflows remain usable without them. This asymmetry is by design.
+
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/engineering/skills/`
 

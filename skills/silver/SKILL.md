@@ -26,7 +26,7 @@ Wait for response, then proceed.
 
 | Classification | Signals | Action |
 |----------------|---------|--------|
-| Trivial | Typo, config, rename, ≤3 files | Route to `silver:fast` (gsd-fast) — bypass workflow |
+| Trivial | Typo, config, rename, ≤3 files | Route to `silver:fast` (gsd-fast) — bypass workflow. Note: §10 routing preferences are NOT applied; silver:fast skips preference loading by design. |
 | Simple | Clear scope, ≤1 phase | Route to workflow, skip silver:explore |
 | Complex | Multi-phase, cross-cutting | Full workflow including silver:explore + brainstorm |
 | Fuzzy | Vague intent, unclear scope | Route to `silver:explore` first, then re-classify |

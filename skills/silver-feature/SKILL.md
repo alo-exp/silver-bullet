@@ -55,7 +55,7 @@ If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
 
 Invoke `silver:intel` (gsd-intel) via the Skill tool to orient planning in the codebase.
 
-If no intel files exist and this is a brownfield project, also invoke `silver:scan` via the Skill tool for rapid structure assessment.
+If no intel files exist and this is a brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
 
 ## Step 1b: Fuzzy Scope Clarification (conditional)
 
@@ -126,18 +126,19 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification l
 ## Step 7a: TDD Gate (implementation plans only)
 
 **Only for implementation plans — skip for config/infra/doc plans:**
+Heuristic: if the PLAN.md modifies source files containing business logic or application code, it is an implementation plan. Config-only, docs-only, or infra-only plans skip this step.
 
-Invoke `silver:tdd` via the Skill tool. Purpose: TDD red-green-refactor discipline per implementation task.
-
-## Step 7b: Test Gap Fill (conditional)
-
-If coverage gaps remain after execution:
-
-Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT criteria to fill coverage gaps.
+Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool. Purpose: TDD red-green-refactor discipline per implementation task.
 
 ## Step 8: Verify Work
 
 Invoke `gsd-verify-work` via the Skill tool. Purpose: UAT, must-haves, artifact checks. Phase is NOT complete until this passes. Non-skippable.
+
+## Step 8b: Test Gap Fill (conditional)
+
+**Only if gsd-verify-work surfaces coverage gaps:**
+
+Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT criteria to fill gaps identified by verification — runs after gsd-verify-work so gap targets are known.
 
 ## Step 9a: Request Code Review
 
