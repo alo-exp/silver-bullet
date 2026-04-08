@@ -1,40 +1,23 @@
 {
-  "marketplace": "Alo Labs",
-  "category": "workflows",
-  "featured": true,
-  "dependencies": {
-    "plugins": [
-      {
-        "name": "superpowers",
-        "source": "obra/superpowers",
-        "url": "https://github.com/obra/superpowers",
-        "required": true
+  "name": "alo-labs",
+  "owner": {
+    "name": "Alo Labs",
+    "email": "hello@alolabs.io"
+  },
+  "metadata": {
+    "description": "Silver Bullet — AI-native software development enforcement for Claude Code",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "silver-bullet",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/alo-exp/silver-bullet.git"
       },
-      {
-        "name": "engineering",
-        "source": "anthropics/knowledge-work-plugins",
-        "url": "https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering",
-        "required": true
-      },
-      {
-        "name": "design",
-        "source": "anthropics/knowledge-work-plugins",
-        "url": "https://github.com/anthropics/knowledge-work-plugins/tree/main/design",
-        "required": true
-      }
-    ],
-    "tools": [
-      {
-        "name": "gsd",
-        "install": "npx get-shit-done-cc@1.30.0",
-        "url": "https://github.com/gsd-build/get-shit-done",
-        "required": true
-      },
-      {
-        "name": "jq",
-        "install": "brew install jq (macOS) / apt install jq (Linux)",
-        "required": true
-      }
-    ]
-  }
+      "description": "Silver Bullet enforces a complete AI-native SDLC: quality gates, GSD integration, Superpowers, guided dev cycle, and pre-release checks — all wired via Claude Code hooks.",
+      "version": "0.12.1",
+      "strict": true
+    }
+  ]
 }
