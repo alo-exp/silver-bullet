@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="shortcut icon" href="favicon.ico">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
-<meta name="description" content="Silver Bullet is an agentic process orchestrator for Claude Code. Two enforced workflows: 20-step dev cycle and 24-step DevOps cycle. Combines GSD, Superpowers, Engineering, Design, and 5 leading DevOps plugins into one enforced system.">
+<meta name="description" content="Silver Bullet is an agentic process orchestrator for Claude Code. 7 orchestration workflows (feature, bugfix, ui, devops, research, release, fast) plus 20-step dev cycle and 24-step DevOps cycle. Combines GSD, Superpowers, Engineering, Design, and 5 leading DevOps plugins into one enforced system.">
 <meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps">
 <meta property="og:description" content="The agentic process orchestrator for AI-native software engineering and DevOps. Two enforced workflows. GSD + Superpowers + Engineering + Design + 5 leading DevOps plugins. Brooks was right. Until now.">
 <meta property="og:type" content="website">
@@ -784,7 +784,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
     <div class="hero-pills">
       <span class="hero-pill">9 Best-in-Class Plugins</span>
-      <span class="hero-pill">Two Enforced Workflows</span>
+      <span class="hero-pill">7 Orchestration Workflows</span>
       <span class="hero-pill">20 + 24 Steps</span>
       <span class="hero-pill">10 Enforcement Layers</span>
     </div>
@@ -836,11 +836,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container text-center">
     <div class="section-label">The Orchestrator</div>
     <h2 class="section-title">Orchestrate. Enforce. Ship.</h2>
-    <p class="section-desc centered">Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps. It curates nine best-in-class plugins and wraps them in a ten-layer technical enforcement engine &mdash; with two dedicated workflows for app development and infrastructure.</p>
+    <p class="section-desc centered">Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps. It curates nine best-in-class plugins and wraps them in a ten-layer technical enforcement engine &mdash; with seven pre-designed orchestration workflows and two underlying enforcement cycles.</p>
 
     <div class="hero-pills mb-4 fade-in">
       <span class="hero-pill">9 Best-in-Class Plugins</span>
-      <span class="hero-pill">Two Enforced Workflows</span>
+      <span class="hero-pill">7 Orchestration Workflows</span>
       <span class="hero-pill">20 + 24 Steps</span>
       <span class="hero-pill">10 Enforcement Layers</span>
     </div>
@@ -857,8 +857,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="git-branch"></i></div>
-        <h3>Two Workflow Modes</h3>
-        <p>20-step <strong>full-dev-cycle</strong> for app development with 8 quality dimensions. 24-step <strong>devops-cycle</strong> for IaC/infrastructure with blast radius assessment and 7 IaC-adapted quality gates.</p>
+        <h3>7 Orchestration Workflows</h3>
+        <p><code>/silver</code> routes to seven pre-designed workflows: <strong>feature, bugfix, ui, devops, research, release, fast</strong>. Each chains GSD, Superpowers, MultAI, and SB quality gates for its specific task type. Two underlying enforcement cycles: 20-step dev and 24-step DevOps.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="shield"></i></div>
@@ -1426,16 +1426,78 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Workflows</div>
-      <h2 class="section-title">Two Workflows. Every Step Enforced.</h2>
-      <p class="section-desc centered">GSD commands drive the main flow. Silver Bullet quality gates and gap-filling skills lock in compliance. Choose your workflow at project initialization &mdash; enforcement adapts automatically.</p>
+      <h2 class="section-title">9 Workflows. Every Step Enforced.</h2>
+      <p class="section-desc centered">Seven orchestration workflows invoked via <code>/silver</code> — each one chains GSD, Superpowers, MultAI, and SB quality gates for its task type. Two underlying enforcement cycles drive execution. All steps enforced.</p>
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('dev')">Full Dev Cycle <span style="opacity:.6">(20 steps)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Orchestration Workflows <span style="opacity:.6">(7)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('dev')">Full Dev Cycle <span style="opacity:.6">(20 steps)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps Cycle <span style="opacity:.6">(24 steps)</span></button>
     </div>
 
-    <div id="workflow-dev" class="workflow-panel active" style="overflow-x:auto">
+    <div id="workflow-orch" class="workflow-panel active" style="overflow-x:auto">
+      <table class="workflow-table fade-in">
+        <thead>
+          <tr>
+            <th>Workflow</th>
+            <th>Entry signals</th>
+            <th>Key steps</th>
+            <th>Non-skippable gates</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
+            <td style="font-size:.8rem">intel → brainstorm → quality-gates → plan → execute → TDD → review → verify → ship</td>
+            <td style="font-size:.8rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
+            <td style="font-size:.8rem">triage (A/B/C) → debug → TDD regression test → plan fix → execute → review → verify → ship</td>
+            <td style="font-size:.8rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
+            <td style="font-size:.8rem">intel → brainstorm → quality-gates → gsd-ui-phase → execute → gsd-ui-review → verify → ship</td>
+            <td style="font-size:.8rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
+            <td style="font-size:.8rem">intel → blast-radius → devops-quality-gates → plan → execute → review → verify → ship</td>
+            <td style="font-size:.8rem"><span class="step-required">silver:security</span> <span class="step-required">devops-quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"how should we", "compare X vs Y", "spike", "which technology"</td>
+            <td style="font-size:.8rem">explore → MultAI research (3 paths) → brainstorm → decision with rationale → hand off</td>
+            <td style="font-size:.8rem"><em style="color:var(--text-dim)">No code changes — no enforcement gates</em></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
+            <td style="font-size:.8rem">quality-gates → UAT audit → milestone audit → docs → create-release → gsd-ship → complete-milestone</td>
+            <td style="font-size:.8rem"><span class="step-required">quality-gates</span> <span class="step-required">silver:security</span> <span class="step-required">gsd-ship</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
+            <td style="font-size:.8rem;color:var(--text-secondary)">Trivial: ≤3 files, typo, rename, config tweak</td>
+            <td style="font-size:.8rem">confirm trivial → gsd-fast → atomic commit (no planning overhead)</td>
+            <td style="font-size:.8rem"><em style="color:var(--text-dim)">Bypasses workflow enforcement by design</em></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
+        All workflows invoked via <code>/silver &lt;anything&gt;</code> — the router classifies intent and dispatches automatically.
+        &nbsp;<a href="help/workflows/" style="color:var(--accent-light)">View full workflow docs &rarr;</a>
+      </p>
+    </div>
+
+    <div id="workflow-dev" class="workflow-panel" style="overflow-x:auto">
       <table class="workflow-table fade-in">
         <thead>
           <tr>
@@ -1635,13 +1697,9 @@ lucide.createIcons();
 function switchWorkflow(mode) {
   document.querySelectorAll('.workflow-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.workflow-panel').forEach(p => p.classList.remove('active'));
-  if (mode === 'devops') {
-    document.querySelectorAll('.workflow-tab')[1].classList.add('active');
-    document.getElementById('workflow-devops').classList.add('active');
-  } else {
-    document.querySelectorAll('.workflow-tab')[0].classList.add('active');
-    document.getElementById('workflow-dev').classList.add('active');
-  }
+  const tabIndex = mode === 'dev' ? 1 : mode === 'devops' ? 2 : 0;
+  document.querySelectorAll('.workflow-tab')[tabIndex].classList.add('active');
+  document.getElementById('workflow-' + mode).classList.add('active');
 }
 </script>
 
