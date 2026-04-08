@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../../favicon.png">
+<link rel="shortcut icon" href="../../../favicon.ico">
+<title>Orchestration Workflows — Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet v0.13.0 orchestration workflows — seven pre-designed workflows for feature development, bug fixes, UI, DevOps, research, releases, and trivial changes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f3f4f6;--bg-card:#ffffff;--bg-card-hover:#eeeff2;--bg-code:#e9eaed;
+  --bg-hero:linear-gradient(160deg,#c0c6cf 0%,#d4dae3 18%,#e8eaee 38%,#eceef2 52%,#e0e4e9 68%,#d0d5dc 84%,#c4c9d1 100%);
+  --chrome-gradient:linear-gradient(135deg,#374151 0%,#7a8ea0 28%,#d4dce6 50%,#7a8ea0 72%,#374151 100%);
+  --accent:#374151;--accent-light:#6b7280;--accent2:#4b5563;--accent3:#6b7280;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#d1d5db;--border-hover:#9ca3af;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(107,114,128,.07);--shadow-lg:0 20px 60px rgba(0,0,0,.08);
+  --nav-bg:rgba(243,244,246,.9);--section-alt:rgba(236,238,242,.6);
+  --accent-glow:rgba(107,114,128,.1);
+}
+[data-theme="dark"]{
+  --bg-page:#0c0c0e;--bg-card:#161618;--bg-card-hover:#1e1e21;--bg-code:#1a1a1d;
+  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
+  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
+  --accent:#9ca3af;--accent-light:#c8d2da;--accent2:#8fa0ad;--accent3:#b0bec8;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
+  --border:#26262a;--border-hover:#38383e;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.5);--shadow-glow:0 0 40px rgba(156,163,175,.07);
+  --nav-bg:rgba(12,12,14,.88);--accent-glow:rgba(156,163,175,.15);
+}
+body,nav,.help-card{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 80px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1;text-align:center}
+.page-hero .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.25);border-radius:999px;padding:6px 16px;font-size:.8rem;color:var(--accent-light);font-weight:500;margin-bottom:32px}
+.page-hero h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1.05rem;color:var(--text-secondary);max-width:560px;margin:0 auto;line-height:1.7}
+section{padding:64px 0}
+.section-label{text-transform:uppercase;font-size:.75rem;font-weight:700;letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px}
+.section-title{font-size:clamp(1.6rem,2.5vw,2rem);font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
+.section-desc{font-size:.95rem;color:var(--text-secondary);max-width:600px;margin-bottom:40px}
+.help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.help-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.help-grid{grid-template-columns:repeat(2,1fr)}}
+.help-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s;text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden}
+.help-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-accent,linear-gradient(90deg,var(--accent),var(--accent2)));opacity:0;transition:opacity .3s}
+.help-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-4px)}
+.help-card:hover::before{opacity:1}
+.help-card .card-icon{font-size:2rem;margin-bottom:16px}
+.help-card .card-badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:.7rem;font-weight:700;letter-spacing:.04em;margin-bottom:12px;text-transform:uppercase}
+.help-card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.help-card p{font-size:.875rem;color:var(--text-secondary);line-height:1.6;margin-bottom:16px}
+.help-card .card-topics{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+.help-card .card-topics li{font-size:.8rem;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.help-card .card-topics li::before{content:'→';color:var(--accent-light);font-weight:700;font-size:.75rem}
+.help-card .card-cta{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:.82rem;font-weight:600;color:var(--accent-light);display:flex;align-items:center;gap:6px}
+.callout-section{background:var(--section-alt);padding:48px 0}
+.callout-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;max-width:680px;margin:0 auto;text-align:center}
+.callout-box p{font-size:.95rem;color:var(--text-secondary);line-height:1.7}
+.callout-box strong{color:var(--text-primary)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+.router-callout{background:rgba(107,114,128,.06);border:1px solid rgba(107,114,128,.15);border-radius:var(--radius);padding:20px 24px;margin-bottom:40px;text-align:center;font-size:.9rem;color:var(--text-secondary)}
+.router-callout code{font-family:var(--font-mono);background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light);font-size:.85em}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span> Workflows</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="badge"><i data-lucide="git-branch-plus"></i> v0.13.0</div>
+    <h1>Orchestration Workflows</h1>
+    <p>Silver Bullet provides seven pre-designed orchestration workflows. <code>/silver</code> routes to the right one automatically based on your intent — or invoke any workflow directly.</p>
+  </div>
+</div>
+
+<section>
+  <div class="container">
+    <div class="router-callout">
+      <strong>The smart entry point:</strong> type <code>/silver [your intent in plain English]</code> and Silver Bullet classifies your request and dispatches to the right workflow automatically. No need to remember which workflow to use.
+    </div>
+
+    <div class="section-label">Documentation</div>
+    <h2 class="section-title">Seven Workflows</h2>
+    <p class="section-desc">Each workflow chains GSD (execution backbone), Superpowers (craft discipline), MultAI (multi-AI intelligence), and SB quality gates in a defined sequence. None implement code directly — they orchestrate only.</p>
+
+    <div class="help-grid">
+
+      <a href="./silver-feature.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--accent),var(--accent2))" data-keywords="feature add build implement new enhance extend workflow">
+        <div class="card-icon"><i data-lucide="plus-circle"></i></div>
+        <span class="card-badge" style="background:rgba(107,114,128,.12);color:var(--accent-light)">Full workflow</span>
+        <h3>/silver:feature</h3>
+        <p>Full feature development cycle — from codebase intel through quality gates, TDD, code review, and ship.</p>
+        <ul class="card-topics">
+          <li>Complexity triage (trivial/simple/fuzzy/complex)</li>
+          <li>product-brainstorming + engineering brainstorm</li>
+          <li>9-dimension quality gates (pre-plan + pre-ship)</li>
+          <li>TDD gate for implementation plans</li>
+          <li>Full code review sequence</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-bugfix.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--red),#ef4444)" data-keywords="bug broken crash error regression failing test fix">
+        <div class="card-icon"><i data-lucide="bug"></i></div>
+        <span class="card-badge" style="background:rgba(220,38,38,.1);color:var(--red)">Triage-first</span>
+        <h3>/silver:bugfix</h3>
+        <p>Triage-first bug investigation — classifies failure type into Path 1A, 1B, or 1C before any investigation begins.</p>
+        <ul class="card-topics">
+          <li>Path 1A: Known symptom → systematic-debugging</li>
+          <li>Path 1B: Unknown cause → silver:forensics</li>
+          <li>Path 1C: GSD workflow failure → gsd-forensics</li>
+          <li>TDD regression test before writing any fix</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-ui.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--cyan),#06b6d4)" data-keywords="ui frontend component screen design interface page layout animation responsive">
+        <div class="card-icon"><i data-lucide="layout"></i></div>
+        <span class="card-badge" style="background:rgba(8,145,178,.12);color:var(--cyan)">UI/UX</span>
+        <h3>/silver:ui</h3>
+        <p>UI/frontend workflow with design contract (gsd-ui-phase), component TDD, 6-pillar visual audit, and accessibility enforcement.</p>
+        <ul class="card-topics">
+          <li>gsd-ui-phase creates UI-SPEC.md design contract</li>
+          <li>TDD for testable component units</li>
+          <li>gsd-ui-review: 6-pillar visual audit</li>
+          <li>Accessibility (WCAG 2.1 AA) enforcement</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-devops.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--amber),#f59e0b)" data-keywords="devops infra ci cd deploy pipeline terraform iac kubernetes container cloud ops">
+        <div class="card-icon"><i data-lucide="hard-hat"></i></div>
+        <span class="card-badge" style="background:rgba(217,119,6,.12);color:var(--amber)">DevOps</span>
+        <h3>/silver:devops</h3>
+        <p>Infrastructure, CI/CD, and IaC workflow — blast-radius assessment mandatory, 7 IaC quality dimensions, TDD explicitly skipped.</p>
+        <ul class="card-topics">
+          <li>blast-radius: LOW / MEDIUM / HIGH / CRITICAL</li>
+          <li>devops-skill-router selects right IaC tooling</li>
+          <li>7 IaC quality dimensions (no usability/extensibility)</li>
+          <li>TDD explicitly not applicable for infra</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-research.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--green),#10b981)" data-keywords="research spike architecture decision technology compare how should we">
+        <div class="card-icon"><i data-lucide="search"></i></div>
+        <span class="card-badge" style="background:rgba(5,150,105,.12);color:var(--green)">Research</span>
+        <h3>/silver:research</h3>
+        <p>Technology decisions, architecture spikes, and competitive analysis — MultAI research paths with handoff to implementation.</p>
+        <ul class="card-topics">
+          <li>Path 2a: market/landscape research</li>
+          <li>Path 2b: tech selection (7-AI comparison matrix)</li>
+          <li>Path 2c: competitive intelligence</li>
+          <li>Handoff to silver:feature or silver:devops</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-release.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--accent),#374151)" data-keywords="release publish version go live cut a release changelog ship to users deploy to prod milestone">
+        <div class="card-icon"><i data-lucide="rocket"></i></div>
+        <span class="card-badge" style="background:rgba(107,114,128,.12);color:var(--accent-light)">Milestone</span>
+        <h3>/silver:release</h3>
+        <p>Milestone-level publish — versioned releases, changelogs, docs, GitHub Releases, and milestone archival. Not the same as gsd:ship.</p>
+        <ul class="card-topics">
+          <li>Pre-release quality gates (9 dimensions)</li>
+          <li>Cross-phase UAT + milestone audit</li>
+          <li>Gap-closure loop (max 2 iterations)</li>
+          <li>silver:create-release → gsd-ship → complete-milestone</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="./silver-fast.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--text-dim),var(--accent-light))" data-keywords="trivial quick fix typo one-liner config value rename fast">
+        <div class="card-icon"><i data-lucide="zap"></i></div>
+        <span class="card-badge" style="background:rgba(107,114,128,.1);color:var(--text-secondary)">Fast path</span>
+        <h3>/silver:fast</h3>
+        <p>Bypass workflow for truly trivial changes (≤3 files): typos, config values, renames. No planning, gates, or review cycle.</p>
+        <ul class="card-topics">
+          <li>Complexity triage gate before gsd-fast</li>
+          <li>Scope expansion STOP condition (3-file limit)</li>
+          <li>§10 preferences NOT applied (by design)</li>
+          <li>Auto-escalation if scope grows</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<div class="callout-section">
+  <div class="container">
+    <div class="callout-box">
+      <div style="font-size:2rem;margin-bottom:12px"><i data-lucide="git-branch-plus"></i></div>
+      <p><strong>Just use <code>/silver</code></strong> — you don't need to choose a workflow manually. Silver Bullet classifies your intent (trivial/simple/fuzzy/complex) and dispatches to the right workflow automatically. The seven workflows are named here so you understand what's happening, not so you have to memorize them.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../">Help Home</a>
+        <a href="../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('icon-sun').style.display=dark?'none':'';
+  document.getElementById('icon-moon').style.display=dark?'':'none';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s?s==='dark':true)})();
+lucide.createIcons();
+</script>
+</body>
+</html>

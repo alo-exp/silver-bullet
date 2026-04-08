@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../../favicon.png">
+<link rel="shortcut icon" href="../../../favicon.ico">
+<title>/silver:ui — UI/UX Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → gsd-ui-phase (design contract) → execute + TDD → gsd-ui-review → accessibility → ship.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f3f4f6;--bg-card:#ffffff;--bg-card-hover:#eeeff2;--bg-code:#e9eaed;
+  --bg-hero:linear-gradient(160deg,#c0c6cf 0%,#d4dae3 18%,#e8eaee 38%,#eceef2 52%,#e0e4e9 68%,#d0d5dc 84%,#c4c9d1 100%);
+  --chrome-gradient:linear-gradient(135deg,#374151 0%,#7a8ea0 28%,#d4dce6 50%,#7a8ea0 72%,#374151 100%);
+  --accent:#374151;--accent-light:#6b7280;--accent2:#4b5563;--accent3:#6b7280;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#d1d5db;--border-hover:#9ca3af;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(107,114,128,.07);--nav-bg:rgba(243,244,246,.9);
+  --section-alt:rgba(236,238,242,.6);--table-row-hover:rgba(107,114,128,.03);
+}
+[data-theme="dark"]{
+  --bg-page:#0c0c0e;--bg-card:#161618;--bg-card-hover:#1e1e21;--bg-code:#1a1a1d;
+  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
+  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
+  --accent:#9ca3af;--accent-light:#c8d2da;--accent2:#8fa0ad;--accent3:#b0bec8;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
+  --border:#26262a;--border-hover:#38383e;
+  --shadow-glow:0 0 40px rgba(156,163,175,.07);--nav-bg:rgba(12,12,14,.88);
+  --section-alt:rgba(20,20,23,.5);--table-row-hover:rgba(156,163,175,.03);
+}
+body,nav{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-warn{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+.badge-small{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle;margin-left:4px}
+.badge-req{background:rgba(239,68,68,.1);color:var(--red)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> UI</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:ui</span></div>
+    <h1>/silver:ui</h1>
+    <p>Full SB-orchestrated UI/frontend workflow — from intel through design contract (gsd-ui-phase), TDD for components, UI visual audit, accessibility review, and ship.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On this page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#design-contract">Design contract</a></li>
+        <li><a href="#ui-visual-audit">UI visual audit</a></li>
+        <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
+        <li><a href="#example">Example invocation</a></li>
+        <li class="sidebar-section">See also</li>
+        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It follows the same skeleton as <code>silver:feature</code> but inserts two key UI-specific steps: <code>gsd-ui-phase</code> (design contract) and <code>gsd-ui-review</code> (visual audit post-execution).</p>
+      <p><strong>It never implements UI directly — it orchestrates only.</strong> Design contract creation, component implementation, visual audit, and accessibility review are all delegated to specialist skills.</p>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>Routing precedence:</strong> If an instruction matches both <code>silver:feature</code> and <code>silver:ui</code>, <code>silver:ui</code> wins — UI is more specific. <code>silver:bugfix</code> always takes precedence over both.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to use</h2>
+      <p>Use <code>/silver:ui</code> for any of these entry trigger signals:</p>
+      <ul>
+        <li>"UI" / "frontend" / "component" / "screen"</li>
+        <li>"design" / "interface" / "page" / "layout"</li>
+        <li>"animation" / "responsive" / "mobile" / "design system"</li>
+        <li>Any work that introduces or modifies user-visible interface elements</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Workflow steps</h2>
+
+      <h3>Pre-flight</h3>
+      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+
+      <h3>Step 0 — Orient in codebase</h3>
+      <p>Invoke <code>silver:intel</code> (gsd-intel) to understand existing UI patterns and component hierarchy. If brownfield project, also invoke <code>silver:scan</code> (gsd-scan) for rapid structure assessment.</p>
+
+      <h3>Step 1a — Fuzzy clarification (conditional)</h3>
+      <p>Only if intent is fuzzy or arguments are empty: invoke <code>silver:explore</code> (gsd-explore) for Socratic clarification of UI intent.</p>
+
+      <h3>Step 1b — Product brainstorming</h3>
+      <p>Invoke <code>/product-brainstorming</code>. Purpose: user flows, personas, success criteria, and scope for the UI feature.</p>
+
+      <h3>Step 1c — Engineering brainstorm</h3>
+      <p>Invoke <code>silver:brainstorm</code> (superpowers:brainstorming). Purpose: UI architecture, component hierarchy, interaction design, spec.</p>
+
+      <h3>Step 1d — MultAI UI perspectives (conditional)</h3>
+      <p>Only for major UI systems (design system, cross-cutting UI architecture, or user request). SB offers multi-AI UX pattern perspectives via <code>silver:multai</code> (multai:orchestrator).</p>
+
+      <h3>Step 2 — Testing strategy</h3>
+      <p>Invoke <code>/testing-strategy</code>. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing plans.</p>
+
+      <h3>Step 2.5 — Writing plans</h3>
+      <p>Invoke <code>silver:writing-plans</code> (superpowers:writing-plans). Purpose: spec and test strategy into implementation plan with frontend-design emphasis.</p>
+
+      <h3>Step 3 — Pre-plan quality gates</h3>
+      <p>Invoke <code>silver:quality-gates</code>. 9 dimensions with usability and testability emphasis. <code>silver:security</code> is always mandatory.</p>
+
+      <h3>Step 4 — Discuss phase</h3>
+      <p>Invoke <code>gsd-discuss-phase</code>. UI phase context → <code>CONTEXT.md</code> with locked decisions.</p>
+
+      <h3 id="design-contract">Step 5 — UI phase: design contract</h3>
+      <p>Invoke <code>gsd-ui-phase</code>. <strong>This step is the key differentiator from silver:feature.</strong> Purpose: create <code>UI-SPEC.md</code> design contract — component API, layout rules, interaction spec. The implementation plan in Step 6 is built on top of this contract.</p>
+
+      <h3>Step 6 — Plan phase</h3>
+      <p>Invoke <code>gsd-plan-phase</code>. Implementation <code>PLAN.md</code> built on top of <code>UI-SPEC.md</code> contract.</p>
+
+      <h3>Step 7 — Execute phase and TDD</h3>
+      <p>Execute: invoke <code>gsd-execute-phase</code> (Interactive) or <code>gsd-autonomous</code> (Autonomous §10e).</p>
+      <p>TDD for component logic: invoke <code>silver:tdd</code> (superpowers:test-driven-development) for testable component units (logic, state, interactions). <em>Skip for pure layout/styling tasks.</em></p>
+
+      <h3>Step 8 — Code review</h3>
+      <p>Run review sequence in order: <code>silver:request-review</code> → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for major UI systems: <code>gsd-review --multi-ai</code>] → <code>silver:receive-review</code>.</p>
+
+      <h3 id="ui-visual-audit">Step 9 — UI visual audit</h3>
+      <p>Invoke <code>gsd-ui-review</code>. <strong>This step is unique to the UI workflow.</strong> Purpose: 6-pillar visual audit of implemented UI:</p>
+      <ul>
+        <li>Layout fidelity (matches UI-SPEC.md contract)</li>
+        <li>Accessibility (WCAG 2.1 AA compliance)</li>
+        <li>Responsiveness (mobile, tablet, desktop breakpoints)</li>
+        <li>Interaction quality (hover states, focus, transitions)</li>
+        <li>Visual consistency (typography, spacing, color system)</li>
+        <li>Performance (render budget, asset optimization)</li>
+      </ul>
+
+      <h3>Step 10 — Frontend security</h3>
+      <p>Invoke <code>gsd-secure-phase</code> (XSS, CSP, auth surface) and <code>silver:security</code> (mandatory security gate). Both run at this step.</p>
+
+      <h3>Step 11 — Verify work and test gap fill</h3>
+      <p>Invoke <code>gsd-verify-work</code>. <strong>Non-skippable gate.</strong> If coverage gaps remain: invoke <code>gsd-add-tests</code>.</p>
+
+      <h3>Step 12 — Validate phase</h3>
+      <p>Invoke <code>gsd-validate-phase</code>. Nyquist validation gap filling.</p>
+
+      <h3>Step 13 — Pre-ship quality gates</h3>
+      <p>Invoke <code>silver:quality-gates</code>. Full 9-dimension sweep. <strong>Non-skippable gate.</strong></p>
+
+      <h3>Steps 14–15 — Finishing branch and ship</h3>
+      <p>Invoke <code>silver:finishing-branch</code> → optionally <code>gsd-pr-branch</code> → <code>gsd-ship</code>. Phase-level merge.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="non-skippable-gates">Non-skippable gates</h2>
+      <div class="callout callout-warn">
+        <div class="callout-icon">🔒</div>
+        <div class="callout-body">
+          <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
+          <ul style="margin-top:8px">
+            <li><code>silver:security</code> (Step 10)</li>
+            <li><code>silver:quality-gates</code> pre-ship (Step 13)</li>
+            <li><code>gsd-verify-work</code> (Step 11)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example invocation</h2>
+      <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
+      <p>Silver Bullet routes to the UI workflow. After intel and brainstorm, gsd-ui-phase creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. gsd-ui-review audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-bugfix.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:bugfix</span>
+        </a>
+        <a href="./silver-devops.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:devops</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../../">Help Home</a>
+        <a href="../../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('icon-sun').style.display=dark?'none':'';
+  document.getElementById('icon-moon').style.display=dark?'':'none';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s?s==='dark':true)})();
+lucide.createIcons();
+const links=document.querySelectorAll('.sidebar-nav a');
+window.addEventListener('scroll',()=>{let curr='';document.querySelectorAll('[id]').forEach(h=>{if(window.scrollY>=h.offsetTop-120)curr=h.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+curr)})},{passive:true});
+</script>
+</body>
+</html>
