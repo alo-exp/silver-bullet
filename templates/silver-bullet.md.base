@@ -262,6 +262,8 @@ You MUST NOT:
 - Claim work is complete without running `/gsd:verify-work`
 - Accept a completion claim from any plugin or skill (GSD, Superpowers, etc.) without invoking `/verification-before-completion` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
+- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §10 preferences — these gates are permanent
+- Write runtime preference updates to §10 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
@@ -622,3 +624,35 @@ issue, ambiguous design decision), log it under "Needs human review" and surface
 to the user before proceeding to the next stage.
 
 > **Anti-Skip:** You are violating this rule if you attempt /create-release without all four quality-gate-stage-N markers in the state file. completion-audit.sh will block the release. Each stage requires explicit /superpowers:verification-before-completion invocation — the marker alone is insufficient.
+
+---
+
+## 10. User Workflow Preferences
+
+This section is written and committed by SB whenever the user expresses a workflow preference.
+Initially empty — all workflow defaults apply. Read at every relevant decision point.
+
+Last updated: (not yet set)
+
+### 10a. Routing Preferences
+| Work type | Override route | Since |
+|-----------|---------------|-------|
+
+### 10b. Step Skip Preferences
+| Workflow | Step skipped | Condition | Since |
+|----------|-------------|-----------|-------|
+
+### 10c. Tool Preferences
+| Decision point | Preferred tool | Since |
+|----------------|---------------|-------|
+
+### 10d. MultAI Preferences
+| Trigger | Disposition | Since |
+|---------|-------------|-------|
+
+### 10e. Mode Preferences
+| Setting | Value | Since |
+|---------|-------|-------|
+| Default session mode | interactive | (set at init) |
+| PR branch | ask | (set at first use) |
+| TDD enforcement | per-plan-type | (default) |
