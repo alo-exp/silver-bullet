@@ -128,7 +128,7 @@ To reset the workflow state, remove the file from your terminal (not from Claude
       is_whitelisted_append=true
     fi
     if [[ "$is_whitelisted_append" == false ]] && \
-       printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial)' && \
+       printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial|mode)' && \
        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 

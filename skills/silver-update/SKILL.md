@@ -120,6 +120,22 @@ Get the commit SHA:
 git -C "$NEW_CACHE" rev-parse HEAD
 ```
 
+Display the SHA to the user before proceeding:
+```
+⚠️  Security check: Silver Bullet v<latest-version> cloned at commit SHA:
+    <commit-sha>
+
+Note: This release tag is not cryptographically signed. Verify this SHA
+matches the expected commit at https://github.com/alo-exp/silver-bullet/releases
+if you have any security concerns.
+```
+
+Use AskUserQuestion:
+- Question: "Proceed with installing v<latest-version> at commit <short-sha>?"
+- Options: "A. Yes, install" / "B. Cancel"
+
+If user cancels, remove `$NEW_CACHE` and exit without modifying the registry.
+
 ### Step 6: Update the plugin registry
 
 Read `~/.claude/plugins/installed_plugins.json`, update the `silver-bullet@silver-bullet` entry:
