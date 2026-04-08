@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Combines GSD, Superpowers, Engineering, and Design plugins into enforced 20-step (app) and 24-step (DevOps) workflows with 10-layer technical compliance.",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
@@ -12,7 +12,16 @@
     "url": "https://github.com/alo-exp/silver-bullet.git"
   },
   "license": "MIT",
-  "keywords": ["silver-bullet", "enforcement", "orchestrator", "gsd", "devops", "quality-gates", "deploy-gate", "ci-cd"],
+  "keywords": [
+    "silver-bullet",
+    "enforcement",
+    "orchestrator",
+    "gsd",
+    "devops",
+    "quality-gates",
+    "deploy-gate",
+    "ci-cd"
+  ],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"
 }

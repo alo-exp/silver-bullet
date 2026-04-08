@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.13.1] — 2026-04-09
+
+### Changed
+- Model routing overhauled: Sonnet (LOW thinking effort) is now the default for all 24 GSD agents. Opus reserved exclusively for `gsd-planner` and `gsd-security-auditor` — the only two agents where reasoning depth measurably changes outcome quality. Previous scheme asked for Opus at phase transitions; new scheme is fully automatic via agent frontmatter.
+- silver-bullet.md §5 and templates/silver-bullet.md.base §5: removed interactive Opus upgrade prompts; replaced with automatic frontmatter-based routing description
+- docs/workflows/full-dev-cycle.md MODEL ROUTING section updated to match; removed manual prompt flow
+
+### Fixed
+- All "8 dimensions" references updated to "9 dimensions" across site/index.html (3 occurrences), site/help/index.html, site/help/dev-workflow/index.html, site/help/search.js (3 occurrences), and docs/workflows/full-dev-cycle.md (4 occurrences total)
+- quality-gates SKILL.md: added 9th dimension (AI/LLM safety) to skill load list and report table; updated model advisory from Opus to Sonnet
+- site/index.html cost-optimization section rewritten: Sonnet-as-default messaging, Opus reserved for 2 agents, cost reduction estimate updated to 60–80%
+- docs/workflows/full-dev-cycle.md: added /silver router and orchestration workflows to invocation table; updated /test-driven-development → silver:tdd, /finishing-a-development-branch → silver:finishing-branch, /design-system+/ux-copy+/accessibility-review → product-brainstorming; added silver:security to CODE REVIEW section
+- site/help/search.js: added dedicated index entries for utility skills (silver:intel, silver:explore, silver:scan, silver:forensics) and alias skills (silver:tdd, silver:security, silver:brainstorm, silver:writing-plans, silver:finishing-branch)
+
 ## [0.13.0] — 2026-04-08
 
 ### Security
