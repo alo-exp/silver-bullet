@@ -65,11 +65,11 @@ var IDX = [
     text:'Automatic context optimization PostToolUse hook. TF-IDF scoring ranks source and doc file chunks by relevance to phase goal. Injects most relevant context into Claude working memory. Cache invalidated on file change. Configure in .silver-bullet.json under semantic_compression.' },
   { page:'Core Concepts', url:'/help/concepts/', anchor:'file-structure',
     title:'Standard project file structure',
-    text:'silver-bullet.md CLAUDE.md .silver-bullet.json .github/workflows/ci.yml. silver-bullet.md contains all enforcement sections 0-9 managed by plugin. CLAUDE.md contains project-specific instructions. .planning/ PROJECT.md REQUIREMENTS.md ROADMAP.md CONTEXT.md PLAN.md VERIFICATION.md .context-cache/. docs/ PRD-Overview.md Architecture-and-Design.md Testing-Strategy-and-Plan.md CICD.md KNOWLEDGE.md CHANGELOG.md specs/ workflows/ sessions/.' },
+    text:'silver-bullet.md CLAUDE.md .silver-bullet.json .github/workflows/ci.yml. silver-bullet.md contains all enforcement sections 0-10 managed by plugin. CLAUDE.md contains project-specific instructions. .planning/ PROJECT.md REQUIREMENTS.md ROADMAP.md CONTEXT.md PLAN.md VERIFICATION.md .context-cache/. docs/ PRD-Overview.md Architecture-and-Design.md Testing-Strategy-and-Plan.md CICD.md KNOWLEDGE.md CHANGELOG.md specs/ workflows/ sessions/.' },
 
   { page:'Reference', url:'/help/reference/', anchor:'file-structure',
     title:'silver-bullet.md — enforcement instructions file',
-    text:'silver-bullet.md is managed by Silver Bullet plugin. Contains all enforcement sections 0-9: session startup, automated enforcement, active workflow, non-negotiable rules, session mode, model routing, ownership rules, file safety, third-party boundary, pre-release gate. Updated by /silver:init. Do not edit manually.' },
+    text:'silver-bullet.md is managed by Silver Bullet plugin. Contains all enforcement sections 0-10: session startup, automated enforcement, active workflow, non-negotiable rules, session mode, model routing, ownership rules, file safety, third-party boundary, pre-release gate, user workflow preferences. Updated by /silver:init. Do not edit manually.' },
 
   // ── DEV WORKFLOW ──────────────────────────────────────────────
   { page:'Dev Workflow', url:'/help/dev-workflow/', anchor:'overview',
@@ -197,7 +197,10 @@ var IDX = [
     text:'/gsd:new-project initialize project requirements roadmap. /gsd:discuss-phase capture decisions. /gsd:plan-phase research task plan. /gsd:execute-phase wave-based parallel execution. /gsd:verify-work goal-backward verification. /gsd:ship create PR. /gsd:next where am I advance to next step. /gsd:debug systematic debugging. /gsd:help.' },
   { page:'Skills', url:'/help/skills/', anchor:'silver',
     title:'/silver — Skill Router',
-    text:'/silver routes freeform natural language to the best Silver Bullet skill or GSD command automatically. Single entry point for users who do not know which skill to invoke. Routes to: /silver:init setup onboarding, /quality-gates code quality review, /blast-radius risk infrastructure change, /devops-quality-gates IaC DevOps quality, /forensics debugging investigation, /create-release release publish, /devops-skill-router IaC toolchain routing. Delegates GSD planning execution project work to /gsd:do.' },
+    text:'/silver routes freeform natural language to the best Silver Bullet skill or GSD command automatically. Single entry point for users who do not know which skill to invoke. Routes to: /silver:init setup onboarding, /quality-gates code quality review, /blast-radius risk infrastructure change, /devops-quality-gates IaC DevOps quality, /forensics debugging investigation, /create-release release publish, /devops-skill-router IaC toolchain routing. Delegates GSD planning execution project work to /gsd:do. 17+ routes with complexity triage and 7-workflow routing table.' },
+  { page:'Skills', url:'/help/reference/', anchor:'sb-skills',
+    title:'Orchestration skills — silver:feature, silver:bugfix, silver:ui, silver:devops, silver:research, silver:release, silver:fast',
+    text:'Seven named orchestration workflows added in v0.9.0: /silver:feature for feature development, /silver:bugfix for bug investigation and fixes, /silver:ui for UI/UX work, /silver:devops for infrastructure and DevOps tasks, /silver:research for research and exploration, /silver:release for release preparation, /silver:fast for quick low-overhead tasks. Invoked directly or routed automatically by /silver.' },
   { page:'Reference', url:'/help/reference/', anchor:'sb-skills',
     title:'Silver Bullet skills catalog',
     text:'/silver router entry point /quality-gates /blast-radius /devops-quality-gates /accessibility-review UI phases only /deploy-checklist /create-release /testing-strategy /tech-debt /documentation /finishing-a-development-branch main branch skipped /incident-response DevOps Incident Fast Path /forensics /silver:init.' },

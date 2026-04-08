@@ -332,6 +332,41 @@ footer a:hover{color:var(--accent-light)}
             <td>Setup</td>
             <td>Initialize or re-activate Silver Bullet for a project. Idempotent on re-run.</td>
           </tr>
+          <tr>
+            <td>/silver:feature</td>
+            <td>Feature work</td>
+            <td>Orchestrated workflow for feature development. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:bugfix</td>
+            <td>Bug fixes</td>
+            <td>Orchestrated workflow for bug investigation and fixes. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:ui</td>
+            <td>UI/UX work</td>
+            <td>Orchestrated workflow for UI/UX work. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:devops</td>
+            <td>Infrastructure</td>
+            <td>Orchestrated workflow for infrastructure and DevOps tasks. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:research</td>
+            <td>Research</td>
+            <td>Orchestrated workflow for research and exploration. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:release</td>
+            <td>Release prep</td>
+            <td>Orchestrated workflow for release preparation. Routed automatically by /silver.</td>
+          </tr>
+          <tr>
+            <td>/silver:fast</td>
+            <td>Quick tasks</td>
+            <td>Orchestrated workflow for quick, low-overhead tasks. Routed automatically by /silver.</td>
+          </tr>
         </tbody>
       </table>
 
@@ -505,7 +540,7 @@ updated (Architecture patterns, Key decisions) | no changes
       <table class="ref-table">
         <thead><tr><th>File</th><th>Owner</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-9). Managed by plugin — do not edit manually. Updated by <code>/silver:init</code>.</td></tr>
+          <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-10). Managed by plugin — do not edit manually. Updated by <code>/silver:init</code>.</td></tr>
           <tr><td>CLAUDE.md</td><td>User</td><td>Project-specific Claude instructions. References <code>silver-bullet.md</code> for enforcement rules. User-owned — Silver Bullet only adds a reference line.</td></tr>
           <tr><td>.silver-bullet.json</td><td>Silver Bullet</td><td>Project-level configuration: project name, source pattern, semantic compression, verify commands, workflow paths.</td></tr>
         </tbody>

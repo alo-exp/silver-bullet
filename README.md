@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.12.0** — `/silver` smart router skill (single entry point for all SB and GSD skills), `/silver:init` rename, enforcement layer documentation corrected to 10 layers, greedy namespace stripping in record-skill.sh (SENTINEL S6-001), 191-test harness. Full site and help center updated.
+**Current version: v0.9.0** — 7 new orchestration skills (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast`), SB Orchestrated Workflows section (§2h) added to silver-bullet.md, `/silver` router expanded with 17+ routes and 7-workflow routing table, `silver:init` MultAI + Engineering + PM plugin checks and project-type detection, §0 session startup MultAI update check, §10 User Workflow Preferences (10a–10e), 191-test harness (12/12 hooks).
 
 ## How It Works
 
@@ -125,7 +125,7 @@ This will:
 - Check that all 4 plugin dependencies are installed
 - Auto-detect your project name, tech stack, and source directory
 - Ask whether this is an application or DevOps/infrastructure project
-- Create `silver-bullet.md` (10-section enforcement guide) and `CLAUDE.md` (project instructions)
+- Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and `CLAUDE.md` (project instructions)
 - Create `.silver-bullet.json` with your project config
 - Copy the appropriate workflow file(s) to `docs/workflows/`
 - Create placeholder docs (`docs/PRD-Overview.md`, `docs/Architecture-and-Design.md`, etc.)
@@ -191,6 +191,13 @@ Skills installed by this plugin that extend the workflow:
 |-------|-------------|
 | `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
 | `/silver:init` | Once per project — initializes CLAUDE.md, config, CI, and docs scaffold |
+| `/silver:feature` | Orchestrated workflow for feature development |
+| `/silver:bugfix` | Orchestrated workflow for bug investigation and fixes |
+| `/silver:ui` | Orchestrated workflow for UI/UX work |
+| `/silver:devops` | Orchestrated workflow for infrastructure and DevOps tasks |
+| `/silver:research` | Orchestrated workflow for research and exploration |
+| `/silver:release` | Orchestrated workflow for release preparation |
+| `/silver:fast` | Orchestrated workflow for quick, low-overhead tasks |
 | `/quality-gates` | Before planning (dev) — checks all 8 quality dimensions in parallel |
 | `/blast-radius` | Before planning (DevOps) — maps change scope, dependencies, and rollback plan |
 | `/devops-quality-gates` | Before planning (DevOps) — 7 IaC-adapted quality dimensions (usability excluded) |
