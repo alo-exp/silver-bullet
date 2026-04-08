@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Session Startup — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet's automatic 5-step session startup works: model switching, doc loading, context compaction, and update checks for Silver Bullet, GSD, plugins, and MultAI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f3f4f6;
+  --bg-card:#ffffff;
+  --bg-card-hover:#eeeff2;
+  --bg-code:#e9eaed;
+  --bg-hero:linear-gradient(160deg,#c0c6cf 0%,#d4dae3 18%,#e8eaee 38%,#eceef2 52%,#e0e4e9 68%,#d0d5dc 84%,#c4c9d1 100%);
+  --chrome-gradient:linear-gradient(135deg,#374151 0%,#7a8ea0 28%,#d4dce6 50%,#7a8ea0 72%,#374151 100%);
+  --accent:#374151;--accent-light:#6b7280;--accent-glow:rgba(107,114,128,.1);
+  --accent2:#4b5563;--accent3:#6b7280;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#d1d5db;--border-hover:#9ca3af;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(107,114,128,.07);
+  --nav-bg:rgba(243,244,246,.9);
+  --section-alt:rgba(236,238,242,.6);
+  --table-row-hover:rgba(107,114,128,.03);
+  --skill-phase-border:rgba(209,213,219,.8);
+}
+[data-theme="dark"]{
+  --bg-page:#0c0c0e;
+  --bg-card:#161618;
+  --bg-card-hover:#1e1e21;
+  --bg-code:#1a1a1d;
+  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
+  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
+  --accent:#9ca3af;--accent-light:#c8d2da;--accent-glow:rgba(156,163,175,.15);
+  --accent2:#8fa0ad;--accent3:#b0bec8;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
+  --border:#26262a;--border-hover:#38383e;
+  --shadow-glow:0 0 40px rgba(156,163,175,.07);
+  --nav-bg:rgba(12,12,14,.88);
+  --section-alt:rgba(20,20,23,.5);
+  --table-row-hover:rgba(156,163,175,.03);
+  --skill-phase-border:rgba(38,38,42,.6);
+}
+body,nav{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px;margin-top:8px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-tip{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2)}
+.callout-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.callout-stop{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.code-block .cmd{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.step-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.step-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;gap:16px;align-items:flex-start}
+.step-num{min-width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#374151,#6b7280);color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);flex-shrink:0;margin-top:2px}
+.step-item h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.step-item p{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin:0}
+.update-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.update-card h4{font-size:.9rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.update-card p{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:8px}
+.update-card p:last-child{margin-bottom:0}
+.update-card code{font-family:var(--font-mono);font-size:.78em;background:var(--bg-code);padding:2px 5px;border-radius:3px;color:var(--accent-light)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68rem;font-weight:700}
+.badge-auto{background:rgba(8,145,178,.1);color:var(--cyan)}
+.badge-info{background:rgba(107,114,128,.1);color:var(--accent-light)}
+.badge-manual{background:rgba(217,119,6,.1);color:var(--amber)}
+.update-options{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.update-opt{background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:.78rem;font-weight:600;color:var(--text-secondary)}
+.update-opt.opt-a{border-color:rgba(5,150,105,.4);color:var(--green)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:200px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+.nav-search-wrap{position:relative}
+.nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.82rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
+.nav-search-input:focus{border-color:var(--accent);width:240px}
+.nav-search-input::placeholder{color:var(--text-dim)}
+.nav-search-results{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:200;max-height:420px;overflow-y:auto;display:none}
+.nav-search-results.open{display:block}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.78rem;color:var(--text-dim);line-height:1.4}
+@media(max-width:768px){.nav-search-wrap{display:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Core Concepts</a><span class="sep">/</span> Session Startup</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-search-wrap">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off">
+        <div class="nav-search-results" id="nav-search-results"></div>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav">
+      <a href="../../">Home</a><span>/</span><a href="../">Help</a><span>/</span><a href="./">Core Concepts</a><span>/</span> Session Startup
+    </div>
+    <h1>Session Startup</h1>
+    <p>Every Silver Bullet session begins with an automatic 5-step sequence that loads full project context, compacts memory, and checks whether your tools are up to date — before any work begins.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#step1">Step 1 — Switch to Opus</a></li>
+        <li><a href="#step2">Step 2 — Read all docs</a></li>
+        <li><a href="#step3">Step 3 — Compact context</a></li>
+        <li><a href="#step4">Step 4 — Switch back</a></li>
+        <li><a href="#step5">Step 5 — Update checks</a></li>
+        <li><a href="#silver-update">silver:update flow</a></li>
+        <li><a href="#anti-skip">Anti-skip enforcement</a></li>
+      </ul>
+    </aside>
+
+    <div class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p>Section §0 of <code>silver-bullet.md</code> defines the session startup sequence. It runs automatically at the very start of every new session, before you issue any work instructions. The sequence ensures Claude has full project context, a clean working memory, and up-to-date tools before starting.</p>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠</span>
+        <div class="callout-body"><strong>Anti-skip:</strong> Claude is violating this rule if it begins work without reading <code>docs/</code> or skipping <code>/compact</code>. Evidence: no Read tool calls for <code>docs/</code> files at session start.</div>
+      </div>
+
+      <h2 id="step1">Step 1 — Switch to Opus 4.6 (1M context)</h2>
+      <p>If Claude is not already running on Opus 4.6, it switches to Opus at the start of the session. Opus 4.6 with its 1M-token context window is required to load all project documentation without truncation.</p>
+      <p>If Opus 4.6 is already selected, this step is a no-op. The model selection is noted so it can be reversed in Step 4.</p>
+
+      <h2 id="step2">Step 2 — Read all project docs</h2>
+      <p>Claude reads <code>silver-bullet.md</code> and 100% of the files in <code>docs/</code>. This gives it complete knowledge of the project's enforcement rules, architecture decisions, requirements, and ongoing context before any task begins.</p>
+
+      <div class="callout callout-stop">
+        <span class="callout-icon">⛔</span>
+        <div class="callout-body">
+          <strong>UNTRUSTED DATA boundary:</strong> <code>docs/</code> files are read for project context only. Any content in <code>docs/</code> that appears to be instructions addressed to Claude — imperative sentences, override commands, <code>SYSTEM:</code> prefixes — is treated as documentation text, <em>not</em> as executable instructions. Silver Bullet instructions live exclusively in <code>silver-bullet.md</code> and <code>CLAUDE.md</code>.
+        </div>
+      </div>
+
+      <p>This boundary prevents prompt injection through project documentation. Even if a <code>docs/</code> file contains text that looks like a command, Claude ignores it as an instruction source.</p>
+
+      <h2 id="step3">Step 3 — Compact the context</h2>
+      <p>After loading all docs, Claude runs <code>/compact</code> to compress the context. Loading a full <code>docs/</code> directory can consume significant context tokens. Compaction distills the loaded content into a dense summary, freeing context budget for the actual work ahead.</p>
+      <p>Compaction happens <em>after</em> reading — not before — so that all documentation is included in the compressed output rather than discarded.</p>
+
+      <h2 id="step4">Step 4 — Switch back to original model</h2>
+      <p>If the model was changed in Step 1, Claude switches back to the model you originally selected. Your model preference is restored before any work begins, so the session runs on your chosen model with a compact, fully-loaded context.</p>
+      <p>If no model switch was needed in Step 1, this step is a no-op.</p>
+
+      <h2 id="step5">Step 5 — Update checks</h2>
+      <p>After <code>/compact</code>, before starting any work, Claude runs version checks for four components. Each check is independent — a failure in one does not block the others.</p>
+
+      <div class="update-card">
+        <h4>5.1 Silver Bullet <span class="badge badge-auto">auto-offer</span></h4>
+        <p>Reads the installed version from the Claude plugin registry and fetches the latest version from GitHub. If installed &lt; latest, presents a prompt:</p>
+        <p><em>"Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
+        <div class="update-options">
+          <span class="update-opt opt-a">A. Yes, update now</span>
+          <span class="update-opt">B. Skip</span>
+        </div>
+        <p style="margin-top:10px">If A: runs <code>/silver:update</code> via the Skill tool, then continues. If B or check fails (offline, unknown version): outputs "Skipping SB update." and continues.</p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.2 GSD <span class="badge badge-auto">auto-offer</span></h4>
+        <p>Reads the installed GSD version from <code>~/.claude/get-shit-done/VERSION</code> and checks npm for the latest <code>get-shit-done-cc</code> version. If installed &lt; latest:</p>
+        <p><em>"GSD v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
+        <div class="update-options">
+          <span class="update-opt opt-a">A. Yes, update now</span>
+          <span class="update-opt">B. Skip</span>
+        </div>
+        <p style="margin-top:10px">If A: runs <code>/gsd-update</code> via the Skill tool. If B or either version is unknown: skips and continues.</p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.3 Superpowers / plugins <span class="badge badge-info">informational</span></h4>
+        <p>Reads installed versions for Superpowers, Design, and Engineering plugins from the plugin registry and displays them. No automated update skill exists for these — Claude displays the versions and immediately continues without prompting.</p>
+        <p>If you want to update: <code>/plugin install obra/superpowers</code> &nbsp;|&nbsp; <code>/plugin install anthropics/knowledge-work-plugins/tree/main/design</code></p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.4 MultAI <span class="badge badge-auto">auto-offer</span></h4>
+        <p>Reads the installed MultAI version from the plugin registry and compares it to the latest entry in <code>~/.claude/plugins/cache/multai/CHANGELOG.md</code>. If outdated:</p>
+        <p><em>"MultAI v{installed} appears outdated. Update now?"</em></p>
+        <div class="update-options">
+          <span class="update-opt opt-a">A. Yes, run /multai:update</span>
+          <span class="update-opt">B. Skip</span>
+        </div>
+        <p style="margin-top:10px">If A: runs <code>/multai:update</code>. If B or check fails (CHANGELOG missing, version unreadable): skips and continues.</p>
+      </div>
+
+      <h2 id="silver-update">The <code>/silver:update</code> flow</h2>
+      <p>When you select "A. Yes, update now" for Silver Bullet, the update skill runs a multi-step flow with two explicit confirmation gates before any files are changed:</p>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>
+            <h4>Fetch and display</h4>
+            <p>The skill fetches the latest release from GitHub and displays the commit SHA and changelog summary for the version being installed.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div>
+            <h4>First confirmation</h4>
+            <p>You confirm that you want to proceed with installing this specific version. Showing the SHA prevents installing an unexpected version if the "latest" tag moved between check and install.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div>
+            <h4>Update files</h4>
+            <p>The plugin files are updated locally. No registry write has happened yet.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div>
+            <h4>Second confirmation before registry write</h4>
+            <p>Before writing to the Claude plugin registry (<code>installed_plugins.json</code>), the skill shows the exact changes and asks for a second explicit confirmation. This gate prevents a partial update from being recorded as complete.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div>
+            <h4>Registry write and continue</h4>
+            <p>On confirmation, the registry is updated and the session startup sequence continues with the updated version loaded.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-body"><strong>Cancel path:</strong> If you cancel at either confirmation, no files are modified and the session continues with the existing version. The cancel path is guarded against unsafe <code>rm</code> operations — partially downloaded files are cleaned up safely.</div>
+      </div>
+
+      <h2 id="anti-skip">Anti-skip enforcement</h2>
+      <p>The session startup sequence is enforced by the <strong>UserPromptSubmit reminder hook</strong>, which re-injects the startup rules at the start of every user message. This means even if Claude loses track of its current state, the rules are re-presented before it can respond to your next instruction.</p>
+      <p>In addition, the compliance status hook shows startup progress on every tool use — if docs were not read or <code>/compact</code> was not run, the status display flags the gap.</p>
+      <p>The anti-skip rule is strict: Claude is in violation if it produces any project work output without evidence of having called Read tool on <code>docs/</code> files at session start.</p>
+
+      <div class="page-nav-bottom">
+        <a href="./preferences.html">
+          <span class="pnb-label">Previous</span>
+          <span class="pnb-title">Preferences</span>
+        </a>
+        <a href="../">
+          <span class="pnb-label">Up</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </div><!-- /.doc-content -->
+  </div><!-- /.doc-layout -->
+</div><!-- /.container-wide -->
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <span>Silver Bullet &copy; 2025 &mdash; AI-driven development for Claude Code</span>
+      <div class="footer-links">
+        <a href="../../">Home</a>
+        <a href="../">Help</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="../search.js"></script>
+<script>
+function toggleTheme(){
+  var d=document.documentElement;
+  var dark=d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme',dark?'':'dark');
+  document.getElementById('icon-sun').style.display=dark?'none':'inline';
+  document.getElementById('icon-moon').style.display=dark?'inline':'none';
+  localStorage.setItem('sb-theme',dark?'light':'dark');
+}
+(function(){
+  var t=localStorage.getItem('sb-theme');
+  if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('icon-sun').style.display='inline';document.getElementById('icon-moon').style.display='none';}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>User Workflow Preferences — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet records and applies user workflow preferences: routing, step-skip protocol, tool preferences, MultAI preferences, and mode preferences.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f3f4f6;
+  --bg-card:#ffffff;
+  --bg-card-hover:#eeeff2;
+  --bg-code:#e9eaed;
+  --bg-hero:linear-gradient(160deg,#c0c6cf 0%,#d4dae3 18%,#e8eaee 38%,#eceef2 52%,#e0e4e9 68%,#d0d5dc 84%,#c4c9d1 100%);
+  --chrome-gradient:linear-gradient(135deg,#374151 0%,#7a8ea0 28%,#d4dce6 50%,#7a8ea0 72%,#374151 100%);
+  --accent:#374151;--accent-light:#6b7280;--accent-glow:rgba(107,114,128,.1);
+  --accent2:#4b5563;--accent3:#6b7280;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#d1d5db;--border-hover:#9ca3af;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(107,114,128,.07);
+  --nav-bg:rgba(243,244,246,.9);
+  --section-alt:rgba(236,238,242,.6);
+  --table-row-hover:rgba(107,114,128,.03);
+  --skill-phase-border:rgba(209,213,219,.8);
+}
+[data-theme="dark"]{
+  --bg-page:#0c0c0e;
+  --bg-card:#161618;
+  --bg-card-hover:#1e1e21;
+  --bg-code:#1a1a1d;
+  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
+  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
+  --accent:#9ca3af;--accent-light:#c8d2da;--accent-glow:rgba(156,163,175,.15);
+  --accent2:#8fa0ad;--accent3:#b0bec8;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
+  --border:#26262a;--border-hover:#38383e;
+  --shadow-glow:0 0 40px rgba(156,163,175,.07);
+  --nav-bg:rgba(12,12,14,.88);
+  --section-alt:rgba(20,20,23,.5);
+  --table-row-hover:rgba(156,163,175,.03);
+  --skill-phase-border:rgba(38,38,42,.6);
+}
+body,nav{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px;margin-top:8px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-tip{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2)}
+.callout-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.callout-stop{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.code-block .cmd{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.pref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.pref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.pref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.pref-table td:first-child{font-weight:600;color:var(--text-primary);font-family:var(--font-mono);font-size:.8rem}
+.pref-table tr:hover td{background:var(--table-row-hover)}
+.step-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.step-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;gap:16px;align-items:flex-start}
+.step-num{min-width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#374151,#6b7280);color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);flex-shrink:0;margin-top:2px}
+.step-item h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.step-item p{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin:0}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}
+.tag-no-skip{background:rgba(220,38,38,.1);color:var(--red)}
+.tag-skippable{background:rgba(5,150,105,.1);color:var(--green)}
+.tag-perm{background:rgba(8,145,178,.1);color:var(--cyan)}
+.confirm-box{background:var(--bg-card);border:2px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px}
+.confirm-box h4{font-size:.9rem;font-weight:700;margin-bottom:12px;color:var(--text-primary)}
+.confirm-box .diff-line{font-family:var(--font-mono);font-size:.78rem;padding:3px 8px;border-radius:3px;margin-bottom:2px}
+.diff-add{background:rgba(5,150,105,.08);color:var(--green)}
+.diff-remove{background:rgba(220,38,38,.08);color:var(--red)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:200px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+.nav-search-wrap{position:relative}
+.nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.82rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
+.nav-search-input:focus{border-color:var(--accent);width:240px}
+.nav-search-input::placeholder{color:var(--text-dim)}
+.nav-search-results{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:200;max-height:420px;overflow-y:auto;display:none}
+.nav-search-results.open{display:block}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.78rem;color:var(--text-dim);line-height:1.4}
+@media(max-width:768px){.nav-search-wrap{display:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Core Concepts</a><span class="sep">/</span> Preferences</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-search-wrap">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off">
+        <div class="nav-search-results" id="nav-search-results"></div>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav">
+      <a href="../../">Home</a><span>/</span><a href="../">Help</a><span>/</span><a href="./">Core Concepts</a><span>/</span> Preferences
+    </div>
+    <h1>User Workflow Preferences</h1>
+    <p>Silver Bullet learns your preferences over time and records them in <code>silver-bullet.md §10</code>. Every preference requires your explicit confirmation before it is written.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#routing">§10a Routing Preferences</a></li>
+        <li><a href="#step-skip">§10b Step-Skip Preferences</a></li>
+        <li><a href="#tools">§10c Tool Preferences</a></li>
+        <li><a href="#multai">§10d MultAI Preferences</a></li>
+        <li><a href="#mode">§10e Mode Preferences</a></li>
+        <li><a href="#recording">Recording a Preference</a></li>
+        <li><a href="#non-skippable">Non-Skippable Gates</a></li>
+      </ul>
+    </aside>
+
+    <div class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p>Section §10 of <code>silver-bullet.md</code> is the preferences registry. It starts empty — all workflow defaults apply. Silver Bullet reads it at every relevant decision point and writes to it whenever you express a durable workflow preference.</p>
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ</span>
+        <div class="callout-body"><strong>Two-file update:</strong> Every §10 write is atomic — Silver Bullet updates <em>both</em> <code>silver-bullet.md</code> and <code>templates/silver-bullet.md.base</code> in a single commit. This keeps project instances and the base template in sync.</div>
+      </div>
+
+      <h2 id="routing">§10a — Routing Preferences</h2>
+      <p>Routing preferences override the default workflow selection for a given work type. When you ask Silver Bullet to handle a request, it normally chooses the best workflow based on your description. A routing preference pins a specific workflow for a domain.</p>
+      <table class="pref-table">
+        <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Work type</td><td>The category of request (e.g., "all UI tasks", "backend API work")</td></tr>
+          <tr><td>Override route</td><td>Which workflow to always use (e.g., <code>silver:feature</code>, <code>silver:ui</code>)</td></tr>
+          <tr><td>Since</td><td>Date the preference was recorded</td></tr>
+        </tbody>
+      </table>
+      <p>Example: if you always want UI changes to go through <code>silver:ui</code> even when your description sounds like a feature, you can record that preference once and Silver Bullet will route accordingly from then on.</p>
+
+      <h2 id="step-skip">§10b — Step-Skip Preferences</h2>
+      <p>When you ask to skip a workflow step, Silver Bullet does not skip silently. It follows the step-skip protocol every time:</p>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>
+            <h4>Explain</h4>
+            <p>Silver Bullet explains in one sentence why the step exists — what problem it solves and what risk skipping it creates.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div>
+            <h4>Offer options</h4>
+            <p>You are presented with three lettered choices: <strong>A. Accept skip</strong> (once, permanently, or conditionally) &nbsp; <strong>B. Lightweight alternative</strong> (abbreviated version of the step) &nbsp; <strong>C. Show me what you have</strong> (proceed with the step as-is).</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div>
+            <h4>Record if permanent</h4>
+            <p>If you choose A and want it recorded permanently, Silver Bullet writes the preference to §10b — but only after showing you the exact diff and receiving your confirmation. See <a href="#recording">Recording a Preference</a> below.</p>
+          </div>
+        </div>
+      </div>
+
+      <p>The §10b table captures each recorded skip:</p>
+      <table class="pref-table">
+        <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Workflow</td><td>Which workflow the skip applies to (e.g., <code>silver:fast</code>, all workflows)</td></tr>
+          <tr><td>Step skipped</td><td>The step name or skill (e.g., <code>/brainstorming</code>)</td></tr>
+          <tr><td>Condition</td><td>When the skip applies (e.g., "always", "when no UI changes")</td></tr>
+          <tr><td>Since</td><td>Date recorded</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-stop">
+        <span class="callout-icon">⛔</span>
+        <div class="callout-body"><strong>Non-skippable gates:</strong> Three gates cannot be added to §10b under any circumstance — they are enforced permanently. See <a href="#non-skippable">Non-Skippable Gates</a>.</div>
+      </div>
+
+      <h2 id="tools">§10c — Tool Preferences</h2>
+      <p>At certain decision points, Silver Bullet selects a research or analysis tool. Tool preferences let you pin your preferred tool for a given decision point instead of relying on automatic selection.</p>
+      <table class="pref-table">
+        <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Decision point</td><td>Where the tool choice occurs (e.g., "technology research", "dependency comparison")</td></tr>
+          <tr><td>Preferred tool</td><td>The tool or skill to always use at that point</td></tr>
+          <tr><td>Since</td><td>Date recorded</td></tr>
+        </tbody>
+      </table>
+      <p>Example: you may prefer <code>/silver:research</code> over <code>/brainstorming</code> for technology spikes. Recording this preference means Silver Bullet routes all research decision points to <code>silver:research</code> automatically.</p>
+
+      <h2 id="multai">§10d — MultAI Preferences</h2>
+      <p>MultAI runs multi-model reviews using multiple AI providers in parallel. §10d controls when MultAI is automatically offered and which models are used.</p>
+      <table class="pref-table">
+        <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td>Trigger</td><td>The scenario that would invoke MultAI (e.g., "architecturally significant changes", "cross-AI code review")</td></tr>
+          <tr><td>Disposition</td><td><code>auto-offer</code> (prompt the user) | <code>auto-run</code> (run without prompting) | <code>skip</code> (never offer)</td></tr>
+          <tr><td>Since</td><td>Date recorded</td></tr>
+        </tbody>
+      </table>
+      <p>MultAI is offered automatically for architecturally significant changes. If you find the prompt disruptive you can set a disposition of <code>skip</code> for specific triggers, or <code>auto-run</code> to have it run silently without asking.</p>
+
+      <h2 id="mode">§10e — Mode Preferences</h2>
+      <p>Mode preferences capture session-level defaults so you do not have to re-answer the same questions each session.</p>
+      <table class="pref-table">
+        <thead><tr><th>Setting</th><th>Values</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td>Default session mode</td><td><code>interactive</code> | <code>autonomous</code></td><td><code>interactive</code></td></tr>
+          <tr><td>PR branch</td><td><code>ask</code> | a branch name prefix</td><td><code>ask</code></td></tr>
+          <tr><td>TDD enforcement</td><td><code>per-plan-type</code> | <code>always</code> | <code>never</code></td><td><code>per-plan-type</code></td></tr>
+        </tbody>
+      </table>
+      <p><strong>Default session mode</strong> is set during <code>/silver:init</code> and can be updated at any time. <strong>PR branch</strong> is captured the first time you create a PR — you can record your preferred prefix (e.g., <code>feat/</code>) so Silver Bullet never has to ask again. <strong>TDD enforcement</strong> controls whether test-driven development applies: the default is per-plan-type, meaning TDD runs for implementation plans but not config, infra, or doc plans.</p>
+
+      <h2 id="recording">Recording a Preference</h2>
+      <p>Before any preference is written to §10, Silver Bullet must show you exactly what will change and receive your explicit confirmation. The display shows a diff of both files that will be updated:</p>
+
+      <div class="confirm-box">
+        <h4>Confirmation prompt (example)</h4>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:12px">The following text will be written to <code>silver-bullet.md</code> and <code>templates/silver-bullet.md.base</code>:</p>
+        <div class="diff-line diff-remove">- | Default session mode | interactive | (set at init) |</div>
+        <div class="diff-line diff-add">+ | Default session mode | autonomous | 2026-04-08 |</div>
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-top:12px">Type <strong>yes</strong> to confirm, or <strong>no</strong> to cancel.</p>
+      </div>
+
+      <p>You must type <strong>yes</strong> (or an equivalent affirmative). Silver Bullet does not accept vague approval — the confirmation must be explicit. Both files are updated in the same commit so the project and base template never diverge.</p>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-body"><strong>Preferences are auditable:</strong> because they are stored in a committed file, <code>git log silver-bullet.md</code> shows exactly when each preference was set and what it contains. You can revert any preference by editing §10 and committing.</div>
+      </div>
+
+      <h2 id="non-skippable">Non-Skippable Gates</h2>
+      <p>Three workflow gates are permanently enforced and cannot be added to §10b under any circumstances:</p>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
+          <div>
+            <h4><code>silver:security</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <p>Security review is mandatory for every non-trivial change. It cannot be skipped, deferred, or combined with another step.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
+          <div>
+            <h4><code>silver:quality-gates</code> pre-ship <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <p>Quality gates must pass before shipping. The pre-ship quality gate run is separate from the pre-planning run and cannot be bypassed.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
+          <div>
+            <h4><code>gsd-verify-work</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <p>Work verification is required before completion can be declared. The completion audit hook blocks if this step is missing.</p>
+          </div>
+        </div>
+      </div>
+
+      <p>Attempting to add any of these to §10b will be rejected with an error. These gates exist because their failure modes are irreversible — skipping security review risks shipping vulnerabilities, and skipping verification risks incomplete or broken releases.</p>
+
+      <div class="page-nav-bottom">
+        <a href="./verification.html">
+          <span class="pnb-label">Previous</span>
+          <span class="pnb-title">Verification</span>
+        </a>
+        <a href="./session-startup.html">
+          <span class="pnb-label">Next</span>
+          <span class="pnb-title">Session Startup</span>
+        </a>
+      </div>
+
+    </div><!-- /.doc-content -->
+  </div><!-- /.doc-layout -->
+</div><!-- /.container-wide -->
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <span>Silver Bullet &copy; 2025 &mdash; AI-driven development for Claude Code</span>
+      <div class="footer-links">
+        <a href="../../">Home</a>
+        <a href="../">Help</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="../search.js"></script>
+<script>
+function toggleTheme(){
+  var d=document.documentElement;
+  var dark=d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme',dark?'':'dark');
+  document.getElementById('icon-sun').style.display=dark?'none':'inline';
+  document.getElementById('icon-moon').style.display=dark?'inline':'none';
+  localStorage.setItem('sb-theme',dark?'light':'dark');
+}
+(function(){
+  var t=localStorage.getItem('sb-theme');
+  if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('icon-sun').style.display='inline';document.getElementById('icon-moon').style.display='none';}
+})();
+</script>
+</body>
+</html>
