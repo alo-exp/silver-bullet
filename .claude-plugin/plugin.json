@@ -22,6 +22,4 @@
     "deploy-gate",
     "ci-cd"
   ],
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json"
 }
