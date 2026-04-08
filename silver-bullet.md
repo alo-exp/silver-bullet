@@ -253,6 +253,34 @@ so the user can follow along without being asked to act.
 
 ---
 
+### 2g. Bare Instruction Interception
+
+When the user sends a **bare instruction** — a message that is not a slash command and is
+non-trivial in nature — SB MUST intercept it and invoke `/silver` via the Skill tool before
+doing anything else. `/silver` routes the instruction to the correct GSD command, Superpowers
+skill, or SB skill.
+
+**Non-trivial bare instruction** (MUST intercept): any user message that:
+- Is NOT a slash command (does not start with `/`)
+- Describes work, a task, a change request, a feature, a fix, a build, a deployment, a refactor, or any action a plugin/skill is designed to handle
+
+**Exemptions** (do NOT intercept — respond directly):
+- Messages that are already slash commands (start with `/`)
+- Simple yes/no confirmations or clarifications in an ongoing workflow
+- Pure questions with no action intent ("what is X?", "explain Y")
+- Replies/continuations while an active skill is already running
+- Single-word or trivial acknowledgements ("ok", "thanks", "got it")
+
+**Process:**
+1. Receive bare instruction
+2. Classify: is it non-trivial work? If yes → intercept
+3. Invoke `/silver` via Skill tool, passing the original instruction as arguments
+4. `/silver` handles routing — SB does not do the work directly
+
+> **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver router exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
+
+---
+
 ## 3. NON-NEGOTIABLE RULES
 
 These rules apply to EVERY non-trivial change. There are NO exceptions.
@@ -264,6 +292,7 @@ You MUST NOT:
 - Proceed to the next phase before completing the current phase
 - Claim work is complete without running `/gsd:verify-work`
 - Accept a completion claim from any plugin or skill (GSD, Superpowers, etc.) without invoking `/verification-before-completion` with that claim
+- Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
