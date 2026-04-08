@@ -16,7 +16,7 @@
         "url": "https://github.com/alo-exp/silver-bullet.git"
       },
       "description": "Silver Bullet enforces a complete AI-native SDLC: quality gates, GSD integration, Superpowers, guided dev cycle, and pre-release checks — all wired via Claude Code hooks.",
-      "version": "0.12.1",
+      "version": "0.13.0",
       "strict": true
     }
   ]
