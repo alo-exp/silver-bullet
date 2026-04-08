@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../../favicon.png">
+<link rel="shortcut icon" href="../../../favicon.ico">
+<title>/silver:release — Milestone Release Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated milestone release workflow: quality-gates → UAT audit → milestone audit → gap-closure → docs → release notes → gsd-ship → complete-milestone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f3f4f6;--bg-card:#ffffff;--bg-card-hover:#eeeff2;--bg-code:#e9eaed;
+  --bg-hero:linear-gradient(160deg,#c0c6cf 0%,#d4dae3 18%,#e8eaee 38%,#eceef2 52%,#e0e4e9 68%,#d0d5dc 84%,#c4c9d1 100%);
+  --chrome-gradient:linear-gradient(135deg,#374151 0%,#7a8ea0 28%,#d4dce6 50%,#7a8ea0 72%,#374151 100%);
+  --accent:#374151;--accent-light:#6b7280;--accent2:#4b5563;--accent3:#6b7280;
+  --green:#059669;--amber:#d97706;--red:#dc2626;--cyan:#0891b2;
+  --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
+  --border:#d1d5db;--border-hover:#9ca3af;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --shadow-glow:0 0 40px rgba(107,114,128,.07);--nav-bg:rgba(243,244,246,.9);
+}
+[data-theme="dark"]{
+  --bg-page:#0c0c0e;--bg-card:#161618;--bg-card-hover:#1e1e21;--bg-code:#1a1a1d;
+  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
+  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
+  --accent:#9ca3af;--accent-light:#c8d2da;--accent2:#8fa0ad;--accent3:#b0bec8;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
+  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
+  --border:#26262a;--border-hover:#38383e;
+  --shadow-glow:0 0 40px rgba(156,163,175,.07);--nav-bg:rgba(12,12,14,.88);
+}
+body,nav{transition:background .25s,background-color .25s,border-color .25s,color .25s}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:.82rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.82rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-warn{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Release</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:release</span></div>
+    <h1>/silver:release</h1>
+    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>gsd:ship</code>.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On this page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#ship-disambiguation">Ship disambiguation</a></li>
+        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#gap-closure">Gap-closure loop</a></li>
+        <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
+        <li><a href="#example">Example invocation</a></li>
+        <li class="sidebar-section">See also</li>
+        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
+      <p><strong>It never publishes directly — it orchestrates only.</strong> This workflow operates at the milestone level — it closes out a complete milestone, not a single phase.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to use</h2>
+      <p>Entry trigger signals for <code>/silver:release</code>:</p>
+      <ul>
+        <li>"release" / "publish" / "version" / "go live"</li>
+        <li>"cut a release" / "tag v" / "ship to users" / "deploy to prod"</li>
+        <li>"changelog" / "release notes"</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="ship-disambiguation">Ship disambiguation</h2>
+      <p>Silver Bullet distinguishes between phase-level ship (<code>gsd:ship</code>) and milestone-level release (<code>silver:release</code>) based on context signals:</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Signal in your message</th><th>Route</th></tr></thead>
+        <tbody>
+          <tr><td>Contains version number (v2.0, 1.4.0…)</td><td><code>silver:release</code></td></tr>
+          <tr><td>Contains "changelog" or "release notes"</td><td><code>silver:release</code></td></tr>
+          <tr><td>Contains "go live", "to production", "publicly"</td><td><code>silver:release</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>gsd:ship</code> (phase merge)</td></tr>
+          <tr><td>No active phase, end of milestone</td><td><code>silver:release</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Workflow steps</h2>
+
+      <h3>Pre-flight</h3>
+      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+
+      <h3>Step 0 — Pre-release quality gates (9 dimensions)</h3>
+      <p>Invoke <code>silver:quality-gates</code>. Full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. <strong>Non-skippable gate.</strong></p>
+
+      <h3>Step 1 — Cross-phase UAT</h3>
+      <p>Invoke <code>gsd-audit-uat</code>. Purpose: cross-phase UAT — surface all outstanding gaps before release. Gives a complete picture of milestone state before deciding whether to ship.</p>
+
+      <h3>Step 2 — Milestone completion audit</h3>
+      <p>Invoke <code>gsd-audit-milestone</code>. Purpose: compare milestone completion vs original intent — are all committed features shipped?</p>
+
+      <h3>Step 2a — Security hard gate</h3>
+      <p>Invoke <code>silver:security</code>. Independent pre-release security review — mandatory regardless of §10 preferences. Runs after milestone audit so it covers the full set of changes being released. <strong>Non-skippable.</strong></p>
+
+      <h3 id="gap-closure">Step 2b — Gap-closure loop (conditional, max 2 iterations)</h3>
+      <p>Only if gaps found in Step 2. Track iteration count. After 2 iterations with remaining gaps, SB presents:</p>
+      <ul>
+        <li><strong>A.</strong> Release anyway — document gaps as known issues, proceed</li>
+        <li><strong>B.</strong> Extend milestone — defer release, continue work</li>
+        <li><strong>C.</strong> Abort release — requires manual decision to resume</li>
+      </ul>
+      <p>Each iteration: invoke <code>gsd-plan-milestone-gaps</code> → invoke <code>silver:feature</code> for each gap phase → return to Step 0 (full quality gate sweep).</p>
+
+      <h3>Step 3a — Verify existing documentation</h3>
+      <p>Invoke <code>gsd-docs-update</code>. Purpose: verify all existing docs are accurate against current codebase before generating new docs.</p>
+
+      <h3>Step 3b — Generate/update documentation</h3>
+      <p>After gsd-docs-update completes: invoke <code>/documentation</code>. Generates/updates GitHub README, user guide, website help section, and project page. Runs on verified-accurate foundation only.</p>
+
+      <h3>Step 4 — Milestone summary</h3>
+      <p>Invoke <code>gsd-milestone-summary</code>. Generates milestone narrative for release notes.</p>
+
+      <h3>Step 5 — Create release</h3>
+      <p>Invoke <code>silver:create-release</code>. Git-history release notes generation + GitHub Release creation with version tag. Blocks if README is stale.</p>
+
+      <h3>Step 6 — PR branch (optional)</h3>
+      <p>SB asks: "Would you like a clean PR branch (strips .planning/ commits)?" A. Yes / B. No / C. Save as permanent preference. If A: invoke <code>gsd-pr-branch</code>.</p>
+
+      <h3>Step 7 — Ship: deploy, CI green, tag push</h3>
+      <p>Invoke <code>gsd-ship</code>. Deploy, ensure CI is green, push the version tag. <strong>This MUST succeed before milestone is archived (Step 8).</strong></p>
+
+      <h3>Step 8 — Complete milestone</h3>
+      <p>Only after Step 7 confirms success: invoke <code>gsd-complete-milestone</code>. Archives milestone, prepares for next version. This is the final step — milestone is officially closed after this.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="non-skippable-gates">Non-skippable gates</h2>
+      <div class="callout callout-warn">
+        <div class="callout-icon">🔒</div>
+        <div class="callout-body">
+          <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
+          <ul style="margin-top:8px">
+            <li><code>silver:quality-gates</code> pre-release (Step 0)</li>
+            <li><code>silver:security</code> (Step 2a)</li>
+            <li><code>gsd-ship</code> (Step 7) must succeed before <code>gsd-complete-milestone</code> (Step 8)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example invocation</h2>
+      <div class="code-block">/silver:release Cut v0.13.0 with the new orchestration workflows</div>
+      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security review → documentation update → release notes → GitHub Release → gsd-ship → milestone archived.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-research.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:research</span>
+        </a>
+        <a href="./silver-fast.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:fast</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../../">Help Home</a>
+        <a href="../../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('icon-sun').style.display=dark?'none':'';
+  document.getElementById('icon-moon').style.display=dark?'':'none';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s?s==='dark':true)})();
+lucide.createIcons();
+const links=document.querySelectorAll('.sidebar-nav a');
+window.addEventListener('scroll',()=>{let curr='';document.querySelectorAll('[id]').forEach(h=>{if(window.scrollY>=h.offsetTop-120)curr=h.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+curr)})},{passive:true});
+</script>
+</body>
+</html>
