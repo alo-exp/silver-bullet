@@ -61,7 +61,7 @@ Before invoking the chosen skill, always display:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER ► ROUTING
+ SILVER BULLET ► ROUTING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Input:      {first 80 chars of user input}
