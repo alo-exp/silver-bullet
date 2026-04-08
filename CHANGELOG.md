@@ -9,6 +9,9 @@
 - silver-bullet.md §5 and templates/silver-bullet.md.base §5: removed interactive Opus upgrade prompts; replaced with automatic frontmatter-based routing description
 - docs/workflows/full-dev-cycle.md MODEL ROUTING section updated to match; removed manual prompt flow
 
+### Added
+- `hooks/ensure-model-routing.sh` — self-healing session-start hook that reapplies `model:` directives to all 24 GSD agent files if a GSD update wipes them. Canary-guarded (~2ms no-op when correct, <50ms when patching). Bash 3.2 compatible. Audit trail written to `~/.claude/.silver-bullet/model-routing-patch.log`.
+
 ### Fixed
 - All "8 dimensions" references updated to "9 dimensions" across site/index.html (3 occurrences), site/help/index.html, site/help/dev-workflow/index.html, site/help/search.js (3 occurrences), and docs/workflows/full-dev-cycle.md (4 occurrences total)
 - quality-gates SKILL.md: added 9th dimension (AI/LLM safety) to skill load list and report table; updated model advisory from Opus to Sonnet
