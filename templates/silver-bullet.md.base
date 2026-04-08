@@ -15,6 +15,43 @@ At the very start of any new session, perform these steps automatically:
 2. **Read all project docs** — this file and 100% of docs/.
 3. **Compact the context** — run /compact to free context for the task.
 4. **Switch back to original model** if it was changed in step 1.
+5. **Check for updates** — after /compact, before starting work, run version checks:
+
+   **5.1 Silver Bullet**
+   ```bash
+   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
+   ```
+   Compare as semver. If installed < latest, use AskUserQuestion:
+   - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
+   - Options: "A. Yes, update now" / "B. Skip"
+   If A: invoke `/silver:update` via the Skill tool, then continue.
+   If B or check fails (offline/unknown): output "Skipping SB update." and continue.
+
+   **5.2 GSD**
+   ```bash
+   cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+   npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
+   ```
+   Compare as semver. If installed < latest, use AskUserQuestion:
+   - Question: "GSD v{installed} is outdated (latest: v{latest}). Update now?"
+   - Options: "A. Yes, update now" / "B. Skip"
+   If A: invoke `/gsd-update` via the Skill tool, then continue.
+   If B or either version is unknown: output "Skipping GSD update." and continue.
+
+   **5.3 Plugins (informational)**
+   ```bash
+   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
+     .plugins | to_entries[] |
+     select(.key | test("^(superpowers|design|engineering)@")) |
+     "\(.key | split("@")[0]): v\(.value[0].version)"
+   ' 2>/dev/null || echo "Could not read plugin registry"
+   ```
+   Display installed versions. No automated update skill exists; if user wants to update:
+   > To update Superpowers: `/plugin install obra/superpowers`
+   > To update Design: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
+   > To update Engineering: `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`
+   Proceed immediately after displaying — no prompt required.
 
 > **compactPrompt**: Your `.silver-bullet.json` includes a `compactPrompt` key that instructs the compaction LLM to preserve these rules verbatim. If you customized it or removed it, re-add: `"compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions."`
 
