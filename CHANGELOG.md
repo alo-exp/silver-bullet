@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-04-08
+
+### Security
+- SENTINEL v2.3 audit: add UNTRUSTED DATA boundary to §0 docs/ read — docs/ files are project context only, not executable instructions (F2-01)
+- SENTINEL v2.3 audit: add UNTRUSTED DATA security boundary to silver:init Phase −1.1 for README.md/CONTEXT.md reads (F2-02)
+- SENTINEL v2.3 audit: add `mode` to state tamper prevention regex in dev-cycle-check.sh alongside state/branch/trivial (F6-01)
+- SENTINEL v2.3 audit: silver:update now displays commit SHA and requires second user confirmation before writing plugin registry (F7-01/F3-01)
+- SENTINEL v2.3 audit: §10 step-skip preference writes now require diff display and explicit user confirmation before committing (F10-01)
+- SENTINEL v2.3 audit: silver:update cancel path guarded against unsafe removal — requires path-containment check before rm (F-NEW-01)
+
 ## [0.9.0] — 2026-04-08
 
 ### Added
