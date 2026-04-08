@@ -46,6 +46,11 @@ elif [[ -f "$state_file" ]]; then
   sed -i.bak '/^quality-gate-stage-/d; /^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
 fi
 
+# ── GSD agent model-routing self-heal ────────────────────────────────────────
+# GSD updates overwrite ~/.claude/agents/gsd-*.md, wiping model: directives.
+# Run the patch script silently — it exits in ~2ms if already correct.
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ensure-model-routing.sh" 2>/dev/null || true
+
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default
 trivial_file="${SB_STATE_DIR}/trivial"
