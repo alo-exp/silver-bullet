@@ -492,6 +492,7 @@ If Phase 0 determined this is an update:
 3. **Strip any SB-owned sections from CLAUDE.md** (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that don't mention silver-bullet.md.
 4. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
+5a. Run step 3.7.5 to re-register or refresh SB hooks in `~/.claude/settings.json`.
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 **Template refresh (only when user explicitly requests it):**
@@ -913,6 +914,115 @@ EOF
 ```
 
 If the commit fails due to a pre-commit hook, read the error output, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
+
+#### 3.7.5 Register SB hooks in ~/.claude/settings.json
+
+This step merges the Silver Bullet hook entries from `hooks/hooks.json` into the user's
+global `~/.claude/settings.json` so hooks are active even in projects that install SB
+without the marketplace (e.g. manual installs or workspace clones).
+
+**Resolve the plugin install path:**
+
+```bash
+INSTALL_PATH=$(python3 -c "
+import json, os, sys
+reg = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+with open(reg) as f:
+    data = json.load(f)
+plugins = data.get('plugins', {})
+# Find the silver-bullet entry (key may be 'silver-bullet@silver-bullet' or similar)
+for key, entries in plugins.items():
+    if 'silver-bullet' in key:
+        path = entries[0].get('installPath', '')
+        if path:
+            print(path)
+            sys.exit(0)
+sys.exit(1)
+" 2>/dev/null)
+echo "SB install path: ${INSTALL_PATH:-NOT FOUND}"
+```
+
+If `INSTALL_PATH` is empty or the command fails, skip this step silently and continue.
+
+**Merge hooks idempotently:**
+
+```bash
+python3 - "$INSTALL_PATH" << 'PYEOF'
+import json, os, sys
+
+install_path = sys.argv[1]
+hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
+settings_path = os.path.expanduser('~/.claude/settings.json')
+
+# Load source hooks.json
+with open(hooks_src) as f:
+    src = json.load(f)
+
+sb_hooks = src.get('hooks', {})
+
+# Substitute actual install path for ${CLAUDE_PLUGIN_ROOT}
+def sub_path(obj, install_path):
+    if isinstance(obj, str):
+        return obj.replace('${CLAUDE_PLUGIN_ROOT}', install_path)
+    if isinstance(obj, list):
+        return [sub_path(i, install_path) for i in obj]
+    if isinstance(obj, dict):
+        return {k: sub_path(v, install_path) for k, v in obj.items()}
+    return obj
+
+sb_hooks = sub_path(sb_hooks, install_path)
+
+# Load or create settings.json
+if os.path.exists(settings_path):
+    with open(settings_path) as f:
+        settings = json.load(f)
+else:
+    settings = {}
+
+existing_hooks = settings.setdefault('hooks', {})
+
+# Merge: for each event, append only entries whose command is not already present
+for event, entries in sb_hooks.items():
+    existing_event = existing_hooks.setdefault(event, [])
+    for new_group in entries:
+        new_hooks_list = new_group.get('hooks', [])
+        for new_hook in new_hooks_list:
+            new_cmd = new_hook.get('command', '')
+            already_present = any(
+                h.get('command', '') == new_cmd
+                for group in existing_event
+                for h in group.get('hooks', [])
+            )
+            if not already_present:
+                # Find matching group by matcher or append new group
+                matcher = new_group.get('matcher', '')
+                matched = next(
+                    (g for g in existing_event
+                     if g.get('matcher', '') == matcher),
+                    None
+                )
+                if matched:
+                    matched.setdefault('hooks', []).append(new_hook)
+                else:
+                    existing_event.append({
+                        'matcher': matcher,
+                        'hooks': [new_hook]
+                    })
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+    f.write('\n')
+
+print('SB hooks registered in ~/.claude/settings.json')
+PYEOF
+```
+
+If the script exits nonzero (e.g., hooks.json not readable, settings.json not writable),
+display a warning but do NOT stop init:
+> ⚠️  Could not auto-register hooks in ~/.claude/settings.json. Run `/silver:init` again
+> after installation completes, or add hooks manually from `hooks/hooks.json`.
+
+This step is idempotent: running `/silver:init` again will not add duplicate hook entries.
 
 #### 3.8 Activate plugins
 
