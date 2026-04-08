@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # PostToolUse hook (matcher: .*)
 # Shows a compact compliance progress score on every tool use.

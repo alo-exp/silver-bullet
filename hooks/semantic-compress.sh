@@ -2,6 +2,7 @@
 # PostToolUse hook — semantic context compression gate.
 # Exits immediately for non-GSD-phase skills (< 10ms overhead).
 set -euo pipefail
+trap 'exit 0' ERR
 
 # Security: restrict file creation permissions (user-only)
 umask 0077

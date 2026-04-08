@@ -13,6 +13,7 @@
 # Compat:    bash 3.2+ (macOS default) — no associative arrays used.
 
 set -euo pipefail
+trap 'exit 0' ERR
 umask 0077
 
 AGENTS_DIR="${HOME}/.claude/agents"

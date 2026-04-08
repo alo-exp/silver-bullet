@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # PostToolUse hook (matcher: Skill)
 # Tracks skill invocations to a state file for workflow enforcement.

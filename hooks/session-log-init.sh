@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # PostToolUse hook (matcher: Bash)
 # Fires when Claude writes the session mode to ~/.claude/.silver-bullet/mode.
