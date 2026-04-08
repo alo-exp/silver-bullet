@@ -281,6 +281,45 @@ skill, or SB skill.
 
 ---
 
+### 2h. SB Orchestrated Workflows
+
+SB provides seven pre-designed orchestration workflows for all common development tasks.
+When a bare instruction is intercepted (§2g) or the user invokes `/silver`, the router
+classifies intent and dispatches to the appropriate workflow.
+
+**The seven workflows:**
+
+| Workflow | Entry triggers | First step |
+|----------|---------------|------------|
+| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → product-brainstorming → silver:brainstorm |
+| `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
+| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
+| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
+| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
+| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Complexity triage confirms ≤3 files → gsd-fast |
+
+**Workflow enforcement rules:**
+- Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
+- `silver:security` is always mandatory — cannot be skipped via §10
+- `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
+- TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
+- `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
+- Code review always uses the Superpowers framing pair: `silver:request-review` before and `silver:receive-review` after
+- Cross-AI review (`gsd-review --multi-ai`) triggers automatically for architecturally significant changes
+- `gsd-ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
+- When user selects Autonomous mode at session start, `gsd-autonomous` drives all remaining phases
+
+**Step-skip protocol:**
+When the user requests skipping a workflow step, SB:
+1. Explains why the step exists (one sentence)
+2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
+3. Records the decision in §10 if user chooses A permanently
+
+Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+
+---
+
 ## 3. NON-NEGOTIABLE RULES
 
 These rules apply to EVERY non-trivial change. There are NO exceptions.
