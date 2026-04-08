@@ -1,11 +1,13 @@
 ---
 name: quality-gates
-description: Apply all 8 Silver Bullet quality dimensions against the current design or plan. Use before /gsd:plan-phase in the dev cycle, or ad-hoc to audit any existing code or design.
+description: Apply all 9 Silver Bullet quality dimensions against the current design or plan. Use before /gsd:plan-phase in the dev cycle, or ad-hoc to audit any existing code or design.
 ---
+
+> **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.
 
 # /quality-gates — Consolidated Quality Review
 
-Applies all 8 Silver Bullet quality dimensions in sequence. Every dimension must
+Applies all 9 Silver Bullet quality dimensions in sequence. Every dimension must
 pass before the current plan proceeds to `/gsd:plan-phase`. If any dimension fails,
 the design must be corrected before continuing — do not defer.
 
@@ -26,6 +28,7 @@ Use the Read tool to read each of the following files:
 6. `${PLUGIN_ROOT}/skills/usability/SKILL.md`
 7. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
 8. `${PLUGIN_ROOT}/skills/extensibility/SKILL.md`
+9. `${PLUGIN_ROOT}/skills/ai-llm-safety/SKILL.md`
 
 ---
 
@@ -57,6 +60,7 @@ Output a report in this format:
 | Usability     | ✅/❌  | ...   |
 | Testability   | ✅/❌  | ...   |
 | Extensibility | ✅/❌  | ...   |
+| AI/LLM Safety | ✅/❌  | ...   |
 
 ### Failures requiring redesign
 [List each ❌ item with the specific rule violated and required fix]

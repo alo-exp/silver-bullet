@@ -445,21 +445,17 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 
 ## 5. Model Routing
 
-Default model: **claude-sonnet-4-6** (latest Sonnet). No user friction for standard work.
+Default model: **claude-sonnet-4-6** (latest Sonnet), **LOW thinking effort**. No user friction for standard work.
 
-Ask about Opus at two phase transitions only:
+Sub-agents are pre-assigned via `model:` YAML frontmatter in each agent file:
+- **Opus** (2 agents): `gsd-planner` (architectural reasoning, MECE decomposition) and `gsd-security-auditor` (adversarial threat modeling). These are the only agents where reasoning depth measurably changes outcome quality.
+- **Sonnet** (22 agents): all other GSD agents — executors, researchers, verifiers, reviewers, documentation, testing, codebase mapping, etc.
 
-1. **Before Planning begins (before DISCUSS step):**
-   > Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
+No model routing questions are asked during the session. Agents auto-select the correct model via frontmatter. The orchestrator (main session) always runs on Sonnet.
 
-2. **Before Design sub-steps apply (design-system / ux-copy / architecture / system-design):**
-   > Entering Design phase. Use Opus, or stay on Sonnet?
+**Autonomous mode**: stays Sonnet. Escalate silently to Opus only if a planning step produces measurably incomplete output: fewer than 5 lines, contains `TBD`/`[TODO]`/`...` placeholders, or a step expected to produce a file produces none. Log escalation as an autonomous decision.
 
-If Opus permitted: switch to `claude-opus-4-6` for that phase, return to Sonnet afterward.
-
-**Autonomous mode**: stay Sonnet. Escalate silently to Opus only if a planning step produces
-measurably incomplete output: fewer than 5 lines, contains `TBD`/`[TODO]`/`...` placeholders,
-or a step expected to produce a file produces none. Log escalation as an autonomous decision.
+**Override**: User may specify `model: opus` for any session explicitly. Sub-agent frontmatter overrides are always respected.
 
 > **Anti-Skip:** You are violating this rule if you enter Planning or Design phases without offering the Opus upgrade. Evidence: no model switch prompt in conversation before /gsd:discuss-phase or design skill invocation.
 

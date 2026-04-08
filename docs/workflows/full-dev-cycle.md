@@ -137,18 +137,20 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 
 ---
 
-### MODEL ROUTING (once per session)
+### MODEL ROUTING (automatic — no prompt)
 
-**What it does:** Selects which AI model to use for the planning-heavy steps of this phase.
+**What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-**What to expect:** A prompt asking whether to use Opus (deeper reasoning, higher cost) or
-stay on Sonnet (faster, lower cost). This affects discuss and plan quality. The choice
-applies for the duration of the session.
+**Default:** Sonnet (LOW thinking effort) for all orchestrator work and 22 of 24 GSD agents.
+**Opus reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-Before DISCUSS begins, ask:
-> Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
+**What to expect:** No model choice prompt. Agents auto-select the correct model. Opus agents
+run deeper reasoning transparently; Sonnet agents handle execution, research, review, and
+documentation at high throughput. The orchestrator (this session) always runs on Sonnet.
 
-**Autonomous mode:** Stay Sonnet; escalate silently only on measurably incomplete planning output.
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to Opus only if a
+planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders,
+or a file-producing step that produces no file). Log escalation as an autonomous decision.
 
 ---
 
