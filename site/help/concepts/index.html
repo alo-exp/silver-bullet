@@ -203,6 +203,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#agents">Agent Teams</a></li>
         <li><a href="#semantic-context">Semantic Context</a></li>
         <li><a href="#file-structure">File Structure</a></li>
+        <li class="sidebar-section">v0.14–v0.16 Features</li>
+        <li><a href="#spec-driven">Spec-Driven Development</a></li>
+        <li><a href="#artifact-review">Artifact Review System</a></li>
+        <li><a href="#review-analytics">Review Analytics</a></li>
+        <li><a href="#cross-artifact">Cross-Artifact Consistency</a></li>
         <li class="sidebar-section">Routing &amp; Behavior</li>
         <li><a href="#routing-logic">Routing Logic</a></li>
         <li><a href="#verification">Verification Before Completion</a></li>
@@ -214,7 +219,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="skills">Skills</h2>
-      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for Claude to follow when performing a specific task. When you invoke a skill, Claude reads the file and executes its instructions as if it were a step-by-step process guide.</p>
+      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for Claude to follow when performing a specific task. When you invoke a skill, Claude reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet ships with <strong>39 skills</strong> in total — including 7 orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), 3 spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), <strong>8 artifact reviewer skills</strong> (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT), and supporting skills for quality gates, enforcement, analytics, and project management.</p>
 
       <h3>How Skills Are Stored</h3>
       <p>Skills live in two locations:</p>
@@ -522,6 +527,121 @@ docs/
   specs/                     <span class="comment"># Detailed design specs (Superpowers)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span></div>
+
+      <div class="divider"></div>
+
+      <h2 id="spec-driven">Spec-Driven Development</h2>
+      <p>Silver Bullet&rsquo;s spec pipeline (v0.14.0) introduces three new skills that take you from raw requirements to a validated, traceable SPEC.md before any code is written.</p>
+
+      <h3>SPEC.md Canonical Format</h3>
+      <p>The <code>SPEC.md</code> file is the authoritative spec artifact. It holds structured requirements, acceptance criteria, assumption tracking, and a cross-reference to source inputs (JIRA tickets, Figma links, PRD excerpts). All downstream artifacts — REQUIREMENTS.md, ROADMAP.md, DESIGN.md — must stay aligned with SPEC.md.</p>
+
+      <h3>silver:spec — Spec Creation</h3>
+      <p><code>/silver:spec</code> runs an AI-driven elicitation session that produces a canonical SPEC.md. It asks structured questions about user stories, acceptance criteria, assumptions, and non-goals, then writes the file in the canonical format. Use it at the start of any feature that needs a formal spec before GSD planning.</p>
+
+      <h3>silver:ingest — External Ingestion</h3>
+      <p><code>/silver:ingest</code> ingests artifacts from external sources — JIRA epics/issues, Figma files, and Google Docs — via MCP connectors. No custom API code is written; all external data access is delegated to MCP. The output is a structured INGESTION_MANIFEST that maps external inputs to spec sections.</p>
+
+      <h3>silver:validate — Pre-Build Validation</h3>
+      <p><code>/silver:validate</code> runs three validation gates before planning begins:</p>
+      <ul>
+        <li><strong>Spec floor check</strong> (<code>spec-floor-check.sh</code>) — verifies the SPEC.md meets minimum completeness requirements</li>
+        <li><strong>PR-to-spec traceability</strong> (<code>pr-traceability.sh</code>) — ensures every PR links back to a requirement in SPEC.md</li>
+        <li><strong>UAT pipeline gate</strong> (<code>uat-gate.sh</code>) — blocks planning if UAT criteria are not yet defined</li>
+      </ul>
+
+      <h3>Multi-Repo Spec Coordination</h3>
+      <p>For multi-repo projects, Silver Bullet fetches the parent repo&rsquo;s spec via GitHub CLI and caches it as <code>.planning/SPEC.main.md</code> (read-only). This gives the child repo access to the upstream spec without git submodules or repo coupling.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="artifact-review">Artifact Review System</h2>
+      <p>Silver Bullet v0.15.0 introduced a structured artifact review framework. Eight reviewer skills apply domain-specific quality checks to planning artifacts, and a 2-consecutive-clean-pass rule ensures artifacts are genuinely ready before they are approved.</p>
+
+      <h3>8 Reviewer Skills</h3>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="file-text"></i></div>
+          <h4>SPEC Reviewer</h4>
+          <p>7 QC checks: sections present, overview quality, user story format, AC testability, assumption status, frontmatter, and source input cross-reference.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="layout"></i></div>
+          <h4>DESIGN Reviewer</h4>
+          <p>Checks design spec completeness, component coverage, and alignment with SPEC acceptance criteria.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="list-checks"></i></div>
+          <h4>REQUIREMENTS Reviewer</h4>
+          <p>Validates requirement format, ID uniqueness, traceability back to SPEC, and completeness of acceptance criteria.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="map"></i></div>
+          <h4>ROADMAP Reviewer</h4>
+          <p>Builds a full dependency graph to detect circular and backward phase dependencies. Verifies phase completeness and feasibility.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="book-open"></i></div>
+          <h4>CONTEXT Reviewer</h4>
+          <p>6 QC checks: decisions present, gray areas resolved, decision specificity, no contradictions, deferred ideas separation, Claude&rsquo;s Discretion context.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="search"></i></div>
+          <h4>RESEARCH Reviewer</h4>
+          <p>Checks research coverage, source quality, and that findings are actionable for implementation decisions.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="download-cloud"></i></div>
+          <h4>INGESTION_MANIFEST Reviewer</h4>
+          <p>Validates that all ingested external artifacts are mapped to spec sections and that the manifest is structurally complete.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="clipboard-check"></i></div>
+          <h4>UAT Reviewer</h4>
+          <p>QC-1/QC-2 check AC coverage and orphan detection. Spec-version mismatch produces distinct findings (missing field vs version mismatch). Conditional on spec-path being present.</p>
+        </div>
+      </div>
+
+      <h3>2-Consecutive-Clean-Pass Enforcement</h3>
+      <p>Every artifact must pass two consecutive clean review rounds before it is approved. State is tracked per artifact in <code>~/.claude/.silver-bullet/review-state/</code> as JSON keyed by an 8-character SHA256 of the artifact&rsquo;s absolute path. A new finding in any round resets the consecutive-pass counter.</p>
+
+      <h3>Configurable Review Depth</h3>
+      <p>Each artifact type can be configured for <strong>deep</strong>, <strong>standard</strong>, or <strong>quick</strong> review depth in <code>.planning/config.json</code>. Standard is the default and is backward-compatible. Deep adds additional structural and consistency checks. Quick reduces the check set for low-risk or time-sensitive reviews.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="review-analytics">Review Analytics</h2>
+      <p>Silver Bullet v0.16.0 added structured metrics emission to the review loop. Every review round appends a JSON Lines record to a metrics file — no configuration required.</p>
+
+      <h3>JSON Lines Metrics</h3>
+      <p>Each record captures: artifact type, review depth, round number, pass/fail result, finding categories, and timestamp. The metrics file accumulates across sessions, giving you a long-running history of artifact quality.</p>
+
+      <h3>silver-review-stats Reports</h3>
+      <p>Run <code>/silver-review-stats</code> to generate three summary tables from the accumulated metrics:</p>
+      <ul>
+        <li><strong>Pass rates by artifact type</strong> — what percentage of review rounds pass cleanly</li>
+        <li><strong>Rounds to clean pass</strong> — how many rounds artifacts typically need before approval</li>
+        <li><strong>Finding categories by artifact type</strong> — which QC checks fire most frequently</li>
+      </ul>
+
+      <h3>Verification-Before-Completion in Review Loop</h3>
+      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>gsd-verify-work</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="cross-artifact">Cross-Artifact Consistency</h2>
+      <p>Silver Bullet v0.16.0 adds a cross-artifact consistency reviewer that validates alignment across the full planning artifact chain in a single pass. It is wired into milestone completion and the release workflow — misaligned artifacts block shipping.</p>
+
+      <h3>What Is Validated</h3>
+      <ul>
+        <li><strong>SPEC &#8596; REQUIREMENTS</strong> — every requirement traces back to a SPEC user story; every SPEC story has at least one requirement</li>
+        <li><strong>REQUIREMENTS &#8596; ROADMAP</strong> — every requirement is assigned to a phase; no phase references non-existent requirements</li>
+        <li><strong>ROADMAP &#8596; DESIGN</strong> — where a DESIGN.md exists, its components cover the interfaces described in the roadmap phases</li>
+      </ul>
+      <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
+
+      <h3>Where It Runs</h3>
+      <p>The cross-artifact reviewer fires at two points: <strong>Step 17.0b</strong> in <code>silver:feature</code> (after artifact review gates, before milestone audit) and <strong>Step 7.5</strong> in <code>silver:release</code> (after <code>/gsd:ship</code> and before <code>gsd-complete-milestone</code>).</p>
 
       <div class="divider"></div>
 

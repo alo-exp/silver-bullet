@@ -200,6 +200,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#code-review">Steps 8–10: Code Review</a></li>
         <li><a href="#post-review">Steps 11–12: Post-review</a></li>
         <li><a href="#finalization">Steps 13–16: Finalization</a></li>
+        <li><a href="#artifact-review-gate">Steps 17.0a–17.0b: Review Gates</a></li>
         <li><a href="#deployment">Step 17: CI/CD</a></li>
         <li><a href="#deploy-check">Step 18: Deploy Checklist</a></li>
         <li><a href="#ship">Step 19: Ship</a></li>
@@ -452,6 +453,22 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- DEPLOYMENT -->
       <h2 id="deployment">Deployment</h2>
+
+      <div class="step-card required">
+        <div class="step-num" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)" id="artifact-review-gate">17.0a</div>
+        <div>
+          <div class="step-meta"><span class="step-title">Artifact Review Gates</span><span class="badge badge-required">Required (if artifact reviewers enabled)</span></div>
+          <p class="step-desc">Runs the 8 artifact reviewer skills (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT) as pre-deployment gates. Each reviewer must produce two consecutive clean passes before the gate clears. Review depth is configurable per artifact type in <code>.planning/config.json</code> (deep / standard / quick — standard is the default). Inserted in <code>silver:feature</code> before the UAT audit step.</p>
+        </div>
+      </div>
+
+      <div class="step-card required">
+        <div class="step-num" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)" id="cross-artifact-gate">17.0b</div>
+        <div>
+          <div class="step-meta"><span class="step-title">Cross-Artifact Alignment Check</span><span class="badge badge-required">Required (after 17.0a)</span></div>
+          <p class="step-desc">Validates SPEC&nbsp;&#8596;&nbsp;REQUIREMENTS&nbsp;&#8596;&nbsp;ROADMAP&nbsp;&#8596;&nbsp;DESIGN alignment in a single pass. If a <code>DESIGN.md</code> is absent, the DESIGN check is skipped with an informational notice. Misalignment findings block proceeding to Step 17 until resolved. Inserted in <code>silver:feature</code> after Step 17.0a.</p>
+        </div>
+      </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">17</div>

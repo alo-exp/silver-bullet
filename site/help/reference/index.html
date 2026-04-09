@@ -181,6 +181,7 @@ footer a:hover{color:var(--accent-light)}
         <li class="sidebar-section">Commands</li>
         <li><a href="#gsd-commands">GSD Commands</a></li>
         <li><a href="#sb-skills">Silver Bullet Skills</a></li>
+        <li><a href="#spec-skills">Spec Pipeline Skills</a></li>
         <li><a href="#orchestration-workflows">Orchestration Workflows</a></li>
         <li><a href="#sp-skills">Superpowers Skills</a></li>
         <li><a href="#devops-skills">DevOps Skills</a></li>
@@ -372,6 +373,38 @@ footer a:hover{color:var(--accent-light)}
             <td>/silver:update</td>
             <td>Session start (auto) or anytime</td>
             <td>Fetches the latest Silver Bullet version and requires commit SHA confirmation before applying. Invoked automatically at session start when the installed version is behind latest. Manual invocation: <code>/silver:update</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <!-- SPEC PIPELINE SKILLS -->
+      <h2 id="spec-skills">Spec Pipeline Skills (v0.14.0+)</h2>
+      <p>Three skills that form the spec-driven development pipeline. They run before GSD planning begins — SPEC.md is the upstream input that REQUIREMENTS.md, ROADMAP.md, and DESIGN.md must stay aligned with.</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>/silver:spec</td>
+            <td>Before planning (spec-first projects)</td>
+            <td>AI-driven spec elicitation. Produces a canonical <code>SPEC.md</code> with structured requirements, acceptance criteria, assumption tracking, and source input cross-references. Use before <code>/gsd:new-project</code> or when a formal spec is required before GSD planning.</td>
+          </tr>
+          <tr>
+            <td>/silver:ingest</td>
+            <td>Before spec creation (external sources)</td>
+            <td>Ingests artifacts from JIRA, Figma, and Google Docs via MCP connectors. No custom API code — all external data access delegated to MCP. Produces a structured <code>INGESTION_MANIFEST.md</code> that maps external inputs to spec sections.</td>
+          </tr>
+          <tr>
+            <td>/silver:validate</td>
+            <td>After spec creation, before planning</td>
+            <td>Runs three validation gates: spec floor check (<code>spec-floor-check.sh</code>) for SPEC.md completeness, PR-to-spec traceability (<code>pr-traceability.sh</code>), and UAT pipeline gate (<code>uat-gate.sh</code>). All three must pass before planning can proceed.</td>
+          </tr>
+          <tr>
+            <td>/silver-review-stats</td>
+            <td>Anytime (review health reporting)</td>
+            <td>Generates three summary tables from accumulated review metrics (JSON Lines): pass rates by artifact type, rounds to clean pass, and finding categories by artifact type. Use to track review health over time.</td>
           </tr>
         </tbody>
       </table>
