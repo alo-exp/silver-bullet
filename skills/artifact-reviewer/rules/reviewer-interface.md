@@ -12,6 +12,7 @@ The orchestrator passes these inputs to each reviewer invocation:
 artifact_path: string     — absolute or relative path to the artifact file (REQUIRED)
 source_inputs: string[]   — optional paths to source artifacts (e.g., SPEC.md for DESIGN.md review)
 review_context: string    — optional additional context (e.g., "Phase 16 spec creation")
+check_mode: "full" | "structural"  — review depth mode (REQUIRED, defaults to "full" if not provided)
 ```
 
 ---
@@ -43,6 +44,37 @@ Finding:
 
 ---
 
+## Check Mode Behavior
+
+The `check_mode` parameter controls which quality criteria a reviewer evaluates.
+
+### full (default)
+
+Run ALL quality criteria defined by the reviewer. This is the standard behavior — every QC check fires.
+
+### structural
+
+Run ONLY structural quality criteria. Structural checks validate:
+- Required sections exist (correct headings present)
+- Document format is valid (frontmatter parseable, markdown well-formed)
+- Required fields are non-empty (not blank placeholders)
+
+Structural checks do NOT validate:
+- Content quality (e.g., "overview contains a real problem statement" — QC-2 in review-spec)
+- Cross-reference consistency (e.g., "AC IDs match spec" — unless it is a format check)
+- Semantic correctness (e.g., "user stories have all three parts")
+- Depth of coverage (e.g., "at least N items present")
+
+### Reviewer Implementation Rule
+
+Each reviewer skill MUST tag its QC checks as either `structural` or `content`:
+- `structural`: Section presence, format validity, non-empty required fields
+- `content`: Quality, consistency, semantics, coverage depth
+
+When `check_mode == "structural"`, the reviewer MUST skip all `content`-tagged QC checks and only evaluate `structural`-tagged checks. A PASS in structural mode means "the artifact has correct structure" — it does NOT assert content quality.
+
+---
+
 ## Reviewer Responsibilities
 
 - Read the artifact at `artifact_path` completely before forming findings
@@ -50,6 +82,7 @@ Finding:
 - Validate against the artifact type's quality criteria (each reviewer defines its own criteria)
 - Return structured findings — the review loop depends on machine-readable output
 - A "PASS" result asserts that the artifact meets all required quality criteria
+- Respect the `check_mode` parameter — when `structural`, skip content quality checks and only validate structure and format
 
 ---
 

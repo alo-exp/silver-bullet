@@ -1,36 +1,56 @@
-# Requirements: Silver Bullet v0.16.0
+# Requirements: Silver Bullet v0.15.0
 
-**Defined:** 2026-04-10
-**Core Value:** Single enforced workflow — review intelligence that catches cross-artifact drift and adapts to project needs
+**Defined:** 2026-04-09
+**Core Value:** Single enforced workflow — no artifact ships without structured quality validation
 
 ## v1 Requirements
 
-Requirements for v0.16.0 milestone. Each maps to roadmap phases.
+Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 
-### Cross-Artifact Consistency
+### Bug Fixes (carried from v0.14.0)
 
-- [ ] **ARVW-09a**: Cross-artifact reviewer skill exists at `skills/cross-artifact-reviewer/SKILL.md` — accepts a set of artifact paths and checks mutual consistency
-- [ ] **ARVW-09b**: SPEC.md acceptance criteria IDs match ROADMAP.md phase requirements — no orphaned or missing IDs
-- [ ] **ARVW-09c**: REQUIREMENTS.md REQ-IDs match ROADMAP.md phase requirement lists — 100% bidirectional coverage
-- [ ] **ARVW-09d**: ROADMAP.md success criteria are derivable from SPEC.md acceptance criteria — no invented criteria
-- [ ] **ARVW-09e**: Cross-artifact reviewer is wired into milestone transitions — runs after roadmapper completes, blocks approval on FAIL findings
+- [x] **BFIX-01**: Fix shell injection via unvalidated owner/repo in silver-ingest --source-url — validate against `^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$` before shell substitution
+- [x] **BFIX-02**: Fix command injection via unescaped WARN findings in pr-traceability.sh heredoc — use `printf '%s'` instead of heredoc expansion for warn_items
+- [x] **BFIX-03**: Fix Confluence failure path in silver-ingest to produce `[ARTIFACT MISSING: reason]` block instead of "note in Assumptions"
+- [x] **BFIX-04**: Fix version mismatch block in silver-bullet.md.base §0/5.5 to show content diff (not just version numbers) when SPEC.main.md is stale
 
-### Review Analytics
+### Artifact Reviewer Framework
 
-- [ ] **ARVW-10a**: Review metrics collected after each review round — artifact type, pass/fail, finding count by severity, round number, timestamp
-- [ ] **ARVW-10b**: Metrics stored in `~/.claude/.silver-bullet/review-analytics.json` — append-only JSON Lines format, one entry per round
-- [ ] **ARVW-10c**: Markdown summary generated on demand at `.planning/REVIEW-ANALYTICS.md` — pass/fail rates per artifact type, top finding categories, average rounds to clean pass
-- [ ] **ARVW-10d**: Analytics skill exists at `skills/review-analytics/SKILL.md` — invokable via `/silver:review-analytics` to generate the summary report
-- [ ] **ARVW-10e**: Review loop (review-loop.md) updated to emit metrics after each round — no manual instrumentation needed
+- [x] **ARFR-01**: A standard artifact reviewer interface is defined — each reviewer accepts an artifact path, validates against source inputs, and returns structured findings with severity (PASS / ISSUE) and finding descriptions
+- [x] **ARFR-02**: The review round loop is implemented as a reusable mechanism — invoke reviewer, collect findings, if issues found → fix and re-review, continue until 2 consecutive clean passes
+- [x] **ARFR-03**: Review round state is tracked per-artifact so partially completed rounds can be resumed across sessions
+- [x] **ARFR-04**: Review round results are recorded in a `REVIEW-ROUNDS.md` artifact alongside the reviewed file for audit trail
 
-### Configurable Review Depth
+### New Artifact Reviewers
 
-- [ ] **ARVW-11a**: `.planning/config.json` supports `review_depth` object mapping artifact types to depth levels: `deep`, `standard`, `quick`
-- [ ] **ARVW-11b**: `deep` depth = full QC checks + 2 consecutive clean passes (current behavior)
-- [ ] **ARVW-11c**: `standard` depth = full QC checks + 1 clean pass (reduced from 2)
-- [ ] **ARVW-11d**: `quick` depth = structural checks only (sections exist, format valid) + 1 pass
-- [ ] **ARVW-11e**: Default depth is `standard` for all artifacts when no config specified
-- [ ] **ARVW-11f**: Review loop reads depth from config and adjusts pass count and check set accordingly
+- [x] **ARVW-01**: SPEC.md reviewer — validates completeness (all required sections present), assumption density (minimum threshold), acceptance criteria testability, user story format, and consistency with source inputs (JIRA ticket, Figma, Google Docs)
+- [x] **ARVW-02**: DESIGN.md reviewer — validates screen/component/behavior/state coverage, consistency with SPEC.md user stories, no orphaned components, interaction flows complete
+- [x] **ARVW-03**: REQUIREMENTS.md reviewer — validates REQ-ID format, uniqueness, testability, categorization, no duplicate requirements, traceability section populated
+- [x] **ARVW-04**: ROADMAP.md reviewer — validates 100% requirement coverage, phase dependency correctness, success criteria derivation from requirements, no orphaned requirements
+- [x] **ARVW-05**: CONTEXT.md reviewer — validates all gray areas have decisions (locked or Claude's discretion), decisions are specific not vague, no contradictions between decisions
+- [x] **ARVW-06**: RESEARCH.md reviewer — validates research addresses the phase's key questions, findings are evidence-based not speculative, confidence levels are justified, pitfalls are actionable
+- [x] **ARVW-07**: INGESTION_MANIFEST.md reviewer — validates all source artifacts accounted for, statuses are accurate (not falsely reporting success), failed artifacts have corresponding [ARTIFACT MISSING] blocks in SPEC.md
+- [x] **ARVW-08**: UAT.md reviewer — validates every acceptance criterion from SPEC.md has a UAT row, pass/fail evidence is substantive (not "looks good"), spec-version matches
+
+### Existing Reviewer Formalization
+
+- [x] **EXRV-01**: plan-checker (gsd-plan-checker) is wired into the 2-consecutive-pass framework — plan-phase workflow invokes it iteratively until 2 clean passes, not just once
+- [x] **EXRV-02**: code-reviewer (gsd-code-reviewer) is wired into the 2-consecutive-pass framework — execute-phase workflow invokes it iteratively with fix rounds between passes
+- [x] **EXRV-03**: verifier (gsd-verifier) is wired into the 2-consecutive-pass framework — verification runs twice consecutively, second pass confirms first pass's results
+- [x] **EXRV-04**: security-auditor (gsd-security-auditor) is wired into the 2-consecutive-pass framework — security audit runs twice, second pass validates mitigations from first
+
+### Workflow Integration
+
+- [x] **WFIN-01**: silver-spec workflow invokes SPEC.md reviewer after Step 7 (SPEC.md write) — step does not complete until 2 consecutive clean passes
+- [x] **WFIN-02**: silver-spec workflow invokes DESIGN.md reviewer after Step 8 (DESIGN.md write) — step does not complete until 2 consecutive clean passes
+- [x] **WFIN-03**: silver-spec workflow invokes REQUIREMENTS.md reviewer after Step 9 (REQUIREMENTS.md write) — step does not complete until 2 consecutive clean passes
+- [x] **WFIN-04**: new-milestone workflow invokes ROADMAP.md reviewer after roadmapper completes — roadmap not approved until 2 consecutive clean passes
+- [x] **WFIN-05**: new-milestone workflow invokes REQUIREMENTS.md reviewer after requirements definition — requirements not committed until 2 consecutive clean passes
+- [x] **WFIN-06**: discuss-phase workflow invokes CONTEXT.md reviewer after context capture — context not committed until 2 consecutive clean passes
+- [x] **WFIN-07**: plan-phase workflow invokes RESEARCH.md reviewer after researcher completes — research not committed until 2 consecutive clean passes
+- [x] **WFIN-08**: silver-ingest workflow invokes INGESTION_MANIFEST.md reviewer after Step 7 — manifest not committed until 2 consecutive clean passes
+- [x] **WFIN-09**: silver-feature Step 17.0 invokes UAT.md reviewer after UAT generation — UAT not committed until 2 consecutive clean passes
+- [x] **WFIN-10**: §3a updated with complete artifact-reviewer mapping table covering all 12+ artifact types
 
 ## Validated (from previous milestones)
 
@@ -42,41 +62,66 @@ Requirements for v0.16.0 milestone. Each maps to roadmap phases.
 - ✓ AI-driven spec creation, ingestion, validation — v0.14.0
 - ✓ Spec floor, PR traceability, UAT gate — v0.14.0
 - ✓ Step non-skip enforcement §3/§3a/§3d — v0.14.0
-- ✓ Granular artifact review rounds (8 reviewers, 2-pass framework) — v0.15.0
-- ✓ Existing reviewer formalization + workflow wiring — v0.15.0
 
-## Future Requirements
+## v2 Requirements
 
-- **ARVW-12**: Review finding auto-categorization using LLM classification
-- **ARVW-13**: Review diff mode — only re-check sections that changed since last pass
-- **ARVW-14**: Team-level analytics aggregation across projects
+Deferred to future release.
+
+### Advanced Review
+
+- **ARVW-09**: Cross-artifact consistency reviewer — validates SPEC.md ↔ DESIGN.md ↔ REQUIREMENTS.md are mutually consistent
+- **ARVW-10**: Review round analytics — track review round counts, common finding patterns, time-to-clean-pass metrics
+- **ARVW-11**: Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Modifying GSD plugin files | §8 plugin boundary — all features are SB skills |
-| Replacing existing reviewers | Enhance, don't replace — existing reviewers work |
-| Real-time dashboard UI | CLI/markdown output sufficient for v0.16.0 |
-| Cross-project consistency | Single-project scope for now (ARVW-14 is future) |
+| Modifying GSD plugin files | §8 plugin boundary — reviewers are SB skills, not GSD modifications |
+| Replacing existing GSD plan-checker/code-reviewer | Formalize into framework, don't replace |
+| Review rounds for non-artifact outputs (console output, git commits) | Artifacts only — measurable, file-based |
+| Blocking on INFO-level findings | Only ISSUE-level blocks; INFO is advisory |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARVW-09a | Phase 20 | Pending |
-| ARVW-09b | Phase 20 | Pending |
-| ARVW-09c | Phase 20 | Pending |
-| ARVW-09d | Phase 20 | Pending |
-| ARVW-09e | Phase 20 | Pending |
-| ARVW-10a | Phase 19 | Pending |
-| ARVW-10b | Phase 19 | Pending |
-| ARVW-10c | Phase 19 | Pending |
-| ARVW-10d | Phase 19 | Pending |
-| ARVW-10e | Phase 19 | Pending |
-| ARVW-11a | Phase 18 | Pending |
-| ARVW-11b | Phase 18 | Pending |
-| ARVW-11c | Phase 18 | Pending |
-| ARVW-11d | Phase 18 | Pending |
-| ARVW-11e | Phase 18 | Pending |
-| ARVW-11f | Phase 18 | Pending |
+| BFIX-01 | Phase 15 | Done |
+| BFIX-02 | Phase 15 | Done |
+| BFIX-03 | Phase 15 | Done |
+| BFIX-04 | Phase 15 | Done |
+| ARFR-01 | Phase 15 | Complete |
+| ARFR-02 | Phase 15 | Complete |
+| ARFR-03 | Phase 15 | Complete |
+| ARFR-04 | Phase 15 | Complete |
+| ARVW-01 | Phase 16 | Complete |
+| ARVW-02 | Phase 16 | Complete |
+| ARVW-03 | Phase 16 | Complete |
+| ARVW-04 | Phase 16 | Complete |
+| ARVW-05 | Phase 16 | Complete |
+| ARVW-06 | Phase 16 | Complete |
+| ARVW-07 | Phase 16 | Complete |
+| ARVW-08 | Phase 16 | Complete |
+| EXRV-01 | Phase 17 | Done |
+| EXRV-02 | Phase 17 | Done |
+| EXRV-03 | Phase 17 | Done |
+| EXRV-04 | Phase 17 | Done |
+| WFIN-01 | Phase 17 | Complete |
+| WFIN-02 | Phase 17 | Complete |
+| WFIN-03 | Phase 17 | Complete |
+| WFIN-04 | Phase 17 | Complete |
+| WFIN-05 | Phase 17 | Complete |
+| WFIN-06 | Phase 17 | Complete |
+| WFIN-07 | Phase 17 | Complete |
+| WFIN-08 | Phase 17 | Complete |
+| WFIN-09 | Phase 17 | Complete |
+| WFIN-10 | Phase 17 | Done |
+
+**Coverage:**
+- v1 requirements: 30 total
+- Mapped to phases: 30
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-04-09*
+*Last updated: 2026-04-09 after roadmap creation*

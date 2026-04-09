@@ -8,7 +8,5 @@
   "research_enabled": true,
   "workflow": {
     "_auto_chain_active": false
-  },
-  "_review_depth_help": "Map reviewer skill names to depth: deep (full QC + 2 passes), standard (full QC + 1 pass, default), quick (structural only + 1 pass)",
-  "review_depth": {}
+  }
 }

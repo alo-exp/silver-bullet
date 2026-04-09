@@ -35,17 +35,15 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ UAT pipeline gate (uat-gate.sh hook) — v0.14.0
 - ✓ Multi-repo spec referencing with version pinning — v0.14.0
 - ✓ Step non-skip enforcement §3/§3a/§3d — v0.14.0
-- ✓ Granular artifact review rounds (8 new reviewer skills, 2-consecutive-clean-pass) — v0.15.0
-- ✓ Existing reviewers formalized into same framework — v0.15.0
-- ✓ Workflow integration: producing steps wired to invoke reviewer — v0.15.0
-- ✓ v0.14.0 critical bug fixes (shell injection, heredoc injection) — v0.15.0
-- ✓ v0.14.0 verification gaps (Confluence [ARTIFACT MISSING], version mismatch diff) — v0.15.3
 
 ### Active
 
-- [ ] Cross-artifact consistency reviewer: checks alignment across SPEC↔ROADMAP↔REQUIREMENTS
-- [ ] Review round analytics: pass/fail rates, finding categories, trends per artifact type
-- [ ] Configurable review depth per artifact type: deep vs quick review based on project config
+- [ ] Granular artifact review rounds: every artifact-producing step gets dedicated reviewer with 2-consecutive-clean-pass enforcement
+- [ ] New reviewer skills/agents for 8 artifact types (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT)
+- [ ] Existing reviewers formalized into same framework (plan-checker, code-reviewer, verifier, security-auditor)
+- [ ] Workflow integration: producing steps wired to invoke reviewer before completing
+- [ ] v0.14.0 critical bug fixes: shell injection in silver-ingest, heredoc injection in pr-traceability.sh
+- [ ] v0.14.0 verification gaps: Confluence [ARTIFACT MISSING], version mismatch diff
 
 ### Out of Scope
 
@@ -55,14 +53,15 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.16.0 Advanced Review Intelligence
+## Current Milestone: v0.15.0 Granular Artifact Review Rounds
 
-**Goal:** Add cross-artifact consistency checking, review analytics, and configurable review depth on top of the v0.15.0 reviewer framework.
+**Goal:** Every artifact produced by any SB/GSD workflow step gets iterative review rounds with a dedicated reviewer — 2 consecutive clean passes required before the step completes. No artifact ships without structured quality validation.
 
 **Target features:**
-- A: Cross-artifact consistency reviewer (SPEC↔ROADMAP↔REQUIREMENTS alignment checking)
-- B: Review round analytics (pass/fail rates, finding categories, time-to-clean trends)
-- C: Configurable review depth per artifact type (deep vs quick based on project config)
+- A: New artifact reviewers (~8 new skills/agents for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT)
+- B: Existing reviewer formalization (plan-checker, code-reviewer, verifier, security-auditor into same 2-pass framework)
+- C: Workflow integration (producing steps wired to invoke reviewer before completing)
+- D: v0.14.0 critical bug fixes (shell injection, heredoc injection, verification gaps)
 
 ## Context
 
@@ -71,7 +70,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.15.3 (Granular artifact review rounds, SENTINEL hardening)
+- Current version: v0.13.2 (Hook hardening + init hook registration)
 
 ## Constraints
 
@@ -109,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after milestone v0.16.0 start*
+*Last updated: 2026-04-09 after milestone v0.15.0 start*
