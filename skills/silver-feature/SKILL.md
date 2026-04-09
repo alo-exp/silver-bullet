@@ -98,6 +98,21 @@ Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tool
 
 Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
 
+## Step 2.7: Pre-Build Validation
+
+**NON-SKIPPABLE GATE.** (VALD-03 compliance)
+
+Invoke `silver:validate` via the Skill tool.
+
+If silver-validate reports any BLOCK findings:
+- STOP. Do not proceed to Step 3.
+- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
+- Offer: A. Return to /silver:spec  B. Re-run /silver:validate after fixes
+
+Only proceed to Step 3 (quality-gates) when silver-validate reports zero BLOCK findings.
+
+WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
+
 ## Step 3: Pre-Plan Quality Gates (9 dimensions)
 
 Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
@@ -208,6 +223,18 @@ Ask user:
 > A. Yes — run milestone completion lifecycle  B. No — done
 
 If A, run in sequence:
+
+### Step 17.0: Generate UAT.md from SPEC.md
+
+Read `.planning/SPEC.md` `## Acceptance Criteria` section. For each criterion, create a row in `.planning/UAT.md` with Result = NOT-RUN and Evidence = empty.
+
+UAT.md format:
+- Frontmatter: spec-version (from SPEC.md), uat-date (today), milestone (from STATE.md)
+- Table: # | Criterion | Result | Evidence
+- Summary section: Total, PASS, FAIL, NOT-RUN counts
+
+Write `.planning/UAT.md` using the Write tool. Then proceed to invoke gsd-audit-uat which fills in results.
+
 1. Invoke `gsd-audit-uat` via the Skill tool
 2. Invoke `gsd-audit-milestone` via the Skill tool
 3. If gaps found (max 2 gap-closure iterations): invoke `gsd-plan-milestone-gaps` → invoke `silver:feature` for gap phases → return to Step 0 of the gap phases. After 2 iterations if gaps remain, surface to user with options.
