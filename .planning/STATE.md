@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.15.0
 milestone_name: Granular Artifact Review Rounds
 current_plan: 0
-status: Defining requirements
+status: Roadmap created
 stopped_at: null
 last_updated: "2026-04-09T00:00:00.000Z"
 last_activity: 2026-04-09
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,7 +19,7 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.14.0
-**Active phase:** Not started (defining requirements)
+**Active phase:** Phase 15 (not started — ready to plan)
 **Current plan:** —
 
 Last activity: 2026-04-09
@@ -35,6 +35,9 @@ Last activity: 2026-04-09
 - Phase 12 added: Spec Foundation — canonical SPEC.md format, silver-spec elicitation skill, spec floor hook (v0.14.0)
 - Phase 13 added: Ingestion & Multi-Repo — silver-ingest skill, MCP connectors, cross-repo spec fetch (v0.14.0)
 - Phase 14 added: Validation, Traceability & UAT Gate — silver-validate skill, pr-traceability hook, uat-gate hook (v0.14.0)
+- Phase 15 added: Bug Fixes & Reviewer Framework — v0.14.0 critical fixes + artifact reviewer interface, 2-pass loop, state tracking, audit trail (v0.15.0)
+- Phase 16 added: New Artifact Reviewers — 8 new reviewer skills for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT (v0.15.0)
+- Phase 17 added: Existing Reviewer Formalization & Workflow Wiring — plan-checker/code-reviewer/verifier/security-auditor into 2-pass framework; all producing workflows wired (v0.15.0)
 
 ## Decisions
 
@@ -60,6 +63,10 @@ Last activity: 2026-04-09
 - [v0.14.0]: Cross-repo spec fetch via gh CLI or GitHub raw URL → .planning/SPEC.main.md (read-only cache, no git submodules)
 - [v0.14.0]: SPEC.md format is the linchpin — Phase 12 must complete before Phase 13 or Phase 14 can be built
 - [v0.14.0]: Documentation pass (silver-bullet.md.base spec lifecycle section, MCP prereqs) embedded in Phase 14 — no separate docs phase needed as requirements are captured in VALD/TRAC/UATG categories
+- [v0.15.0]: Bug fixes (BFIX-01..04) co-located with framework (ARFR-01..04) in Phase 15 — fix critical issues before building on top of them
+- [v0.15.0]: All 8 new reviewers (ARVW-01..08) grouped in Phase 16 — uniform pattern enables parallel construction
+- [v0.15.0]: Existing reviewer formalization (EXRV-01..04) and all workflow wiring (WFIN-01..10) co-located in Phase 17 — wiring requires both framework (Phase 15) and new reviewers (Phase 16)
+- [v0.15.0]: Reviewers are SB skills, not GSD modifications — §8 plugin boundary maintained throughout
 
 ### Quick Tasks Completed
 
@@ -94,4 +101,4 @@ Last activity: 2026-04-09
 ## Session Continuity
 
 Last session: 2026-04-09
-Stopped at: Roadmap created for v0.14.0 — ready to plan Phase 12
+Stopped at: Roadmap created for v0.15.0 — ready to plan Phase 15

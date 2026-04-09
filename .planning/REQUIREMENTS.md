@@ -86,42 +86,42 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BFIX-01 | — | Pending |
-| BFIX-02 | — | Pending |
-| BFIX-03 | — | Pending |
-| BFIX-04 | — | Pending |
-| ARFR-01 | — | Pending |
-| ARFR-02 | — | Pending |
-| ARFR-03 | — | Pending |
-| ARFR-04 | — | Pending |
-| ARVW-01 | — | Pending |
-| ARVW-02 | — | Pending |
-| ARVW-03 | — | Pending |
-| ARVW-04 | — | Pending |
-| ARVW-05 | — | Pending |
-| ARVW-06 | — | Pending |
-| ARVW-07 | — | Pending |
-| ARVW-08 | — | Pending |
-| EXRV-01 | — | Pending |
-| EXRV-02 | — | Pending |
-| EXRV-03 | — | Pending |
-| EXRV-04 | — | Pending |
-| WFIN-01 | — | Pending |
-| WFIN-02 | — | Pending |
-| WFIN-03 | — | Pending |
-| WFIN-04 | — | Pending |
-| WFIN-05 | — | Pending |
-| WFIN-06 | — | Pending |
-| WFIN-07 | — | Pending |
-| WFIN-08 | — | Pending |
-| WFIN-09 | — | Pending |
-| WFIN-10 | — | Pending |
+| BFIX-01 | Phase 15 | Pending |
+| BFIX-02 | Phase 15 | Pending |
+| BFIX-03 | Phase 15 | Pending |
+| BFIX-04 | Phase 15 | Pending |
+| ARFR-01 | Phase 15 | Pending |
+| ARFR-02 | Phase 15 | Pending |
+| ARFR-03 | Phase 15 | Pending |
+| ARFR-04 | Phase 15 | Pending |
+| ARVW-01 | Phase 16 | Pending |
+| ARVW-02 | Phase 16 | Pending |
+| ARVW-03 | Phase 16 | Pending |
+| ARVW-04 | Phase 16 | Pending |
+| ARVW-05 | Phase 16 | Pending |
+| ARVW-06 | Phase 16 | Pending |
+| ARVW-07 | Phase 16 | Pending |
+| ARVW-08 | Phase 16 | Pending |
+| EXRV-01 | Phase 17 | Pending |
+| EXRV-02 | Phase 17 | Pending |
+| EXRV-03 | Phase 17 | Pending |
+| EXRV-04 | Phase 17 | Pending |
+| WFIN-01 | Phase 17 | Pending |
+| WFIN-02 | Phase 17 | Pending |
+| WFIN-03 | Phase 17 | Pending |
+| WFIN-04 | Phase 17 | Pending |
+| WFIN-05 | Phase 17 | Pending |
+| WFIN-06 | Phase 17 | Pending |
+| WFIN-07 | Phase 17 | Pending |
+| WFIN-08 | Phase 17 | Pending |
+| WFIN-09 | Phase 17 | Pending |
+| WFIN-10 | Phase 17 | Pending |
 
 **Coverage:**
 - v1 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30 ⚠️
+- Mapped to phases: 30
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-09*
-*Last updated: 2026-04-09 after initial definition*
+*Last updated: 2026-04-09 after roadmap creation*

@@ -25,7 +25,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 11: Website Content Refresh** - v0.13.0 site update
 - [ ] **Phase 12: Spec Foundation** - Canonical SPEC.md format, AI-guided elicitation skill, and spec floor enforcement — the linchpin that unblocks all downstream spec capabilities
 - [ ] **Phase 13: Ingestion & Multi-Repo** - External artifact ingestion via MCP connectors (JIRA, Figma, Google Docs) and cross-repo spec referencing with version pinning
-- [ ] **Phase 14: Validation, Traceability & UAT Gate** - Pre-build validation gate, PR-to-spec traceability automation, and UAT as a formal pipeline gate
+- [x] **Phase 14: Validation, Traceability & UAT Gate** - Pre-build validation gate, PR-to-spec traceability automation, and UAT as a formal pipeline gate (completed 2026-04-09)
+- [ ] **Phase 15: Bug Fixes & Reviewer Framework** - Fix critical v0.14.0 bugs then establish the artifact reviewer framework (interface, loop, state tracking, audit trail)
+- [ ] **Phase 16: New Artifact Reviewers** - Create all 8 new artifact reviewer skills for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, and UAT
+- [ ] **Phase 17: Existing Reviewer Formalization & Workflow Wiring** - Formalize plan-checker, code-reviewer, verifier, and security-auditor into the 2-pass framework; wire all reviewers into their producing workflows
 
 ## Phase Details
 
@@ -119,7 +122,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 11. Website Content Refresh | 1/1 | ✓ Complete | 2026-04-09 |
 | 12. Spec Foundation | 0/3 | Planning complete | - |
 | 13. Ingestion & Multi-Repo | 0/? | Not started | - |
-| 14. Validation, Traceability & UAT Gate | 0/3 | Planning complete | - |
+| 14. Validation, Traceability & UAT Gate | 3/3 | Complete   | 2026-04-09 |
+| 15. Bug Fixes & Reviewer Framework | 0/? | Not started | - |
+| 16. New Artifact Reviewers | 0/? | Not started | - |
+| 17. Existing Reviewer Formalization & Workflow Wiring | 0/? | Not started | - |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
 
@@ -236,6 +242,46 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 14-01-PLAN.md -- silver-validate skill + silver-feature Step 2.7 wiring
-- [ ] 14-02-PLAN.md -- spec-session-record.sh + pr-traceability.sh hooks
-- [ ] 14-03-PLAN.md -- uat-gate.sh hook + spec lifecycle documentation
+- [x] 14-01-PLAN.md -- silver-validate skill + silver-feature Step 2.7 wiring
+- [x] 14-02-PLAN.md -- spec-session-record.sh + pr-traceability.sh hooks
+- [x] 14-03-PLAN.md -- uat-gate.sh hook + spec lifecycle documentation
+
+### Phase 15: Bug Fixes & Reviewer Framework
+
+**Goal:** All critical v0.14.0 bugs are fixed and a reusable artifact reviewer framework exists — defining the interface, 2-consecutive-pass loop, per-artifact state tracking, and REVIEW-ROUNDS.md audit trail that every reviewer will use
+**Depends on:** Phase 14
+**Requirements**: BFIX-01, BFIX-02, BFIX-03, BFIX-04, ARFR-01, ARFR-02, ARFR-03, ARFR-04
+**Success Criteria** (what must be TRUE):
+  1. Running silver-ingest with a malicious --source-url (e.g., containing shell metacharacters) does not execute arbitrary commands — input is validated against the allowed pattern before shell substitution
+  2. The pr-traceability.sh hook produces correct heredoc output even when WARN findings contain special characters (quotes, backticks, dollar signs) — no command injection possible
+  3. When Confluence ingestion fails in silver-ingest, the SPEC.md contains a visible `[ARTIFACT MISSING: <reason>]` block at the relevant section — not a note buried in Assumptions
+  4. When SPEC.main.md is stale, the version mismatch block shows a side-by-side content diff (not just version numbers) so the developer can see exactly what changed
+  5. A reviewer can be invoked with an artifact path and returns structured findings with PASS or ISSUE severity plus finding descriptions — the interface is consistent across all artifact types
+  6. Running a reviewer on an artifact with issues triggers an automated fix-and-re-review loop that terminates only after 2 consecutive PASS results — not just one clean pass
+**Plans**: TBD
+
+### Phase 16: New Artifact Reviewers
+
+**Goal:** Eight dedicated reviewer skills exist — one per artifact type — each validating the artifact's completeness, consistency with source inputs, and structural requirements; all built to the Phase 15 framework interface
+**Depends on:** Phase 15
+**Requirements**: ARVW-01, ARVW-02, ARVW-03, ARVW-04, ARVW-05, ARVW-06, ARVW-07, ARVW-08
+**Success Criteria** (what must be TRUE):
+  1. The SPEC.md reviewer catches a spec missing Acceptance Criteria and returns an ISSUE finding — it also flags inconsistency with source JIRA/Figma inputs when present
+  2. The DESIGN.md reviewer catches an orphaned component (referenced in design but with no user story in SPEC.md) and returns an ISSUE finding
+  3. The REQUIREMENTS.md reviewer catches a duplicate REQ-ID and a requirement with no testable criterion, returning ISSUE findings for both
+  4. The ROADMAP.md reviewer catches an orphaned requirement (not mapped to any phase) and a phase with success criteria that cannot be traced to a requirement, returning ISSUE findings
+  5. The CONTEXT.md, RESEARCH.md, INGESTION_MANIFEST.md, and UAT.md reviewers each return structured findings when their respective quality criteria are violated (vague decision, speculative finding, falsely-reported status, missing UAT row)
+**Plans**: TBD
+
+### Phase 17: Existing Reviewer Formalization & Workflow Wiring
+
+**Goal:** The four existing GSD reviewers (plan-checker, code-reviewer, verifier, security-auditor) are upgraded to require 2 consecutive clean passes, and every artifact-producing workflow step is wired to invoke its dedicated reviewer before completing — enforced via silver-bullet.md §3a
+**Depends on:** Phase 15, Phase 16
+**Requirements**: EXRV-01, EXRV-02, EXRV-03, EXRV-04, WFIN-01, WFIN-02, WFIN-03, WFIN-04, WFIN-05, WFIN-06, WFIN-07, WFIN-08, WFIN-09, WFIN-10
+**Success Criteria** (what must be TRUE):
+  1. Running gsd-plan-phase invokes plan-checker iteratively — a plan with issues is not approved on the first clean pass; a second consecutive clean pass is required before the plan is committed
+  2. Running gsd-execute invokes code-reviewer iteratively — code with ISSUE findings triggers a fix round; two consecutive clean reviews are required before the execution step completes
+  3. Running silver-spec completes Steps 7, 8, and 9 only after their respective reviewers (SPEC.md, DESIGN.md, REQUIREMENTS.md) each return 2 consecutive clean passes
+  4. Running new-milestone (roadmap and requirements steps) and discuss-phase (context step) each block on 2 consecutive clean passes from their respective reviewers before the artifact is committed
+  5. silver-bullet.md §3a contains a complete artifact-reviewer mapping table covering all 12+ artifact types — any step that produces a listed artifact is required to invoke the mapped reviewer
+**Plans**: TBD
