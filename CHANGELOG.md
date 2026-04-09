@@ -2,6 +2,53 @@
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-04-09
+
+### Added — Granular Artifact Review Rounds (v0.15.0)
+- Artifact reviewer framework: `skills/artifact-reviewer/SKILL.md` with
+  interface contract (`reviewer-interface.md`), 2-consecutive-clean-pass
+  loop (`review-loop.md`), per-artifact state tracking, and audit trail
+- 8 new artifact reviewer skills: `review-spec`, `review-design`,
+  `review-requirements`, `review-roadmap`, `review-context`,
+  `review-research`, `review-ingestion-manifest`, `review-uat`
+- Existing GSD reviewers (plan-checker, code-reviewer, verifier,
+  security-auditor) formalized into the 2-pass framework via silver-bullet.md §3a
+- Workflow wiring: silver-spec Steps 7a/8a/9a, silver-ingest Step 7a,
+  silver-feature Step 17.0a — all NON-SKIPPABLE gates
+- Post-command review gates in §3a-i for ROADMAP, REQUIREMENTS, CONTEXT, RESEARCH
+- Complete artifact-reviewer mapping table in §3a (12 artifact types)
+
+### Fixed — v0.14.0 Critical Bug Fixes
+- BFIX-01: Shell injection via unvalidated owner/repo in `silver-ingest --source-url` — allowlist regex validation added
+- BFIX-02: Command injection via unescaped WARN findings in `pr-traceability.sh` heredoc — replaced with `printf '%s'`
+- BFIX-03: Confluence failure path now produces `[ARTIFACT MISSING: reason]` block (was buried in Assumptions)
+- BFIX-04: Version mismatch block in §0/5.5 now shows content diff (was version numbers only)
+
+## [0.14.0] — 2026-04-09
+
+### Added — AI-Driven Spec & Multi-Repo Orchestration
+- `skills/silver-spec/SKILL.md` — AI-driven Socratic elicitation skill (238 lines)
+  guiding PM/BA through 9-domain requirements creation, producing SPEC.md + REQUIREMENTS.md
+- `skills/silver-ingest/SKILL.md` — External artifact ingestion (428 lines) via
+  JIRA (Atlassian MCP), Figma (Figma MCP), Google Docs (Workspace CLI with vision).
+  Cross-repo spec fetch with version pinning. Resumable via INGESTION_MANIFEST.md
+- `skills/silver-validate/SKILL.md` — Pre-build gap analysis (360 lines) with
+  BLOCK/WARN/INFO findings. Hard-blocks gsd-plan-phase on BLOCK findings
+- `hooks/spec-floor-check.sh` — PreToolUse hook that hard-blocks gsd-plan-phase
+  without valid SPEC.md; advisory-only for gsd-fast/gsd-quick
+- `hooks/spec-session-record.sh` — SessionStart hook capturing spec-id/version/JIRA ref
+- `hooks/pr-traceability.sh` — PostToolUse hook auto-populating PR description with
+  spec reference and updating SPEC.md Implementations section post-merge
+- `hooks/uat-gate.sh` — PreToolUse hook blocking gsd-complete-milestone without UAT pass
+- Canonical spec templates: `templates/specs/SPEC.md.template`, `DESIGN.md.template`,
+  `REQUIREMENTS.md.template` with YAML frontmatter and standardized sections
+- Multi-repo spec referencing: `silver-ingest --source-url` fetches + caches main repo
+  SPEC.md with version pinning; session-start validation blocks on mismatch
+- §3/§3a/§3d step non-skip enforcement: workflow steps cannot be bypassed, artifact
+  existence required before phase advancement
+- Spec Lifecycle section in silver-bullet.md.base
+- MCP Connector Prerequisites (§2j) and Cross-Repo Conventions (§2k)
+
 ## [0.13.2] — 2026-04-09
 
 ### Fixed
