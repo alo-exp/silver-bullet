@@ -328,7 +328,11 @@ Plans:
   1. Completing a review round appends a JSON object to `.planning/review-analytics.jsonl` with artifact path, round number, finding count, pass/fail, depth, and duration
   2. Running `silver-review-stats` reads the analytics file and produces a summary table showing pass rates, average rounds to clean pass, and common finding categories by artifact type
   3. When the analytics file exceeds 1000 lines, the oldest entries are archived before new entries are appended
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — Metrics emission in review loop + analytics file rotation
+- [ ] 19-02-PLAN.md — silver-review-stats skill for summary reports
 
 ### Phase 20: Cross-Artifact Consistency
 
