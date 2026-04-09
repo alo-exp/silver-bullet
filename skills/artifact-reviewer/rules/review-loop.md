@@ -19,10 +19,19 @@ if state exists:
   round = state.round
   display "Resuming review of {artifact} from round {round} ({consecutive_passes} consecutive passes so far)"
 
-while consecutive_passes < 2:
-  findings = invoke_reviewer(artifact_path, source_inputs)
+depth = resolve_depth(reviewer_skill_name)
+required_passes = 2 if depth == "deep" else 1
+check_mode = "structural" if depth == "quick" else "full"
+
+while consecutive_passes < required_passes:
+  round_start = current_time()  # ARVW-10a/10d: timing start
+  findings = invoke_reviewer(artifact_path, source_inputs, check_mode)
 
   record_round(artifact_path, round, findings)  # ARFR-04
+
+  duration = current_time() - round_start  # ARVW-10a/10d: compute duration
+  # ARVW-10a/10d: emit per-round metric
+  emit_review_metric(artifact_path, reviewer_skill_name, round, len(findings.findings), findings.status, depth, check_mode, duration)
 
   if findings.status == "PASS":
     consecutive_passes += 1
@@ -154,3 +163,77 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
 - Each artifact gets its own section identified by `## {artifact filename}` header
 - If REVIEW-ROUNDS.md already contains rounds for this artifact from a prior session, append new rounds after the last existing one
 - Commit REVIEW-ROUNDS.md alongside the artifact after the review loop completes (2 clean passes achieved)
+
+---
+
+## Section 4: Review Analytics (ARVW-10)
+
+Every completed review round appends a structured JSON record to `.planning/review-analytics.jsonl`. This enables data-driven review health visibility and is the data source for the `silver-review-stats` skill.
+
+### 4a. Metric Record Schema
+
+```json
+{
+  "artifact_path": "/absolute/path/to/artifact.md",
+  "artifact_type": "SPEC.md",
+  "reviewer": "review-spec",
+  "round": 2,
+  "finding_count": 3,
+  "status": "ISSUES_FOUND",
+  "depth": "standard",
+  "check_mode": "full",
+  "duration_seconds": 45,
+  "timestamp": "2026-04-10T12:00:00Z"
+}
+```
+
+Where `artifact_type` is the filename (basename) of the artifact, and `duration_seconds` is wall-clock seconds for that round.
+
+### 4b. `emit_review_metric()` Function
+
+```
+emit_review_metric(artifact_path, reviewer, round, finding_count, status, depth, check_mode, duration_seconds):
+  analytics_file = ".planning/review-analytics.jsonl"
+
+  # Rotate if needed (ARVW-10e)
+  rotate_analytics_if_needed(analytics_file)
+
+  metric = {
+    artifact_path: realpath(artifact_path),
+    artifact_type: basename(artifact_path),
+    reviewer: reviewer,
+    round: round,
+    finding_count: finding_count,
+    status: status,
+    depth: depth,
+    check_mode: check_mode,
+    duration_seconds: duration_seconds,
+    timestamp: current_iso_timestamp()
+  }
+
+  append_json_line(analytics_file, metric)
+```
+
+### 4c. `rotate_analytics_if_needed()` Function
+
+```
+rotate_analytics_if_needed(analytics_file):
+  if not file_exists(analytics_file):
+    return
+
+  line_count = count_lines(analytics_file)
+  if line_count <= 1000:
+    return
+
+  archive_dir = ".planning/archive"
+  mkdir_p(archive_dir)
+  archive_name = "review-analytics-{YYYY-MM-DD}.jsonl"
+  move(analytics_file, archive_dir + "/" + archive_name)
+  # New entries will be appended to a fresh analytics_file
+```
+
+When the analytics file exceeds 1000 lines, the oldest entries are archived before the new record is appended. This prevents unbounded file growth (ARVW-10e / T-19-02 mitigation).
+
+### 4d. Integration Notes
+
+The `emit_review_metric()` call is placed in Section 1 after `record_round()` and before the PASS/ISSUES_FOUND branching — so every round (pass or fail) is captured. The variables `artifact_path`, `reviewer_skill_name`, `round`, `findings`, `depth`, `check_mode`, `round_start`, and `duration` are all in scope at that point.
