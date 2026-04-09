@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.15.0
-milestone_name: Granular Artifact Review Rounds
-current_plan: 0
+milestone: v0.13.0
+milestone_name: site update
+current_plan: —
 status: Roadmap created
-stopped_at: null
-last_updated: "2026-04-09T00:00:00.000Z"
+stopped_at: Completed 15-02-PLAN.md — artifact reviewer framework
+last_updated: "2026-04-09T12:01:18.494Z"
 last_activity: 2026-04-09
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 17
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -67,6 +67,7 @@ Last activity: 2026-04-09
 - [v0.15.0]: All 8 new reviewers (ARVW-01..08) grouped in Phase 16 — uniform pattern enables parallel construction
 - [v0.15.0]: Existing reviewer formalization (EXRV-01..04) and all workflow wiring (WFIN-01..10) co-located in Phase 17 — wiring requires both framework (Phase 15) and new reviewers (Phase 16)
 - [v0.15.0]: Reviewers are SB skills, not GSD modifications — §8 plugin boundary maintained throughout
+- [Phase 15-02]: Reviewer state stored as JSON keyed by 8-char SHA256 of artifact absolute path in ~/.claude/.silver-bullet/review-state/
 
 ### Quick Tasks Completed
 
@@ -97,8 +98,9 @@ Last activity: 2026-04-09
 | 07-03 | 15m | 2 tasks | 6 files |
 | Phase 07-close-enforcement-audit-gaps P04 | 212 | 2 tasks | 6 files |
 | Phase 10 P07 | 5 | 2 tasks | 1 files |
+| Phase 15 P02 | 300 | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-04-09
-Stopped at: Roadmap created for v0.15.0 — ready to plan Phase 15
+Last session: 2026-04-09T12:01:18.489Z
+Stopped at: Completed 15-02-PLAN.md — artifact reviewer framework

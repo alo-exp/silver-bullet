@@ -26,7 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 12: Spec Foundation** - Canonical SPEC.md format, AI-guided elicitation skill, and spec floor enforcement — the linchpin that unblocks all downstream spec capabilities
 - [ ] **Phase 13: Ingestion & Multi-Repo** - External artifact ingestion via MCP connectors (JIRA, Figma, Google Docs) and cross-repo spec referencing with version pinning
 - [x] **Phase 14: Validation, Traceability & UAT Gate** - Pre-build validation gate, PR-to-spec traceability automation, and UAT as a formal pipeline gate (completed 2026-04-09)
-- [ ] **Phase 15: Bug Fixes & Reviewer Framework** - Fix critical v0.14.0 bugs then establish the artifact reviewer framework (interface, loop, state tracking, audit trail)
+- [x] **Phase 15: Bug Fixes & Reviewer Framework** - Fix critical v0.14.0 bugs then establish the artifact reviewer framework (interface, loop, state tracking, audit trail) (completed 2026-04-09)
 - [ ] **Phase 16: New Artifact Reviewers** - Create all 8 new artifact reviewer skills for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, and UAT
 - [ ] **Phase 17: Existing Reviewer Formalization & Workflow Wiring** - Formalize plan-checker, code-reviewer, verifier, and security-auditor into the 2-pass framework; wire all reviewers into their producing workflows
 
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 12. Spec Foundation | 0/3 | Planning complete | - |
 | 13. Ingestion & Multi-Repo | 0/? | Not started | - |
 | 14. Validation, Traceability & UAT Gate | 3/3 | Complete   | 2026-04-09 |
-| 15. Bug Fixes & Reviewer Framework | 0/2 | Planning complete | - |
+| 15. Bug Fixes & Reviewer Framework | 2/2 | Complete   | 2026-04-09 |
 | 16. New Artifact Reviewers | 0/? | Not started | - |
 | 17. Existing Reviewer Formalization & Workflow Wiring | 0/? | Not started | - |
 
@@ -261,8 +261,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md -- Fix critical bugs: shell injection, heredoc injection, Confluence failure path, version mismatch display
-- [ ] 15-02-PLAN.md -- Artifact reviewer framework: interface, 2-pass loop, state tracking, audit trail
+- [x] 15-01-PLAN.md -- Fix critical bugs: shell injection, heredoc injection, Confluence failure path, version mismatch display
+- [x] 15-02-PLAN.md -- Artifact reviewer framework: interface, 2-pass loop, state tracking, audit trail
 
 ### Phase 16: New Artifact Reviewers
 

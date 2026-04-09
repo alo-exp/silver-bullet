@@ -16,10 +16,10 @@ Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 
 ### Artifact Reviewer Framework
 
-- [ ] **ARFR-01**: A standard artifact reviewer interface is defined — each reviewer accepts an artifact path, validates against source inputs, and returns structured findings with severity (PASS / ISSUE) and finding descriptions
-- [ ] **ARFR-02**: The review round loop is implemented as a reusable mechanism — invoke reviewer, collect findings, if issues found → fix and re-review, continue until 2 consecutive clean passes
-- [ ] **ARFR-03**: Review round state is tracked per-artifact so partially completed rounds can be resumed across sessions
-- [ ] **ARFR-04**: Review round results are recorded in a `REVIEW-ROUNDS.md` artifact alongside the reviewed file for audit trail
+- [x] **ARFR-01**: A standard artifact reviewer interface is defined — each reviewer accepts an artifact path, validates against source inputs, and returns structured findings with severity (PASS / ISSUE) and finding descriptions
+- [x] **ARFR-02**: The review round loop is implemented as a reusable mechanism — invoke reviewer, collect findings, if issues found → fix and re-review, continue until 2 consecutive clean passes
+- [x] **ARFR-03**: Review round state is tracked per-artifact so partially completed rounds can be resumed across sessions
+- [x] **ARFR-04**: Review round results are recorded in a `REVIEW-ROUNDS.md` artifact alongside the reviewed file for audit trail
 
 ### New Artifact Reviewers
 
@@ -90,10 +90,10 @@ Deferred to future release.
 | BFIX-02 | Phase 15 | Pending |
 | BFIX-03 | Phase 15 | Pending |
 | BFIX-04 | Phase 15 | Pending |
-| ARFR-01 | Phase 15 | Pending |
-| ARFR-02 | Phase 15 | Pending |
-| ARFR-03 | Phase 15 | Pending |
-| ARFR-04 | Phase 15 | Pending |
+| ARFR-01 | Phase 15 | Complete |
+| ARFR-02 | Phase 15 | Complete |
+| ARFR-03 | Phase 15 | Complete |
+| ARFR-04 | Phase 15 | Complete |
 | ARVW-01 | Phase 16 | Pending |
 | ARVW-02 | Phase 16 | Pending |
 | ARVW-03 | Phase 16 | Pending |
