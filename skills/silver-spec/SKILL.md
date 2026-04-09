@@ -36,7 +36,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
 
-**Non-skippable gates:** `Step 3: Socratic Elicitation`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `Step 3: Socratic Elicitation`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
 
 ## Step 0: Mode Detection
 
@@ -181,6 +181,14 @@ Invoke `design:design-critique` via the Skill tool. If the skill is unavailable,
 
 Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` fields. No untagged assumptions.
 
+### Step 7a: Review SPEC.md
+
+**NON-SKIPPABLE GATE.**
+
+Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` via the Skill tool.
+
+Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
+
 ## Step 8: Write .planning/REQUIREMENTS.md
 
 1. Read `templates/specs/REQUIREMENTS.md.template` to get the canonical structure.
@@ -190,6 +198,14 @@ Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` 
 5. Mirror the Open Questions section from SPEC.md.
 6. Write to `.planning/REQUIREMENTS.md` using the Write tool.
 
+### Step 8a: Review REQUIREMENTS.md
+
+**NON-SKIPPABLE GATE.**
+
+Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool.
+
+Do NOT proceed to Step 9 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
+
 ## Step 9: Write .planning/DESIGN.md (conditional)
 
 Only if a design artifact or Figma URL was provided:
@@ -197,6 +213,14 @@ Only if a design artifact or Figma URL was provided:
 1. Read `templates/specs/DESIGN.md.template` to get the canonical structure.
 2. Populate from design context gathered in Steps 4 and 6.
 3. Write to `.planning/DESIGN.md` using the Write tool.
+
+### Step 9a: Review DESIGN.md (conditional)
+
+**Only if Step 9 produced a DESIGN.md.**
+
+Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` via the Skill tool.
+
+Do NOT proceed to Step 10 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
 ## Step 10: Commit artifacts
 
