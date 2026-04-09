@@ -92,6 +92,7 @@ Last activity: 2026-04-09
 | 260408-pkj | Add §2g bare instruction interception — SB routes non-trivial bare messages through /silver | 2026-04-08 | b146148 | — | [260408-pkj-add-sb-interception-rule-for-non-trivial](./quick/260408-pkj-add-sb-interception-rule-for-non-trivial/) |
 | 260408-tfp | Add §2h workflows, §10 preferences, /silver router expansion, silver:init updates, §0 MultAI check | 2026-04-08 | 952c1f9 | — | .planning/quick/260408-tfp-add-2h-sb-orchestrated-workflows-to-silv/ |
 | 260410-1he | Phase archive hook and v0.14.0 phase restoration | 2026-04-10 | 23ae7f6 | — | [260410-1he-phase-archive-hook-and-v0-14-0-phase-res](./quick/260410-1he-phase-archive-hook-and-v0-14-0-phase-res/) |
+| 260410-2ju | Fix P1-P3 forensic findings: spec-floor-check POSIX grep, silver-ingest fixes, tracking debt cleanup | 2026-04-10 | 7a830a3 | — | [260410-2ju-fix-p1-p3-forensic-findings-spec-floor-c](./quick/260410-2ju-fix-p1-p3-forensic-findings-spec-floor-c/) |
 
 ## Performance Metrics
 
