@@ -23,8 +23,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Silver Bullet Core Improvements** - silver:init initializes all dependencies, GSD state delegation, guided UX, lettered options
 - [x] **Phase 10: SB Orchestration Skill Files** - Create 7 named orchestration skills: silver-feature/bugfix/ui/devops/research/release/fast
 - [x] **Phase 11: Website Content Refresh** - v0.13.0 site update
-- [ ] **Phase 12: Spec Foundation** - Canonical SPEC.md format, AI-guided elicitation skill, and spec floor enforcement — the linchpin that unblocks all downstream spec capabilities
-- [ ] **Phase 13: Ingestion & Multi-Repo** - External artifact ingestion via MCP connectors (JIRA, Figma, Google Docs) and cross-repo spec referencing with version pinning
+- [x] **Phase 12: Spec Foundation** - Canonical SPEC.md format, AI-guided elicitation skill, and spec floor enforcement — the linchpin that unblocks all downstream spec capabilities
+- [x] **Phase 13: Ingestion & Multi-Repo** - External artifact ingestion via MCP connectors (JIRA, Figma, Google Docs) and cross-repo spec referencing with version pinning
 - [x] **Phase 14: Validation, Traceability & UAT Gate** - Pre-build validation gate, PR-to-spec traceability automation, and UAT as a formal pipeline gate (completed 2026-04-09)
 - [x] **Phase 15: Bug Fixes & Reviewer Framework** - Fix critical v0.14.0 bugs then establish the artifact reviewer framework (interface, loop, state tracking, audit trail) (completed 2026-04-09)
 - [x] **Phase 16: New Artifact Reviewers** - Create all 8 new artifact reviewer skills for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, and UAT (completed 2026-04-09)
@@ -120,8 +120,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 9. Silver Bullet Core Improvements | 2/2 | ✓ Complete | 2026-04-08 |
 | 10. SB Orchestration Skill Files | 7/7 | ✓ Complete | 2026-04-08 |
 | 11. Website Content Refresh | 1/1 | ✓ Complete | 2026-04-09 |
-| 12. Spec Foundation | 0/3 | Planning complete | - |
-| 13. Ingestion & Multi-Repo | 0/? | Not started | - |
+| 12. Spec Foundation | 3/3 | Complete | 2026-04-09 |
+| 13. Ingestion & Multi-Repo | 2/2 | Complete | 2026-04-09 |
 | 14. Validation, Traceability & UAT Gate | 3/3 | Complete   | 2026-04-09 |
 | 15. Bug Fixes & Reviewer Framework | 2/2 | Complete   | 2026-04-09 |
 | 16. New Artifact Reviewers | 2/2 | Complete   | 2026-04-09 |
@@ -154,7 +154,7 @@ Plans:
 ### Phase 8: Comprehensive SB enforcement test harness
 
 **Goal:** Automated integration test suite that validates multi-hook enforcement scenarios (planning gates, workflow completion, skill tracking, session management) replacing manual e2e-smoke-test enforcement checks with deterministic JSON-pipe tests
-**Requirements**: ENF-HARNESS-01, ENF-HARNESS-02, ENF-HARNESS-03, ENF-HARNESS-04, ENF-HARNESS-05, ENF-HARNESS-06, ENF-HARNESS-07, ENF-HARNESS-08, ENF-HARNESS-10
+**Requirements**: ENF-HARNESS-01, ENF-HARNESS-02, ENF-HARNESS-03, ENF-HARNESS-04, ENF-HARNESS-05, ENF-HARNESS-06, ENF-HARNESS-07, ENF-HARNESS-08, ENF-HARNESS-09
 **Depends on:** Phase 7
 **Plans:** 1/2 plans executed
 
@@ -207,9 +207,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 12-01-PLAN.md -- Spec templates + spec-floor-check.sh hook
-- [ ] 12-02-PLAN.md -- silver-spec SKILL.md (Socratic elicitation)
-- [ ] 12-03-PLAN.md -- Router wiring + hooks.json registration + silver-bullet.md docs
+- [x] 12-01-PLAN.md -- Spec templates + spec-floor-check.sh hook
+- [x] 12-02-PLAN.md -- silver-spec SKILL.md (Socratic elicitation)
+- [x] 12-03-PLAN.md -- Router wiring + hooks.json registration + silver-bullet.md docs
 
 ### Phase 13: Ingestion & Multi-Repo
 
@@ -225,8 +225,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 13-01-PLAN.md -- silver-ingest SKILL.md (JIRA/Figma/Google Docs ingestion + cross-repo fetch)
-- [ ] 13-02-PLAN.md -- Router wiring, session-start version validation, MCP prerequisites
+- [x] 13-01-PLAN.md -- silver-ingest SKILL.md (JIRA/Figma/Google Docs ingestion + cross-repo fetch)
+- [x] 13-02-PLAN.md -- Router wiring, session-start version validation, MCP prerequisites
 
 ### Phase 14: Validation, Traceability & UAT Gate
 

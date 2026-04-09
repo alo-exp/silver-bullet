@@ -9,10 +9,10 @@ Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 
 ### Bug Fixes (carried from v0.14.0)
 
-- [ ] **BFIX-01**: Fix shell injection via unvalidated owner/repo in silver-ingest --source-url — validate against `^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$` before shell substitution
-- [ ] **BFIX-02**: Fix command injection via unescaped WARN findings in pr-traceability.sh heredoc — use `printf '%s'` instead of heredoc expansion for warn_items
-- [ ] **BFIX-03**: Fix Confluence failure path in silver-ingest to produce `[ARTIFACT MISSING: reason]` block instead of "note in Assumptions"
-- [ ] **BFIX-04**: Fix version mismatch block in silver-bullet.md.base §0/5.5 to show content diff (not just version numbers) when SPEC.main.md is stale
+- [x] **BFIX-01**: Fix shell injection via unvalidated owner/repo in silver-ingest --source-url — validate against `^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$` before shell substitution
+- [x] **BFIX-02**: Fix command injection via unescaped WARN findings in pr-traceability.sh heredoc — use `printf '%s'` instead of heredoc expansion for warn_items
+- [x] **BFIX-03**: Fix Confluence failure path in silver-ingest to produce `[ARTIFACT MISSING: reason]` block instead of "note in Assumptions"
+- [x] **BFIX-04**: Fix version mismatch block in silver-bullet.md.base §0/5.5 to show content diff (not just version numbers) when SPEC.main.md is stale
 
 ### Artifact Reviewer Framework
 
@@ -34,10 +34,10 @@ Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 
 ### Existing Reviewer Formalization
 
-- [ ] **EXRV-01**: plan-checker (gsd-plan-checker) is wired into the 2-consecutive-pass framework — plan-phase workflow invokes it iteratively until 2 clean passes, not just once
-- [ ] **EXRV-02**: code-reviewer (gsd-code-reviewer) is wired into the 2-consecutive-pass framework — execute-phase workflow invokes it iteratively with fix rounds between passes
-- [ ] **EXRV-03**: verifier (gsd-verifier) is wired into the 2-consecutive-pass framework — verification runs twice consecutively, second pass confirms first pass's results
-- [ ] **EXRV-04**: security-auditor (gsd-security-auditor) is wired into the 2-consecutive-pass framework — security audit runs twice, second pass validates mitigations from first
+- [x] **EXRV-01**: plan-checker (gsd-plan-checker) is wired into the 2-consecutive-pass framework — plan-phase workflow invokes it iteratively until 2 clean passes, not just once
+- [x] **EXRV-02**: code-reviewer (gsd-code-reviewer) is wired into the 2-consecutive-pass framework — execute-phase workflow invokes it iteratively with fix rounds between passes
+- [x] **EXRV-03**: verifier (gsd-verifier) is wired into the 2-consecutive-pass framework — verification runs twice consecutively, second pass confirms first pass's results
+- [x] **EXRV-04**: security-auditor (gsd-security-auditor) is wired into the 2-consecutive-pass framework — security audit runs twice, second pass validates mitigations from first
 
 ### Workflow Integration
 
@@ -50,7 +50,7 @@ Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 - [x] **WFIN-07**: plan-phase workflow invokes RESEARCH.md reviewer after researcher completes — research not committed until 2 consecutive clean passes
 - [x] **WFIN-08**: silver-ingest workflow invokes INGESTION_MANIFEST.md reviewer after Step 7 — manifest not committed until 2 consecutive clean passes
 - [x] **WFIN-09**: silver-feature Step 17.0 invokes UAT.md reviewer after UAT generation — UAT not committed until 2 consecutive clean passes
-- [ ] **WFIN-10**: §3a updated with complete artifact-reviewer mapping table covering all 12+ artifact types
+- [x] **WFIN-10**: §3a updated with complete artifact-reviewer mapping table covering all 12+ artifact types
 
 ## Validated (from previous milestones)
 
@@ -86,10 +86,10 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BFIX-01 | Phase 15 | Pending |
-| BFIX-02 | Phase 15 | Pending |
-| BFIX-03 | Phase 15 | Pending |
-| BFIX-04 | Phase 15 | Pending |
+| BFIX-01 | Phase 15 | Done |
+| BFIX-02 | Phase 15 | Done |
+| BFIX-03 | Phase 15 | Done |
+| BFIX-04 | Phase 15 | Done |
 | ARFR-01 | Phase 15 | Complete |
 | ARFR-02 | Phase 15 | Complete |
 | ARFR-03 | Phase 15 | Complete |
@@ -102,10 +102,10 @@ Deferred to future release.
 | ARVW-06 | Phase 16 | Complete |
 | ARVW-07 | Phase 16 | Complete |
 | ARVW-08 | Phase 16 | Complete |
-| EXRV-01 | Phase 17 | Pending |
-| EXRV-02 | Phase 17 | Pending |
-| EXRV-03 | Phase 17 | Pending |
-| EXRV-04 | Phase 17 | Pending |
+| EXRV-01 | Phase 17 | Done |
+| EXRV-02 | Phase 17 | Done |
+| EXRV-03 | Phase 17 | Done |
+| EXRV-04 | Phase 17 | Done |
 | WFIN-01 | Phase 17 | Complete |
 | WFIN-02 | Phase 17 | Complete |
 | WFIN-03 | Phase 17 | Complete |
@@ -115,7 +115,7 @@ Deferred to future release.
 | WFIN-07 | Phase 17 | Complete |
 | WFIN-08 | Phase 17 | Complete |
 | WFIN-09 | Phase 17 | Complete |
-| WFIN-10 | Phase 17 | Pending |
+| WFIN-10 | Phase 17 | Done |
 
 **Coverage:**
 - v1 requirements: 30 total
