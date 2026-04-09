@@ -23,10 +23,10 @@ while consecutive_passes < 2:
   findings = invoke_reviewer(artifact_path, source_inputs)
 
   record_round(artifact_path, round, findings)  # ARFR-04
-  save_review_state(artifact_path, round, consecutive_passes)  # ARFR-03
 
   if findings.status == "PASS":
     consecutive_passes += 1
+    save_review_state(artifact_path, round, consecutive_passes)  # ARFR-03 — save AFTER status update
     if consecutive_passes < 2:
       display "Clean pass {consecutive_passes}/2. Re-reviewing for confirmation..."
       round += 1
@@ -34,9 +34,15 @@ while consecutive_passes < 2:
     consecutive_passes = 0  # Reset on any ISSUE finding
     display "Round {round}: {len(findings.findings)} issue(s) found. Fixing..."
 
-    # Fix each finding
+    # Fix each finding — the PRODUCING STEP (not the reviewer) applies fixes.
+    # The orchestrator re-invokes the producing step's fix logic with the finding's
+    # suggestion field as guidance. The reviewer is read-only and MUST NOT modify artifacts.
     for finding in findings.findings:
-      apply_fix(artifact_path, finding)
+      orchestrator_apply_fix(artifact_path, finding)
+      # orchestrator_apply_fix: reads finding.suggestion, applies the change to artifact_path,
+      # commits atomically. If finding.suggestion is empty, surfaces to user for manual fix.
+
+    save_review_state(artifact_path, round, consecutive_passes)  # ARFR-03 — save AFTER fixes applied
 
     round += 1
 
@@ -48,6 +54,7 @@ while consecutive_passes < 2:
     break
 
 display "2 consecutive clean passes achieved. Review complete."
+commit_review_trail(artifact_path)  # Commit REVIEW-ROUNDS.md alongside the artifact
 clear_review_state(artifact_path)
 ```
 

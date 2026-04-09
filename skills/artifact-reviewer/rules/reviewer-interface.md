@@ -60,3 +60,27 @@ Finding:
 - Do NOT return PASS when any required section is missing or empty
 - Do NOT conflate INFO and ISSUE — only ISSUE findings block progression
 - Do NOT return unstructured text as the primary output; wrap findings in the schema above
+
+---
+
+## Fix Application Contract
+
+Reviewers are **read-only** — they produce findings but NEVER apply fixes. Fix application is the responsibility of the **orchestrator** (the workflow step that invoked the review loop).
+
+### `orchestrator_apply_fix(artifact_path, finding)`
+
+The orchestrator applies fixes using this contract:
+
+1. Read `finding.suggestion` — the reviewer's specific, actionable fix recommendation
+2. If `finding.suggestion` is non-empty: apply the suggested change to `artifact_path` using Edit/Write tools, then commit atomically
+3. If `finding.suggestion` is empty or unclear: surface the finding to the user for manual resolution — do NOT guess
+4. After ALL findings in a round are fixed, the review loop re-invokes the reviewer for the next round
+
+### `commit_review_trail(artifact_path)`
+
+After the review loop achieves 2 consecutive clean passes:
+
+1. Commit `REVIEW-ROUNDS.md` alongside the reviewed artifact
+2. The commit message follows: `docs: review rounds complete for {artifact_filename}`
+
+**Why the orchestrator owns fixes:** The producing step (silver-spec, gsd-planner, etc.) has the domain context to apply changes correctly. The reviewer only has validation context. Separating read (reviewer) from write (orchestrator) prevents reviewers from making changes they cannot validate.
