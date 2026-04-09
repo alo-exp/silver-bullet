@@ -9,7 +9,7 @@
 <meta name="description" content="Comprehensive documentation for Silver Bullet — the agentic process orchestrator for AI-native software engineering &amp; DevOps. Learn concepts, workflows, and commands.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
@@ -26,8 +26,8 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --text-primary:#0f172a;--text-secondary:#475569;--text-dim:#94a3b8;
   --border:#d1d5db;--border-hover:#9ca3af;
   --radius:12px;--radius-lg:20px;--radius-sm:8px;
-  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
-  --font-mono:'JetBrains Mono',monospace;
+  --font-sans:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'Fira Code',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.08);
   --shadow-glow:0 0 40px rgba(107,114,128,.07);
   --nav-bg:rgba(243,244,246,.9);--nav-mobile-bg:rgba(243,244,246,.98);
@@ -36,23 +36,37 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --skill-phase-border:rgba(209,213,219,.8);
 }
 [data-theme="dark"]{
-  --bg-page:#0c0c0e;
-  --bg-card:#161618;
-  --bg-card-hover:#1e1e21;
-  --bg-code:#1a1a1d;
-  --bg-hero:linear-gradient(160deg,#060608 0%,#0a0a0e 28%,#0f1013 50%,#111316 65%,#0c0d10 82%,#070709 100%);
-  --chrome-gradient:linear-gradient(135deg,#6b7280 0%,#a4b4c2 28%,#dce6ee 50%,#a4b4c2 72%,#6b7280 100%);
-  --accent:#9ca3af;--accent-light:#c8d2da;--accent-glow:rgba(156,163,175,.15);
-  --accent2:#8fa0ad;--accent3:#b0bec8;
-  --green:#34d399;--amber:#fbbf24;--red:#f87171;--cyan:#22d3ee;
-  --text-primary:#e8eaed;--text-secondary:#9ca3af;--text-dim:#6b7280;
-  --border:#26262a;--border-hover:#38383e;
-  --shadow-lg:0 20px 60px rgba(0,0,0,.5);
-  --shadow-glow:0 0 40px rgba(156,163,175,.07);
-  --nav-bg:rgba(12,12,14,.88);--nav-mobile-bg:rgba(12,12,14,.97);
-  --section-alt:rgba(20,20,23,.5);
-  --table-row-hover:rgba(156,163,175,.03);
-  --skill-phase-border:rgba(38,38,42,.6);
+  --bg-page:#080c10;
+  --bg-card:#0f1520;
+  --bg-card-hover:#162030;
+  --bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
+  --accent:#00ff41;
+  --accent-light:#39ff66;
+  --accent-glow:rgba(0,255,65,0.18);
+  --accent2:#00ccff;
+  --accent3:#a855f7;
+  --green:#00ff41;
+  --amber:#ffaa00;
+  --red:#ff4466;
+  --cyan:#00ccff;
+  --text-primary:#c8f0d8;
+  --text-secondary:#5a8a6a;
+  --text-dim:#283830;
+  --border:#112218;
+  --border-hover:#1a3824;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
+  --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --table-row-hover:rgba(0,255,65,.02);
+  --skill-phase-border:rgba(17,34,24,.9);
+  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
+  --hero-glow:rgba(0,255,65,0.06);
+  --card-top:rgba(0,255,65,0.6);
 }
 body,nav,.help-card{transition:background .25s,background-color .25s,border-color .25s,color .25s}
 body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
