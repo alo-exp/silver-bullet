@@ -1,0 +1,38 @@
+---
+spec-version: 1
+linked-spec: .planning/SPEC.md
+figma-url: ""
+last-updated: YYYY-MM-DD
+---
+
+# [Feature Name] — Design
+
+## Screens
+
+### [Screen Name]
+**Purpose:** [what the user sees and does here]
+**Entry point:** [how user reaches this screen]
+**Exit points:** [navigation options from this screen]
+
+## Components
+
+### [Component Name]
+**Type:** [button / modal / form / list / card / etc.]
+**State variants:** [default / loading / error / empty / success]
+**Behavior:** [what happens on interaction]
+
+## Behavior Specifications
+
+| Trigger | Condition | System Response |
+|---------|-----------|-----------------|
+| [user action] | [state] | [what the system does] |
+
+## State Definitions
+
+| State | Description | Visual Indicator |
+|-------|-------------|-----------------|
+| [state name] | [what it means] | [how it looks] |
+
+## Design Tokens (from Figma)
+
+<!-- Populated by silver-ingest (Phase 13) from Figma MCP. Empty until then. -->
