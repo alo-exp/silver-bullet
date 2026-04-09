@@ -65,6 +65,13 @@ while consecutive_passes < required_passes:
 display "2 consecutive clean passes achieved. Review complete."
 commit_review_trail(artifact_path)  # Commit REVIEW-ROUNDS.md alongside the artifact
 clear_review_state(artifact_path)
+
+# Verification gate — no completion claim without fresh evidence
+invoke /superpowers:verification-before-completion
+# The producing step is NOT done until verification confirms the artifact
+# meets its acceptance criteria with fresh, run-the-command evidence.
+# This prevents "review passed → step complete" shortcuts where the
+# orchestrator trusts the review result without independent verification.
 ```
 
 ### Key Rules
@@ -74,6 +81,7 @@ clear_review_state(artifact_path)
 - INFO findings do NOT reset the counter (INFO is advisory)
 - The loop is self-limiting: it terminates after 2 consecutive PASS results
 - If the loop reaches 5 rounds without achieving 2 consecutive passes, surface all accumulated findings to the user
+- After the loop completes, `/superpowers:verification-before-completion` MUST be invoked before the producing step is marked done — no completion claim without fresh verification evidence
 
 ---
 
