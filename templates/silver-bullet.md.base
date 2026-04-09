@@ -63,6 +63,31 @@ At the very start of any new session, perform these steps automatically:
    If A: invoke `/multai:update` via the Skill tool, then continue.
    If B or check fails (file missing/unknown): output "Skipping MultAI update." and continue.
 
+   **5.5 Multi-Repo Spec Validation**
+
+   If `.planning/SPEC.main.md` exists (indicating a satellite/mobile repo linked to a main repo spec):
+
+   1. Read `spec-version:` from `.planning/SPEC.main.md` frontmatter
+   2. Read the `<!-- READ-ONLY: fetched from {source-url} -->` header to get the source repo URL
+   3. Fetch the current main repo SPEC.md version:
+      ```bash
+      /opt/homebrew/bin/gh api repos/{owner}/{repo}/contents/.planning/SPEC.md --jq '.content' | base64 -d | grep -m1 '^spec-version:' | awk '{print $2}'
+      ```
+      If the gh CLI call fails (no network, auth expired): display "Could not verify spec version -- proceed with caution." and continue. The check is best-effort.
+   4. Compare versions:
+      - **Match:** Display "Spec version v{N} -- in sync with main repo." and continue.
+      - **Mismatch:** BLOCK the session. Display:
+        ```
+        SPEC VERSION MISMATCH
+        Local (SPEC.main.md):  v{local}
+        Remote ({repo}):       v{remote}
+
+        Run /silver:ingest --source-url {repo-url} to refresh before proceeding.
+        ```
+        Do NOT proceed with any implementation work until the user refreshes.
+
+   If `.planning/SPEC.main.md` does not exist, skip this check silently.
+
 > **compactPrompt**: Your `.silver-bullet.json` includes a `compactPrompt` key that instructs the compaction LLM to preserve these rules verbatim. If you customized it or removed it, re-add: `"compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions."`
 
 > **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip /compact. Evidence: no Read tool calls for docs/ files in session start.
@@ -279,6 +304,28 @@ Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-ve
 - Augment: existing SPEC.md — refine, extend, increment spec-version
 
 **Assumption tracking:** Every unresolvable ambiguity produces an `[ASSUMPTION: ...]` block in SPEC.md. Assumption density is a quality signal — zero assumptions on a non-trivial feature is suspicious.
+
+---
+
+### 2j. MCP Connector Prerequisites (for silver-ingest)
+
+silver-ingest delegates all external data access to MCP connectors. Configure these in your Claude environment before using ingestion features:
+
+| Connector | Required For | Configuration |
+|-----------|-------------|---------------|
+| Atlassian MCP | JIRA ticket + Confluence ingestion | API token auth via `/v1/mcp` streamable HTTP endpoint. SSE transport deprecated after 2026-06-30. |
+| Figma MCP (official remote) | Design context extraction | Connect via Figma account. Free during beta. |
+| Google Drive MCP | Google Docs/Slides extraction | Community MCP or Google Workspace CLI with OAuth. |
+
+If a connector is not configured, silver-ingest continues with `[ARTIFACT MISSING]` blocks -- it never hard-blocks on a missing connector.
+
+---
+
+### 2k. Cross-Repo Spec Workflow
+
+- **Main repo specs first (REPO-03):** Non-mobile-exclusive requirements are implementation-spec'd in the main repo first. The main repo spec is then fetched as input for satellite repo sessions via `silver-ingest --source-url`.
+- **Mobile-exclusive (REPO-04):** Requirements unique to the mobile/satellite repo follow the standard SB process entirely within the satellite repo -- no main repo dependency.
+- **Do not edit SPEC.main.md directly.** It is a read-only cache of the main repo spec. To update, re-run `/silver:ingest --source-url {repo-url}`.
 
 ---
 
