@@ -40,6 +40,7 @@ Wait for response, then proceed.
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
+| "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | AI-guided spec elicitation |
 | "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:research` | Tech decisions, architecture choices |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only — see disambiguation below |
 | "merge this", "push this PR", "ship this feature" [active phase context] | `gsd-ship` (in-workflow) | Phase-level only |
@@ -72,6 +73,7 @@ Wait for response, then proceed.
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
 | `silver:devops` + `silver:feature` | Ask user (A/B) | Both equally valid |
 | `silver:research` + any | `silver:research` first | Research informs implementation |
+| `silver:spec` + `silver:feature` | `silver:spec` first | Spec before implementation |
 | `silver:fast` + domain workflow | Check scope: if truly ≤3 files → `silver:fast`; if domain signals strong → domain workflow; if ambiguous → ask user "A. Treat as trivial  B. Route to [domain]" |
 
 **MultAI auto-offer:** Proactively offer MultAI research before brainstorming when:
