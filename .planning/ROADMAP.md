@@ -292,4 +292,9 @@ Plans:
   3. Running silver-spec completes Steps 7, 8, and 9 only after their respective reviewers (SPEC.md, DESIGN.md, REQUIREMENTS.md) each return 2 consecutive clean passes
   4. Running new-milestone (roadmap and requirements steps) and discuss-phase (context step) each block on 2 consecutive clean passes from their respective reviewers before the artifact is committed
   5. silver-bullet.md §3a contains a complete artifact-reviewer mapping table covering all 12+ artifact types — any step that produces a listed artifact is required to invoke the mapped reviewer
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md -- Formalize existing reviewers (EXRV-01..04) + complete section 3a mapping table (WFIN-10)
+- [ ] 17-02-PLAN.md -- Wire review rounds into silver-spec, silver-ingest, silver-feature (WFIN-01/02/03/08/09)
+- [ ] 17-03-PLAN.md -- Wire review rounds into new-milestone, discuss-phase, plan-phase via silver-bullet.md.base (WFIN-04/05/06/07)
