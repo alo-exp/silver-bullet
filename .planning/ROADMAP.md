@@ -331,7 +331,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — Metrics emission in review loop + analytics file rotation
+- [x] 19-01-PLAN.md — Metrics emission in review loop + analytics file rotation
 - [ ] 19-02-PLAN.md — silver-review-stats skill for summary reports
 
 ### Phase 20: Cross-Artifact Consistency

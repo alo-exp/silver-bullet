@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.16.0
-milestone_name: Advanced Review Intelligence
+milestone: v0.13.0
+milestone_name: site update
 current_plan: 1
-status: Executing Phase 18
-stopped_at: Completed Phase 18 — configurable review depth
-last_updated: "2026-04-10T00:00:00.000Z"
-last_activity: 2026-04-10
+status: Executing Phase 19
+stopped_at: Completed 19-01 review analytics metrics emission
+last_updated: "2026-04-09T17:05:54.736Z"
+last_activity: 2026-04-09
 progress:
   total_phases: 20
-  completed_phases: 1
+  completed_phases: 0
   total_plans: 2
-  completed_plans: 2
-  percent: 33
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -22,7 +22,7 @@ progress:
 **Active phase:** Phase 19 (not started — ready to plan)
 **Current plan:** 1
 
-Last activity: 2026-04-10
+Last activity: 2026-04-09
 
 ## Roadmap Evolution
 
@@ -82,6 +82,7 @@ Last activity: 2026-04-10
 - [v0.16.0]: ARVW-10 (review analytics) promoted from v2 to v1 as Phase 19 — provides data-driven review health visibility
 - [v0.16.0]: ARVW-09 (cross-artifact consistency) promoted from v2 to v1 as Phase 20 — prevents shipping misaligned artifacts
 - [Phase 18]: Review depth config uses per-artifact-type mapping in .planning/config.json — standard is default for backward compatibility
+- [Phase 19-01]: Analytics emit placed after record_round() and before PASS/ISSUES_FOUND branch so every round is captured
 
 ### Quick Tasks Completed
 
@@ -119,8 +120,9 @@ Last activity: 2026-04-10
 | Phase 16 P02 | 186 | 2 tasks | 5 files |
 | Phase 17 P02 | 70 | 2 tasks | 3 files |
 | Phase 17 P03 | 300 | 2 tasks | 2 files |
+| Phase 19 P01 | 180 | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-04-10T00:00:00.000Z
-Stopped at: Completed Phase 18 — configurable review depth
+Last session: 2026-04-09T17:05:54.732Z
+Stopped at: Completed 19-01 review analytics metrics emission
