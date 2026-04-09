@@ -17,6 +17,15 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Skill Evolution** - Evolve SB forensics to route GSD-workflow issues to /gsd:forensics while retaining session-level capabilities; verify zero redundancy across all SB skills
 - [x] **Phase 4: Template Parity & Hook Verification** - Sync templates with updated workflow files and silver-bullet.md; verify all enforcement hooks fire correctly with restructured files
 - [x] **Phase 5: Documentation & Public-Facing** - Update README and site pages to reflect the new orchestration-first approach
+- [x] **Phase 6: Implement Enforcement Techniques** - Add 4 missing enforcement mechanisms and create comprehensive enforcement reference
+- [x] **Phase 7: Close All Enforcement Audit Gaps** - Close all 16 actionable enforcement gaps from adversarial audit
+- [x] **Phase 8: Comprehensive SB Enforcement Test Harness** - Automated integration test suite for multi-hook enforcement scenarios
+- [x] **Phase 9: Silver Bullet Core Improvements** - silver:init initializes all dependencies, GSD state delegation, guided UX, lettered options
+- [x] **Phase 10: SB Orchestration Skill Files** - Create 7 named orchestration skills: silver-feature/bugfix/ui/devops/research/release/fast
+- [x] **Phase 11: Website Content Refresh** - v0.13.0 site update
+- [ ] **Phase 12: Spec Foundation** - Canonical SPEC.md format, AI-guided elicitation skill, and spec floor enforcement — the linchpin that unblocks all downstream spec capabilities
+- [ ] **Phase 13: Ingestion & Multi-Repo** - External artifact ingestion via MCP connectors (JIRA, Figma, Google Docs) and cross-repo spec referencing with version pinning
+- [ ] **Phase 14: Validation, Traceability & UAT Gate** - Pre-build validation gate, PR-to-spec traceability automation, and UAT as a formal pipeline gate
 
 ## Phase Details
 
@@ -105,6 +114,12 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 6. Enforcement Techniques | 2/2 | ✓ Complete | 2026-04-05 |
 | 7. Close Enforcement Audit Gaps | 4/4 | ✓ Complete | 2026-04-05 |
 | 8. Enforcement Test Harness | 2/2 | ✓ Complete | 2026-04-08 |
+| 9. Silver Bullet Core Improvements | 2/2 | ✓ Complete | 2026-04-08 |
+| 10. SB Orchestration Skill Files | 7/7 | ✓ Complete | 2026-04-08 |
+| 11. Website Content Refresh | 1/1 | ✓ Complete | 2026-04-09 |
+| 12. Spec Foundation | 0/? | Not started | - |
+| 13. Ingestion & Multi-Repo | 0/? | Not started | - |
+| 14. Validation, Traceability & UAT Gate | 0/? | Not started | - |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
 
@@ -161,3 +176,52 @@ Plans:
 
 Plans:
 - [x] TBD (run /gsd-plan-phase 10 to break down) (completed 2026-04-08)
+
+### Phase 11: Silver Bullet website content refresh — v0.13.0 site update
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 11 to break down)
+
+### Phase 12: Spec Foundation
+
+**Goal:** Users can create, elicit, and store standardized specs — SB produces canonical SPEC.md and DESIGN.md artifacts, guides PM/BA through Socratic elicitation, and hard-blocks any implementation attempt that lacks a minimum viable spec
+**Depends on:** Phase 11
+**Requirements**: SPEC-01, SPEC-02, SPEC-03, SPEC-04, SPEC-05, ELIC-01, ELIC-02, ELIC-03, ELIC-04, ELIC-05, ELIC-06, FLOR-01, FLOR-02, FLOR-03
+**Success Criteria** (what must be TRUE):
+  1. User runs `silver-spec` and SB guides them through Socratic dialogue — asking about user stories, edge cases, UX flows, and data model implications — producing a completed SPEC.md and REQUIREMENTS.md without the user ever filling a template manually
+  2. User can provide a Google Doc, PPT, or Figma URL during elicitation and SB incorporates its content into the evolving spec without restarting the session
+  3. Every unresolvable gap during elicitation produces a visible `[ASSUMPTION: ...]` block in SPEC.md — the block count reflects spec maturity, not optional decoration
+  4. Running `gsd-plan-phase` without a `.planning/SPEC.md` that contains Overview and Acceptance Criteria sections results in a hard block with a clear error message; running `gsd-fast` without a 3-field minimal spec produces a warning but does not block
+  5. SPEC.md and DESIGN.md are generated from templates in `templates/specs/` — a new spec is never created from scratch
+**Plans**: TBD
+
+### Phase 13: Ingestion & Multi-Repo
+
+**Goal:** Users can feed external artifacts (JIRA tickets, Figma designs, Google Docs) directly into SB to produce a draft spec, and satellite repos can reference and pin to the main repo's spec as a read-only source of truth
+**Depends on:** Phase 12
+**Requirements**: INGT-01, INGT-02, INGT-03, INGT-04, INGT-05, INGT-06, INGT-07, REPO-01, REPO-02, REPO-03, REPO-04
+**Success Criteria** (what must be TRUE):
+  1. User runs `silver-ingest <jira-ticket-id>` and SB pulls ticket summary, description, acceptance criteria, and resolves linked Google Drive and Figma URLs — producing a draft SPEC.md and DESIGN.md without manual copy-paste
+  2. Every ingestion run produces an `INGESTION_MANIFEST.md` that lists each artifact with status (succeeded / failed / missing) — no silent partial failures; failed artifacts appear as `[ARTIFACT MISSING: reason]` blocks in SPEC.md
+  3. If a connector fails mid-ingestion, re-running `silver-ingest` resumes from the last successful artifact in the manifest rather than starting over
+  4. User runs `silver-ingest --source-url <repo-url>` in a mobile repo and SB fetches the main repo's SPEC.md, caches it as `.planning/SPEC.main.md` (read-only), and displays the pinned spec-version
+  5. When a mobile repo SB session starts and the pinned spec-version does not match the main repo's current version, the session is blocked with a diff of what changed before the user can proceed
+**Plans**: TBD
+
+### Phase 14: Validation, Traceability & UAT Gate
+
+**Goal:** Every implementation session is anchored to a verified spec — pre-build validation surfaces gaps before a line of code is written, PRs are machine-linked to the spec that drove them, and milestone completion is blocked until UAT is formally signed off
+**Depends on:** Phase 13
+**Requirements**: VALD-01, VALD-02, VALD-03, VALD-04, VALD-05, TRAC-01, TRAC-02, TRAC-03, TRAC-04, UATG-01, UATG-02, UATG-03, UATG-04
+**Success Criteria** (what must be TRUE):
+  1. Running `silver-validate` before implementation produces machine-readable findings with severity (BLOCK / WARN / INFO) — BLOCK findings prevent `gsd-plan-phase` from proceeding; WARN findings appear in PR descriptions as deferred items
+  2. All `[ASSUMPTION: ...]` blocks from SPEC.md are re-surfaced at implementation start so the developer cannot proceed without consciously acknowledging them
+  3. After `gsd-ship`, the PR description contains auto-generated spec reference, requirement IDs covered, and a link to SPEC.md — with no developer annotation required
+  4. SPEC.md's Implementations section is updated post-merge with the PR URL and commit range — the spec remains the living record of what was built against it
+  5. Running `gsd-complete-milestone` when UAT has not been run, or when any UAT criterion is marked FAIL, results in a hard block — the UAT artifact (UAT.md) committed to `.planning/` with pass/fail per criterion is the only way to unblock
+**Plans**: TBD

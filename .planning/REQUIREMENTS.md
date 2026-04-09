@@ -120,50 +120,50 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPEC-01 | — | Pending |
-| SPEC-02 | — | Pending |
-| SPEC-03 | — | Pending |
-| SPEC-04 | — | Pending |
-| SPEC-05 | — | Pending |
-| ELIC-01 | — | Pending |
-| ELIC-02 | — | Pending |
-| ELIC-03 | — | Pending |
-| ELIC-04 | — | Pending |
-| ELIC-05 | — | Pending |
-| ELIC-06 | — | Pending |
-| INGT-01 | — | Pending |
-| INGT-02 | — | Pending |
-| INGT-03 | — | Pending |
-| INGT-04 | — | Pending |
-| INGT-05 | — | Pending |
-| INGT-06 | — | Pending |
-| INGT-07 | — | Pending |
-| REPO-01 | — | Pending |
-| REPO-02 | — | Pending |
-| REPO-03 | — | Pending |
-| REPO-04 | — | Pending |
-| VALD-01 | — | Pending |
-| VALD-02 | — | Pending |
-| VALD-03 | — | Pending |
-| VALD-04 | — | Pending |
-| VALD-05 | — | Pending |
-| FLOR-01 | — | Pending |
-| FLOR-02 | — | Pending |
-| FLOR-03 | — | Pending |
-| TRAC-01 | — | Pending |
-| TRAC-02 | — | Pending |
-| TRAC-03 | — | Pending |
-| TRAC-04 | — | Pending |
-| UATG-01 | — | Pending |
-| UATG-02 | — | Pending |
-| UATG-03 | — | Pending |
-| UATG-04 | — | Pending |
+| SPEC-01 | Phase 12 | Pending |
+| SPEC-02 | Phase 12 | Pending |
+| SPEC-03 | Phase 12 | Pending |
+| SPEC-04 | Phase 12 | Pending |
+| SPEC-05 | Phase 12 | Pending |
+| ELIC-01 | Phase 12 | Pending |
+| ELIC-02 | Phase 12 | Pending |
+| ELIC-03 | Phase 12 | Pending |
+| ELIC-04 | Phase 12 | Pending |
+| ELIC-05 | Phase 12 | Pending |
+| ELIC-06 | Phase 12 | Pending |
+| FLOR-01 | Phase 12 | Pending |
+| FLOR-02 | Phase 12 | Pending |
+| FLOR-03 | Phase 12 | Pending |
+| INGT-01 | Phase 13 | Pending |
+| INGT-02 | Phase 13 | Pending |
+| INGT-03 | Phase 13 | Pending |
+| INGT-04 | Phase 13 | Pending |
+| INGT-05 | Phase 13 | Pending |
+| INGT-06 | Phase 13 | Pending |
+| INGT-07 | Phase 13 | Pending |
+| REPO-01 | Phase 13 | Pending |
+| REPO-02 | Phase 13 | Pending |
+| REPO-03 | Phase 13 | Pending |
+| REPO-04 | Phase 13 | Pending |
+| VALD-01 | Phase 14 | Pending |
+| VALD-02 | Phase 14 | Pending |
+| VALD-03 | Phase 14 | Pending |
+| VALD-04 | Phase 14 | Pending |
+| VALD-05 | Phase 14 | Pending |
+| TRAC-01 | Phase 14 | Pending |
+| TRAC-02 | Phase 14 | Pending |
+| TRAC-03 | Phase 14 | Pending |
+| TRAC-04 | Phase 14 | Pending |
+| UATG-01 | Phase 14 | Pending |
+| UATG-02 | Phase 14 | Pending |
+| UATG-03 | Phase 14 | Pending |
+| UATG-04 | Phase 14 | Pending |
 
 **Coverage:**
 - v1 requirements: 38 total
-- Mapped to phases: 0
-- Unmapped: 38 ⚠️
+- Mapped to phases: 38
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-09*
-*Last updated: 2026-04-09 after initial definition*
+*Last updated: 2026-04-09 after roadmap creation*

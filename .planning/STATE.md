@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.14.0
 milestone_name: AI-Driven Spec & Multi-Repo Orchestration
 current_plan: 0
-status: Defining requirements
+status: Roadmap defined — ready to plan Phase 12
 stopped_at: null
 last_updated: "2026-04-09T00:00:00.000Z"
 last_activity: 2026-04-09
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,7 +19,7 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.13.2
-**Active phase:** Not started (defining requirements)
+**Active phase:** Phase 12 — Spec Foundation (not started)
 **Current plan:** —
 
 Last activity: 2026-04-09
@@ -32,6 +32,9 @@ Last activity: 2026-04-09
 - Phase 9 added: Silver Bullet core improvements: init with GSD+Superpowers, GSD state delegation, guided UX, lettered option bullets
 - Phase 10 added: Create 7 named SB orchestration skill files (silver-feature/bugfix/ui/devops/research/release/fast)
 - Phase 11 added: Silver Bullet website content refresh — v0.13.0 site update
+- Phase 12 added: Spec Foundation — canonical SPEC.md format, silver-spec elicitation skill, spec floor hook (v0.14.0)
+- Phase 13 added: Ingestion & Multi-Repo — silver-ingest skill, MCP connectors, cross-repo spec fetch (v0.14.0)
+- Phase 14 added: Validation, Traceability & UAT Gate — silver-validate skill, pr-traceability hook, uat-gate hook (v0.14.0)
 
 ## Decisions
 
@@ -52,6 +55,11 @@ Last activity: 2026-04-09
 - [Phase 02-silver-bullet-md-overhaul]: S2b uses two tables (core workflow + lifecycle) for 15 GSD commands, S2c uses trigger table for 7 utility commands
 - [Phase 07-close-enforcement-audit-gaps]: review-loop-pass markers required for Tier 2 delivery as partially mechanical F-01 proxy
 - [Phase 10]: silver:fast skips §10 prefs — preference loading overhead defeats the purpose of a trivial bypass
+- [v0.14.0]: Three new skills (silver-spec, silver-ingest, silver-validate), three new hooks (spec-floor-check.sh, pr-traceability.sh, uat-gate.sh), zero GSD modifications
+- [v0.14.0]: All external data access delegated to MCP connectors — no custom API code in SB
+- [v0.14.0]: Cross-repo spec fetch via gh CLI or GitHub raw URL → .planning/SPEC.main.md (read-only cache, no git submodules)
+- [v0.14.0]: SPEC.md format is the linchpin — Phase 12 must complete before Phase 13 or Phase 14 can be built
+- [v0.14.0]: Documentation pass (silver-bullet.md.base spec lifecycle section, MCP prereqs) embedded in Phase 14 — no separate docs phase needed as requirements are captured in VALD/TRAC/UATG categories
 
 ### Quick Tasks Completed
 
@@ -85,5 +93,5 @@ Last activity: 2026-04-09
 
 ## Session Continuity
 
-Last session: 2026-04-08T11:36:32.805Z
-Stopped at: Completed 10-07-PLAN.md
+Last session: 2026-04-09
+Stopped at: Roadmap created for v0.14.0 — ready to plan Phase 12
