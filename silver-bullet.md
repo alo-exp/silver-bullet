@@ -330,6 +330,36 @@ Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-ve
 
 ---
 
+## Spec Lifecycle
+
+Silver Bullet anchors every implementation to a verified spec. The spec lifecycle flows:
+
+**Create:** `/silver:spec` (Socratic elicitation) or `/silver:ingest` (external artifact ingestion from JIRA/Figma/Google Docs)
+
+**Artifacts:**
+- `.planning/SPEC.md` — canonical spec with YAML frontmatter (`spec-version:`, `jira-id:`, `status:`)
+- `.planning/DESIGN.md` — structured design definitions (when Figma input provided)
+- `.planning/REQUIREMENTS.md` — derived requirement IDs (REQ-XX, NFR-XX)
+- `.planning/SPEC.main.md` — read-only cache of remote spec (cross-repo mode only)
+
+**Validate:** `/silver:validate` performs gap analysis between SPEC.md and PLAN.md before implementation. Findings use severity levels:
+- **BLOCK** — missing acceptance criteria coverage or unresolved assumptions. Stops workflow.
+- **WARN** — partial coverage, deferred items. Surfaced in PR description.
+- **INFO** — awareness items (accepted assumptions).
+
+**Trace:** After `gsd-ship` creates a PR, `pr-traceability.sh` auto-appends spec reference, requirement IDs, and deferred items to the PR description. SPEC.md `## Implementations` section is updated with PR URL post-creation.
+
+**UAT Gate:** Before `gsd-complete-milestone`, UAT.md must exist with all criteria PASS. `uat-gate.sh` blocks if UAT is missing, any criterion is FAIL, or UAT was run against a stale spec version.
+
+**MCP Prerequisites (for /silver:ingest):**
+- Atlassian MCP — JIRA ticket + Confluence page ingestion (use `/v1/mcp` streamable HTTP endpoint)
+- Figma MCP (beta) — design context and token extraction
+- Google Drive MCP — document text extraction (community connector or WebFetch fallback)
+
+If a connector is unavailable, ingestion continues with `[ARTIFACT MISSING]` blocks — no hard block on missing connectors.
+
+---
+
 ## 3. NON-NEGOTIABLE RULES
 
 These rules apply to EVERY non-trivial change. There are NO exceptions.
