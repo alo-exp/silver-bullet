@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'exit 0' ERR
+trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
 # UAT GATE — blocks gsd-complete-milestone when UAT.md is missing, has FAIL results,

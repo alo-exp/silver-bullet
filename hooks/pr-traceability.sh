@@ -43,7 +43,7 @@ if [[ ! -f "$spec_session_file" ]]; then
 fi
 
 # Extract spec-version and jira-id with validation (CR-03 fix)
-spec_version=$(grep '^spec-version=' "$spec_session_file" | cut -d'=' -f2 | grep -E '^[0-9]+$' || echo "unknown")
+spec_version=$(grep '^spec-version=' "$spec_session_file" | cut -d'=' -f2 | grep -E '^[0-9]+(\.[0-9]+)*$' || echo "unknown")
 jira_id=$(grep '^jira-id=' "$spec_session_file" | cut -d'=' -f2 | grep -E '^[A-Z]+-[0-9]+$' || echo "")
 
 # Read WARN findings from VALIDATION.md if it exists

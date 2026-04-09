@@ -42,7 +42,7 @@ Read the artifact at `artifact_path` completely before evaluating any criterion.
 
 The manifest MUST contain a row for every artifact referenced in the ingestion run. An ingestion run may reference artifacts via a run configuration, input list, or the associated SPEC.md (when `source_inputs` includes a spec-path). No artifact that was part of the ingestion run may be absent from the manifest.
 
-**If any artifact is missing from the manifest:** Emit ISSUE finding `INGM-F01` with location = the ingestion run or spec section referencing the missing artifact, suggestion = "Add a manifest row for '[artifact identifier]' with the appropriate status (succeeded/failed/missing) and a reason if applicable."
+**If any artifact is missing from the manifest:** Emit ISSUE finding `INGM-F01` with location = the ingestion run or spec section referencing the missing artifact, suggestion = "Add a manifest row for '[artifact identifier]' with the appropriate status (success/failed/skipped) and a reason if applicable."
 
 ### QC-2: Status Accuracy — No Blank Statuses
 
@@ -62,15 +62,15 @@ For every manifest row with status `failed` or `skipped`, there MUST be a corres
 
 **Only evaluate this criterion when `source_inputs` includes a spec-path.**
 
-For every manifest row with status `succeeded`, the ingested content in the linked SPEC.md MUST be non-empty and non-placeholder. Empty content means the section exists but contains only whitespace or template placeholder text (e.g., `[content here]`, `TODO`, `placeholder`, or the literal string "EMPTY").
+For every manifest row with status `success`, the ingested content in the linked SPEC.md MUST be non-empty and non-placeholder. Empty content means the section exists but contains only whitespace or template placeholder text (e.g., `[content here]`, `TODO`, `placeholder`, or the literal string "EMPTY").
 
-**If a succeeded artifact has empty or placeholder content in the SPEC.md:** Emit ISSUE finding `INGM-F30` with location = the manifest row AND the empty SPEC.md section, description = "Artifact marked 'succeeded' but ingested content is empty or placeholder in SPEC.md", suggestion = "Correct the manifest status to `failed` or re-run ingestion for this artifact to populate real content."
+**If a success artifact has empty or placeholder content in the SPEC.md:** Emit ISSUE finding `INGM-F30` with location = the manifest row AND the empty SPEC.md section, description = "Artifact marked 'success' but ingested content is empty or placeholder in SPEC.md", suggestion = "Correct the manifest status to `failed` or re-run ingestion for this artifact to populate real content."
 
-### QC-5: Reason Field for Failed/Missing Artifacts
+### QC-5: Reason Field for Failed/Skipped Artifacts
 
-Every manifest row with status `failed` or `missing` MUST include a non-empty `reason` field (or equivalent column) explaining why the artifact failed or could not be located. A blank reason provides no actionable information.
+Every manifest row with status `failed` or `skipped` MUST include a non-empty `reason` field (or equivalent column) explaining why the artifact failed or was skipped. A blank reason provides no actionable information.
 
-**If any failed/missing row has an empty reason:** Emit ISSUE finding `INGM-F40` with location = the manifest row, suggestion = "Add a non-empty reason explaining the failure, e.g., 'Confluence page not found at URL', 'API rate limit exceeded', 'JIRA ticket ID does not exist'."
+**If any failed/skipped row has an empty reason:** Emit ISSUE finding `INGM-F40` with location = the manifest row, suggestion = "Add a non-empty reason explaining the failure, e.g., 'Confluence page not found at URL', 'API rate limit exceeded', 'JIRA ticket ID does not exist'."
 
 ### QC-6: Resumability — Sufficient State for Re-Run
 
