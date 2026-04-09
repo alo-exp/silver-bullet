@@ -117,8 +117,20 @@ Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push 
 
 **Enforcement:** Do not proceed to Step 8 until gsd-ship confirms CI green and deploy succeeded.
 
+## Step 7.5: Cross-Artifact Consistency Review
+
+**Only if `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` exist:**
+
+Invoke `/artifact-reviewer --reviewer review-cross-artifact` with:
+- `.planning/SPEC.md`
+- `.planning/REQUIREMENTS.md`
+- `.planning/ROADMAP.md`
+- `.planning/DESIGN.md` (only if it exists)
+
+Do NOT proceed to Step 8 (gsd-complete-milestone) until cross-artifact review reports clean pass. If unresolvable after 5 rounds, STOP and present to the user.
+
 ## Step 8: Complete Milestone
 
-**Only after Step 7 (gsd-ship) confirms success:**
+**Only after Step 7 (gsd-ship) confirms success and Step 7.5 cross-artifact review passes:**
 
 Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, prepare for next version. This is the final step — milestone is officially closed after this.

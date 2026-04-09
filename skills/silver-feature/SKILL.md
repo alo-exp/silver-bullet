@@ -241,6 +241,18 @@ Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` via the Skill
 
 Do NOT proceed to gsd-audit-uat until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
+### Step 17.0b: Cross-Artifact Consistency Review
+
+Invoke `/artifact-reviewer --reviewer review-cross-artifact` with artifacts:
+- `.planning/SPEC.md`
+- `.planning/REQUIREMENTS.md`
+- `.planning/ROADMAP.md`
+- `.planning/DESIGN.md` (only if it exists)
+
+Do NOT proceed to gsd-audit-uat until cross-artifact review reports clean pass. If ISSUES_FOUND, the orchestrator applies fixes and re-reviews per the review loop. If unresolvable after 5 rounds, STOP and present to the user.
+
+**Why here:** Cross-artifact alignment must be confirmed before milestone audit begins — auditing against misaligned artifacts wastes effort.
+
 1. Invoke `gsd-audit-uat` via the Skill tool
 2. Invoke `gsd-audit-milestone` via the Skill tool
 3. If gaps found (max 2 gap-closure iterations): invoke `gsd-plan-milestone-gaps` → invoke `silver:feature` for gap phases → return to Step 0 of the gap phases. After 2 iterations if gaps remain, surface to user with options.
