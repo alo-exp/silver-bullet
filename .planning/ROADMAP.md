@@ -48,7 +48,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Cross-artifact reviewer skill (SPEC-to-REQ, REQ-to-ROADMAP, SPEC-to-DESIGN)
+- [x] 20-01-PLAN.md — Cross-artifact reviewer skill (SPEC-to-REQ, REQ-to-ROADMAP, SPEC-to-DESIGN)
 - [ ] 20-02-PLAN.md — Wire cross-artifact review into milestone completion workflows
 
 Plans:
