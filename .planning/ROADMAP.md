@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 15. Bug Fixes & Reviewer Framework | 2/2 | Complete   | 2026-04-09 |
 | 16. New Artifact Reviewers | 2/2 | Complete   | 2026-04-09 |
 | 17. Existing Reviewer Formalization & Workflow Wiring | 3/3 | Complete   | 2026-04-09 |
-| 18. Configurable Review Depth | 0/0 | Not started | - |
+| 18. Configurable Review Depth | 0/2 | Planned | - |
 | 19. Review Analytics | 0/0 | Not started | - |
 | 20. Cross-Artifact Consistency | 0/0 | Not started | - |
 
@@ -315,7 +315,11 @@ Plans:
   2. A project with no review_depth entry in config.json gets standard depth (full QC + 1 clean pass) for every artifact type by default
   3. Running a reviewer on an artifact at quick depth produces findings only for structural failures (missing sections, invalid format) -- content quality checks do not fire
   4. Running a reviewer on an artifact at deep depth requires a second consecutive clean pass even if the first pass was clean -- a single clean result does not terminate the loop
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 18-01-PLAN.md -- Config schema + depth-aware review loop algorithm
+- [ ] 18-02-PLAN.md -- Reviewer interface check_mode contract + SKILL.md documentation
 
 ### Phase 19: Review Analytics
 
