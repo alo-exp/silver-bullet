@@ -470,6 +470,28 @@ The completion audit hook requires `review-loop-pass-2` in the state file before
 
 **EXRV-04 (security-auditor):** After /silver:security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
 
+### 3a-i. Post-Command Review Gates
+
+GSD commands that produce reviewable artifacts MUST be followed by a review round. Since GSD plugin files cannot be modified (section 8 boundary), these gates are enforced here as post-command instructions.
+
+**After /gsd:new-milestone completes:**
+
+1. **ROADMAP.md review (WFIN-04):** Invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` via the Skill tool. Do NOT commit the roadmap until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to ROADMAP.md and re-review automatically.
+
+2. **REQUIREMENTS.md review (WFIN-05):** Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool. Do NOT commit requirements until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to REQUIREMENTS.md and re-review automatically.
+
+Run these reviews in sequence (ROADMAP first, then REQUIREMENTS) since requirements reference the roadmap.
+
+**After /gsd:discuss-phase completes:**
+
+3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` via the Skill tool. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
+
+**After /gsd:plan-phase researcher step completes (before planning begins):**
+
+4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` via the Skill tool. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
+
+> **Note:** The `{phase}` placeholder refers to the current phase directory (e.g., `12-spec-foundation`). The artifact-reviewer resolves the absolute path internally.
+
 ## 3b. GSD Command Tracking
 
 GSD command markers are recorded **automatically** by `record-skill.sh` whenever a
