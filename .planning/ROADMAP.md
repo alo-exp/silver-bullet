@@ -29,6 +29,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 15: Bug Fixes & Reviewer Framework** - Fix critical v0.14.0 bugs then establish the artifact reviewer framework (interface, loop, state tracking, audit trail) (completed 2026-04-09)
 - [x] **Phase 16: New Artifact Reviewers** - Create all 8 new artifact reviewer skills for SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, and UAT (completed 2026-04-09)
 - [x] **Phase 17: Existing Reviewer Formalization & Workflow Wiring** - Formalize plan-checker, code-reviewer, verifier, and security-auditor into the 2-pass framework; wire all reviewers into their producing workflows (completed 2026-04-09)
+- [ ] **Phase 18: Configurable Review Depth** - Add review_depth config to .planning/config.json; implement deep/standard/quick depth modes in review-loop.md so pass counts and check sets adapt to project configuration
+- [ ] **Phase 19: Review Analytics** - Instrument the review loop to emit per-round metrics; create review-analytics skill that generates a Markdown summary report of pass/fail rates, finding categories, and time-to-clean trends
+- [ ] **Phase 20: Cross-Artifact Consistency** - Create cross-artifact reviewer skill that checks SPEC<>ROADMAP<>REQUIREMENTS mutual consistency; wire into milestone transitions to block approval on FAIL findings
 
 ## Phase Details
 
@@ -126,6 +129,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 15. Bug Fixes & Reviewer Framework | 2/2 | Complete   | 2026-04-09 |
 | 16. New Artifact Reviewers | 2/2 | Complete   | 2026-04-09 |
 | 17. Existing Reviewer Formalization & Workflow Wiring | 3/3 | Complete   | 2026-04-09 |
+| 18. Configurable Review Depth | 0/0 | Not started | - |
+| 19. Review Analytics | 0/0 | Not started | - |
+| 20. Cross-Artifact Consistency | 0/0 | Not started | - |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
 
@@ -298,3 +304,39 @@ Plans:
 - [x] 17-01-PLAN.md -- Formalize existing reviewers (EXRV-01..04) + complete section 3a mapping table (WFIN-10)
 - [x] 17-02-PLAN.md -- Wire review rounds into silver-spec, silver-ingest, silver-feature (WFIN-01/02/03/08/09)
 - [x] 17-03-PLAN.md -- Wire review rounds into new-milestone, discuss-phase, plan-phase via silver-bullet.md.base (WFIN-04/05/06/07)
+
+### Phase 18: Configurable Review Depth
+
+**Goal:** Users can configure review depth per artifact type so teams can apply rigorous 2-pass review where it matters and lighter structural checks where speed is acceptable -- all driven by a single config entry
+**Depends on:** Phase 17
+**Requirements**: ARVW-11a, ARVW-11b, ARVW-11c, ARVW-11d, ARVW-11e, ARVW-11f
+**Success Criteria** (what must be TRUE):
+  1. A user who adds review_depth with SPEC=deep and ROADMAP=quick to .planning/config.json sees SPEC reviews require 2 consecutive clean passes while ROADMAP reviews require only structural checks + 1 pass -- with no other changes needed
+  2. A project with no review_depth entry in config.json gets standard depth (full QC + 1 clean pass) for every artifact type by default
+  3. Running a reviewer on an artifact at quick depth produces findings only for structural failures (missing sections, invalid format) -- content quality checks do not fire
+  4. Running a reviewer on an artifact at deep depth requires a second consecutive clean pass even if the first pass was clean -- a single clean result does not terminate the loop
+**Plans**: TBD
+
+### Phase 19: Review Analytics
+
+**Goal:** Every review round automatically records metrics and users can generate a Markdown analytics report on demand -- showing pass/fail rates, top finding categories, and average rounds to clean pass per artifact type
+**Depends on:** Phase 18
+**Requirements**: ARVW-10a, ARVW-10b, ARVW-10c, ARVW-10d, ARVW-10e
+**Success Criteria** (what must be TRUE):
+  1. After any review round completes, a new JSON Lines entry appears in ~/.claude/.silver-bullet/review-analytics.json containing artifact type, pass/fail result, finding count by severity, round number, and timestamp -- without any manual action
+  2. Running /silver:review-analytics produces a .planning/REVIEW-ANALYTICS.md file containing pass/fail rates per artifact type, top 3 finding categories, and average rounds-to-clean per type
+  3. A user who has never run a reviewer sees a graceful empty-state message from /silver:review-analytics rather than an error or empty table
+  4. Deleting or editing review-analytics.json manually does not cause any review loop to fail -- metrics emission is fire-and-forget with no impact on review outcomes
+**Plans**: TBD
+
+### Phase 20: Cross-Artifact Consistency
+
+**Goal:** A dedicated reviewer catches drift between SPEC, ROADMAP, and REQUIREMENTS before milestone approval -- ensuring acceptance criteria IDs, requirement IDs, and phase success criteria are mutually consistent across all three documents
+**Depends on:** Phase 19
+**Requirements**: ARVW-09a, ARVW-09b, ARVW-09c, ARVW-09d, ARVW-09e
+**Success Criteria** (what must be TRUE):
+  1. Running cross-artifact-reviewer with a set of artifact paths returns structured PASS or ISSUE findings -- an ISSUE finding for each ROADMAP.md success criterion that references a SPEC acceptance criteria ID not present in SPEC.md
+  2. The reviewer catches a REQUIREMENTS.md REQ-ID that is listed in ROADMAP.md phase requirements but absent from REQUIREMENTS.md -- returning an ISSUE finding identifying the orphaned ID and which phase references it
+  3. The reviewer catches a ROADMAP.md success criterion that cannot be traced to any SPEC.md acceptance criterion -- returning an ISSUE finding for each invented criterion
+  4. After /gsd-new-milestone completes roadmap creation, the cross-artifact reviewer runs automatically and blocks the milestone approval step if any FAIL findings are present -- the user sees explicit findings before being asked to approve
+**Plans**: TBD

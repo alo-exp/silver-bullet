@@ -64,19 +64,19 @@ Requirements for v0.16.0 milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARVW-09a | — | Pending |
-| ARVW-09b | — | Pending |
-| ARVW-09c | — | Pending |
-| ARVW-09d | — | Pending |
-| ARVW-09e | — | Pending |
-| ARVW-10a | — | Pending |
-| ARVW-10b | — | Pending |
-| ARVW-10c | — | Pending |
-| ARVW-10d | — | Pending |
-| ARVW-10e | — | Pending |
-| ARVW-11a | — | Pending |
-| ARVW-11b | — | Pending |
-| ARVW-11c | — | Pending |
-| ARVW-11d | — | Pending |
-| ARVW-11e | — | Pending |
-| ARVW-11f | — | Pending |
+| ARVW-09a | Phase 20 | Pending |
+| ARVW-09b | Phase 20 | Pending |
+| ARVW-09c | Phase 20 | Pending |
+| ARVW-09d | Phase 20 | Pending |
+| ARVW-09e | Phase 20 | Pending |
+| ARVW-10a | Phase 19 | Pending |
+| ARVW-10b | Phase 19 | Pending |
+| ARVW-10c | Phase 19 | Pending |
+| ARVW-10d | Phase 19 | Pending |
+| ARVW-10e | Phase 19 | Pending |
+| ARVW-11a | Phase 18 | Pending |
+| ARVW-11b | Phase 18 | Pending |
+| ARVW-11c | Phase 18 | Pending |
+| ARVW-11d | Phase 18 | Pending |
+| ARVW-11e | Phase 18 | Pending |
+| ARVW-11f | Phase 18 | Pending |
