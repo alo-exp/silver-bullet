@@ -276,9 +276,9 @@ task producing an atomic git commit and each plan producing a SUMMARY.md.
 **Command:** `/gsd:execute-phase`                                                **REQUIRED** -- DO NOT SKIP
 
 **Pre-execution requirement:**
-`silver:tdd` -- Before writing any implementation code: establish                           **REQUIRED** -- DO NOT SKIP
-red-green-refactor discipline. Write the failing test first, make it pass,
-then refactor. TDD applies per task within each GSD wave.
+`superpowers:test-driven-development` -- Before writing any implementation code:            **REQUIRED** -- DO NOT SKIP
+establish red-green-refactor discipline. Write the failing test first, make it
+pass, then refactor. TDD applies per task within each GSD wave.
 
 **What to expect:** Executor agents are dispatched per plan -- one agent per plan within each
 wave (using worktree isolation for parallel execution). After each wave completes, a merge
@@ -339,7 +339,7 @@ review feedback.
 
 **Commands (all required, in order):**
 
-1. `silver:security`                                                             **REQUIRED** -- DO NOT SKIP
+1. `/security`                                                                   **REQUIRED** -- DO NOT SKIP
    SENTINEL v2 adversarial security audit. Runs before peer review so security findings
    are available as inputs to the review. Covers OWASP LLM Top 10, prompt injection,
    privilege escalation, and data exfiltration patterns.
@@ -475,7 +475,7 @@ files that need updating.
 
 ### Branch Cleanup
 
-**Command:** `silver:finishing-branch`                                           **REQUIRED** -- DO NOT SKIP
+**Command:** `superpowers:finishing-a-development-branch`                        **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Performs branch rebase, cleanup, and merge preparation so the branch is
 ready for PR creation.
