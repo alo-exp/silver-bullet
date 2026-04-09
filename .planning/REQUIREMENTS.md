@@ -23,10 +23,10 @@ Requirements for v0.15.0 milestone. Each maps to roadmap phases.
 
 ### New Artifact Reviewers
 
-- [ ] **ARVW-01**: SPEC.md reviewer — validates completeness (all required sections present), assumption density (minimum threshold), acceptance criteria testability, user story format, and consistency with source inputs (JIRA ticket, Figma, Google Docs)
-- [ ] **ARVW-02**: DESIGN.md reviewer — validates screen/component/behavior/state coverage, consistency with SPEC.md user stories, no orphaned components, interaction flows complete
-- [ ] **ARVW-03**: REQUIREMENTS.md reviewer — validates REQ-ID format, uniqueness, testability, categorization, no duplicate requirements, traceability section populated
-- [ ] **ARVW-04**: ROADMAP.md reviewer — validates 100% requirement coverage, phase dependency correctness, success criteria derivation from requirements, no orphaned requirements
+- [x] **ARVW-01**: SPEC.md reviewer — validates completeness (all required sections present), assumption density (minimum threshold), acceptance criteria testability, user story format, and consistency with source inputs (JIRA ticket, Figma, Google Docs)
+- [x] **ARVW-02**: DESIGN.md reviewer — validates screen/component/behavior/state coverage, consistency with SPEC.md user stories, no orphaned components, interaction flows complete
+- [x] **ARVW-03**: REQUIREMENTS.md reviewer — validates REQ-ID format, uniqueness, testability, categorization, no duplicate requirements, traceability section populated
+- [x] **ARVW-04**: ROADMAP.md reviewer — validates 100% requirement coverage, phase dependency correctness, success criteria derivation from requirements, no orphaned requirements
 - [ ] **ARVW-05**: CONTEXT.md reviewer — validates all gray areas have decisions (locked or Claude's discretion), decisions are specific not vague, no contradictions between decisions
 - [ ] **ARVW-06**: RESEARCH.md reviewer — validates research addresses the phase's key questions, findings are evidence-based not speculative, confidence levels are justified, pitfalls are actionable
 - [ ] **ARVW-07**: INGESTION_MANIFEST.md reviewer — validates all source artifacts accounted for, statuses are accurate (not falsely reporting success), failed artifacts have corresponding [ARTIFACT MISSING] blocks in SPEC.md
@@ -94,10 +94,10 @@ Deferred to future release.
 | ARFR-02 | Phase 15 | Complete |
 | ARFR-03 | Phase 15 | Complete |
 | ARFR-04 | Phase 15 | Complete |
-| ARVW-01 | Phase 16 | Pending |
-| ARVW-02 | Phase 16 | Pending |
-| ARVW-03 | Phase 16 | Pending |
-| ARVW-04 | Phase 16 | Pending |
+| ARVW-01 | Phase 16 | Complete |
+| ARVW-02 | Phase 16 | Complete |
+| ARVW-03 | Phase 16 | Complete |
+| ARVW-04 | Phase 16 | Complete |
 | ARVW-05 | Phase 16 | Pending |
 | ARVW-06 | Phase 16 | Pending |
 | ARVW-07 | Phase 16 | Pending |
