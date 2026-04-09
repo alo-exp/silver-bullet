@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-design="a">
+<html lang="en" data-design="c">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,8 +28,8 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
    Light inversion of Terminal Dark: dark green text on
    light backgrounds, same green accent family.
    ══════════════════════════════════════════════════════ */
-[data-design="a"],[data-design="b"],[data-design="c"]{
-  --chrome-gradient:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
+[data-design="c"]{
+  --chrome-gradient:linear-gradient(90deg,#2a2a2a 0%,#585858 9%,#383838 18%,#282828 27%,#505050 36%,#444444 43%,#303030 51%,#484848 59%,#343434 68%,#242424 76%,#404040 86%,#1e1e1e 100%);
   --accent:#007a20;
   --accent-light:#005c18;
   --accent-glow:rgba(0,122,32,.18);
@@ -56,32 +56,6 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --btn-gradient-hover:linear-gradient(135deg,#009928 0%,#007a20 50%,#009928 100%);
   --hero-glow:rgba(0,122,32,0.07);
   --card-top:rgba(0,122,32,0.5);
-}
-
-/* ───── Design A: "Terminal Light" — pure neutral white ───── */
-[data-design="a"]{
-  --bg-page:#f4f6f4;
-  --bg-card:#ffffff;
-  --bg-card-hover:#eef4f0;
-  --bg-code:#e8f0ea;
-  --bg-hero:linear-gradient(160deg,#e4ece6 0%,#eaf2ec 25%,#f2f8f4 48%,#f4f8f5 62%,#eef4f0 80%,#e8eee9 100%);
-  --shadow-lg:0 20px 60px rgba(0,0,0,.10);
-  --nav-bg:rgba(244,246,244,.92);
-  --nav-mobile-bg:rgba(244,246,244,.99);
-  --section-alt:rgba(232,242,234,.55);
-}
-
-/* ───── Design B: "Terminal Light Cool" — cool blue-white tint ───── */
-[data-design="b"]{
-  --bg-page:#f2f4f8;
-  --bg-card:#ffffff;
-  --bg-card-hover:#eaeff6;
-  --bg-code:#e4eaf2;
-  --bg-hero:linear-gradient(160deg,#e0e8f0 0%,#e8eef6 25%,#f0f4f8 48%,#f2f5fa 62%,#eaf0f6 80%,#e4eaf2 100%);
-  --shadow-lg:0 20px 60px rgba(0,0,0,.10);
-  --nav-bg:rgba(242,244,248,.92);
-  --nav-mobile-bg:rgba(242,244,248,.99);
-  --section-alt:rgba(228,236,246,.55);
 }
 
 /* ───── Design C: "Terminal Light Warm" — warm paper tint ───── */
@@ -752,9 +726,7 @@ body{padding-top:108px}/* 44px switcher + 64px nav */
 <!-- ────── DESIGN SWITCHER ────── -->
 <div id="design-switcher">
   <span class="switcher-label">light theme:</span>
-  <button class="switcher-btn active" id="btn-a" onclick="setDesign('a')">A &mdash; Ink</button>
-  <button class="switcher-btn" id="btn-b" onclick="setDesign('b')">B &mdash; Slate</button>
-  <button class="switcher-btn" id="btn-c" onclick="setDesign('c')">C &mdash; Warm</button>
+  <button class="switcher-btn active" id="btn-c" onclick="setDesign('c')">Terminal Light</button>
 </div>
 
 <!-- ────── NAV ────── -->
