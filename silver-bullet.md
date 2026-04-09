@@ -374,6 +374,8 @@ You MUST NOT:
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
 - Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §10 preferences — these gates are permanent
 - Write runtime preference updates to §10 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Execute a GSD phase (plan, execute, verify) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
+- Advance to the next GSD phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
@@ -401,7 +403,18 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 
 ## 3a. Review Loop Enforcement
 
-Every review loop (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns ✅ Approved TWICE IN A ROW**. A single clean pass is not sufficient — the reviewer must find no issues on two consecutive passes. There are NO exceptions.
+Every review loop **MUST iterate until the reviewer returns Approved TWICE IN A ROW**. A single clean pass is not sufficient — the reviewer must find no issues on two consecutive passes. There are NO exceptions.
+
+This rule applies to ALL artifact-producing review steps, specifically:
+
+| Step | Artifact | Review Tool | Two-Pass Required |
+|------|----------|-------------|-------------------|
+| Plan creation | {phase}-NN-PLAN.md | /gsd:plan-checker | YES |
+| Execution | Code changes + SUMMARY.md | /code-review | YES |
+| Verification | VERIFICATION.md | /gsd:verify-work | YES (verify + re-verify) |
+| Security check | Security findings | /silver:security | YES |
+
+If ANY of these steps produces findings on the first pass, you MUST fix the findings and re-run the review. The step is complete ONLY after two consecutive clean passes.
 
 You MUST NOT:
 - Stop a review loop because "issues are minor"
@@ -474,6 +487,34 @@ These markers allow `compliance-status.sh` to display a GSD phase counter (e.g. 
 - Confirmation prompts asking the user to proceed
 
 > **Anti-Skip:** You are violating this rule if you read a "COMPLETE" or "PASS" signal from any agent and advance to the next step without running `/verification-before-completion`. Trusting agent self-reports without independent verification is the primary source of false completions.
+
+## 3d. Post-Execution Artifact Requirements
+
+Every GSD phase MUST produce its required artifacts. Advancing to the next phase
+without these artifacts is a §3 violation regardless of how the phase was executed
+(skill-based or manually driven).
+
+| GSD Phase | Required Artifacts | Where |
+|-----------|-------------------|-------|
+| /gsd:discuss-phase | {phase}-CONTEXT.md | .planning/phases/{phase}/ |
+| /gsd:plan-phase | {phase}-NN-PLAN.md (1+) | .planning/phases/{phase}/ |
+| /gsd:execute-phase | {phase}-NN-SUMMARY.md per plan | .planning/phases/{phase}/ |
+| /gsd:verify-work | VERIFICATION.md | .planning/phases/{phase}/ or project root |
+| /code-review | REVIEW.md | .planning/phases/{phase}/ or project root |
+
+**Pre-advance check:** Before invoking the NEXT phase's GSD command, verify the
+PREVIOUS phase's artifacts exist. If they do not exist, STOP and either:
+1. Run the missing step to produce the artifacts, OR
+2. Explain to the user why the artifacts are missing and get explicit approval to skip
+
+**Hook support:** The completion-audit hook (completion-audit.sh) performs artifact
+existence checks at commit/PR/deploy time. But artifact checks at phase boundaries
+are instruction-enforced because hooks cannot intercept GSD skill invocations
+at the workflow level.
+
+> **Anti-Skip:** You are violating this rule if you invoke /gsd:execute-phase
+> without a PLAN.md existing, or invoke /gsd:verify-work without SUMMARY.md
+> files from execution, or create a PR without VERIFICATION.md and REVIEW.md.
 
 ---
 
