@@ -174,6 +174,10 @@ To reset workflow state intentionally, run in your terminal:
     if ! printf '%s' "$src_pattern" | grep -qE '^/[a-zA-Z0-9/_.|()-]*/?$'; then
       src_pattern="/src/"
     fi
+    # Reject overly permissive patterns (SENTINEL-3.1)
+    if printf '%s' "$src_pattern" | grep -qE '^\.\*$|^\.\+$|^/$|^$'; then
+      src_pattern="/src/"
+    fi
     src_exclude_pattern=$(jq -r '.project.src_exclude_pattern // "__tests__|\\.test\\."' "$config_file")
     # Validate exclude pattern: reject patterns > 200 chars (ReDoS mitigation)
     if [[ ${#src_exclude_pattern} -gt 200 ]]; then

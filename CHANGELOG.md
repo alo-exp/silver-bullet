@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.15.2] — 2026-04-10
+
+### Fixed — SENTINEL v2.3 Security Audit Findings
+- SENTINEL-9.1: Sanitize VALIDATION.md warn_items in pr-traceability.sh — strip markdown link syntax and wrap in code fence to prevent injection into PR descriptions
+- SENTINEL-3.1: Reject overly permissive src_pattern values (e.g., `.*`, `.+`, `/`) in dev-cycle-check.sh — fall back to `/src/` default
+- Full SENTINEL v2.3 8-step adversarial security audit report: `SENTINEL-audit-silver-bullet-v0.15.1.md`
+
 ## [0.15.1] — 2026-04-09
 
 ### Fixed — Pre-Release QA Gate Findings
