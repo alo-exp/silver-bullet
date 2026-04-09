@@ -227,71 +227,31 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --card-top:rgba(0,255,65,0.6);
 }
 
-/* ───── DESIGN SWITCHER BAR ───── */
-.design-switcher{
-  position:fixed;top:0;left:0;right:0;z-index:200;
-  height:44px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  background:rgba(4,4,8,.95);
-  border-bottom:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(12px);
-  padding:0 16px;
-  font-family:'Inter',system-ui,sans-serif;
-}
-.ds-label{
-  font-size:.7rem;font-weight:600;letter-spacing:.1em;
-  text-transform:uppercase;color:rgba(255,255,255,.35);
-  margin-right:4px;
-}
-.ds-btn{
-  padding:5px 18px;border-radius:999px;font-size:.75rem;font-weight:600;
-  border:1px solid rgba(255,255,255,.12);background:transparent;
-  color:rgba(255,255,255,.45);cursor:pointer;transition:all .2s;
-  letter-spacing:.02em;
-}
-.ds-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.75)}
-[data-design="a"] .ds-btn[data-d="a"],
-[data-design="b"] .ds-btn[data-d="b"],
-[data-design="c"] .ds-btn[data-d="c"],
-[data-design="d"] .ds-btn[data-d="d"],
-[data-design="e"] .ds-btn[data-d="e"]{
-  background:rgba(0,255,65,.12);
-  border-color:rgba(0,255,65,.45);
-  color:#00ff41;
-}
-.ds-divider{width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 4px}
-.ds-new-badge{
-  font-size:.6rem;font-weight:700;letter-spacing:.06em;
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-  color:rgba(255,255,255,.3);padding:2px 7px;border-radius:4px;margin-left:6px;
-}
 
-/* ───── GRADIENT OVERRIDES ───── */
-/* G1 — Mirror Chrome: stark white highlights, deep gunmetal shadows */
+/* ───── GRADIENT OVERRIDES — Mirror Chrome L→R variants ───── */
+/* G1 — Classic: single bright centred hotspot */
 [data-gradient="1"]{
-  --chrome-gradient:linear-gradient(105deg,
-    #2a2a2a 0%,#7a7a7a 12%,#d0d0d0 22%,#f8f8f8 30%,#ffffff 36%,
-    #e8e8e8 42%,#b0b0b0 52%,#f0f0f0 60%,#ffffff 66%,
-    #d8d8d8 74%,#888888 86%,#1e1e1e 100%);
+  --chrome-gradient:linear-gradient(90deg,
+    #1e1e1e 0%,#6a6a6a 14%,#c8c8c8 28%,#f5f5f5 40%,#ffffff 50%,
+    #f0f0f0 60%,#b8b8b8 74%,#606060 88%,#1a1a1a 100%);
 }
-/* G2 — Brushed Steel: softer, directional grain, cool blue tint */
+/* G2 — Double-glint: two shimmer peaks like bevelled metal */
 [data-gradient="2"]{
-  --chrome-gradient:linear-gradient(105deg,
-    #1c2028 0%,#5a6070 14%,#a8b4c0 26%,#dce4ec 38%,#f4f8fc 46%,
-    #ffffff 52%,#e0e8f0 58%,#b0bcc8 68%,#e8f0f8 78%,
-    #c8d4e0 88%,#3a4450 100%);
+  --chrome-gradient:linear-gradient(90deg,
+    #2a2a2a 0%,#909090 10%,#ffffff 20%,#c0c0c0 30%,
+    #707070 42%,#b0b0b0 54%,#ffffff 66%,
+    #d0d0d0 78%,#808080 90%,#222222 100%);
 }
-/* G3 — Liquid Mercury: rippled, high-shimmer, near-white core */
+/* G3 — Wide spread: slower fade, longer bright zone */
 [data-gradient="3"]{
-  --chrome-gradient:linear-gradient(105deg,
-    #383838 0%,#909090 8%,#c8c8c8 16%,#f0f0f0 24%,#ffffff 30%,
-    #d0d0d0 36%,#a0a0a0 44%,#e8e8e8 52%,#ffffff 58%,
-    #e0e0e0 64%,#b8b8b8 72%,#ffffff 80%,#c0c0c0 90%,#404040 100%);
+  --chrome-gradient:linear-gradient(90deg,
+    #111111 0%,#505050 12%,#a8a8a8 24%,#e8e8e8 36%,#ffffff 44%,
+    #ffffff 56%,#e0e0e0 66%,#a0a0a0 78%,#484848 90%,#0e0e0e 100%);
 }
 
 /* ───── GRADIENT SWITCHER BAR ───── */
 .gradient-switcher{
-  position:fixed;top:44px;left:0;right:0;z-index:199;
+  position:fixed;top:0;left:0;right:0;z-index:200;
   height:36px;
   display:flex;align-items:center;justify-content:center;gap:8px;
   background:rgba(4,4,8,.88);
@@ -331,7 +291,7 @@ body{
   color:var(--text-primary);
   line-height:1.7;
   overflow-x:hidden;
-  padding-top:80px;
+  padding-top:36px;
 }
 
 /* ───── UTILITIES ───── */
@@ -356,7 +316,7 @@ body{
 
 /* ───── NAV ───── */
 nav{
-  position:fixed;top:80px;left:0;right:0;z-index:100;
+  position:fixed;top:36px;left:0;right:0;z-index:100;
   background:var(--nav-bg);
   backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
@@ -778,19 +738,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <button class="gs-btn" data-g="3" onclick="setGradient('3')">3 — Liquid Mercury</button>
 </div>
 
-<!-- ────── DESIGN SWITCHER ────── -->
-<div class="design-switcher">
-  <span class="ds-label">Typography:</span>
-  <button class="ds-btn" data-d="a" onclick="setDesign('a')">A — Space Grotesk</button>
-  <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="b" onclick="setDesign('b')">B — Rajdhani</button>
-  <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="c" onclick="setDesign('c')">C — Oxanium</button>
-  <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="d" onclick="setDesign('d')">D — Exo 2</button>
-  <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="e" onclick="setDesign('e')">E — Titillium</button>
-</div>
 
 <!-- ────── NAV ────── -->
 <nav>
