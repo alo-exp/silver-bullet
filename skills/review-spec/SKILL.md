@@ -81,11 +81,11 @@ Signs of testability: specific counts, percentages, named states, error messages
 
 ### QC-5: Assumption Status Fields Present
 
-Every ASSUMPTION entry in `## Assumptions` MUST include a `Status:` field with a value of either `Resolved` or `Follow-up-required`.
+Every ASSUMPTION entry in `## Assumptions` MUST include a `Status:` field with a value of `Resolved`, `Accepted`, or `Follow-up-required`.
 
-Pattern to check (each assumption line or block): `Status: Resolved` or `Status: Follow-up-required`
+Pattern to check (each assumption line or block): `Status: Resolved` or `Status: Accepted` or `Status: Follow-up-required`
 
-**If any assumption lacks a Status field:** Emit ISSUE finding `SPEC-F40` with location = the offending assumption entry, suggestion = "Add `| Status: Resolved` or `| Status: Follow-up-required` to each ASSUMPTION entry."
+**If any assumption lacks a Status field or has an unrecognized value:** Emit ISSUE finding `SPEC-F40` with location = the offending assumption entry, suggestion = "Add `| Status: Resolved` (confirmed correct), `| Status: Accepted` (user acknowledged), or `| Status: Follow-up-required` (needs resolution) to each ASSUMPTION entry."
 
 ### QC-6: Frontmatter Completeness
 

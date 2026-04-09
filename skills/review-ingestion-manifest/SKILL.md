@@ -46,15 +46,15 @@ The manifest MUST contain a row for every artifact referenced in the ingestion r
 
 ### QC-2: Status Accuracy — No Blank Statuses
 
-Every row in the manifest table MUST have a non-empty, valid status value. Valid statuses are: `succeeded`, `failed`, `missing`. A blank status, null, or unrecognized value fails this check.
+Every row in the manifest table MUST have a non-empty, valid status value. Valid statuses are: `success`, `failed`, `skipped`. A blank status, null, or unrecognized value fails this check.
 
-**If any row has a blank or invalid status:** Emit ISSUE finding `INGM-F10` (increment suffix per row) with location = the manifest row, suggestion = "Set the status to one of: `succeeded`, `failed`, or `missing`. Use `missing` when the source artifact could not be located, `failed` when ingestion was attempted but errored."
+**If any row has a blank or invalid status:** Emit ISSUE finding `INGM-F10` (increment suffix per row) with location = the manifest row, suggestion = "Set the status to one of: `success`, `failed`, or `skipped`. Use `skipped` when the source artifact was intentionally omitted or not applicable, `failed` when ingestion was attempted but errored."
 
 ### QC-3: Failed Artifacts Have Corresponding ARTIFACT MISSING Blocks (when spec-path provided)
 
 **Only evaluate this criterion when `source_inputs` includes a spec-path.**
 
-For every manifest row with status `failed` or `missing`, there MUST be a corresponding `[ARTIFACT MISSING: reason]` block in the linked SPEC.md. The block must appear in the SPEC.md section that would have contained the artifact's ingested content.
+For every manifest row with status `failed` or `skipped`, there MUST be a corresponding `[ARTIFACT MISSING: reason]` block in the linked SPEC.md. The block must appear in the SPEC.md section that would have contained the artifact's ingested content.
 
 **If a failed/missing artifact has no corresponding ARTIFACT MISSING block in the linked SPEC.md:** Emit ISSUE finding `INGM-F20` (increment suffix per missing block) with location = the manifest row AND the expected SPEC.md section, description = "Failed artifact '[artifact identifier]' has no corresponding `[ARTIFACT MISSING]` block in the linked SPEC.md", suggestion = "Add `[ARTIFACT MISSING: {reason from manifest}]` in the SPEC.md section where this artifact's content would have appeared."
 

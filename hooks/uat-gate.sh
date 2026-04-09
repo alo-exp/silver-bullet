@@ -58,8 +58,8 @@ fi
 
 # Check 4: Spec version must match (UATG-04)
 if [[ -f "$SPEC" ]]; then
-  uat_version=$(grep -m1 '^spec-version:' "$UAT" | awk '{print $2}' || true)
-  spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}' || true)
+  uat_version=$(grep -m1 '^spec-version:' "$UAT" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
+  spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
   if [[ -n "$uat_version" && -n "$spec_version" && "$uat_version" != "$spec_version" ]]; then
     emit_block "UAT GATE: UAT was run against spec v${uat_version} but current SPEC.md is v${spec_version}. Re-run UAT against the current spec."
     exit 0
