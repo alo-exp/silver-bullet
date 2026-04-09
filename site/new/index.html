@@ -11,59 +11,16 @@
 <title>Silver Bullet — Design Candidates</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&family=Rajdhani:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600&family=Oxanium:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&family=Exo+2:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Titillium+Web:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ───── RESET ───── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 
 /* ═══════════════════════════════════════════
-   DESIGN A — PLASMA MATRIX · Syne + Space Mono
+   DESIGN A — Space Grotesk + Fira Code
 ═══════════════════════════════════════════ */
 [data-design="a"]{
-  --bg-page:#080c10;
-  --bg-card:#0f1520;
-  --bg-card-hover:#162030;
-  --bg-code:#060a0e;
-  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
-  --chrome-gradient:linear-gradient(135deg,#00ff41 0%,#00ccff 50%,#a855f7 100%);
-  --accent:#00ff41;
-  --accent-light:#39ff66;
-  --accent-glow:rgba(0,255,65,0.18);
-  --accent2:#00ccff;
-  --accent3:#a855f7;
-  --green:#00ff41;
-  --amber:#ffaa00;
-  --red:#ff4466;
-  --cyan:#00ccff;
-  --text-primary:#c8f0d8;
-  --text-secondary:#5a8a6a;
-  --text-dim:#283830;
-  --border:#112218;
-  --border-hover:#1a3824;
-  --radius:8px;
-  --radius-lg:14px;
-  --radius-sm:4px;
-  --font-sans:'Syne',system-ui,sans-serif;
-  --font-mono:'Space Mono',monospace;
-  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
-  --shadow-glow:0 0 40px rgba(0,255,65,.06);
-  --nav-bg:rgba(8,12,16,.92);
-  --nav-mobile-bg:rgba(8,12,16,.99);
-  --section-alt:rgba(12,20,16,.7);
-  --table-row-hover:rgba(0,255,65,.02);
-  --skill-phase-border:rgba(17,34,24,.9);
-  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
-  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
-  --hero-glow:rgba(0,255,65,0.06);
-  --card-top:rgba(0,255,65,0.6);
-}
-
-/* ═══════════════════════════════════════════
-   DESIGN B — PLASMA MATRIX
-   Matrix green · electric blue · Syne + Space Mono
-═══════════════════════════════════════════ */
-[data-design="b"]{
   --bg-page:#080c10;
   --bg-card:#0f1520;
   --bg-card-hover:#162030;
@@ -103,7 +60,49 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 }
 
 /* ═══════════════════════════════════════════
-   DESIGN C — PLASMA MATRIX · Orbitron + JetBrains Mono
+   DESIGN B — Rajdhani + Source Code Pro
+═══════════════════════════════════════════ */
+[data-design="b"]{
+  --bg-page:#080c10;
+  --bg-card:#0f1520;
+  --bg-card-hover:#162030;
+  --bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(135deg,#00ff41 0%,#00ccff 50%,#a855f7 100%);
+  --accent:#00ff41;
+  --accent-light:#39ff66;
+  --accent-glow:rgba(0,255,65,0.18);
+  --accent2:#00ccff;
+  --accent3:#a855f7;
+  --green:#00ff41;
+  --amber:#ffaa00;
+  --red:#ff4466;
+  --cyan:#00ccff;
+  --text-primary:#c8f0d8;
+  --text-secondary:#5a8a6a;
+  --text-dim:#283830;
+  --border:#112218;
+  --border-hover:#1a3824;
+  --radius:8px;
+  --radius-lg:14px;
+  --radius-sm:4px;
+  --font-sans:'Rajdhani',system-ui,sans-serif;
+  --font-mono:'Source Code Pro',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
+  --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --table-row-hover:rgba(0,255,65,.02);
+  --skill-phase-border:rgba(17,34,24,.9);
+  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
+  --hero-glow:rgba(0,255,65,0.06);
+  --card-top:rgba(0,255,65,0.6);
+}
+
+/* ═══════════════════════════════════════════
+   DESIGN C — Oxanium + Roboto Mono
 ═══════════════════════════════════════════ */
 [data-design="c"]{
   --bg-page:#080c10;
@@ -129,7 +128,91 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --radius:8px;
   --radius-lg:14px;
   --radius-sm:4px;
-  --font-sans:'Orbitron',system-ui,sans-serif;
+  --font-sans:'Oxanium',system-ui,sans-serif;
+  --font-mono:'Roboto Mono',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
+  --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --table-row-hover:rgba(0,255,65,.02);
+  --skill-phase-border:rgba(17,34,24,.9);
+  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
+  --hero-glow:rgba(0,255,65,0.06);
+  --card-top:rgba(0,255,65,0.6);
+}
+
+/* ═══════════════════════════════════════════
+   DESIGN D — Exo 2 + IBM Plex Mono
+═══════════════════════════════════════════ */
+[data-design="d"]{
+  --bg-page:#080c10;
+  --bg-card:#0f1520;
+  --bg-card-hover:#162030;
+  --bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(135deg,#00ff41 0%,#00ccff 50%,#a855f7 100%);
+  --accent:#00ff41;
+  --accent-light:#39ff66;
+  --accent-glow:rgba(0,255,65,0.18);
+  --accent2:#00ccff;
+  --accent3:#a855f7;
+  --green:#00ff41;
+  --amber:#ffaa00;
+  --red:#ff4466;
+  --cyan:#00ccff;
+  --text-primary:#c8f0d8;
+  --text-secondary:#5a8a6a;
+  --text-dim:#283830;
+  --border:#112218;
+  --border-hover:#1a3824;
+  --radius:8px;
+  --radius-lg:14px;
+  --radius-sm:4px;
+  --font-sans:'Exo 2',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
+  --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --table-row-hover:rgba(0,255,65,.02);
+  --skill-phase-border:rgba(17,34,24,.9);
+  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
+  --hero-glow:rgba(0,255,65,0.06);
+  --card-top:rgba(0,255,65,0.6);
+}
+
+/* ═══════════════════════════════════════════
+   DESIGN E — Titillium Web + JetBrains Mono
+═══════════════════════════════════════════ */
+[data-design="e"]{
+  --bg-page:#080c10;
+  --bg-card:#0f1520;
+  --bg-card-hover:#162030;
+  --bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(135deg,#00ff41 0%,#00ccff 50%,#a855f7 100%);
+  --accent:#00ff41;
+  --accent-light:#39ff66;
+  --accent-glow:rgba(0,255,65,0.18);
+  --accent2:#00ccff;
+  --accent3:#a855f7;
+  --green:#00ff41;
+  --amber:#ffaa00;
+  --red:#ff4466;
+  --cyan:#00ccff;
+  --text-primary:#c8f0d8;
+  --text-secondary:#5a8a6a;
+  --text-dim:#283830;
+  --border:#112218;
+  --border-hover:#1a3824;
+  --radius:8px;
+  --radius-lg:14px;
+  --radius-sm:4px;
+  --font-sans:'Titillium Web',system-ui,sans-serif;
   --font-mono:'JetBrains Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.7);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
@@ -169,14 +252,13 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 .ds-btn:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.75)}
 [data-design="a"] .ds-btn[data-d="a"],
 [data-design="b"] .ds-btn[data-d="b"],
-[data-design="c"] .ds-btn[data-d="c"]{
-  background:rgba(255,255,255,.1);
-  border-color:rgba(255,255,255,.35);
-  color:#fff;
+[data-design="c"] .ds-btn[data-d="c"],
+[data-design="d"] .ds-btn[data-d="d"],
+[data-design="e"] .ds-btn[data-d="e"]{
+  background:rgba(0,255,65,.12);
+  border-color:rgba(0,255,65,.45);
+  color:#00ff41;
 }
-[data-design="a"] .ds-btn[data-d="a"]{background:rgba(0,212,255,.15);border-color:rgba(0,212,255,.5);color:#00d4ff}
-[data-design="b"] .ds-btn[data-d="b"]{background:rgba(0,255,65,.12);border-color:rgba(0,255,65,.45);color:#00ff41}
-[data-design="c"] .ds-btn[data-d="c"]{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.5);color:#f59e0b}
 .ds-divider{width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 4px}
 .ds-new-badge{
   font-size:.6rem;font-weight:700;letter-spacing:.06em;
@@ -634,13 +716,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
 <!-- ────── DESIGN SWITCHER ────── -->
 <div class="design-switcher">
-  <span class="ds-label">Design:</span>
-  <button class="ds-btn" data-d="a" onclick="setDesign('a')">A — Neon Forge</button>
+  <span class="ds-label">Typography:</span>
+  <button class="ds-btn" data-d="a" onclick="setDesign('a')">A — Space Grotesk</button>
   <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="b" onclick="setDesign('b')">B — Plasma Matrix</button>
+  <button class="ds-btn" data-d="b" onclick="setDesign('b')">B — Rajdhani</button>
   <div class="ds-divider"></div>
-  <button class="ds-btn" data-d="c" onclick="setDesign('c')">C — Fusion Core</button>
-  <span class="ds-new-badge">PREVIEW</span>
+  <button class="ds-btn" data-d="c" onclick="setDesign('c')">C — Oxanium</button>
+  <div class="ds-divider"></div>
+  <button class="ds-btn" data-d="d" onclick="setDesign('d')">D — Exo 2</button>
+  <div class="ds-divider"></div>
+  <button class="ds-btn" data-d="e" onclick="setDesign('e')">E — Titillium</button>
 </div>
 
 <!-- ────── NAV ────── -->
