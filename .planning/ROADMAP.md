@@ -124,7 +124,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 13. Ingestion & Multi-Repo | 0/? | Not started | - |
 | 14. Validation, Traceability & UAT Gate | 3/3 | Complete   | 2026-04-09 |
 | 15. Bug Fixes & Reviewer Framework | 2/2 | Complete   | 2026-04-09 |
-| 16. New Artifact Reviewers | 0/2 | Planning complete | - |
+| 16. New Artifact Reviewers | 1/2 | In Progress|  |
 | 17. Existing Reviewer Formalization & Workflow Wiring | 0/? | Not started | - |
 
 ### Phase 6: Implement Enforcement Techniques from AI-Native SDLC Playbook
@@ -278,7 +278,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md -- SPEC.md, DESIGN.md, REQUIREMENTS.md, ROADMAP.md reviewer skills
+- [x] 16-01-PLAN.md -- SPEC.md, DESIGN.md, REQUIREMENTS.md, ROADMAP.md reviewer skills
 - [ ] 16-02-PLAN.md -- CONTEXT.md, RESEARCH.md, INGESTION_MANIFEST.md, UAT.md reviewer skills + finalize mapping table
 
 ### Phase 17: Existing Reviewer Formalization & Workflow Wiring

@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.13.0
 milestone_name: site update
-current_plan: —
-status: Roadmap created
-stopped_at: Completed 15-02-PLAN.md — artifact reviewer framework
-last_updated: "2026-04-09T12:01:18.494Z"
+current_plan: 1
+status: Executing Phase 16
+stopped_at: Completed 16-01-PLAN.md — 4 new artifact reviewer skills
+last_updated: "2026-04-09T12:18:14.612Z"
 last_activity: 2026-04-09
 progress:
   total_phases: 17
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -20,7 +20,7 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.14.0
 **Active phase:** Phase 15 (not started — ready to plan)
-**Current plan:** —
+**Current plan:** 1
 
 Last activity: 2026-04-09
 
@@ -68,6 +68,8 @@ Last activity: 2026-04-09
 - [v0.15.0]: Existing reviewer formalization (EXRV-01..04) and all workflow wiring (WFIN-01..10) co-located in Phase 17 — wiring requires both framework (Phase 15) and new reviewers (Phase 16)
 - [v0.15.0]: Reviewers are SB skills, not GSD modifications — §8 plugin boundary maintained throughout
 - [Phase 15-02]: Reviewer state stored as JSON keyed by 8-char SHA256 of artifact absolute path in ~/.claude/.silver-bullet/review-state/
+- [Phase 16]: SPEC reviewer uses 7 QC checks covering sections, overview quality, user story format, AC testability, assumption status, frontmatter, and source input cross-reference
+- [Phase 16]: ROADMAP reviewer builds full dependency graph to detect circular and backward phase dependencies
 
 ### Quick Tasks Completed
 
@@ -99,8 +101,9 @@ Last activity: 2026-04-09
 | Phase 07-close-enforcement-audit-gaps P04 | 212 | 2 tasks | 6 files |
 | Phase 10 P07 | 5 | 2 tasks | 1 files |
 | Phase 15 P02 | 300 | 2 tasks | 3 files |
+| Phase 16 P01 | 166 | 2 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-04-09T12:01:18.489Z
-Stopped at: Completed 15-02-PLAN.md — artifact reviewer framework
+Last session: 2026-04-09T12:18:09.911Z
+Stopped at: Completed 16-01-PLAN.md — 4 new artifact reviewer skills
