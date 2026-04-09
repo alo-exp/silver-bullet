@@ -76,11 +76,21 @@ At the very start of any new session, perform these steps automatically:
       If the gh CLI call fails (no network, auth expired): display "Could not verify spec version -- proceed with caution." and continue. The check is best-effort.
    4. Compare versions:
       - **Match:** Display "Spec version v{N} -- in sync with main repo." and continue.
-      - **Mismatch:** BLOCK the session. Display:
+      - **Mismatch:** BLOCK the session. Fetch the full remote SPEC.md content and produce a side-by-side summary:
+        ```bash
+        # Fetch remote SPEC.md for diff
+        /opt/homebrew/bin/gh api repos/{owner}/{repo}/contents/.planning/SPEC.md --jq '.content' | base64 -d > /tmp/spec-remote-diff.md
+        diff --unified=3 .planning/SPEC.main.md /tmp/spec-remote-diff.md || true
+        rm -f /tmp/spec-remote-diff.md
+        ```
+        Display:
         ```
         SPEC VERSION MISMATCH
         Local (SPEC.main.md):  v{local}
         Remote ({repo}):       v{remote}
+
+        Content changes:
+        {unified diff output from above — show added/removed/changed lines}
 
         Run /silver:ingest --source-url {repo-url} to refresh before proceeding.
         ```

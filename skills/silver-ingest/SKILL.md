@@ -111,6 +111,10 @@ Call `jira_get_issue` with the provided key. Extract the following fields:
 
 For each Confluence URL found in the JIRA description body: call `confluence_get_page` to fetch the page content. Add the fetched content to the in-memory context alongside the JIRA content.
 
+**On Confluence page fetch failure:**
+
+Record `status: failed` for this Confluence page in the in-memory artifact list. Insert `[ARTIFACT MISSING: Confluence page fetch failed — {error}]` in the SPEC.md section that references this Confluence page (typically Overview or UX Flows). Do NOT bury the failure in the Assumptions section — it must appear inline at the point where the content was expected.
+
 **URL parsing from JIRA description:**
 
 Scan the description body and linked fields for these URL patterns:
@@ -432,7 +436,7 @@ Review .planning/INGESTION_MANIFEST.md for error details.
 | Connector | On Failure | Output |
 |-----------|-----------|--------|
 | Atlassian MCP / `jira_get_issue` | Continue | `[ARTIFACT MISSING: JIRA fetch failed — {error}]` in SPEC.md Overview |
-| Atlassian MCP / `confluence_get_page` | Continue per page | Skip page content; note in Assumptions |
+| Atlassian MCP / `confluence_get_page` | Continue per page | `[ARTIFACT MISSING: Confluence page fetch failed — {error}]` in relevant SPEC.md section |
 | Figma MCP / `get_design_context` | Continue | `[ARTIFACT MISSING: Figma extraction failed — {error}]` in DESIGN.md sections |
 | Google Drive MCP / `read_document` | Try WebFetch fallback | `[ARTIFACT MISSING: Google Doc extraction failed — {error}]` if both fail |
 | gh CLI (cross-repo fetch) | Try curl fallback | Surface error to user if both fail; do not write partial SPEC.main.md |
