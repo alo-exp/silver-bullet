@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>
-  var saved = localStorage.getItem('sb-design') || 'a';
-  document.documentElement.setAttribute('data-design', saved);
+  document.documentElement.setAttribute('data-design', localStorage.getItem('sb-design') || 'a');
+  document.documentElement.setAttribute('data-gradient', localStorage.getItem('sb-gradient') || '1');
 </script>
 <link rel="icon" type="image/png" href="../favicon.png">
 <title>Silver Bullet — Design Candidates</title>
@@ -266,6 +266,60 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   color:rgba(255,255,255,.3);padding:2px 7px;border-radius:4px;margin-left:6px;
 }
 
+/* ───── GRADIENT OVERRIDES ───── */
+/* G1 — Mirror Chrome: stark white highlights, deep gunmetal shadows */
+[data-gradient="1"]{
+  --chrome-gradient:linear-gradient(105deg,
+    #2a2a2a 0%,#7a7a7a 12%,#d0d0d0 22%,#f8f8f8 30%,#ffffff 36%,
+    #e8e8e8 42%,#b0b0b0 52%,#f0f0f0 60%,#ffffff 66%,
+    #d8d8d8 74%,#888888 86%,#1e1e1e 100%);
+}
+/* G2 — Brushed Steel: softer, directional grain, cool blue tint */
+[data-gradient="2"]{
+  --chrome-gradient:linear-gradient(105deg,
+    #1c2028 0%,#5a6070 14%,#a8b4c0 26%,#dce4ec 38%,#f4f8fc 46%,
+    #ffffff 52%,#e0e8f0 58%,#b0bcc8 68%,#e8f0f8 78%,
+    #c8d4e0 88%,#3a4450 100%);
+}
+/* G3 — Liquid Mercury: rippled, high-shimmer, near-white core */
+[data-gradient="3"]{
+  --chrome-gradient:linear-gradient(105deg,
+    #383838 0%,#909090 8%,#c8c8c8 16%,#f0f0f0 24%,#ffffff 30%,
+    #d0d0d0 36%,#a0a0a0 44%,#e8e8e8 52%,#ffffff 58%,
+    #e0e0e0 64%,#b8b8b8 72%,#ffffff 80%,#c0c0c0 90%,#404040 100%);
+}
+
+/* ───── GRADIENT SWITCHER BAR ───── */
+.gradient-switcher{
+  position:fixed;top:44px;left:0;right:0;z-index:199;
+  height:36px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(4,4,8,.88);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  backdrop-filter:blur(12px);
+  padding:0 16px;
+  font-family:'Inter',system-ui,sans-serif;
+}
+.gs-label{
+  font-size:.65rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.25);
+  margin-right:4px;
+}
+.gs-btn{
+  padding:4px 14px;border-radius:999px;font-size:.7rem;font-weight:600;
+  border:1px solid rgba(255,255,255,.1);background:transparent;
+  color:rgba(255,255,255,.4);cursor:pointer;transition:all .2s;
+  letter-spacing:.02em;
+}
+.gs-btn:hover{border-color:rgba(255,255,255,.28);color:rgba(255,255,255,.7)}
+[data-gradient="1"] .gs-btn[data-g="1"],
+[data-gradient="2"] .gs-btn[data-g="2"],
+[data-gradient="3"] .gs-btn[data-g="3"]{
+  background:rgba(255,255,255,.1);
+  border-color:rgba(220,220,220,.5);
+  color:#e8e8e8;
+}
+
 /* ───── THEME TRANSITION ───── */
 body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-block,.arch-diagram,.callout,.comparison-table td,.comparison-table th,.enforcement-block{
   transition:background .3s,background-color .3s,border-color .3s,color .3s,box-shadow .3s;
@@ -277,7 +331,7 @@ body{
   color:var(--text-primary);
   line-height:1.7;
   overflow-x:hidden;
-  padding-top:44px;
+  padding-top:80px;
 }
 
 /* ───── UTILITIES ───── */
@@ -302,7 +356,7 @@ body{
 
 /* ───── NAV ───── */
 nav{
-  position:fixed;top:44px;left:0;right:0;z-index:100;
+  position:fixed;top:80px;left:0;right:0;z-index:100;
   background:var(--nav-bg);
   backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
@@ -713,6 +767,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 </style>
 </head>
 <body>
+
+<!-- ────── GRADIENT SWITCHER ────── -->
+<div class="gradient-switcher">
+  <span class="gs-label">Logo gradient:</span>
+  <button class="gs-btn" data-g="1" onclick="setGradient('1')">1 — Mirror Chrome</button>
+  <div class="ds-divider"></div>
+  <button class="gs-btn" data-g="2" onclick="setGradient('2')">2 — Brushed Steel</button>
+  <div class="ds-divider"></div>
+  <button class="gs-btn" data-g="3" onclick="setGradient('3')">3 — Liquid Mercury</button>
+</div>
 
 <!-- ────── DESIGN SWITCHER ────── -->
 <div class="design-switcher">
@@ -1349,6 +1413,14 @@ function setDesign(d) {
   document.documentElement.setAttribute('data-design', d);
   localStorage.setItem('sb-design', d);
 }
+function setGradient(g) {
+  document.documentElement.setAttribute('data-gradient', g);
+  localStorage.setItem('sb-gradient', g);
+}
+(function(){
+  var g = localStorage.getItem('sb-gradient') || '1';
+  document.documentElement.setAttribute('data-gradient', g);
+})();
 
 // ── Scroll-triggered fade-in ──
 const observer = new IntersectionObserver((entries) => {
