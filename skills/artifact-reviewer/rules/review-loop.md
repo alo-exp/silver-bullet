@@ -4,13 +4,34 @@
 
 ## Section 1: Review Loop Mechanism (ARFR-02)
 
-The review loop runs until 2 consecutive clean PASS results are produced. A single pass is never sufficient.
+The review loop runs until the required number of consecutive clean PASS results are produced. The required pass count depends on the configured depth for the reviewer.
+
+### Depth Resolution
+
+At the start of the review loop, resolve the depth for this reviewer:
+
+1. Read `.planning/config.json` and look up `review_depth[reviewer_skill_name]`
+2. If no entry exists for this reviewer in `review_depth`, default to `"standard"` (per ARVW-11e)
+3. If no `review_depth` key exists in config.json, default to `"standard"` for all reviewers
+4. If `.planning/config.json` does not exist, default to `"standard"` for all reviewers
+
+Depth semantics:
+- `deep`: full QC checks + 2 consecutive clean passes required (per ARVW-11b)
+- `standard`: full QC checks + 1 clean pass required (per ARVW-11c) — **THIS IS THE DEFAULT**
+- `quick`: structural checks only + 1 pass required (per ARVW-11d)
 
 ### Algorithm
 
 ```
 consecutive_passes = 0
 round = 1
+
+# Resolve depth from config (ARVW-11a, ARVW-11e)
+depth = resolve_depth(reviewer_skill_name)
+required_passes = 2 if depth == "deep" else 1
+check_mode = "structural" if depth == "quick" else "full"
+
+display "Reviewing {artifact} at {depth} depth (requires {required_passes} consecutive clean pass(es))"
 
 # Resume from state if available (ARFR-03)
 state = load_review_state(artifact_path)
@@ -19,16 +40,16 @@ if state exists:
   round = state.round
   display "Resuming review of {artifact} from round {round} ({consecutive_passes} consecutive passes so far)"
 
-while consecutive_passes < 2:
-  findings = invoke_reviewer(artifact_path, source_inputs)
+while consecutive_passes < required_passes:
+  findings = invoke_reviewer(artifact_path, source_inputs, check_mode)
 
   record_round(artifact_path, round, findings)  # ARFR-04
 
   if findings.status == "PASS":
     consecutive_passes += 1
     save_review_state(artifact_path, round, consecutive_passes)  # ARFR-03 — save AFTER status update
-    if consecutive_passes < 2:
-      display "Clean pass {consecutive_passes}/2. Re-reviewing for confirmation..."
+    if consecutive_passes < required_passes:
+      display "Clean pass {consecutive_passes}/{required_passes}. Re-reviewing for confirmation..."
       round += 1
   else:
     consecutive_passes = 0  # Reset on any ISSUE finding
@@ -46,25 +67,39 @@ while consecutive_passes < 2:
 
     round += 1
 
-  # Safety cap — surface to user after 5 rounds without 2 consecutive passes
-  if round > 5 and consecutive_passes < 2:
+  # Safety cap — surface to user after 5 rounds without required consecutive passes
+  if round > 5 and consecutive_passes < required_passes:
     display "Review has not converged after 5 rounds. All accumulated findings:"
     display_all_findings(artifact_path)
     STOP — surface to user for decision
     break
 
-display "2 consecutive clean passes achieved. Review complete."
+display "Review complete at {depth} depth. {required_passes} consecutive clean pass(es) achieved."
 commit_review_trail(artifact_path)  # Commit REVIEW-ROUNDS.md alongside the artifact
 clear_review_state(artifact_path)
 ```
 
+#### resolve_depth(reviewer_skill_name)
+
+```
+function resolve_depth(reviewer_skill_name):
+  if .planning/config.json does not exist:
+    return "standard"
+  config = load_json(".planning/config.json")
+  if "review_depth" not in config:
+    return "standard"
+  return config["review_depth"].get(reviewer_skill_name, "standard")
+```
+
 ### Key Rules
 
-- A single clean pass is NOT sufficient — the loop continues until 2 consecutive passes
+- The required number of consecutive clean passes depends on depth: deep=2, standard=1, quick=1
 - Any ISSUE finding resets `consecutive_passes` to 0
 - INFO findings do NOT reset the counter (INFO is advisory)
-- The loop is self-limiting: it terminates after 2 consecutive PASS results
-- If the loop reaches 5 rounds without achieving 2 consecutive passes, surface all accumulated findings to the user
+- The loop is self-limiting: it terminates after `required_passes` consecutive PASS results
+- If the loop reaches 5 rounds without achieving `required_passes` consecutive passes, surface all accumulated findings to the user
+- When `check_mode` is `"structural"`, reviewers MUST skip content quality checks and only validate section presence and format validity (per ARVW-11d)
+- Default depth is `"standard"` for all artifact types when `review_depth` is absent or does not contain an entry for the reviewer (per ARVW-11e)
 
 ---
 
@@ -101,7 +136,7 @@ Where `{artifact-hash}` = first 8 chars of SHA256 of the artifact's absolute pat
 
 - `load_review_state(artifact_path)` — Read state file if it exists; return null if not present
 - `save_review_state(artifact_path, round, consecutive_passes)` — Write/update state file after each round
-- `clear_review_state(artifact_path)` — Delete state file after successful 2-pass completion
+- `clear_review_state(artifact_path)` — Delete state file after successful completion
 
 ### Implementation (Shell)
 
@@ -138,12 +173,14 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
 
 ### Round {N} — {ISO timestamp}
 - **Reviewer:** {reviewer-skill-name}
+- **Depth:** {depth}
+- **Check mode:** {check_mode}
 - **Status:** {PASS | ISSUES_FOUND}
 - **Findings:**
   - {finding.id}: {finding.description} [{finding.severity}]
   - ...
   (or "No issues found" if PASS)
-- **Consecutive clean passes:** {count}/2
+- **Consecutive clean passes:** {count}/{required_passes}
 
 ---
 ```
@@ -153,4 +190,4 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
 - REVIEW-ROUNDS.md is **append-only** during a review session — never truncate prior rounds
 - Each artifact gets its own section identified by `## {artifact filename}` header
 - If REVIEW-ROUNDS.md already contains rounds for this artifact from a prior session, append new rounds after the last existing one
-- Commit REVIEW-ROUNDS.md alongside the artifact after the review loop completes (2 clean passes achieved)
+- Commit REVIEW-ROUNDS.md alongside the artifact after the review loop completes (required consecutive clean passes achieved)
