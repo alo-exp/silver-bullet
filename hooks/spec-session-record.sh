@@ -15,8 +15,8 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# Read JSON from stdin
-input=$(cat)
+# Read JSON from stdin (required — SessionStart hooks must consume stdin)
+_input=$(cat)
 
 SPEC=".planning/SPEC.md"
 
