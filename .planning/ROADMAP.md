@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 12. Spec Foundation | 0/3 | Planning complete | - |
 | 13. Ingestion & Multi-Repo | 0/? | Not started | - |
 | 14. Validation, Traceability & UAT Gate | 3/3 | Complete   | 2026-04-09 |
-| 15. Bug Fixes & Reviewer Framework | 0/? | Not started | - |
+| 15. Bug Fixes & Reviewer Framework | 0/2 | Planning complete | - |
 | 16. New Artifact Reviewers | 0/? | Not started | - |
 | 17. Existing Reviewer Formalization & Workflow Wiring | 0/? | Not started | - |
 
@@ -258,7 +258,11 @@ Plans:
   4. When SPEC.main.md is stale, the version mismatch block shows a side-by-side content diff (not just version numbers) so the developer can see exactly what changed
   5. A reviewer can be invoked with an artifact path and returns structured findings with PASS or ISSUE severity plus finding descriptions — the interface is consistent across all artifact types
   6. Running a reviewer on an artifact with issues triggers an automated fix-and-re-review loop that terminates only after 2 consecutive PASS results — not just one clean pass
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 15-01-PLAN.md -- Fix critical bugs: shell injection, heredoc injection, Confluence failure path, version mismatch display
+- [ ] 15-02-PLAN.md -- Artifact reviewer framework: interface, 2-pass loop, state tracking, audit trail
 
 ### Phase 16: New Artifact Reviewers
 
