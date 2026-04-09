@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 9. Silver Bullet Core Improvements | 2/2 | ✓ Complete | 2026-04-08 |
 | 10. SB Orchestration Skill Files | 7/7 | ✓ Complete | 2026-04-08 |
 | 11. Website Content Refresh | 1/1 | ✓ Complete | 2026-04-09 |
-| 12. Spec Foundation | 0/? | Not started | - |
+| 12. Spec Foundation | 0/3 | Planning complete | - |
 | 13. Ingestion & Multi-Repo | 0/? | Not started | - |
 | 14. Validation, Traceability & UAT Gate | 0/? | Not started | - |
 
@@ -198,7 +198,12 @@ Plans:
   3. Every unresolvable gap during elicitation produces a visible `[ASSUMPTION: ...]` block in SPEC.md — the block count reflects spec maturity, not optional decoration
   4. Running `gsd-plan-phase` without a `.planning/SPEC.md` that contains Overview and Acceptance Criteria sections results in a hard block with a clear error message; running `gsd-fast` without a 3-field minimal spec produces a warning but does not block
   5. SPEC.md and DESIGN.md are generated from templates in `templates/specs/` — a new spec is never created from scratch
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 12-01-PLAN.md -- Spec templates + spec-floor-check.sh hook
+- [ ] 12-02-PLAN.md -- silver-spec SKILL.md (Socratic elicitation)
+- [ ] 12-03-PLAN.md -- Router wiring + hooks.json registration + silver-bullet.md docs
 
 ### Phase 13: Ingestion & Multi-Repo
 
