@@ -260,6 +260,28 @@ Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-ve
 
 ---
 
+### 2i. Spec Lifecycle
+
+**When to invoke:** Before any feature development begins. `silver:spec` is the entry point for creating or refining a spec.
+
+**Artifacts produced:**
+- `.planning/SPEC.md` — Canonical spec with YAML frontmatter (spec-version, status, jira-id, figma-url, source-artifacts) and sections (Overview, User Stories, UX Flows, Acceptance Criteria, Assumptions, Open Questions, Out of Scope, Implementations)
+- `.planning/REQUIREMENTS.md` — Derived requirements with REQ-XX and NFR-XX IDs
+- `.planning/DESIGN.md` — Design artifact (when Figma or design context provided)
+
+**Spec floor enforcement:**
+- `gsd-plan-phase` is hard-blocked by `spec-floor-check.sh` if `.planning/SPEC.md` is missing or lacks `## Overview` and `## Acceptance Criteria` sections
+- `gsd-fast` and `gsd-quick` emit a warning but are not blocked — fast path preserves bypass intent
+- Run `/silver:spec` to create or update the spec before planning
+
+**Modes:**
+- Greenfield: no existing SPEC.md — full Socratic elicitation from scratch
+- Augment: existing SPEC.md — refine, extend, increment spec-version
+
+**Assumption tracking:** Every unresolvable ambiguity produces an `[ASSUMPTION: ...]` block in SPEC.md. Assumption density is a quality signal — zero assumptions on a non-trivial feature is suspicious.
+
+---
+
 ## 3. NON-NEGOTIABLE RULES
 
 These rules apply to EVERY non-trivial change. There are NO exceptions.
