@@ -210,19 +210,18 @@ If B: STOP.
 
 ### 1.7 Anthropic Engineering plugin
 
-> **Intentional deviation from spec §3:** The spec says all three dependency plugins (MultAI, Engineering, PM) require an offer-to-install gate. In practice, MultAI is a hard STOP because silver:research and multi-AI perspectives are non-functional without it. Engineering and PM degrade gracefully — their skills are invoked conditionally (silver:ui, silver:feature product-brainstorm) and the workflows remain usable without them. This asymmetry is by design.
-
-Use the Glob tool to search for:
-`~/.claude/plugins/cache/engineering/skills/`
+Use the Glob tool to search for Engineering plugin skills in these paths:
+- `~/.claude/plugins/cache/engineering/skills/`
+- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
 
 If no directory found, use AskUserQuestion:
-- Question: "⚠️ **Anthropic Engineering plugin is not installed.** This is optional but recommended — it enables `/frontend-design`, `/testing-strategy`, and `/documentation` in silver:ui and silver:release.\n\nInstall command (inside Claude Code):\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nWould you like to install it now, or continue without it?"
+- Question: "❌ **Anthropic Engineering plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
 - Options:
-  - "A. I'll install it now — pause and wait"
-  - "B. Skip it and continue without"
+  - "A. Yes, I've installed it — continue"
+  - "B. Stop for now"
 
-If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
-If B: continue without stopping.
+If A: re-run the Glob check. If still not found, STOP with: `❌ Engineering plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.8 Anthropic Product Management plugin
 
@@ -230,13 +229,13 @@ Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
 
 If no directory found, use AskUserQuestion:
-- Question: "⚠️ **Anthropic Product Management plugin is not installed.** This is optional but recommended — it enables `/product-brainstorming` in silver:feature and silver:ui.\n\nInstall command (inside Claude Code):\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nWould you like to install it now, or continue without it?"
+- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
 - Options:
-  - "A. I'll install it now — pause and wait"
-  - "B. Skip it and continue without"
+  - "A. Yes, I've installed it — continue"
+  - "B. Stop for now"
 
-If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
-If B: continue without stopping.
+If A: re-run the Glob check. If still not found, STOP with: `❌ Product Management plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ---
 
