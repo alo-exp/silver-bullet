@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:630px;overflow:hidden}
+  body{
+    background:#0a0f0a;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+  .bg-glow{
+    position:absolute;
+    width:600px;height:600px;
+    border-radius:50%;
+    background:radial-gradient(circle,rgba(0,136,42,.18) 0%,transparent 70%);
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    pointer-events:none;
+  }
+  .card{
+    display:flex;
+    align-items:center;
+    gap:64px;
+    padding:0 80px;
+    position:relative;
+    z-index:1;
+  }
+  .bullet{
+    width:180px;
+    flex-shrink:0;
+    filter:drop-shadow(0 0 40px rgba(0,200,80,.35));
+  }
+  .text{flex:1}
+  .label{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.18em;
+    color:#00c84a;
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  h1{
+    font-size:42px;
+    font-weight:900;
+    line-height:1.1;
+    letter-spacing:-.03em;
+    color:#f0f4f0;
+    margin-bottom:20px;
+  }
+  h1 span{
+    background:linear-gradient(135deg,#00c84a,#00ff7f,#00c84a);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .desc{
+    font-size:17px;
+    line-height:1.55;
+    color:#8ca08c;
+    max-width:480px;
+  }
+  .url{
+    margin-top:28px;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.06em;
+    color:#3a5c3a;
+  }
+  .border-top{
+    position:absolute;
+    top:0;left:0;right:0;
+    height:3px;
+    background:linear-gradient(90deg,transparent,#00c84a,#00ff7f,#00c84a,transparent);
+  }
+</style>
+</head>
+<body>
+  <div class="border-top"></div>
+  <div class="bg-glow"></div>
+  <div class="card">
+    <img class="bullet" src="silver-bullet.png" alt="">
+    <div class="text">
+      <div class="label">Agentic Process Orchestrator</div>
+      <h1>The <span>Silver Bullet</span><br>for AI-native Dev.</h1>
+      <p class="desc">39 skills. 10 enforcement layers. 7 pre-designed workflows. Spec-driven, review-gated, and deployment-verified.</p>
+      <div class="url">sb.alolabs.dev</div>
+    </div>
+  </div>
+</body>
+</html>
