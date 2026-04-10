@@ -1680,31 +1680,18 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container text-center">
     <div class="section-label">Installation</div>
     <h2 class="section-title">Get Started in Two Minutes</h2>
-    <p class="section-desc centered">Install the four core plugins, add Silver Bullet, and initialize. For DevOps projects, optionally add leading IaC plugins for contextual enrichment.</p>
+    <p class="section-desc centered">Install Silver Bullet and initialize your project. Dependency plugins are guided automatically during setup.</p>
 
     <div class="install-block mt-4 fade-in">
       <div class="install-code">
-        <div><span class="comment"># 1. Install the four core workflow plugins</span></div>
-        <div><span class="cmd">npx</span> <span class="flag">get-shit-done-cc@1.30.0</span></div>
-        <div><span class="cmd">/plugin install</span> <span class="flag">obra/superpowers</span></div>
-        <div><span class="cmd">/plugin install</span> <span class="flag">anthropics/knowledge-work-plugins/tree/main/engineering</span></div>
-        <div><span class="cmd">/plugin install</span> <span class="flag">anthropics/knowledge-work-plugins/tree/main/design</span></div>
-        <div>&nbsp;</div>
-        <div><span class="comment"># 2. Install Silver Bullet</span></div>
+        <div><span class="comment"># Install Silver Bullet</span></div>
         <div><span class="cmd">/plugin install</span> <span class="flag">alo-exp/silver-bullet</span></div>
         <div>&nbsp;</div>
-        <div><span class="comment"># 3. (Optional) DevOps plugins — for devops-cycle workflow</span></div>
-        <div><span class="cmd">/plugin marketplace add</span> <span class="flag">hashicorp/agent-skills</span></div>
-        <div><span class="cmd">/plugin marketplace add</span> <span class="flag">awslabs/agent-plugins</span></div>
-        <div><span class="cmd">/plugin marketplace add</span> <span class="flag">pulumi/agent-skills</span></div>
-        <div><span class="cmd">/plugin marketplace add</span> <span class="flag">ahmedasmar/devops-claude-skills</span></div>
-        <div><span class="cmd">/plugin marketplace add</span> <span class="flag">wshobson/agents</span></div>
-        <div>&nbsp;</div>
-        <div><span class="comment"># 4. Initialize your project</span></div>
+        <div><span class="comment"># Initialize your project</span></div>
         <div><span class="cmd">/silver:init</span></div>
-        <div><span class="comment"># Asks: application or DevOps/infrastructure project?</span></div>
+        <div><span class="comment"># Guides you through dependencies, then asks: app or DevOps project?</span></div>
         <div>&nbsp;</div>
-        <div><span class="comment"># 5. Use /silver as your single entry point</span></div>
+        <div><span class="comment"># Use /silver as your single entry point</span></div>
         <div><span class="cmd">/silver</span> <span class="flag">quality review my architecture</span></div>
         <div><span class="comment"># Routes to the right skill automatically</span></div>
       </div>
@@ -1714,7 +1701,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="callout fade-in">
         <div class="callout-icon"><i data-lucide="zap"></i></div>
         <p><strong>Enforcement starts immediately.</strong><br>
-        After running <code>/silver:init</code>, hooks are active and the workflow is live. Use <code>/silver &lt;anything&gt;</code> as your single entry point — it routes to the right skill automatically, or delegates to <code>/gsd:do</code> for planning and execution work. For app projects, the 20-step full-dev-cycle activates. For DevOps projects, the 24-step devops-cycle activates with blast radius assessment, IaC-adapted quality gates, and automatic detection of installed DevOps plugins.</p>
+        After running <code>/silver:init</code>, hooks are active and the workflow is live. Use <code>/silver &lt;anything&gt;</code> as your single entry point — it routes to the right skill automatically, or delegates to <code>/gsd:do</code> for planning and execution work. For app projects, the 20-step full-dev-cycle activates. For DevOps projects, the 24-step devops-cycle activates with blast radius assessment, IaC-adapted quality gates, and automatic detection of installed DevOps plugins. Missing dependencies are detected and guided during <code>/silver:init</code> — no manual setup required.</p>
       </div>
     </div>
   </div>
