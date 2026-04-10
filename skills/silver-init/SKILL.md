@@ -88,10 +88,19 @@ Run via Bash tool:
 ```
 command -v jq
 ```
-If the command fails (exit code non-zero), output exactly:
-> ❌ Silver Bullet requires jq. Install: `brew install jq` (macOS) / `apt install jq` (Linux)
+If the command fails (exit code non-zero):
 
-STOP. Do not proceed.
+Output:
+> ❌ **jq is not installed.** Silver Bullet requires jq for JSON processing.
+
+Then use AskUserQuestion:
+- Question: "Please install jq in a terminal, then come back and I'll continue.\n\n**macOS:** `brew install jq`\n**Linux:** `sudo apt install jq`\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed jq — continue"
+  - "B. Stop for now"
+
+If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.2 Superpowers plugin
 
@@ -101,10 +110,14 @@ Use the Glob tool to search for:
 ```
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
-If no files found, output exactly:
-> ❌ Superpowers plugin not found. Install: `/plugin install obra/superpowers`
+If no files found, use AskUserQuestion:
+- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed it — continue"
+  - "B. Stop for now"
 
-STOP. Do not proceed.
+If A: re-run the Glob check. If still not found, STOP with: `❌ Superpowers plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.3 Design plugin
 
@@ -114,10 +127,14 @@ Use the Glob tool to search for Design plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, output exactly:
-> ❌ Design plugin not found. Install: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
+If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
+- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed it — continue"
+  - "B. Stop for now"
 
-STOP. Do not proceed.
+If A: re-run the Glob check. If still not found, STOP with: `❌ Design plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.4 Engineering plugin
 
@@ -127,10 +144,14 @@ Use the Glob tool to search for Engineering plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, output exactly:
-> ❌ Engineering plugin not found. Install: `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`
+If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
+- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed it — continue"
+  - "B. Stop for now"
 
-STOP. Do not proceed.
+If A: re-run the Glob check. If still not found, STOP with: `❌ Engineering plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.5 GSD plugin
 
@@ -139,12 +160,16 @@ Use the Bash tool to check if GSD commands are installed:
 test -f "$HOME/.claude/commands/gsd/new-project.md" && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
-If `NOT_FOUND`, output exactly:
-> ❌ GSD plugin not found. Install: `npx get-shit-done-cc@latest`
->
-> Silver Bullet requires GSD. Install it, then re-run `/silver:init`.
+If `NOT_FOUND`, use AskUserQuestion:
+- Question: "❌ **GSD plugin is not installed.** GSD is a hard requirement — Silver Bullet wraps GSD's planning and execution commands and cannot function without it.\n\nPlease run this command in your terminal, then come back:\n\n```\nnpx get-shit-done-cc@latest\n```\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed GSD — continue"
+  - "B. Stop for now"
 
-**HARD STOP. Do NOT proceed under any circumstances.** Do NOT offer to install GSD yourself. Do NOT continue even if the user asks. The user must install GSD manually and re-run this skill.
+If A: re-run the Bash check. If still `NOT_FOUND`, STOP with: `❌ GSD still not found. Please install it and re-run /silver:init.`
+If B: STOP.
+
+**Do NOT proceed past this check without GSD confirmed present.**
 
 ### 1.6 v1 incompatibility check
 
@@ -174,11 +199,14 @@ If user selects A, use the Edit tool to remove the offending hook entries from `
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
-If no file found, output exactly:
-> ❌ MultAI plugin not found. Required for silver:research and multi-AI perspectives.
-> Install: `/plugin install` from the MultAI marketplace
+If no file found, use AskUserQuestion:
+- Question: "❌ **MultAI plugin is not installed.** MultAI is required for `silver:research` and multi-AI perspectives — these workflows will not function without it.\n\nPlease install the MultAI plugin from the Claude Code plugin marketplace (`/plugin install`), then come back.\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed MultAI — continue"
+  - "B. Stop for now"
 
-STOP. Do not proceed.
+If A: re-run the Glob check. If still not found, STOP with: `❌ MultAI plugin still not found. Please install it and re-run /silver:init.`
+If B: STOP.
 
 ### 1.7 Anthropic Engineering plugin
 
@@ -187,22 +215,28 @@ STOP. Do not proceed.
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/engineering/skills/`
 
-If no directory found, display:
-> ⚠️  Anthropic Engineering plugin not found. Recommended for silver:ui (/frontend-design, /testing-strategy) and silver:release (/documentation).
-> Install via the Anthropic Engineering plugin in the marketplace. (Optional — workflows degrade gracefully.)
+If no directory found, use AskUserQuestion:
+- Question: "⚠️ **Anthropic Engineering plugin is not installed.** This is optional but recommended — it enables `/frontend-design`, `/testing-strategy`, and `/documentation` in silver:ui and silver:release.\n\nInstall command (inside Claude Code):\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nWould you like to install it now, or continue without it?"
+- Options:
+  - "A. I'll install it now — pause and wait"
+  - "B. Skip it and continue without"
 
-Continue without stopping.
+If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
+If B: continue without stopping.
 
 ### 1.8 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
 
-If no directory found, display:
-> ⚠️  Anthropic Product Management plugin not found. Recommended for silver:feature and silver:ui (/product-brainstorming).
-> Install via the Anthropic Product Management plugin in the marketplace. (Optional — workflows degrade gracefully.)
+If no directory found, use AskUserQuestion:
+- Question: "⚠️ **Anthropic Product Management plugin is not installed.** This is optional but recommended — it enables `/product-brainstorming` in silver:feature and silver:ui.\n\nInstall command (inside Claude Code):\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nWould you like to install it now, or continue without it?"
+- Options:
+  - "A. I'll install it now — pause and wait"
+  - "B. Skip it and continue without"
 
-Continue without stopping.
+If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
+If B: continue without stopping.
 
 ---
 
