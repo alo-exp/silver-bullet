@@ -72,12 +72,12 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --bg-code:#060a0e;
   --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
   --chrome-gradient:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
-  --accent:#00ff41;
-  --accent-light:#39ff66;
-  --accent-glow:rgba(0,255,65,0.18);
+  --accent:#00c832;
+  --accent-light:#2dd952;
+  --accent-glow:rgba(0,200,50,0.15);
   --accent2:#00ccff;
   --accent3:#a855f7;
-  --green:#00ff41;
+  --green:#00c832;
   --amber:#ffaa00;
   --red:#c44060;
   --cyan:#00ccff;
@@ -93,10 +93,10 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --section-alt:rgba(12,20,16,.7);
   --table-row-hover:rgba(0,255,65,.02);
   --skill-phase-border:rgba(17,34,24,.9);
-  --btn-gradient:linear-gradient(135deg,#00cc33 0%,#009922 50%,#00cc33 100%);
-  --btn-gradient-hover:linear-gradient(135deg,#00ff41 0%,#00cc33 50%,#00ff41 100%);
-  --hero-glow:rgba(0,255,65,0.06);
-  --card-top:rgba(0,255,65,0.6);
+  --btn-gradient:linear-gradient(135deg,#00a828 0%,#007a1a 50%,#00a828 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#00c832 0%,#009922 50%,#00c832 100%);
+  --hero-glow:rgba(0,200,50,0.05);
+  --card-top:rgba(0,200,50,0.5);
 }
 
 /* ───── THEME TRANSITION ───── */
@@ -216,6 +216,8 @@ nav .nav-cta:hover{
 .hero-h1-inner{display:inline-flex;flex-direction:column;align-items:center;gap:20px;}
 .hero-bullet{height:75px;width:auto;margin-top:6px;filter:drop-shadow(3px 6px 10px rgba(0,0,0,.25));}
 [data-theme="dark"] .hero-bullet{filter:drop-shadow(3px 6px 10px rgba(255,255,255,.25));}
+[data-theme="dark"] .section-title{color:#b8c4cc;}
+[data-theme="dark"] .feature-card h3,[data-theme="dark"] .layer-card h3{color:#b8c4cc;}
 [data-theme="dark"] .hero .brooks-quote{color:var(--text-secondary);}
 [data-theme="dark"] .hero .brooks-attr{color:var(--text-secondary);}
 [data-theme="dark"] .hero .brooks-attr a{color:var(--text-secondary);}
