@@ -200,6 +200,47 @@ print_results() {
   [[ $FAIL -eq 0 ]] && exit 0 || exit 1
 }
 
+capture_mtime() {
+  stat -f "%m" "$1" 2>/dev/null || stat --format="%Y" "$1" 2>/dev/null || echo "0"
+}
+
+assert_file_contains() {
+  local label="$1" filepath="$2" needle="$3"
+  if grep -qiE "$needle" "$filepath" 2>/dev/null; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  (expected pattern "%s" in %s)\n' "$label" "$needle" "$filepath"
+    printf '  File snippet: %s\n' "$(head -c 400 "$filepath" 2>/dev/null || echo '(file not found)')"
+  fi
+}
+
+assert_file_not_contains() {
+  local label="$1" filepath="$2" needle="$3"
+  if ! grep -qiE "$needle" "$filepath" 2>/dev/null; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  (unexpected pattern "%s" found in %s)\n' "$label" "$needle" "$filepath"
+    printf '  File snippet: %s\n' "$(head -c 400 "$filepath" 2>/dev/null)"
+  fi
+}
+
+assert_file_modified() {
+  local label="$1" filepath="$2" mtime_before="$3"
+  local mtime_after
+  mtime_after=$(capture_mtime "$filepath")
+  if [[ "$mtime_after" -gt "$mtime_before" ]]; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  (file mtime not updated: before=%s after=%s)\n' "$label" "$mtime_before" "$mtime_after"
+  fi
+}
+
 seed_state() {
   # Write given skill names (one per line) to the real state file
   mkdir -p "$(dirname "$REAL_STATE")"

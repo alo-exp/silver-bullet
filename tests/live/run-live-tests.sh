@@ -7,7 +7,7 @@ echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
 echo "WARNING: These tests invoke real Claude CLI."
-echo "Estimated cost: \$0.08-\$0.40 per full run."
+echo "Estimated cost: \$0.10-\$0.60 per full run."
 echo ""
 
 # Check claude CLI exists
@@ -33,6 +33,7 @@ run_suite() {
 run_suite "Enforcement" "$SCRIPT_DIR/test-live-enforcement.sh"
 run_suite "Skill Recording" "$SCRIPT_DIR/test-live-skill-recording.sh"
 run_suite "Full Scenario" "$SCRIPT_DIR/test-live-full-scenario.sh"
+run_suite "Doc Scheme" "$SCRIPT_DIR/test-live-doc-scheme.sh"
 
 echo ""
 echo "========================================"
