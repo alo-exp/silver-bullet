@@ -30,7 +30,7 @@
   --font-heading:'Space Grotesk',system-ui,sans-serif;
   --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
   --font-sans:var(--font-body);
-  --font-mono:'Fira Code',monospace;
+  --font-mono:'Roboto Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
   --nav-bg:rgba(246,244,240,.92);
