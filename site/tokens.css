@@ -27,7 +27,9 @@
   --radius:12px;
   --radius-lg:20px;
   --radius-sm:8px;
-  --font-sans:'Space Grotesk',system-ui,sans-serif;
+  --font-heading:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-sans:var(--font-body);
   --font-mono:'Fira Code',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);

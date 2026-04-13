@@ -9,7 +9,7 @@
 <meta name="description" content="Full feature comparison: Silver Bullet vs GSD (get-shit-done-cc) vs Superpowers. 92 features across 12 categories. Scores, category breakdown, and when to use each.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
@@ -26,7 +26,9 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --text-primary:#050f08;--text-secondary:#0d3a1a;--text-dim:#285c38;
   --border:#8cc4a4;--border-hover:#4a9464;
   --radius:12px;--radius-lg:20px;--radius-sm:8px;
-  --font-sans:'Space Grotesk',system-ui,sans-serif;
+  --font-heading:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-sans:var(--font-body);
   --font-mono:'Fira Code',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
@@ -72,6 +74,7 @@ body,nav,section,.score-card,.feat-table td,.feat-table th{
   transition:background .25s,background-color .25s,border-color .25s,color .25s;
 }
 body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
 .container{max-width:1200px;margin:0 auto;padding:0 24px}
 .text-center{text-align:center}
 .mt-2{margin-top:16px}.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}.mt-8{margin-top:64px}
