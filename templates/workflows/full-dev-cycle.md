@@ -198,7 +198,7 @@ Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
 - If this phase introduces an **architectural decision**: write an ADR inline
   (structure: title, status, context, decision, consequences) before moving to PLAN.
 - If this phase introduces a **new service or major component**: `/system-design`
-- If this phase involves **UI work**: `product-brainstorming`
+- If this phase involves **UI work**: `product-management:product-brainstorming`
   (consolidated design skill covering design system, UX copy, and accessibility; WCAG 2.1 AA audit included)   **REQUIRED when UI work** -- DO NOT SKIP
 
 **Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,

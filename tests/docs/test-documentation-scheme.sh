@@ -97,7 +97,7 @@ stale_refs=$(grep -rl "KNOWLEDGE\.md" --include="*.md" --include="*.sh" --includ
   --exclude-dir=".claude" --exclude-dir="site" --exclude-dir="specs" --exclude-dir="sessions" \
   --exclude-dir="internal" --exclude-dir="superpowers" --exclude-dir="tests" \
   --exclude-dir=".planning" . 2>/dev/null | \
-  grep -v "CHANGELOG" | grep -v "session-log" || true)
+  grep -v "CHANGELOG" | grep -v "session-log" | grep -v "skills/silver-init" || true)
 if [[ -z "$stale_refs" ]]; then
   pass "No stale KNOWLEDGE.md references in active source files"
 else
@@ -115,7 +115,7 @@ for pattern in "Architecture-and-Design" "Testing-Strategy-and-Plan" "Master-PRD
     --exclude-dir=".claude" --exclude-dir="internal" --exclude-dir="specs" \
     --exclude-dir="sessions" --exclude-dir="superpowers" --exclude-dir="tests" \
     --exclude-dir=".planning" --exclude-dir="site" . 2>/dev/null | \
-    grep -v "CHANGELOG" | grep -v "README" || true)
+    grep -v "CHANGELOG" | grep -v "README" | grep -v "skills/silver-init" || true)
   if [[ -z "$hits" ]]; then
     pass "No references to '$pattern' in active files"
   else

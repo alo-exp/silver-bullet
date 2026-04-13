@@ -848,6 +848,147 @@ Copy both workflow templates to `docs/workflows/`:
    to `docs/workflows/devops-cycle.md.backup` before writing.
    Write the contents to `docs/workflows/devops-cycle.md` using the Write tool.
 
+#### 3.5.5 Documentation migration (existing projects only)
+
+**Skip this step** if the project has no existing `docs/` directory (`test -d docs` returns false).
+
+If `docs/` exists, scan for documentation that can be migrated to the SB documentation scheme. The migration is **100% transparent** — every action requires explicit user approval. No files are deleted; originals are preserved as `.pre-sb-backup` copies.
+
+**Step A: Detect existing documentation patterns**
+
+Use the Bash tool to scan for common doc patterns:
+```bash
+echo "=== SCAN RESULTS ==="
+# Architecture docs (various naming conventions)
+for f in docs/Architecture*.md docs/architecture*.md docs/ARCHITECTURE*.md docs/design*.md docs/Design*.md docs/system-design*.md; do test -f "$f" && echo "ARCH: $f"; done
+# Testing docs
+for f in docs/Testing*.md docs/testing*.md docs/TESTING*.md docs/test-plan*.md docs/test-strategy*.md; do test -f "$f" && echo "TEST: $f"; done
+# Knowledge / lessons / decisions / ADRs
+for f in docs/KNOWLEDGE*.md docs/knowledge*.md docs/decisions*.md docs/adr/*.md docs/ADR/*.md docs/learnings*.md docs/lessons*.md; do test -f "$f" && echo "KNOW: $f"; done
+# Changelog
+for f in docs/CHANGELOG*.md docs/changelog*.md docs/changes*.md; do test -f "$f" && echo "CLOG: $f"; done
+# CI/CD docs
+for f in docs/CICD*.md docs/cicd*.md docs/CI*.md docs/ci-cd*.md docs/pipeline*.md docs/deploy*.md docs/deployment*.md; do test -f "$f" && echo "CICD: $f"; done
+# PRD / requirements / product docs
+for f in docs/PRD*.md docs/prd*.md docs/requirements*.md docs/product*.md docs/spec*.md; do test -f "$f" && echo "PRD: $f"; done
+# API docs
+for f in docs/API*.md docs/api*.md; do test -f "$f" && echo "API: $f"; done
+# Security docs
+for f in docs/SECURITY*.md docs/security*.md docs/threat-model*.md; do test -f "$f" && echo "SEC: $f"; done
+echo "=== END SCAN ==="
+```
+
+**Step B: Build migration plan**
+
+For each detected file, determine the migration action:
+
+| Detected Pattern | SB Target | Action |
+|-----------------|-----------|--------|
+| `Architecture-and-Design.md`, `architecture.md`, etc. | `docs/ARCHITECTURE.md` | Rename (preserve content) |
+| `Testing-Strategy-and-Plan.md`, `test-plan.md`, etc. | `docs/TESTING.md` | Rename (preserve content) |
+| `KNOWLEDGE.md` (single file) | `docs/knowledge/` directory | Split: project intelligence → `docs/knowledge/YYYY-MM.md`, portable lessons → `docs/lessons/YYYY-MM.md` |
+| `changelog.md` (lowercase or variant) | `docs/CHANGELOG.md` | Rename (preserve content) |
+| `cicd.md`, `pipeline.md`, `deploy.md` | `docs/CICD.md` | Rename (preserve content) |
+| File already matches SB naming | — | Skip (no action needed) |
+| Unrecognized doc | — | Leave in place (no action) |
+
+If no migration candidates are found, output `✓ No documentation migration needed — existing docs already match or no conflicts found.` and skip to Step 3.6.
+
+**Step C: Present migration plan to user**
+
+Use AskUserQuestion to present the plan. Format the question as a numbered list:
+
+```
+📋 **Documentation Migration Plan**
+
+I found existing documentation that can be migrated to the Silver Bullet documentation scheme. Here's what I'd like to do:
+
+1. **Rename** `docs/Architecture-and-Design.md` → `docs/ARCHITECTURE.md` (content preserved as-is)
+2. **Rename** `docs/Testing-Strategy-and-Plan.md` → `docs/TESTING.md` (content preserved as-is)
+3. **Split** `docs/KNOWLEDGE.md` → `docs/knowledge/YYYY-MM.md` (project intelligence) + `docs/lessons/YYYY-MM.md` (portable lessons)
+...
+
+Each original file will be backed up as `<filename>.pre-sb-backup` before any changes.
+No files will be deleted. You approve each step individually.
+
+Shall I proceed with this migration?
+```
+
+Options:
+- "A. Yes, proceed step by step (I'll approve each one)"
+- "B. Show me more details about each step first"
+- "C. Skip migration — I'll reorganize docs myself later"
+
+If B: Read each detected file (first 30 lines) and explain what content will go where. Then re-ask with options A and C.
+If C: Skip to Step 3.6 — the non-destructive placeholder creation will fill any gaps without touching existing files.
+
+**Step D: Execute migration (one step at a time)**
+
+For each migration action from the plan, execute in order. After EACH action, use AskUserQuestion to confirm before proceeding to the next.
+
+**For renames:**
+1. Copy original to `<filename>.pre-sb-backup` using Bash (`cp`)
+2. Rename using Bash (`mv <old> <new>`)
+3. Use AskUserQuestion: `✓ Renamed \`<old>\` → \`<new>\` (backup at \`<old>.pre-sb-backup\`). Continue with next step?`
+
+**For KNOWLEDGE.md split:**
+This is the most complex migration. Execute as follows:
+
+1. Copy `docs/KNOWLEDGE.md` to `docs/KNOWLEDGE.md.pre-sb-backup`
+2. Read the full content of `docs/KNOWLEDGE.md`
+3. Analyze the content and separate into two categories:
+   - **Project-scoped intelligence** (architecture patterns, gotchas, decisions, project-specific recurring patterns, open questions) → goes to `docs/knowledge/YYYY-MM.md`
+   - **Portable lessons** (general lessons that apply beyond this project — remove all project-specific file paths, feature names, and requirement IDs) → goes to `docs/lessons/YYYY-MM.md`
+4. Use AskUserQuestion to show the user the proposed split:
+   ```
+   📋 **KNOWLEDGE.md Split Preview**
+
+   **→ docs/knowledge/YYYY-MM.md** (project intelligence):
+   - [list first 3-5 entries that will go here]
+
+   **→ docs/lessons/YYYY-MM.md** (portable lessons):
+   - [list first 3-5 entries that will go here]
+
+   **Kept as-is** (doesn't fit either category):
+   - [list any entries that don't clearly fit]
+
+   Does this split look right?
+   ```
+   Options: "A. Yes, write both files" / "B. Move everything to knowledge/ (I'll sort later)" / "C. Skip this step"
+5. Write the files based on the user's choice
+6. Create `docs/knowledge/INDEX.md` if it doesn't exist (from template)
+
+**For unrecognized files in docs/:**
+Leave them in place. After all migrations complete, mention them:
+```
+ℹ️ These existing docs were left untouched (not part of the SB scheme):
+- docs/custom-guide.md
+- docs/onboarding.md
+They will coexist with SB-managed docs without conflict.
+```
+
+**Step E: Migration summary**
+
+After all steps complete, output a summary:
+```
+✅ **Documentation migration complete**
+
+Migrated:
+- docs/Architecture-and-Design.md → docs/ARCHITECTURE.md
+- docs/KNOWLEDGE.md → docs/knowledge/YYYY-MM.md + docs/lessons/YYYY-MM.md
+
+Backups:
+- docs/Architecture-and-Design.md.pre-sb-backup
+- docs/KNOWLEDGE.md.pre-sb-backup
+
+Untouched:
+- docs/custom-guide.md (not part of SB scheme)
+
+You can safely delete the .pre-sb-backup files once you've verified the migration.
+```
+
+---
+
 #### 3.6 Create placeholder docs (NON-DESTRUCTIVE)
 
 **CRITICAL: Do NOT overwrite existing files.** For each file below, check if it already
