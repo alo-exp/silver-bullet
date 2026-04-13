@@ -164,6 +164,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#agents">Agent Teams</a></li>
         <li><a href="#semantic-context">Semantic Context</a></li>
         <li><a href="#file-structure">File Structure</a></li>
+        <li><a href="#documentation">Documentation Scheme</a></li>
         <li class="sidebar-section">v0.14–v0.16 Features</li>
         <li><a href="#spec-driven">Spec-Driven Development</a></li>
         <li><a href="#artifact-review">Artifact Review System</a></li>
@@ -480,15 +481,36 @@ CLAUDE.md                    <span class="comment"># Active workflow + Silver Bu
 
 <span class="comment"># Documentation (maintained by Silver Bullet)</span>
 docs/
-  PRD-Overview.md            <span class="comment"># High-level requirements (syncs from .planning/)</span>
-  Architecture-and-Design.md <span class="comment"># High-level arch + principles only</span>
-  Testing-Strategy-and-Plan.md
-  CICD.md
-  KNOWLEDGE.md               <span class="comment"># Architectural decisions, gotchas, patterns</span>
+  ARCHITECTURE.md            <span class="comment"># High-level arch + design principles</span>
+  TESTING.md                 <span class="comment"># Test pyramid, coverage goals</span>
   CHANGELOG.md               <span class="comment"># Task log (newest first)</span>
+  doc-scheme.md              <span class="comment"># Documentation architecture reference</span>
+  knowledge/                 <span class="comment"># Project-scoped intelligence (monthly files)</span>
+    INDEX.md                 <span class="comment"># Gateway doc index</span>
+    YYYY-MM.md               <span class="comment"># Monthly knowledge entries</span>
+  lessons/                   <span class="comment"># Portable lessons learned (monthly files)</span>
+    YYYY-MM.md               <span class="comment"># Monthly lessons by category</span>
   specs/                     <span class="comment"># Detailed design specs (Superpowers)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span></div>
+
+      <div class="divider"></div>
+
+      <h2 id="documentation">Documentation Scheme</h2>
+      <p>Silver Bullet scaffolds a bounded, non-redundant documentation architecture for every project. Documentation lives in three layers: <strong>planning</strong> (<code>.planning/</code>, ephemeral per-milestone), <strong>project docs</strong> (<code>docs/</code>, durable across milestones), and <strong>public</strong> (<code>README.md</code>). Every document uses one of five scalability patterns &mdash; snapshot, capped table, rotation, summary+archive, or fixed &mdash; so no file grows unbounded.</p>
+      <p>Project intelligence is split into <code>docs/knowledge/</code> (project-specific patterns, gotchas, decisions) and <code>docs/lessons/</code> (portable lessons with a strict category taxonomy). Both use monthly files (<code>YYYY-MM.md</code>) that freeze after their month ends.</p>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="file-text"></i></div>
+          <h4><a href="documentation.html" style="color:var(--accent-light);text-decoration:none">Documentation Scheme &rarr;</a></h4>
+          <p>Three layers, five scalability patterns, knowledge vs lessons, size caps, update timing, and the non-redundancy contract.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="layers"></i></div>
+          <h4>Knowledge vs Lessons</h4>
+          <p>Knowledge is project-scoped intelligence. Lessons are portable &mdash; written as if explaining to someone who has never seen the codebase. No project-specific references leak into lessons.</p>
+        </div>
+      </div>
 
       <div class="divider"></div>
 

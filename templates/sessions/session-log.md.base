@@ -39,8 +39,7 @@ In order: skill-name, skill-name, ...
 
 What was produced. Commits: abc1234, ...
 
-## KNOWLEDGE.md additions
+## Knowledge & Lessons additions
 
-- Architecture patterns: (none | described)
-- Known gotchas: (none | described)
-- Key decisions: (none | described)
+- knowledge/YYYY-MM.md: (none | sections updated)
+- lessons/YYYY-MM.md: (none | categories added)

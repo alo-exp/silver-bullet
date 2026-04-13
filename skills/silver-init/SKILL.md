@@ -155,9 +155,9 @@ If B: STOP.
 
 ### 1.5 GSD plugin
 
-Use the Bash tool to check if GSD commands are installed:
+Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
 ```bash
-test -f "$HOME/.claude/commands/gsd/new-project.md" && echo "EXISTS" || echo "NOT_FOUND"
+{ test -f "$HOME/.claude/get-shit-done/workflows/new-project.md" || test -f "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND`, use AskUserQuestion:
@@ -881,7 +881,7 @@ TODO — High-level groupings of requirements (see `.planning/REQUIREMENTS.md` f
 TODO — What this product explicitly does not do, and why.
 ```
 
-**`docs/Architecture-and-Design.md`**:
+**`docs/ARCHITECTURE.md`**:
 ```markdown
 # Architecture and Design
 
@@ -905,7 +905,7 @@ TODO — Architectural constraints and principles that guide all implementation 
 TODO — Key technology decisions and rationale.
 ```
 
-**`docs/Testing-Strategy-and-Plan.md`**:
+**`docs/TESTING.md`**:
 ```markdown
 # Testing Strategy and Plan
 
@@ -930,6 +930,10 @@ Read `${PLUGIN_ROOT}/templates/knowledge/YYYY-MM.md.base` using the Read tool. R
 **`docs/lessons/YYYY-MM.md`** (only if current month's file does not already exist):
 
 Read `${PLUGIN_ROOT}/templates/lessons/YYYY-MM.md.base` using the Read tool. Replace `{{YYYY-MM}}` with the current year-month. Write to `docs/lessons/YYYY-MM.md` (using actual current year-month).
+
+**`docs/doc-scheme.md`** (only if it does not already exist):
+
+Read `${PLUGIN_ROOT}/templates/doc-scheme.md.base` using the Read tool. Write as-is to `docs/doc-scheme.md`.
 
 **`docs/CHANGELOG.md`** (only if it does not already exist — task log, distinct from root-level CHANGELOG.md if present):
 

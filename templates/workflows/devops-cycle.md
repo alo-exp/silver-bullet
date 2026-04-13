@@ -612,7 +612,7 @@ files from templates and re-run.
 
 ### Branch Cleanup
 
-`/finishing-a-development-branch`                                                        **REQUIRED** -- DO NOT SKIP
+`superpowers:finishing-a-development-branch`                                              **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Prepares the branch for merge -- rebases on the base branch, squashes
 if appropriate, and ensures a clean diff.

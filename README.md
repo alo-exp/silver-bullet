@@ -128,7 +128,7 @@ This will:
 - Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and `CLAUDE.md` (project instructions)
 - Create `.silver-bullet.json` with your project config
 - Copy the appropriate workflow file(s) to `docs/workflows/`
-- Create placeholder docs (`docs/PRD-Overview.md`, `docs/Architecture-and-Design.md`, etc.)
+- Create placeholder docs (`docs/ARCHITECTURE.md`, `docs/TESTING.md`, `docs/knowledge/`, `docs/lessons/`, etc.)
 - Commit everything
 
 That's it. Enforcement is now active.

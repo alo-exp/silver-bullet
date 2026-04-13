@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Site (static)",
+      "runtimeExecutable": "/opt/homebrew/bin/python3.13",
+      "runtimeArgs": ["-m", "http.server", "4321", "--directory", "site"],
+      "port": 4321
+    },
+    {
+      "name": "Test App (Express)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/server.js"],
+      "cwd": "tests/test-app",
+      "port": 3456
+    }
+  ]
+}

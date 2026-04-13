@@ -11,6 +11,8 @@
 
 | What | How to invoke |
 |------|---------------|
+| `/silver` smart router | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
+| Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
 | Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |
 | Gap-filling skills | Skill tool -- `/testing-strategy`, `/documentation`, etc. |
@@ -135,18 +137,20 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 
 ---
 
-### MODEL ROUTING (once per session)
+### MODEL ROUTING (automatic — no prompt)
 
-**What it does:** Selects which AI model to use for the planning-heavy steps of this phase.
+**What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-**What to expect:** A prompt asking whether to use Opus (deeper reasoning, higher cost) or
-stay on Sonnet (faster, lower cost). This affects discuss and plan quality. The choice
-applies for the duration of the session.
+**Default:** Sonnet (LOW thinking effort) for all orchestrator work and 22 of 24 GSD agents.
+**Opus reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-Before DISCUSS begins, ask:
-> Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
+**What to expect:** No model choice prompt. Agents auto-select the correct model. Opus agents
+run deeper reasoning transparently; Sonnet agents handle execution, research, review, and
+documentation at high throughput. The orchestrator (this session) always runs on Sonnet.
 
-**Autonomous mode:** Stay Sonnet; escalate silently only on measurably incomplete planning output.
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to Opus only if a
+planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders,
+or a file-producing step that produces no file). Log escalation as an autonomous decision.
 
 ---
 
@@ -194,8 +198,8 @@ Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
 - If this phase introduces an **architectural decision**: write an ADR inline
   (structure: title, status, context, decision, consequences) before moving to PLAN.
 - If this phase introduces a **new service or major component**: `/system-design`
-- If this phase involves **UI work**: `/design-system` + `/ux-copy` + `/accessibility-review`
-  (WCAG 2.1 AA audit against the phase's UI deliverables)   **REQUIRED when UI work** -- DO NOT SKIP
+- If this phase involves **UI work**: `product-brainstorming`
+  (consolidated design skill covering design system, UX copy, and accessibility; WCAG 2.1 AA audit included)   **REQUIRED when UI work** -- DO NOT SKIP
 
 **Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,
 architecture, system-design), ask once before beginning them:
@@ -212,24 +216,24 @@ log all auto-decisions to the session log.
 
 ### QUALITY GATES
 
-**What it does:** Evaluates the current design against all 8 Silver Bullet quality dimensions
+**What it does:** Evaluates the current design against all 9 Silver Bullet quality dimensions
 and produces a consolidated pass/fail report. A failure is a hard stop, not a warning.
 
 **Command:** `/quality-gates`                                                    **REQUIRED** -- DO NOT SKIP
 
-**What to expect:** All 8 dimensions (modularity, reusability, scalability, security,
-reliability, usability, testability, extensibility) are evaluated in parallel -- one agent per
+**What to expect:** All 9 dimensions (modularity, reusability, scalability, security,
+reliability, usability, testability, extensibility, and AI/LLM safety) are evaluated in parallel -- one agent per
 dimension. Results are synthesized into a single report. Every dimension must pass. Expect 2-5
 minutes.
 
-**Agent Team dispatch**: Dispatch all 8 quality dimensions as a single parallel Agent Team
+**Agent Team dispatch**: Dispatch all 9 quality dimensions as a single parallel Agent Team
 wave -- one agent per dimension, `isolation: "worktree"`. Claude synthesizes results.
 Conflict resolution: more conservative/restrictive finding wins; resolution rationale logged
 in session log. **Autonomous mode:** All dispatches use `run_in_background: true`.
 
 **If it fails:** Read the report to identify which dimension(s) failed. Fix the specific
 design issue in your CONTEXT.md or design artifacts, then re-run `/quality-gates`. Do not
-proceed to PLAN until all 8 dimensions pass. Phase order is a hard constraint: do NOT start
+proceed to PLAN until all 9 dimensions pass. Phase order is a hard constraint: do NOT start
 PLAN before `/quality-gates` completes.
 
 ---
@@ -272,9 +276,9 @@ task producing an atomic git commit and each plan producing a SUMMARY.md.
 **Command:** `/gsd:execute-phase`                                                **REQUIRED** -- DO NOT SKIP
 
 **Pre-execution requirement:**
-`/test-driven-development` -- Before writing any implementation code: establish              **REQUIRED** -- DO NOT SKIP
-red-green-refactor discipline. Write the failing test first, make it pass,
-then refactor. TDD applies per task within each GSD wave.
+`superpowers:test-driven-development` -- Before writing any implementation code:            **REQUIRED** -- DO NOT SKIP
+establish red-green-refactor discipline. Write the failing test first, make it
+pass, then refactor. TDD applies per task within each GSD wave.
 
 **What to expect:** Executor agents are dispatched per plan -- one agent per plan within each
 wave (using worktree isolation for parallel execution). After each wave completes, a merge
@@ -335,19 +339,24 @@ review feedback.
 
 **Commands (all required, in order):**
 
-1. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
+1. `/security`                                                                   **REQUIRED** -- DO NOT SKIP
+   SENTINEL v2 adversarial security audit. Runs before peer review so security findings
+   are available as inputs to the review. Covers OWASP LLM Top 10, prompt injection,
+   privilege escalation, and data exfiltration patterns.
+
+2. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
    Structured peer code quality review (security, performance, correctness, readability).
    Covers SQL injection, XSS, N+1 queries, race conditions, edge cases, and maintainability.
    Run this before dispatching the automated reviewer.
 
-2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+3. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
    Dispatches `superpowers:code-reviewer` via the Agent tool to perform peer code quality
    review (security, performance, correctness, readability).
    **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
    A single clean pass is not sufficient. The loop is self-limiting -- it ends naturally
    when two consecutive passes are clean. Never stop early on "minor" issues.
 
-3. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
+4. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
    Triage and accept/reject all items from the review above.
 
 **What to expect:** A thorough multi-pass review process. The automated reviewer runs at
@@ -437,12 +446,13 @@ of the project after this milestone's work.
 **Additional required updates at this step:**
 - Update `docs/knowledge/YYYY-MM.md` (current month's file): append dated entries to
   Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions
-  as applicable. Create from `templates/knowledge/YYYY-MM.md.base` if it doesn't exist.
-  Resolved questions: append `[RESOLVED YYYY-MM-DD]: <resolution>` below original.
+  as applicable. If the file doesn't exist yet, create it from
+  `templates/knowledge/YYYY-MM.md.base`. Resolved questions: append
+  `[RESOLVED YYYY-MM-DD]: <resolution>` below original.
 - Update `docs/lessons/YYYY-MM.md` (current month's file): append any portable lessons
-  learned — tech stack, engineering practices, DevOps, domain knowledge. Write as if
-  explaining to someone who has never seen this project. Create from
-  `templates/lessons/YYYY-MM.md.base` if it doesn't exist.
+  learned — tech stack, engineering practices, DevOps, domain knowledge, or design patterns.
+  Write as if explaining to someone who has never seen this project. If the file doesn't
+  exist yet, create it from `templates/lessons/YYYY-MM.md.base`.
 - Update `docs/knowledge/INDEX.md` if any new docs were created or removed.
 - Update `docs/CHANGELOG.md`: prepend a new entry (newest first):
   ```
@@ -472,7 +482,7 @@ files that need updating.
 
 ### Branch Cleanup
 
-**Command:** `/finishing-a-development-branch`                                   **REQUIRED** -- DO NOT SKIP
+**Command:** `superpowers:finishing-a-development-branch`                        **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Performs branch rebase, cleanup, and merge preparation so the branch is
 ready for PR creation.

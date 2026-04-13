@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Documentation Scheme — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet organizes project documentation: three layers, five scalability patterns, knowledge vs lessons, and the non-redundancy contract.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.82rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px;margin-top:8px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-tip{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2)}
+.callout-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* LAYER CARDS */
+.layer-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.layer-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;display:flex;gap:16px;align-items:flex-start}
+.layer-num{min-width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#374151,#6b7280);color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);flex-shrink:0;margin-top:2px}
+.layer-card h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.layer-card p{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin:0}
+/* PATTERN TABLE */
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.doc-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.doc-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.doc-table td:first-child{font-weight:600;color:var(--text-primary)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+/* NAV SEARCH */
+.nav-search-wrap{position:relative}
+.nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.82rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
+.nav-search-input:focus{border-color:var(--accent);width:240px}
+.nav-search-input::placeholder{color:var(--text-dim)}
+.nav-search-results{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:200;max-height:420px;overflow-y:auto;display:none}
+.nav-search-results.open{display:block}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.78rem;color:var(--text-dim);line-height:1.4}
+@media(max-width:768px){.nav-search-wrap{display:none}}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span> Documentation</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-search-wrap">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs&#x2026;" autocomplete="off">
+        <div class="nav-search-results" id="nav-search-results"></div>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav">
+      <a href="../">Help Center</a>
+      <span>/</span>
+      <a href="./">Concepts</a>
+      <span>/</span>
+      <span>Documentation Scheme</span>
+    </div>
+    <h1>Documentation Scheme</h1>
+    <p>How Silver Bullet organizes your project's documentation across three layers &mdash; with bounded growth, no redundancy, and clear ownership.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#three-layers">Three Layers</a></li>
+        <li><a href="#scalability">Scalability Patterns</a></li>
+        <li class="sidebar-section">Project Docs</li>
+        <li><a href="#core-files">Core Files</a></li>
+        <li><a href="#knowledge-lessons">Knowledge &amp; Lessons</a></li>
+        <li><a href="#optional-files">Optional Files</a></li>
+        <li class="sidebar-section">Rules</li>
+        <li><a href="#size-caps">Size Caps</a></li>
+        <li><a href="#update-timing">When Docs Update</a></li>
+        <li><a href="#non-redundancy">Non-Redundancy</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p>Every Silver Bullet project gets a documentation architecture scaffolded by <code>/silver:init</code>. The scheme is designed around three principles:</p>
+      <ul>
+        <li><strong>Docs are artifacts, not afterthoughts</strong> &mdash; every document is produced by a specific workflow step and reviewed by the artifact reviewer framework</li>
+        <li><strong>No doc grows unbounded</strong> &mdash; every file uses one of five scalability patterns with enforced size caps</li>
+        <li><strong>Separation of concerns</strong> &mdash; planning artifacts (<code>.planning/</code>) are ephemeral per-milestone; project docs (<code>docs/</code>) are durable across milestones</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body">Your project includes a <code>docs/doc-scheme.md</code> file with the full reference. This page explains the concepts behind it.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="three-layers">Three Layers</h2>
+      <p>Documentation lives in three distinct layers, each with its own audience and lifespan:</p>
+
+      <div class="layer-list">
+        <div class="layer-card">
+          <span class="layer-num">1</span>
+          <div>
+            <h4>Planning &mdash; <code>.planning/</code></h4>
+            <p>Specs, plans, reviews, verification reports. Created and consumed during the SDLC. Archived automatically on milestone completion. Managed by GSD.</p>
+          </div>
+        </div>
+        <div class="layer-card">
+          <span class="layer-num">2</span>
+          <div>
+            <h4>Project Docs &mdash; <code>docs/</code></h4>
+            <p>Architecture, testing strategy, changelog, knowledge, lessons. Durable across milestones. Updated during the Documentation step of every task finalization.</p>
+          </div>
+        </div>
+        <div class="layer-card">
+          <span class="layer-num">3</span>
+          <div>
+            <h4>Public &mdash; <code>README.md</code></h4>
+            <p>Project overview for external readers. Updated during finalization and release.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="scalability">Scalability Patterns</h2>
+      <p>Every growing document uses one of these bounded patterns to prevent unbounded file growth:</p>
+
+      <table class="doc-table">
+        <thead><tr><th>Pattern</th><th>How It Works</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Snapshot</td><td>Overwritten each milestone; previous version archived</td><td><code>ARCHITECTURE.md</code>, <code>STATE.md</code></td></tr>
+          <tr><td>Capped Table</td><td>Max N rows; oldest archived when exceeded</td><td><code>CHANGELOG.md</code> (50 entries), quick tasks (20 rows)</td></tr>
+          <tr><td>Rotation</td><td>File archived at line threshold; fresh file started</td><td><code>REVIEW-ROUNDS.md</code> (200 lines)</td></tr>
+          <tr><td>Summary + Archive</td><td>Only current content inline; older collapsed to links</td><td><code>ROADMAP.md</code>, <code>PROJECT.md</code></td></tr>
+          <tr><td>Fixed</td><td>Structurally bounded by nature &mdash; never grows</td><td><code>TESTING.md</code>, per-phase artifacts</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="core-files">Core Files</h2>
+      <p>These files are scaffolded by <code>/silver:init</code> and form the backbone of your project documentation:</p>
+
+      <table class="doc-table">
+        <thead><tr><th>File</th><th>Purpose</th><th>Scalability</th></tr></thead>
+        <tbody>
+          <tr><td><code>ARCHITECTURE.md</code></td><td>Component model, layers, data flow, design principles</td><td>Snapshot</td></tr>
+          <tr><td><code>TESTING.md</code></td><td>Test pyramid, coverage goals, test classification</td><td>Fixed</td></tr>
+          <tr><td><code>CHANGELOG.md</code></td><td>Rolling task log &mdash; what, commits, skills, cost</td><td>Capped (50)</td></tr>
+          <tr><td><code>knowledge/INDEX.md</code></td><td>Gateway index of all project docs</td><td>Fixed</td></tr>
+          <tr><td><code>doc-scheme.md</code></td><td>Documentation architecture reference (this scheme)</td><td>Fixed</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="knowledge-lessons">Knowledge &amp; Lessons</h2>
+      <p>Project intelligence is split into two directories to separate project-specific knowledge from portable lessons.</p>
+
+      <h3><code>docs/knowledge/</code> &mdash; Project-Scoped Intelligence</h3>
+      <p>Things learned about <strong>this project</strong>: architecture patterns discovered, gotchas encountered, key decisions made, recurring patterns, and open questions. Not redundant with <code>ARCHITECTURE.md</code> (which captures current state, not journey) or phase <code>CONTEXT.md</code> files (which are single-phase and archived).</p>
+      <ul>
+        <li><strong>File convention:</strong> <code>YYYY-MM.md</code> &mdash; one file per month, append-only within that month, frozen after</li>
+        <li><strong>Categories:</strong> Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions</li>
+        <li><strong>Gateway:</strong> <code>knowledge/INDEX.md</code> lists all project docs with paths and purposes</li>
+      </ul>
+
+      <h3><code>docs/lessons/</code> &mdash; Portable Lessons Learned</h3>
+      <p>General lessons applicable beyond this project. Written as if explaining to someone who has never seen this codebase. No project-specific file paths, feature names, or requirement IDs.</p>
+      <ul>
+        <li><strong>File convention:</strong> <code>YYYY-MM.md</code> &mdash; same monthly segmentation</li>
+        <li><strong>Category taxonomy:</strong></li>
+      </ul>
+
+      <table class="doc-table">
+        <thead><tr><th>Prefix</th><th>Covers</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>domain:</code></td><td>Business domain lessons</td><td>Regulations, patterns, terminology</td></tr>
+          <tr><td><code>stack:</code></td><td>Language/framework/tool</td><td>Bash quirks, React patterns</td></tr>
+          <tr><td><code>practice:</code></td><td>Software engineering</td><td>Config management, testing strategy</td></tr>
+          <tr><td><code>devops:</code></td><td>CI, deployment, infra</td><td>Pipeline design, monitoring</td></tr>
+          <tr><td><code>design:</code></td><td>UI, UX, accessibility</td><td>Component patterns, responsive layout</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Portability rule.</strong> Lessons files must never contain project-specific references. If you can't explain the lesson without naming a project file or feature, it belongs in <code>knowledge/</code> instead.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="optional-files">Optional Files</h2>
+      <p>Created when your project needs them &mdash; not scaffolded by default:</p>
+
+      <table class="doc-table">
+        <thead><tr><th>File</th><th>When to Create</th></tr></thead>
+        <tbody>
+          <tr><td><code>CICD.md</code></td><td>CI/CD pipeline exists</td></tr>
+          <tr><td><code>API.md</code></td><td>First API endpoint</td></tr>
+          <tr><td><code>DEPLOYMENT.md</code></td><td>First deployment</td></tr>
+          <tr><td><code>SECURITY.md</code></td><td>After security audit</td></tr>
+          <tr><td><code>CONTRIBUTING.md</code></td><td>Multi-contributor project</td></tr>
+          <tr><td><code>ADR/</code></td><td>Significant architecture decisions</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="size-caps">Size Caps</h2>
+      <p>Every document has an enforced growth limit. The artifact reviewer flags violations during review rounds.</p>
+
+      <table class="doc-table">
+        <thead><tr><th>Location</th><th>Cap</th><th>If Exceeded</th></tr></thead>
+        <tbody>
+          <tr><td><code>docs/*.md</code></td><td>500 lines</td><td>Artifact reviewer flags for splitting</td></tr>
+          <tr><td><code>docs/knowledge/*.md</code></td><td>300 lines</td><td>Split into <code>YYYY-MM-a.md</code> / <code>YYYY-MM-b.md</code></td></tr>
+          <tr><td><code>docs/lessons/*.md</code></td><td>300 lines</td><td>Split into <code>YYYY-MM-a.md</code> / <code>YYYY-MM-b.md</code></td></tr>
+          <tr><td><code>.planning/</code> active files</td><td>300 lines</td><td>Milestone completion archives and resets</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="update-timing">When Docs Update</h2>
+
+      <table class="doc-table">
+        <thead><tr><th>Event</th><th>What Updates</th></tr></thead>
+        <tbody>
+          <tr><td>Every task (finalization step)</td><td><code>CHANGELOG.md</code>, <code>knowledge/YYYY-MM.md</code>, <code>lessons/YYYY-MM.md</code></td></tr>
+          <tr><td>Architecture changes</td><td><code>ARCHITECTURE.md</code> (rewritten)</td></tr>
+          <tr><td>Test infrastructure changes</td><td><code>TESTING.md</code></td></tr>
+          <tr><td>Docs added or removed</td><td><code>knowledge/INDEX.md</code></td></tr>
+          <tr><td>Milestone completion</td><td>Planning artifacts archived; tables trimmed</td></tr>
+          <tr><td>Release</td><td><code>README.md</code>, root <code>CHANGELOG.md</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="non-redundancy">Non-Redundancy Rules</h2>
+      <p>Silver Bullet enforces strict non-redundancy across all documentation layers:</p>
+      <ol>
+        <li><code>.planning/</code> artifacts are the source of truth during active development &mdash; <code>docs/</code> files are derived summaries</li>
+        <li><code>knowledge/</code> captures intelligence <strong>not derivable</strong> from code or git history</li>
+        <li><code>lessons/</code> captures portable learnings &mdash; never duplicates project-specific knowledge</li>
+        <li><code>ARCHITECTURE.md</code> is high-level design only &mdash; detailed phase designs stay in <code>.planning/phases/</code></li>
+        <li><code>CHANGELOG.md</code> is the task log &mdash; git log is the commit log (different granularity, no overlap)</li>
+      </ol>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Never duplicate between layers.</strong> If content exists in <code>.planning/REQUIREMENTS.md</code>, don't copy it into <code>docs/</code>. Reference it. If a lesson applies beyond this project, put it in <code>lessons/</code>, not <code>knowledge/</code>. The artifact reviewer checks for cross-document duplication.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="./">Core Concepts</a> &mdash; skills, hooks, enforcement layers, and the full mental model</li>
+        <li><a href="verification.html">Verification Before Completion</a> &mdash; how gsd-verify-work enforces quality gates</li>
+        <li><a href="../dev-workflow/">Dev Workflow</a> &mdash; the full development cycle, including the Documentation finalization step</li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="verification.html">
+          <span class="pnb-label">&larr; Previous</span>
+          <span class="pnb-title">Verification</span>
+        </a>
+        <a href="./">
+          <span class="pnb-label">Back to</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../">Help Home</a>
+        <a href="../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('icon-sun').style.display=dark?'none':'';
+  document.getElementById('icon-moon').style.display=dark?'':'none';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='light'?false:true)})();
+lucide.createIcons();
+</script>
+</body>
+</html>

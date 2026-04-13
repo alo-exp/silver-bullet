@@ -180,7 +180,7 @@ cat > "$log_file" << LOGEOF
 
 (filled at documentation step)
 
-## KNOWLEDGE.md additions
+## Knowledge & Lessons additions
 
 (filled at documentation step)
 LOGEOF
