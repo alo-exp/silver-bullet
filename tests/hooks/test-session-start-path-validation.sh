@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Tests for the path validation logic in hooks/session-start
 # Tests that sp_file is cleared when the resolved path is outside ~/.claude/plugins/cache/
+#
+# NOTE: These tests reproduce the validation snippet inline rather than invoking
+# hooks/session-start directly (which requires live plugin cache paths and a full
+# session environment). If the hook's validation logic changes, update both the
+# hook and the snippet below.
 
 set -euo pipefail
 

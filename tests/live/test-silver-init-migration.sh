@@ -90,7 +90,7 @@ mkdir -p "$S5_DIR/docs"
 printf '# Architecture and Design\n\nThis is the architecture document.\n\n## Overview\n\nKey decisions made during initial design.\n' \
   > "$S5_DIR/docs/Architecture-and-Design.md"
 response=$(invoke_migration "Project root: $S5_DIR. docs/ contains: Architecture-and-Design.md. The user has approved the migration." \
-  "Execute Step D for $S5_DIR/docs/Architecture-and-Design.md: first copy it to $S5_DIR/docs/Architecture-and-Design.md.pre-sb-backup using the Bash tool, then rename $S5_DIR/docs/Architecture-and-Design.md to $S5_DIR/docs/DESIGN.md using the Bash tool. Confirm when done.")
+  "Execute Step D for $S5_DIR/docs/Architecture-and-Design.md: first copy it to $S5_DIR/docs/Architecture-and-Design.md.pre-sb-backup using the Bash tool, then rename $S5_DIR/docs/Architecture-and-Design.md to $S5_DIR/docs/ARCHITECTURE.md using the Bash tool. Confirm when done.")
 backup_exists=$(find "$S5_DIR/docs" -name "*.pre-sb-backup" 2>/dev/null | head -1 || true)
 if [[ -n "$backup_exists" ]]; then
   PASS=$((PASS + 1))

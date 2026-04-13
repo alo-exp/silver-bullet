@@ -219,7 +219,7 @@ if [[ -z "$output" ]]; then exit 0; fi
 # Removes lines beginning with common injection prefixes (SYSTEM:, ASSISTANT:,
 # HUMAN:, <instruction>, etc.) to prevent adversarial project files from
 # smuggling instructions past the SENTINEL boundary.
-output=$(printf '%s' "$output" | grep -Ev '^[[:space:]]*(SYSTEM|ASSISTANT|HUMAN|USER):[[:space:]]' \
+output=$(printf '%s' "$output" | LC_ALL=C grep -Ev '^[[:space:]]*(SYSTEM|ASSISTANT|HUMAN|USER):' \
   | grep -Ev '^[[:space:]]*<(instruction|system|prompt|override)[^>]*>' || true)
 
 SENTINEL_BOUNDARY="---

@@ -373,7 +373,7 @@ var IDX = [
   // -- REVIEW ANALYTICS --
   { page:'Core Concepts', url:'/help/concepts/', anchor:'review-analytics',
     title:'Review Analytics — JSON Lines metrics, silver-review-stats',
-    text:'v0.18.0 review analytics. Every review round emits structured metrics to JSON Lines file automatically. Each record captures artifact type review depth round number pass/fail result finding categories and timestamp. Run /silver-review-stats for summary reports: pass rates by artifact type rounds to clean pass finding categories by artifact type.' },
+    text:'v0.18.1 review analytics. Every review round emits structured metrics to JSON Lines file automatically. Each record captures artifact type review depth round number pass/fail result finding categories and timestamp. Run /silver-review-stats for summary reports: pass rates by artifact type rounds to clean pass finding categories by artifact type.' },
   { page:'Reference', url:'/help/reference/', anchor:'spec-skills',
     title:'silver-review-stats — review analytics summary reports',
     text:'Generates three summary tables from accumulated review metrics JSON Lines: pass rates by artifact type rounds to clean pass and finding categories by artifact type. Use to track review health over time.' },
@@ -384,7 +384,7 @@ var IDX = [
   // -- CROSS-ARTIFACT CONSISTENCY --
   { page:'Core Concepts', url:'/help/concepts/', anchor:'cross-artifact',
     title:'Cross-Artifact Consistency — SPEC REQUIREMENTS ROADMAP DESIGN alignment',
-    text:'v0.18.0 cross-artifact consistency reviewer validates alignment across full planning artifact chain. SPEC to REQUIREMENTS: every requirement traces back to SPEC user story. REQUIREMENTS to ROADMAP: every requirement assigned to a phase. ROADMAP to DESIGN: design components cover interfaces in roadmap phases. DESIGN check conditional on DESIGN.md being present. Wired into milestone completion and release workflow.' },
+    text:'v0.18.1 cross-artifact consistency reviewer validates alignment across full planning artifact chain. SPEC to REQUIREMENTS: every requirement traces back to SPEC user story. REQUIREMENTS to ROADMAP: every requirement assigned to a phase. ROADMAP to DESIGN: design components cover interfaces in roadmap phases. DESIGN check conditional on DESIGN.md being present. Wired into milestone completion and release workflow.' },
   { page:'Core Concepts', url:'/help/concepts/', anchor:'cross-artifact',
     title:'Cross-artifact review steps — 17.0b in silver:feature, 7.5 in silver:release',
     text:'Cross-artifact reviewer fires at Step 17.0b in silver:feature after artifact review gates before milestone audit. Also fires at Step 7.5 in silver:release after gsd-ship before gsd-complete-milestone. Misalignment findings block proceeding until resolved.' },

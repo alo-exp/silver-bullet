@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.18.0** — Configurable review depth (deep/standard/quick per artifact type), review analytics with JSON Lines metrics and summary reports, cross-artifact consistency validation (SPEC↔REQUIREMENTS↔ROADMAP↔DESIGN alignment), verification-before-completion enforcement in review loop, plus all v0.15.0 capabilities: AI-driven spec creation, external artifact ingestion (JIRA, Figma, Google Docs via MCP), pre-build validation, multi-repo spec coordination, spec floor enforcement, PR-to-spec traceability, UAT pipeline gate, granular artifact review rounds (8 reviewer skills with depth-configurable pass enforcement), SENTINEL security hardening, and enforced subagent dispatch for large-context steps.
+**Current version: v0.18.1** — Configurable review depth (deep/standard/quick per artifact type), review analytics with JSON Lines metrics and summary reports, cross-artifact consistency validation (SPEC↔REQUIREMENTS↔ROADMAP↔DESIGN alignment), verification-before-completion enforcement in review loop, plus all v0.15.0 capabilities: AI-driven spec creation, external artifact ingestion (JIRA, Figma, Google Docs via MCP), pre-build validation, multi-repo spec coordination, spec floor enforcement, PR-to-spec traceability, UAT pipeline gate, granular artifact review rounds (8 reviewer skills with depth-configurable pass enforcement), SENTINEL security hardening, and enforced subagent dispatch for large-context steps.
 
 ## How It Works
 
@@ -128,6 +128,7 @@ This will:
 - Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and `CLAUDE.md` (project instructions)
 - Create `.silver-bullet.json` with your project config
 - Copy the appropriate workflow file(s) to `docs/workflows/`
+- Scan existing `docs/` and offer to migrate them to the SB documentation scheme (100% transparent — originals preserved as `.pre-sb-backup`, every action requires your approval)
 - Create placeholder docs (`docs/ARCHITECTURE.md`, `docs/TESTING.md`, `docs/knowledge/`, `docs/lessons/`, etc.)
 - Commit everything
 

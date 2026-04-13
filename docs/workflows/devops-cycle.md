@@ -200,12 +200,16 @@ before proceeding.
 
 ---
 
-### MODEL ROUTING (once per session)
+### MODEL ROUTING (automatic — no prompt)
 
-Before DISCUSS begins, ask:
-> Entering Planning phase. Use Opus (claude-opus-4-6) for deeper reasoning, or stay on Sonnet?
+**What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-Autonomous mode: stay Sonnet; escalate silently only on measurably incomplete planning output.
+**Default:** Sonnet (LOW thinking effort) for all orchestrator work and GSD agents.
+**Opus reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
+
+**What to expect:** No model choice prompt. Agents auto-select the correct model. The orchestrator (this session) always runs on Sonnet.
+
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to Opus only if a planning step produces measurably incomplete output.
 
 ---
 
