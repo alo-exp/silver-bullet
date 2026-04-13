@@ -28,7 +28,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
 .page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .page-hero .container{position:relative;z-index:1}
 .breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
 .breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
@@ -41,7 +41,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
 .sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
 .sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
-.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav li a.active{background:var(--slate-a08);color:var(--accent-light);font-weight:600}
 .sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}
 @media(max-width:768px){.doc-sidebar{display:none}}
 .doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
@@ -53,10 +53,10 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .doc-content strong{color:var(--text-primary)}
 .doc-content code{font-family:var(--font-mono);font-size:.82em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
 .callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
-.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
-.callout-tip{background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2)}
-.callout-warn{background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2)}
-.callout-stop{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2)}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-stop{background:var(--red-warn-a06);border:1px solid var(--red-warn-a20)}
 .callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
 .callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
 .callout-body strong{color:var(--text-primary)}
@@ -70,29 +70,29 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .step-card .step-desc{font-size:.84rem;color:var(--text-secondary);line-height:1.6}
 .step-card .step-output{font-size:.87rem;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.badge-required{background:rgba(239,68,68,.1);color:var(--red)}
-.badge-gsd{background:rgba(107,114,128,.12);color:var(--accent-light)}
-.badge-sp{background:rgba(5,150,105,.12);color:var(--green)}
-.badge-eng{background:rgba(251,191,36,.12);color:var(--amber)}
-.badge-cond{background:rgba(251,191,36,.1);color:var(--amber)}
-.badge-devops{background:rgba(107,114,128,.12);color:var(--accent-light)}
+.badge-required{background:var(--red-badge-a10);color:var(--red)}
+.badge-gsd{background:var(--slate-a12);color:var(--accent-light)}
+.badge-sp{background:var(--green-warn-a12);color:var(--green)}
+.badge-eng{background:var(--amber-a12);color:var(--amber)}
+.badge-cond{background:var(--amber-a10);color:var(--amber)}
+.badge-devops{background:var(--slate-a12);color:var(--accent-light)}
 /* PHASE HEADERS */
 .phase-header{padding:12px 20px;border-radius:var(--radius-sm);font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:24px;margin-top:52px;display:flex;align-items:center;gap:10px}
 /* BLAST RADIUS RATINGS */
 .blast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
 @media(max-width:600px){.blast-grid{grid-template-columns:repeat(2,1fr)}}
 .blast-card{border-radius:var(--radius-sm);padding:14px 16px;text-align:center}
-.blast-low{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.2)}
-.blast-medium{background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.2)}
-.blast-high{background:rgba(234,88,12,.08);border:1px solid rgba(234,88,12,.2)}
-.blast-critical{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2)}
+.blast-low{background:var(--green-warn-a08);border:1px solid var(--green-warn-a20)}
+.blast-medium{background:var(--amber-warn-a08);border:1px solid var(--amber-warn-a20)}
+.blast-high{background:var(--orange-warn-a08);border:1px solid var(--orange-warn-a20)}
+.blast-critical{background:var(--red-warn-a08);border:1px solid var(--red-warn-a20)}
 .blast-card .blast-icon{font-size:1.2rem;margin-bottom:6px}
 .blast-card .blast-label{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 .blast-card .blast-action{font-size:.72rem;margin-top:4px;line-height:1.4}
 /* WAVE ORDER */
 .wave-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px}
 .wave-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;display:flex;align-items:center;gap:12px}
-.wave-num{font-family:var(--font-mono);font-size:.75rem;font-weight:700;color:var(--accent-light);background:rgba(107,114,128,.1);padding:2px 8px;border-radius:4px;flex-shrink:0}
+.wave-num{font-family:var(--font-mono);font-size:.75rem;font-weight:700;color:var(--accent-light);background:var(--slate-a08);padding:2px 8px;border-radius:4px;flex-shrink:0}
 .wave-desc{font-size:.84rem;color:var(--text-secondary)}
 /* PAGE NAV BOTTOM */
 .page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
@@ -266,7 +266,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Repeat Steps 3–13 for each phase. Use <code>/gsd:next</code> to confirm which phase is current.</p>
 
       <!-- DISCUSS -->
-      <div class="phase-header" style="background:rgba(107,114,128,.1);color:var(--accent-light)" id="discuss">
+      <div class="phase-header" style="background:var(--slate-a08);color:var(--accent-light)" id="discuss">
         <span>Phase: Discuss</span>
       </div>
 
@@ -288,7 +288,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>If a matching DevOps plugin skill exists for the IaC toolchain discussed (e.g., HashiCorp's <code>terraform-code-generation</code> for Terraform work, <code>kubernetes-operations</code> for k8s), it can be invoked here for best-practice guidance that feeds into quality gates. This is optional enrichment, not a gate.</p>
 
       <!-- BLAST RADIUS -->
-      <div class="phase-header" style="background:rgba(217,119,6,.1);color:var(--amber)" id="blast-radius">
+      <div class="phase-header" style="background:var(--amber-warn-a10);color:var(--amber)" id="blast-radius">
         <span>Phase: Blast Radius</span>
       </div>
 
@@ -325,7 +325,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <!-- DEVOPS QUALITY GATES -->
-      <div class="phase-header" style="background:rgba(220,38,38,.08);color:var(--red)" id="devops-gates">
+      <div class="phase-header" style="background:var(--red-warn-a08);color:var(--red)" id="devops-gates">
         <span>Phase: DevOps Quality Gates</span>
       </div>
 
@@ -338,7 +338,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <!-- PLAN -->
-      <div class="phase-header" style="background:rgba(107,114,128,.1);color:var(--accent-light)" id="plan">
+      <div class="phase-header" style="background:var(--slate-a08);color:var(--accent-light)" id="plan">
         <span>Phase: Plan</span>
       </div>
 
@@ -360,7 +360,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <!-- EXECUTE -->
-      <div class="phase-header" style="background:rgba(5,150,105,.1);color:var(--green)" id="execute">
+      <div class="phase-header" style="background:var(--green-warn-a10);color:var(--green)" id="execute">
         <span>Phase: Execute</span>
       </div>
 
@@ -374,7 +374,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <!-- VERIFY -->
-      <div class="phase-header" style="background:rgba(217,119,6,.1);color:var(--amber)" id="verify">
+      <div class="phase-header" style="background:var(--amber-warn-a10);color:var(--amber)" id="verify">
         <span>Phase: Verify</span>
       </div>
 
@@ -396,7 +396,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <!-- CODE REVIEW -->
-      <div class="phase-header" style="background:rgba(217,119,6,.1);color:var(--amber)" id="code-review">
+      <div class="phase-header" style="background:var(--amber-warn-a10);color:var(--amber)" id="code-review">
         <span>Phase: Code Review</span>
       </div>
 

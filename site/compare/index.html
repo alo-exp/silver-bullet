@@ -79,10 +79,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 .text-center{text-align:center}
 .mt-2{margin-top:16px}.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}.mt-8{margin-top:64px}
 .tag{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:600;letter-spacing:.03em}
-.tag-purple{background:rgba(107,114,128,.15);color:var(--accent-light)}
-.tag-green{background:rgba(52,211,153,.12);color:var(--green)}
+.tag-purple{background:var(--slate-a15);color:var(--accent-light)}
+.tag-green{background:var(--green-a12);color:var(--green)}
 .tag-cyan{background:rgba(34,211,238,.12);color:var(--cyan)}
-.tag-pink{background:rgba(244,114,182,.12);color:var(--accent3)}
+.tag-pink{background:var(--accent3-a12);color:var(--accent3)}
 
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
@@ -102,7 +102,7 @@ nav .nav-cta:hover{background:linear-gradient(135deg,#4b5563,#9ca3af);box-shadow
 
 /* ── HERO ── */
 .hero{background:var(--bg-hero);padding:120px 24px 80px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .hero .container{position:relative;z-index:1}
 .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);text-decoration:none;font-size:.85rem;font-weight:500;margin-bottom:32px;transition:color .2s}
 .back-link:hover{color:var(--accent-light)}
@@ -117,7 +117,7 @@ section:nth-child(even){background:var(--section-alt)}
 .score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 @media(max-width:900px){.score-grid{grid-template-columns:1fr}}
 .score-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s}
-.score-card.winner{border-color:rgba(200,210,222,.45);background:linear-gradient(160deg,var(--bg-card),rgba(200,210,222,.08) 35%,rgba(107,114,128,.04));box-shadow:0 0 40px rgba(107,114,128,.07)}
+.score-card.winner{border-color:rgba(200,210,222,.45);background:linear-gradient(160deg,var(--bg-card),rgba(200,210,222,.08) 35%,var(--slate-a02));box-shadow:0 0 40px var(--slate-a07)}
 .score-card .sc-name{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
 .score-card .sc-role{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:20px}
 .score-card .sc-num{font-size:3rem;font-weight:900;letter-spacing:-.04em;font-family:var(--font-mono);line-height:1}
@@ -148,8 +148,8 @@ section:nth-child(even){background:var(--section-alt)}
 .feat-table th:nth-child(4),.feat-table td:nth-child(4){width:11.33%}
 .feat-table th:nth-child(5),.feat-table td:nth-child(5){width:11.33%}
 .feat-category-header{
-  background:linear-gradient(135deg,rgba(107,114,128,.08),rgba(107,114,128,.04));
-  border:1px solid rgba(107,114,128,.15);border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--slate-a08),var(--slate-a02));
+  border:1px solid var(--slate-a15);border-radius:var(--radius);
   padding:14px 20px;margin-bottom:4px;
   font-size:.9rem;font-weight:700;color:var(--text-primary);
   display:flex;align-items:center;justify-content:space-between;
@@ -728,7 +728,7 @@ footer .footer-links{display:flex;gap:24px}
         </ul>
       </div>
 
-      <div class="when-card" style="border-color:rgba(200,210,222,.45);background:linear-gradient(160deg,var(--bg-card),rgba(200,210,222,.08) 35%,rgba(107,114,128,.04))">
+      <div class="when-card" style="border-color:rgba(200,210,222,.45);background:linear-gradient(160deg,var(--bg-card),rgba(200,210,222,.08) 35%,var(--slate-a02))">
         <h3 style="background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</h3>
         <div class="when-role" style="color:var(--accent-light)">Agentic Process Orchestrator</div>
         <ul>
@@ -743,7 +743,7 @@ footer .footer-links{display:flex;gap:24px}
     </div>
 
     <div class="text-center mt-6">
-      <a href="../#install" class="btn" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;background:linear-gradient(135deg,#374151 0%,#6b7280 35%,#b0bec8 52%,#6b7280 67%,#374151 100%);background-size:250% auto;color:#fff;box-shadow:0 4px 20px rgba(107,114,128,.3),inset 0 1px 0 rgba(255,255,255,.18)">Install Silver Bullet &darr;</a>
+      <a href="../#install" class="btn" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;background:linear-gradient(135deg,#374151 0%,#6b7280 35%,#b0bec8 52%,#6b7280 67%,#374151 100%);background-size:250% auto;color:#fff;box-shadow:0 4px 20px var(--slate-a30),inset 0 1px 0 rgba(255,255,255,.18)">Install Silver Bullet &darr;</a>
     </div>
   </div>
 </section>

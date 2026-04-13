@@ -87,12 +87,48 @@
   --green-a12:rgba(52,211,153,.12);
   --green-a15:rgba(5,150,105,.12);
   --accent3-a12:rgba(244,114,182,.12);
+  --slate-a02:rgba(107,114,128,.02);
+  --slate-a07:rgba(107,114,128,.07);
+  --slate-a08:rgba(107,114,128,.08);
+  --slate-a10b:rgba(107,114,128,.10);
   --slate-a10:rgba(100,116,139,.10);
   --slate-a12:rgba(100,116,139,.12);
+  --slate-a15:rgba(107,114,128,.15);
+  --slate-a20:rgba(107,114,128,.20);
+  --slate-a25:rgba(107,114,128,.25);
+  --slate-a30:rgba(107,114,128,.30);
   --slate-text:#64748b;
+  --cyan-discuss-a10:rgba(8,145,178,.10);
   --cyan-discuss-a12:rgba(8,145,178,.12);
   --neutral-a12:rgba(180,194,210,.12);
   --neutral-a10:rgba(75,85,99,.10);
+  /* Semantic UI state tokens — callout/badge/phase colors */
+  --green-warn-a06:rgba(5,150,105,.06);
+  --green-warn-a08:rgba(5,150,105,.08);
+  --green-warn-a10:rgba(5,150,105,.10);
+  --green-warn-a12:rgba(5,150,105,.12);
+  --green-warn-a20:rgba(5,150,105,.20);
+  --amber-a10:rgba(251,191,36,.10);
+  --amber-a15:rgba(251,191,36,.15);
+  --amber-warn-a06:rgba(217,119,6,.06);
+  --amber-warn-a08:rgba(217,119,6,.08);
+  --amber-warn-a10:rgba(217,119,6,.10);
+  --amber-warn-a12:rgba(217,119,6,.12);
+  --amber-warn-a20:rgba(217,119,6,.20);
+  --red-badge-a08:rgba(239,68,68,.08);
+  --red-badge-a10:rgba(239,68,68,.10);
+  --red-badge-a12:rgba(239,68,68,.12);
+  --red-badge-a15:rgba(239,68,68,.15);
+  --red-warn-a06:rgba(220,38,38,.06);
+  --red-warn-a07:rgba(220,38,38,.07);
+  --red-warn-a08:rgba(220,38,38,.08);
+  --red-warn-a10:rgba(220,38,38,.10);
+  --red-warn-a20:rgba(220,38,38,.20);
+  --green-warn-a40:rgba(5,150,105,.40);
+  --orange-warn-a08:rgba(234,88,12,.08);
+  --orange-warn-a20:rgba(234,88,12,.20);
+  --accent-a12:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-a20:color-mix(in srgb,var(--accent) 20%,transparent);
   --heading-muted:var(--text-primary);
 }
 

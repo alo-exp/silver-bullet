@@ -28,7 +28,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
 .page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(107,114,128,.08) 0%,transparent 70%)}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .page-hero .container{position:relative;z-index:1}
 .breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
 .breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
@@ -41,7 +41,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
 .sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
 .sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
-.sidebar-nav li a.active{background:rgba(107,114,128,.1);color:var(--accent-light);font-weight:600}
+.sidebar-nav li a.active{background:var(--slate-a10b);color:var(--accent-light);font-weight:600}
 .sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}
 @media(max-width:768px){.doc-sidebar{display:none}}
 .doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
@@ -59,14 +59,14 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
 .ref-table td:first-child{font-family:var(--font-mono);font-size: 1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
 .ref-table tr:last-child td{border-bottom:none}
-.ref-table tr:hover td{background:rgba(107,114,128,.02)}
+.ref-table tr:hover td{background:var(--slate-a02)}
 .badge-small{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle;margin-left:4px}
-.badge-req{background:rgba(239,68,68,.1);color:var(--red)}
-.badge-cond{background:rgba(251,191,36,.1);color:var(--amber)}
-.badge-gsd{background:rgba(107,114,128,.12);color:var(--accent-light)}
-.badge-sp{background:rgba(5,150,105,.12);color:var(--green)}
-.badge-eng{background:rgba(251,191,36,.12);color:var(--amber)}
-.badge-do{background:rgba(8,145,178,.12);color:var(--cyan)}
+.badge-req{background:var(--red-badge-a10);color:var(--red)}
+.badge-cond{background:var(--amber-a10);color:var(--amber)}
+.badge-gsd{background:var(--slate-a12);color:var(--accent-light)}
+.badge-sp{background:var(--green-warn-a12);color:var(--green)}
+.badge-eng{background:var(--amber-a12);color:var(--amber)}
+.badge-do{background:var(--cyan-discuss-a12);color:var(--cyan)}
 /* CODE BLOCK */
 .code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
 .code-block .comment{color:var(--text-dim)}
@@ -75,7 +75,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .code-block .str{color:var(--accent3)}
 /* CALLOUT */
 .callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
-.callout-info{background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2)}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
 .callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
 .callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
 .callout-body strong{color:var(--text-primary)}
