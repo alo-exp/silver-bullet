@@ -71,6 +71,17 @@ Create `tests/hooks/test-dev-cycle-check.sh` with 7 cases:
 6. Stage D: all required skills present → silent pass
 7. Trivial file present → never blocks regardless of state
 
+## Live AI Tests (separate suite)
+
+Not part of CI — run manually at ~$0.10–$0.60/run via `tests/live/run-live-tests.sh`.
+
+| Test file | What it covers |
+|-----------|---------------|
+| `tests/live/test-silver-init-migration.sh` | Phase 3.5.5 doc-scheme migration: no-docs skip, unrecognized files skip, architecture doc detection, skip option (no files touched), migration approved (backup + rename), KNOWLEDGE.md split |
+| `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
+
+These tests exercise the interactive migration step in `skills/silver-init/SKILL.md` (Phase 3.5.5). The migration is non-destructive by design — originals are backed up as `.pre-sb-backup` before any rename or split.
+
 ## Skip Policy
 
 Do **not** test:
