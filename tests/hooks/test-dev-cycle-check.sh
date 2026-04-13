@@ -294,6 +294,70 @@ out=$(run_hook_bash "PreToolUse" "echo 'quality-gate-stage-1' >> ~/.claude/.silv
 assert_passes "tamper: quality-gate-stage-N recording is allowed (whitelist)" "$out"
 teardown
 
+# Tests 18-22: F-07 plugin boundary — execution vs write distinction
+# Use expanded $HOME path so the plugin_cache grep actually fires in the hook
+PLUGIN_CACHE_PATH="${HOME}/.claude/plugins/cache"
+echo "--- Group 9: F-07 execution vs write (plugin binary) ---"
+
+# Test 18: Running a plugin binary with node should be ALLOWED (execution, not write)
+setup
+out=$(run_hook_bash "PreToolUse" "node ${PLUGIN_CACHE_PATH}/some-plugin/index.js --run")
+assert_passes "F-07: node execution of plugin binary is allowed" "$out"
+teardown
+
+# Test 19: node with a redirect into the plugin cache should be BLOCKED (write)
+setup
+out=$(run_hook_bash "PreToolUse" "node ${PLUGIN_CACHE_PATH}/some-plugin/build.js > ${PLUGIN_CACHE_PATH}/some-plugin/out.js")
+assert_blocks "F-07: node with redirect into plugin cache is blocked" "$out"
+teardown
+
+# Test 20: python3 execution of plugin binary should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "python3 ${PLUGIN_CACHE_PATH}/some-plugin/tool.py")
+assert_passes "F-07: python3 execution of plugin binary is allowed" "$out"
+teardown
+
+# Test 21: ruby execution of plugin binary should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "ruby ${PLUGIN_CACHE_PATH}/some-plugin/tool.rb")
+assert_passes "F-07: ruby execution of plugin binary is allowed" "$out"
+teardown
+
+# Test 22: cp into plugin cache should still be BLOCKED (write op)
+setup
+out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.js ${PLUGIN_CACHE_PATH}/some-plugin/index.js")
+assert_blocks "F-07: cp into plugin cache is still blocked" "$out"
+teardown
+
+# Tests 23-26: Hooks self-protection — execution vs write (fallback path, no CLAUDE_PLUGIN_ROOT)
+# The fallback uses pattern /silver-bullet[^/]*/hooks/ — use that directly
+echo "--- Group 10: Hooks self-protection execution vs write ---"
+SB_HOOKS_PATH="/home/user/silver-bullet/hooks"
+
+# Test 23: node execution of something in hooks dir should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "node /home/user/silver-bullet/hooks/some-util.js --check")
+assert_passes "hooks-protect: node execution in hooks dir is allowed" "$out"
+teardown
+
+# Test 24: node with redirect into hooks dir should be BLOCKED (write)
+setup
+out=$(run_hook_bash "PreToolUse" "node /home/user/silver-bullet/hooks/build.js > /home/user/silver-bullet/hooks/out.js")
+assert_blocks "hooks-protect: node with redirect into hooks dir is blocked" "$out"
+teardown
+
+# Test 25: python3 execution in hooks dir should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "python3 /home/user/silver-bullet/hooks/util.py --dry-run")
+assert_passes "hooks-protect: python3 execution in hooks dir is allowed" "$out"
+teardown
+
+# Test 26: cp into hooks dir should still be BLOCKED
+setup
+out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh /home/user/silver-bullet/hooks/dev-cycle-check.sh")
+assert_blocks "hooks-protect: cp into hooks dir is still blocked" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
