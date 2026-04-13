@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='light'?'light':'dark');</script>
+<link rel="icon" type="image/png" href="../favicon.png">
+<title>Font Comparison — Silver Bullet Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Space Grotesk (headings), Fira Code (mono), plus 3 body font candidates -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ───── RESET ───── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+
+/* ───── DESIGN TOKENS — LIGHT ───── */
+:root{
+  --bg-page:#f6f4f0;
+  --bg-card:#ffffff;
+  --bg-card-hover:#f0ece6;
+  --bg-code:#ece8e0;
+  --bg-hero:linear-gradient(160deg,#eae4da 0%,#eee8de 25%,#f4f0e8 48%,#f6f2ea 62%,#f0ece4 80%,#eae6dc 100%);
+  --chrome-gradient:linear-gradient(90deg,#2a2a2a 0%,#585858 9%,#383838 18%,#282828 27%,#505050 36%,#444444 43%,#303030 51%,#484848 59%,#343434 68%,#242424 76%,#404040 86%,#1e1e1e 100%);
+  --accent:#00c834;
+  --accent-light:#009a28;
+  --accent-glow:rgba(0,200,52,.18);
+  --accent2:#006fa8;
+  --accent3:#6b21d4;
+  --green:#00c834;
+  --amber:#a86000;
+  --red:#aa1830;
+  --cyan:#006fa8;
+  --text-primary:#050f08;
+  --text-secondary:#0d3a1a;
+  --text-dim:#285c38;
+  --border:#8cc4a4;
+  --border-hover:#4a9464;
+  --radius:12px;
+  --radius-lg:20px;
+  --radius-sm:8px;
+  --font-heading:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'Fira Code',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.10);
+  --shadow-glow:0 0 40px rgba(0,170,46,.08);
+  --nav-bg:rgba(246,244,240,.92);
+  --nav-mobile-bg:rgba(246,244,240,.99);
+  --section-alt:rgba(236,230,220,.55);
+  --table-row-hover:rgba(0,170,46,.03);
+  --btn-gradient:linear-gradient(135deg,#1a3a22 0%,#2d5c38 50%,#1a3a22 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#2d5c38 0%,#3a7a48 50%,#2d5c38 100%);
+  --grad-1:#1a3a22;--grad-2:#2d5c38;--grad-3:#4a8a5a;--grad-4:#3a7a48;
+  --accent-a04:color-mix(in srgb,var(--accent) 4%,transparent);
+  --accent-a10:color-mix(in srgb,var(--accent) 10%,transparent);
+  --accent-a12:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-a15:color-mix(in srgb,var(--accent) 15%,transparent);
+  --accent-a18:color-mix(in srgb,var(--accent) 18%,transparent);
+  --accent-a25:color-mix(in srgb,var(--accent) 25%,transparent);
+  --accent-a28:color-mix(in srgb,var(--accent) 28%,transparent);
+  --accent-a35:color-mix(in srgb,var(--accent) 35%,transparent);
+  --mint-a45:rgba(160,210,180,.45);
+  --green-a12:color-mix(in srgb,var(--green) 12%,transparent);
+  --amber-a12:color-mix(in srgb,var(--amber) 12%,transparent);
+  --accent3-a12:color-mix(in srgb,var(--accent3) 12%,transparent);
+  --cyan-a12:color-mix(in srgb,var(--cyan) 12%,transparent);
+  --red-a15:color-mix(in srgb,var(--red) 15%,transparent);
+  --heading-muted:#0d3a1a;
+}
+
+/* ───── DARK THEME ───── */
+[data-theme="dark"]{
+  --bg-page:#060c0a;
+  --bg-card:#0c1a12;
+  --bg-card-hover:#122010;
+  --bg-code:#0a1410;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(90deg,#b8b8b8 0%,#e8e8e8 9%,#c8c8c8 18%,#f0f0f0 27%,#d0d0d0 36%,#e0e0e0 43%,#c0c0c0 51%,#dcdcdc 59%,#c8c8c8 68%,#f4f4f4 76%,#d8d8d8 86%,#ffffff 100%);
+  --accent:#00e040;
+  --accent-light:#00d438;
+  --accent-glow:rgba(0,224,64,.12);
+  --accent2:#38b2f0;
+  --accent3:#a855f7;
+  --green:#00e040;
+  --amber:#f59e0b;
+  --red:#f87171;
+  --cyan:#38b2f0;
+  --text-primary:#eef6f0;
+  --text-secondary:#a8d4b4;
+  --text-dim:#6aaa84;
+  --heading-muted:#c8ecd4;
+  --border:#1e3828;
+  --border-hover:#2e5a3c;
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.6);
+  --shadow-glow:0 0 40px rgba(0,200,64,.06);
+  --btn-gradient:linear-gradient(135deg,#0d2418 0%,#1a4028 50%,#0d2418 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#1a4028 0%,#265c38 50%,#1a4028 100%);
+  --grad-1:#0d2418;--grad-2:#1a4028;--grad-3:#265c38;--grad-4:#204e30;
+  --accent-a04:color-mix(in srgb,var(--accent) 4%,transparent);
+  --accent-a10:color-mix(in srgb,var(--accent) 10%,transparent);
+  --accent-a12:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-a15:color-mix(in srgb,var(--accent) 15%,transparent);
+  --accent-a18:color-mix(in srgb,var(--accent) 18%,transparent);
+  --accent-a25:color-mix(in srgb,var(--accent) 25%,transparent);
+  --accent-a28:color-mix(in srgb,var(--accent) 28%,transparent);
+  --accent-a35:color-mix(in srgb,var(--accent) 35%,transparent);
+  --mint-a45:rgba(100,180,130,.35);
+  --green-a12:color-mix(in srgb,var(--green) 12%,transparent);
+  --amber-a12:color-mix(in srgb,var(--amber) 12%,transparent);
+  --accent3-a12:color-mix(in srgb,var(--accent3) 12%,transparent);
+  --cyan-a12:color-mix(in srgb,var(--cyan) 12%,transparent);
+  --red-a15:color-mix(in srgb,var(--red) 15%,transparent);
+}
+
+/* ───── THEME TRANSITIONS ───── */
+body,nav,section,.feature-card,.callout,.comparison-table td,.comparison-table th{
+  transition:background .25s,background-color .25s,border-color .25s,color .25s,box-shadow .25s;
+}
+
+/* ───── BASE ───── */
+body{
+  font-family:var(--font-body);
+  background:var(--bg-page);
+  color:var(--text-primary);
+  line-height:1.7;
+  overflow-x:hidden;
+}
+
+/* Headings always use Space Grotesk */
+h1,h2,h3,h4,h5,h6,
+.logo,.section-title,.section-label,.tagline,
+nav .logo, .hero h1, .hero .tagline,
+.feature-card h3,.font-bar-title{
+  font-family:var(--font-heading);
+}
+
+/* ───── LAYOUT ───── */
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.grid{display:grid;gap:24px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+.text-center{text-align:center}
+.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}
+.mb-2{margin-bottom:16px}.mb-4{margin-bottom:32px}
+.fade-in{opacity:0;transform:translateY(20px);transition:all .6s ease-out}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* ───── NAV ───── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:var(--nav-bg);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+}
+nav .nav-inner{
+  max-width:1200px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:64px;
+}
+nav .logo{font-weight:800;font-size:1.1rem;color:var(--text-primary);letter-spacing:-.02em;text-decoration:none}
+nav .nav-links{display:flex;gap:24px;list-style:none}
+nav .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-family:var(--font-body)}
+nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-cta{
+  padding:8px 20px;border-radius:999px;
+  background:var(--btn-gradient);
+  color:#fff;font-size:.8rem;font-weight:600;text-decoration:none;
+  font-family:var(--font-heading);
+}
+
+/* ───── FONT SELECTOR BAR ───── */
+.font-bar{
+  position:fixed;top:64px;left:0;right:0;z-index:99;
+  background:var(--bg-card);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  padding:10px 24px;
+  display:flex;align-items:center;justify-content:center;gap:0;
+  box-shadow:0 4px 20px rgba(0,0,0,.06);
+}
+.font-bar-label{
+  font-family:var(--font-heading);
+  font-size:.72rem;font-weight:700;
+  letter-spacing:.12em;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  margin-right:16px;
+}
+.font-btn-group{
+  display:flex;
+  border:1px solid var(--border);
+  border-radius:999px;
+  overflow:hidden;
+  background:var(--bg-code);
+}
+.font-btn{
+  padding:7px 20px;
+  border:none;
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:.82rem;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  position:relative;
+}
+.font-btn:not(:last-child)::after{
+  content:'';
+  position:absolute;right:0;top:20%;bottom:20%;
+  width:1px;background:var(--border);
+}
+.font-btn.active{
+  background:var(--accent);
+  color:#fff;
+  font-weight:700;
+}
+.font-btn:hover:not(.active){
+  background:var(--accent-a10);
+  color:var(--accent-light);
+}
+.font-btn-inter{font-family:'Inter',system-ui,sans-serif}
+.font-btn-dm{font-family:'DM Sans',system-ui,sans-serif}
+.font-btn-jakarta{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+
+.font-meta{
+  margin-left:16px;
+  font-size:.78rem;
+  color:var(--text-dim);
+  font-family:var(--font-body);
+  font-style:italic;
+}
+
+/* ───── PAGE OFFSET ───── */
+.page-start{padding-top:128px} /* nav(64) + font-bar(~64) */
+
+/* ───── HERO ───── */
+.hero{
+  background:var(--bg-hero);
+  padding:80px 0 72px;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.hero h1{
+  font-size:clamp(2.2rem,5vw,4rem);
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:-.04em;
+  color:var(--text-primary);
+  margin-bottom:16px;
+}
+.hero h1 .gradient{
+  background:var(--chrome-gradient);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-tagline-caps{
+  font-size:.82rem;font-weight:700;letter-spacing:.22em;
+  color:var(--accent-light);
+  margin:0 auto 32px;
+  font-family:var(--font-heading);
+}
+.tagline{
+  font-size:1.25rem;font-weight:700;
+  color:var(--text-primary);
+  margin-bottom:12px;
+  font-family:var(--font-heading);
+}
+.subtitle{
+  font-size:1.05rem;
+  color:var(--text-secondary);
+  max-width:680px;
+  margin:0 auto 32px;
+  line-height:1.7;
+}
+.brooks-block{
+  display:flex;align-items:flex-start;gap:16px;
+  max-width:640px;margin:0 auto 32px;
+  text-align:left;
+}
+.brooks-photo{
+  width:52px;height:52px;border-radius:50%;
+  object-fit:cover;flex-shrink:0;
+  border:2px solid var(--border);
+}
+.brooks-text{flex:1;border-left:3px solid var(--mint-a45);padding-left:16px}
+.brooks-quote{
+  font-size:.95rem;color:var(--text-dim);
+  font-style:italic;line-height:1.6;margin-bottom:6px;
+}
+.brooks-attr{font-size:.8rem;color:var(--text-dim)}
+.brooks-attr a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px}
+.cta-group{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 28px;border-radius:999px;
+  font-weight:600;font-size:.95rem;text-decoration:none;
+  transition:all .25s;cursor:pointer;border:none;
+  min-height:44px;
+  font-family:var(--font-heading);
+}
+.btn-primary{background:var(--btn-gradient);color:#fff}
+.btn-primary:hover{background:var(--btn-gradient-hover);transform:translateY(-2px);box-shadow:0 8px 24px var(--accent-glow)}
+.btn-outline{border:1px solid var(--border-hover);color:var(--text-secondary);background:transparent}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+.hero-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:8px}
+.hero-pill{
+  padding:8px 18px;border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--accent-a04);
+  color:var(--text-secondary);
+  font-size:.82rem;font-weight:500;
+  text-decoration:none;
+  transition:all .2s;
+  font-family:var(--font-body);
+}
+.hero-pill:hover{border-color:var(--accent);color:var(--accent-light);background:var(--accent-a10)}
+
+/* ───── SECTIONS ───── */
+section{padding:80px 0}
+.section-label{
+  font-size:.75rem;font-weight:700;letter-spacing:.12em;
+  color:var(--accent-light);text-transform:uppercase;
+  margin-bottom:12px;
+  font-family:var(--font-heading);
+}
+.section-title{
+  font-size:clamp(1.8rem,3vw,2.5rem);
+  font-weight:800;line-height:1.2;letter-spacing:-.03em;
+  color:var(--heading-muted);
+  margin-bottom:16px;
+}
+[data-theme="dark"] .section-title{color:var(--heading-muted)}
+.section-desc{
+  font-size:1.05rem;color:var(--text-secondary);
+  max-width:660px;margin-bottom:48px;line-height:1.7;
+}
+.section-desc.centered{margin-left:auto;margin-right:auto}
+
+/* ───── FEATURE CARDS ───── */
+.feature-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:20px;
+}
+.feature-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:28px;
+  text-align:left;
+  transition:all .3s;
+}
+.feature-card:hover{
+  border-color:var(--border-hover);
+  box-shadow:var(--shadow-glow);
+  transform:translateY(-4px);
+}
+.feature-icon{
+  width:44px;height:44px;border-radius:var(--radius-sm);
+  background:var(--accent-a12);color:var(--accent-light);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.3rem;margin-bottom:14px;
+}
+.feature-card h3{
+  font-size:1.05rem;font-weight:700;
+  color:var(--text-primary);
+  margin-bottom:8px;line-height:1.3;
+}
+[data-theme="dark"] .feature-card h3{color:var(--heading-muted)}
+.feature-card p{
+  font-size:.9rem;color:var(--text-secondary);line-height:1.7;
+}
+
+/* ───── CALLOUT ───── */
+.callout{
+  background:var(--accent-a10);
+  border:1px solid var(--accent-a28);
+  border-radius:var(--radius);
+  padding:20px 24px;
+  display:flex;align-items:flex-start;gap:16px;
+}
+.callout-icon{
+  color:var(--accent-light);font-size:1.3rem;flex-shrink:0;margin-top:2px;
+}
+.callout p{color:var(--text-secondary);font-size:.95rem;line-height:1.6}
+.callout strong{color:var(--text-primary)}
+
+/* ───── TYPOGRAPHY SPECIMEN ───── */
+.specimen-section{background:var(--section-alt)}
+.specimen-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:32px;
+  margin-bottom:24px;
+}
+.specimen-label{
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;
+  color:var(--text-dim);text-transform:uppercase;
+  margin-bottom:20px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--font-heading);
+}
+.specimen-heading{
+  font-family:var(--font-heading);
+  font-size:2rem;font-weight:900;letter-spacing:-.04em;
+  color:var(--text-primary);margin-bottom:8px;line-height:1.1;
+}
+.specimen-subhead{
+  font-family:var(--font-heading);
+  font-size:1.25rem;font-weight:700;
+  color:var(--text-primary);margin-bottom:16px;
+}
+.specimen-body{
+  font-family:var(--font-body);
+  font-size:1rem;line-height:1.7;color:var(--text-secondary);
+  margin-bottom:12px;
+}
+.specimen-small{
+  font-family:var(--font-body);
+  font-size:.875rem;line-height:1.6;color:var(--text-secondary);
+  margin-bottom:12px;
+}
+.specimen-caption{
+  font-family:var(--font-body);
+  font-size:.8rem;color:var(--text-dim);
+}
+.specimen-sizes{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:16px;
+}
+.specimen-sizes span{color:var(--text-secondary);font-family:var(--font-body)}
+.size-label{
+  font-family:var(--font-heading);
+  font-size:.7rem;font-weight:700;letter-spacing:.08em;
+  color:var(--text-dim);text-transform:uppercase;
+  margin-right:10px;display:inline-block;min-width:50px;
+}
+
+/* ───── COMPARISON TABLE ───── */
+.comparison-table{
+  width:100%;border-collapse:collapse;margin-top:24px;
+}
+.comparison-table th{
+  font-family:var(--font-heading);
+  font-size:.75rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-dim);
+  padding:10px 16px;text-align:left;
+  border-bottom:2px solid var(--border);
+}
+.comparison-table td{
+  font-family:var(--font-body);
+  font-size:.9rem;color:var(--text-secondary);
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  line-height:1.5;
+}
+.comparison-table tr:hover td{background:var(--table-row-hover)}
+.comparison-table td:first-child{font-family:var(--font-heading);font-weight:600;color:var(--text-primary)}
+.tag{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;letter-spacing:.04em;font-family:var(--font-heading)}
+.tag-green{background:var(--green-a12);color:var(--green)}
+.tag-amber{background:var(--amber-a12);color:var(--amber)}
+.tag-cyan{background:var(--cyan-a12);color:var(--cyan)}
+
+/* ───── FOOTER ───── */
+footer{
+  border-top:1px solid var(--border);
+  padding:32px 0;
+  background:var(--bg-page);
+}
+footer .footer-inner{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  flex-wrap:wrap;
+}
+footer .footer-links{
+  display:flex;gap:24px;list-style:none;
+}
+footer .footer-links a,footer a{
+  font-size:.875rem;color:var(--text-secondary);text-decoration:none;
+  font-family:var(--font-body);
+}
+footer .footer-links a:hover,footer a:hover{color:var(--accent-light)}
+footer .footer-brand{font-family:var(--font-heading);font-weight:700;color:var(--text-secondary)}
+
+/* ───── ICONS ───── */
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* ───── RESPONSIVE ───── */
+@media(max-width:768px){
+  .hero{padding:60px 0 56px}
+  .font-bar{flex-wrap:wrap;gap:8px;padding:8px 16px}
+  .font-meta{display:none}
+  .page-start{padding-top:148px}
+  .feature-grid{grid-template-columns:1fr}
+  nav .nav-links{display:none}
+}
+@media(max-width:480px){
+  .font-btn{padding:6px 14px;font-size:.78rem}
+  .cta-group{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ────── NAV ────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="../" class="logo">← Silver Bullet</a>
+    <ul class="nav-links">
+      <li><a href="#specimen">Type Specimen</a></li>
+      <li><a href="#in-context">In Context</a></li>
+      <li><a href="#comparison">Comparison</a></li>
+    </ul>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="
+        width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
+        background:var(--bg-card);color:var(--text-secondary);
+        display:flex;align-items:center;justify-content:center;cursor:pointer;
+        transition:all .2s;flex-shrink:0;
+      ">
+        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
+        <span id="icon-moon"><i data-lucide="moon"></i></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ────── FONT SELECTOR BAR ────── -->
+<div class="font-bar" id="font-bar">
+  <span class="font-bar-label">Body Font</span>
+  <div class="font-btn-group" role="group" aria-label="Select body font">
+    <button class="font-btn font-btn-inter active" onclick="setFont('inter', this)" data-desc="Neutral · Highly legible · Industry standard">Inter</button>
+    <button class="font-btn font-btn-dm" onclick="setFont('dm', this)" data-desc="Geometric · Warm · Approachable">DM Sans</button>
+    <button class="font-btn font-btn-jakarta" onclick="setFont('jakarta', this)" data-desc="Contemporary · Balanced · Versatile">Plus Jakarta Sans</button>
+  </div>
+  <span class="font-meta" id="font-meta">Neutral · Highly legible · Industry standard</span>
+</div>
+
+<!-- ────── PAGE START ────── -->
+<div class="page-start">
+
+<!-- ────── HERO ────── -->
+<section class="hero text-center">
+  <div class="container">
+    <p class="hero-tagline-caps">FONT COMPARISON</p>
+    <h1><span class="gradient">Silver Bullet</span></h1>
+    <p class="tagline" style="margin-top:16px">Space Grotesk stays for headings. You're choosing the body font.</p>
+
+    <div class="brooks-block">
+      <img src="../fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
+      <div class="brooks-text">
+        <div class="brooks-quote">
+          &ldquo;There is no single development, in either technology or management technique, which by itself promises even one order-of-magnitude improvement in productivity, in reliability, in simplicity.&rdquo;
+        </div>
+        <div class="brooks-attr">
+          &mdash; <strong>Fred Brooks</strong>, <a href="https://www.cs.unc.edu/techreports/86-020.pdf" target="_blank" rel="noopener noreferrer"><em>No Silver Bullet</em></a> (1986)
+        </div>
+      </div>
+    </div>
+
+    <p class="subtitle">
+      The agentic process orchestrator for AI-native software engineering &amp; DevOps. Purpose-built for how AI agents work — not retrofitted from human processes. Toggle between three body font candidates above to see how each reads in real content.
+    </p>
+
+    <div class="cta-group">
+      <a href="../#install" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/alo-exp/silver-bullet" class="btn btn-outline" target="_blank">GitHub &rarr;</a>
+    </div>
+
+    <div class="hero-pills">
+      <span class="hero-pill">39 Skills</span>
+      <span class="hero-pill">7 Orchestration Workflows</span>
+      <span class="hero-pill">10 Enforcement Layers</span>
+    </div>
+  </div>
+</section>
+
+<!-- ────── TYPE SPECIMEN ────── -->
+<section class="specimen-section" id="specimen">
+  <div class="container">
+    <div class="text-center mb-4">
+      <div class="section-label">Type Specimen</div>
+      <h2 class="section-title">Heading + Body Pairings</h2>
+      <p class="section-desc centered">Space Grotesk for all headings and UI labels. Your selected font below for all body copy, descriptions, table text, and prose.</p>
+    </div>
+
+    <div class="specimen-card fade-in">
+      <div class="specimen-label">Size scale — body font</div>
+      <div class="specimen-sizes">
+        <div>
+          <span class="size-label">1.05rem</span>
+          <span style="font-size:1.05rem">Body text: The agentic process orchestrator for AI-native software engineering and DevOps. Built for how AI agents actually work.</span>
+        </div>
+        <div>
+          <span class="size-label">1rem</span>
+          <span style="font-size:1rem">Body text: Silver Bullet curates nine best-in-class plugins and wraps them in a ten-layer technical enforcement engine.</span>
+        </div>
+        <div>
+          <span class="size-label">.95rem</span>
+          <span style="font-size:.95rem">Card body: Every review round emits structured metrics. Pass rates, rounds to clean pass, and finding categories — all captured automatically.</span>
+        </div>
+        <div>
+          <span class="size-label">.9rem</span>
+          <span style="font-size:.9rem">Card body small: GSD brings wave-based parallel execution, fresh 200K context per task, atomic per-task commits, and requirements traceability.</span>
+        </div>
+        <div>
+          <span class="size-label">.875rem</span>
+          <span style="font-size:.875rem">Nav / UI text: Quality gates, enforcement layers, execution engine, code review, testing strategy, deployment checklist.</span>
+        </div>
+        <div>
+          <span class="size-label">.84rem</span>
+          <span style="font-size:.84rem">Step description: Validate specs before planning begins. Spec floor enforcement, PR-to-spec traceability, and UAT pipeline gate. Broken specs are blocked before they become broken builds.</span>
+        </div>
+        <div>
+          <span class="size-label">.82rem</span>
+          <span style="font-size:.82rem">Small UI text: Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate.</span>
+        </div>
+        <div>
+          <span class="size-label">.8rem</span>
+          <span style="font-size:.8rem">Caption: Innovated at Ālo Labs · MIT License · v0.18.3</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="specimen-card fade-in">
+      <div class="specimen-label">Heading + Body pairing in context</div>
+      <div class="specimen-heading">Orchestrate. Enforce. Ship.</div>
+      <div class="specimen-subhead">Seven pre-designed orchestration workflows</div>
+      <p class="specimen-body">Silver Bullet is an agentic process orchestrator for AI-native software engineering and DevOps. It curates nine best-in-class plugins and wraps them in a ten-layer technical enforcement engine — with seven pre-designed orchestration workflows and two underlying enforcement cycles.</p>
+      <p class="specimen-small">The <code style="font-size:.82rem;background:var(--bg-code);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);color:var(--accent-light)">/silver</code> command routes to seven pre-designed workflows: feature, bugfix, ui, devops, research, release, fast. Each chains GSD, Superpowers, MultAI, and SB quality gates for its specific task type. Two underlying enforcement cycles: 20-step dev and 24-step DevOps.</p>
+      <p class="specimen-caption">Last updated: 2026-04-14 &middot; Silver Bullet v0.18.3</p>
+    </div>
+  </div>
+</section>
+
+<!-- ────── IN CONTEXT ────── -->
+<section id="in-context">
+  <div class="container text-center">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">AI Agents Skip Steps — And Lose Context</h2>
+    <p class="section-desc centered">Even when your CLAUDE.md explicitly says "always plan first," Claude rationalizes its way past it. And as context fills, quality silently degrades.</p>
+
+    <div class="feature-grid mt-4 fade-in">
+      <div class="feature-card">
+        <div class="feature-icon"><i data-lucide="skip-forward"></i></div>
+        <h3>Skipped Planning</h3>
+        <p>Claude jumps straight to coding. No brainstorming, no spec, no design review. The path of least resistance is always to just start writing code.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color:var(--accent3);background:var(--accent3-a12)"><i data-lucide="shield-off"></i></div>
+        <h3>No Quality Gates</h3>
+        <p>Security, scalability, and reliability are afterthoughts — not enforced checkpoints. Modularity and testability are never considered before implementation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color:var(--green);background:var(--green-a12)"><i data-lucide="flag"></i></div>
+        <h3>Premature Completion</h3>
+        <p>Work is declared "done" without code review, testing strategy, or verification. Commits happen before the workflow is complete.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color:var(--amber);background:var(--amber-a12)"><i data-lucide="activity"></i></div>
+        <h3>Context Rot</h3>
+        <p>As the context window fills, output quality silently degrades. The best workflows in the world mean nothing if the agent is operating on a rotting context.</p>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <div class="callout fade-in">
+        <div class="callout-icon"><i data-lucide="lightbulb"></i></div>
+        <p><strong>The root cause:</strong> Great workflows exist. Great enforcement tools exist. Great execution engines exist. But they've never been combined into a single, coherent, enforced system — until Silver Bullet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────── COMPARISON ────── -->
+<section id="comparison" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Font Comparison</div>
+      <h2 class="section-title">Three Body Font Candidates</h2>
+      <p class="section-desc centered">All three pair well with Space Grotesk. The differences become apparent in long-form body copy and smaller sizes.</p>
+    </div>
+
+    <div class="specimen-card fade-in">
+      <div style="overflow-x:auto">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Font</th>
+              <th>Character</th>
+              <th>Best at</th>
+              <th>Optical feel</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Inter</td>
+              <td>Neutral, precise</td>
+              <td>UI labels, small sizes, data-dense layouts</td>
+              <td><span class="tag tag-cyan">Clean</span></td>
+              <td>The gold standard for screen legibility. Near-invisible at body size — text, not font.</td>
+            </tr>
+            <tr>
+              <td>DM Sans</td>
+              <td>Geometric, warm</td>
+              <td>Paragraphs, marketing copy, approachable tone</td>
+              <td><span class="tag tag-green">Warm</span></td>
+              <td>Slightly softer than Inter. Feels friendly without losing professionalism.</td>
+            </tr>
+            <tr>
+              <td>Plus Jakarta Sans</td>
+              <td>Contemporary, versatile</td>
+              <td>Mixed content, cards, docs, long-form</td>
+              <td><span class="tag tag-amber">Balanced</span></td>
+              <td>More distinctive than Inter at large sizes, still readable at small. Bridges heading and body well.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid grid-3 mt-4 fade-in">
+      <div class="specimen-card" style="margin-bottom:0">
+        <div class="specimen-label" style="font-family:'Inter',sans-serif">Inter — Sample</div>
+        <p style="font-family:'Inter',sans-serif;font-size:.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:10px">The agentic process orchestrator for AI-native software engineering and DevOps. Purpose-built for how AI agents work — not retrofitted from human processes.</p>
+        <p style="font-family:'Inter',sans-serif;font-size:.82rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
+      </div>
+      <div class="specimen-card" style="margin-bottom:0">
+        <div class="specimen-label" style="font-family:'DM Sans',sans-serif">DM Sans — Sample</div>
+        <p style="font-family:'DM Sans',sans-serif;font-size:.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:10px">The agentic process orchestrator for AI-native software engineering and DevOps. Purpose-built for how AI agents work — not retrofitted from human processes.</p>
+        <p style="font-family:'DM Sans',sans-serif;font-size:.82rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
+      </div>
+      <div class="specimen-card" style="margin-bottom:0">
+        <div class="specimen-label" style="font-family:'Plus Jakarta Sans',sans-serif">Plus Jakarta Sans — Sample</div>
+        <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:10px">The agentic process orchestrator for AI-native software engineering and DevOps. Purpose-built for how AI agents work — not retrofitted from human processes.</p>
+        <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────── FOOTER ────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-brand">Silver Bullet</span>
+      <div style="font-size:.9rem;color:var(--text-secondary);text-align:center;font-family:var(--font-body)">
+        Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">Ālo Labs</a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="../">Home</a></li>
+        <li><a href="../help/">Help</a></li>
+        <li><a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+</div><!-- .page-start -->
+
+<!-- ────── SCRIPTS ────── -->
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+// ── Theme ──
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('icon-sun').style.display = dark ? 'none' : '';
+  document.getElementById('icon-moon').style.display = dark ? '' : 'none';
+  localStorage.setItem('silver-bullet-theme', dark ? 'dark' : 'light');
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+}
+(function(){
+  const saved = localStorage.getItem('silver-bullet-theme');
+  applyTheme(saved ? saved === 'dark' : true);
+})();
+
+// ── Font switcher ──
+const FONTS = {
+  inter:   { family: "'Inter', system-ui, sans-serif",             label: "Inter" },
+  dm:      { family: "'DM Sans', system-ui, sans-serif",           label: "DM Sans" },
+  jakarta: { family: "'Plus Jakarta Sans', system-ui, sans-serif", label: "Plus Jakarta Sans" },
+};
+
+function setFont(key, btn) {
+  const f = FONTS[key];
+  // Update CSS variable on root
+  document.documentElement.style.setProperty('--font-body', f.family);
+  // Update active button
+  document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Update meta description
+  document.getElementById('font-meta').textContent = btn.dataset.desc;
+  // Persist choice
+  localStorage.setItem('sb-font-choice', key);
+}
+
+// Restore saved font choice
+(function() {
+  const saved = localStorage.getItem('sb-font-choice') || 'inter';
+  const btn = document.querySelector(`.font-btn-${saved}`);
+  if (btn) setFont(saved, btn);
+})();
+
+// ── Scroll fade-in ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Lucide ──
+lucide.createIcons();
+</script>
+
+</body>
+</html>
