@@ -1,5 +1,5 @@
 ---
-name: silver:init
+name: silver-init
 description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
 ---
 

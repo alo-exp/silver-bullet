@@ -1,5 +1,5 @@
 ---
-name: silver:update
+name: silver-update
 description: "Check for Silver Bullet updates, show changelog, and install if available"
 ---
 
