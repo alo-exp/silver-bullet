@@ -22,7 +22,7 @@
 <meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 /* ───── RESET ───── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -54,7 +54,7 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --radius-lg:20px;
   --radius-sm:8px;
   --font-heading:'Space Grotesk',system-ui,sans-serif;
-  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-body:'Roboto',system-ui,sans-serif;
   --font-sans:var(--font-body);
   --font-mono:'Roboto Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
@@ -572,7 +572,7 @@ section:nth-child(even){background:var(--section-alt)}
 }
 .enforcement-body{
   padding:20px 24px;
-  font-family:var(--font-mono);font-size:.9rem;
+  font-family:var(--font-mono);font-size: 1rem;
   line-height:1.9;color:var(--text-secondary);
   overflow-x:auto;
 }
@@ -601,7 +601,7 @@ section:nth-child(even){background:var(--section-alt)}
 .code-block{
   background:var(--bg-code);border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:20px 24px;
-  font-family:var(--font-mono);font-size:.9rem;
+  font-family:var(--font-mono);font-size: 1rem;
   line-height:1.8;color:var(--text-secondary);
   overflow-x:auto;white-space:pre-wrap;
 }
@@ -771,7 +771,7 @@ footer .footer-links{display:flex;gap:24px}
   .hero .cta-group{margin-bottom:48px}
   .hero-pills{gap:14px}
   .callout{padding:28px 20px}
-  .install-code{font-size:.87rem;padding:20px 16px}
+  ..95rem;padding:20px 16px}
   .workflow-tabs{flex-wrap:wrap;gap:6px}
   .workflow-tab{padding:8px 16px;font-size:.9rem}
   .enforcement-body{font-size:.87rem;padding:16px 18px}
@@ -1661,44 +1661,44 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
-            <td style="font-size:.9rem">intel → brainstorm → quality-gates → plan → execute → TDD → review → verify → ship</td>
-            <td style="font-size:.9rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td rem">intel → brainstorm → quality-gates → plan → execute → TDD → review → verify → ship</td>
+            <td rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
-            <td style="font-size:.9rem">triage (A/B/C) → debug → TDD regression test → plan fix → execute → review → verify → ship</td>
-            <td style="font-size:.9rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td rem">triage (A/B/C) → debug → TDD regression test → plan fix → execute → review → verify → ship</td>
+            <td rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
-            <td style="font-size:.9rem">intel → brainstorm → quality-gates → gsd-ui-phase → execute → gsd-ui-review → verify → ship</td>
-            <td style="font-size:.9rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td rem">intel → brainstorm → quality-gates → gsd-ui-phase → execute → gsd-ui-review → verify → ship</td>
+            <td rem"><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
-            <td style="font-size:.9rem">intel → blast-radius → devops-quality-gates → plan → execute → review → verify → ship</td>
-            <td style="font-size:.9rem"><span class="step-required">silver:security</span> <span class="step-required">devops-quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td rem">intel → blast-radius → devops-quality-gates → plan → execute → review → verify → ship</td>
+            <td rem"><span class="step-required">silver:security</span> <span class="step-required">devops-quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"how should we", "compare X vs Y", "spike", "which technology"</td>
-            <td style="font-size:.9rem">explore → MultAI research (3 paths) → brainstorm → decision with rationale → hand off</td>
-            <td style="font-size:.9rem"><em style="color:var(--text-dim)">No code changes — no enforcement gates</em></td>
+            <td rem">explore → MultAI research (3 paths) → brainstorm → decision with rationale → hand off</td>
+            <td rem"><em style="color:var(--text-dim)">No code changes — no enforcement gates</em></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td style="font-size:.9rem">quality-gates → UAT audit → milestone audit → docs → create-release → gsd-ship → complete-milestone</td>
-            <td style="font-size:.9rem"><span class="step-required">quality-gates</span> <span class="step-required">silver:security</span> <span class="step-required">gsd-ship</span></td>
+            <td rem">quality-gates → UAT audit → milestone audit → docs → create-release → gsd-ship → complete-milestone</td>
+            <td rem"><span class="step-required">quality-gates</span> <span class="step-required">silver:security</span> <span class="step-required">gsd-ship</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Trivial: ≤3 files, typo, rename, config tweak</td>
-            <td style="font-size:.9rem">confirm trivial → gsd-fast → atomic commit (no planning overhead)</td>
-            <td style="font-size:.9rem"><em style="color:var(--text-dim)">Bypasses workflow enforcement by design</em></td>
+            <td rem">confirm trivial → gsd-fast → atomic commit (no planning overhead)</td>
+            <td rem"><em style="color:var(--text-dim)">Bypasses workflow enforcement by design</em></td>
           </tr>
         </tbody>
       </table>

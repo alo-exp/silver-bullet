@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Space Grotesk (headings), Roboto Mono (mono), plus 3 body font candidates -->
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Roboto+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Roboto+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 /* ───── RESET ───── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -42,7 +42,7 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --radius-lg:20px;
   --radius-sm:8px;
   --font-heading:'Space Grotesk',system-ui,sans-serif;
-  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-body:'Roboto',system-ui,sans-serif;
   --font-sans:var(--font-body);
   --font-mono:'Roboto Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
@@ -230,7 +230,7 @@ nav .nav-cta{
 }
 .font-btn-inter{font-family:'Inter',system-ui,sans-serif}
 .font-btn-dm{font-family:'DM Sans',system-ui,sans-serif}
-.font-btn-jakarta{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.font-btn-jakarta{font-family:'Roboto',system-ui,sans-serif}
 
 .font-meta{
   margin-left:16px;
@@ -540,7 +540,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="font-btn-group" role="group" aria-label="Select body font">
     <button class="font-btn font-btn-inter active" onclick="setFont('inter', this)" data-desc="Neutral · Highly legible · Industry standard">Inter</button>
     <button class="font-btn font-btn-dm" onclick="setFont('dm', this)" data-desc="Geometric · Warm · Approachable">DM Sans</button>
-    <button class="font-btn font-btn-jakarta" onclick="setFont('jakarta', this)" data-desc="Contemporary · Balanced · Versatile">Plus Jakarta Sans</button>
+    <button class="font-btn font-btn-jakarta" onclick="setFont('jakarta', this)" data-desc="Contemporary · Balanced · Versatile">Roboto</button>
   </div>
   <span class="font-meta" id="font-meta">Neutral · Highly legible · Industry standard</span>
 </div>
@@ -610,7 +610,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </div>
         <div>
           <span class="size-label">.9rem</span>
-          <span style="font-size:.9rem">Card body small: GSD brings wave-based parallel execution, fresh 200K context per task, atomic per-task commits, and requirements traceability.</span>
+          <span rem">Card body small: GSD brings wave-based parallel execution, fresh 200K context per task, atomic per-task commits, and requirements traceability.</span>
         </div>
         <div>
           <span class="size-label">.875rem</span>
@@ -622,11 +622,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </div>
         <div>
           <span class="size-label">.82rem</span>
-          <span style="font-size:.9rem">Small UI text: Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate.</span>
+          <span rem">Small UI text: Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate.</span>
         </div>
         <div>
           <span class="size-label">.8rem</span>
-          <span style="font-size:.9rem">Caption: Innovated at Ālo Labs · MIT License · v0.18.3</span>
+          <span rem">Caption: Innovated at Ālo Labs · MIT License · v0.18.3</span>
         </div>
       </div>
     </div>
@@ -718,7 +718,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
               <td>Slightly softer than Inter. Feels friendly without losing professionalism.</td>
             </tr>
             <tr>
-              <td>Plus Jakarta Sans</td>
+              <td>Roboto</td>
               <td>Contemporary, versatile</td>
               <td>Mixed content, cards, docs, long-form</td>
               <td><span class="tag tag-amber">Balanced</span></td>
@@ -741,9 +741,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <p style="font-family:'DM Sans',sans-serif;font-size:.9rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
       </div>
       <div class="specimen-card" style="margin-bottom:0">
-        <div class="specimen-label" style="font-family:'Plus Jakarta Sans',sans-serif">Plus Jakarta Sans — Sample</div>
-        <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:10px">The agentic process orchestrator for AI-native software engineering and DevOps. Purpose-built for how AI agents work — not retrofitted from human processes.</p>
-        <p style="font-family:'Plus Jakarta Sans',sans-serif;font-size:.9rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
+        <div class="specimen-label" style="font-family:'Roboto',sans-serif">Roboto — Sample</div>
+        <p style="font-family:'Roboto',sans-serif;font-size:.95rem;line-height:1.7;color:var(--text-secondary);margin-bottom:10px">The agentic process orchestrator for AI-native software engineering and DevOps. Purpose-built for how AI agents work — not retrofitted from human processes.</p>
+        <p style="font-family:'Roboto',sans-serif;font-size:.9rem;line-height:1.7;color:var(--text-dim)">Silver Bullet's hooks plus GSD's workflow guard form ten independent enforcement layers — including Stop hook, UserPromptSubmit reminder, and forbidden-skill gate. No single point of bypass.</p>
       </div>
     </div>
   </div>
@@ -790,7 +790,7 @@ function toggleTheme() {
 const FONTS = {
   inter:   { family: "'Inter', system-ui, sans-serif",             label: "Inter" },
   dm:      { family: "'DM Sans', system-ui, sans-serif",           label: "DM Sans" },
-  jakarta: { family: "'Plus Jakarta Sans', system-ui, sans-serif", label: "Plus Jakarta Sans" },
+  jakarta: { family: "'Roboto', system-ui, sans-serif", label: "Roboto" },
 };
 
 function setFont(key, btn) {
