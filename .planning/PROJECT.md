@@ -127,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after milestone v0.16.0 start*
+*Last updated: 2026-04-14 after Phase 21 (Foundation) complete — path contracts, WORKFLOW.md template, artifact-review-assessor, doc-scheme update delivered*
