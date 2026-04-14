@@ -108,8 +108,8 @@ Plans:
   5. All 9 quality dimension skills operate in dual mode -- design-time checklist (pre-plan) and adversarial audit (pre-ship) with mode detected from artifact state
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 24-01-PLAN.md — Add PATHs 9, 10, 12, 14, 16, 17 to silver-feature
+- [ ] 24-02-PLAN.md — Quality gate dual-mode detection in quality-gates orchestrator
 
 ### Phase 25: Composer Redesign
 **Goal**: /silver works as a composer -- classifying context, selecting and ordering paths, proposing compositions, supervising execution with anti-stall
@@ -123,8 +123,8 @@ Plans:
   5. 4-tier anti-stall operates -- progress-based detection, permission-stall prevention, context exhaustion prevention, heartbeat sentinel
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 25-01-PLAN.md — TBD
+- [ ] 25-02-PLAN.md — TBD
 
 ### Phase 26: Hook Alignment + silver:migrate
 **Goal**: All hooks are WORKFLOW.md-aware with legacy fallback, and existing mid-milestone users can migrate to composable paths
@@ -137,8 +137,8 @@ Plans:
   4. silver:migrate scans STATE.md + artifacts, infers path completion, generates WORKFLOW.md, and user confirms before applying
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 26-01-PLAN.md — TBD
+- [ ] 26-02-PLAN.md — TBD
 
 ### Phase 27: silver-fast Redesign
 **Goal**: silver-fast triages work into 3 complexity tiers with appropriate routing and autonomous escalation
@@ -150,8 +150,8 @@ Plans:
   3. Autonomous escalation re-runs /silver classification against expanded scope when complexity exceeds silver-fast tier
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 27-01-PLAN.md — TBD
+- [ ] 27-02-PLAN.md — TBD
 
 ### Phase 28: Documentation Update
 **Goal**: All documentation reflects the composable paths architecture -- silver-bullet.md, doc-scheme, enforcement docs, and dev-cycle reference updated
@@ -164,8 +164,8 @@ Plans:
   4. full-dev-cycle.md is demoted to example composition, not primary reference
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 28-01-PLAN.md — TBD
+- [ ] 28-02-PLAN.md — TBD
 
 ### Phase 29: Help Center + Homepage
 **Goal**: Website and help center fully reflect composable paths architecture for new and existing users
@@ -178,8 +178,8 @@ Plans:
   4. Reference page documents assessor, WORKFLOW.md, path contracts, and search.js indexes all new pages
 **Plans**: 2 plans
 Plans:
-- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
-- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
+- [ ] 29-01-PLAN.md — TBD
+- [ ] 29-02-PLAN.md — TBD
 **UI hint**: yes
 
 ## Progress
@@ -193,9 +193,9 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | 21. Foundation | v0.20.0 | 2/2 | Complete    | 2026-04-14 |
 | 22. Core Paths | v0.20.0 | 2/2 | Complete    | 2026-04-14 |
 | 23. Specialized Paths | v0.20.0 | 0/2 | Not started | - |
-| 24. Cross-Cutting + Quality Gates | v0.20.0 | 0/? | Not started | - |
-| 25. Composer Redesign | v0.20.0 | 0/? | Not started | - |
-| 26. Hook Alignment + Migrate | v0.20.0 | 0/? | Not started | - |
-| 27. silver-fast Redesign | v0.20.0 | 0/? | Not started | - |
-| 28. Documentation Update | v0.20.0 | 0/? | Not started | - |
-| 29. Help Center + Homepage | v0.20.0 | 0/? | Not started | - |
+| 24. Cross-Cutting + Quality Gates | v0.20.0 | 0/2 | Not started | - |
+| 25. Composer Redesign | v0.20.0 | 0/2 | Not started | - |
+| 26. Hook Alignment + Migrate | v0.20.0 | 0/2 | Not started | - |
+| 27. silver-fast Redesign | v0.20.0 | 0/2 | Not started | - |
+| 28. Documentation Update | v0.20.0 | 0/2 | Not started | - |
+| 29. Help Center + Homepage | v0.20.0 | 0/2 | Not started | - |
