@@ -178,7 +178,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [ ] 29-01-PLAN.md — Homepage updates + help center concept pages (new and updated)
-- [ ] 29-02-PLAN.md — Workflow pages + reference page + search index updates
+- [x] 29-02-PLAN.md — Workflow pages + reference page + search index updates
 **UI hint**: yes
 
 ## Progress
@@ -197,4 +197,4 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | 26. Hook Alignment + Migrate | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
 | 27. silver-fast Redesign | v0.20.0 | 0/1 | Not started | - |
 | 28. Documentation Update | v0.20.0 | 0/2 | Not started | - |
-| 29. Help Center + Homepage | v0.20.0 | 0/2 | Not started | - |
+| 29. Help Center + Homepage | v0.20.0 | 1/2 | In Progress|  |
