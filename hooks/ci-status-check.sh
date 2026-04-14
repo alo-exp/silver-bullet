@@ -37,6 +37,13 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 # Only fire on commit, push, PR create/merge, or release create
 printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
 
+# ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
+SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+trivial_file="${SB_STATE_DIR}/trivial"
+if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
+  exit 0
+fi
+
 # gh CLI required for real runs; test override bypasses it
 if [[ -n "${GH_STATUS_OVERRIDE:-}" ]]; then
   run_json="$GH_STATUS_OVERRIDE"

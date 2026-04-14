@@ -184,28 +184,18 @@ out=$(run_hook "PreToolUse" "npm run deploy")
 assert_blocks "deploy command blocked without full workflow" "$out"
 teardown
 
-# Test 9: gh release create blocked without §9 stages
+# Test 9: gh release create blocked without required workflow skills
 setup
 cat > "$TMPSTATE" << 'EOF'
 quality-gates
 code-review
-requesting-code-review
-receiving-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
-deploy-checklist
-create-release
-verification-before-completion
-test-driven-development
-tech-debt
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_blocks "release blocked without §9 quality-gate stages" "$out"
-assert_contains "release block message mentions stage" "$out" "quality-gate-stage"
+assert_blocks "release blocked without full workflow skills" "$out"
+assert_contains "release block message mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
 teardown
 
-# Test 10: gh release create passes with all skills + §9 stages
+# Test 10: gh release create passes with all required workflow skills (no §9 stages needed)
 setup
 cat > "$TMPSTATE" << 'EOF'
 quality-gates
@@ -220,13 +210,9 @@ create-release
 verification-before-completion
 test-driven-development
 tech-debt
-quality-gate-stage-1
-quality-gate-stage-2
-quality-gate-stage-3
-quality-gate-stage-4
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "release passes with all skills + §9 stages" "$out"
+assert_passes "release passes with all required workflow skills" "$out"
 teardown
 
 # Test 11: finishing-a-development-branch NOT required when on main

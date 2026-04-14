@@ -18,9 +18,9 @@ mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 # sessions, the full state is cleared — forcing a fresh workflow for the new branch.
 # This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
 #
-# Within the same branch: quality-gate-stage-* and gsd-* markers are reset on each
-# session start (forcing fresh §9 gate and GSD tracking per session), but skill
-# recordings accumulate (so mid-feature work across multiple sessions is preserved).
+# Within the same branch: gsd-* markers are reset on each session start (forcing
+# fresh GSD tracking per session), but skill recordings accumulate (so mid-feature
+# work across multiple sessions is preserved).
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
 
@@ -41,10 +41,9 @@ if [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   printf '%s' "$current_branch" > "$branch_file"
 elif [[ -f "$state_file" ]]; then
   # Same branch — reset session-specific markers only
-  # Remove quality-gate stage markers (force fresh §9 gate per release cycle)
   # Remove GSD command markers (force fresh workflow tracking per session)
   # Keep skill invocation records (accumulate within the same branch/feature)
-  sed -i.bak '/^quality-gate-stage-/d; /^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
+  sed -i.bak '/^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
 fi
 
 # ── GSD agent model-routing self-heal ────────────────────────────────────────

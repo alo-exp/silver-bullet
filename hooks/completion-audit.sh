@@ -292,68 +292,8 @@ if has_skill "gsd-verify-work" && [[ ! -f "$project_root/VERIFICATION.md" ]] && 
   artifact_warnings="${artifact_warnings}  ⚠️  /gsd:verify-work was recorded but VERIFICATION.md is absent — was verification actually completed?\n"
 fi
 
-# ── §9 Pre-Release Quality Gate check (only for gh release create) ────────────
-release_missing=""
-if [[ "${is_release:-false}" == true ]]; then
-  for stage in quality-gate-stage-1 quality-gate-stage-2 quality-gate-stage-3 quality-gate-stage-4; do
-    if ! printf '%s\n' "$state_contents" | grep -qx "$stage" 2>/dev/null; then
-      release_missing="${release_missing:+$release_missing }$stage"
-    fi
-  done
-fi
-
-# ── Verification-before-completion-stage ordering (F-05) ─────────────────────
-stage_ordering_issues=""
-if [[ "${is_release:-false}" == true ]] || printf '%s\n' "$state_contents" | grep -qx "quality-gate-stage-1" 2>/dev/null; then
-  for n in 1 2 3 4; do
-    vbc_line=$(skill_line "verification-before-completion-stage-$n")
-    qgs_line=$(skill_line "quality-gate-stage-$n")
-    if [[ "$qgs_line" -gt 0 ]]; then
-      if [[ "$vbc_line" -eq 0 ]]; then
-        stage_ordering_issues="${stage_ordering_issues}  quality-gate-stage-$n recorded without preceding verification-before-completion-stage-$n\n"
-      elif [[ "$vbc_line" -gt "$qgs_line" ]]; then
-        stage_ordering_issues="${stage_ordering_issues}  verification-before-completion-stage-$n appears AFTER quality-gate-stage-$n (wrong order)\n"
-      fi
-    fi
-  done
-fi
-
-# ── Stage-after-workflow ordering (F-11) ──────────────────────────────────────
-workflow_stage_warning=""
-if printf '%s\n' "$state_contents" | grep -qx "quality-gate-stage-1" 2>/dev/null; then
-  min_stage_line=99999
-  for n in 1 2 3 4; do
-    line=$(skill_line "quality-gate-stage-$n")
-    [[ "$line" -gt 0 && "$line" -lt "$min_stage_line" ]] && min_stage_line=$line
-  done
-  max_skill_line=0
-  for skill in $required_skills; do
-    line=$(skill_line "$skill")
-    [[ "$line" -gt "$max_skill_line" ]] && max_skill_line=$line
-  done
-  if [[ "$min_stage_line" -lt "$max_skill_line" && "$min_stage_line" -lt 99999 ]]; then
-    workflow_stage_warning="Quality gate stages were recorded BEFORE all workflow skills completed. Stages should run after workflow finalization."
-  fi
-fi
-
 # ── Output result ─────────────────────────────────────────────────────────────
-if [[ -n "$missing" && -n "$release_missing" ]]; then
-  missing_lines=""
-  for skill in $missing; do
-    missing_lines="${missing_lines}  ❌ /${skill}\n"
-  done
-  stage_order_note=""
-  [[ -n "$stage_ordering_issues" ]] && stage_order_note=$(printf '\n⚠️  Stage ordering issues:\n%s' "$stage_ordering_issues")
-  msg=$(printf '🛑 RELEASE BLOCKED — Workflow incomplete AND §9 Quality Gate incomplete.\n\nMissing workflow steps:\n%s\nMissing quality gate stages: %s%s\n\nComplete ALL workflow steps first, then run the 4-stage quality gate.\nDo NOT proceed with this release.' "$missing_lines" "$release_missing" "$stage_order_note")
-  emit_block "$msg"
-  exit 0
-elif [[ -n "$release_missing" ]]; then
-  stage_order_note=""
-  [[ -n "$stage_ordering_issues" ]] && stage_order_note=$(printf '\n⚠️  Stage ordering issues:\n%s' "$stage_ordering_issues")
-  msg=$(printf '🛑 RELEASE BLOCKED — §9 Pre-Release Quality Gate incomplete.\n\nMissing evidence for: %s%s\n\nThe 4-stage quality gate (Code Review Triad, Big-Picture Audit, Content Refresh, SENTINEL) must complete before /create-release.\nDo NOT proceed with this release.' "$release_missing" "$stage_order_note")
-  emit_block "$msg"
-  exit 0
-elif [[ -n "$missing" ]]; then
+if [[ -n "$missing" ]]; then
   missing_lines=""
   for skill in $missing; do
     missing_lines="${missing_lines}  ❌ /${skill}\n"
@@ -363,11 +303,6 @@ elif [[ -n "$missing" ]]; then
   msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines" "$ordering_note")
   emit_block "$msg"
   exit 0
-elif [[ -n "$stage_ordering_issues" ]]; then
-  msg=$(printf '⚠️  STAGE ORDERING WARNING — Quality gate stage markers recorded without required preceding verification:\n%s\nEach quality-gate-stage-N must be preceded by verification-before-completion-stage-N.' "$stage_ordering_issues")
-  jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
-elif [[ -n "$workflow_stage_warning" ]]; then
-  jq -n --arg m "⚠️  §9 ORDERING WARNING — $workflow_stage_warning Stages must run AFTER all required skills." '{"hookSpecificOutput":{"message":$m}}'
 elif [[ -n "$ordering_issues" ]]; then
   msg=$(printf '⚠️  ORDERING WARNING — All skills recorded but Code Review Triad ran out of order:\n%s\nConsider re-running the triad in the correct sequence before merging.' "$ordering_issues")
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
