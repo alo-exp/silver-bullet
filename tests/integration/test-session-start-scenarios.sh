@@ -67,12 +67,10 @@ save_real_state
 # Store current branch (feature/test matches what integration_setup creates)
 echo "feature/test" > "$SB_REAL_BRANCH"
 
-# Pre-populate state with skills AND session markers (quality-gate-stage-N, gsd-*)
+# Pre-populate state with skills AND session markers (gsd-*)
 cat > "$SB_REAL_STATE" << 'EOF'
 quality-gates
 code-review
-quality-gate-stage-1
-quality-gate-stage-2
 gsd-execute-phase
 EOF
 
@@ -91,13 +89,7 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.2: code-review skill was removed\n'
 fi
 
-# quality-gate-stage-N and gsd-* markers should be removed
-if ! grep -q "quality-gate-stage" "$SB_REAL_STATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.3: quality-gate-stage markers cleaned\n'
-else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.3: quality-gate-stage markers still present\n'
-fi
-
+# gsd-* markers should be removed
 if ! grep -q "gsd-" "$SB_REAL_STATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S2.4: gsd- markers cleaned\n'
 else

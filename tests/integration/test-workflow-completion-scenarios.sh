@@ -25,10 +25,7 @@ skills=("quality-gates" "code-review" "requesting-code-review" "receiving-code-r
 for skill in "${skills[@]}"; do
   run_record_skill "$skill" >/dev/null
 done
-# Add quality-gate stages (required by stop-check when create-release is tracked)
-printf 'quality-gate-stage-1\nquality-gate-stage-2\nquality-gate-stage-3\nquality-gate-stage-4\n' >> "$TMPSTATE"
-
-# Step 3: stop-check passes now (all skills + stages present)
+# Step 3: stop-check passes now (all skills present)
 out=$(run_stop_check "Stop")
 assert_allowed "S1.2: stop-check passes with all skills" "$out"
 
@@ -63,12 +60,12 @@ assert_blocked "S2.3: PR merge blocked with only planning" "$out"
 
 integration_teardown
 
-# Scenario 3: Release requires quality-gate stages beyond skills
-echo "--- Scenario 3: Release blocked without quality-gate stages ---"
+# Scenario 3: PR create and release allowed with all skills
+echo "--- Scenario 3: PR create and release allowed with all skills ---"
 integration_setup
 write_default_config
 
-# All skills present (without stages — release gate test)
+# All skills present
 cat > "$TMPSTATE" << 'EOSKILLS'
 quality-gates
 code-review
@@ -84,21 +81,13 @@ test-driven-development
 tech-debt
 EOSKILLS
 
-# Step 1: PR create allowed (no stages needed for pr create)
+# Step 1: PR create allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
-assert_allowed "S3.1: PR create allowed (stages not needed)" "$out"
+assert_allowed "S3.1: PR create allowed with all skills" "$out"
 
-# Step 2: Release blocked (stages needed)
+# Step 2: Release allowed with all skills
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_blocked "S3.2: release blocked without quality-gate stages" "$out"
-assert_contains "S3.2: mentions quality-gate-stage" "$out" "quality-gate-stage"
-
-# Step 3: Add stages
-printf 'quality-gate-stage-1\nquality-gate-stage-2\nquality-gate-stage-3\nquality-gate-stage-4\n' >> "$TMPSTATE"
-
-# Step 4: Release now allowed
-out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_allowed "S3.3: release allowed with all stages" "$out"
+assert_allowed "S3.2: release allowed with all skills" "$out"
 
 integration_teardown
 

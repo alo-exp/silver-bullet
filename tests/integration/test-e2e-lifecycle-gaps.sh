@@ -29,7 +29,7 @@ rm -f "${HOME}/.claude/.silver-bullet/mode"
 integration_teardown
 
 # ── S2: Cross-session skill accumulation ──────────────────────────────────────
-# session-start resets gsd- and quality-gate-stage- markers but KEEPS skill records
+# session-start resets gsd- markers but KEEPS skill records
 # for the same branch. Verify quality-gates persists after run_session_start.
 echo "--- S2: Cross-session skill accumulation ---"
 integration_setup
@@ -160,9 +160,7 @@ for skill in blast-radius devops-quality-gates code-review requesting-code-revie
              receiving-code-review testing-strategy documentation \
              finishing-a-development-branch deploy-checklist create-release \
              verification-before-completion test-driven-development tech-debt \
-             review-loop-pass-1 review-loop-pass-2 \
-             quality-gate-stage-1 quality-gate-stage-2 \
-             quality-gate-stage-3 quality-gate-stage-4; do
+             review-loop-pass-1 review-loop-pass-2; do
   echo "$skill" >> "$TMPSTATE"
 done
 

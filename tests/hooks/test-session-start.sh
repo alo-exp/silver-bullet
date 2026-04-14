@@ -176,18 +176,16 @@ assert_file_contains "same branch -> skill line preserved" "$REAL_STATE" "qualit
 rm -rf "$HOOK_WORKDIR"
 restore_real_state
 
-# Test 3: Same branch -> quality-gate-stage-* markers stripped, skills kept
-echo "--- Test 3: Same branch -> quality-gate markers stripped, skills preserved ---"
+# Test 3: Same branch -> regular skills survive session restart
+echo "--- Test 3: Same branch -> regular skills survive session restart ---"
 backup_real_state
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'quality-gates\nquality-gate-stage-1\nquality-gate-stage-2\ncode-review\n' > "$REAL_STATE"
+printf 'quality-gates\ncode-review\n' > "$REAL_STATE"
 printf '%s' "$new_branch" > "$REAL_BRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_contains "same branch -> skills preserved" "$REAL_STATE" "quality-gates"
 assert_file_contains "same branch -> code-review preserved" "$REAL_STATE" "code-review"
-assert_file_not_contains "same branch -> quality-gate-stage-1 stripped" "$REAL_STATE" "quality-gate-stage-1"
-assert_file_not_contains "same branch -> quality-gate-stage-2 stripped" "$REAL_STATE" "quality-gate-stage-2"
 rm -rf "$HOOK_WORKDIR"
 restore_real_state
 

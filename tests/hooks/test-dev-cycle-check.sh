@@ -289,9 +289,9 @@ assert_blocks "tamper: arbitrary state write is blocked" "$out"
 teardown
 
 setup
-# Test 17: quality-gate-stage-N write is BLOCKED (whitelist removed; individual skill markers are ground truth)
+# Test 17: quality-gate-stage-N write is treated as arbitrary state write (blocked)
 out=$(run_hook_bash "PreToolUse" "echo 'quality-gate-stage-1' >> ~/.claude/.silver-bullet/state")
-assert_blocks "tamper: quality-gate-stage-N write is blocked (no longer whitelisted)" "$out"
+assert_blocks "tamper: quality-gate-stage-N write is blocked (arbitrary state write)" "$out"
 teardown
 
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction

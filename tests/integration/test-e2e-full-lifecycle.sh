@@ -173,17 +173,9 @@ EOSKILLS
 # Record GSD ship
 run_record_skill "gsd-ship" >/dev/null
 
-# Release blocked without quality-gate stages
+# Release allowed with all skills
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_blocked "S7.1: release blocked without quality-gate stages" "$out"
-assert_contains "S7.2: mentions quality-gate-stage" "$out" "quality-gate-stage"
-
-# Add quality-gate stages to state
-printf 'quality-gate-stage-1\nquality-gate-stage-2\nquality-gate-stage-3\nquality-gate-stage-4\n' >> "$TMPSTATE"
-
-# Release now allowed
-out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_allowed "S7.3: release allowed with all stages" "$out"
+assert_allowed "S7.1: release allowed with all skills" "$out"
 
 # Stop-check passes
 out=$(run_stop_check "Stop")

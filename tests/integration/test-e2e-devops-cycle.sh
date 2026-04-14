@@ -103,10 +103,8 @@ for skill in blast-radius devops-quality-gates code-review requesting-code-revie
              verification-before-completion test-driven-development tech-debt; do
   run_record_skill "$skill" >/dev/null
 done
-printf 'quality-gate-stage-1\nquality-gate-stage-2\nquality-gate-stage-3\nquality-gate-stage-4\n' >> "$TMPSTATE"
-
 out=$(run_stop_check "Stop")
-assert_allowed "S4.2: stop-check allowed with all devops skills + stages" "$out"
+assert_allowed "S4.2: stop-check allowed with all devops skills" "$out"
 
 integration_teardown
 

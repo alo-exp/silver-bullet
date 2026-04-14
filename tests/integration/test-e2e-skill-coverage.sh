@@ -154,27 +154,6 @@ fi
 
 integration_teardown
 
-# Scenario 7: Quality gate stages recorded via whitelisted append
-echo "--- Scenario 7: Quality gate stages recorded ---"
-integration_setup
-write_default_config
-
-# Stages are appended directly (whitelisted pattern)
-printf 'quality-gate-stage-1\n' >> "$TMPSTATE"
-printf 'quality-gate-stage-2\n' >> "$TMPSTATE"
-printf 'quality-gate-stage-3\n' >> "$TMPSTATE"
-printf 'quality-gate-stage-4\n' >> "$TMPSTATE"
-
-for i in 1 2 3 4; do
-  if grep -qx "quality-gate-stage-${i}" "$TMPSTATE" 2>/dev/null; then
-    PASS=$((PASS + 1)); printf 'PASS: S7.%d: quality-gate-stage-%d present\n' "$i" "$i"
-  else
-    FAIL=$((FAIL + 1)); printf 'FAIL: S7.%d: quality-gate-stage-%d missing\n' "$i" "$i"
-  fi
-done
-
-integration_teardown
-
 # Scenario 8: Compliance status reflects all recorded required_deploy skills
 echo "--- Scenario 8: Compliance status with all required_deploy skills ---"
 integration_setup

@@ -67,28 +67,6 @@ assert_allowed "S3.2: PR create allowed with all required skills" "$out"
 
 integration_teardown
 
-# Scenario 4: Release-without-quality-gate-stages
-echo "--- Scenario 4: Release blocked without quality-gate-stage markers ---"
-integration_setup
-write_default_config
-
-# All required_deploy, no stages
-for skill in quality-gates code-review requesting-code-review receiving-code-review \
-             testing-strategy documentation finishing-a-development-branch deploy-checklist \
-             create-release verification-before-completion test-driven-development tech-debt; do
-  run_record_skill "$skill" >/dev/null
-done
-out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_blocked "S4.1: release blocked without quality-gate stages" "$out"
-assert_contains "S4.2: mentions quality-gate-stage" "$out" "quality-gate-stage"
-
-# Add stages: release now ALLOWED
-printf 'quality-gate-stage-1\nquality-gate-stage-2\nquality-gate-stage-3\nquality-gate-stage-4\n' >> "$TMPSTATE"
-out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
-assert_allowed "S4.3: release allowed with all stages" "$out"
-
-integration_teardown
-
 # Scenario 5: Forbidden skill blocked
 echo "--- Scenario 5: Forbidden skill gate ---"
 integration_setup

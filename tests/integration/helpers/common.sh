@@ -63,10 +63,6 @@ create-release
 verification-before-completion
 test-driven-development
 tech-debt
-quality-gate-stage-1
-quality-gate-stage-2
-quality-gate-stage-3
-quality-gate-stage-4
 EOSKILLS
 }
 
