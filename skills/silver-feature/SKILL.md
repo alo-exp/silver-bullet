@@ -105,34 +105,61 @@ Intel files exist in `.planning/intel/` OR scan complete.
 
 ---
 
-## Non-core path steps: Exploration & Ideation
-<!-- These steps map to PATH 2 (EXPLORE), PATH 3 (IDEATE), PATH 4 (SPECIFY), PATH 6 (DESIGN CONTRACT), and PATH 12 pre-plan quality gate. They will become full composable paths in Phase 23-24. -->
+## PATH 2: EXPLORE — Problem space understanding
 
-### Step 1b: Fuzzy Scope Clarification — PATH 2 (EXPLORE) [future]
+### Prerequisite Check
 
-**Only if complexity triage found fuzzy intent or $ARGUMENTS is empty:**
+PATH 1 completed: intel files must exist in `.planning/intel/` OR scan complete. If not, STOP and run PATH 1 first.
 
-Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarification before structured brainstorming.
+```bash
+ls .planning/intel/ 2>/dev/null | grep -q . || echo "STOP: Intel files missing — run PATH 1 first"
+```
 
-### Step 1c: Brainstorm — PATH 3 (IDEATE) [future]
+**Trigger note:** Activated when complexity triage (Step 0) classifies work as fuzzy or complex. Skipped for simple work.
 
-Run both brainstorm tools in sequence:
+### Steps
 
-**1c-i: Product brainstorming**
-Invoke `/product-brainstorming` via the Skill tool. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.
+1. `gsd-explore` (Always)
+2. `product-management:product-brainstorming` (Always)
+3. `design:user-research` (As-needed — user-facing work)
+4. `product-management:synthesize-research` (As-needed — prior research exists)
+5. `product-management:competitive-brief` (As-needed — competitive landscape relevant)
 
-**1c-ii: Engineering brainstorm**
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
+Invoke each applicable step via the Skill tool.
 
-### Step 1d: MultAI Pre-Spec Review — PATH 3 (IDEATE) [future, conditional]
+### Exit Condition
 
-**Trigger condition:** Architecture-significant change OR user requested OR any of these auto-trigger signals apply:
+Problem space clarified, scope boundaries established.
+
+---
+
+## PATH 3: IDEATE — Convergent ideation + structural shaping
+
+### Prerequisite Check
+
+PATH 2 completed. If not, STOP and run PATH 2 first.
+
+**Skip condition:** Skipped for simple/clear-scope work (same classification as Step 0 "simple").
+
+### Steps
+
+1. `superpowers:brainstorming` (Always)
+2. `engineering:architecture` (As-needed — new service, cross-cutting concern, ADR-worthy)
+3. `engineering:system-design` (As-needed — new service boundary, major component)
+4. `design:design-system` (As-needed — UI phase, new component type)
+
+Invoke each applicable step via the Skill tool.
+
+**Conditional sub-step: MultAI Pre-Spec Review**
+
+After step 4, evaluate the trigger condition:
 - Choosing between 2+ fundamentally different architectures
 - Selecting a technology stack from scratch
 - Domain is novel (no prior intel in .planning/)
 - Change affects public API or data model fundamentally
+- User requested OR architecture-significant change
 
-If condition met, ask:
+If any trigger applies, ask:
 
 > This appears to be an architecturally significant change. Would you like 7-AI perspectives on the architecture/approach before locking the spec?
 >
@@ -141,34 +168,47 @@ If condition met, ask:
 
 If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --multi-ai) reviews completed code POST-execution. Both are independent.
 
-### Step 2: Testing Strategy — PATH 4 (SPECIFY) [future]
+### Exit Condition
 
-Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tooling, coverage targets — MUST run after spec approval and before writing-plans so test requirements are baked into the implementation plan.
+Architectural direction chosen, design approach locked.
 
-### Step 2.5: Writing Plans — PATH 5 pre-step [future PATH 4]
+---
 
-Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
+## PATH 4: SPECIFY — Requirements convergence
 
-### Step 2.7: Pre-Build Validation — PATH 12 pre-plan quality gate [future]
+### Prerequisite Check
 
-**NON-SKIPPABLE GATE.** (VALD-03 compliance)
+PATH 3 completed OR user has external spec to ingest. If neither, STOP.
 
-Invoke `silver:validate` via the Skill tool.
+**Skip condition:** May be skipped ONLY when REQUIREMENTS.md already exists (from PATH 0). If REQUIREMENTS.md does not exist and PATH 4 is excluded, the composer MUST insert it.
 
-If silver-validate reports any BLOCK findings:
-- STOP. Do not proceed to Step 3.
-- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
-- Offer: A. Return to /silver:spec  B. Re-run /silver:validate after fixes
+```bash
+[ -f ".planning/REQUIREMENTS.md" ] && echo "REQUIREMENTS.md exists — PATH 4 may be skipped" || echo "REQUIREMENTS.md missing — PATH 4 is required"
+```
 
-Only proceed to Step 3 (quality-gates) when silver-validate reports zero BLOCK findings.
+### Steps
 
-WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
+1. `silver-ingest` (As-needed — JIRA/Figma/Google Docs)
+2. `product-management:write-spec` (As-needed — scaffold)
+3. `silver-spec` (Always — Socratic elicitation)
+4. `silver-validate` (Always — gap analysis)
 
-### Step 3: Pre-Plan Quality Gates (9 dimensions) — PATH 12 pre-plan [future]
+Invoke each applicable step via the Skill tool.
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
+If `silver-validate` reports any BLOCK findings: STOP, do not proceed. Display: "Pre-build validation found BLOCK findings. Resolve them before continuing." Offer: A. Return to silver-spec  B. Re-run silver-validate after fixes.
 
-`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in quality-gates (one of the 9 dimensions — not a separate step).
+### Review Cycle
+
+Artifact review through artifact-review-assessor per the Reviewer → Assessor → fix MUST-FIX → Reviewer cycle until 2 consecutive clean passes:
+
+- `SPEC.md` → invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` via the Skill tool
+- `REQUIREMENTS.md` → invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool
+- `DESIGN.md` → invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` via the Skill tool (if it exists)
+- `INGESTION_MANIFEST.md` → invoke `/artifact-reviewer --reviewer review-ingestion-manifest` via the Skill tool (if ingest was run)
+
+### Exit Condition
+
+SPEC.md + REQUIREMENTS.md exist, silver-validate shows zero BLOCK findings.
 
 ---
 
