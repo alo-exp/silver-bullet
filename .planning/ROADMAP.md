@@ -177,8 +177,8 @@ Plans:
   4. Reference page documents assessor, WORKFLOW.md, path contracts, and search.js indexes all new pages
 **Plans**: 2 plans
 Plans:
-- [ ] 29-01-PLAN.md — TBD
-- [ ] 29-02-PLAN.md — TBD
+- [ ] 29-01-PLAN.md — Homepage updates + help center concept pages (new and updated)
+- [ ] 29-02-PLAN.md — Workflow pages + reference page + search index updates
 **UI hint**: yes
 
 ## Progress
