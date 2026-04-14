@@ -31,6 +31,71 @@ UI work: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
 ```
 
+## Composition Proposal
+
+Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+
+### 1. Context Scan
+
+Check the following artifacts and set skip/include flags:
+
+| Artifact | Signal | Action |
+|----------|--------|--------|
+| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
+| `.planning/SPEC.md` exists | Specification already written | Skip PATH 4 (SPECIFY) |
+| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip PATH 5 (PLAN) |
+| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) — this is the UI workflow |
+
+```bash
+# Check for existing planning artifacts
+[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
+[ -f ".planning/SPEC.md" ] && echo "SKIP PATH 4 — SPEC.md exists" || echo "Include PATH 4"
+ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP PATH 5 — PLAN.md exists" || echo "Include PATH 5"
+```
+
+### 2. Build Path Chain
+
+Construct the proposed path chain for UI work. Default full chain:
+
+PATH 0 (BOOTSTRAP) [skip if .planning/ exists] → PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) [always in UI workflow] → PATH 4 (SPECIFY) [skip if SPEC.md exists] → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) [always in UI workflow] → PATH 9 (REVIEW) → PATH 12 (QUALITY GATE) → PATH 13 (SHIP)
+
+Note: PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are always included — this is a UI-focused workflow.
+
+### 3. Display Proposal
+
+Display the composition proposal to the user:
+
+```
+┌─ COMPOSITION PROPOSAL ─────────────────────────
+│ Paths: PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) → ...
+│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists
+└────────────────────────────────────────────────
+Approve composition? [Y/n]
+```
+
+### 4. Auto-Confirm in Autonomous Mode
+
+In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
+
+```
+⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
+```
+
+### 5. Create WORKFLOW.md
+
+If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
+- Populate `Intent:` with the user's original request
+- Populate `Composed:` with the current ISO timestamp
+- Populate `Composer:` with `/silver:ui`
+- Populate `Mode:` with the current mode (interactive or autonomous)
+- Record the confirmed path chain in the Path Log section header
+
+After each path completes, write status to Path Log table:
+
+```
+| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+```
+
 ## Step-Skip Protocol
 
 When the user requests skipping any step:

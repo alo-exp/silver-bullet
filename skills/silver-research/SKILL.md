@@ -30,6 +30,67 @@ Display banner:
 Question: {$ARGUMENTS or "(not specified)"}
 ```
 
+## Composition Proposal
+
+Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+
+### 1. Context Scan
+
+Research is an exploration-focused workflow — it produces artifacts, not shipped code. No PATH 7 (EXECUTE), PATH 11 (VERIFY), or PATH 13 (SHIP) are included.
+
+| Artifact | Signal | Action |
+|----------|--------|--------|
+| `.planning/research/` directory exists | Prior research artifacts present | Note for continuity — do not skip, always re-scope |
+| External spec artifacts provided | Structured source material | Include PATH 4 (SPECIFY) to ingest into SPEC.md |
+
+```bash
+# Check for existing research artifacts
+ls .planning/research/ 2>/dev/null | head -5
+```
+
+### 2. Build Path Chain
+
+Construct the proposed path chain for research/exploration work. Short chain — research produces artifacts only:
+
+PATH 2 (EXPLORE) → PATH 3 (IDEATE) → PATH 4 (SPECIFY)
+
+No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (silver:feature or silver:devops).
+
+### 3. Display Proposal
+
+Display the composition proposal to the user:
+
+```
+┌─ COMPOSITION PROPOSAL ─────────────────────────
+│ Paths: PATH 2 (EXPLORE) → PATH 3 (IDEATE) → PATH 4 (SPECIFY)
+│ Skipped: PATH 7/11/13 — research produces artifacts, not shipped code
+└────────────────────────────────────────────────
+Approve composition? [Y/n]
+```
+
+### 4. Auto-Confirm in Autonomous Mode
+
+In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
+
+```
+⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
+```
+
+### 5. Create WORKFLOW.md
+
+If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
+- Populate `Intent:` with the research question ($ARGUMENTS)
+- Populate `Composed:` with the current ISO timestamp
+- Populate `Composer:` with `/silver:research`
+- Populate `Mode:` with the current mode (interactive or autonomous)
+- Record the confirmed path chain in the Path Log section header
+
+After each path completes, write status to Path Log table:
+
+```
+| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+```
+
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
