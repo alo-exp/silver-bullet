@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="../../../favicon.png">
-<link rel="shortcut icon" href="../../../favicon.ico">
-<title>Orchestration Workflows — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet v0.18.4 orchestration workflows — eight pre-designed workflows for idea exploration, feature development, bug fixes, UI, DevOps, research, releases, and trivial changes.">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Composable Workflow Orchestration — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet's 18-step composable workflow orchestration works: /silver classifies context, composes a chain of workflow steps dynamically, and supervises execution via WORKFLOW.md real-time tracking.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -16,51 +16,86 @@
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
 h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
-.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
 nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
 .nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none;letter-spacing:-.02em}
 .nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
-.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
 .nav-breadcrumb .sep{color:var(--text-dim)}
 .theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
-.page-hero{background:var(--bg-hero);padding:120px 24px 80px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
-.page-hero .container{position:relative;z-index:1;text-align:center}
-.page-hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--slate-a10b);border:1px solid var(--slate-a25);border-radius:999px;padding:6px 16px;font-size:.9rem;color:var(--accent-light);font-weight:500;margin-bottom:32px}
-.page-hero h1{font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
-.page-hero p{font-size:1.05rem;color:var(--text-secondary);max-width:560px;margin:0 auto;line-height:1.7}
-section{padding:64px 0}
-.section-label{text-transform:uppercase;font-size:.75rem;font-weight:700;letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px}
-.section-title{font-size:clamp(1.6rem,2.5vw,2rem);font-weight:800;letter-spacing:-.03em;margin-bottom:12px}
-.section-desc{font-size:.95rem;color:var(--text-secondary);max-width:600px;margin-bottom:40px}
-.help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-@media(max-width:900px){.help-grid{grid-template-columns:1fr}}
-@media(min-width:901px) and (max-width:1100px){.help-grid{grid-template-columns:repeat(2,1fr)}}
-.help-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s;text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden}
-.help-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-accent,linear-gradient(90deg,var(--accent),var(--accent2)));opacity:0;transition:opacity .3s}
-.help-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-4px)}
-.help-card:hover::before{opacity:1}
-.help-card .card-icon{font-size:2rem;margin-bottom:16px}
-.help-card .card-badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:.7rem;font-weight:700;letter-spacing:.04em;margin-bottom:12px;text-transform:uppercase}
-.help-card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
-.help-card p{font-size:.875rem;color:var(--text-secondary);line-height:1.6;margin-bottom:16px}
-.help-card .card-topics{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
-.help-card .card-topics li{font-size:.9rem;color:var(--text-dim);display:flex;align-items:center;gap:6px}
-.help-card .card-topics li::before{content:'→';color:var(--accent-light);font-weight:700;font-size:.75rem}
-.help-card .card-cta{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:.9rem;font-weight:600;color:var(--accent-light);display:flex;align-items:center;gap:6px}
-.callout-section{background:var(--section-alt);padding:48px 0}
-.callout-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;max-width:680px;margin:0 auto;text-align:center}
-.callout-box p{font-size:.95rem;color:var(--text-secondary);line-height:1.7}
-.callout-box strong{color:var(--text-primary)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:var(--slate-a10b);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px;margin-top:8px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* REFERENCE TABLE */
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+/* CODE BLOCK */
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
 footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
 .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
-footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
 .footer-links{display:flex;gap:24px}
 @media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
-.router-callout{background:var(--slate-a08);border:1px solid var(--slate-a15);border-radius:var(--radius);padding:20px 24px;margin-bottom:40px;text-align:center;font-size:.9rem;color:var(--text-secondary)}
-.router-callout code{font-family:var(--font-mono);background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light);font-size:1em}
+/* NAV SEARCH */
+.nav-search-wrap{position:relative}
+.nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.9rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
+.nav-search-input:focus{border-color:var(--accent);width:240px}
+.nav-search-input::placeholder{color:var(--text-dim)}
+.nav-search-results{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.12);z-index:200;max-height:420px;overflow-y:auto;display:none}
+.nav-search-results.open{display:block}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+@media(max-width:768px){.nav-search-wrap{display:none}}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -68,10 +103,14 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 <nav>
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
-      <a href="../../../" class="nav-logo">Silver Bullet</a>
-      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span> Workflows</span>
+      <a href="../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span> Composable Workflow Orchestration</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
+      <div class="nav-search-wrap">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off">
+        <div class="nav-search-results" id="nav-search-results"></div>
+      </div>
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
         <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
         <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
@@ -82,157 +121,241 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
 <div class="page-hero">
   <div class="container">
-    <div class="badge"><i data-lucide="git-branch-plus"></i> v0.18.4</div>
-    <h1>Orchestration Workflows</h1>
-    <p>Silver Bullet provides eight pre-designed orchestration workflows. <code>/silver</code> routes to the right one automatically based on your intent — or invoke any workflow directly.</p>
+    <div class="breadcrumb-nav">
+      <a href="../">Help Center</a>
+      <span>/</span>
+      <span>Composable Workflow Orchestration</span>
+    </div>
+    <h1>Composable Workflow Orchestration</h1>
+    <p>How <code>/silver</code> replaces fixed pipelines with dynamic workflow composition — classifying context, selecting from 18 workflow steps, and supervising execution via <code>WORKFLOW.md</code>.</p>
   </div>
 </div>
 
-<section>
-  <div class="container">
-    <div class="router-callout">
-      <strong>The smart entry point:</strong> type <code>/silver [your intent in plain English]</code> and Silver Bullet classifies your request and dispatches to the right workflow automatically. No need to remember which workflow to use.
-    </div>
+<div class="container-wide">
+  <div class="doc-layout">
 
-    <div class="callout-box" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 28px;margin-bottom:40px;text-align:left">
-      <p style="margin-bottom:8px;font-size:.9rem;color:var(--text-secondary)"><strong style="color:var(--text-primary)">Composable Workflow Orchestration:</strong> All eight workflows now use composable paths. Each workflow is a <em>composition template</em> that selects paths from the 18-path catalog — BOOTSTRAP, ORIENT, EXPLORE, IDEATE, SPECIFY, PLAN, DESIGN CONTRACT, EXECUTE, UI QUALITY, REVIEW, SECURE, VERIFY, QUALITY GATE, SHIP, DEBUG, DESIGN HANDOFF, DOCUMENT, RELEASE. The composition is proposed by <code>/silver</code> based on your context and can include dynamic insertions (e.g., PATH 14 DEBUG on failure, PATH 6 DESIGN CONTRACT when UI is detected).</p>
-      <p style="margin-bottom:0;font-size:.9rem;color:var(--text-secondary)"><a href="../concepts/composable-workflow.html" style="color:var(--accent-light);font-weight:600">Learn about Composable Paths →</a></p>
-    </div>
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#the-18-paths">The 18 Workflow Steps</a></li>
+        <li><a href="#how-composition-works">How Composition Works</a></li>
+        <li><a href="#workflow-tracking">WORKFLOW.md Tracking</a></li>
+        <li><a href="#supervision-loop">Supervision Loop</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
 
-    <div class="section-label">Documentation</div>
-    <h2 class="section-title">Eight Workflows</h2>
-    <p class="section-desc">Each workflow is a composition template selecting from the 18-path catalog. <code>/silver</code> proposes the chain, you approve, and the supervision loop advances path by path. None implement code directly — they orchestrate only.</p>
+    <article class="doc-content">
 
-    <div class="help-grid">
+      <h2 id="overview">What is Composable Workflow Orchestration?</h2>
+      <p>Silver Bullet's composable workflow orchestration replaces fixed step-by-step pipelines with a catalog of 18 named workflow steps. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of steps appropriate to the work — no two compositions need be identical.</p>
+      <p>Each step is a discrete unit with a contract: prerequisites, trigger signals, steps, produced artifacts, review cycle, GSD state impact, and exit condition. Steps compose into chains. Chains execute under supervision.</p>
 
-      <a href="./silver-brainstorm-idea.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--accent),var(--accent2))" data-keywords="idea brainstorm concept build want overview milestone">
-        <div class="card-icon"><i data-lucide="lightbulb"></i></div>
-        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Idea-stage</span>
-        <h3>/silver:brainstorm-idea</h3>
-        <p>Idea-to-milestone workflow — explores a new concept before any spec exists, then sets up milestone artifacts and discusses the first phase.</p>
-        <ul class="card-topics">
-          <li>product-brainstorming (PM lens) first</li>
-          <li>engineering brainstorm second</li>
-          <li>gsd-new-milestone (conditional)</li>
-          <li>gsd-discuss-phase to lock Phase 1 decisions</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, VERIFY, REVIEW, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable workflow orchestration can.</div>
+      </div>
 
-      <a href="./silver-feature.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--accent),var(--accent2))" data-keywords="feature add build implement new enhance extend workflow">
-        <div class="card-icon"><i data-lucide="plus-circle"></i></div>
-        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Full workflow</span>
-        <h3>/silver:feature</h3>
-        <p>Full feature development cycle — from codebase intel through quality gates, TDD, code review, and ship.</p>
-        <ul class="card-topics">
-          <li>Complexity triage (trivial/simple/fuzzy/complex)</li>
-          <li>product-brainstorming + engineering brainstorm</li>
-          <li>9-dimension quality gates (pre-plan + pre-ship)</li>
-          <li>TDD gate for implementation plans</li>
-          <li>Full code review sequence</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <div class="divider"></div>
 
-      <a href="./silver-bugfix.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--red),#ef4444)" data-keywords="bug broken crash error regression failing test fix">
-        <div class="card-icon"><i data-lucide="bug"></i></div>
-        <span class="card-badge" style="background:var(--red-warn-a10);color:var(--red)">Triage-first</span>
-        <h3>/silver:bugfix</h3>
-        <p>Triage-first bug investigation — classifies failure type into Path 1A, 1B, or 1C before any investigation begins.</p>
-        <ul class="card-topics">
-          <li>Path 1A: Known symptom → systematic-debugging</li>
-          <li>Path 1B: Unknown cause → silver:forensics</li>
-          <li>Path 1C: GSD workflow failure → gsd-forensics</li>
-          <li>TDD regression test before writing any fix</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <h2 id="the-18-paths">The 18 Workflow Steps</h2>
+      <p>Every step has a number, a name, and a one-line description. The trigger column describes what causes <code>/silver</code> to include this step in a composition.</p>
 
-      <a href="./silver-ui.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--cyan),#06b6d4)" data-keywords="ui frontend component screen design interface page layout animation responsive">
-        <div class="card-icon"><i data-lucide="layout"></i></div>
-        <span class="card-badge" style="background:var(--cyan-discuss-a12);color:var(--cyan)">UI/UX</span>
-        <h3>/silver:ui</h3>
-        <p>UI/frontend workflow with design contract (gsd-ui-phase), component TDD, 6-pillar visual audit, and accessibility enforcement.</p>
-        <ul class="card-topics">
-          <li>gsd-ui-phase creates UI-SPEC.md design contract</li>
-          <li>TDD for testable component units</li>
-          <li>gsd-ui-review: 6-pillar visual audit</li>
-          <li>Accessibility (WCAG 2.1 AA) enforcement</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Step</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PATH 0</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td>
+            <td style="font-family:inherit;font-size:.875rem">Initialize project, milestone, or resume prior session</td>
+            <td style="font-family:inherit;font-size:.875rem">No .planning/ exists, prior milestone complete, or user says "new project"</td>
+          </tr>
+          <tr>
+            <td>PATH 1</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td>
+            <td style="font-family:inherit;font-size:.875rem">Build intel files — scan codebase, map architecture</td>
+            <td style="font-family:inherit;font-size:.875rem">Always included for non-trivial work</td>
+          </tr>
+          <tr>
+            <td>PATH 2</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXPLORE</td>
+            <td style="font-family:inherit;font-size:.875rem">Clarify scope, user research, competitive brief</td>
+            <td style="font-family:inherit;font-size:.875rem">Fuzzy intent, unclear scope, or user uncertainty</td>
+          </tr>
+          <tr>
+            <td>PATH 3</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">IDEATE</td>
+            <td style="font-family:inherit;font-size:.875rem">Brainstorm, architecture decisions, system design</td>
+            <td style="font-family:inherit;font-size:.875rem">Always for complex work; skipped for clear-scope simple work</td>
+          </tr>
+          <tr>
+            <td>PATH 4</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td>
+            <td style="font-family:inherit;font-size:.875rem">Produce SPEC.md and REQUIREMENTS.md via silver-spec</td>
+            <td style="font-family:inherit;font-size:.875rem">No SPEC.md exists, spec refresh needed, or external artifacts to ingest</td>
+          </tr>
+          <tr>
+            <td>PATH 5</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td>
+            <td style="font-family:inherit;font-size:.875rem">Produce CONTEXT.md, RESEARCH.md, PLAN.md</td>
+            <td style="font-family:inherit;font-size:.875rem">Always for every phase</td>
+          </tr>
+          <tr>
+            <td>PATH 6</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN CONTRACT</td>
+            <td style="font-family:inherit;font-size:.875rem">Produce UI-SPEC.md via design system and UX skills</td>
+            <td style="font-family:inherit;font-size:.875rem">Phase involves UI (keywords, file types, DESIGN.md presence)</td>
+          </tr>
+          <tr>
+            <td>PATH 7</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td>
+            <td style="font-family:inherit;font-size:.875rem">Wave-based parallel execution via gsd-execute-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">Always</td>
+          </tr>
+          <tr>
+            <td>PATH 8</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI QUALITY</td>
+            <td style="font-family:inherit;font-size:.875rem">Design critique, 6-pillar UI audit, accessibility review</td>
+            <td style="font-family:inherit;font-size:.875rem">PATH 6 was in composition, or SUMMARY.md contains UI file types</td>
+          </tr>
+          <tr>
+            <td>PATH 9</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td>
+            <td style="font-family:inherit;font-size:.875rem">Layered code review: automated → peer → engineering → cross-AI</td>
+            <td style="font-family:inherit;font-size:.875rem">Always for any composition with PATH 7</td>
+          </tr>
+          <tr>
+            <td>PATH 10</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td>
+            <td style="font-family:inherit;font-size:.875rem">Security audit, validation, LLM safety checks</td>
+            <td style="font-family:inherit;font-size:.875rem">Always — scope varies by project type</td>
+          </tr>
+          <tr>
+            <td>PATH 11</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td>
+            <td style="font-family:inherit;font-size:.875rem">Non-skippable verification gate — gsd-verify-work</td>
+            <td style="font-family:inherit;font-size:.875rem">Always — NON-SKIPPABLE</td>
+          </tr>
+          <tr>
+            <td>PATH 12</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY GATE</td>
+            <td style="font-family:inherit;font-size:.875rem">Dual-mode: design-time checklist pre-plan + adversarial audit pre-ship</td>
+            <td style="font-family:inherit;font-size:.875rem">Always — appears TWICE in every composition</td>
+          </tr>
+          <tr>
+            <td>PATH 13</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td>
+            <td style="font-family:inherit;font-size:.875rem">Create PR via gsd-ship</td>
+            <td style="font-family:inherit;font-size:.875rem">Always</td>
+          </tr>
+          <tr>
+            <td>PATH 14</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td>
+            <td style="font-family:inherit;font-size:.875rem">Systematic debugging, forensics, incident response</td>
+            <td style="font-family:inherit;font-size:.875rem">Execution failure, CI red, verification failure — inserted dynamically</td>
+          </tr>
+          <tr>
+            <td>PATH 15</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN HANDOFF</td>
+            <td style="font-family:inherit;font-size:.875rem">Produce design handoff package for milestone UI phases</td>
+            <td style="font-family:inherit;font-size:.875rem">Milestone has UI phases AND in release flow — runs inside PATH 17 only</td>
+          </tr>
+          <tr>
+            <td>PATH 16</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td>
+            <td style="font-family:inherit;font-size:.875rem">Update docs/, session log, tech debt, milestone summary</td>
+            <td style="font-family:inherit;font-size:.875rem">Always post-ship</td>
+          </tr>
+          <tr>
+            <td>PATH 17</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td>
+            <td style="font-family:inherit;font-size:.875rem">Milestone audit, gap closure, GitHub Release creation</td>
+            <td style="font-family:inherit;font-size:.875rem">User signals milestone complete, or last phase shipped</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <a href="./silver-devops.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--amber),#f59e0b)" data-keywords="devops infra ci cd deploy pipeline terraform iac kubernetes container cloud ops">
-        <div class="card-icon"><i data-lucide="hard-hat"></i></div>
-        <span class="card-badge" style="background:var(--amber-warn-a12);color:var(--amber)">DevOps</span>
-        <h3>/silver:devops</h3>
-        <p>Infrastructure, CI/CD, and IaC workflow — blast-radius assessment mandatory, 7 IaC quality dimensions, TDD explicitly skipped.</p>
-        <ul class="card-topics">
-          <li>blast-radius: LOW / MEDIUM / HIGH / CRITICAL</li>
-          <li>devops-skill-router selects right IaC tooling</li>
-          <li>7 IaC quality dimensions (no usability/extensibility)</li>
-          <li>TDD explicitly not applicable for infra</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <div class="divider"></div>
 
-      <a href="./silver-research.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--green),#10b981)" data-keywords="research spike architecture decision technology compare how should we">
-        <div class="card-icon"><i data-lucide="search"></i></div>
-        <span class="card-badge" style="background:var(--green-warn-a12);color:var(--green)">Research</span>
-        <h3>/silver:research</h3>
-        <p>Technology decisions, architecture spikes, and competitive analysis — MultAI research paths with handoff to implementation.</p>
-        <ul class="card-topics">
-          <li>Path 2a: market/landscape research</li>
-          <li>Path 2b: tech selection (7-AI comparison matrix)</li>
-          <li>Path 2c: competitive intelligence</li>
-          <li>Handoff to silver:feature or silver:devops</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <h2 id="how-composition-works">How Composition Works</h2>
+      <p>When you invoke <code>/silver</code>, composition happens in four steps:</p>
 
-      <a href="./silver-release.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--accent),#374151)" data-keywords="release publish version go live cut a release changelog ship to users deploy to prod milestone">
-        <div class="card-icon"><i data-lucide="rocket"></i></div>
-        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Milestone</span>
-        <h3>/silver:release</h3>
-        <p>Milestone-level publish — versioned releases, changelogs, docs, GitHub Releases, and milestone archival. Not the same as gsd:ship.</p>
-        <ul class="card-topics">
-          <li>Pre-release quality gates (9 dimensions)</li>
-          <li>Cross-phase UAT + milestone audit</li>
-          <li>Gap-closure loop (max 2 iterations)</li>
-          <li>silver:create-release → gsd-ship → complete-milestone</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <ol>
+        <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
+        <li><strong>Step selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 steps apply. Always-included steps (PATH 7 EXECUTE, PATH 11 VERIFY, PATH 12 QUALITY GATE, PATH 13 SHIP) are anchors. Context-dependent steps (PATH 2 EXPLORE, PATH 6 DESIGN CONTRACT, PATH 8 UI QUALITY, PATH 14 DEBUG) are added based on signals.</li>
+        <li><strong>Chain ordering</strong> — Steps are ordered by their dependency graph. PATH 0 before PATH 1 before PATH 5 before PATH 7, etc. Dynamic insertions (e.g. PATH 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
+        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which steps are included and why, before execution begins.</li>
+      </ol>
 
-      <a href="./silver-fast.html" class="help-card" style="--card-accent:linear-gradient(90deg,var(--text-dim),var(--accent-light))" data-keywords="trivial quick fix typo one-liner config value rename fast">
-        <div class="card-icon"><i data-lucide="zap"></i></div>
-        <span class="card-badge" style="background:var(--slate-a10b);color:var(--text-secondary)">Fast path</span>
-        <h3>/silver:fast</h3>
-        <p>Bypass workflow for truly trivial changes (≤3 files): typos, config values, renames. No planning, gates, or review cycle.</p>
-        <ul class="card-topics">
-          <li>Complexity triage gate before gsd-fast</li>
-          <li>Scope expansion STOP condition (3-file limit)</li>
-          <li>§10 preferences NOT applied (by design)</li>
-          <li>Auto-escalation if scope grows</li>
-        </ul>
-        <div class="card-cta">Read workflow →</div>
-      </a>
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Example composition for a feature request:</strong> PATH 1 (ORIENT) → PATH 12 (QUALITY GATE, pre-plan) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 11 (VERIFY) → PATH 9 (REVIEW) → PATH 10 (SECURE) → PATH 12 (QUALITY GATE, pre-ship) → PATH 13 (SHIP) → PATH 16 (DOCUMENT). PATH 14 (DEBUG) is available to insert dynamically if PATH 7 fails.</div>
+      </div>
 
-    </div>
-  </div>
-</section>
+      <div class="divider"></div>
 
-<div class="callout-section">
-  <div class="container">
-    <div class="callout-box">
-      <div style="font-size:2rem;margin-bottom:12px"><i data-lucide="git-branch-plus"></i></div>
-      <p><strong>Just use <code>/silver</code></strong> — you don't need to choose a workflow manually. Silver Bullet classifies your intent (trivial/simple/fuzzy/complex) and dispatches to the right workflow automatically. The eight workflows are named here so you understand what's happening, not so you have to memorize them.</p>
-    </div>
+      <h2 id="workflow-tracking">WORKFLOW.md Tracking</h2>
+      <p><code>WORKFLOW.md</code> is the real-time state tracking artifact for an active composition. It is created when a composition begins and updated after every step completes.</p>
+
+      <h3>What WORKFLOW.md Contains</h3>
+      <ul>
+        <li><strong>Active step</strong> — which workflow step is currently executing</li>
+        <li><strong>Completed steps</strong> — log of steps that have exited successfully, with timestamps</li>
+        <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
+        <li><strong>Dynamic insertions</strong> — steps inserted at runtime (e.g. PATH 14 DEBUG after a failure)</li>
+        <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
+      </ul>
+
+      <h3>Why WORKFLOW.md Matters</h3>
+      <p>WORKFLOW.md gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, WORKFLOW.md allows the next session to resume from the correct point in the chain without re-running completed steps. It also provides an audit trail for post-hoc review.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="supervision-loop">Supervision Loop</h2>
+      <p>Each step in a composition runs under a supervision loop:</p>
+
+      <ol>
+        <li><strong>Pre-step check</strong> — Prerequisites are verified before the step begins. If prerequisites are missing, the step is blocked and the user is notified.</li>
+        <li><strong>Step execution</strong> — The step's actions execute in order, with mandatory actions always running and as-needed actions gated on context signals.</li>
+        <li><strong>Exit verification</strong> — The step's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective step (e.g. PATH 14 DEBUG on execution failure).</li>
+        <li><strong>Stall detection</strong> — If a step makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
+        <li><strong>Progress reporting</strong> — On every tool use, the compliance status hook shows the current step and overall chain progress.</li>
+      </ol>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>PATH 11 VERIFY is NON-SKIPPABLE.</strong> The supervision loop cannot exit the chain before PATH 11 completes. Even if the user requests to skip it, the enforcement hooks block any <code>git commit</code> or <code>git push</code> until verification has run and passed.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="../concepts/routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a workflow chain</li>
+        <li><a href="../concepts/verification.html">Verification Before Completion</a> — PATH 11 VERIFY and dual-mode quality gates in detail</li>
+        <li><a href="../concepts/artifact-review-assessor.html">Artifact Review Assessor</a> — how PATH 9 REVIEW triages findings via the assessor</li>
+        <li><a href="../concepts/documentation.html">Documentation Scheme</a> — PATH 16 DOCUMENT and WORKFLOW.md as project artifacts</li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="../">
+          <span class="pnb-label">← Back to</span>
+          <span class="pnb-title">Help Center</span>
+        </a>
+        <a href="../concepts/">
+          <span class="pnb-label">See also</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </article>
   </div>
 </div>
 
 <footer>
-  <div class="container">
+  <div class="container-wide">
     <div class="footer-inner">
       <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
       <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
@@ -247,6 +370,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 </footer>
 
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
 <script>
 function applyTheme(dark){
   document.documentElement.setAttribute('data-theme',dark?'dark':'light');
