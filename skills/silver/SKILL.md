@@ -56,11 +56,6 @@ Wait for response, then proceed.
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC tool routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | Ingest external artifacts (JIRA, Figma, Google Docs) into SPEC.md + DESIGN.md, or fetch cross-repo spec |
 
-**Composer note:** Each silver-* workflow is a composition template. After routing,
-the workflow proposes a path composition to the user before executing. The router
-does not need to know about paths — it routes to the right workflow, which handles
-composition internally.
-
 **"Ship" disambiguation:**
 
 | Signal | Route |

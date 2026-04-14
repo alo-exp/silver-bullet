@@ -32,71 +32,6 @@ Display banner:
 Release: {$ARGUMENTS or "(version not specified)"}
 ```
 
-## Composition Proposal
-
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
-
-### 1. Context Scan
-
-Release is a milestone-completion workflow — short chain focused on quality gate, documentation, and publishing. No per-phase loop.
-
-| Artifact | Signal | Action |
-|----------|--------|--------|
-| UI-SPEC.md or UI-REVIEW.md in any phase directory | Milestone has UI phases | Include PATH 15 (DESIGN HANDOFF) |
-| `.planning/phases/*/UI-SPEC.md` or `.planning/phases/*/UI-REVIEW.md` absent | No UI phases in milestone | Skip PATH 15 (DESIGN HANDOFF) |
-
-```bash
-# Detect UI phases in current milestone
-ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | grep -q . \
-  && echo "Include PATH 15 — UI phases detected" \
-  || echo "SKIP PATH 15 — no UI phases in this milestone"
-```
-
-### 2. Build Path Chain
-
-Construct the proposed path chain for milestone release. Default chain:
-
-PATH 12 (QUALITY GATE) → PATH 15 (DESIGN HANDOFF) [only if UI milestone detected] → PATH 16 (DOCUMENT) → PATH 17 (RELEASE)
-
-Short chain — release produces a versioned milestone artifact, not implementation code.
-
-### 3. Display Proposal
-
-Display the composition proposal to the user:
-
-```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 12 (QUALITY GATE) → PATH 16 (DOCUMENT) → PATH 17 (RELEASE)
-│ Skipped: PATH 15 (DESIGN HANDOFF) — no UI phases detected
-└────────────────────────────────────────────────
-Approve composition? [Y/n]
-```
-
-(If UI milestone detected, PATH 15 appears between PATH 12 and PATH 16.)
-
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Create WORKFLOW.md
-
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the release version/description ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:release`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
-
-After each path completes, write status to Path Log table:
-
-```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
-```
-
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
@@ -123,24 +58,6 @@ Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone comp
 ## Step 2a: Security Hard Gate
 
 Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
-
-## PATH 15: DESIGN HANDOFF — Milestone UI handoff
-
-**Prerequisite Check:**
-```bash
-# Scan phase directories for UI-SPEC.md or UI-REVIEW.md existence
-ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | grep -q . || echo "SKIP: No UI phases in this milestone — PATH 15 not needed"
-```
-
-**Trigger note:** Activated when milestone has UI phases (detected by UI-SPEC.md or UI-REVIEW.md in any phase directory) AND currently in release flow. Runs inside PATH 17 (RELEASE) only — never in the per-phase sequence.
-
-**Steps** (all via Skill tool):
-1. `design:design-handoff` (Always in this path — produce handoff package)
-2. `design:design-system` (As-needed — final component inventory, design token reconciliation)
-
-**Produces:** Handoff package.
-
-**Exit Condition:** Handoff package produced.
 
 ## Step 2b: Gap-Closure Loop (conditional, max 2 iterations)
 

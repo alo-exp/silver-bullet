@@ -1,40 +1,18 @@
 ---
 name: quality-gates
-description: "Dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state."
+description: Apply all 9 Silver Bullet quality dimensions against the current design or plan. Use before /gsd:plan-phase in the dev cycle, or ad-hoc to audit any existing code or design.
 ---
 
 > **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.
 
 # /quality-gates — Consolidated Quality Review
 
-Applies all 9 Silver Bullet quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
+Applies all 9 Silver Bullet quality dimensions in sequence. Every dimension must
+pass before the current plan proceeds to `/gsd:plan-phase`. If any dimension fails,
+the design must be corrected before continuing — do not defer.
 
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/quality-gates/SKILL.md`, so the plugin root is two directories up.
-
----
-
-## Step 0: Mode Detection
-
-Detect operating mode from artifact state before loading dimension skills.
-
-Run these detection commands:
-
-```bash
-PLAN_EXISTS=$(ls .planning/phases/*/**-PLAN.md 2>/dev/null | head -1)
-VERIFY_PASSED=$(grep -l "status: passed" .planning/VERIFICATION.md 2>/dev/null)
-```
-
-Use the disambiguation table to determine mode:
-
-| PLAN.md exists? | VERIFICATION.md with `status: passed`? | Mode |
-|-----------------|----------------------------------------|------|
-| No | No | **design-time** (pre-plan quality gate) |
-| No | Yes | **Invalid state** — STOP with error: "VERIFICATION.md shows passed but no PLAN.md found. Cannot determine quality gate context." |
-| Yes | No | **design-time** (mid-execution, treat as pre-plan) |
-| Yes | Yes | **adversarial** (pre-ship quality gate) |
-
-**Record the detected mode.** It controls Step 2 behavior for all 9 dimensions.
 
 ---
 
@@ -56,11 +34,7 @@ Use the Read tool to read each of the following files:
 
 ## Step 2: Apply each dimension
 
-For each dimension, run its **Planning Checklist (design-time mode) or Full Audit (adversarial mode) as determined in Step 0** against the current design or plan.
-
-- **design-time mode:** Run the **Planning Checklist** for each dimension. Focus on design decisions, architectural alignment, and upfront risk identification. N/A is acceptable for implementation-specific items that cannot yet be evaluated.
-- **adversarial mode:** Run the **Full Audit** for each dimension. Focus on implementation quality, edge cases, security gaps, and production readiness. N/A requires strong justification — assume the worst case unless evidence proves otherwise.
-
+For each dimension, run its **Planning Checklist** against the current design or plan.
 Work through all items. For each checklist item mark it:
 
 - ✅ Pass — requirement is satisfied
@@ -98,11 +72,9 @@ Output a report in this format:
 
 ## Step 4: Gate enforcement
 
-- If **all dimensions pass:**
-  - design-time mode → output "Quality gates passed (design-time). Proceed to planning."
-  - adversarial mode → output "Quality gates passed (pre-ship). Proceed to shipping."
-- If **any dimension fails** → output "Quality gates FAILED. Redesign required before proceeding."
+- If **all dimensions pass** → output "Quality gates passed. Proceed to `/gsd:plan-phase`."
+- If **any dimension fails** → output "Quality gates FAILED. Redesign required before planning."
   List each failure with the specific rule and required corrective action.
-  Do NOT proceed until all failures are resolved and this skill is re-run.
+  Do NOT proceed to `/gsd:plan-phase` until all failures are resolved and this skill is re-run.
 
 **There are no exceptions.** A ❌ is a hard stop, not a warning.

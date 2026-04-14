@@ -36,69 +36,6 @@ Change: {$ARGUMENTS or "(not specified)"}
 Mode:   {interactive | autonomous — from §10e or session selection}
 ```
 
-## Composition Proposal
-
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
-
-### 1. Context Scan
-
-Check the following artifacts and set skip/include flags:
-
-| Artifact | Signal | Action |
-|----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip PATH 0 (BOOTSTRAP) |
-
-```bash
-# Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
-```
-
-Note: PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
-
-### 2. Build Path Chain
-
-Construct the proposed path chain for infrastructure/CI-CD work. Default chain:
-
-PATH 0 (BOOTSTRAP) [skip if .planning/ exists] → PATH 1 (ORIENT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 10 (SECURE) [always included — infra work] → PATH 11 (VERIFY) → PATH 13 (SHIP)
-
-Note: PATH 10 (SECURE) is always included for any infrastructure engagement. PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are never included.
-
-### 3. Display Proposal
-
-Display the composition proposal to the user:
-
-```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 1 (ORIENT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 10 (SECURE) → PATH 11 (VERIFY) → PATH 13 (SHIP)
-│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists; PATH 6/8 — no UI in infra workflow
-└────────────────────────────────────────────────
-Approve composition? [Y/n]
-```
-
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Create WORKFLOW.md
-
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the infrastructure change description ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:devops`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
-
-After each path completes, write status to Path Log table:
-
-```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
-```
-
 ## Step-Skip Protocol
 
 When the user requests skipping any step:

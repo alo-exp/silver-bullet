@@ -31,71 +31,6 @@ UI work: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
 ```
 
-## Composition Proposal
-
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
-
-### 1. Context Scan
-
-Check the following artifacts and set skip/include flags:
-
-| Artifact | Signal | Action |
-|----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
-| `.planning/SPEC.md` exists | Specification already written | Skip PATH 4 (SPECIFY) |
-| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip PATH 5 (PLAN) |
-| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) — this is the UI workflow |
-
-```bash
-# Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
-[ -f ".planning/SPEC.md" ] && echo "SKIP PATH 4 — SPEC.md exists" || echo "Include PATH 4"
-ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP PATH 5 — PLAN.md exists" || echo "Include PATH 5"
-```
-
-### 2. Build Path Chain
-
-Construct the proposed path chain for UI work. Default full chain:
-
-PATH 0 (BOOTSTRAP) [skip if .planning/ exists] → PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) [always in UI workflow] → PATH 4 (SPECIFY) [skip if SPEC.md exists] → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) [always in UI workflow] → PATH 9 (REVIEW) → PATH 12 (QUALITY GATE) → PATH 13 (SHIP)
-
-Note: PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are always included — this is a UI-focused workflow.
-
-### 3. Display Proposal
-
-Display the composition proposal to the user:
-
-```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) → ...
-│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists
-└────────────────────────────────────────────────
-Approve composition? [Y/n]
-```
-
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Create WORKFLOW.md
-
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the user's original request
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:ui`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
-
-After each path completes, write status to Path Log table:
-
-```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
-```
-
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
@@ -152,21 +87,9 @@ Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usa
 
 Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
-## PATH 6: DESIGN CONTRACT — UI specification (iterative)
+## Step 5: UI Phase — Design Contract
 
-**Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
-
-**Note:** Always active in silver-ui (UI workflow is inherently UI work — no trigger detection needed).
-
-**Steps** (all via Skill tool):
-1. `design:design-system` (Always)
-2. `design:ux-copy` (As-needed — user-facing copy requires review)
-3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
-4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
-
-**Iterative:** User can loop steps 1-4. Claude suggests when design contract is solid; user decides exit.
-
-**Exit Condition:** UI-SPEC.md exists, user accepts design contract.
+Invoke `gsd-ui-phase` via the Skill tool. Purpose: create UI-SPEC.md design contract — component API, layout rules, interaction spec. This step is the key differentiator from silver:feature.
 
 ## Step 6: Plan Phase
 
@@ -189,22 +112,9 @@ Run review sequence in order:
 3. For architecturally significant UI systems: invoke `gsd-review --multi-ai` via the Skill tool (cross-AI adversarial review).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
-## PATH 8: UI QUALITY — Post-execution UI audit
+## Step 9: UI Visual Audit
 
-**Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
-
-**Note:** Always active in silver-ui (no trigger detection needed).
-
-**Steps** (all via Skill tool):
-1. `design:design-critique` (Always)
-2. `gsd-ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
-3. `design:accessibility-review` (Always)
-
-**Produces:** UI-REVIEW.md. Fixes route through `gsd-execute-phase --gaps-only`.
-
-**Review Cycle:** UI-REVIEW.md through artifact-review-assessor, fix critical via GSD, re-audit.
-
-**Exit Condition:** UI-REVIEW.md exists with no critical findings, or user accepts.
+Invoke `gsd-ui-review` via the Skill tool. Purpose: 6-pillar visual audit of implemented UI — layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance. This step is unique to the UI workflow.
 
 ## Step 10: Frontend Security
 
