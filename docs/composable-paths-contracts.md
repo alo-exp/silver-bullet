@@ -20,7 +20,7 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 0: BOOTSTRAP
+### FLOW 0: BOOTSTRAP
 
 | Field | Value |
 |-------|-------|
@@ -34,11 +34,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 1: ORIENT
+### FLOW 1: ORIENT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 0 completed (STATE.md exists) |
+| **Prerequisites** | FLOW 0 completed (STATE.md exists) |
 | **Trigger** | Always included for non-trivial work |
 | **Steps** | 1. gsd-intel (Always) · 2. gsd-scan (As-needed — brownfield, no intel files) · 3. gsd-map-codebase (As-needed — first time, deep analysis) |
 | **Produces** | Intel files in .planning/intel/ |
@@ -48,11 +48,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 2: EXPLORE
+### FLOW 2: EXPLORE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 1 completed |
+| **Prerequisites** | FLOW 1 completed |
 | **Trigger** | Fuzzy intent, unclear scope, user uncertainty, OR always for complex work |
 | **Steps** | 1. gsd-explore (Always) · 2. product-management:product-brainstorming (Always) · 3. design:user-research (As-needed — user-facing work) · 4. product-management:synthesize-research (As-needed — prior research exists) · 5. product-management:competitive-brief (As-needed — competitive landscape relevant) |
 | **Produces** | Scope summary, problem space documentation |
@@ -62,11 +62,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 3: IDEATE
+### FLOW 3: IDEATE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 2 completed |
+| **Prerequisites** | FLOW 2 completed |
 | **Trigger** | Always for complex work; skipped for simple/clear-scope |
 | **Steps** | 1. superpowers:brainstorming (Always) · 2. engineering:architecture (As-needed — new service, cross-cutting concern, ADR-worthy) · 3. engineering:system-design (As-needed — new service boundary, major component) · 4. design:design-system (As-needed — UI phase, new component type) |
 | **Produces** | ADR, design-system tokens, system-design diagram, or brainstorming spec doc |
@@ -76,12 +76,12 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 4: SPECIFY
+### FLOW 4: SPECIFY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 3 completed, OR user has external spec to ingest |
-| **Trigger** | No SPEC.md exists, OR spec refresh needed, OR external artifacts to ingest. May be skipped ONLY when REQUIREMENTS.md already exists (from PATH 0). |
+| **Prerequisites** | FLOW 3 completed, OR user has external spec to ingest |
+| **Trigger** | No SPEC.md exists, OR spec refresh needed, OR external artifacts to ingest. May be skipped ONLY when REQUIREMENTS.md already exists (from FLOW 0). |
 | **Steps** | 1. silver-ingest (As-needed — JIRA/Figma/Google Docs) · 2. product-management:write-spec (As-needed — scaffold) · 3. silver-spec (Always — Socratic elicitation) · 4. silver-validate (Always — gap analysis) |
 | **Produces** | SPEC.md, REQUIREMENTS.md |
 | **Review Cycle** | SPEC.md → review-spec → artifact-review-assessor → 2-pass; REQUIREMENTS.md → review-requirements → artifact-review-assessor → 2-pass; DESIGN.md → review-design → artifact-review-assessor → 2-pass (if exists); INGESTION_MANIFEST.md → review-ingestion-manifest → artifact-review-assessor → 2-pass (if ingest) |
@@ -90,7 +90,7 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 5: PLAN
+### FLOW 5: PLAN
 
 | Field | Value |
 |-------|-------|
@@ -104,11 +104,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 6: DESIGN CONTRACT
+### FLOW 6: DESIGN CONTRACT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 5 completed (PLAN.md exists) |
+| **Prerequisites** | FLOW 5 completed (PLAN.md exists) |
 | **Trigger** | Phase involves UI (keywords, file types, DESIGN.md existence) |
 | **Steps** | 1. design:design-system (Always in this path) · 2. design:ux-copy (As-needed) · 3. gsd-ui-phase (Always in this path) · 4. design:accessibility-review (As-needed — WCAG 2.1 AA) |
 | **Produces** | UI-SPEC.md |
@@ -118,7 +118,7 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 7: EXECUTE
+### FLOW 7: EXECUTE
 
 | Field | Value |
 |-------|-------|
@@ -126,18 +126,18 @@ Every path contract contains these 7 required fields:
 | **Trigger** | Always |
 | **Steps** | 1. superpowers:test-driven-development (As-needed — implementation plans only) · 2. gsd-execute-phase OR gsd-autonomous (Always) · 3. context7-plugin:context7-mcp (Ambient — available during execution) |
 | **Produces** | SUMMARY.md (per plan), code changes |
-| **Review Cycle** | Failure path: Insert PATH 14 (DEBUG) dynamically |
+| **Review Cycle** | Failure path: Insert FLOW 14 (DEBUG) dynamically |
 | **GSD Impact** | Heavy — reads/writes STATE.md, ROADMAP.md, REQUIREMENTS.md. Advances state position. All 10 GSD assumptions apply. |
 | **Exit Condition** | All PLAN.md files have SUMMARY.md, STATE.md advanced |
 
 ---
 
-### PATH 8: UI QUALITY
+### FLOW 8: UI QUALITY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 7 completed with UI deliverables |
-| **Trigger** | PATH 6 was in composition, OR SUMMARY.md contains UI file types |
+| **Prerequisites** | FLOW 7 completed with UI deliverables |
+| **Trigger** | FLOW 6 was in composition, OR SUMMARY.md contains UI file types |
 | **Steps** | 1. design:design-critique (Always in this path) · 2. gsd-ui-review (Always in this path — 6-pillar audit) · 3. design:accessibility-review (Always in this path) |
 | **Produces** | UI-REVIEW.md |
 | **Review Cycle** | UI-REVIEW.md → artifact-review-assessor → fix critical via GSD → re-audit |
@@ -146,12 +146,12 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 9: REVIEW
+### FLOW 9: REVIEW
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 7 completed |
-| **Trigger** | Always for any composition with PATH 7 |
+| **Prerequisites** | FLOW 7 completed |
+| **Trigger** | Always for any composition with FLOW 7 |
 | **Steps** | Layer A: gsd-code-review → superpowers:receiving-code-review → gsd-code-review-fix (automated). Layer B: superpowers:requesting-code-review → superpowers:receiving-code-review → gsd-code-review-fix (re-review). Layer C: engineering:code-review → superpowers:receiving-code-review → gsd-code-review-fix (engineering). Layer D (As-needed): gsd-review --multi-ai → superpowers:receiving-code-review → gsd-code-review-fix (cross-AI). |
 | **Produces** | REVIEW.md |
 | **Review Cycle** | Entire cycle iterates until 2 consecutive clean passes across all layers |
@@ -160,11 +160,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 10: SECURE
+### FLOW 10: SECURE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 9 completed |
+| **Prerequisites** | FLOW 9 completed |
 | **Trigger** | Always — scope varies by project type |
 | **Steps** | 1. security (SENTINEL) (As-needed — software is Claude/AI Plugin or Skill) · 2. gsd-secure-phase (Always) · 3. gsd-validate-phase (Always) · 4. ai-llm-safety (As-needed — LLM agents/prompts/AI content) |
 | **Produces** | SECURITY.md |
@@ -174,11 +174,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 11: VERIFY
+### FLOW 11: VERIFY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 7 completed (SUMMARY.md exists) |
+| **Prerequisites** | FLOW 7 completed (SUMMARY.md exists) |
 | **Trigger** | Always — NON-SKIPPABLE |
 | **Steps** | 1. gsd-verify-work (Always — NON-SKIPPABLE) · 2. gsd-add-tests (As-needed — coverage gaps) · 3. superpowers:verification-before-completion (Always) |
 | **Produces** | UAT.md, VERIFICATION.md |
@@ -188,11 +188,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 12: QUALITY GATE
+### FLOW 12: QUALITY GATE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | Pre-plan: CONTEXT.md exists. Pre-ship: PATH 11 completed. |
+| **Prerequisites** | Pre-plan: CONTEXT.md exists. Pre-ship: FLOW 11 completed. |
 | **Trigger** | Always — appears TWICE (pre-plan + pre-ship) |
 | **Steps** | 1. quality-gates (9 dimensions) for standard projects OR devops-quality-gates (7 dimensions) for IaC/infra · 2. Individual dimension deep-dive (As-needed — specific failure) |
 | **Produces** | Quality assessment (design-time checklist pre-plan; adversarial audit pre-ship) |
@@ -202,11 +202,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 13: SHIP
+### FLOW 13: SHIP
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 12 pre-ship passed, PATH 11 completed, clean tree, feature branch |
+| **Prerequisites** | FLOW 12 pre-ship passed, FLOW 11 completed, clean tree, feature branch |
 | **Trigger** | Always |
 | **Steps** | 1. gsd-pr-branch (As-needed) · 2. engineering:deploy-checklist (As-needed — production) · 3. gsd-ship (Always) |
 | **Produces** | PR |
@@ -216,7 +216,7 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 14: DEBUG
+### FLOW 14: DEBUG
 
 | Field | Value |
 |-------|-------|
@@ -230,12 +230,12 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 15: DESIGN HANDOFF
+### FLOW 15: DESIGN HANDOFF
 
 | Field | Value |
 |-------|-------|
 | **Prerequisites** | All UI phases verified |
-| **Trigger** | Milestone has UI phases AND in release flow. Runs inside PATH 17 only (between milestone audit and gap closure — never in per-phase sequence). |
+| **Trigger** | Milestone has UI phases AND in release flow. Runs inside FLOW 17 only (between milestone audit and gap closure — never in per-phase sequence). |
 | **Steps** | 1. design:design-handoff (Always in this path) · 2. design:design-system (As-needed — final component inventory) |
 | **Produces** | Handoff package |
 | **Review Cycle** | None |
@@ -244,11 +244,11 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 16: DOCUMENT
+### FLOW 16: DOCUMENT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PATH 13 completed |
+| **Prerequisites** | FLOW 13 completed |
 | **Trigger** | Always post-ship |
 | **Steps** | 1. gsd-docs-update (Always) · 2. engineering:documentation (Always) · 3. engineering:tech-debt (Always) · 4. gsd-milestone-summary (As-needed — milestone narrative) · 5. episodic-memory:remembering-conversations (Always) · 6. gsd-session-report (As-needed) |
 | **Produces** | Updated docs/, session log |
@@ -258,13 +258,13 @@ Every path contract contains these 7 required fields:
 
 ---
 
-### PATH 17: RELEASE
+### FLOW 17: RELEASE
 
 | Field | Value |
 |-------|-------|
 | **Prerequisites** | All phases shipped |
 | **Trigger** | User signals milestone complete, or last phase shipped |
-| **Steps** | 1. gsd-audit-uat (Always) · 2. gsd-audit-milestone (Always) · 3. PATH 15 DESIGN HANDOFF (As-needed — if milestone has UI phases, inserted here between steps 2 and 3) · 4. gsd-plan-milestone-gaps (As-needed — gaps found) · 5. create-release (Always) · 6. gsd-complete-milestone (Always) |
+| **Steps** | 1. gsd-audit-uat (Always) · 2. gsd-audit-milestone (Always) · 3. FLOW 15 DESIGN HANDOFF (As-needed — if milestone has UI phases, inserted here between steps 2 and 3) · 4. gsd-plan-milestone-gaps (As-needed — gaps found) · 5. create-release (Always) · 6. gsd-complete-milestone (Always) |
 | **Produces** | GitHub Release, archived .planning/ |
 | **Review Cycle** | Cross-artifact review → artifact-review-assessor → fix → pass (before create-release). Gap closure recursion: Claude-suggested, user-decided depth. |
 | **GSD Impact** | gsd-complete-milestone archives .planning/, resets STATE.md |

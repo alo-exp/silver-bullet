@@ -136,7 +136,7 @@ fi
 # ── WORKFLOW.md path completion check (primary gate with legacy fallback) ─────
 workflow_file="$PWD/.planning/WORKFLOW.md"
 if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Parse Path Log: count completed and total paths
+  # Parse Flow Log: count completed and total paths
   wf_complete=0
   wf_total=0
   wf_parse_ok=false

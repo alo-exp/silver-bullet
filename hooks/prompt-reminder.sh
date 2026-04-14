@@ -151,15 +151,15 @@ workflow_position=""
 if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   # Extract Last-path from Heartbeat section
   last_path=""
-  last_path=$(grep -A1 '## Heartbeat' "$workflow_file" 2>/dev/null | grep 'Last-path:' | sed 's/Last-path:[[:space:]]*//' | tr -d '\r' || true)
+  last_path=$(grep -A1 '## Heartbeat' "$workflow_file" 2>/dev/null | grep 'Last-flow:' | sed 's/Last-flow:[[:space:]]*//' | tr -d '\r' || true)
   # Extract next path from Next Path section
   next_path=""
-  next_path=$(grep -A1 '## Next Path' "$workflow_file" 2>/dev/null | tail -1 | sed 's/^[[:space:]]*//' | tr -d '\r' || true)
+  next_path=$(grep -A1 '## Next Flow' "$workflow_file" 2>/dev/null | tail -1 | sed 's/^[[:space:]]*//' | tr -d '\r' || true)
   # Extract mode from Composition section
   comp_mode=""
   comp_mode=$(grep '^Mode:' "$workflow_file" 2>/dev/null | head -1 | sed 's/Mode:[[:space:]]*//' | tr -d '\r' || true)
   if [[ -n "$last_path" ]]; then
-    workflow_position="Composable path: currently at PATH ${last_path}, next: ${next_path} (${comp_mode} mode)"
+    workflow_position="Composable path: currently at FLOW ${last_path}, next: ${next_path} (${comp_mode} mode)"
   fi
 fi
 

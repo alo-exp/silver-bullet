@@ -2,7 +2,7 @@
 # Tests for compliance-status.sh WORKFLOW.md path-progress display
 #
 # Covers:
-#   S1 — PATH N/M shown when WORKFLOW.md present and state file exists
+#   S1 — FLOW N/M shown when WORKFLOW.md present and state file exists
 #   S2 — PATH: N/A (legacy mode) shown when no WORKFLOW.md
 #   S3 — Bug-1 fix: PATH progress shown in early-exit path (no state file)
 #   S4 — Bug-2 fix: digit-starting rows in other WORKFLOW.md sections don't inflate total
@@ -17,8 +17,8 @@ source "$(dirname "$0")/helpers/common.sh"
 
 echo "=== Compliance-Status PATH Progress Scenarios ==="
 
-# ── Scenario 1: WORKFLOW.md present + state file → PATH N/M shown ──────────
-echo "--- S1: WORKFLOW.md present + state file → PATH N/M in output ---"
+# ── Scenario 1: WORKFLOW.md present + state file → FLOW N/M shown ──────────
+echo "--- S1: WORKFLOW.md present + state file → FLOW N/M in output ---"
 integration_setup
 write_default_config
 
@@ -32,8 +32,8 @@ Intent: "test feature"
 Composer: /silver:feature
 Mode: interactive
 
-## Path Log
-| # | Path | Status | Artifacts | Exit |
+## Flow Log
+| # | Flow | Status | Artifacts | Exit |
 |---|------|--------|-----------|------|
 | 0 | BOOTSTRAP | complete | PROJECT.md | yes |
 | 5 | PLAN | complete | PLAN.md | yes |
@@ -41,18 +41,18 @@ Mode: interactive
 | 11 | VERIFY | pending | — | no |
 
 ## Heartbeat
-Last-path: 5
+Last-flow: 5
 Last-beat: 2026-04-15T00:00:00Z
 
-## Next Path
-PATH 7 (EXECUTE)
+## Next Flow
+FLOW 7 (EXECUTE)
 EOF
 
 # Put quality-gates in state so we skip early-exit path
 printf 'quality-gates\n' >> "$TMPSTATE"
 
 out=$(run_compliance_status)
-assert_contains "S1.1: PATH N/M appears in output" "$out" "PATH 2/4"
+assert_contains "S1.1: FLOW N/M appears in output" "$out" "FLOW 2/4"
 assert_not_contains "S1.2: legacy mode NOT shown when WORKFLOW.md present" "$out" "N/A (legacy mode)"
 
 integration_teardown
@@ -65,7 +65,7 @@ printf 'quality-gates\n' >> "$TMPSTATE"
 # No WORKFLOW.md
 
 out=$(run_compliance_status)
-assert_contains "S2.1: legacy mode shown when no WORKFLOW.md" "$out" "PATH: N/A (legacy mode)"
+assert_contains "S2.1: legacy mode shown when no WORKFLOW.md" "$out" "FLOW: N/A (legacy mode)"
 
 integration_teardown
 
@@ -78,18 +78,18 @@ mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'EOF'
 # Workflow Manifest
 
-## Path Log
-| # | Path | Status | Artifacts | Exit |
+## Flow Log
+| # | Flow | Status | Artifacts | Exit |
 |---|------|--------|-----------|------|
 | 0 | BOOTSTRAP | complete | PROJECT.md | yes |
 | 5 | PLAN | pending | — | no |
 | 7 | EXECUTE | pending | — | no |
 
 ## Heartbeat
-Last-path: 0
+Last-flow: 0
 
-## Next Path
-PATH 5 (PLAN)
+## Next Flow
+FLOW 5 (PLAN)
 EOF
 
 # State file intentionally absent (don't write anything to TMPSTATE)
@@ -97,8 +97,8 @@ rm -f "$TMPSTATE"
 
 out=$(run_compliance_status)
 # Before Bug-1 fix: this would show "0 steps | Mode: interactive | GSD 0/5 ..."
-# After fix: PATH 1/3 must appear in the early-exit format string
-assert_contains "S3.1: PATH progress in early-exit output (Bug-1 regression)" "$out" "PATH 1/3"
+# After fix: FLOW 1/3 must appear in the early-exit format string
+assert_contains "S3.1: FLOW progress in early-exit output (Bug-1 regression)" "$out" "FLOW 1/3"
 assert_not_contains "S3.2: legacy mode NOT shown when WORKFLOW.md present (early-exit)" "$out" "N/A (legacy mode)"
 
 integration_teardown
@@ -118,8 +118,8 @@ Intent: "test"
 Composer: /silver:feature
 Mode: autonomous
 
-## Path Log
-| # | Path | Status | Artifacts | Exit |
+## Flow Log
+| # | Flow | Status | Artifacts | Exit |
 |---|------|--------|-----------|------|
 | 0 | BOOTSTRAP | complete | PROJECT.md | yes |
 | 5 | PLAN | complete | PLAN.md | yes |
@@ -128,29 +128,29 @@ Mode: autonomous
 ## Phase Iterations
 | Phase | Status |
 |-------|--------|
-| 01 (feature-phase) | PATH 5 complete, PATH 7 pending |
+| 01 (feature-phase) | FLOW 5 complete, FLOW 7 pending |
 
 ## Autonomous Decisions
 | Timestamp | Decision | Rationale |
 |-----------|----------|-----------|
-| 2026-04-15T10:00:00Z | Skipped PATH 4 | No SPEC.md found |
+| 2026-04-15T10:00:00Z | Skipped FLOW 4 | No SPEC.md found |
 | 2026-04-15T10:05:00Z | Auto-confirmed composition | autonomous mode |
 
 ## Heartbeat
-Last-path: 5
+Last-flow: 5
 
-## Next Path
-PATH 7 (EXECUTE)
+## Next Flow
+FLOW 7 (EXECUTE)
 EOF
 
 out=$(run_compliance_status)
 # Total rows: 3 in Path Log. Phase Iterations row starts with '| 01' and
 # Autonomous Decisions rows start with '| 2026'. Bug-2 fix prevents those
 # from being counted as Path Log entries.
-# Correct: PATH 2/3 (2 complete, 3 total)
-# Buggy:   PATH 2/6 (2 complete, 3+1+2=6 total)
-assert_contains "S4.1: PATH total is 3, not 6 (Bug-2 regression)" "$out" "PATH 2/3"
-assert_not_contains "S4.2: inflated count PATH 2/6 not present" "$out" "PATH 2/6"
+# Correct: FLOW 2/3 (2 complete, 3 total)
+# Buggy:   FLOW 2/6 (2 complete, 3+1+2=6 total)
+assert_contains "S4.1: FLOW total is 3, not 6 (Bug-2 regression)" "$out" "FLOW 2/3"
+assert_not_contains "S4.2: inflated count FLOW 2/6 not present" "$out" "FLOW 2/6"
 
 integration_teardown
 
@@ -163,15 +163,15 @@ printf 'quality-gates\n' >> "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning"
 real_wf="/tmp/sb-test-real-workflow-$$.md"
 cat > "$real_wf" << 'EOF'
-## Path Log
-| # | Path | Status | Artifacts | Exit |
+## Flow Log
+| # | Flow | Status | Artifacts | Exit |
 |---|------|--------|-----------|------|
 | 0 | BOOTSTRAP | complete | PROJECT.md | yes |
 EOF
 ln -s "$real_wf" "$TMPDIR_TEST/.planning/WORKFLOW.md"
 
 out=$(run_compliance_status)
-assert_contains "S5.1: symlinked WORKFLOW.md ignored → legacy mode" "$out" "PATH: N/A (legacy mode)"
+assert_contains "S5.1: symlinked WORKFLOW.md ignored → legacy mode" "$out" "FLOW: N/A (legacy mode)"
 
 rm -f "$real_wf"
 integration_teardown
@@ -186,7 +186,7 @@ mkdir -p "$TMPDIR_TEST/.planning"
 echo "This file has no path log rows at all." > "$TMPDIR_TEST/.planning/WORKFLOW.md"
 
 out=$(run_compliance_status)
-assert_contains "S6.1: no valid path rows → legacy mode" "$out" "PATH: N/A (legacy mode)"
+assert_contains "S6.1: no valid path rows → legacy mode" "$out" "FLOW: N/A (legacy mode)"
 
 integration_teardown
 
@@ -200,8 +200,8 @@ mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'EOF'
 # Workflow Manifest
 
-## Path Log
-| # | Path | Status | Artifacts | Exit |
+## Flow Log
+| # | Flow | Status | Artifacts | Exit |
 |---|------|--------|-----------|------|
 | 0 | BOOTSTRAP | complete | PROJECT.md, ROADMAP.md | yes |
 | 1 | ORIENT | complete | intel/codebase.md | yes |
@@ -212,16 +212,16 @@ cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'EOF'
 | 17 | RELEASE | pending | — | no |
 
 ## Heartbeat
-Last-path: 7
+Last-flow: 7
 
-## Next Path
-PATH 11 (VERIFY)
+## Next Flow
+FLOW 11 (VERIFY)
 EOF
 
 out=$(run_compliance_status)
-assert_contains "S7.1: 4 complete paths counted correctly" "$out" "PATH 4/7"
-assert_not_contains "S7.2: 7 total (not inflated)" "$out" "PATH 4/8"
-assert_not_contains "S7.3: 7 total (not inflated)" "$out" "PATH 4/9"
+assert_contains "S7.1: 4 complete flows counted correctly" "$out" "FLOW 4/7"
+assert_not_contains "S7.2: 7 total (not inflated)" "$out" "FLOW 4/8"
+assert_not_contains "S7.3: 7 total (not inflated)" "$out" "FLOW 4/9"
 
 integration_teardown
 

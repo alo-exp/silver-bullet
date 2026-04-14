@@ -35,26 +35,26 @@ Read `.planning/STATE.md` to understand current phase, milestone state, and any 
 
 Then scan the project for artifacts that indicate path completion. Use this artifact-to-path mapping:
 
-| Path | Name | Artifacts to Check | Inference Rule |
+| Flow | Name | Artifacts to Check | Inference Rule |
 |------|------|--------------------|----------------|
-| PATH 0 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if ALL four exist |
-| PATH 1 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any intel or codebase file exists |
-| PATH 2 | EXPLORE | (no dedicated artifact) | Mark as "skipped" — cannot infer from artifacts alone |
-| PATH 3 | IDEATE | `docs/superpowers/specs/*.md`, `.planning/ADR-*.md` | Complete if any matching file exists |
-| PATH 4 | SPECIFY | `.planning/SPEC.md` | Complete if file exists |
-| PATH 5 | PLAN | `.planning/phases/*/CONTEXT.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has PLAN.md files |
-| PATH 6 | DESIGN CONTRACT | `.planning/DESIGN.md`, `.planning/UI-SPEC.md` | Complete if either exists |
-| PATH 7 | EXECUTE | `.planning/phases/*/*-SUMMARY.md` | Complete if current phase has SUMMARY.md files |
-| PATH 8 | UI QUALITY | `.planning/UI-REVIEW.md` | Complete if file exists |
-| PATH 9 | REVIEW | `.planning/REVIEW.md`, `.planning/phases/*/REVIEW.md` | Complete if any exists |
-| PATH 10 | SECURE | `.planning/SECURITY.md` | Complete if file exists |
-| PATH 11 | VERIFY | `.planning/VERIFICATION.md` | Complete if file exists |
-| PATH 12 | QUALITY GATE | (checked via STATE.md) | Complete if `quality-gates` appears in STATE.md completed skills |
-| PATH 13 | SHIP | (checked via STATE.md) | Complete if `deploy-checklist` or `create-release` appears in STATE.md completed skills |
-| PATH 14 | DEBUG | (no dedicated artifact) | Mark as "not applicable" — inserted dynamically only on failure |
-| PATH 15 | DESIGN HANDOFF | (no dedicated artifact) | Mark as "not applicable" unless milestone has UI phases |
-| PATH 16 | DOCUMENT | (checked via STATE.md) | Complete if `gsd-docs-update` or documentation skill appears in STATE.md |
-| PATH 17 | RELEASE | (checked via STATE.md) | Complete if `create-release` appears in STATE.md completed skills |
+| FLOW 0 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if ALL four exist |
+| FLOW 1 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any intel or codebase file exists |
+| FLOW 2 | EXPLORE | (no dedicated artifact) | Mark as "skipped" — cannot infer from artifacts alone |
+| FLOW 3 | IDEATE | `docs/superpowers/specs/*.md`, `.planning/ADR-*.md` | Complete if any matching file exists |
+| FLOW 4 | SPECIFY | `.planning/SPEC.md` | Complete if file exists |
+| FLOW 5 | PLAN | `.planning/phases/*/CONTEXT.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has PLAN.md files |
+| FLOW 6 | DESIGN CONTRACT | `.planning/DESIGN.md`, `.planning/UI-SPEC.md` | Complete if either exists |
+| FLOW 7 | EXECUTE | `.planning/phases/*/*-SUMMARY.md` | Complete if current phase has SUMMARY.md files |
+| FLOW 8 | UI QUALITY | `.planning/UI-REVIEW.md` | Complete if file exists |
+| FLOW 9 | REVIEW | `.planning/REVIEW.md`, `.planning/phases/*/REVIEW.md` | Complete if any exists |
+| FLOW 10 | SECURE | `.planning/SECURITY.md` | Complete if file exists |
+| FLOW 11 | VERIFY | `.planning/VERIFICATION.md` | Complete if file exists |
+| FLOW 12 | QUALITY GATE | (checked via STATE.md) | Complete if `quality-gates` appears in STATE.md completed skills |
+| FLOW 13 | SHIP | (checked via STATE.md) | Complete if `deploy-checklist` or `create-release` appears in STATE.md completed skills |
+| FLOW 14 | DEBUG | (no dedicated artifact) | Mark as "not applicable" — inserted dynamically only on failure |
+| FLOW 15 | DESIGN HANDOFF | (no dedicated artifact) | Mark as "not applicable" unless milestone has UI phases |
+| FLOW 16 | DOCUMENT | (checked via STATE.md) | Complete if `gsd-docs-update` or documentation skill appears in STATE.md |
+| FLOW 17 | RELEASE | (checked via STATE.md) | Complete if `create-release` appears in STATE.md completed skills |
 
 Record which artifacts were found for each path. This evidence list will be shown to the user in Step 4.
 
@@ -64,17 +64,17 @@ Record which artifacts were found for each path. This evidence list will be show
 
 Based on the artifacts found in Step 1, determine which paths belong to this project's composition:
 
-- **Always include:** PATH 0, PATH 1, PATH 5, PATH 7, PATH 11, PATH 13
-- **Include if artifacts exist:** PATH 2, PATH 3, PATH 4, PATH 6, PATH 8, PATH 9, PATH 10, PATH 16, PATH 17
-- **Include PATH 12** if quality-gates skill appears in STATE.md
-- **Exclude PATH 14 and PATH 15** unless specific evidence exists (UI milestone or debug artifacts)
+- **Always include:** FLOW 0, FLOW 1, FLOW 5, FLOW 7, FLOW 11, FLOW 13
+- **Include if artifacts exist:** FLOW 2, FLOW 3, FLOW 4, FLOW 6, FLOW 8, FLOW 9, FLOW 10, FLOW 16, FLOW 17
+- **Include FLOW 12** if quality-gates skill appears in STATE.md
+- **Exclude FLOW 14 and FLOW 15** unless specific evidence exists (UI milestone or debug artifacts)
 - **Exclude paths** with no artifacts AND no STATE.md markers — these were intentionally skipped
 
 For each included path, assign an inferred status:
 - `complete` — artifact(s) confirmed present
-- `in-progress` — partial artifacts exist (e.g., PLAN.md exists but no SUMMARY.md for PATH 7)
+- `in-progress` — partial artifacts exist (e.g., PLAN.md exists but no SUMMARY.md for FLOW 7)
 - `pending` — no artifacts yet but path is in composition
-- `skipped` — intentionally excluded (PATH 2, 14, 15 when not applicable)
+- `skipped` — intentionally excluded (FLOW 2, 14, 15 when not applicable)
 
 ---
 
@@ -95,10 +95,10 @@ Build the WORKFLOW.md content by filling in:
 | {#} | {PATH NAME} | {status} | {artifact filename(s) or "—"} | {Yes / No / Inferred} |
 ```
 
-**Phase Iterations section:** Add the current phase from STATE.md with status of Paths 5-13 based on inferred statuses.
+**Phase Iterations section:** Add the current phase from STATE.md with status of Flows 5-13 based on inferred statuses.
 
 **Heartbeat section:**
-- `Last-path:` → highest path number with status `complete`
+- `Last-flow:` → highest path number with status `complete`
 - `Last-beat:` → current ISO timestamp
 
 **Next Path section:**
@@ -116,17 +116,17 @@ Also display a summary panel:
 ## Migration Summary
 
 Paths inferred as COMPLETE:
-  - PATH 0 (BOOTSTRAP): PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md all present
-  - PATH 1 (ORIENT): intel files found in .planning/intel/
+  - FLOW 0 (BOOTSTRAP): PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md all present
+  - FLOW 1 (ORIENT): intel files found in .planning/intel/
   - ... (list each with evidence)
 
 Paths marked PENDING:
-  - PATH 11 (VERIFY): no VERIFICATION.md found
+  - FLOW 11 (VERIFY): no VERIFICATION.md found
   - ... (list each)
 
 Paths excluded from composition:
-  - PATH 2 (EXPLORE): no artifacts found, skipped
-  - PATH 14 (DEBUG): not applicable
+  - FLOW 2 (EXPLORE): no artifacts found, skipped
+  - FLOW 14 (DEBUG): not applicable
   - ...
 
 Next path after migration: PATH {N} ({NAME})
@@ -165,5 +165,5 @@ After user confirms (or after adjustments are agreed):
 - This is a **one-time migration skill**. Once WORKFLOW.md exists, the `/silver` composer manages it going forward.
 - If the user disagrees with any inferred status, adjust before writing — the goal is an accurate starting state, not a perfect one.
 - Paths marked `skipped` in the composition record that they were intentionally not part of this project's workflow. This prevents /silver from re-suggesting them.
-- PATH 2 (EXPLORE) is almost always `skipped` in migrations — its outputs are narrative and leave no dedicated artifact trail.
+- FLOW 2 (EXPLORE) is almost always `skipped` in migrations — its outputs are narrative and leave no dedicated artifact trail.
 - The `workflow.md.base` template governs the file structure. Do not add sections not present in the template.

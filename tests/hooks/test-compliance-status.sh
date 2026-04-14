@@ -216,22 +216,22 @@ teardown
 echo ""
 echo "=== WORKFLOW.md path progress ==="
 
-# WF1: WORKFLOW.md present -> shows PATH N/M
-echo "--- WF1: shows PATH progress ---"
+# WF1: WORKFLOW.md present -> shows FLOW N/M
+echo "--- WF1: shows FLOW progress ---"
 setup
 write_cfg
 echo "quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
-| # | Path | Status |
+## Flow Log
+| # | Flow | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
 | 5 | PLAN | complete |
 | 7 | EXECUTE | in_progress |
 WFEOF
 out=$(run_hook)
-assert_contains "WF1: shows PATH progress" "$out" "PATH"
+assert_contains "WF1: shows FLOW progress" "$out" "FLOW"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

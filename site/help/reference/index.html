@@ -535,7 +535,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>NICE-TO-HAVE</strong> — improvement worth making if time allows; does not block</li>
         <li><strong>DISMISS</strong> — finding is not applicable, already addressed, or out of scope</li>
       </ul>
-      <p><strong>When it runs:</strong> Inside <strong>PATH 9 (REVIEW)</strong> after each reviewer pass. Also runs in PATH 4 (SPECIFY), PATH 5 (PLAN), and PATH 11 (VERIFY) after artifact reviewers complete. Produces a triage report that the orchestrator uses to decide whether exit condition is met.</p>
+      <p><strong>When it runs:</strong> Inside <strong>FLOW 9 (REVIEW)</strong> after each reviewer pass. Also runs in FLOW 4 (SPECIFY), FLOW 5 (PLAN), and FLOW 11 (VERIFY) after artifact reviewers complete. Produces a triage report that the orchestrator uses to decide whether exit condition is met.</p>
       <p><strong>Review cycle pattern:</strong> Artifact → reviewer → artifact-review-assessor → fix → 2-pass. Two consecutive clean passes (no MUST-FIX findings) satisfy the exit condition.</p>
 
       <div class="divider"></div>
@@ -546,17 +546,17 @@ footer a:hover{color:var(--accent-light)}
       <ul>
         <li><code>path_log</code> — ordered list of paths completed with timestamps and exit conditions met</li>
         <li><code>phase_iterations</code> — how many times the per-phase loop (PLAN → EXECUTE → REVIEW → VERIFY) has run</li>
-        <li><code>dynamic_insertions</code> — paths inserted mid-composition (e.g., PATH 14 DEBUG on failure, PATH 6 DESIGN CONTRACT on UI detection)</li>
+        <li><code>dynamic_insertions</code> — paths inserted mid-composition (e.g., FLOW 14 DEBUG on failure, FLOW 6 DESIGN CONTRACT on UI detection)</li>
         <li><code>autonomous_decisions</code> — decisions the orchestrator made without user input (logged for transparency)</li>
         <li><code>deferred_improvements</code> — NICE-TO-HAVE findings from assessor that were deferred</li>
         <li><code>next_path</code> — the path scheduled to run next</li>
       </ul>
-      <p><strong>Where created:</strong> <strong>PATH 0 (BOOTSTRAP)</strong> on first run, or via <code>silver:migrate</code> when upgrading from pre-composable-paths versions. Updated by the supervision loop after each path completes.</p>
+      <p><strong>Where created:</strong> <strong>FLOW 0 (BOOTSTRAP)</strong> on first run, or via <code>silver:migrate</code> when upgrading from pre-composable-paths versions. Updated by the supervision loop after each path completes.</p>
 
       <div class="divider"></div>
 
       <h3 id="path-contracts">Path Contracts</h3>
-      <p><strong>Reference:</strong> <code>docs/composable-paths-contracts.md</code> — the authoritative contract reference for all 18 paths.</p>
+      <p><strong>Reference:</strong> <code>docs/composable-flows-contracts.md</code> — the authoritative contract reference for all 18 flows.</p>
       <p>Each path contract defines 7 required fields:</p>
       <ul>
         <li><strong>Prerequisites</strong> — artifacts that MUST exist before the path runs</li>
@@ -567,7 +567,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>GSD Impact</strong> — which GSD state fields are read/written</li>
         <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
       </ul>
-      <p>The 18 paths are: PATH 0 BOOTSTRAP · PATH 1 ORIENT · PATH 2 EXPLORE · PATH 3 IDEATE · PATH 4 SPECIFY · PATH 5 PLAN · PATH 6 DESIGN CONTRACT · PATH 7 EXECUTE · PATH 8 UI QUALITY · PATH 9 REVIEW · PATH 10 SECURE · PATH 11 VERIFY · PATH 12 QUALITY GATE · PATH 13 SHIP · PATH 14 DEBUG · PATH 15 DESIGN HANDOFF · PATH 16 DOCUMENT · PATH 17 RELEASE.</p>
+      <p>The 18 flows are: FLOW 0 BOOTSTRAP · FLOW 1 ORIENT · FLOW 2 EXPLORE · FLOW 3 IDEATE · FLOW 4 SPECIFY · FLOW 5 PLAN · FLOW 6 DESIGN CONTRACT · FLOW 7 EXECUTE · FLOW 8 UI QUALITY · FLOW 9 REVIEW · FLOW 10 SECURE · FLOW 11 VERIFY · FLOW 12 QUALITY GATE · FLOW 13 SHIP · FLOW 14 DEBUG · FLOW 15 DESIGN HANDOFF · FLOW 16 DOCUMENT · FLOW 17 RELEASE.</p>
 
       <div class="divider"></div>
 

@@ -367,7 +367,7 @@ echo "--- WF1: all workflow paths complete -> allow ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
+## Flow Log
 | # | Path | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
@@ -383,7 +383,7 @@ echo "--- WF2: partial workflow paths -> legacy gate ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
+## Flow Log
 | # | Path | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
@@ -408,7 +408,7 @@ echo "--- WF4: all paths complete overrides missing legacy skills ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
+## Flow Log
 | # | Path | Status |
 |---|------|--------|
 | 5 | PLAN | complete |

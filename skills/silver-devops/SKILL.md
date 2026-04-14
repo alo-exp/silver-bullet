@@ -46,23 +46,23 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip PATH 0 (BOOTSTRAP) |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | GSD state present | Skip FLOW 0 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
+[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
 ```
 
-Note: PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
+Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
 
 ### 2. Build Path Chain
 
 Construct the proposed path chain for infrastructure/CI-CD work. Default chain:
 
-PATH 0 (BOOTSTRAP) [skip if .planning/ exists] → PATH 1 (ORIENT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 10 (SECURE) [always included — infra work] → PATH 11 (VERIFY) → PATH 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
 
-Note: PATH 10 (SECURE) is always included for any infrastructure engagement. PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are never included.
+Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included.
 
 ### 3. Display Proposal
 
@@ -70,8 +70,8 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 1 (ORIENT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 10 (SECURE) → PATH 11 (VERIFY) → PATH 13 (SHIP)
-│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists; PATH 6/8 — no UI in infra workflow
+│ Paths: FLOW 1 (ORIENT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists; FLOW 6/8 — no UI in infra workflow
 └────────────────────────────────────────────────
 Approve composition? [Y/n]
 ```

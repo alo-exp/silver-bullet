@@ -129,7 +129,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <span>Composable Workflow Orchestration</span>
     </div>
     <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> replaces fixed pipelines with dynamic path composition — classifying context, selecting from 18 paths, and supervising execution via <code>WORKFLOW.md</code>.</p>
+    <p>How <code>/silver</code> replaces fixed pipelines with dynamic path composition — classifying context, selecting from 18 flows, and supervising execution via <code>WORKFLOW.md</code>.</p>
   </div>
 </div>
 
@@ -169,109 +169,109 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </thead>
         <tbody>
           <tr>
-            <td>PATH 0</td>
+            <td>FLOW 0</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td>
             <td style="font-family:inherit;font-size:.875rem">Initialize project, milestone, or resume prior session</td>
             <td style="font-family:inherit;font-size:.875rem">No .planning/ exists, prior milestone complete, or user says "new project"</td>
           </tr>
           <tr>
-            <td>PATH 1</td>
+            <td>FLOW 1</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td>
             <td style="font-family:inherit;font-size:.875rem">Build intel files — scan codebase, map architecture</td>
             <td style="font-family:inherit;font-size:.875rem">Always included for non-trivial work</td>
           </tr>
           <tr>
-            <td>PATH 2</td>
+            <td>FLOW 2</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXPLORE</td>
             <td style="font-family:inherit;font-size:.875rem">Clarify scope, user research, competitive brief</td>
             <td style="font-family:inherit;font-size:.875rem">Fuzzy intent, unclear scope, or user uncertainty</td>
           </tr>
           <tr>
-            <td>PATH 3</td>
+            <td>FLOW 3</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">IDEATE</td>
             <td style="font-family:inherit;font-size:.875rem">Brainstorm, architecture decisions, system design</td>
             <td style="font-family:inherit;font-size:.875rem">Always for complex work; skipped for clear-scope simple work</td>
           </tr>
           <tr>
-            <td>PATH 4</td>
+            <td>FLOW 4</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td>
             <td style="font-family:inherit;font-size:.875rem">Produce SPEC.md and REQUIREMENTS.md via silver-spec</td>
             <td style="font-family:inherit;font-size:.875rem">No SPEC.md exists, spec refresh needed, or external artifacts to ingest</td>
           </tr>
           <tr>
-            <td>PATH 5</td>
+            <td>FLOW 5</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td>
             <td style="font-family:inherit;font-size:.875rem">Produce CONTEXT.md, RESEARCH.md, PLAN.md</td>
             <td style="font-family:inherit;font-size:.875rem">Always for every phase</td>
           </tr>
           <tr>
-            <td>PATH 6</td>
+            <td>FLOW 6</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN CONTRACT</td>
             <td style="font-family:inherit;font-size:.875rem">Produce UI-SPEC.md via design system and UX skills</td>
             <td style="font-family:inherit;font-size:.875rem">Phase involves UI (keywords, file types, DESIGN.md presence)</td>
           </tr>
           <tr>
-            <td>PATH 7</td>
+            <td>FLOW 7</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td>
             <td style="font-family:inherit;font-size:.875rem">Wave-based parallel execution via gsd-execute-phase</td>
             <td style="font-family:inherit;font-size:.875rem">Always</td>
           </tr>
           <tr>
-            <td>PATH 8</td>
+            <td>FLOW 8</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI QUALITY</td>
             <td style="font-family:inherit;font-size:.875rem">Design critique, 6-pillar UI audit, accessibility review</td>
-            <td style="font-family:inherit;font-size:.875rem">PATH 6 was in composition, or SUMMARY.md contains UI file types</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 6 was in composition, or SUMMARY.md contains UI file types</td>
           </tr>
           <tr>
-            <td>PATH 9</td>
+            <td>FLOW 9</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td>
             <td style="font-family:inherit;font-size:.875rem">Layered code review: automated → peer → engineering → cross-AI</td>
-            <td style="font-family:inherit;font-size:.875rem">Always for any composition with PATH 7</td>
+            <td style="font-family:inherit;font-size:.875rem">Always for any composition with FLOW 7</td>
           </tr>
           <tr>
-            <td>PATH 10</td>
+            <td>FLOW 10</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td>
             <td style="font-family:inherit;font-size:.875rem">Security audit, validation, LLM safety checks</td>
             <td style="font-family:inherit;font-size:.875rem">Always — scope varies by project type</td>
           </tr>
           <tr>
-            <td>PATH 11</td>
+            <td>FLOW 11</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td>
             <td style="font-family:inherit;font-size:.875rem">Non-skippable verification gate — gsd-verify-work</td>
             <td style="font-family:inherit;font-size:.875rem">Always — NON-SKIPPABLE</td>
           </tr>
           <tr>
-            <td>PATH 12</td>
+            <td>FLOW 12</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY GATE</td>
             <td style="font-family:inherit;font-size:.875rem">Dual-mode: design-time checklist pre-plan + adversarial audit pre-ship</td>
             <td style="font-family:inherit;font-size:.875rem">Always — appears TWICE in every composition</td>
           </tr>
           <tr>
-            <td>PATH 13</td>
+            <td>FLOW 13</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td>
             <td style="font-family:inherit;font-size:.875rem">Create PR via gsd-ship</td>
             <td style="font-family:inherit;font-size:.875rem">Always</td>
           </tr>
           <tr>
-            <td>PATH 14</td>
+            <td>FLOW 14</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td>
             <td style="font-family:inherit;font-size:.875rem">Systematic debugging, forensics, incident response</td>
             <td style="font-family:inherit;font-size:.875rem">Execution failure, CI red, verification failure — inserted dynamically</td>
           </tr>
           <tr>
-            <td>PATH 15</td>
+            <td>FLOW 15</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN HANDOFF</td>
             <td style="font-family:inherit;font-size:.875rem">Produce design handoff package for milestone UI phases</td>
-            <td style="font-family:inherit;font-size:.875rem">Milestone has UI phases AND in release flow — runs inside PATH 17 only</td>
+            <td style="font-family:inherit;font-size:.875rem">Milestone has UI phases AND in release flow — runs inside FLOW 17 only</td>
           </tr>
           <tr>
-            <td>PATH 16</td>
+            <td>FLOW 16</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td>
             <td style="font-family:inherit;font-size:.875rem">Update docs/, session log, tech debt, milestone summary</td>
             <td style="font-family:inherit;font-size:.875rem">Always post-ship</td>
           </tr>
           <tr>
-            <td>PATH 17</td>
+            <td>FLOW 17</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td>
             <td style="font-family:inherit;font-size:.875rem">Milestone audit, gap closure, GitHub Release creation</td>
             <td style="font-family:inherit;font-size:.875rem">User signals milestone complete, or last phase shipped</td>
@@ -286,14 +286,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <ol>
         <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
-        <li><strong>Path selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 paths apply. Always-included paths (PATH 7 EXECUTE, PATH 11 VERIFY, PATH 12 QUALITY GATE, PATH 13 SHIP) are anchors. Context-dependent paths (PATH 2 EXPLORE, PATH 6 DESIGN CONTRACT, PATH 8 UI QUALITY, PATH 14 DEBUG) are added based on signals.</li>
-        <li><strong>Chain ordering</strong> — Paths are ordered by their dependency graph. PATH 0 before PATH 1 before PATH 5 before PATH 7, etc. Dynamic insertions (e.g. PATH 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
+        <li><strong>Path selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 flows apply. Always-included paths (FLOW 7 EXECUTE, FLOW 11 VERIFY, FLOW 12 QUALITY GATE, FLOW 13 SHIP) are anchors. Context-dependent paths (FLOW 2 EXPLORE, FLOW 6 DESIGN CONTRACT, FLOW 8 UI QUALITY, FLOW 14 DEBUG) are added based on signals.</li>
+        <li><strong>Chain ordering</strong> — Paths are ordered by their dependency graph. FLOW 0 before FLOW 1 before FLOW 5 before FLOW 7, etc. Dynamic insertions (e.g. FLOW 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
         <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which paths are included and why, before execution begins.</li>
       </ol>
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Example composition for a feature request:</strong> PATH 1 (ORIENT) → PATH 12 (QUALITY GATE, pre-plan) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 11 (VERIFY) → PATH 9 (REVIEW) → PATH 10 (SECURE) → PATH 12 (QUALITY GATE, pre-ship) → PATH 13 (SHIP) → PATH 16 (DOCUMENT). PATH 14 (DEBUG) is available to insert dynamically if PATH 7 fails.</div>
+        <div class="callout-body"><strong>Example composition for a feature request:</strong> FLOW 1 (ORIENT) → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP) → FLOW 16 (DOCUMENT). FLOW 14 (DEBUG) is available to insert dynamically if FLOW 7 fails.</div>
       </div>
 
       <div class="divider"></div>
@@ -306,7 +306,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Active path</strong> — which path is currently executing</li>
         <li><strong>Completed paths</strong> — log of paths that have exited successfully, with timestamps</li>
         <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
-        <li><strong>Dynamic insertions</strong> — paths inserted at runtime (e.g. PATH 14 DEBUG after a failure)</li>
+        <li><strong>Dynamic insertions</strong> — paths inserted at runtime (e.g. FLOW 14 DEBUG after a failure)</li>
         <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
       </ul>
 
@@ -321,14 +321,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li><strong>Pre-path check</strong> — Prerequisites are verified before the path begins. If prerequisites are missing, the path is blocked and the user is notified.</li>
         <li><strong>Step execution</strong> — The path's steps execute in order, with mandatory steps always running and as-needed steps gated on context signals.</li>
-        <li><strong>Exit verification</strong> — The path's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective path (e.g. PATH 14 DEBUG on execution failure).</li>
+        <li><strong>Exit verification</strong> — The path's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective path (e.g. FLOW 14 DEBUG on execution failure).</li>
         <li><strong>Stall detection</strong> — If a path makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
         <li><strong>Progress reporting</strong> — On every tool use, the compliance status hook shows the current path and overall chain progress.</li>
       </ol>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>PATH 11 VERIFY is NON-SKIPPABLE.</strong> The supervision loop cannot exit the chain before PATH 11 completes. Even if the user requests to skip it, the enforcement hooks block any <code>git commit</code> or <code>git push</code> until verification has run and passed.</div>
+        <div class="callout-body"><strong>FLOW 11 VERIFY is NON-SKIPPABLE.</strong> The supervision loop cannot exit the chain before FLOW 11 completes. Even if the user requests to skip it, the enforcement hooks block any <code>git commit</code> or <code>git push</code> until verification has run and passed.</div>
       </div>
 
       <div class="divider"></div>
@@ -336,9 +336,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="see-also">See Also</h2>
       <ul>
         <li><a href="routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a path chain</li>
-        <li><a href="verification.html">Verification Before Completion</a> — PATH 11 VERIFY and dual-mode quality gates in detail</li>
-        <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how PATH 9 REVIEW triages findings via the assessor</li>
-        <li><a href="documentation.html">Documentation Scheme</a> — PATH 16 DOCUMENT and WORKFLOW.md as project artifacts</li>
+        <li><a href="verification.html">Verification Before Completion</a> — FLOW 11 VERIFY and dual-mode quality gates in detail</li>
+        <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how FLOW 9 REVIEW triages findings via the assessor</li>
+        <li><a href="documentation.html">Documentation Scheme</a> — FLOW 16 DOCUMENT and WORKFLOW.md as project artifacts</li>
       </ul>
 
       <div class="page-nav-bottom">

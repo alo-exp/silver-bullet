@@ -36,12 +36,12 @@ Before beginning execution, read existing artifacts to determine context and pro
 
 ### 1. Context Scan
 
-Research is an exploration-focused workflow — it produces artifacts, not shipped code. No PATH 7 (EXECUTE), PATH 11 (VERIFY), or PATH 13 (SHIP) are included.
+Research is an exploration-focused workflow — it produces artifacts, not shipped code. No FLOW 7 (EXECUTE), FLOW 11 (VERIFY), or FLOW 13 (SHIP) are included.
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
 | `.planning/research/` directory exists | Prior research artifacts present | Note for continuity — do not skip, always re-scope |
-| External spec artifacts provided | Structured source material | Include PATH 4 (SPECIFY) to ingest into SPEC.md |
+| External spec artifacts provided | Structured source material | Include FLOW 4 (SPECIFY) to ingest into SPEC.md |
 
 ```bash
 # Check for existing research artifacts
@@ -52,7 +52,7 @@ ls .planning/research/ 2>/dev/null | head -5
 
 Construct the proposed path chain for research/exploration work. Short chain — research produces artifacts only:
 
-PATH 2 (EXPLORE) → PATH 3 (IDEATE) → PATH 4 (SPECIFY)
+FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
 
 No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (silver:feature or silver:devops).
 
@@ -62,8 +62,8 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 2 (EXPLORE) → PATH 3 (IDEATE) → PATH 4 (SPECIFY)
-│ Skipped: PATH 7/11/13 — research produces artifacts, not shipped code
+│ Paths: FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
+│ Skipped: FLOW 7/11/13 — research produces artifacts, not shipped code
 └────────────────────────────────────────────────
 Approve composition? [Y/n]
 ```

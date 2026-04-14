@@ -39,10 +39,10 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/SPEC.md` exists | Specification already written | Skip PATH 4 (SPECIFY) |
-| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip PATH 5 (PLAN) |
-| `.planning/VERIFICATION.md` exists and passing | Verification already done | Skip PATH 11 (VERIFY) |
-| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) |
+| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 4 (SPECIFY) |
+| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 5 (PLAN) |
+| `.planning/VERIFICATION.md` exists and passing | Verification already done | Skip FLOW 11 (VERIFY) |
+| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) |
 | `STATE.md` current phase and completion status | Phase position | Set loop start/end |
 
 ```bash
@@ -50,7 +50,7 @@ Check the following artifacts and set skip/include flags:
 grep "^current_phase\|^current_plan" .planning/STATE.md 2>/dev/null
 
 # Check for existing SPEC.md
-[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip PATH 4" || echo "No SPEC — include PATH 4"
+[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 4" || echo "No SPEC — include FLOW 4"
 
 # Check ROADMAP.md for remaining phases in milestone
 grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
@@ -58,9 +58,9 @@ grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 
 ### 2. Build Path Chain
 
-Construct the proposed path chain from the 18-path catalog (PATH 0-17), including only relevant paths based on the context scan. Standard full-feature chain:
+Construct the proposed path chain from the 18-flow catalog (FLOW 0-17), including only relevant paths based on the context scan. Standard full-feature chain:
 
-PATH 0 (BOOTSTRAP) → PATH 1 (ORIENT) → PATH 2 (INTEL) → PATH 3 (BRAINSTORM) → PATH 4 (SPECIFY) [skip if SPEC.md exists] → PATH 5 (PLAN) → PATH 6 (DESIGN CONTRACT) [include if UI] → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) [include if UI] → PATH 9 (TDD) → PATH 10 (REVIEW) → PATH 11 (VERIFY) → PATH 12 (SECURE) → PATH 13 (SHIP)
+FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (INTEL) → FLOW 3 (BRAINSTORM) → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (TDD) → FLOW 10 (REVIEW) → FLOW 11 (VERIFY) → FLOW 12 (SECURE) → FLOW 13 (SHIP)
 
 ### 3. Display Proposal
 
@@ -68,8 +68,8 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 0 (BOOTSTRAP) → PATH 1 (ORIENT) → PATH 5 (PLAN) → ...
-│ Skipped: PATH 4 (SPECIFY) — SPEC.md exists
+│ Paths: FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → ...
+│ Skipped: FLOW 4 (SPECIFY) — SPEC.md exists
 │ Phase loop: Phases {start}-{end} (from ROADMAP.md)
 └────────────────────────────────────────────────
 Approve composition? [Y/n]
@@ -115,13 +115,13 @@ For each remaining phase in the current milestone:
 
 ```
 FOR each phase in remaining_phases:
-  EXECUTE PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 11 (VERIFY) → PATH 13 (SHIP)
+  EXECUTE FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
   INSERT optional paths per composition proposal:
-    - PATH 6 (DESIGN CONTRACT) before PATH 7 if UI discovered
-    - PATH 8 (UI QUALITY) after PATH 7 if UI in scope
-    - PATH 9 (TDD) within PATH 7 for implementation plans
-    - PATH 10 (REVIEW) after PATH 7
-    - PATH 12 (SECURE) after PATH 11
+    - FLOW 6 (DESIGN CONTRACT) before FLOW 7 if UI discovered
+    - FLOW 8 (UI QUALITY) after FLOW 7 if UI in scope
+    - FLOW 9 (TDD) within FLOW 7 for implementation plans
+    - FLOW 10 (REVIEW) after FLOW 7
+    - FLOW 12 (SECURE) after FLOW 11
   AFTER phase complete: advance to next phase
   UPDATE WORKFLOW.md Phase Iterations table
 END FOR
@@ -132,7 +132,7 @@ END FOR
 After completing all paths for a phase, write to WORKFLOW.md Phase Iterations table:
 
 ```
-| Phase {N} | PATH 5 ✓ → PATH 7 ✓ → PATH 11 ✓ → PATH 13 ✓ |
+| Phase {N} | FLOW 5 ✓ → FLOW 7 ✓ → FLOW 11 ✓ → FLOW 13 ✓ |
 ```
 
 ### 5. PATH Delegation
@@ -147,25 +147,25 @@ The supervision loop runs BETWEEN each PATH completion. It checks exit condition
 
 **Step SL-1: Exit Condition Check (D-07.1)**
 
-Verify the PATH's exit condition was met (per `docs/composable-paths-contracts.md`). If the exit condition is NOT met:
+Verify the PATH's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
 
 ```
 ⚠ PATH {N} exit condition not met: {condition description}
 Options:
   A. Retry PATH {N}
   B. Skip with reason (document in WORKFLOW.md)
-  C. Insert PATH 14 (DEBUG) before next path
+  C. Insert FLOW 14 (DEBUG) before next path
 ```
 
 **Step SL-2: Composition Evaluation (D-07.2)**
 
 Re-evaluate context for dynamic insertion triggers:
 
-- **Execution failed** → insert PATH 14 (DEBUG) before next path (per D-11):
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | PATH 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
-- **UI files discovered in SUMMARY.md** → insert PATH 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
+- **Execution failed** → insert FLOW 14 (DEBUG) before next path (per D-11):
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
+- **UI files discovered in SUMMARY.md** → insert FLOW 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
   - Check SUMMARY.md for `*.tsx`, `*.css`, `*.html`, or `design/` references
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | PATH 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | FLOW 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
 
 **Step SL-3: Anti-Stall Check (D-07.3)**
 
@@ -185,7 +185,7 @@ Run 4-tier anti-stall detection:
   - If context >80%: display `/compact recommendation: Context window at ~80%. Consider running /compact before continuing.`
   - If context >90%: display `Context exhaustion imminent. Running /compact before continuing.` then invoke `/compact`
 
-- **Tier 4 — Heartbeat sentinel (D-19):** Each path invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-path:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
+- **Tier 4 — Heartbeat sentinel (D-19):** Each path invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-flow:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
   ```
   ⚠ HEARTBEAT GAP: PATH {N} may have stalled. Options: [retry/skip/debug]
   ```
@@ -213,7 +213,7 @@ Write path status and timestamp to WORKFLOW.md Path Log table:
 
 Also update heartbeat fields:
 ```
-Last-path: {N}
+Last-flow: {N}
 Last-beat: {ISO timestamp}
 ```
 

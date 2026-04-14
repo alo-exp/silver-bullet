@@ -10,7 +10,7 @@ Silver Bullet enforces workflow compliance through 7 independent layers. No sing
 | 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, Bash | Code changes before planning is complete. Uses WORKFLOW.md Path Log as primary gate with legacy fallback. |
 | 3 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. WORKFLOW.md-first with legacy fallback. |
 | 4 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
-| 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (PATH N/M) or skill count (legacy) |
+| 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
 | 6 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
 | 7 | **Model Routing** | `ensure-model-routing.sh` (PreToolUse) | Agent tool calls | Wrong model for task type |
 
@@ -33,9 +33,9 @@ All hooks check WORKFLOW.md first, falling back to legacy skill markers when WOR
 |------|-----------------|-----------------|
 | `dev-cycle-check.sh` | Path Log shows planning paths complete | 4-stage skill marker check |
 | `completion-audit.sh` | Path Log shows all required paths complete | `required_deploy` skill list check |
-| `compliance-status.sh` | Shows path progress (PATH N/M) | Shows skill count only |
+| `compliance-status.sh` | Shows path progress (FLOW N/M) | Shows skill count only |
 | `prompt-reminder.sh` | Includes current WORKFLOW.md position | Omits composition context |
-| `spec-floor-check.sh` | Advisory when PATH 4 excluded from composition | Hard gate always |
+| `spec-floor-check.sh` | Advisory when FLOW 4 excluded from composition | Hard gate always |
 
 Detection: hooks check for `.planning/WORKFLOW.md` existence. Present = composable paths mode, absent = legacy mode.
 

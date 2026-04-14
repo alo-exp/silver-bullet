@@ -38,21 +38,21 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip PATH 0 (BOOTSTRAP) |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | GSD state present | Skip FLOW 0 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
+[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
 ```
 
 ### 2. Build Path Chain
 
 Construct the proposed path chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
-PATH 1 (ORIENT) → PATH 14 (DEBUG) [always included — this is a bugfix] → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 11 (VERIFY) → PATH 13 (SHIP)
+FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
 
-Note: PATH 14 (DEBUG) is always included for any bugfix engagement. PATH 0 (BOOTSTRAP) is skipped when `.planning/` already exists.
+Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOTSTRAP) is skipped when `.planning/` already exists.
 
 ### 3. Display Proposal
 
@@ -60,8 +60,8 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 1 (ORIENT) → PATH 14 (DEBUG) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 11 (VERIFY) → PATH 13 (SHIP)
-│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists
+│ Paths: FLOW 1 (ORIENT) → FLOW 14 (DEBUG) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists
 └────────────────────────────────────────────────
 Approve composition? [Y/n]
 ```

@@ -96,7 +96,7 @@ Invoke `/gsd:forensics` via the Skill tool and stop. Do not proceed to Step 2.
 
 From the user description (or evidence alone in autonomous mode), classify into one path:
 
-| Path | Triggered when |
+| Flow | Triggered when |
 |------|----------------|
 | **Session-level** | Timeout flag present; session log shows incomplete outcome; stall/timeout/hang described |
 | **Task-level** | Specific task or phase named; commits present but output is wrong; tests failing after recent commits |

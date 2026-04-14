@@ -198,17 +198,17 @@ Paths: 0 → 5 → 7 → 11 → 13
 Mode: autonomous
 
 ## Heartbeat
-Last-path: 7
+Last-flow: 7
 
-## Path Log
-| # | Path | Status |
+## Flow Log
+| # | Flow | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
 | 5 | PLAN | complete |
 | 7 | EXECUTE | in_progress |
 
-## Next Path
-PATH 11: VERIFY
+## Next Flow
+FLOW 11: VERIFY
 WFEOF
 out=$(run_hook)
 assert_contains "WF1: includes WORKFLOW.md context" "$out" "Composable path"

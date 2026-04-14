@@ -41,25 +41,25 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip PATH 0 (BOOTSTRAP) |
-| `.planning/SPEC.md` exists | Specification already written | Skip PATH 4 (SPECIFY) |
-| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip PATH 5 (PLAN) |
-| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) — this is the UI workflow |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
+| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 4 (SPECIFY) |
+| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 5 (PLAN) |
+| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) — this is the UI workflow |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP PATH 0 — .planning/ exists" || echo "Include PATH 0"
-[ -f ".planning/SPEC.md" ] && echo "SKIP PATH 4 — SPEC.md exists" || echo "Include PATH 4"
-ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP PATH 5 — PLAN.md exists" || echo "Include PATH 5"
+[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
+[ -f ".planning/SPEC.md" ] && echo "SKIP FLOW 4 — SPEC.md exists" || echo "Include FLOW 4"
+ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 5 — PLAN.md exists" || echo "Include FLOW 5"
 ```
 
 ### 2. Build Path Chain
 
 Construct the proposed path chain for UI work. Default full chain:
 
-PATH 0 (BOOTSTRAP) [skip if .planning/ exists] → PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) [always in UI workflow] → PATH 4 (SPECIFY) [skip if SPEC.md exists] → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) [always in UI workflow] → PATH 9 (REVIEW) → PATH 12 (QUALITY GATE) → PATH 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
 
-Note: PATH 6 (DESIGN CONTRACT) and PATH 8 (UI QUALITY) are always included — this is a UI-focused workflow.
+Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — this is a UI-focused workflow.
 
 ### 3. Display Proposal
 
@@ -67,8 +67,8 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: PATH 1 (ORIENT) → PATH 6 (DESIGN CONTRACT) → PATH 5 (PLAN) → PATH 7 (EXECUTE) → PATH 8 (UI QUALITY) → ...
-│ Skipped: PATH 0 (BOOTSTRAP) — .planning/ exists
+│ Paths: FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) → ...
+│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists
 └────────────────────────────────────────────────
 Approve composition? [Y/n]
 ```
@@ -152,7 +152,7 @@ Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usa
 
 Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
-## PATH 6: DESIGN CONTRACT — UI specification (iterative)
+## FLOW 6: DESIGN CONTRACT — UI specification (iterative)
 
 **Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
 
@@ -189,7 +189,7 @@ Run review sequence in order:
 3. For architecturally significant UI systems: invoke `gsd-review --multi-ai` via the Skill tool (cross-AI adversarial review).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
-## PATH 8: UI QUALITY — Post-execution UI audit
+## FLOW 8: UI QUALITY — Post-execution UI audit
 
 **Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
 

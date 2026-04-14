@@ -230,32 +230,32 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="when-it-runs">When It Runs</h2>
-      <p>The artifact-review-assessor runs as part of PATH 9 (REVIEW) in any composition that includes code review. It also runs after every planning artifact reviewer in compositions that include PATH 4 (SPECIFY) or PATH 5 (PLAN).</p>
+      <p>The artifact-review-assessor runs as part of FLOW 9 (REVIEW) in any composition that includes code review. It also runs after every planning artifact reviewer in compositions that include FLOW 4 (SPECIFY) or FLOW 5 (PLAN).</p>
 
       <p>Specifically, the assessor is invoked after these reviewers:</p>
       <ul>
-        <li><code>review-roadmap</code> — triages ROADMAP.md findings (PATH 0 BOOTSTRAP)</li>
-        <li><code>review-requirements</code> — triages REQUIREMENTS.md findings (PATH 0 and PATH 4)</li>
-        <li><code>review-spec</code> — triages SPEC.md findings (PATH 4 SPECIFY)</li>
-        <li><code>review-context</code> — triages CONTEXT.md findings (PATH 5 PLAN)</li>
-        <li><code>review-research</code> — triages RESEARCH.md findings (PATH 5 PLAN)</li>
-        <li><code>gsd-plan-checker</code> — triages PLAN.md findings (PATH 5 PLAN, max 3 iterations)</li>
-        <li><code>review-uat</code> — triages UAT.md findings (PATH 11 VERIFY)</li>
-        <li><code>gsd-code-review</code> — triages code review findings (PATH 9 REVIEW)</li>
+        <li><code>review-roadmap</code> — triages ROADMAP.md findings (FLOW 0 BOOTSTRAP)</li>
+        <li><code>review-requirements</code> — triages REQUIREMENTS.md findings (FLOW 0 and FLOW 4)</li>
+        <li><code>review-spec</code> — triages SPEC.md findings (FLOW 4 SPECIFY)</li>
+        <li><code>review-context</code> — triages CONTEXT.md findings (FLOW 5 PLAN)</li>
+        <li><code>review-research</code> — triages RESEARCH.md findings (FLOW 5 PLAN)</li>
+        <li><code>gsd-plan-checker</code> — triages PLAN.md findings (FLOW 5 PLAN, max 3 iterations)</li>
+        <li><code>review-uat</code> — triages UAT.md findings (FLOW 11 VERIFY)</li>
+        <li><code>gsd-code-review</code> — triages code review findings (FLOW 9 REVIEW)</li>
       </ul>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Cross-artifact review.</strong> At milestone completion (PATH 17 RELEASE), a cross-artifact reviewer checks SPEC-to-REQUIREMENTS-to-ROADMAP-to-DESIGN alignment. The assessor triages these cross-artifact findings using the same MUST-FIX / NICE-TO-HAVE / DISMISS framework before the release proceeds.</div>
+        <div class="callout-body"><strong>Cross-artifact review.</strong> At milestone completion (FLOW 17 RELEASE), a cross-artifact reviewer checks SPEC-to-REQUIREMENTS-to-ROADMAP-to-DESIGN alignment. The assessor triages these cross-artifact findings using the same MUST-FIX / NICE-TO-HAVE / DISMISS framework before the release proceeds.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — how PATH 9 REVIEW fits into a composition</li>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — how FLOW 9 REVIEW fits into a composition</li>
         <li><a href="./">Core Concepts</a> — artifact review system overview and 8 reviewer skills</li>
-        <li><a href="verification.html">Verification Before Completion</a> — PATH 11 VERIFY and its own 2-pass enforcement</li>
+        <li><a href="verification.html">Verification Before Completion</a> — FLOW 11 VERIFY and its own 2-pass enforcement</li>
       </ul>
 
       <div class="page-nav-bottom">

@@ -347,7 +347,7 @@ setup
 write_cfg
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
+## Flow Log
 | # | Path | Status |
 |---|------|--------|
 | 5 | PLAN | complete |
@@ -366,7 +366,7 @@ setup
 write_cfg
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Path Log
+## Flow Log
 | # | Path | Status |
 |---|------|--------|
 | 5 | PLAN | complete |

@@ -303,7 +303,7 @@ To reset workflow state intentionally, run in your terminal:
   # --- WORKFLOW.md path completion check (primary gate with legacy fallback) ---
   workflow_file="$PWD/.planning/WORKFLOW.md"
   if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-    # Parse Path Log table: count completed and total paths
+    # Parse Flow Log table: count completed and total paths
     path_complete_count=0
     path_total_count=0
     if path_complete_count=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \

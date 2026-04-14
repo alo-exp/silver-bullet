@@ -120,13 +120,13 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It uses <strong>composable paths architecture</strong> — the core path chain from <code>silver:feature</code> plus two UI-specific paths inserted automatically when UI context is detected.</p>
-      <p><strong>It never implements UI directly — it orchestrates only.</strong> Design contract creation, component implementation, visual audit, and accessibility review are all delegated to specialist skills. See <a href="../concepts/composable-workflow.html">Composable Paths</a> for the full 18-path catalog.</p>
+      <p><strong>It never implements UI directly — it orchestrates only.</strong> Design contract creation, component implementation, visual audit, and accessibility review are all delegated to specialist skills. See <a href="../concepts/composable-workflow.html">Composable Paths</a> for the full 18-flow catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="ui-paths">UI-Specific Path Composition</h2>
 
-      <h3>PATH 6: DESIGN CONTRACT</h3>
+      <h3>FLOW 6: DESIGN CONTRACT</h3>
       <p><strong>Trigger:</strong> Phase involves UI — detected via intent keywords, UI file types in scope, or DESIGN.md existence.</p>
       <p><strong>Steps:</strong></p>
       <ul>
@@ -135,10 +135,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><code>gsd-ui-phase</code> — produces <code>UI-SPEC.md</code> design contract with component API and layout rules</li>
         <li><code>design:accessibility-review</code> (as-needed) — WCAG 2.1 AA compliance</li>
       </ul>
-      <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan (PATH 7) is built on top of this contract — implementation must match the spec.</p>
+      <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan (FLOW 7) is built on top of this contract — implementation must match the spec.</p>
 
-      <h3>PATH 8: UI QUALITY</h3>
-      <p><strong>Trigger:</strong> PATH 6 was in the composition, OR SUMMARY.md references UI file types after execution.</p>
+      <h3>FLOW 8: UI QUALITY</h3>
+      <p><strong>Trigger:</strong> FLOW 6 was in the composition, OR SUMMARY.md references UI file types after execution.</p>
       <p><strong>Steps:</strong></p>
       <ul>
         <li><code>design:design-critique</code> — design quality review</li>
@@ -148,7 +148,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>gsd-execute-phase --gaps-only</code> for targeted fixes.</p>
 
       <h3>Full composition for UI work</h3>
-      <p>A typical <code>silver:ui</code> composition: PATH 0 → PATH 1 → PATH 2 (if fuzzy) → PATH 3 → PATH 4 → PATH 5 → <strong>PATH 6 (DESIGN CONTRACT)</strong> → PATH 7 → <strong>PATH 8 (UI QUALITY)</strong> → PATH 9 → PATH 10 → PATH 11 → PATH 12 → PATH 13 → PATH 16.</p>
+      <p>A typical <code>silver:ui</code> composition: FLOW 0 → FLOW 1 → FLOW 2 (if fuzzy) → FLOW 3 → FLOW 4 → FLOW 5 → <strong>FLOW 6 (DESIGN CONTRACT)</strong> → FLOW 7 → <strong>FLOW 8 (UI QUALITY)</strong> → FLOW 9 → FLOW 10 → FLOW 11 → FLOW 12 → FLOW 13 → FLOW 16.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>

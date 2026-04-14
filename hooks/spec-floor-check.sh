@@ -58,7 +58,7 @@ fi
 # ── WORKFLOW.md composition check: downgrade spec floor when PATH 4 excluded ──
 workflow_file="$PWD/.planning/WORKFLOW.md"
 if [[ "$is_plan_phase" == true && -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Check if PATH 4 (SPECIFY) appears in the Path Log
+  # Check if PATH 4 (SPECIFY) appears in the Flow Log
   if ! grep -qE '^\| [^|]*\| (SPECIFY|PATH 4)[^|]*\|' "$workflow_file" 2>/dev/null; then
     # PATH 4 intentionally excluded from composition — downgrade to advisory
     printf '{"hookSpecificOutput":{"message":"SPEC FLOOR ADVISORY: PATH 4 (SPECIFY) excluded from composition — spec floor downgraded to advisory."}}'

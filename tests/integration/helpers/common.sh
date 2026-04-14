@@ -76,9 +76,9 @@ write_workflow_md_complete() {
 **Workflow:** silver:feature
 **Mode:** autonomous
 
-## Path Log
+## Flow Log
 
-| # | Path | Status |
+| # | Flow | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
 | 1 | ORIENT | complete |
@@ -90,10 +90,10 @@ write_workflow_md_complete() {
 
 ## Heartbeat
 
-Last-path: PATH 13 SHIP
+Last-flow: FLOW 13 SHIP
 Last-beat: 2026-04-15T00:00:00Z
 
-## Next Path
+## Next Flow
 
 (none — composition complete)
 WFEOF
@@ -109,9 +109,9 @@ write_workflow_md_partial() {
 **Workflow:** silver:feature
 **Mode:** interactive
 
-## Path Log
+## Flow Log
 
-| # | Path | Status |
+| # | Flow | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
 | 1 | ORIENT | complete |
@@ -122,16 +122,16 @@ write_workflow_md_partial() {
 
 ## Heartbeat
 
-Last-path: PATH 5 PLAN
+Last-flow: FLOW 5 PLAN
 Last-beat: 2026-04-15T00:00:00Z
 
-## Next Path
+## Next Flow
 
-PATH 7 EXECUTE
+FLOW 7 EXECUTE
 WFEOF
 }
 
-# Write a WORKFLOW.md with PATH 4 excluded (for spec-floor advisory tests)
+# Write a WORKFLOW.md with FLOW 4 excluded (for spec-floor advisory tests)
 write_workflow_md_no_path4() {
   local planning_dir="${TMPDIR_TEST}/.planning"
   mkdir -p "$planning_dir"
@@ -141,18 +141,18 @@ write_workflow_md_no_path4() {
 **Workflow:** silver:feature
 **Mode:** interactive
 
-## Path Log
+## Flow Log
 
-| # | Path | Status |
+| # | Flow | Status |
 |---|------|--------|
 | 0 | BOOTSTRAP | complete |
 | 1 | ORIENT | complete |
 | 5 | PLAN | pending |
 | 7 | EXECUTE | pending |
 
-## Next Path
+## Next Flow
 
-PATH 5 PLAN
+FLOW 5 PLAN
 WFEOF
 }
 

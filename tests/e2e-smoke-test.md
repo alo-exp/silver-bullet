@@ -185,8 +185,8 @@ After completing the standard smoke test above, verify composable paths features
 4. Verify Path Log entries update as paths complete
 
 ### Dual-Mode Hook Enforcement
-1. With WORKFLOW.md present, verify `dev-cycle-check.sh` shows PATH progress (not just skill count)
-2. With WORKFLOW.md present, verify `compliance-status.sh` shows PATH N/M format
+1. With WORKFLOW.md present, verify `dev-cycle-check.sh` shows FLOW progress (not just skill count)
+2. With WORKFLOW.md present, verify `compliance-status.sh` shows FLOW N/M format
 3. Delete WORKFLOW.md — verify hooks fall back to legacy skill-based enforcement
 
 ### 3-Tier silver-fast Triage

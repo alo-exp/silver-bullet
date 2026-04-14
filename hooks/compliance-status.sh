@@ -112,17 +112,17 @@ esac
 # --- WORKFLOW.md path progress (computed before early-exit so it appears in all output paths) ---
 # Bug fix: hoisted above the 'no state file' early-exit so PATH N/M shows even in zero-state sessions.
 workflow_file="$PWD/.planning/WORKFLOW.md"
-path_progress="PATH: N/A (legacy mode)"
+path_progress="FLOW: N/A (legacy mode)"
 if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   wf_complete=0
   wf_total=0
-  # Bug fix: use '^\ [0-9]+ \|' (digits then space-pipe) to count only Path Log rows.
+  # Bug fix: use '^\ [0-9]+ \|' (digits then space-pipe) to count only Flow Log rows.
   # Previous pattern '^\| [0-9]' matched Phase Iterations ('| 01 (phase)') and
   # Autonomous Decisions ('| 2026-...') rows, inflating the total count.
   if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
      wf_total=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null) && \
      [[ "$wf_total" -gt 0 ]]; then
-    path_progress="PATH ${wf_complete}/${wf_total}"
+    path_progress="FLOW ${wf_complete}/${wf_total}"
   fi
 fi
 

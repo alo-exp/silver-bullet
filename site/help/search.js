@@ -9,7 +9,7 @@ var IDX = [
     text:'AI-driven development uses a large language model LLM like Claude as an active collaborator — not just autocomplete. Claude manages a complete development workflow: plan execute verify review and ship entire features. You define the outcome, Claude is the executor.' },
   { page:'Getting Started', url:'/help/getting-started/', anchor:'what-is-sb',
     title:'What Silver Bullet does',
-    text:'Silver Bullet is a Claude Code plugin combining GSD Superpowers Engineering and Design plugins into composable paths architecture — 18 paths selectable per-workflow, supervision loop advances path by path. Hooks enforce every step without relying on Claude self-discipline.' },
+    text:'Silver Bullet is a Claude Code plugin combining GSD Superpowers Engineering and Design plugins into composable paths architecture — 18 flows selectable per-workflow, supervision loop advances path by path. Hooks enforce every step without relying on Claude self-discipline.' },
   { page:'Getting Started', url:'/help/getting-started/', anchor:'prerequisites',
     title:'Prerequisites — Claude Code, jq, GSD, Superpowers',
     text:'Required: Claude Code npm install anthropic claude-code. jq brew install jq apt install jq. GSD Get Shit Done npx get-shit-done-cc@1.30.0. Superpowers plugin install obra/superpowers. Recommended: GitHub CLI gh brew install gh. Design Engineering plugins.' },
@@ -403,16 +403,16 @@ var IDX = [
   // ── COMPOSABLE PATHS ──────────────────────────────────────────
   { page:'Concepts', url:'/help/concepts/composable-workflow.html', anchor:'overview',
     title:'What are Composable Paths?',
-    text:'Composable paths architecture replaces fixed pipeline workflows in Silver Bullet. Instead of a hardcoded step sequence, /silver classifies context and proposes a composition chain selected from the 18-path catalog. The supervision loop advances path by path, dynamically inserting or removing paths based on what is discovered during execution.' },
+    text:'Composable paths architecture replaces fixed pipeline workflows in Silver Bullet. Instead of a hardcoded step sequence, /silver classifies context and proposes a composition chain selected from the 18-flow catalog. The supervision loop advances path by path, dynamically inserting or removing paths based on what is discovered during execution.' },
   { page:'Concepts', url:'/help/concepts/composable-workflow.html', anchor:'the-18-paths',
     title:'The 18 Paths — full catalog',
-    text:'PATH 0 BOOTSTRAP PATH 1 ORIENT PATH 2 EXPLORE PATH 3 IDEATE PATH 4 SPECIFY PATH 5 PLAN PATH 6 DESIGN CONTRACT PATH 7 EXECUTE PATH 8 UI QUALITY PATH 9 REVIEW PATH 10 SECURE PATH 11 VERIFY PATH 12 QUALITY GATE PATH 13 SHIP PATH 14 DEBUG PATH 15 DESIGN HANDOFF PATH 16 DOCUMENT PATH 17 RELEASE. Each path has a contract: prerequisites trigger steps produces review cycle GSD impact exit condition.' },
+    text:'FLOW 0 BOOTSTRAP FLOW 1 ORIENT FLOW 2 EXPLORE FLOW 3 IDEATE FLOW 4 SPECIFY FLOW 5 PLAN FLOW 6 DESIGN CONTRACT FLOW 7 EXECUTE FLOW 8 UI QUALITY FLOW 9 REVIEW FLOW 10 SECURE FLOW 11 VERIFY FLOW 12 QUALITY GATE FLOW 13 SHIP FLOW 14 DEBUG FLOW 15 DESIGN HANDOFF FLOW 16 DOCUMENT FLOW 17 RELEASE. Each path has a contract: prerequisites trigger steps produces review cycle GSD impact exit condition.' },
   { page:'Concepts', url:'/help/concepts/composable-workflow.html', anchor:'how-composition-works',
     title:'How Composition Works — proposal, approval, supervision loop',
-    text:'When you invoke /silver it classifies your context and proposes a path chain. You approve or adjust. The supervision loop then runs: execute path, verify exit condition met, evaluate dynamic insertions (PATH 14 DEBUG on failure, PATH 6 DESIGN CONTRACT on UI detection), stall check, advance to next path. Composition can change mid-run based on findings.' },
+    text:'When you invoke /silver it classifies your context and proposes a path chain. You approve or adjust. The supervision loop then runs: execute path, verify exit condition met, evaluate dynamic insertions (FLOW 14 DEBUG on failure, FLOW 6 DESIGN CONTRACT on UI detection), stall check, advance to next path. Composition can change mid-run based on findings.' },
   { page:'Concepts', url:'/help/concepts/composable-workflow.html', anchor:'workflow-md-tracking',
     title:'WORKFLOW.md Tracking — real-time composition state',
-    text:'WORKFLOW.md is created by PATH 0 BOOTSTRAP and updated by the supervision loop after each path. Key fields: path_log ordered completed paths with exit conditions, phase_iterations per-phase PLAN EXECUTE REVIEW VERIFY loop count, dynamic_insertions paths added mid-composition, autonomous_decisions logged for transparency, deferred_improvements NICE-TO-HAVE findings deferred, next_path scheduled next path.' },
+    text:'WORKFLOW.md is created by FLOW 0 BOOTSTRAP and updated by the supervision loop after each path. Key fields: path_log ordered completed paths with exit conditions, phase_iterations per-phase PLAN EXECUTE REVIEW VERIFY loop count, dynamic_insertions paths added mid-composition, autonomous_decisions logged for transparency, deferred_improvements NICE-TO-HAVE findings deferred, next_path scheduled next path.' },
   { page:'Concepts', url:'/help/concepts/composable-workflow.html', anchor:'supervision-loop',
     title:'Supervision Loop — verify exit, evaluate composition, stall check, advance',
     text:'After each path completes the supervision loop runs four steps: 1 Verify exit condition met per path contract. 2 Evaluate whether composition should change — dynamic insertions or removals. 3 Stall check — if same path attempted 3+ times without progress escalate. 4 Advance to next path. The supervision loop is what makes composable paths autonomous without being uncontrolled.' },
@@ -426,7 +426,7 @@ var IDX = [
     text:'Three triage categories: MUST-FIX the finding blocks the path exit condition and must be resolved before proceeding. NICE-TO-HAVE the finding improves quality but does not block — deferred to WORKFLOW.md deferred_improvements list. DISMISS the finding is not applicable already addressed superseded or out of scope — logged with rationale. Two consecutive passes with no MUST-FIX findings satisfies the exit condition.' },
   { page:'Concepts', url:'/help/concepts/artifact-review-assessor.html', anchor:'review-cycle',
     title:'Review Cycle — artifact reviewer assessor fix 2-pass',
-    text:'Standard review cycle pattern: artifact goes to domain reviewer (plan-checker code-reviewer security-auditor etc), reviewer produces findings, artifact-review-assessor triages findings into MUST-FIX NICE-TO-HAVE DISMISS, MUST-FIX findings are fixed, cycle repeats until two consecutive clean passes with no MUST-FIX findings. Assessor runs in PATH 9 REVIEW PATH 4 SPECIFY PATH 5 PLAN and PATH 11 VERIFY.' },
+    text:'Standard review cycle pattern: artifact goes to domain reviewer (plan-checker code-reviewer security-auditor etc), reviewer produces findings, artifact-review-assessor triages findings into MUST-FIX NICE-TO-HAVE DISMISS, MUST-FIX findings are fixed, cycle repeats until two consecutive clean passes with no MUST-FIX findings. Assessor runs in FLOW 9 REVIEW FLOW 4 SPECIFY FLOW 5 PLAN and FLOW 11 VERIFY.' },
 ];
 
 function _score(entry, terms) {
