@@ -41,10 +41,10 @@ The composable paths architecture preserves all 10 GSD execution assumptions:
 |---|---|
 | Serial state reads | WORKFLOW.md is separate from STATE.md. No parallel STATE.md contention. |
 | Artifact existence gates | Every path checks prerequisites on entry. WORKFLOW.md ordering ensures producers before consumers. |
-| Blocking anti-patterns | PATH 5 and PATH 7 respect .continue-here.md checks. |
+| Blocking anti-patterns | PATH 5, PATH 7, and PATH 14 (when routing fixes through gsd-execute-phase --gaps-only) respect .continue-here.md checks. |
 | Wave sequencing | PATH 7 delegates entirely to gsd-execute-phase. No external wave manipulation. |
 | Worktree branch isolation | PATH 7 delegates worktree management to gsd-execute-phase. |
-| State advance after completion | Only gsd-execute-phase writes STATE.md via gsd-tools. No SB path writes STATE.md directly. |
+| State advance after completion | Only GSD skills write STATE.md (gsd-execute-phase advances position, gsd-new-project/gsd-ship/gsd-complete-milestone update status fields). No SB orchestration path writes STATE.md directly. |
 | Gap closure sequencing | PATH 11 delegates to gsd-verify-work's internal diagnosis/planning/execution flow. |
 | Context persistence | PATH 5 ensures discuss-phase reads prior CONTEXT.md files. |
 | Subagent completion detection | All subagent spawning inside GSD workflows. SB invokes via Skill tool. |
@@ -112,7 +112,7 @@ Composer: /silver
 PLAN (step 6: gsd-plan-phase)
 ```
 
-**GSD isolation rule:** GSD workflows never read WORKFLOW.md. SB orchestration never writes STATE.md. The only bridge is /silver:migrate which reads STATE.md to generate WORKFLOW.md.
+**GSD isolation rule:** GSD workflows never read WORKFLOW.md. SB orchestration never writes STATE.md **directly** — it does so indirectly by invoking GSD skills (gsd-new-project, gsd-ship, gsd-complete-milestone) which manage STATE.md internally. The only bridge is /silver:migrate which reads STATE.md to generate WORKFLOW.md.
 
 ---
 
@@ -162,7 +162,7 @@ No review cycle.
 | Prerequisites | PATH 1 completed |
 | Trigger | Fuzzy intent, unclear scope, user uncertainty, OR always for complex work |
 | GSD Impact | None |
-| Exit Condition | Problem space clarified, scope boundaries established |
+| Exit Condition | Problem space clarified, scope boundaries established. Verification: the next path (IDEATE or SPECIFY) can begin without Claude asking "what are we building?" — if the next path's first step immediately requests problem clarification, EXPLORE did not complete. In autonomous mode, supervision loop marks EXPLORE complete when gsd-explore outputs a scope summary. |
 
 | Step | Skill | When |
 |---|---|---|
@@ -181,7 +181,7 @@ No review cycle.
 | Prerequisites | PATH 2 completed |
 | Trigger | Always for complex work; skipped for simple/clear-scope |
 | GSD Impact | None |
-| Exit Condition | Architectural direction chosen, design approach locked |
+| Exit Condition | Architectural direction chosen, design approach locked. Verification: at least one concrete output exists — ADR written, design-system tokens defined, system-design diagram produced, OR brainstorming spec doc committed. For simple ideation with no formal artifact, the supervision loop marks IDEATE complete when the next path (SPECIFY or PLAN) successfully consumes ideation decisions. |
 
 | Step | Skill | When |
 |---|---|---|
@@ -197,7 +197,8 @@ No review cycle.
 | | |
 |---|---|
 | Prerequisites | PATH 3 completed, OR user has external spec to ingest |
-| Trigger | No SPEC.md exists, OR spec refresh needed |
+| Trigger | No SPEC.md exists, OR spec refresh needed, OR external artifacts to ingest |
+| Skip condition | PATH 4 may be skipped ONLY when REQUIREMENTS.md already exists (produced by PATH 0 via gsd-new-project or gsd-new-milestone). If REQUIREMENTS.md does not exist and PATH 4 is excluded from composition, the composer MUST insert it — REQUIREMENTS.md is a hard prerequisite for PATH 5 (PLAN). |
 | GSD Impact | None — SPEC.md/REQUIREMENTS.md are SB artifacts |
 | Exit Condition | SPEC.md + REQUIREMENTS.md exist, silver-validate shows zero BLOCK findings |
 
@@ -350,7 +351,14 @@ Review cycle: UAT.md → review-uat → artifact-review-assessor → 2-pass
 | 1-alt | devops-quality-gates (7 dimensions) | IaC/infra |
 | 2 | Individual dimension deep-dive | As-needed — specific failure |
 
-Dual-mode: Pre-plan = design-time checklist. Pre-ship = adversarial audit. Each dimension skill detects mode from artifact context (PLAN.md absent = design-time; SUMMARY.md + VERIFICATION.md present = adversarial).
+Dual-mode: Pre-plan = design-time checklist. Pre-ship = adversarial audit. Each dimension skill detects mode from artifact context:
+
+| Artifact state | Mode | Rationale |
+|---|---|---|
+| No PLAN.md in phase | Design-time checklist | Evaluating approach before planning |
+| PLAN.md exists, no SUMMARY.md | Design-time checklist | Plan written but not executed — still design phase |
+| SUMMARY.md + VERIFICATION.md exist | Adversarial audit | Implementation complete — stress-test the code |
+| SUMMARY.md exists, no VERIFICATION.md | Adversarial audit | Executed but not yet verified — audit the implementation |
 
 ### PATH 13: SHIP — Delivery
 
@@ -384,6 +392,16 @@ Dual-mode: Pre-plan = design-time checklist. Pre-ship = adversarial audit. Each 
 | 4 | forensics | As-needed — unknown root cause |
 | 5 | gsd-forensics | As-needed — failed GSD workflow |
 | 6 | engineering:incident-response | As-needed — production incident |
+
+**Resume semantics after PATH 14 completes:**
+
+1. Read WORKFLOW.md to identify which path was interrupted and at which step
+2. If interrupted path was PATH 7 (EXECUTE): resume via `gsd-execute-phase --gaps-only` for the failed wave. Completed waves are not re-run (SUMMARY.md existence = wave done).
+3. If interrupted path was PATH 11 (VERIFY): re-run gsd-verify-work from the beginning (UAT.md persists — only failed/pending tests re-run).
+4. If interrupted path was PATH 9 (REVIEW) or PATH 10 (SECURE): re-run the interrupted path from step 1 (review/security cycles are idempotent).
+5. If interrupted during any other path: re-run the interrupted path from step 1.
+6. WORKFLOW.md records: "PATH 14 complete — resumed {interrupted path} at {step}. Fix applied via {method}."
+7. If PATH 14 cannot resolve (debug exhausted, user escalation needed): mark interrupted path as BLOCKED in WORKFLOW.md, surface to user with diagnosis summary.
 
 ### PATH 15: DESIGN HANDOFF — UI finalization
 
@@ -471,6 +489,7 @@ artifact-reviewer (path-specific) → artifact-review-assessor (triage) → fix 
 | REVIEW.md | Code quality finding format in gsd-code-reviewer agent |
 | UAT.md | Criterion + Result + Evidence format in gsd-verify-work workflow |
 | INGESTION_MANIFEST.md | Source artifact listing in silver-ingest SKILL.md step 7 |
+| SECURITY.md | Threat model format in gsd-secure-phase workflow |
 
 **No review loop on the assessor itself.** Assessor triages once per reviewer invocation. Reviewer → assessor → fix → reviewer again (not assessor again).
 
@@ -493,7 +512,9 @@ artifact-reviewer (path-specific) → artifact-review-assessor (triage) → fix 
    Dynamic: 14
 
 3. ORDER (fixed sequence when present):
-   0 → 1 → 2 → 3 → 4 → 12(pre-plan) → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12(pre-ship) → 13 → 15 → 16 → 17
+   0 → 1 → 2 → 3 → 4 → 12(pre-plan) → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12(pre-ship) → 13 → 16 → 17
+   
+   PATH 15 (DESIGN HANDOFF) is NOT in the per-phase sequence. It runs inside PATH 17 (RELEASE), between the milestone audit (step 2) and gap closure (step 3), only when the milestone contains UI phases. This avoids producing handoff packages for phases that might change during gap closure.
 
 4. PROPOSE to user (or auto-confirm in autonomous mode)
 
@@ -506,11 +527,11 @@ artifact-reviewer (path-specific) → artifact-review-assessor (triage) → fix 
 |---|---|
 | silver-feature | 0?→1→2→3→4?→12→5→7→9→10→11→12→13→16→17? |
 | silver-ui | 0?→1→2→3→4?→12→5→6→7→8→9→10→11→12→13→15→16→17? |
-| silver-bugfix | 1→14→5(light)→7→9→10→11→12→13 |
-| silver-devops | 1→5→7→9→10(devops)→11→12(devops-qg)→13 |
+| silver-bugfix | 0?→1→14→5(light)→7→9→10→11→12→13 |
+| silver-devops | 1→12(devops-qg, pre-plan)→5→7→9→10(devops)→11→12(devops-qg, pre-ship)→13 |
 | silver-research | 1→2→3 (terminal) |
 | silver-fast | Bypasses composer → gsd-fast or gsd-quick |
-| silver-release | 12→15?→16→17 |
+| silver-release | 12(pre-ship, reads prior phase artifacts)→16→17(with PATH 15 inserted if UI) |
 
 ### 7.3 Supervision Loop
 
@@ -553,6 +574,8 @@ Three-tier complexity triage:
 **Tier 3: Escalation** (scope grows beyond quick) → STOP → route to silver-feature (auto-escalate in autonomous mode)
 
 No WORKFLOW.md. No supervision loop. No review cycles for Tier 1. Quick tasks are atomic and independent of composition system.
+
+**Autonomous escalation target selection:** When scope expands in autonomous mode, silver-fast selects the escalation target by re-running /silver's classification logic against the expanded scope description. If the task involves UI file types → silver-ui. If infra/IaC → silver-devops. If bug symptoms → silver-bugfix. Default fallback → silver-feature. The chosen target is logged as an autonomous decision.
 
 ---
 
