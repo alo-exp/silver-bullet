@@ -23,6 +23,7 @@
 Intent: "{user's original request}"
 Composed: {ISO timestamp}
 Composer: /silver
+Mode: {interactive | autonomous}
 
 ## Path Log
 | # | Path | Status | Artifacts Produced | Exit Condition Met |
@@ -43,6 +44,10 @@ Composer: /silver
 ## Deferred Improvements
 | Source Path | Finding | Classification |
 |-------------|---------|----------------|
+
+## Heartbeat
+Last-path: {path number}
+Last-beat: {ISO timestamp}
 
 ## Next Path
 {next path name and step}
