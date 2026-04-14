@@ -37,6 +37,21 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 # Only fire on commit, push, PR create/merge, or release create
 printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
 
+# ── Resolve config file — exit silently if not a Silver Bullet project ───────
+config_file=""
+search_dir="$PWD"
+while true; do
+  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+    config_file="$search_dir/.silver-bullet.json"
+    break
+  fi
+  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+    break
+  fi
+  search_dir=$(dirname "$search_dir")
+done
+[[ -z "$config_file" ]] && exit 0
+
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 trivial_file="${SB_STATE_DIR}/trivial"
