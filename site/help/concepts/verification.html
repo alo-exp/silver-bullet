@@ -225,7 +225,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="composable-paths-context">PATH 11 VERIFY and Dual-Mode Quality Gates</h2>
-      <p>In Silver Bullet's <a href="composable-paths.html">composable paths architecture</a>, verification maps to two distinct paths:</p>
+      <p>In Silver Bullet's <a href="composable-workflow.html">composable paths architecture</a>, verification maps to two distinct paths:</p>
       <ul>
         <li><strong>PATH 11 VERIFY</strong> — the non-skippable verification gate. Runs <code>gsd-verify-work</code>, <code>gsd-add-tests</code> (as-needed for coverage gaps), and <code>superpowers:verification-before-completion</code>. Produces <code>UAT.md</code> and <code>VERIFICATION.md</code>. Cannot be removed from any composition that includes PATH 7 (EXECUTE).</li>
         <li><strong>PATH 12 QUALITY GATE</strong> — dual-mode quality gate that appears <strong>twice</strong> in every composition: once as a <em>design-time checklist</em> before planning (9 quality dimensions), and once as an <em>adversarial audit</em> before shipping. The pre-ship instance runs after PATH 11 VERIFY completes. Both instances must pass — all dimensions must pass in each.</li>
@@ -236,7 +236,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="composable-paths.html">Composable Workflow Orchestration</a> — PATH 11 VERIFY and PATH 12 QUALITY GATE in the full 18-path catalog</li>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — PATH 11 VERIFY and PATH 12 QUALITY GATE in the full 18-path catalog</li>
         <li><a href="preferences.html">User Workflow Preferences</a> — the step-skip protocol and which gates are permanently non-skippable</li>
         <li><a href="../workflows/silver-feature.html">silver:feature workflow</a> — gsd-verify-work shown in full context</li>
         <li><a href="../workflows/silver-bugfix.html">silver:bugfix workflow</a> — TDD regression test before verification</li>

@@ -164,7 +164,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Bare instruction interception (§2g)</strong> — if your message is a plain work request rather than a slash command, <code>/silver</code> is invoked automatically before anything else happens.</li>
         <li><strong>Complexity triage</strong> — the router classifies the request as Trivial, Simple, Fuzzy, or Complex to determine whether an exploration step is needed and which paths to compose.</li>
       </ol>
-      <p>After triage, <code>/silver</code> performs <strong>path composition</strong> — selecting from 18 composable paths and assembling an ordered chain appropriate for the classified work. This replaces fixed step-by-step pipelines: each composition is tailored to the context, not predetermined. See <a href="composable-paths.html">Composable Workflow Orchestration</a> for the full path catalog.</p>
+      <p>After triage, <code>/silver</code> performs <strong>path composition</strong> — selecting from 18 composable paths and assembling an ordered chain appropriate for the classified work. This replaces fixed step-by-step pipelines: each composition is tailored to the context, not predetermined. See <a href="composable-workflow.html">Composable Workflow Orchestration</a> for the full path catalog.</p>
 
       <div class="divider"></div>
 
@@ -405,7 +405,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="composable-paths.html">Composable Workflow Orchestration</a> — the 18-path catalog that routing composes from</li>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — the 18-path catalog that routing composes from</li>
         <li><a href="../workflows/silver-feature.html">silver:feature workflow</a> — feature development end-to-end</li>
         <li><a href="../workflows/silver-bugfix.html">silver:bugfix workflow</a> — triage-first bug investigation</li>
         <li><a href="../workflows/silver-ui.html">silver:ui workflow</a> — UI/UX with accessibility review</li>
