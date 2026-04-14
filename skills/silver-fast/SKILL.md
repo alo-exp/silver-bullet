@@ -1,32 +1,22 @@
 ---
 name: silver-fast
-description: "Trivial change fast-path: complexity triage confirms ≤3 files → gsd-fast → verify → commit. No planning overhead."
-argument-hint: "<description of trivial change>"
+description: "3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver-feature escalation."
+argument-hint: "<description of change>"
 ---
 
-# /silver:fast — Trivial Change Fast Path
+# /silver:fast — 3-Tier Complexity Triage
 
-SB fast-path for trivial changes only. Bypasses all workflow steps — no planning, no quality gates, no brainstorming, no review cycle.
+SB fast-path with 3-tier routing. Classifies work autonomously and routes to the appropriate execution engine.
 
-**This skill is only appropriate for:**
-- Typo or text fix
-- Config value change (single key/value)
-- Variable or symbol rename (≤3 files)
-- One-liner code change
-- Comment update
+| Tier | Criteria | Routes to |
+|------|----------|-----------|
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | gsd-fast |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | gsd-quick (with flags) |
+| **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver-feature |
 
-**Not appropriate for:**
-- Any change touching >3 files
-- Logic changes (even "small" ones)
-- Dependency additions or removals
-- Schema changes
-- Changes with downstream impact
-
-If in doubt, use the appropriate named workflow instead.
+> **Note:** This workflow does NOT read §10 prefs or create WORKFLOW.md. The fast path skips all preference and composition overhead by design.
 
 ## Pre-flight: Banner
-
-> **Note:** This workflow does NOT read §10 prefs. The fast path skips all preference overhead by design — preference loading adds latency that defeats the purpose of a trivial bypass.
 
 Display banner:
 
@@ -38,80 +28,46 @@ Display banner:
 Change: {$ARGUMENTS or "(not specified)"}
 ```
 
-## Step 0: Complexity Triage Gate
+## Step 0: Complexity Triage
 
-Before invoking gsd-fast, confirm the change is truly trivial.
+Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no AskUserQuestion.
 
-Use AskUserQuestion:
+**Tier 1 (Trivial):**
+- ≤3 files AND no logic changes
+- Indicators: typo, config value, rename, comment update, one-liner, text fix
+- Proceed to Step 1
 
-> Confirming trivial scope for: **{$ARGUMENTS}**
->
-> Does this change:
->
-> A. Touch ≤3 files AND is a typo / config value / rename / one-liner? → proceed to fast path
-> B. Touch >3 files OR involves logic, dependency, or schema changes? → escalate to full workflow
+**Tier 2 (Medium):**
+- 4-10 files OR logic change in ≤3 files OR dependency update
+- Indicators: small feature addition, refactor, bug fix with tests, dependency bump, multi-file rename
+- Proceed to Step 2
 
-**If A (trivial confirmed):** proceed to Step 1.
+**Tier 3 (Complex):**
+- >10 files OR cross-cutting concern OR schema change OR new capability
+- Indicators: new feature, architecture change, database migration, API redesign, multi-component work
+- Proceed to Step 3
 
-**If B (non-trivial):** do NOT invoke gsd-fast. Instead:
+**Ambiguity rules (always bias toward the safer/more thorough tier):**
+- Ambiguous between Tier 1 and Tier 2 → classify as Tier 2
+- Ambiguous between Tier 2 and Tier 3 → classify as Tier 3
+- Cannot determine scope from description alone → classify as Tier 3
 
-1. Ask which workflow to route to using AskUserQuestion:
-
-   > Which workflow should handle this?
-   >
-   > A. `silver:feature` — build or extend a feature
-   > B. `silver:bugfix` — fix something that's broken
-   > C. `silver:ui` — UI, frontend, or design work
-   > D. `silver:devops` — infrastructure, CI/CD, or deployment
-   > E. `silver:research` — technology decision or spike
-
-2. Display: "This change exceeds the trivial threshold. Routing to [workflow name] instead."
-3. Invoke the chosen named workflow via the Skill tool, passing `$ARGUMENTS`. Exit silver:fast.
-
-**If scope is ambiguous** (cannot determine without investigation): treat as B — non-trivial. False trivial classifications cause under-reviewed changes. Escalate.
-
-## Step 1: Execute Fast Path
-
-**Only reached if Step 0 confirms A (trivial scope confirmed).**
-
-Invoke `gsd-fast` via the Skill tool. Pass `$ARGUMENTS` as the change description.
-
-## Step 2: STOP Condition — Scope Expansion Check
-
-**During or after gsd-fast execution**, if scope expands beyond 3 files:
-
-STOP immediately. Do not complete the change under the fast path. Display:
+Display classification:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► FAST PATH STOP
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Scope has expanded beyond 3 files. Fast path cannot continue.
-
-Files now affected: {list}
+Classification: Tier {N} ({Trivial|Medium|Complex})
+Routing to: {gsd-fast|gsd-quick|silver-feature}
 ```
 
-Then use AskUserQuestion to escalate:
+## Step 1: Tier 1 — Execute via gsd-fast
 
-> The change has grown beyond the trivial threshold. Which workflow should take over?
->
-> A. `silver:feature` — build or extend a feature
-> B. `silver:bugfix` — fix something that's broken
-> C. `silver:devops` — infrastructure or CI/CD change
-> D. Stop — let me manually review scope before proceeding
+**Only reached when Step 0 classifies as Tier 1 (Trivial).**
 
-Wait for user selection. If A, B, or C: invoke the chosen workflow via the Skill tool with the original `$ARGUMENTS`. If D: stop and return control to the user.
+Invoke `gsd-fast` via the Skill tool. Pass $ARGUMENTS as the change description.
 
-## Step 3: Verify
+After gsd-fast completes, run scope expansion check (Step 4).
 
-After gsd-fast completes (and scope remained ≤3 files throughout):
-
-Run the verification command provided by gsd-fast output. If no automated verification is available, ask the user to confirm the change looks correct.
-
-## Step 4: Confirm
-
-Display completion summary:
+If scope remained ≤3 files, display completion banner:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -122,3 +78,75 @@ Change: {$ARGUMENTS}
 Files modified: {count} (confirmed ≤3)
 Status: committed
 ```
+
+## Step 2: Tier 2 — Detect flags and route to gsd-quick
+
+**Only reached when Step 0 classifies as Tier 2 (Medium).**
+
+Before invoking gsd-quick, detect which flags to apply by scanning $ARGUMENTS for signals:
+
+**Signal detection:**
+
+| Flag | Signal words in $ARGUMENTS |
+|------|---------------------------|
+| `--discuss` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
+| `--research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
+| `--validate` | Change modifies src/, app/, or lib/ directories with logic changes (not just config/comments) |
+
+**Flag composition rules:**
+- Any combination is valid (e.g., `--discuss --validate` without `--research`)
+- If no signals detected → invoke bare `gsd-quick` (no flags)
+- If all three signals detected → use `--full` instead of listing all three
+
+Display detected signals:
+
+```
+Detected signals:
+  Ambiguity: {yes/no} {reason if yes}
+  Novel domain: {yes/no} {reason if yes}
+  Production code: {yes/no} {reason if yes}
+Flags: {--discuss --research --validate | --full | (none)}
+```
+
+Invoke `gsd-quick` via the Skill tool with the composed flags and $ARGUMENTS.
+
+After gsd-quick completes, run scope expansion check (Step 4).
+
+## Step 3: Tier 3 — Escalate to silver-feature
+
+**Only reached when Step 0 classifies as Tier 3 (Complex).**
+
+Display:
+
+```
+Change exceeds fast-path complexity. Routing to silver-feature.
+Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
+```
+
+Invoke `silver:feature` via the Skill tool with $ARGUMENTS. Exit silver:fast.
+
+## Step 4: Scope Expansion Check
+
+After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the current tier.
+
+**During Tier 1:** If files modified > 3:
+- If 4-10 files → escalate to Tier 2 (gsd-quick, Step 2)
+- If > 10 files → escalate to Tier 3 (silver-feature, Step 3)
+
+**During Tier 2:** If files modified > 10:
+- Escalate to Tier 3 (silver-feature, Step 3)
+
+Escalation is **autonomous** — no AskUserQuestion needed. Display escalation banner:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ FAST PATH ESCALATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Reason: Scope expanded from {original tier} to {new tier}
+Files affected: {count}
+Routing to: {gsd-quick|silver-feature}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Then invoke the target workflow. On escalation to silver-feature, pass the updated scope description so /silver can classify appropriately.
