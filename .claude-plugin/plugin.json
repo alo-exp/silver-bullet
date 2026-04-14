@@ -18,6 +18,5 @@
     "quality-gates",
     "deploy-gate",
     "ci-cd"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
