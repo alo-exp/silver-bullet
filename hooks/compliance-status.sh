@@ -109,28 +109,32 @@ case "$mode" in
   *) mode="interactive" ;;
 esac
 
-# If no state file exists → early output with zeros
-if [[ ! -f "$state_file" ]]; then
-  # Count totals
-  plan_total=0
-  for _ in $required_planning; do ((plan_total++)) || true; done
-  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | Mode: %s | GSD 0/5 | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
-    "$mode" "$plan_total" \
-    "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
-  exit 0
-fi
-
-# --- WORKFLOW.md path progress ---
+# --- WORKFLOW.md path progress (computed before early-exit so it appears in all output paths) ---
+# Bug fix: hoisted above the 'no state file' early-exit so PATH N/M shows even in zero-state sessions.
 workflow_file="$PWD/.planning/WORKFLOW.md"
 path_progress="PATH: N/A (legacy mode)"
 if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   wf_complete=0
   wf_total=0
+  # Bug fix: use '^\ [0-9]+ \|' (digits then space-pipe) to count only Path Log rows.
+  # Previous pattern '^\| [0-9]' matched Phase Iterations ('| 01 (phase)') and
+  # Autonomous Decisions ('| 2026-...') rows, inflating the total count.
   if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-     wf_total=$(grep -cE '^\| [0-9]' "$workflow_file" 2>/dev/null) && \
+     wf_total=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null) && \
      [[ "$wf_total" -gt 0 ]]; then
     path_progress="PATH ${wf_complete}/${wf_total}"
   fi
+fi
+
+# If no state file exists → early output with zeros
+if [[ ! -f "$state_file" ]]; then
+  # Count totals
+  plan_total=0
+  for _ in $required_planning; do ((plan_total++)) || true; done
+  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | Mode: %s | %s | GSD 0/5 | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
+    "$mode" "$path_progress" "$plan_total" \
+    "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
+  exit 0
 fi
 
 # Read state file once
