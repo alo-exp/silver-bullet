@@ -293,14 +293,15 @@ skill, or SB skill.
 
 ### 2h. SB Orchestrated Workflows
 
-SB provides seven pre-designed orchestration workflows for all common development tasks.
+SB provides eight pre-designed orchestration workflows for all common development tasks.
 When a bare instruction is intercepted (§2g) or the user invokes `/silver`, the router
 classifies intent and dispatches to the appropriate workflow.
 
-**The seven workflows:**
+**The eight workflows:**
 
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
+| `silver:brainstorm-idea` | "I want to build", "I have an idea", "here's my concept", multi-sentence idea description with no SPEC.md | product-brainstorming → silver:brainstorm → gsd-new-milestone → gsd-discuss-phase |
 | `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → product-brainstorming → silver:brainstorm |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |

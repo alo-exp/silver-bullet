@@ -192,6 +192,7 @@ Skills installed by this plugin that extend the workflow:
 |-------|-------------|
 | `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
 | `/silver:init` | Once per project — initializes CLAUDE.md, config, CI, and docs scaffold |
+| `/silver:brainstorm-idea` | Orchestrated workflow for exploring a new idea before any spec exists |
 | `/silver:feature` | Orchestrated workflow for feature development |
 | `/silver:bugfix` | Orchestrated workflow for bug investigation and fixes |
 | `/silver:ui` | Orchestrated workflow for UI/UX work |

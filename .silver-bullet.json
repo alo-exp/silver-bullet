@@ -1,5 +1,5 @@
 {
-  "version": "0.18.4",
+  "version": "0.19.0",
   "project": {
     "name": "silver-bullet",
     "src_pattern": "/hooks/|/skills/|/templates/",
@@ -34,7 +34,8 @@
       "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
       "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-debug",
-      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase"
+      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase",
+      "silver-brainstorm-idea"
     ]
   },
   "devops_plugins": {

@@ -308,13 +308,18 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
       <div class="divider"></div>
 
       <h2 id="routing-table">Full Routing Table</h2>
-      <p>After complexity triage confirms the request is not Trivial or Fuzzy, <code>/silver</code> matches intent signals to one of seven orchestration workflows:</p>
+      <p>After complexity triage confirms the request is not Trivial or Fuzzy, <code>/silver</code> matches intent signals to one of eight orchestration workflows:</p>
 
       <table class="ref-table">
         <thead>
           <tr><th>Workflow</th><th>Entry triggers</th><th>First step</th></tr>
         </thead>
         <tbody>
+          <tr>
+            <td><a href="../workflows/silver-brainstorm-idea.html" style="color:var(--accent-light)">/silver:brainstorm-idea</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"I want to build", "I'm thinking of", "here's my idea", "what if we", "concept:" — when no SPEC.md exists</td>
+            <td style="font-family:inherit;font-size:.875rem">product-brainstorming → brainstorming → gsd-new-milestone → gsd-discuss-phase</td>
+          </tr>
           <tr>
             <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/silver:feature</a></td>
             <td style="font-family:inherit;font-size:.875rem">"add X", "build X", "implement X", "new feature", "enhance X", "extend X"</td>

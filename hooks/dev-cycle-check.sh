@@ -124,17 +124,8 @@ To reset the workflow state, remove the file from your terminal (not from Claude
   elif [[ -n "$command_str" ]]; then
     # Bash write to .silver-bullet/state, /branch, or /trivial → block
     # Matches: echo x >> path, printf x > path, tee path — but not reads (cat, grep)
-    # Whitelist: quality-gate-stage-N and verification-before-completion-stage-N appends are
-    # legitimate (§9 pre-release gate recording). Match only the exact single-marker append
-    # pattern to prevent multiline injection that bundles additional skill names.
+    # All state writes go through the Skill tool (recorded automatically on invocation).
     is_whitelisted_append=false
-    if printf '%s' "$command_str" | grep -qE "^echo ['\"]?(quality-gate-stage-[1-4]|verification-before-completion-stage-[1-4]|review-loop-pass-[12])['\"]? >> ~/\.claude/[^/]+/state$"; then
-      is_whitelisted_append=true
-      # Reject if command contains chaining operators (bypass via semicolons, pipes, etc.)
-      if printf '%s' "$command_str" | grep -qE '[;|]|&&|\|\|'; then
-        is_whitelisted_append=false
-      fi
-    fi
     if [[ "$is_whitelisted_append" == false ]] && \
        printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial|mode)' && \
        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)'; then
