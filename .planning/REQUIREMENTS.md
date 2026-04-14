@@ -10,8 +10,8 @@ Requirements for v0.20.0 milestone. Each maps to roadmap phases.
 
 ### Foundation (CPA-01 through CPA-04)
 
-- [ ] **FOUND-01**: Path contract schema defined — every composable path has prerequisites, trigger, steps, produces, review cycle, GSD impact, and exit condition documented
-- [ ] **FOUND-02**: WORKFLOW.md specification implemented — persistent composition state file with path log, phase iterations, dynamic insertions, autonomous decisions, deferred improvements, and next path sections; 100-line size cap enforced
+- [x] **FOUND-01**: Path contract schema defined — every composable path has prerequisites, trigger, steps, produces, review cycle, GSD impact, and exit condition documented
+- [x] **FOUND-02**: WORKFLOW.md specification implemented — persistent composition state file with path log, phase iterations, dynamic insertions, autonomous decisions, deferred improvements, and next path sections; 100-line size cap enforced
 - [ ] **FOUND-03**: artifact-review-assessor skill created — triages reviewer findings into MUST-FIX / NICE-TO-HAVE / DISMISS based on artifact contract; no review loop on assessor itself
 - [ ] **FOUND-04**: doc-scheme.md.base updated — WORKFLOW.md, VALIDATION.md, UI-SPEC.md, UI-REVIEW.md, SECURITY.md added to artifact tables; non-redundancy rule 6 added (WORKFLOW.md vs STATE.md separation)
 
@@ -99,8 +99,8 @@ Requirements for v0.20.0 milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 21 | Pending |
-| FOUND-02 | Phase 21 | Pending |
+| FOUND-01 | Phase 21 | Complete |
+| FOUND-02 | Phase 21 | Complete |
 | FOUND-03 | Phase 21 | Pending |
 | FOUND-04 | Phase 21 | Pending |
 | CORE-01 | Phase 22 | Pending |
