@@ -148,10 +148,9 @@ Plans:
   1. Trivial changes route to gsd-fast, medium changes route to gsd-quick with appropriate flags, complex changes escalate to silver-feature
   2. gsd-quick flag composition (--discuss, --research, --validate, --full) is selected based on detected need
   3. Autonomous escalation re-runs /silver classification against expanded scope when complexity exceeds silver-fast tier
-**Plans**: 2 plans
+**Plans**: 1 plan
 Plans:
-- [ ] 27-01-PLAN.md — TBD
-- [ ] 27-02-PLAN.md — TBD
+- [ ] 27-01-PLAN.md — Rewrite SKILL.md with 3-tier triage, gsd-quick flags, and autonomous escalation
 
 ### Phase 28: Documentation Update
 **Goal**: All documentation reflects the composable paths architecture -- silver-bullet.md, doc-scheme, enforcement docs, and dev-cycle reference updated
@@ -196,6 +195,6 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | 24. Cross-Cutting + Quality Gates | v0.20.0 | 0/2 | Not started | - |
 | 25. Composer Redesign | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
 | 26. Hook Alignment + Migrate | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
-| 27. silver-fast Redesign | v0.20.0 | 0/2 | Not started | - |
+| 27. silver-fast Redesign | v0.20.0 | 0/1 | Not started | - |
 | 28. Documentation Update | v0.20.0 | 0/2 | Not started | - |
 | 29. Help Center + Homepage | v0.20.0 | 0/2 | Not started | - |
