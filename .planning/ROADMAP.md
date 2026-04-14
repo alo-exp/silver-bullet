@@ -60,7 +60,10 @@
   2. WORKFLOW.md can be created and tracks path log, phase iterations, dynamic insertions, autonomous decisions, deferred improvements, and next path -- stays under 100 lines
   3. artifact-review-assessor skill triages reviewer findings into MUST-FIX / NICE-TO-HAVE / DISMISS based on artifact contract, with no review loop on itself
   4. doc-scheme.md.base includes WORKFLOW.md, VALIDATION.md, UI-SPEC.md, UI-REVIEW.md, SECURITY.md in artifact tables and enforces non-redundancy rule 6
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 22: Core Paths
 **Goal**: The 6 paths that form the backbone of every composition are implemented and can execute end-to-end
@@ -72,7 +75,10 @@
   3. PATH 5 (PLAN) produces CONTEXT.md + RESEARCH.md + PLAN.md using discuss-phase, writing-plans, testing-strategy, list-phase-assumptions, analyze-dependencies, gsd-plan-phase
   4. PATH 7 (EXECUTE) uses TDD as-needed and gsd-execute-phase/gsd-autonomous as sole execution engine with all 10 GSD assumptions preserved
   5. PATH 11 (VERIFY) and PATH 13 (SHIP) produce their expected artifacts and enforce non-skippable verification before shipping
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 23: Specialized Paths
 **Goal**: All 6 context-triggered paths are implemented -- each activates only when its trigger condition is met
@@ -84,7 +90,10 @@
   3. PATH 6 (DESIGN CONTRACT) triggers on UI phase detection and runs design-system, ux-copy, gsd-ui-phase, accessibility-review iteratively
   4. PATH 8 (UI QUALITY) triggers from PATH 6 or UI file types in SUMMARY.md and runs design-critique, gsd-ui-review (6-pillar), accessibility-review
   5. PATH 15 (DESIGN HANDOFF) runs inside PATH 17 only, not in the per-phase sequence
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 **UI hint**: yes
 
 ### Phase 24: Cross-Cutting Paths + Quality Gate Dual-Mode
@@ -97,7 +106,10 @@
   3. PATH 14 (DEBUG) has resume semantics defined for all interrupted paths and chains debugging skills appropriately
   4. PATH 16 (DOCUMENT) and PATH 17 (RELEASE) complete their skill chains, with PATH 17 including the PATH 15 insertion point for UI milestones
   5. All 9 quality dimension skills operate in dual mode -- design-time checklist (pre-plan) and adversarial audit (pre-ship) with mode detected from artifact state
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 25: Composer Redesign
 **Goal**: /silver works as a composer -- classifying context, selecting and ordering paths, proposing compositions, supervising execution with anti-stall
@@ -109,7 +121,10 @@
   3. End-to-end supervision loop works -- after each path: verify exit, evaluate composition changes, stall check, advance, report progress
   4. Dynamic insertion works -- PATH 14 inserted on failure, new paths inserted on context discovery, all recorded in WORKFLOW.md
   5. 4-tier anti-stall operates -- progress-based detection, permission-stall prevention, context exhaustion prevention, heartbeat sentinel
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 26: Hook Alignment + silver:migrate
 **Goal**: All hooks are WORKFLOW.md-aware with legacy fallback, and existing mid-milestone users can migrate to composable paths
@@ -120,7 +135,10 @@
   2. compliance-status.sh shows path progress (PATH 5/12) alongside skill count, and prompt-reminder.sh includes WORKFLOW.md position for post-compact recovery
   3. spec-floor-check.sh downgrades to advisory when PATH 4 is intentionally excluded from composition
   4. silver:migrate scans STATE.md + artifacts, infers path completion, generates WORKFLOW.md, and user confirms before applying
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 27: silver-fast Redesign
 **Goal**: silver-fast triages work into 3 complexity tiers with appropriate routing and autonomous escalation
@@ -130,7 +148,10 @@
   1. Trivial changes route to gsd-fast, medium changes route to gsd-quick with appropriate flags, complex changes escalate to silver-feature
   2. gsd-quick flag composition (--discuss, --research, --validate, --full) is selected based on detected need
   3. Autonomous escalation re-runs /silver classification against expanded scope when complexity exceeds silver-fast tier
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 28: Documentation Update
 **Goal**: All documentation reflects the composable paths architecture -- silver-bullet.md, doc-scheme, enforcement docs, and dev-cycle reference updated
@@ -141,7 +162,10 @@
   2. doc-scheme.md.base is finalized with all new artifacts documented
   3. ENFORCEMENT.md reflects all hook modifications from Phase 26
   4. full-dev-cycle.md is demoted to example composition, not primary reference
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 
 ### Phase 29: Help Center + Homepage
 **Goal**: Website and help center fully reflect composable paths architecture for new and existing users
@@ -152,7 +176,10 @@
   2. Help center concept pages exist for composable-paths, artifact-review-assessor, routing-logic, verification, and documentation
   3. Help center workflow pages describe silver-feature, silver-ui, silver-fast as composable and silver-bugfix, silver-devops, silver-release, silver-research are updated
   4. Reference page documents assessor, WORKFLOW.md, path contracts, and search.js indexes all new pages
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 21-01-PLAN.md — Path contracts summary + WORKFLOW.md template
+- [ ] 21-02-PLAN.md — artifact-review-assessor skill + doc-scheme update
 **UI hint**: yes
 
 ## Progress
@@ -163,7 +190,7 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-20 | v0.9.0-v0.16.0 | 46/46 | Complete | 2026-04-10 |
-| 21. Foundation | v0.20.0 | 0/? | Not started | - |
+| 21. Foundation | v0.20.0 | 0/2 | Not started | - |
 | 22. Core Paths | v0.20.0 | 0/? | Not started | - |
 | 23. Specialized Paths | v0.20.0 | 0/? | Not started | - |
 | 24. Cross-Cutting + Quality Gates | v0.20.0 | 0/? | Not started | - |
