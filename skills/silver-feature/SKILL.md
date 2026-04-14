@@ -280,42 +280,100 @@ All PLAN.md files for the current phase have SUMMARY.md, STATE.md advanced.
 
 ---
 
-## Non-core path steps: Review, Security, Quality
-<!-- These steps map to PATH 9 (REVIEW), PATH 10 (SECURE), PATH 8 (UI QUALITY), and PATH 12 pre-ship quality gate. They will become full composable paths in Phase 23-24. -->
+## PATH 6: DESIGN CONTRACT — UI specification (iterative)
 
-### Step 9a: Request Code Review — PATH 9 (REVIEW) [future]
+### Prerequisite Check
+
+PATH 5 completed: PLAN.md must exist. If not, STOP and run PATH 5 first.
+
+```bash
+ls .planning/phases/{phase}/*-PLAN.md 2>/dev/null | grep -q . || echo "STOP: PLAN.md missing — run PATH 5 first"
+```
+
+**Trigger note:** Activated when phase involves UI — detected by keywords in phase name/goal (UI, frontend, component, design, layout, animation, responsive), UI file types in existing code (.tsx, .jsx, .css, .scss, .vue, .svelte), or DESIGN.md existence. Skipped for non-UI phases.
+
+### Steps
+
+1. `design:design-system` (Always in this path)
+2. `design:ux-copy` (As-needed — user-facing copy requires review)
+3. `gsd-ui-phase` (Always in this path — produces UI-SPEC.md)
+4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
+
+Invoke each applicable step via the Skill tool.
+
+**Iterative:** User can loop steps 1-4. Claude suggests when design contract is solid; user decides exit.
+
+### Exit Condition
+
+UI-SPEC.md exists, user accepts design contract.
+
+Verify: `[ -f ".planning/phases/{phase}/UI-SPEC.md" ]`
+
+---
+
+## PATH 8: UI QUALITY — Post-execution UI audit
+
+### Prerequisite Check
+
+PATH 7 completed with UI deliverables. If not, STOP and complete PATH 7 first.
+
+**Trigger note:** Activated when PATH 6 (DESIGN CONTRACT) was in the composition, OR SUMMARY.md contains UI file types (.tsx, .jsx, .css, .scss, .vue, .svelte). Skipped when no UI deliverables exist.
+
+### Steps
+
+1. `design:design-critique` (Always in this path)
+2. `gsd-ui-review` (Always in this path — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
+3. `design:accessibility-review` (Always in this path)
+
+Invoke each applicable step via the Skill tool.
+
+Produces: UI-REVIEW.md. Fixes route through `gsd-execute-phase --gaps-only`.
+
+### Review Cycle
+
+UI-REVIEW.md through artifact-review-assessor: fix critical findings via GSD (`gsd-execute-phase --gaps-only`), re-audit until no critical findings remain or user accepts.
+
+### Exit Condition
+
+UI-REVIEW.md exists with no critical findings, or user accepts.
+
+---
+
+<!-- Review, Security, and Quality Gate steps — will become PATH 9, 10, 12 in Phase 24 -->
+
+### Step 9a: Request Code Review — PATH 9 (REVIEW)
 
 Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
 
-### Step 9b: Run Code Review — PATH 9 (REVIEW) [future]
+### Step 9b: Run Code Review — PATH 9 (REVIEW)
 
 Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md.
 
 If issues found in REVIEW.md: invoke `gsd-code-review-fix` via the Skill tool to auto-fix findings atomically before human review.
 
-### Step 9c: Cross-AI Review — PATH 9 (REVIEW) [future, conditional]
+### Step 9c: Cross-AI Review — PATH 9 (REVIEW, conditional)
 
 **Only for architecturally significant changes or user request:**
 
 Invoke `gsd-review --multi-ai` via the Skill tool. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code.
 
-### Step 9d: Receive Review — PATH 9 (REVIEW) [future]
+### Step 9d: Receive Review — PATH 9 (REVIEW)
 
 Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
 
-### Step 10: Security Review — PATH 10 (SECURE) [future]
+### Step 10: Security Review — PATH 10 (SECURE)
 
 Invoke `silver:security` via the Skill tool. Non-skippable gate.
 
-### Step 11: Secure Phase — PATH 10 (SECURE) [future]
+### Step 11: Secure Phase — PATH 10 (SECURE)
 
 Invoke `gsd-secure-phase` via the Skill tool. Purpose: retroactive threat mitigation verification.
 
-### Step 12: Validate Phase — PATH 10 (SECURE) [future]
+### Step 12: Validate Phase — PATH 10 (SECURE)
 
 Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap filling.
 
-### Step 13: Pre-Ship Quality Gates (9 dimensions) — PATH 12 pre-ship [future]
+### Step 13: Pre-Ship Quality Gates (9 dimensions) — PATH 12 pre-ship
 
 Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
 
