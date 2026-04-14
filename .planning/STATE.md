@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v0.20.0
 milestone_name: Composable Paths Architecture
 current_plan: 1
-status: Defining requirements
+status: Ready to plan
 last_updated: "2026-04-14"
 last_activity: 2026-04-14
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,18 +18,43 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.19.1
-**Active phase:** Not started (defining requirements)
-**Current plan:** —
+**Active phase:** Phase 21 (Foundation)
+**Current plan:** --
 
-Last activity: 2026-04-14 — Milestone v0.20.0 started
+Last activity: 2026-04-14 -- Roadmap created for v0.20.0
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-04-14)
+
+**Core value:** Single enforced workflow -- no artifact ships without structured quality validation
+**Current focus:** Phase 21 - Foundation (path contracts, WORKFLOW.md, assessor, doc-scheme)
+
+## Current Position
+
+Phase: 21 (1 of 9 in v0.20.0) - Foundation
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-04-14 -- Roadmap created
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: --
+- Total execution time: 0 hours
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
 ### Decisions
-- GSD is sole execution engine — all code-producing work through gsd-execute-phase
+- GSD is sole execution engine -- all code-producing work through gsd-execute-phase
 - WORKFLOW.md tracks composition state, STATE.md tracks GSD execution state (never cross-write directly)
-- Big-bang hook update in Phase 6 — no hook changes until all skills ready
-- Forward-compatible building (Approach B) — skills built for new system work under old hooks
+- Big-bang hook update in Phase 26 -- no hook changes until all skills ready
+- Forward-compatible building (Approach B) -- skills built for new system work under old hooks
 - artifact-review-assessor judges against artifact CONTRACT, not subjective quality
 - Iteration termination: Claude-suggested, user-decided (no hard caps)
 - /silver:migrate for existing mid-milestone users (explicit, not implicit)
@@ -47,10 +72,7 @@ Last activity: 2026-04-14 — Milestone v0.20.0 started
 ## Quick Tasks Completed
 (none)
 
-## Performance Metrics
-(new milestone)
-
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Milestone v0.20.0 initialization
+Stopped at: Roadmap created for v0.20.0 -- ready to plan Phase 21
