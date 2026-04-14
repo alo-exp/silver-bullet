@@ -59,6 +59,24 @@ Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone comp
 
 Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
 
+## PATH 15: DESIGN HANDOFF — Milestone UI handoff
+
+**Prerequisite Check:**
+```bash
+# Scan phase directories for UI-SPEC.md or UI-REVIEW.md existence
+ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | grep -q . || echo "SKIP: No UI phases in this milestone — PATH 15 not needed"
+```
+
+**Trigger note:** Activated when milestone has UI phases (detected by UI-SPEC.md or UI-REVIEW.md in any phase directory) AND currently in release flow. Runs inside PATH 17 (RELEASE) only — never in the per-phase sequence.
+
+**Steps** (all via Skill tool):
+1. `design:design-handoff` (Always in this path — produce handoff package)
+2. `design:design-system` (As-needed — final component inventory, design token reconciliation)
+
+**Produces:** Handoff package.
+
+**Exit Condition:** Handoff package produced.
+
 ## Step 2b: Gap-Closure Loop (conditional, max 2 iterations)
 
 **Only if gaps found in Step 2:**
