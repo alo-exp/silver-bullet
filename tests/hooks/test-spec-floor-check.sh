@@ -156,6 +156,35 @@ assert_passes "gsd-quick NOT blocked when no SPEC.md (advisory only)" "$out"
 assert_contains "output contains ADVISORY warning" "$out" "ADVISORY"
 teardown
 
+# ── WORKFLOW.md advisory mode tests ──────────────────────────────────────────
+echo ""
+echo "=== WORKFLOW.md advisory mode ==="
+
+# WF1: WORKFLOW.md with PATH 4 excluded -> advisory (no block)
+echo "--- WF1: PATH 4 excluded -> advisory ---"
+setup
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Composition
+Paths: 0 → 1 → 5 → 7 → 11 → 13
+
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 1 | ORIENT | complete |
+| 5 | PLAN | complete |
+WFEOF
+# PATH 4 (SPECIFY) not in composition -> spec floor should be advisory
+out=$(run_hook "gsd-plan-phase")
+# Should NOT block (advisory mode)
+if echo "$out" | grep -q '"exitCode":1\|BLOCK\|HARD STOP'; then
+  FAIL=$((FAIL + 1)); printf 'FAIL: WF1: PATH 4 excluded should be advisory\n'
+else
+  PASS=$((PASS + 1)); printf 'PASS: WF1: PATH 4 excluded -> advisory\n'
+fi
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

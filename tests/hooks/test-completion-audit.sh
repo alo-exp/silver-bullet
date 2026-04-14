@@ -337,6 +337,45 @@ out=$(run_hook "PreToolUse" "gh pr merge --squash")
 assert_passes "gh pr merge passes with all skills + review-loop-pass markers" "$out"
 teardown
 
+# ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────
+echo ""
+echo "=== WORKFLOW.md-first gate ==="
+
+# WF1: WORKFLOW.md with all paths complete -> allow commit
+echo "--- WF1: all workflow paths complete -> allow commit ---"
+setup
+write_cfg
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 5 | PLAN | complete |
+| 7 | EXECUTE | complete |
+| 9 | REVIEW | complete |
+| 11 | VERIFY | complete |
+| 13 | SHIP | complete |
+WFEOF
+out=$(run_hook "PreToolUse" "git commit -m test")
+assert_passes "WF1: all workflow paths complete -> allow" "$out"
+teardown
+
+# WF2: WORKFLOW.md with partial paths -> blocks final delivery
+echo "--- WF2: partial paths -> blocks final delivery ---"
+setup
+write_cfg
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 5 | PLAN | complete |
+| 7 | EXECUTE | in_progress |
+WFEOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "WF2: partial paths -> block final delivery" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

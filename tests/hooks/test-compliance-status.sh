@@ -212,6 +212,28 @@ out=$(run_hook)
 assert_contains "create-release in state -> RELEASE 1/1" "$out" "RELEASE 1/1"
 teardown
 
+# ── WORKFLOW.md path progress tests ──────────────────────────────────────────
+echo ""
+echo "=== WORKFLOW.md path progress ==="
+
+# WF1: WORKFLOW.md present -> shows PATH N/M
+echo "--- WF1: shows PATH progress ---"
+setup
+write_cfg
+echo "quality-gates" > "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | in_progress |
+WFEOF
+out=$(run_hook)
+assert_contains "WF1: shows PATH progress" "$out" "PATH"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

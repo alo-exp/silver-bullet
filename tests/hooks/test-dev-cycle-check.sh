@@ -288,12 +288,6 @@ out=$(run_hook_bash "PreToolUse" "echo 'fake-skill' >> ~/.claude/.silver-bullet/
 assert_blocks "tamper: arbitrary state write is blocked" "$out"
 teardown
 
-setup
-# Test 17: quality-gate-stage-N write is treated as arbitrary state write (blocked)
-out=$(run_hook_bash "PreToolUse" "echo 'quality-gate-stage-1' >> ~/.claude/.silver-bullet/state")
-assert_blocks "tamper: quality-gate-stage-N write is blocked (arbitrary state write)" "$out"
-teardown
-
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
 # Use expanded $HOME path so the plugin_cache grep actually fires in the hook
 PLUGIN_CACHE_PATH="${HOME}/.claude/plugins/cache"
@@ -362,6 +356,68 @@ teardown
 setup
 out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh /home/user/silver-bullet/hooks/dev-cycle-check.sh")
 assert_blocks "hooks-protect: cp into hooks dir is still blocked" "$out"
+teardown
+
+# ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────
+echo ""
+echo "=== WORKFLOW.md-first gate ==="
+
+# WF1: WORKFLOW.md with all paths complete -> allow edit
+echo "--- WF1: all workflow paths complete -> allow ---"
+setup
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | complete |
+WFEOF
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF1: all workflow paths complete -> allow" "$out"
+teardown
+
+# WF2: WORKFLOW.md with partial paths -> falls through to legacy gate
+echo "--- WF2: partial workflow paths -> legacy gate ---"
+setup
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | in_progress |
+WFEOF
+# No skills in state -> legacy gate should block
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF2: partial paths + no legacy skills -> block" "$out"
+teardown
+
+# WF3: No WORKFLOW.md -> legacy gate only
+echo "--- WF3: no WORKFLOW.md -> legacy gate ---"
+setup
+# No .planning directory at all
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF3: no WORKFLOW.md + no skills -> block" "$out"
+teardown
+
+# WF4: WORKFLOW.md with all paths complete -> allow even without legacy skills
+echo "--- WF4: all paths complete overrides missing legacy skills ---"
+setup
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 5 | PLAN | complete |
+| 7 | EXECUTE | complete |
+| 11 | VERIFY | complete |
+| 13 | SHIP | complete |
+WFEOF
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF4: all workflow paths complete overrides legacy" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

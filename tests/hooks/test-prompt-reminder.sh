@@ -182,6 +182,38 @@ assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANAR
 rm -rf "$evil_dir"
 teardown
 
+# ── WORKFLOW.md position tests ───────────────────────────────────────────────
+echo ""
+echo "=== WORKFLOW.md position ==="
+
+# WF1: WORKFLOW.md present -> includes composition context
+echo "--- WF1: includes WORKFLOW.md position ---"
+setup
+write_cfg
+echo "quality-gates" > "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Composition
+Paths: 0 → 5 → 7 → 11 → 13
+Mode: autonomous
+
+## Heartbeat
+Last-path: 7
+
+## Path Log
+| # | Path | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | in_progress |
+
+## Next Path
+PATH 11: VERIFY
+WFEOF
+out=$(run_hook)
+assert_contains "WF1: includes WORKFLOW.md context" "$out" "Composable path"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

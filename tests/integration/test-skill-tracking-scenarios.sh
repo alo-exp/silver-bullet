@@ -82,7 +82,7 @@ echo "--- Scenario 5: Full skill progression to compliance ---"
 integration_setup
 write_default_config
 
-# write_all_skills includes all required skills + quality-gate-stage markers
+# write_all_skills includes all required skills
 write_all_skills
 
 # stop-check should pass with all skills + stages recorded
