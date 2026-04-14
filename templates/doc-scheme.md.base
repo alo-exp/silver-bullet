@@ -65,11 +65,6 @@ Managed by GSD. You rarely edit these directly — they're created and consumed 
 | `STATE.md` | `gsd-new-project` | Current progress, decisions, quick tasks |
 | `REQUIREMENTS.md` | `gsd-new-milestone` | Scoped requirements with acceptance criteria |
 | Phase dirs (`phases/`) | Planning skills | Per-phase context, research, plans, reviews |
-| `WORKFLOW.md` | /silver composer | Composition state -- path log, iterations, dynamic insertions, decisions |
-| `VALIDATION.md` | silver-validate | Gap analysis findings from spec validation |
-| `UI-SPEC.md` | gsd-ui-phase | Design contract -- component specs, tokens, responsive rules |
-| `UI-REVIEW.md` | gsd-ui-review | 6-pillar UI audit findings |
-| `SECURITY.md` | gsd-secure-phase | Threat model, STRIDE register, security findings |
 
 All planning artifacts are archived on milestone completion — nothing grows unbounded.
 
@@ -85,7 +80,6 @@ Every document has a growth limit:
 | `docs/knowledge/*.md`, `docs/lessons/*.md` | 300 lines | Split into `YYYY-MM-a.md` / `YYYY-MM-b.md` if exceeded |
 | `.planning/` active files | 300 lines | Milestone completion archives and resets |
 | Quick tasks table in `STATE.md` | 20 rows | Oldest archived when exceeded |
-| `WORKFLOW.md` | 100 lines | FIFO truncation of completed path entries |
 
 ---
 
@@ -109,4 +103,3 @@ Every document has a growth limit:
 3. `lessons/` captures portable learnings — never duplicates project-specific knowledge
 4. `ARCHITECTURE.md` is high-level design — detailed phase designs stay in `.planning/phases/`
 5. `CHANGELOG.md` is the task log — git log is the commit log (different granularity)
-6. WORKFLOW.md tracks composition state (path ordering, dynamic insertions, deferred improvements). STATE.md tracks GSD execution state (current phase, plan position, velocity). Neither file writes to the other directly -- /silver:migrate is the only bridge.
