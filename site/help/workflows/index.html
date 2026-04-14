@@ -94,9 +94,14 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <strong>The smart entry point:</strong> type <code>/silver [your intent in plain English]</code> and Silver Bullet classifies your request and dispatches to the right workflow automatically. No need to remember which workflow to use.
     </div>
 
+    <div class="callout-box" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 28px;margin-bottom:40px;text-align:left">
+      <p style="margin-bottom:8px;font-size:.9rem;color:var(--text-secondary)"><strong style="color:var(--text-primary)">Composable Paths Architecture:</strong> All eight workflows now use composable paths. Each workflow is a <em>composition template</em> that selects paths from the 18-path catalog — BOOTSTRAP, ORIENT, EXPLORE, IDEATE, SPECIFY, PLAN, DESIGN CONTRACT, EXECUTE, UI QUALITY, REVIEW, SECURE, VERIFY, QUALITY GATE, SHIP, DEBUG, DESIGN HANDOFF, DOCUMENT, RELEASE. The composition is proposed by <code>/silver</code> based on your context and can include dynamic insertions (e.g., PATH 14 DEBUG on failure, PATH 6 DESIGN CONTRACT when UI is detected).</p>
+      <p style="margin-bottom:0;font-size:.9rem;color:var(--text-secondary)"><a href="../concepts/composable-paths.html" style="color:var(--accent-light);font-weight:600">Learn about Composable Paths →</a></p>
+    </div>
+
     <div class="section-label">Documentation</div>
     <h2 class="section-title">Eight Workflows</h2>
-    <p class="section-desc">Each workflow chains GSD (execution backbone), Superpowers (craft discipline), MultAI (multi-AI intelligence), and SB quality gates in a defined sequence. None implement code directly — they orchestrate only.</p>
+    <p class="section-desc">Each workflow is a composition template selecting from the 18-path catalog. <code>/silver</code> proposes the chain, you approve, and the supervision loop advances path by path. None implement code directly — they orchestrate only.</p>
 
     <div class="help-grid">
 

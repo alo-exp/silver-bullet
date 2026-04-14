@@ -101,6 +101,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <ul class="sidebar-nav">
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
+        <li><a href="#three-tier">3-tier complexity triage</a></li>
         <li><a href="#when-to-use">When to use</a></li>
         <li><a href="#scope-limit">Scope limit</a></li>
         <li><a href="#workflow-steps">Workflow steps</a></li>
@@ -116,9 +117,40 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:fast</code> is the Silver Bullet bypass workflow for trivial changes. It skips all workflow overhead — no planning, no quality gates, no brainstorming, no review cycle — and routes directly to <code>gsd-fast</code> execution.</p>
-      <p><strong>Appropriate for:</strong> typo fixes, config value changes, symbol renames ≤3 files, one-liner code changes, comment updates.</p>
-      <p>Also invoked automatically by <code>/silver</code> when complexity triage classifies the request as Trivial (≤3 files, clear trivial scope).</p>
+      <p><code>/silver:fast</code> is Silver Bullet's entry point for changes that don't need the full composable paths chain. It uses a <strong>3-tier complexity triage</strong> to route each request to the right execution path — preventing both over-engineering trivial changes and under-engineering medium-complexity ones.</p>
+      <p>Invoked directly as <code>/silver:fast</code>, or automatically by <code>/silver</code> when complexity triage classifies the request as Tier 1 (Trivial) or Tier 2 (Medium). See <a href="../concepts/composable-paths.html">Composable Paths</a> for the full 18-path architecture used by Tier 3 escalations.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="three-tier">3-Tier Complexity Triage</h2>
+
+      <table class="ref-table">
+        <thead><tr><th>Tier</th><th>Signals</th><th>Route</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Tier 1 — Trivial</td>
+            <td>≤3 files, typo, config value, symbol rename, one-liner, comment update</td>
+            <td>Route directly to <code>gsd-fast</code> — one-shot execution, no planning overhead</td>
+          </tr>
+          <tr>
+            <td>Tier 2 — Medium</td>
+            <td>4–10 files, clear scope, limited logic change, no cross-cutting concerns</td>
+            <td>Route to <code>gsd-quick</code> with flag composition: <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, <code>--full</code> as needed</td>
+          </tr>
+          <tr>
+            <td>Tier 3 — Complex</td>
+            <td>Multi-file logic, architecture impact, cross-cutting concerns, or scope expands during execution</td>
+            <td>Autonomous escalation to <code>silver:feature</code> via <code>/silver</code> reclassification — full composable paths chain</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>Tier 3 escalation is autonomous:</strong> if scope expands beyond Tier 2 boundaries during execution, <code>silver:fast</code> stops immediately, reports the expansion, and routes to <code>/silver</code> for full reclassification. No silent scope creep.
+        </div>
+      </div>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>

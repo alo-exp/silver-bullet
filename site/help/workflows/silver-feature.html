@@ -113,6 +113,7 @@ footer a:hover{color:var(--accent-light)}
       <ul class="sidebar-nav">
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
+        <li><a href="#composition">Composable path chain</a></li>
         <li><a href="#when-to-use">When to use</a></li>
         <li><a href="#complexity-triage">Complexity triage</a></li>
         <li><a href="#workflow-steps">Workflow steps</a></li>
@@ -129,9 +130,44 @@ footer a:hover{color:var(--accent-light)}
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It chains GSD (execution backbone), Superpowers (craft discipline), MultAI (multi-AI intelligence), and SB quality gates in a defined sequence.</p>
+      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable paths architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-path catalog, and proposes a composition chain tailored to the request.</p>
       <p><strong>It never implements features directly — it orchestrates only.</strong> Every implementation step is delegated to the appropriate specialist skill (GSD, Superpowers, MultAI). This separation keeps the orchestration layer clean and each specialist focused.</p>
-      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>.</p>
+      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-paths.html">Composable Paths</a> for the full 18-path catalog.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="composition">Composable Path Chain</h2>
+
+      <h3>Composition Proposal</h3>
+      <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a path chain. For a typical feature request the proposed composition looks like:</p>
+      <ul>
+        <li><strong>PATH 0 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
+        <li><strong>PATH 1 (ORIENT)</strong> — codebase intel, brownfield scan</li>
+        <li><strong>PATH 2 (EXPLORE)</strong> — scope clarification when intent is fuzzy</li>
+        <li><strong>PATH 3 (IDEATE)</strong> — brainstorm, architecture decision, system design</li>
+        <li><strong>PATH 4 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
+        <li><strong>PATH 5 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
+        <li><strong>PATH 7 (EXECUTE)</strong> — wave-based execution with atomic commits</li>
+        <li><strong>PATH 9 (REVIEW)</strong> — multi-layer code review sequence</li>
+        <li><strong>PATH 10 (SECURE)</strong> — security audit, threat mitigation verification</li>
+        <li><strong>PATH 11 (VERIFY)</strong> — goal-backward verification, UAT</li>
+        <li><strong>PATH 12 (QUALITY GATE)</strong> — 9-dimension quality sweep (pre-plan and pre-ship)</li>
+        <li><strong>PATH 13 (SHIP)</strong> — PR creation, CI green</li>
+        <li><strong>PATH 16 (DOCUMENT)</strong> — docs update, episodic memory</li>
+      </ul>
+      <p>If the phase involves UI work, <strong>PATH 6 (DESIGN CONTRACT)</strong> and <strong>PATH 8 (UI QUALITY)</strong> are inserted automatically. If execution fails, <strong>PATH 14 (DEBUG)</strong> is inserted dynamically.</p>
+
+      <h3>Per-Phase Loop</h3>
+      <p>For each phase, the orchestrator runs a tightly coupled loop: <strong>PLAN (PATH 5) → EXECUTE (PATH 7) → REVIEW (PATH 9) → VERIFY (PATH 11)</strong>. This cycle repeats per phase until VERIFY passes two consecutive clean passes.</p>
+
+      <h3>Supervision Loop</h3>
+      <p>After each path completes, the supervision loop runs:</p>
+      <ul>
+        <li>Verify exit condition met (path contract satisfied)</li>
+        <li>Evaluate whether the composition should change (dynamic insertions — e.g., add PATH 14 if execution failed)</li>
+        <li>Stall check — detect if the same path has been attempted 3+ times without progress</li>
+        <li>Advance to next path in chain</li>
+      </ul>
 
       <div class="divider"></div>
 
