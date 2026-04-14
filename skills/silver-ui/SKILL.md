@@ -87,21 +87,9 @@ Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usa
 
 Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
-## PATH 6: DESIGN CONTRACT — UI specification (iterative)
+## Step 5: UI Phase — Design Contract
 
-**Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
-
-**Note:** Always active in silver-ui (UI workflow is inherently UI work — no trigger detection needed).
-
-**Steps** (all via Skill tool):
-1. `design:design-system` (Always)
-2. `design:ux-copy` (As-needed — user-facing copy requires review)
-3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
-4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
-
-**Iterative:** User can loop steps 1-4. Claude suggests when design contract is solid; user decides exit.
-
-**Exit Condition:** UI-SPEC.md exists, user accepts design contract.
+Invoke `gsd-ui-phase` via the Skill tool. Purpose: create UI-SPEC.md design contract — component API, layout rules, interaction spec. This step is the key differentiator from silver:feature.
 
 ## Step 6: Plan Phase
 
@@ -124,22 +112,9 @@ Run review sequence in order:
 3. For architecturally significant UI systems: invoke `gsd-review --multi-ai` via the Skill tool (cross-AI adversarial review).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
-## PATH 8: UI QUALITY — Post-execution UI audit
+## Step 9: UI Visual Audit
 
-**Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
-
-**Note:** Always active in silver-ui (no trigger detection needed).
-
-**Steps** (all via Skill tool):
-1. `design:design-critique` (Always)
-2. `gsd-ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
-3. `design:accessibility-review` (Always)
-
-**Produces:** UI-REVIEW.md. Fixes route through `gsd-execute-phase --gaps-only`.
-
-**Review Cycle:** UI-REVIEW.md through artifact-review-assessor, fix critical via GSD, re-audit.
-
-**Exit Condition:** UI-REVIEW.md exists with no critical findings, or user accepts.
+Invoke `gsd-ui-review` via the Skill tool. Purpose: 6-pillar visual audit of implemented UI — layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance. This step is unique to the UI workflow.
 
 ## Step 10: Frontend Security
 
