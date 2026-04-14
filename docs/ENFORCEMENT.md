@@ -7,16 +7,16 @@ Silver Bullet enforces workflow compliance through 7 independent layers. No sing
 | # | Layer | Mechanism | Fires On | What It Prevents |
 |---|-------|-----------|----------|-----------------|
 | 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Every Skill tool call | Skills invoked but not tracked |
-| 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, Bash | Code changes before planning is complete |
-| 3 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required skills |
+| 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, Bash | Code changes before planning is complete. Uses WORKFLOW.md Path Log as primary gate with legacy fallback. |
+| 3 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. WORKFLOW.md-first with legacy fallback. |
 | 4 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
-| 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — emits live score |
+| 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (PATH N/M) or skill count (legacy) |
 | 6 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
 | 7 | **Model Routing** | `ensure-model-routing.sh` (PreToolUse) | Agent tool calls | Wrong model for task type |
 
 ## Dev Cycle Gate (4-Stage)
 
-`dev-cycle-check.sh` enforces a sequential workflow via 4 stages:
+`dev-cycle-check.sh` enforces a sequential workflow. When WORKFLOW.md exists, the dev-cycle gate checks Path Log completion as the primary signal. The 4-stage skill-based check is the legacy fallback for projects without WORKFLOW.md.
 
 | Stage | Requires | Blocks Until |
 |-------|----------|-------------|
@@ -24,6 +24,20 @@ Silver Bullet enforces workflow compliance through 7 independent layers. No sing
 | B — Planning | Planning skills in state | GSD planning complete |
 | C — Code Review | `code-review` in state | Review before finalization |
 | D — Finalization | All `required_deploy` skills | All required skills invoked |
+
+## WORKFLOW.md-First Enforcement Pattern
+
+All hooks check WORKFLOW.md first, falling back to legacy skill markers when WORKFLOW.md is absent.
+
+| Hook | WORKFLOW.md Mode | Legacy Fallback |
+|------|-----------------|-----------------|
+| `dev-cycle-check.sh` | Path Log shows planning paths complete | 4-stage skill marker check |
+| `completion-audit.sh` | Path Log shows all required paths complete | `required_deploy` skill list check |
+| `compliance-status.sh` | Shows path progress (PATH N/M) | Shows skill count only |
+| `prompt-reminder.sh` | Includes current WORKFLOW.md position | Omits composition context |
+| `spec-floor-check.sh` | Advisory when PATH 4 excluded from composition | Hard gate always |
+
+Detection: hooks check for `.planning/WORKFLOW.md` existence. Present = composable paths mode, absent = legacy mode.
 
 ## Skill Classification
 
@@ -59,4 +73,4 @@ Silver Bullet detects and blocks:
 
 ## Scalability
 
-**Fixed** — this document describes structural layers that change only when enforcement architecture changes. Not append-only.
+**Fixed** — this document describes structural layers that change only when enforcement architecture changes. Dual-mode hooks support both composable-paths projects (WORKFLOW.md) and legacy projects (skill markers). Not append-only.

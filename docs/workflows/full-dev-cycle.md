@@ -1,5 +1,10 @@
 # Full Dev Cycle Workflow
 
+> **NOTE:** This document shows a representative path composition for feature development.
+> The actual workflow is dynamically composed by `/silver` based on context.
+> See `silver-bullet.md` §2h for the composable paths architecture and
+> `docs/composable-paths-contracts.md` for the full path catalog.
+
 > **ENFORCED** -- Silver Bullet hooks track Skill tool invocations for quality gates
 > and gap-filling skills. GSD's own hooks (workflow guard, context monitor) enforce
 > GSD step compliance independently. Both enforcement layers run in parallel.
