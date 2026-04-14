@@ -420,6 +420,35 @@ out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exc
 assert_passes "WF4: all workflow paths complete overrides legacy" "$out"
 teardown
 
+# WF5: Bug-2 regression — Phase Iterations and Autonomous Decisions rows don't inflate total
+echo "--- WF5: Bug-2 regression — digit-starting rows in other sections don't inflate total ---"
+setup
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Flow Log
+| # | Flow | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | complete |
+| 11 | VERIFY | complete |
+| 13 | SHIP | complete |
+
+## Phase Iterations
+| Phase | Status |
+|-------|--------|
+| 01 (feature-phase) | FLOW 5 complete, FLOW 7 complete |
+
+## Autonomous Decisions
+| Timestamp | Decision | Rationale |
+|-----------|----------|-----------|
+| 2026-04-15T10:00:00Z | Skipped FLOW 4 | No SPEC.md found |
+| 2026-04-15T10:05:00Z | Auto-confirmed | autonomous mode |
+WFEOF
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF5: Phase Iterations and Autonomous Decisions rows don't inflate total (Bug-2 regression)" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

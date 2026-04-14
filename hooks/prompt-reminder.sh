@@ -149,10 +149,10 @@ fi
 workflow_file="$PWD/.planning/WORKFLOW.md"
 workflow_position=""
 if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Extract Last-path from Heartbeat section
+  # Extract Last-flow from Heartbeat section
   last_path=""
   last_path=$(grep -A1 '## Heartbeat' "$workflow_file" 2>/dev/null | grep 'Last-flow:' | sed 's/Last-flow:[[:space:]]*//' | tr -d '\r' || true)
-  # Extract next path from Next Path section
+  # Extract next flow from Next Flow section
   next_path=""
   next_path=$(grep -A1 '## Next Flow' "$workflow_file" 2>/dev/null | tail -1 | sed 's/^[[:space:]]*//' | tr -d '\r' || true)
   # Extract mode from Composition section

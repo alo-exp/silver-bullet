@@ -141,7 +141,7 @@ if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   wf_total=0
   wf_parse_ok=false
   if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-     wf_total=$(grep -cE '^\| [0-9]' "$workflow_file" 2>/dev/null); then
+     wf_total=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null); then
     wf_parse_ok=true
   fi
 

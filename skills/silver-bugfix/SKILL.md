@@ -48,7 +48,7 @@ Check the following artifacts and set skip/include flags:
 
 ### 2. Build Path Chain
 
-Construct the proposed path chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
+Construct the proposed flow chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
 FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
 
@@ -81,12 +81,12 @@ If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md
 - Populate `Composed:` with the current ISO timestamp
 - Populate `Composer:` with `/silver:bugfix`
 - Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
+- Record the confirmed flow chain in the Flow Log section header
 
-After each path completes, write status to Path Log table:
+After each path completes, write status to Flow Log table:
 
 ```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
 ```
 
 ## Step-Skip Protocol

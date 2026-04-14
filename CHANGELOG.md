@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.20.1] — 2026-04-15
+
+### Fixed
+- `compliance-status.sh` Bug-1: WORKFLOW.md flow progress (`FLOW N/M`) now shown in early-exit path (no state file) — was omitted before this fix
+- `compliance-status.sh` Bug-2: Row-count regex tightened from `^\| [0-9]` to `^\| [0-9]+ \|` — Phase Iterations and Autonomous Decisions rows no longer inflate the total flow count
+- Same Bug-2 regex fix applied to `completion-audit.sh` and `dev-cycle-check.sh` (same pattern, same exposure)
+
+### Changed
+- Terminology rename: "paths" → "flows" and "Composable Path Architecture" → "Composable Workflow Orchestration" project-wide (42 files)
+- WORKFLOW.md sections renamed: `Path Log` → `Flow Log`, `Next Path` → `Next Flow`, `Last-path:` → `Last-flow:`
+- Status output updated: `PATH N/M` → `FLOW N/M`, `PATH: N/A (legacy mode)` → `FLOW: N/A (legacy mode)`
+
+### Added
+- 7-scenario integration test suite for `compliance-status.sh` WORKFLOW.md flow-progress display (S1–S7 covering early-exit, symlink, malformed, digit-row false positives, mixed counts)
+- Bug-2 inflation regression tests for `completion-audit.sh` (WF3) and `dev-cycle-check.sh` (WF5)
+
 ## [0.15.3] — 2026-04-10
 
 ### Fixed — SENTINEL v2.3 Security Audit Findings

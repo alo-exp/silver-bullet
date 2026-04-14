@@ -90,7 +90,7 @@ Build the WORKFLOW.md content by filling in:
 - `Composer:` → `/silver:migrate`
 - `Mode:` → `interactive`
 
-**Path Log table:** Add one row per path in the determined composition:
+**Flow Log table:** Add one row per path in the determined composition:
 ```
 | {#} | {PATH NAME} | {status} | {artifact filename(s) or "—"} | {Yes / No / Inferred} |
 ```
@@ -129,7 +129,7 @@ Paths excluded from composition:
   - FLOW 14 (DEBUG): not applicable
   - ...
 
-Next path after migration: PATH {N} ({NAME})
+Next path after migration: FLOW {N} ({NAME})
 ```
 
 Ask the user to confirm before writing:
@@ -150,7 +150,7 @@ After user confirms (or after adjustments are agreed):
    git add .planning/WORKFLOW.md
    git commit -m "docs(workflow): migrate to composable paths via silver:migrate"
    ```
-3. Confirm to the user: "WORKFLOW.md written and committed. Your project is now on composable paths. Use /silver to continue from PATH {N} ({NAME})."
+3. Confirm to the user: "WORKFLOW.md written and committed. Your project is now on composable flows. Use /silver to continue from FLOW {N} ({NAME})."
 
 ---
 

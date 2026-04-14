@@ -55,7 +55,7 @@ ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 5 — PLA
 
 ### 2. Build Path Chain
 
-Construct the proposed path chain for UI work. Default full chain:
+Construct the proposed flow chain for UI work. Default full chain:
 
 FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
 
@@ -88,12 +88,12 @@ If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md
 - Populate `Composed:` with the current ISO timestamp
 - Populate `Composer:` with `/silver:ui`
 - Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
+- Record the confirmed flow chain in the Flow Log section header
 
-After each path completes, write status to Path Log table:
+After each path completes, write status to Flow Log table:
 
 ```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
 ```
 
 ## Step-Skip Protocol

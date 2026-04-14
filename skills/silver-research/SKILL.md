@@ -50,7 +50,7 @@ ls .planning/research/ 2>/dev/null | head -5
 
 ### 2. Build Path Chain
 
-Construct the proposed path chain for research/exploration work. Short chain — research produces artifacts only:
+Construct the proposed flow chain for research/exploration work. Short chain — research produces artifacts only:
 
 FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
 
@@ -83,12 +83,12 @@ If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md
 - Populate `Composed:` with the current ISO timestamp
 - Populate `Composer:` with `/silver:research`
 - Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
+- Record the confirmed flow chain in the Flow Log section header
 
-After each path completes, write status to Path Log table:
+After each path completes, write status to Flow Log table:
 
 ```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
 ```
 
 ## Step-Skip Protocol

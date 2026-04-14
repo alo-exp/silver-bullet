@@ -58,7 +58,7 @@ grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 
 ### 2. Build Path Chain
 
-Construct the proposed path chain from the 18-flow catalog (FLOW 0-17), including only relevant paths based on the context scan. Standard full-feature chain:
+Construct the proposed flow chain from the 18-flow catalog (FLOW 0-17), including only relevant paths based on the context scan. Standard full-feature chain:
 
 FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (INTEL) → FLOW 3 (BRAINSTORM) → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (TDD) → FLOW 10 (REVIEW) → FLOW 11 (VERIFY) → FLOW 12 (SECURE) → FLOW 13 (SHIP)
 
@@ -90,7 +90,7 @@ If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md
 - Populate `Composed:` with the current ISO timestamp
 - Populate `Composer:` with `/silver:feature`
 - Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed path chain in the Path Log section header
+- Record the confirmed flow chain in the Flow Log section header
 
 ## Per-Phase Loop
 
@@ -150,9 +150,9 @@ The supervision loop runs BETWEEN each PATH completion. It checks exit condition
 Verify the PATH's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
 
 ```
-⚠ PATH {N} exit condition not met: {condition description}
+⚠ FLOW {N} exit condition not met: {condition description}
 Options:
-  A. Retry PATH {N}
+  A. Retry FLOW {N}
   B. Skip with reason (document in WORKFLOW.md)
   C. Insert FLOW 14 (DEBUG) before next path
 ```
@@ -162,10 +162,10 @@ Options:
 Re-evaluate context for dynamic insertion triggers:
 
 - **Execution failed** → insert FLOW 14 (DEBUG) before next path (per D-11):
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
 - **UI files discovered in SUMMARY.md** → insert FLOW 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
   - Check SUMMARY.md for `*.tsx`, `*.css`, `*.html`, or `design/` references
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After PATH {N} | FLOW 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
 
 **Step SL-3: Anti-Stall Check (D-07.3)**
 
@@ -187,7 +187,7 @@ Run 4-tier anti-stall detection:
 
 - **Tier 4 — Heartbeat sentinel (D-19):** Each path invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-flow:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
   ```
-  ⚠ HEARTBEAT GAP: PATH {N} may have stalled. Options: [retry/skip/debug]
+  ⚠ HEARTBEAT GAP: FLOW {N} may have stalled. Options: [retry/skip/debug]
   ```
   Heartbeat timestamps use ISO 8601 format (e.g., `2026-04-15T10:30:00Z`).
 
@@ -205,10 +205,10 @@ PATH {current}/{total}: {name} ✓ | Context: ~{percent}% | Remaining: {list of 
 
 **Step SL-6: WORKFLOW.md Update (D-10)**
 
-Write path status and timestamp to WORKFLOW.md Path Log table:
+Write path status and timestamp to WORKFLOW.md Flow Log table:
 
 ```
-| {#} | PATH {N} ({name}) | complete | {artifacts produced} | ✓ |
+| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
 ```
 
 Also update heartbeat fields:

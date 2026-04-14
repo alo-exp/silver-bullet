@@ -376,6 +376,39 @@ out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "WF2: partial paths -> block final delivery" "$out"
 teardown
 
+# WF3: Bug-2 regression — Phase Iterations and Autonomous Decisions rows don't inflate total
+echo "--- WF3: Bug-2 regression — digit-starting rows in other sections don't inflate total ---"
+setup
+write_cfg
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
+## Flow Log
+| # | Flow | Status |
+|---|------|--------|
+| 0 | BOOTSTRAP | complete |
+| 5 | PLAN | complete |
+| 7 | EXECUTE | complete |
+| 9 | REVIEW | complete |
+| 11 | VERIFY | complete |
+| 13 | SHIP | complete |
+
+## Phase Iterations
+| Phase | Status |
+|-------|--------|
+| 01 (feature-phase) | FLOW 5 complete, FLOW 7 complete |
+
+## Autonomous Decisions
+| Timestamp | Decision | Rationale |
+|-----------|----------|-----------|
+| 2026-04-15T10:00:00Z | Skipped FLOW 4 | No SPEC.md found |
+| 2026-04-15T10:05:00Z | Auto-confirmed | autonomous mode |
+WFEOF
+# All 6 Flow Log rows complete — should allow final delivery despite extra digit-starting rows
+# Must use gh pr create (is_completion=true) — git commit is intermediate and doesn't trigger the total check
+out=$(run_hook "PreToolUse" "gh pr create --title 'release'")
+assert_passes "WF3: Phase Iterations and Autonomous Decisions rows don't inflate total (Bug-2 regression)" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
