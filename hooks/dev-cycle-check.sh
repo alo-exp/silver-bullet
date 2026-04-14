@@ -309,8 +309,8 @@ To reset workflow state intentionally, run in your terminal:
     if path_complete_count=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
        path_total_count=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null); then
       if [[ "$path_total_count" -gt 0 && "$path_complete_count" -eq "$path_total_count" ]]; then
-        # All workflow paths done — allow freely
-        printf '{"hookSpecificOutput":{"message":"✅ All workflow paths complete. Proceed freely."}}'
+        # All flows done — allow freely
+        printf '{"hookSpecificOutput":{"message":"✅ All flows complete. Proceed freely."}}'
         exit 0
       elif [[ "$path_total_count" -gt 0 ]]; then
         # Partial progress — inform but fall through to legacy gate

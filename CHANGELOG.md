@@ -13,6 +13,7 @@
 - Terminology rename: "paths" → "flows" and "Composable Path Architecture" → "Composable Workflow Orchestration" project-wide (42 files)
 - WORKFLOW.md sections renamed: `Path Log` → `Flow Log`, `Next Path` → `Next Flow`, `Last-path:` → `Last-flow:`
 - Status output updated: `PATH N/M` → `FLOW N/M`, `PATH: N/A (legacy mode)` → `FLOW: N/A (legacy mode)`
+- `dev-cycle-check.sh` stale messages updated: "All workflow paths complete" → "All flows complete", partial-progress "PATH %s/%s" → "FLOW %s/%s"
 
 ### Added
 - 7-scenario integration test suite for `compliance-status.sh` WORKFLOW.md flow-progress display (S1–S7 covering early-exit, symlink, malformed, digit-row false positives, mixed counts)
