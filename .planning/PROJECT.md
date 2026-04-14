@@ -40,23 +40,12 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ Existing reviewers formalized into 2-pass framework (plan-checker, code-reviewer, verifier, security-auditor) — v0.15.0
 - ✓ Workflow integration: all producing steps wired to invoke reviewer before completing — v0.15.0
 - ✓ v0.14.0 critical bug fixes: shell injection, heredoc injection, Confluence failure path, version mismatch display — v0.15.0
-- ✓ Cross-artifact consistency reviewer (ARVW-09) — v0.16.0
-- ✓ Review round analytics (ARVW-10) — v0.16.0
-- ✓ Configurable review depth (ARVW-11) — v0.16.0
-- ✓ Hooks exit silently in non-SB projects — v0.19.1
 
 ### Active
 
-- [ ] 17 composable paths architecture (CPA-01)
-- [ ] /silver composer with supervision loop (CPA-02)
-- [ ] WORKFLOW.md persistent composition state (CPA-03)
-- [ ] artifact-review-assessor skill (CPA-04)
-- [ ] 4-tier anti-stall for autonomous development (CPA-05)
-- [ ] Dual-mode quality gates — 9 dimensions (CPA-06)
-- [ ] silver-fast redesign with gsd-quick integration (CPA-07)
-- [ ] /silver:migrate skill (CPA-08)
-- [ ] Hook alignment for WORKFLOW.md awareness (CPA-09)
-- [ ] Help Center + Homepage update (CPA-10)
+- [ ] Cross-artifact consistency reviewer — validates SPEC.md ↔ DESIGN.md ↔ REQUIREMENTS.md are mutually consistent (ARVW-09)
+- [ ] Review round analytics — track review round counts, common finding patterns, time-to-clean-pass metrics (ARVW-10)
+- [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
 
 ### Out of Scope
 
@@ -66,21 +55,14 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.20.0 Composable Paths Architecture
+## Current Milestone: v0.16.0 Advanced Review Intelligence
 
-**Goal:** Redesign Silver Bullet from fixed-pipeline workflows into 17 dynamically composable paths with /silver as composer, WORKFLOW.md state tracking, artifact-review-assessor, 4-tier anti-stall, and dual-mode quality gates.
+**Goal:** Review depth is configurable per artifact type, review rounds emit structured analytics, and a cross-artifact consistency reviewer validates alignment across SPEC/REQUIREMENTS/ROADMAP/DESIGN — building on the v0.15.0 reviewer framework.
 
 **Target features:**
-- 17 composable paths replacing the fixed per-phase loop
-- /silver redesigned from router to composer (hybrid: up-front proposal + dynamic insertion)
-- WORKFLOW.md persistent composition state (separate from GSD STATE.md)
-- artifact-review-assessor skill (reality-checks reviewer findings before fixing)
-- End-to-end supervision loop with 4-tier anti-stall for 100% autonomous development
-- Dual-mode quality gates (design-time checklist + adversarial audit) for all 9 dimensions
-- silver-fast redesign (encompasses gsd-quick with 3-tier complexity triage)
-- /silver:migrate for existing mid-milestone users
-- Hook alignment (5 hooks modified/enhanced for WORKFLOW.md awareness)
-- Help Center + Homepage rewrite reflecting composable architecture
+- A: Configurable review depth (deep/standard/quick) per artifact type via .planning/config.json (ARVW-11)
+- B: Review analytics — structured metrics per review round, JSON Lines storage, summary reporting skill (ARVW-10)
+- C: Cross-artifact consistency reviewer — validates alignment across SPEC.md ↔ REQUIREMENTS.md ↔ ROADMAP.md ↔ DESIGN.md, wired into milestone completion (ARVW-09)
 
 ## Context
 
@@ -89,7 +71,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.19.1
+- Current version: v0.15.3
 
 ## Constraints
 
@@ -127,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after Phase 21 (Foundation) complete — path contracts, WORKFLOW.md template, artifact-review-assessor, doc-scheme update delivered*
+*Last updated: 2026-04-10 after milestone v0.16.0 start*

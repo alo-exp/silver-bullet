@@ -45,76 +45,25 @@ Before proceeding, classify the request:
 | Classification | Signals | Action |
 |----------------|---------|--------|
 | Trivial | ≤3 files, typo, config, rename | STOP — route to `silver:fast` instead |
-| Fuzzy | Vague intent, unclear scope | Continue to PATH 2 exploration steps |
-| Simple | Clear scope, ≤1 phase | Skip exploration, go to PATH 1 |
-| Complex | Multi-phase, cross-cutting | Full workflow including exploration |
+| Fuzzy | Vague intent, unclear scope | Continue to Step 1b (silver:explore) |
+| Simple | Clear scope, ≤1 phase | Skip Step 1b, go to Step 1a |
+| Complex | Multi-phase, cross-cutting | Full workflow including Step 1b |
 
 If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
 
----
+## Step 1a: Codebase Intel
 
-## PATH 0: BOOTSTRAP — Project/milestone lifecycle
+Invoke `silver:intel` (gsd-intel) via the Skill tool to orient planning in the codebase.
 
-### Prerequisite Check
+If no intel files exist and this is a brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
 
-None — entry point. Run this path when no `.planning/` exists, a prior milestone is complete, or the user signals a new project or milestone.
-
-### Steps
-
-1. `episodic-memory:remembering-conversations` (Always — recall prior context before any new work)
-2. `gsd-new-project` (As-needed — no `.planning/` exists)
-3. `gsd-map-codebase` (As-needed — brownfield project, no `.planning/` yet)
-4. `gsd-new-milestone` (As-needed — prior milestone complete)
-5. `gsd-resume-work` (As-needed — continuing a prior session)
-6. `gsd-progress` (As-needed — check current project state)
-
-Invoke each applicable step via the Skill tool.
-
-### Review Cycle
-
-ROADMAP.md and REQUIREMENTS.md through artifact-review-assessor per the Reviewer → Assessor → fix MUST-FIX → Reviewer cycle until 2 consecutive clean passes:
-
-- `ROADMAP.md` → invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` via the Skill tool
-- `REQUIREMENTS.md` → invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool
-
-### Exit Condition
-
-STATE.md exists with valid Current Position.
-
-Verify: `grep -c "Current Position" .planning/STATE.md` returns 1.
-
----
-
-## PATH 1: ORIENT — Codebase awareness
-
-### Prerequisite Check
-
-PATH 0 completed: `.planning/STATE.md` must exist. If not, STOP and run PATH 0 first.
-
-### Steps
-
-1. `gsd-intel` (Always — orient planning in the codebase)
-2. `gsd-scan` (As-needed — brownfield project with no intel files)
-3. `gsd-map-codebase` (As-needed — first time, deep structural analysis needed)
-
-Invoke each applicable step via the Skill tool.
-
-### Exit Condition
-
-Intel files exist in `.planning/intel/` OR scan complete.
-
----
-
-## Non-core path steps: Exploration & Ideation
-<!-- These steps map to PATH 2 (EXPLORE), PATH 3 (IDEATE), PATH 4 (SPECIFY), PATH 6 (DESIGN CONTRACT), and PATH 12 pre-plan quality gate. They will become full composable paths in Phase 23-24. -->
-
-### Step 1b: Fuzzy Scope Clarification — PATH 2 (EXPLORE) [future]
+## Step 1b: Fuzzy Scope Clarification (conditional)
 
 **Only if complexity triage found fuzzy intent or $ARGUMENTS is empty:**
 
 Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarification before structured brainstorming.
 
-### Step 1c: Brainstorm — PATH 3 (IDEATE) [future]
+## Step 1c: Brainstorm
 
 Run both brainstorm tools in sequence:
 
@@ -124,7 +73,7 @@ Invoke `/product-brainstorming` via the Skill tool. Purpose: PM lens — problem
 **1c-ii: Engineering brainstorm**
 Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
 
-### Step 1d: MultAI Pre-Spec Review — PATH 3 (IDEATE) [future, conditional]
+## Step 1d: MultAI Pre-Spec Review (conditional)
 
 **Trigger condition:** Architecture-significant change OR user requested OR any of these auto-trigger signals apply:
 - Choosing between 2+ fundamentally different architectures
@@ -141,15 +90,15 @@ If condition met, ask:
 
 If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --multi-ai) reviews completed code POST-execution. Both are independent.
 
-### Step 2: Testing Strategy — PATH 4 (SPECIFY) [future]
+## Step 2: Testing Strategy
 
 Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tooling, coverage targets — MUST run after spec approval and before writing-plans so test requirements are baked into the implementation plan.
 
-### Step 2.5: Writing Plans — PATH 5 pre-step [future PATH 4]
+## Step 2.5: Writing Plans
 
 Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
 
-### Step 2.7: Pre-Build Validation — PATH 12 pre-plan quality gate [future]
+## Step 2.7: Pre-Build Validation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
@@ -164,195 +113,102 @@ Only proceed to Step 3 (quality-gates) when silver-validate reports zero BLOCK f
 
 WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
 
-### Step 3: Pre-Plan Quality Gates (9 dimensions) — PATH 12 pre-plan [future]
+## Step 3: Pre-Plan Quality Gates (9 dimensions)
 
 Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
 
 `silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in quality-gates (one of the 9 dimensions — not a separate step).
 
----
+## Step 4: Discuss Phase
 
-## PATH 5: PLAN — Execution planning
+Invoke `gsd-discuss-phase` via the Skill tool. Purpose: adaptive questioning → CONTEXT.md with locked decisions for the planner.
 
-### Prerequisite Check
+## Step 5: Analyze Dependencies
 
-All three must exist. Check each and STOP with a specific message if missing:
+Invoke `gsd-analyze-dependencies` via the Skill tool. Purpose: map phase dependencies before GSD creates the plan.
 
-```bash
-[ -f ".planning/ROADMAP.md" ]       || echo "STOP: ROADMAP.md missing — run PATH 0 first"
-[ -f ".planning/REQUIREMENTS.md" ]  || echo "STOP: REQUIREMENTS.md missing — run PATH 0 first"
-ls .planning/phases/ 2>/dev/null | grep -q . || echo "STOP: phase directory missing — run gsd-new-milestone first"
-```
+## Step 6: Plan Phase
 
-### Steps
+Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification loop.
 
-1. `gsd-discuss-phase` (Always — adaptive questioning → CONTEXT.md)
-2. `superpowers:writing-plans` (Always — spec-to-plan bridge)
-3. `engineering:testing-strategy` (Always — test requirements baked in before planning)
-4. `gsd-list-phase-assumptions` (As-needed — surface hidden assumptions)
-5. `gsd-analyze-dependencies` (Always — map phase dependencies)
-6. `gsd-plan-phase` (Always — produce PLAN.md with verification loop)
+## Step 7: Execute Phase
 
-Invoke each applicable step via the Skill tool.
+**If mode is Interactive (default):** invoke `gsd-execute-phase` via the Skill tool.
+**If mode is Autonomous (§10e):** invoke `gsd-autonomous` via the Skill tool.
 
-### Review Cycle
+**Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
-Artifact review through artifact-review-assessor per the Reviewer → Assessor → fix MUST-FIX → Reviewer cycle until 2 consecutive clean passes:
+## Step 7a: TDD Gate (implementation plans only)
 
-- `CONTEXT.md` → invoke `/artifact-reviewer .planning/phases/{phase}/CONTEXT.md --reviewer review-context` via the Skill tool
-- `RESEARCH.md` → invoke `/artifact-reviewer .planning/phases/{phase}/RESEARCH.md --reviewer review-research` via the Skill tool (if it exists)
-- `PLAN.md` → invoke `/artifact-reviewer` with `--reviewer gsd-plan-checker` via the Skill tool (max 3 iterations, 2 consecutive clean passes required)
+**Only for implementation plans — skip for config/infra/doc plans:**
+Heuristic: if the PLAN.md modifies source files containing business logic or application code, it is an implementation plan. Config-only, docs-only, or infra-only plans skip this step.
 
-### Exit Condition
+Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool. Purpose: TDD red-green-refactor discipline per implementation task.
 
-PLAN.md exists with plan-checker PASS (2 consecutive clean passes).
+## Step 8: Verify Work
 
----
+Invoke `gsd-verify-work` via the Skill tool. Purpose: UAT, must-haves, artifact checks. Phase is NOT complete until this passes. Non-skippable.
 
-## PATH 7: EXECUTE — GSD wave-based implementation
+## Step 8b: Test Gap Fill (conditional)
 
-### Prerequisite Check
+**Only if gsd-verify-work surfaces coverage gaps:**
 
-Both must pass. If either fails, STOP with specific message:
+Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT criteria to fill gaps identified by verification — runs after gsd-verify-work so gap targets are known.
 
-```bash
-[ -f ".planning/phases/{phase}/{plan}-PLAN.md" ] || echo "STOP: PLAN.md missing — run PATH 5 first"
-grep "Current Position.*{phase}" .planning/STATE.md  || echo "STOP: STATE.md position does not match current phase — check STATE.md"
-```
-
-### Steps
-
-1. `superpowers:test-driven-development` (As-needed — implementation plans only, per D-09; skip for config/infra/doc plans)
-2. `gsd-execute-phase` (Interactive mode, Always) OR `gsd-autonomous` (Autonomous mode per §10e, Always) — these are the sole execution engines; do not implement features directly
-3. `context7-plugin:context7-mcp` (Ambient — available during execution for library documentation lookups, per D-11)
-
-Invoke each applicable step via the Skill tool.
-
-### Failure Path
-
-If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage. Return here only after bugfix confirms the root cause is resolved.
-
-(PATH 14 DEBUG dynamic insertion will be implemented in Phase 24, per D-10.)
-
-### Exit Condition
-
-All PLAN.md files for the current phase have SUMMARY.md, STATE.md advanced.
-
----
-
-## Non-core path steps: Review, Security, Quality
-<!-- These steps map to PATH 9 (REVIEW), PATH 10 (SECURE), PATH 8 (UI QUALITY), and PATH 12 pre-ship quality gate. They will become full composable paths in Phase 23-24. -->
-
-### Step 9a: Request Code Review — PATH 9 (REVIEW) [future]
+## Step 9a: Request Code Review
 
 Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
 
-### Step 9b: Run Code Review — PATH 9 (REVIEW) [future]
+## Step 9b: Run Code Review
 
 Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md.
 
 If issues found in REVIEW.md: invoke `gsd-code-review-fix` via the Skill tool to auto-fix findings atomically before human review.
 
-### Step 9c: Cross-AI Review — PATH 9 (REVIEW) [future, conditional]
+## Step 9c: Cross-AI Review (conditional)
 
 **Only for architecturally significant changes or user request:**
 
 Invoke `gsd-review --multi-ai` via the Skill tool. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code.
 
-### Step 9d: Receive Review — PATH 9 (REVIEW) [future]
+## Step 9d: Receive Review
 
 Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
 
-### Step 10: Security Review — PATH 10 (SECURE) [future]
+## Step 10: Security Review
 
 Invoke `silver:security` via the Skill tool. Non-skippable gate.
 
-### Step 11: Secure Phase — PATH 10 (SECURE) [future]
+## Step 11: Secure Phase
 
 Invoke `gsd-secure-phase` via the Skill tool. Purpose: retroactive threat mitigation verification.
 
-### Step 12: Validate Phase — PATH 10 (SECURE) [future]
+## Step 12: Validate Phase
 
 Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap filling.
 
-### Step 13: Pre-Ship Quality Gates (9 dimensions) — PATH 12 pre-ship [future]
+## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
 Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
 
----
+## Step 14: Finishing Branch
 
-## PATH 11: VERIFY — Non-skippable verification
+Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool. Purpose: merge / PR / cleanup decision.
 
-### Prerequisite Check
+## Step 15a: PR Branch (ask user)
 
-PATH 7 completed: at least one SUMMARY.md must exist for the current phase. If not, STOP and complete PATH 7 first.
-
-```bash
-ls .planning/phases/{phase}/*-SUMMARY.md 2>/dev/null | grep -q . || echo "STOP: No SUMMARY.md found — PATH 7 must complete first"
-```
-
-### NON-SKIPPABLE
-
-This path cannot be skipped regardless of §10 preferences. Refuse all skip requests for this path and its steps.
-
-### Steps
-
-1. `gsd-verify-work` (Always — NON-SKIPPABLE; produces UAT.md and VERIFICATION.md; phase is NOT complete until this passes)
-2. `gsd-add-tests` (As-needed — only if gsd-verify-work surfaces coverage gaps; generates tests from UAT criteria)
-3. `superpowers:verification-before-completion` (Always — structured verification discipline before declaring done)
-
-Invoke each applicable step via the Skill tool.
-
-### Review Cycle
-
-UAT.md through artifact-review-assessor per the Reviewer → Assessor → fix MUST-FIX → Reviewer cycle until 2 consecutive clean passes:
-
-- `UAT.md` → invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` via the Skill tool
-
-### Exit Condition
-
-VERIFICATION.md exists with `status: passed` (2 consecutive clean passes).
-
----
-
-## PATH 13: SHIP — Deliver
-
-### Prerequisite Check
-
-All four must pass. If any fail, STOP with the specific message. Per D-14:
-
-```bash
-# PATH 12 pre-ship quality gates must have passed (Step 13 above completed)
-# PATH 11 completed: VERIFICATION.md with status: passed
-grep -q "status: passed" .planning/VERIFICATION.md || echo "STOP: PATH 11 not complete — VERIFICATION.md must show status: passed"
-# Clean working tree
-git status --porcelain | grep -q . && echo "STOP: Working tree is not clean — commit or stash changes" || true
-# On a feature branch (not main/master)
-git rev-parse --abbrev-ref HEAD | grep -qE "^(main|master)$" && echo "STOP: Must be on a feature branch, not main/master" || true
-```
-
-### Steps
-
-1. `superpowers:finishing-a-development-branch` (Always — merge / PR / cleanup decision; skip only when current branch is main, per project convention)
-2. `gsd-pr-branch` (As-needed — user chooses clean PR branch that strips .planning/ commits)
-3. `engineering:deploy-checklist` (As-needed — production deployment required)
-4. `gsd-ship` (Always — push branch, create PR, prepare for merge at phase level)
-
-Invoke each applicable step via the Skill tool.
-
-**PR branch choice:** Ask the user before gsd-pr-branch:
+Ask user:
 
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
+If A: invoke `gsd-pr-branch` via the Skill tool.
 If C: record preference in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
 
-### Exit Condition
+## Step 15b: Ship Phase
 
-PR created, CI green. Per D-15.
-
----
+Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
 
 ## Step 16: Episodic Memory
 
