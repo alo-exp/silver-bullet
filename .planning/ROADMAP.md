@@ -123,8 +123,8 @@ Plans:
   5. 4-tier anti-stall operates -- progress-based detection, permission-stall prevention, context exhaustion prevention, heartbeat sentinel
 **Plans**: 2 plans
 Plans:
-- [ ] 25-01-PLAN.md — TBD
-- [ ] 25-02-PLAN.md — TBD
+- [ ] 25-01-PLAN.md — Composition proposal + supervision loop + anti-stall in silver-feature + workflow.md.base heartbeat
+- [ ] 25-02-PLAN.md — Composition proposals in 5 remaining silver-* workflows + /silver router compatibility
 
 ### Phase 26: Hook Alignment + silver:migrate
 **Goal**: All hooks are WORKFLOW.md-aware with legacy fallback, and existing mid-milestone users can migrate to composable paths
