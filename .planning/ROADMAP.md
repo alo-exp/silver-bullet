@@ -44,7 +44,7 @@
 - [ ] **Phase 23: Specialized Paths** - 6 context-triggered paths (EXPLORE, IDEATE, SPECIFY, DESIGN CONTRACT, UI QUALITY, DESIGN HANDOFF)
 - [ ] **Phase 24: Cross-Cutting Paths + Quality Gate Dual-Mode** - 7 cross-cutting paths plus dual-mode quality gates
 - [x] **Phase 25: Composer Redesign** - /silver as composer with supervision loop, dynamic insertion, anti-stall (completed 2026-04-14)
-- [ ] **Phase 26: Hook Alignment + silver:migrate** - 5 hooks modified for WORKFLOW.md awareness plus migration skill
+- [x] **Phase 26: Hook Alignment + silver:migrate** - 5 hooks modified for WORKFLOW.md awareness plus migration skill (completed 2026-04-14)
 - [ ] **Phase 27: silver-fast Redesign** - 3-tier complexity triage with gsd-quick flags and autonomous escalation
 - [ ] **Phase 28: Documentation Update** - silver-bullet.md, doc-scheme, ENFORCEMENT.md, full-dev-cycle demotion
 - [ ] **Phase 29: Help Center + Homepage** - Homepage refresh and help center rewrite for composable architecture
@@ -137,8 +137,8 @@ Plans:
   4. silver:migrate scans STATE.md + artifacts, infers path completion, generates WORKFLOW.md, and user confirms before applying
 **Plans**: 2 plans
 Plans:
-- [ ] 26-01-PLAN.md — WORKFLOW.md awareness in 5 hook scripts with legacy fallback
-- [ ] 26-02-PLAN.md — silver:migrate skill with artifact-to-path inference
+- [x] 26-01-PLAN.md — WORKFLOW.md awareness in 5 hook scripts with legacy fallback
+- [x] 26-02-PLAN.md — silver:migrate skill with artifact-to-path inference
 
 ### Phase 27: silver-fast Redesign
 **Goal**: silver-fast triages work into 3 complexity tiers with appropriate routing and autonomous escalation
@@ -195,7 +195,7 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | 23. Specialized Paths | v0.20.0 | 0/2 | Not started | - |
 | 24. Cross-Cutting + Quality Gates | v0.20.0 | 0/2 | Not started | - |
 | 25. Composer Redesign | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
-| 26. Hook Alignment + Migrate | v0.20.0 | 0/2 | Not started | - |
+| 26. Hook Alignment + Migrate | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
 | 27. silver-fast Redesign | v0.20.0 | 0/2 | Not started | - |
 | 28. Documentation Update | v0.20.0 | 0/2 | Not started | - |
 | 29. Help Center + Homepage | v0.20.0 | 0/2 | Not started | - |
