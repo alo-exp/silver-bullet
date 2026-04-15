@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=lib/workflow-utils.sh
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+# shellcheck disable=SC1091
+[[ -f "$_lib_dir/workflow-utils.sh" ]] && source "$_lib_dir/workflow-utils.sh"
+# Fallback definitions if sourcing failed (e.g. in test environments or path resolution issues)
+if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
+  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| complete' "$1" 2>/dev/null || echo 0; }
+fi
+
 # Pre+PostToolUse hook (matcher: Bash)
 # Detects git commit/push/deploy commands and blocks if workflow is incomplete.
 #
@@ -140,8 +150,8 @@ if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   wf_complete=0
   wf_total=0
   wf_parse_ok=false
-  if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-     wf_total=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null); then
+  if wf_complete=$(count_complete_flow_rows "$workflow_file") && \
+     wf_total=$(count_flow_log_rows "$workflow_file"); then
     wf_parse_ok=true
   fi
 
@@ -149,19 +159,19 @@ if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
     if [[ "$is_intermediate" == true ]]; then
       # For intermediate commits: any path completed means planning is underway — allow
       if [[ "$wf_complete" -gt 0 ]]; then
-        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: %s/%s paths complete. Intermediate commit allowed."}}\n' \
+        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: %s/%s flows complete. Intermediate commit allowed."}}\n' \
           "$wf_complete" "$wf_total"
         exit 0
       fi
-      # No paths complete yet — fall through to legacy check
+      # No flows complete yet — fall through to legacy check
     elif [[ "$is_completion" == true ]]; then
       if [[ "$wf_complete" -eq "$wf_total" ]]; then
-        # All paths complete — final delivery allowed
-        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: all %s paths complete. Delivery allowed."}}\n' "$wf_total"
+        # All flows complete — final delivery allowed
+        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: all %s flows complete. Delivery allowed."}}\n' "$wf_total"
         exit 0
       else
-        # Not all paths done — block final delivery
-        emit_block "WORKFLOW INCOMPLETE — ${wf_complete}/${wf_total} paths done. Complete all paths before final delivery."
+        # Not all flows done — block final delivery
+        emit_block "WORKFLOW INCOMPLETE — ${wf_complete}/${wf_total} flows done. Complete all flows before final delivery."
         exit 0
       fi
     fi

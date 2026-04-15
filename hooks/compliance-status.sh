@@ -2,6 +2,16 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+# Load shared workflow utilities (TD-1: single source of truth for Flow Log regex)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
+  source "$_lib_dir/workflow-utils.sh"
+fi
+if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
+  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| complete' "$1" 2>/dev/null || echo 0; }
+fi
+
 # PostToolUse hook (matcher: .*)
 # Shows a compact compliance progress score on every tool use.
 # PERFORMANCE CRITICAL: must complete in <100ms. Minimal I/O.
@@ -120,7 +130,7 @@ if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
   # Previous pattern '^\| [0-9]' matched Phase Iterations ('| 01 (phase)') and
   # Autonomous Decisions ('| 2026-...') rows, inflating the total count.
   if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-     wf_total=$(grep -cE '^\| [0-9]+ \|' "$workflow_file" 2>/dev/null) && \
+     wf_total=$(count_flow_log_rows "$workflow_file") && \
      [[ "$wf_total" -gt 0 ]]; then
     path_progress="FLOW ${wf_complete}/${wf_total}"
   fi
