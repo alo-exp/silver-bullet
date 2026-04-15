@@ -112,18 +112,16 @@ if [[ "$active_workflow" == "devops-cycle" ]]; then
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 fi
 
-# Mandatory finalization skills
-mandatory="testing-strategy documentation finishing-a-development-branch deploy-checklist"
-
 # When on main/master branch, finishing-a-development-branch is not applicable
 if [[ "$on_main" == true ]]; then
-  mandatory="testing-strategy documentation deploy-checklist"
   DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
   required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
+# When config supplies required_deploy, it is the sole source of truth.
+# When config is absent, fall back to DEFAULT_REQUIRED from required-skills.sh.
 if [[ -n "$required_deploy_cfg" ]]; then
-  all_skills="$required_deploy_cfg $mandatory"
+  all_skills="$required_deploy_cfg"
 else
   all_skills="$DEFAULT_REQUIRED"
 fi
