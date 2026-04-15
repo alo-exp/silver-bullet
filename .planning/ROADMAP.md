@@ -198,3 +198,25 @@ Phases 21 -> 22 -> 23 -> 24 -> 25 -> 26 -> 27 + 28 (parallel possible) -> 29
 | 27. silver-fast Redesign | v0.20.0 | 0/1 | Not started | - |
 | 28. Documentation Update | v0.20.0 | 0/2 | Not started | - |
 | 29. Help Center + Homepage | v0.20.0 | 2/2 | Complete   | 2026-04-14 |
+
+## Backlog
+
+Items below are deferred, not yet scheduled to a milestone. Numbered 999.x.
+
+| # | Item | Source | Priority | Effort |
+|---|------|--------|----------|--------|
+| 999.1 | `jq` CI assertions for `required_deploy`/`all_tracked` correctness (silent drift risk if arrays diverge) | docs/tech-debt.md Phase 2 | High | Low |
+| 999.2 | `diff` CI step for `docs/workflows/` vs `templates/workflows/` parity (template drift has caused bugs) | docs/tech-debt.md Phase 2 | High | Low |
+| 999.3 | Derive `finalization_skills` from `.silver-bullet.json` at hook runtime instead of hardcoded string in `hooks/dev-cycle-check.sh` line 371 | docs/tech-debt.md Phase 2 | Medium | Medium |
+| 999.4 | Investigate and fix T2-1 test failure in `tests/hooks/test-timeout-check.sh` ("expected 'Check-in', got: ") | forensics 2026-04-16 | Medium | Low |
+| 999.5 | Create or verify `docs/KNOWLEDGE.md` and `docs/LESSONS.md` — referenced in session log but files are missing | forensics 2026-04-16 | Medium | Low |
+| 999.6 | Add test for roadmap-freshness hook: missing ROADMAP.md path edge case (deferred from aeda816 code review) | code review aeda816 | Medium | Low |
+| 999.7 | Fix regex convention drift in `hooks/roadmap-freshness.sh` that allows silent pass (deferred from aeda816 code review) | code review aeda816 | Medium | Low |
+| 999.8 | Create missing VERIFICATION.md for phases 25, 26, 27, 28, 29 (skipped during autonomous v0.20.0 execution) | forensics gsd-2026-04-16 | Low | Medium |
+| 999.9 | Reconcile STATE.md `completed_phases: 6` stale value + narrative section (shows Phase 21 active) | forensics gsd-2026-04-16 | Low | Low |
+| 999.10 | Investigate Phase 23 missing PLAN.md/CONTEXT.md artifacts (work completed, but planning artifacts absent) | forensics gsd-2026-04-16 | Low | Low |
+| 999.11 | PATH 9 layer parallelism: sequential invocation is current; true parallelism is a future optimization | Phase 24 CONTEXT.md | Low | High |
+| 999.12 | Post-work deferred-item capture step: add mechanism in SB composable flows to add deferred items to backlog after each flow's core work completes | user request 2026-04-16 | High | Medium |
+| 999.13 | During-work deferred-item capture: add instructions/mechanisms so that items deferred or ignored during execution are automatically added to GSD backlog | user request 2026-04-16 | High | Medium |
+| 999.14 | After-review backlog enforcement: after any review (code review, quality gates, security), low-priority/suggested items must be implemented immediately or added to backlog — not silently dropped | user request 2026-04-16 | High | Low |
+| 999.15 | Analyze composable flows for atomicity: split non-atomic flows, eliminate redundancy from arbitrary compositions, fix ordering issues that cause work at wrong step | user request 2026-04-16 | High | High |

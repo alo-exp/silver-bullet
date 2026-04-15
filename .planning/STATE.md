@@ -71,7 +71,8 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Pending Todos
 
-(none)
+- 2026-04-06: Implement SDLC coverage expansion roadmap (v0.11–v0.17) [docs]
+- 2026-04-15: Check and create missing Knowledge and Lessons docs [docs]
 
 ### Blockers/Concerns
 
