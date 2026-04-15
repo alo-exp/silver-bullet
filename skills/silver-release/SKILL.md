@@ -202,6 +202,10 @@ Invoke `/artifact-reviewer --reviewer review-cross-artifact --artifacts .plannin
 
 Do NOT proceed to Step 8 (Ship) until cross-artifact review reports clean pass. If unresolvable after 5 rounds, STOP and present to the user.
 
+## Step 7b: Pre-Ship Deployment Checklist
+
+Invoke `/deploy-checklist` via the Skill tool. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
+
 ## Step 8: Ship — Deploy, CI Green, Tag Push
 
 Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push the version tag. This MUST succeed before milestone is archived.

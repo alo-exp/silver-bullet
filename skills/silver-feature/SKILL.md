@@ -360,6 +360,10 @@ Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT crit
 
 Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
 
+## Step 9a2: Code Review Criteria
+
+Invoke `/code-review` via the Skill tool. Purpose: establish review criteria and checklist before spawning reviewer agents — ensures reviewers have explicit quality bar to evaluate against.
+
 ## Step 9b: Run Code Review
 
 Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md.
@@ -398,6 +402,10 @@ Invoke `gsd-secure-phase` via the Skill tool. Purpose: retroactive threat mitiga
 ## Step 12: Validate Phase
 
 Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap filling.
+
+## Step 12b: Tech Debt Review
+
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured in the GSD backlog via `gsd-add-backlog`.
 
 ## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
