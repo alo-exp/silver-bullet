@@ -87,10 +87,10 @@ while IFS= read -r summary_path; do
   [[ -z "$phase_num" ]] && continue
 
   # Check if ROADMAP.md has an unticked entry for this phase number
-  # Pattern: - [ ] **Phase 27: (with optional space variants)
-  if grep -qE "^\- \[ \] \*\*Phase ${phase_num}:" "$roadmap_file" 2>/dev/null; then
+  # Pattern: - [ ] **Phase 27: (ERE, no unnecessary backslash escapes)
+  if grep -qE "^- \[ \] \*\*Phase ${phase_num}:" "$roadmap_file" 2>/dev/null; then
     # Checkbox is unticked — flag it
-    phase_title=$(grep -E "^\- \[ \] \*\*Phase ${phase_num}:" "$roadmap_file" | head -1 | sed 's/^- \[ \] //')
+    phase_title=$(grep -E "^- \[ \] \*\*Phase ${phase_num}:" "$roadmap_file" | head -1 | sed 's/^- \[ \] //')
     unticked_phases="${unticked_phases}  [UNTICKED] Phase ${phase_num}: ${phase_title}\n"
   fi
   # If already [x] or not found in ROADMAP — silent pass
