@@ -159,7 +159,16 @@ out=$(run_hook "PreToolUse" "git commit -m 'Phases 23+24 complete'")
 assert_blocks "one unticked among multiple stages: blocks" "$out"
 teardown
 
-# 8. PostToolUse event — hook emits PreToolUse deny format unconditionally regardless of
+# 8. ROADMAP.md missing — passes silently (no roadmap to check against)
+echo "  group: ROADMAP.md missing"
+setup
+# Don't write a ROADMAP.md — only stage a SUMMARY.md
+stage_summary "27-silver-fast-redesign" "27-01"
+out=$(run_hook "PreToolUse" "git commit -m 'Phase 27: complete'")
+assert_passes "no ROADMAP.md: silent pass" "$out"
+teardown
+
+# 9. PostToolUse event — hook emits PreToolUse deny format unconditionally regardless of
 #    the event type in stdin. Hook is registered PreToolUse-only in hooks.json; this test
 #    verifies the hook's own output (deny) not a separate PostToolUse code path.
 echo "  group: PostToolUse event"
