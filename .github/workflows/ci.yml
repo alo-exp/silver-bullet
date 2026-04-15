@@ -49,3 +49,11 @@ jobs:
           bash tests/hooks/test-record-skill.sh
           bash tests/hooks/test-completion-audit.sh
           bash tests/hooks/test-dev-cycle-check.sh
+
+      - name: Lint site HTML (duplicate IDs, structure)
+        run: |
+          npx --yes html-validate@latest \
+            --rule 'no-dup-id:error' \
+            --rule 'void-style:off' \
+            --rule 'attribute-boolean-style:off' \
+            site/**/*.html

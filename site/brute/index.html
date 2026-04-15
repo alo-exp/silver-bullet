@@ -671,16 +671,12 @@
     font-weight: 500;
   }
   .source-item .s-body { flex: 1; }
-  .source-item .s-title {
+  .source-item .source-title {
     font-family: var(--font-heading);
     font-size: 14px;
     font-weight: 700;
     color: var(--heading-muted);
     line-height: 1.3;
-    min-height: 0;
-    background: none;
-    padding: 0;
-    border: none;
   }
   .source-item .s-detail {
     font-family: var(--font-mono);
@@ -1081,91 +1077,91 @@
     <div class="source-item">
       <span class="s-num">S1</span>
       <div class="s-body">
-        <div class="s-title">Fortune — Data centers underutilised</div>
+        <div class="source-title">Fortune — Data centers underutilised</div>
         <div class="s-detail">fortune.com · Aug 2025 · 12–18% utilisation, 10M idle servers, $30B wasted</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S2</span>
       <div class="s-body">
-        <div class="s-title">Flexera State of the Cloud Report 2025</div>
+        <div class="source-title">Flexera State of the Cloud Report 2025</div>
         <div class="s-detail">27–32% cloud waste, unchanged 2019–2025. $182B at $675B market size.</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S3</span>
       <div class="s-body">
-        <div class="s-title">CNCF FinOps Survey 2024</div>
+        <div class="source-title">CNCF FinOps Survey 2024</div>
         <div class="s-detail">Kubernetes clusters: avg 10% CPU, 20% memory utilisation</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S4</span>
       <div class="s-body">
-        <div class="s-title">Harness Cloud Cost Management Report 2025</div>
+        <div class="source-title">Harness Cloud Cost Management Report 2025</div>
         <div class="s-detail">Median EC2 instance: 7–12% CPU utilisation</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S5</span>
       <div class="s-body">
-        <div class="s-title">IEEE / Felter et al. — VM vs. Container benchmark</div>
+        <div class="source-title">IEEE / Felter et al. — VM vs. Container benchmark</div>
         <div class="s-detail">KVM: ~30% throughput loss vs. native on Redis. Docker: &lt;5% overhead.</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S6</span>
       <div class="s-body">
-        <div class="s-title">Pereira et al., ACM SLE 2017</div>
+        <div class="source-title">Pereira et al., ACM SLE 2017</div>
         <div class="s-detail">DOI: 10.1145/3136014.3136031 · Python 75× vs. C on CLBG benchmarks. Validated in Science of Computer Programming, 2021.</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S7</span>
       <div class="s-body">
-        <div class="s-title">Green-Coding.io — Python energy efficiency revisit, 2024</div>
+        <div class="source-title">Green-Coding.io — Python energy efficiency revisit, 2024</div>
         <div class="s-detail">Real-world Python/C gap: ~4× (vs. 75× in pure-compute benchmarks)</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S8</span>
       <div class="s-body">
-        <div class="s-title">TechEmpower Framework Benchmarks — Round 22 (2023) / Round 23 (2025)</div>
+        <div class="source-title">TechEmpower Framework Benchmarks — Round 22 (2023) / Round 23 (2025)</div>
         <div class="s-detail">Laravel ~4,800 req/s (full board); ~2× slower than Symfony (HN thread confirmation). FastAPI: 167,592 req/s JSON. github.com/TechEmpower/FrameworkBenchmarks</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S9</span>
       <div class="s-body">
-        <div class="s-title">JetBrains State of PHP 2025</div>
+        <div class="source-title">JetBrains State of PHP 2025</div>
         <div class="s-detail">Laravel: 64% PHP market share. PHP powers 76.6% of all websites.</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S10</span>
       <div class="s-body">
-        <div class="s-title">Oxford Open Energy — "Black software", 2023</div>
+        <div class="source-title">Oxford Open Energy — "Black software", 2023</div>
         <div class="s-detail">doi.org/10.1093/ooenergy/oiac011 · Software bloat and higher-level languages compound energy inefficiency across the full stack</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S11</span>
       <div class="s-body">
-        <div class="s-title">IEA Energy and AI Report, April 2025</div>
+        <div class="source-title">IEA Energy and AI Report, April 2025</div>
         <div class="s-detail">iea.org/reports/energy-and-ai · 415 TWh (2024) → 945 TWh (2030). 15%/yr growth, 4× other sectors.</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S12</span>
       <div class="s-body">
-        <div class="s-title">Data Center Knowledge — Technical debt & sustainability, 2024</div>
+        <div class="source-title">Data Center Knowledge — Technical debt & sustainability, 2024</div>
         <div class="s-detail">20% CPU overhead from poorly optimised code = equivalent energy increase</div>
       </div>
     </div>
     <div class="source-item">
       <span class="s-num">S13</span>
       <div class="s-body">
-        <div class="s-title">arXiv:2505.02346 — Compiled Python energy study, May 2025</div>
+        <div class="source-title">arXiv:2505.02346 — Compiled Python energy study, May 2025</div>
         <div class="s-detail">2.4–119× improvement from compiled vs. standard CPython runtime</div>
       </div>
     </div>
@@ -1174,12 +1170,15 @@
 
 </div><!-- /deck -->
 
-<div class="progress"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+<div class="progress"><div class="progress-fill" id="progress-fill"></div></div>
 
 <script>
   const slides = document.querySelectorAll('.slide');
   const total = slides.length;
   let current = 0;
+
+  // Set initial progress bar width from JS (single source of truth)
+  document.getElementById('progress-fill').style.width = `${(1 / total) * 100}%`;
 
   function showSlide(n) {
     slides[current].classList.remove('active');
