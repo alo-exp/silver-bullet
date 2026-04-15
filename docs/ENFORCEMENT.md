@@ -63,6 +63,12 @@ Before any release, 4 stages must pass in the current session:
 
 Each stage requires explicit `/superpowers:verification-before-completion` invocation. Stage markers are cleared on session start — no stale markers.
 
+## Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `SILVER_BULLET_STATE_FILE` | `~/.claude/silver-bullet-state.json` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
+
 ## Bypass Detection
 
 Silver Bullet detects and blocks:
