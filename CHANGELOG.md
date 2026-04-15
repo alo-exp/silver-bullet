@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.20.3] — 2026-04-15
+
+### Added
+- `create-release` skill: Step 5 posts a Google Chat notification after publishing a release. Reads `notifications.google_chat_webhook` from `.silver-bullet.json`; silent skip if absent; warns but does not fail if `curl` errors.
+- `.silver-bullet.json`: `notifications.google_chat_webhook` config key for project-local webhook URL storage.
+
 ## [0.20.2] — 2026-04-15
 
 ### Refactored

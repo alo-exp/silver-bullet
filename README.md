@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.20.2** — Flow Log regex extracted to shared lib (`hooks/lib/workflow-utils.sh`) with fallback definitions for resilience; 169-test skill execution path suite covering all 41 orchestration skills. Previous: v0.20.1 Bug-2 regex fix prevents phase-iteration rows inflating flow counts; v0.20.0 Composable Workflow Orchestration with 18 dynamically composable flows.
+**Current version: v0.20.3** — Google Chat release notifications via configurable webhook in `.silver-bullet.json`. Previous: v0.20.2 shared Flow Log regex lib + 169-test skill execution path suite; v0.20.1 Bug-2 regex fix.
 
 ## How It Works
 
