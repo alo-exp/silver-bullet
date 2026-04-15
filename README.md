@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.20.8** — Fix: `/silver-forensics` routing bug where `SKILL.md` referenced non-existent `/gsd:silver-forensics` command (now correctly routes to `/gsd-forensics`). Backlog hygiene: 17 deferred items captured from forensics sweep and added to ROADMAP.md. Previous: v0.20.7 test suite isolation fix.
+**Current version: v0.20.9** — Backlog maintenance sweep: 17 items implemented including hook fixes (timeout stall detection, roadmap-freshness regex, dev-cycle-check config-driven finalization), CI assertions (required_deploy subset check, docs/templates parity), deferred-item capture enforcement in composable flows, silver-release ordering fix (cross-artifact review now runs before gsd-ship). Previous: v0.20.8 forensics routing fix.
 
 ## How It Works
 
