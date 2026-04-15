@@ -17,7 +17,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/blast-radius`, `/devops-quality-gates`, `/forensics`, etc. |
+| Silver Bullet skills | Skill tool -- `/silver-blast-radius`, `/devops-quality-gates`, `/silver-forensics`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -112,7 +112,7 @@ treatment after the incident resolves.
 2. **Document the incident** -- Record what is broken, the proposed change, and the
    expected outcome. Even under time pressure, a one-paragraph description prevents
    misaligned fixes.
-3. `/blast-radius` -- Required even in incidents. A rushed unreviewed change can make     **REQUIRED** -- DO NOT SKIP
+3. `/silver-blast-radius` -- Required even in incidents. A rushed unreviewed change can make     **REQUIRED** -- DO NOT SKIP
    incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.
 4. **Apply minimal change** -- Apply in the lowest affected environment first. Verify
    health checks pass. Then promote to the next environment.
@@ -220,7 +220,7 @@ Scan installed skills from two sources:
 
 Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
 current task description. Surface candidates:
-> Skills that may apply to this task: `/blast-radius` -- infra change; `/devops-skill-router` -- IaC toolchain
+> Skills that may apply to this task: `/silver-blast-radius` -- infra change; `/devops-skill-router` -- IaC toolchain
 
 If no matches or both directories absent/empty: log "Skill discovery: no candidates surfaced."
 Write results to `## Skills flagged at discovery` in the session log. **Do not invoke yet.**
@@ -273,7 +273,7 @@ focus on the specific gray areas that are blocking progress.
 rollback plan, and change window risk for this phase. This analysis determines how
 cautiously the change must be applied.
 
-`/blast-radius`                                                                          **REQUIRED** -- DO NOT SKIP
+`/silver-blast-radius`                                                                          **REQUIRED** -- DO NOT SKIP
 
 This step is ALWAYS required and comes BEFORE quality gates. Infrastructure changes can
 have cascading effects -- a networking change can break compute, a security group change
@@ -423,7 +423,7 @@ are diagnosed and fix plans are created automatically. Typical duration: 5-10 mi
 
 **Produces:** `.planning/phases/{phase}-VERIFICATION.md`
 
-**If verification fails:** Invoke `/forensics` FIRST -- identify root cause before
+**If verification fails:** Invoke `/silver-forensics` FIRST -- identify root cause before
 retrying. Then:
 - If root cause is implementation: re-run execute + verify only.
 - If root cause is design/plan: return to discuss for the same phase.
@@ -694,7 +694,7 @@ authenticated, and that verification passed. Use `/gsd:debug` for specific error
 
 **What it does:** Generates release notes and creates a GitHub Release with a git tag.
 
-`/create-release`                                                                        **REQUIRED** -- DO NOT SKIP
+`/silver-create-release`                                                                        **REQUIRED** -- DO NOT SKIP
 
 **What to expect:** A git tag and GitHub Release with structured notes covering features,
 fixes, and breaking changes. README must have been updated in the documentation step
@@ -780,14 +780,14 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 - **GSD steps** are enforced by instruction (this file + CLAUDE.md) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
-- **Silver Bullet skills** (blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
+- **Silver Bullet skills** (silver-blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
   by PostToolUse hooks that track Skill tool invocations. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.
 - For trivial changes (typos, comment fixes in non-logic files): `touch ~/.claude/.silver-bullet/trivial`.
   This does NOT apply to YAML/JSON files in this workflow.
-- For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
+- For root-cause investigation after a completed, failed, or abandoned session: use `/silver-forensics`.
 
 ---
 

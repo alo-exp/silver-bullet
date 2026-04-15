@@ -12,17 +12,17 @@ live_setup
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S1 test comment'. Do not invoke any skills, just edit the file directly.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
-assert_response_contains "S1: response mentions planning/HARD STOP/blocked/permission" "$response" "planning|HARD STOP|BLOCKED|quality-gates|Planning incomplete|permission|write|granted"
-assert_state_not_contains "S1: no edits recorded in state (edit was blocked)" "quality-gates"
+assert_response_contains "S1: response mentions planning/HARD STOP/blocked/permission" "$response" "planning|HARD STOP|BLOCKED|silver-quality-gates|Planning incomplete|permission|write|granted"
+assert_state_not_contains "S1: no edits recorded in state (edit was blocked)" "silver-quality-gates"
 live_teardown
 
-# --- S2: Planning gate opens after quality-gates + code-review ---
+# --- S2: Planning gate opens after silver-quality-gates + code-review ---
 echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
-seed_state "quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S2 test edit'. Just add the comment, nothing else.")
 sleep 2
-# With quality-gates AND code-review recorded, Stage C is reached — edit should succeed
+# With silver-quality-gates AND code-review recorded, Stage C is reached — edit should succeed
 assert_response_not_contains "S2: no HARD STOP in response" "$response" "HARD STOP"
 assert_response_not_contains "S2: no BLOCKED planning incomplete" "$response" "BLOCKED.*Planning incomplete"
 live_teardown
@@ -52,7 +52,7 @@ live_setup
 response=$(invoke_claude "Say hello and then stop. Do not invoke any skills or edit any files.")
 sleep 2
 # State should be empty — no skills were recorded (Claude didn't invoke any tracked skills)
-assert_state_not_contains "S4: state is empty — stop-check would block on empty state" "quality-gates"
+assert_state_not_contains "S4: state is empty — stop-check would block on empty state" "silver-quality-gates"
 # Also accept if response text does mention the block (bonus signal)
 live_teardown
 

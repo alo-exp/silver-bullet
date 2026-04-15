@@ -302,9 +302,9 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 | `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → product-brainstorming → silver:brainstorm |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:silver-blast-radius → silver:devops-skill-router |
 | `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
-| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
+| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:silver-silver-quality-gates → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
 
 **Workflow enforcement rules:**
@@ -324,7 +324,7 @@ When the user requests skipping a workflow step, SB:
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. Records the decision in §10 if user chooses A permanently — **before committing, display the exact text being written to §10 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
-Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+Non-skippable gates: `silver:security`, `silver:silver-silver-quality-gates` pre-ship, `gsd-verify-work`.
 
 #### Composable Paths Catalog
 
@@ -349,7 +349,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 14 | DEBUG | Debugging — systematic-debugging, gsd-debug (dynamic insertion on failure) |
 | FLOW 15 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 17 only |
 | FLOW 16 | DOCUMENT | Documentation — gsd-docs-update, engineering:documentation, episodic memory |
-| FLOW 17 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, create-release |
+| FLOW 17 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, silver-create-release |
 
 ---
 
@@ -404,7 +404,7 @@ You MUST NOT:
 - Claim work is complete without running `/gsd:verify-work`
 - Accept a completion claim from any plugin or skill (GSD, Superpowers, etc.) without invoking `/verification-before-completion` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
-- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §9 preferences — these gates are permanent
+- Override a non-skippable gate (silver:security, silver:silver-silver-quality-gates pre-ship, gsd-verify-work) via §9 preferences — these gates are permanent
 - Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute a GSD phase (plan, execute, verify) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next GSD phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
@@ -423,9 +423,9 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 **Rules**:
 - Do NOT stop until the final outcome is achieved
 - Always use `/gsd:debug` for ANY bug encountered during execution
-- Always use `/forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
+- Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- `README.md` MUST be updated to reflect current version, features, and changes before release. `/create-release` will block if README is stale.
+- `README.md` MUST be updated to reflect current version, features, and changes before release. `/silver-create-release` will block if README is stale.
 - Always strictly adhere to this file and CLAUDE.md 100%
 
 > **Anti-Skip:** You are violating this rule if:

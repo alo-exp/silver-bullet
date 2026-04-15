@@ -25,13 +25,13 @@ assert_contains "S1.2: compliance shows 0 steps" "$out" "0 steps"
 integration_teardown
 
 # Scenario 2: Developer completes planning, then edits source (Stage B gate)
-# Expected: quality-gates recorded -> edit still blocked (need code-review) -> record code-review -> edit allowed
+# Expected: silver-quality-gates recorded -> edit still blocked (need code-review) -> record code-review -> edit allowed
 echo "--- Scenario 2: Progressive stage unlocking A->B->C ---"
 integration_setup
 write_default_config
 
-# Step 1: Record quality-gates skill (simulates /quality-gates invocation)
-run_record_skill "quality-gates"
+# Step 1: Record silver-quality-gates skill (simulates /silver-quality-gates invocation)
+run_record_skill "silver-quality-gates"
 
 # Step 2: Try edit — blocked at Stage B (no code-review)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -57,7 +57,7 @@ integration_setup
 write_default_config
 
 # Step 1: Record planning (directly write state — record-skill only records tracked skills)
-printf 'quality-gates\ncode-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\n' > "$TMPSTATE"
 
 # Step 2: dev-cycle-check allows edit (Stage C)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -69,7 +69,7 @@ assert_blocked "S3.2: PR create blocked with partial skills" "$out"
 
 # Step 4: Complete all skills (using config's required_deploy list, without stages)
 cat > "$TMPSTATE" << 'EOSKILLS'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -77,7 +77,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -94,8 +94,8 @@ echo "--- Scenario 4: Phase skip detection ---"
 integration_setup
 write_default_config
 
-# Record quality-gates then skip to finalization (no code-review)
-printf 'quality-gates\ntesting-strategy\n' > "$TMPSTATE"
+# Record silver-quality-gates then skip to finalization (no code-review)
+printf 'silver-quality-gates\ntesting-strategy\n' > "$TMPSTATE"
 
 # Edit should be blocked AND flag phase skip
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")

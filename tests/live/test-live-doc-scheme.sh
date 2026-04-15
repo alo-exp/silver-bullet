@@ -70,11 +70,11 @@ cat > "$WORK_DIR/docs/CHANGELOG.md" << 'EOCL'
 ## 2026-04-10 — initial-setup
 - **What:** Project scaffolding
 - **Commits:** def5678
-- **Skills:** quality-gates
+- **Skills:** silver-quality-gates
 EOCL
 git -C "$WORK_DIR" add -A
 git -C "$WORK_DIR" commit -q -m "seed changelog"
-response=$(invoke_claude_permissive "Prepend a new CHANGELOG entry to docs/CHANGELOG.md for today's work. Task slug: redis-cache. What was done: Added Redis cache-aside layer for API responses. Commits: abc1234. Skills run: quality-gates, code-review. Knowledge updated: Architecture Patterns. Lessons updated: stack, practice.")
+response=$(invoke_claude_permissive "Prepend a new CHANGELOG entry to docs/CHANGELOG.md for today's work. Task slug: redis-cache. What was done: Added Redis cache-aside layer for API responses. Commits: abc1234. Skills run: silver-quality-gates, code-review. Knowledge updated: Architecture Patterns. Lessons updated: stack, practice.")
 assert_file_contains "S3: new entry has slug" "$WORK_DIR/docs/CHANGELOG.md" "redis-cache"
 assert_file_contains "S3: new entry has date" "$WORK_DIR/docs/CHANGELOG.md" "2026-04"
 assert_file_contains "S3: entry has Knowledge ref" "$WORK_DIR/docs/CHANGELOG.md" "Knowledge|knowledge"

@@ -141,7 +141,7 @@ backup_real_state
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 # Write a state file and point branch file at a different branch
-printf 'quality-gates\ncode-review\n' > "$REAL_STATE"
+printf 'silver-quality-gates\ncode-review\n' > "$REAL_STATE"
 printf 'old-branch-xyz' > "$REAL_BRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "branch changed -> state file deleted" "$REAL_STATE"
@@ -168,11 +168,11 @@ backup_real_state
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 # Pre-write skill lines (no quality-gate or gsd lines — should be preserved)
-printf 'quality-gates\ncode-review\n' > "$REAL_STATE"
+printf 'silver-quality-gates\ncode-review\n' > "$REAL_STATE"
 printf '%s' "$new_branch" > "$REAL_BRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_exists "same branch -> state file preserved" "$REAL_STATE"
-assert_file_contains "same branch -> skill line preserved" "$REAL_STATE" "quality-gates"
+assert_file_contains "same branch -> skill line preserved" "$REAL_STATE" "silver-quality-gates"
 rm -rf "$HOOK_WORKDIR"
 restore_real_state
 
@@ -181,10 +181,10 @@ echo "--- Test 3: Same branch -> regular skills survive session restart ---"
 backup_real_state
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'quality-gates\ncode-review\n' > "$REAL_STATE"
+printf 'silver-quality-gates\ncode-review\n' > "$REAL_STATE"
 printf '%s' "$new_branch" > "$REAL_BRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
-assert_file_contains "same branch -> skills preserved" "$REAL_STATE" "quality-gates"
+assert_file_contains "same branch -> skills preserved" "$REAL_STATE" "silver-quality-gates"
 assert_file_contains "same branch -> code-review preserved" "$REAL_STATE" "code-review"
 rm -rf "$HOOK_WORKDIR"
 restore_real_state
@@ -194,10 +194,10 @@ echo "--- Test 4: Same branch -> gsd-* markers stripped ---"
 backup_real_state
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$REAL_STATE"
+printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$REAL_STATE"
 printf '%s' "$new_branch" > "$REAL_BRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
-assert_file_contains "same branch -> quality-gates preserved" "$REAL_STATE" "quality-gates"
+assert_file_contains "same branch -> silver-quality-gates preserved" "$REAL_STATE" "silver-quality-gates"
 assert_file_not_contains "same branch -> gsd-discuss-phase stripped" "$REAL_STATE" "gsd-discuss-phase"
 assert_file_not_contains "same branch -> gsd-plan-phase stripped" "$REAL_STATE" "gsd-plan-phase"
 rm -rf "$HOOK_WORKDIR"

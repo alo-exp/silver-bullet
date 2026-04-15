@@ -1,16 +1,16 @@
 ---
-name: quality-gates
+name: silver-quality-gates
 description: "Dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state."
 ---
 
 > **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.
 
-# /quality-gates — Consolidated Quality Review
+# /silver-quality-gates — Consolidated Quality Review
 
 Applies all 9 Silver Bullet quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
 
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
-`${PLUGIN_ROOT}/skills/quality-gates/SKILL.md`, so the plugin root is two directories up.
+`${PLUGIN_ROOT}/skills/silver-quality-gates/SKILL.md`, so the plugin root is two directories up.
 
 ---
 

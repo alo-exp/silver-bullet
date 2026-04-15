@@ -103,7 +103,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Orient in Codebase
 
@@ -146,7 +146,7 @@ Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Pu
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
+Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
 
 ## Step 4: Discuss Phase
 
@@ -222,7 +222,7 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist gap filling.
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
+Invoke `silver:silver-quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
 
 ## Step 14: Finishing Branch
 

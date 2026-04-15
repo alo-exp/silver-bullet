@@ -8,16 +8,16 @@ echo "=== E2E: Skill Coverage (all 37 tracked skills) ==="
 
 # All 37 tracked skills from .silver-bullet.json all_tracked
 ALL_37_SKILLS=(
-  "quality-gates" "blast-radius" "devops-quality-gates" "devops-skill-router"
+  "silver-quality-gates" "silver-blast-radius" "devops-quality-gates" "devops-skill-router"
   "design-system" "ux-copy"
   "architecture" "system-design"
   "code-review" "requesting-code-review" "receiving-code-review"
   "testing-strategy" "documentation"
   "finishing-a-development-branch" "deploy-checklist"
-  "create-release"
+  "silver-create-release"
   "modularity" "reusability" "scalability" "security"
   "reliability" "usability" "testability" "extensibility"
-  "forensics" "silver-init"
+  "silver-forensics" "silver-init"
   "verification-before-completion"
   "test-driven-development" "tech-debt" "accessibility-review" "incident-response"
   "gsd-new-project" "gsd-new-milestone" "gsd-discuss-phase" "gsd-plan-phase"
@@ -64,15 +64,15 @@ echo "--- Scenario 2: Idempotent recording ---"
 integration_setup
 write_full_config
 
-run_record_skill "quality-gates" >/dev/null
-run_record_skill "quality-gates" >/dev/null
-run_record_skill "quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
 
-count=$(grep -c "^quality-gates$" "$TMPSTATE" 2>/dev/null || echo "0")
+count=$(grep -c "^silver-quality-gates$" "$TMPSTATE" 2>/dev/null || echo "0")
 if [[ "$count" -eq 1 ]]; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.1: quality-gates recorded exactly once (idempotent)\n'
+  PASS=$((PASS + 1)); printf 'PASS: S2.1: silver-quality-gates recorded exactly once (idempotent)\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: quality-gates recorded %d times (expected 1)\n' "$count"
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: silver-quality-gates recorded %d times (expected 1)\n' "$count"
 fi
 
 integration_teardown
@@ -161,9 +161,9 @@ write_default_config
 
 # Record all 12 required_deploy skills
 required_deploy_skills=(
-  "quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+  "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
   "testing-strategy" "documentation" "finishing-a-development-branch" "deploy-checklist"
-  "create-release" "verification-before-completion" "test-driven-development" "tech-debt"
+  "silver-create-release" "verification-before-completion" "test-driven-development" "tech-debt"
 )
 for skill in "${required_deploy_skills[@]}"; do
   run_record_skill "$skill" >/dev/null

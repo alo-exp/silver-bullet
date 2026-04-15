@@ -22,9 +22,9 @@ write_cfg() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch"],
-    "all_tracked": ["quality-gates","code-review"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch"],
+    "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -112,7 +112,7 @@ echo "--- Test 2: All skills complete ---"
 setup
 write_cfg
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 testing-strategy
 documentation
@@ -126,7 +126,7 @@ teardown
 echo "--- Test 3: Missing skills -> Missing label and skill name ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "missing skills -> output contains 'Missing:'" "$out" "Missing:"
 assert_contains "missing skills -> output contains 'code-review'" "$out" "code-review"
@@ -136,7 +136,7 @@ teardown
 echo "--- Test 4: Missing skills -> count format (N of M complete) ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "missing skills -> output contains 'of' count" "$out" "of"
 assert_contains "missing skills -> output contains 'complete'" "$out" "complete"
@@ -160,9 +160,9 @@ setup
 write_cfg
 # Switch to main branch
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
-# Record only quality-gates (leave code-review and others missing) so 'Missing:' appears,
+# Record only silver-quality-gates (leave code-review and others missing) so 'Missing:' appears,
 # but finishing-a-development-branch should be exempt on main and not appear in the list
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "on main: output contains 'Missing:'" "$out" "Missing:"
 assert_not_contains "on main: finishing-a-development-branch NOT in missing" "$out" "finishing-a-development-branch"
@@ -172,7 +172,7 @@ teardown
 echo "--- Test 7: Path traversal in CLAUDE_PLUGIN_ROOT -> evil core-rules not injected ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 # Create a core-rules.md outside the plugin dir with a canary string
 evil_dir=$(mktemp -d)
 echo "CANARY_EVIL_RULES" > "$evil_dir/core-rules.md"
@@ -190,7 +190,7 @@ echo "=== WORKFLOW.md position ==="
 echo "--- WF1: includes WORKFLOW.md position ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
 ## Composition

@@ -40,9 +40,9 @@ write_default_config() {
 {
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -51,7 +51,7 @@ EOCFG
 
 write_all_skills() {
   cat > "$TMPSTATE" << 'EOSKILLS'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -59,7 +59,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -330,9 +330,9 @@ write_full_config() {
 {
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["quality-gates","blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }

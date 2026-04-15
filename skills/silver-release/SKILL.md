@@ -1,6 +1,6 @@
 ---
 name: silver-release
-description: "SB-orchestrated milestone release: quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone"
+description: "SB-orchestrated milestone release: silver-quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone"
 argument-hint: "<version or release description, e.g. v1.2.0>"
 ---
 
@@ -104,11 +104,11 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 2a), `silver:quality-gates` pre-release (Step 0), `gsd-verify-work` (embedded in milestone audit), `gsd-ship` (Step 7) must succeed before Step 8.
+**Non-skippable gates:** `silver:security` (Step 2a), `silver:silver-quality-gates` pre-release (Step 0), `gsd-verify-work` (embedded in milestone audit), `gsd-ship` (Step 7) must succeed before Step 8.
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
+Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
 
 ## Step 1: Cross-Phase UAT
 
@@ -181,7 +181,7 @@ Invoke `gsd-milestone-summary` via the Skill tool. Purpose: generate milestone n
 
 ## Step 5: Create Release
 
-Invoke `silver:create-release` via the Skill tool. Purpose: SB-owned release creation (skills/create-release/SKILL.md) — git-history release notes generation + GitHub Release creation with version tag.
+Invoke `silver:silver-create-release` via the Skill tool. Purpose: SB-owned release creation (skills/silver-create-release/SKILL.md) — git-history release notes generation + GitHub Release creation with version tag.
 
 ## Step 6: PR Branch (ask user)
 

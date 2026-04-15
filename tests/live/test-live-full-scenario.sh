@@ -15,20 +15,20 @@ assert_file_exists "S7: SB state directory exists" "${HOME}/.claude/.silver-bull
 assert_response_contains "S7: response contains a greeting or answer" "$response" "Hello|hello|hi|4|four|2\+2|answer"
 live_teardown
 
-# --- S8: Abbreviated lifecycle (quality-gates -> code-review -> edit) ---
+# --- S8: Abbreviated lifecycle (silver-quality-gates -> code-review -> edit) ---
 echo "--- S8: Abbreviated lifecycle ---"
 live_setup
 
-# Step 1: record quality-gates via hook directly (record-skill.sh PostToolUse:Skill
+# Step 1: record silver-quality-gates via hook directly (record-skill.sh PostToolUse:Skill
 # does not fire in -p mode since Claude reads skill files via Read, not Skill tool)
-echo "  S8.1: Recording quality-gates via hook..."
-hook_out=$(printf '{"tool_name":"Skill","tool_input":{"skill":"quality-gates"},"hook_event_name":"PostToolUse"}' \
+echo "  S8.1: Recording silver-quality-gates via hook..."
+hook_out=$(printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
   | bash "${SB_ROOT}/hooks/record-skill.sh" 2>/dev/null || true)
-assert_state_contains "S8.1: quality-gates recorded" "quality-gates"
+assert_state_contains "S8.1: silver-quality-gates recorded" "silver-quality-gates"
 
 # Step 2: seed code-review and related review skills (saves cost vs real invocation)
 echo "  S8.2: Seeding code-review state..."
-seed_state "quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
 assert_state_contains "S8.2: code-review in state" "code-review"
 
 # Step 3: attempt edit (should succeed at Stage C)

@@ -1,6 +1,6 @@
 ---
 name: silver-feature
-description: "Full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → quality-gates → GSD plan/execute/verify → ship"
+description: "Full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver-quality-gates → GSD plan/execute/verify → ship"
 argument-hint: "<feature description>"
 ---
 
@@ -226,7 +226,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
 
-**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
 
 ## Step 0: Complexity Triage
 
@@ -299,15 +299,15 @@ If silver-validate reports any BLOCK findings:
 - Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
 - Offer: A. Return to /silver:spec  B. Re-run /silver:validate after fixes
 
-Only proceed to Step 3 (quality-gates) when silver-validate reports zero BLOCK findings.
+Only proceed to Step 3 (silver-quality-gates) when silver-validate reports zero BLOCK findings.
 
 WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
 
 ## Step 3: Pre-Plan Quality Gates (9 dimensions)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
+Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
 
-`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in quality-gates (one of the 9 dimensions — not a separate step).
+`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in silver-quality-gates (one of the 9 dimensions — not a separate step).
 
 ## Step 4: Discuss Phase
 
@@ -379,7 +379,7 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap 
 
 ## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
+Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
 
 ## Step 14: Finishing Branch
 

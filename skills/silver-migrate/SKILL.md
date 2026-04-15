@@ -49,12 +49,12 @@ Then scan the project for artifacts that indicate path completion. Use this arti
 | FLOW 9 | REVIEW | `.planning/REVIEW.md`, `.planning/phases/*/REVIEW.md` | Complete if any exists |
 | FLOW 10 | SECURE | `.planning/SECURITY.md` | Complete if file exists |
 | FLOW 11 | VERIFY | `.planning/VERIFICATION.md` | Complete if file exists |
-| FLOW 12 | QUALITY GATE | (checked via STATE.md) | Complete if `quality-gates` appears in STATE.md completed skills |
-| FLOW 13 | SHIP | (checked via STATE.md) | Complete if `deploy-checklist` or `create-release` appears in STATE.md completed skills |
+| FLOW 12 | QUALITY GATE | (checked via STATE.md) | Complete if `silver-quality-gates` appears in STATE.md completed skills |
+| FLOW 13 | SHIP | (checked via STATE.md) | Complete if `deploy-checklist` or `silver-create-release` appears in STATE.md completed skills |
 | FLOW 14 | DEBUG | (no dedicated artifact) | Mark as "not applicable" — inserted dynamically only on failure |
 | FLOW 15 | DESIGN HANDOFF | (no dedicated artifact) | Mark as "not applicable" unless milestone has UI phases |
 | FLOW 16 | DOCUMENT | (checked via STATE.md) | Complete if `gsd-docs-update` or documentation skill appears in STATE.md |
-| FLOW 17 | RELEASE | (checked via STATE.md) | Complete if `create-release` appears in STATE.md completed skills |
+| FLOW 17 | RELEASE | (checked via STATE.md) | Complete if `silver-create-release` appears in STATE.md completed skills |
 
 Record which artifacts were found for each path. This evidence list will be shown to the user in Step 4.
 
@@ -66,7 +66,7 @@ Based on the artifacts found in Step 1, determine which paths belong to this pro
 
 - **Always include:** FLOW 0, FLOW 1, FLOW 5, FLOW 7, FLOW 11, FLOW 13
 - **Include if artifacts exist:** FLOW 2, FLOW 3, FLOW 4, FLOW 6, FLOW 8, FLOW 9, FLOW 10, FLOW 16, FLOW 17
-- **Include FLOW 12** if quality-gates skill appears in STATE.md
+- **Include FLOW 12** if silver-quality-gates skill appears in STATE.md
 - **Exclude FLOW 14 and FLOW 15** unless specific evidence exists (UI milestone or debug artifacts)
 - **Exclude paths** with no artifacts AND no STATE.md markers — these were intentionally skipped
 

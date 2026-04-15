@@ -16,7 +16,7 @@ fi
 #
 # TWO-TIER ENFORCEMENT:
 #   Intermediate commits (git commit, git push to feature branches):
-#     → Only require required_planning skills (default: quality-gates)
+#     → Only require required_planning skills (default: silver-quality-gates)
 #     → Allows GSD execute-phase to make atomic commits during development
 #   Final delivery (gh pr create, deploy, gh release create):
 #     → Require full required_deploy skill list
@@ -210,11 +210,11 @@ skill_line() {
 # ── TIER 1: Intermediate commit check (git commit / git push) ─────────────────
 if [[ "$is_intermediate" == true ]]; then
   # Determine planning skills required for intermediate commits
-  # DevOps workflow requires blast-radius + devops-quality-gates instead of quality-gates
+  # DevOps workflow requires silver-blast-radius + devops-quality-gates instead of silver-quality-gates
   if [[ "$active_workflow" == "devops-cycle" ]]; then
-    DEFAULT_PLANNING="blast-radius devops-quality-gates"
+    DEFAULT_PLANNING="silver-blast-radius devops-quality-gates"
   else
-    DEFAULT_PLANNING="quality-gates"
+    DEFAULT_PLANNING="silver-quality-gates"
   fi
   planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
 
@@ -251,11 +251,11 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
-  DEVOPS_DEFAULT_REQUIRED="blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
+  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
+  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
 fi
 
-# DevOps workflow substitutes quality-gates with blast-radius + devops-quality-gates
+# DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 fi

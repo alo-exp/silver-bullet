@@ -24,9 +24,9 @@ setup() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review"],
-    "all_tracked": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt","blast-radius","devops-quality-gates","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review"],
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","silver-blast-radius","devops-quality-gates","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -97,8 +97,8 @@ echo "=== record-skill.sh tests ==="
 # Test 1: Tracked skill is recorded
 echo "--- Group 1: Basic recording ---"
 setup
-run_hook "quality-gates" >/dev/null
-assert_in_state "quality-gates recorded after invocation" "quality-gates"
+run_hook "silver-quality-gates" >/dev/null
+assert_in_state "silver-quality-gates recorded after invocation" "silver-quality-gates"
 teardown
 
 # Test 2: Untracked skill is NOT recorded
@@ -131,17 +131,17 @@ teardown
 # Test 6: Deduplication — invoking same skill twice only records once
 echo "--- Group 2: Deduplication ---"
 setup
-run_hook "quality-gates" >/dev/null
-run_hook "quality-gates" >/dev/null
-assert_count "quality-gates recorded exactly once despite two invocations" "quality-gates" 1
+run_hook "silver-quality-gates" >/dev/null
+run_hook "silver-quality-gates" >/dev/null
+assert_count "silver-quality-gates recorded exactly once despite two invocations" "silver-quality-gates" 1
 teardown
 
 # Test 7: Multiple different skills all recorded
 setup
-run_hook "quality-gates" >/dev/null
+run_hook "silver-quality-gates" >/dev/null
 run_hook "code-review" >/dev/null
 run_hook "testing-strategy" >/dev/null
-assert_in_state "quality-gates recorded" "quality-gates"
+assert_in_state "silver-quality-gates recorded" "silver-quality-gates"
 assert_in_state "code-review recorded" "code-review"
 assert_in_state "testing-strategy recorded" "testing-strategy"
 teardown
@@ -150,7 +150,7 @@ teardown
 echo "--- Group 3: State file management ---"
 setup
 rm -f "$TMPSTATE"  # ensure it doesn't exist
-run_hook "quality-gates" >/dev/null
+run_hook "silver-quality-gates" >/dev/null
 if [[ -f "$TMPSTATE" ]]; then
   echo "  ✅ state file created when it doesn't exist"
   PASS=$((PASS + 1))
@@ -163,16 +163,16 @@ teardown
 # Test 9: Existing state preserved when new skill added
 setup
 echo "code-review" > "$TMPSTATE"
-run_hook "quality-gates" >/dev/null
+run_hook "silver-quality-gates" >/dev/null
 assert_in_state "existing skill (code-review) preserved" "code-review"
-assert_in_state "new skill (quality-gates) added" "quality-gates"
+assert_in_state "new skill (silver-quality-gates) added" "silver-quality-gates"
 teardown
 
-# Test 10: blast-radius and devops-quality-gates are recorded (devops skills)
+# Test 10: silver-blast-radius and devops-quality-gates are recorded (devops skills)
 echo "--- Group 4: DevOps skills ---"
 setup
-run_hook "blast-radius" >/dev/null
-assert_in_state "blast-radius recorded" "blast-radius"
+run_hook "silver-blast-radius" >/dev/null
+assert_in_state "silver-blast-radius recorded" "silver-blast-radius"
 teardown
 
 setup
@@ -216,13 +216,13 @@ else
 fi
 teardown
 
-# Test 14: Double-namespace stripping (outer:inner:quality-gates → quality-gates)
+# Test 14: Double-namespace stripping (outer:inner:silver-quality-gates → silver-quality-gates)
 echo "--- Group 6: Double-namespace stripping (SENTINEL S6-001) ---"
 setup
-run_hook "outer:inner:quality-gates" >/dev/null
-assert_in_state "double-namespaced skill recorded (outer:inner:quality-gates → quality-gates)" "quality-gates"
-assert_not_in_state "double-namespaced form not recorded verbatim" "outer:inner:quality-gates"
-assert_not_in_state "single-stripped form not recorded" "inner:quality-gates"
+run_hook "outer:inner:silver-quality-gates" >/dev/null
+assert_in_state "double-namespaced skill recorded (outer:inner:silver-quality-gates → silver-quality-gates)" "silver-quality-gates"
+assert_not_in_state "double-namespaced form not recorded verbatim" "outer:inner:silver-quality-gates"
+assert_not_in_state "single-stripped form not recorded" "inner:silver-quality-gates"
 teardown
 
 setup

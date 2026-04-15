@@ -80,7 +80,7 @@ echo "=== uat-gate.sh tests ==="
 # Test 1: Non-gsd-complete-milestone skill passes silently
 echo "--- Group 1: Skill filtering ---"
 setup
-out=$(run_hook "quality-gates")
+out=$(run_hook "silver-quality-gates")
 assert_passes "non-gsd-complete-milestone skill passes silently" "$out"
 teardown
 

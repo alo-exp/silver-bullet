@@ -14,7 +14,7 @@
 | `/silver` smart router | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |
+| Silver Bullet skills | Skill tool -- `/silver-quality-gates`, `/silver-blast-radius`, etc. |
 | Gap-filling skills | Skill tool -- `/testing-strategy`, `/documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
@@ -219,7 +219,7 @@ log all auto-decisions to the session log.
 **What it does:** Evaluates the current design against all 9 Silver Bullet quality dimensions
 and produces a consolidated pass/fail report. A failure is a hard stop, not a warning.
 
-**Command:** `/quality-gates`                                                    **REQUIRED** -- DO NOT SKIP
+**Command:** `/silver-quality-gates`                                                    **REQUIRED** -- DO NOT SKIP
 
 **What to expect:** All 9 dimensions (modularity, reusability, scalability, security,
 reliability, usability, testability, extensibility, and AI/LLM safety) are evaluated in parallel -- one agent per
@@ -232,9 +232,9 @@ Conflict resolution: more conservative/restrictive finding wins; resolution rati
 in session log. **Autonomous mode:** All dispatches use `run_in_background: true`.
 
 **If it fails:** Read the report to identify which dimension(s) failed. Fix the specific
-design issue in your CONTEXT.md or design artifacts, then re-run `/quality-gates`. Do not
+design issue in your CONTEXT.md or design artifacts, then re-run `/silver-quality-gates`. Do not
 proceed to PLAN until all 9 dimensions pass. Phase order is a hard constraint: do NOT start
-PLAN before `/quality-gates` completes.
+PLAN before `/silver-quality-gates` completes.
 
 ---
 
@@ -318,7 +318,7 @@ many deliverables need verification.
 Produces: `.planning/phases/{phase}/{phase_num}-VERIFICATION.md`,
 `.planning/phases/{phase}/{phase_num}-UAT.md`
 
-**If verification fails or output is suspect:** Invoke `/forensics` before retrying.
+**If verification fails or output is suspect:** Invoke `/silver-forensics` before retrying.
 Identify root cause first. Then:
 - If root cause is implementation: re-run EXECUTE + VERIFY only.
 - If root cause is design/plan: return to DISCUSS for the same phase.
@@ -573,7 +573,7 @@ Produces: pull request with phase summaries and requirement coverage.
 
 ## STEP 6: RELEASE
 
-**Command:** `/create-release`                                                   **REQUIRED** -- DO NOT SKIP
+**Command:** `/silver-create-release`                                                   **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Generates structured release notes and creates a GitHub Release with a
 git tag.
@@ -678,9 +678,9 @@ Every review loop in this workflow (spec review, plan review, code review, verif
   GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
   that track Skill tool invocations. "I already covered this" is NOT valid.
-- Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
+- Phase order is a hard constraint: do NOT start PLAN before `/silver-quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
-- For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
+- For root-cause investigation after a completed, failed, or abandoned session: use `/silver-forensics`.
 - For trivial changes (typos, copy fixes, config tweaks): `touch ~/.claude/.silver-bullet/trivial`
 
 ---

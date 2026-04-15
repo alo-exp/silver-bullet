@@ -22,9 +22,9 @@ write_cfg() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist"],
-    "all_tracked": ["quality-gates","code-review"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist"],
+    "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -36,9 +36,9 @@ write_cfg_with_release() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release"],
-    "all_tracked": ["quality-gates","code-review"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release"],
+    "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -145,7 +145,7 @@ teardown
 echo "--- Test 2: All required skills present ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 testing-strategy
 documentation
@@ -160,7 +160,7 @@ teardown
 echo "--- Test 3: Missing skills -> block with skill names ---"
 setup
 # Only put one skill, leaving others missing
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_blocks "missing skills -> decision:block" "$out"
 assert_contains "block output contains 'code-review'" "$out" "code-review"
@@ -184,7 +184,7 @@ setup
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 testing-strategy
 documentation

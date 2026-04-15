@@ -84,7 +84,7 @@ fi
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
   (.state.state_file // "~/.claude/.silver-bullet/state"),
-  ((.skills.required_planning // ["quality-gates"]) | join(" ")),
+  ((.skills.required_planning // ["silver-quality-gates"]) | join(" ")),
   (.project.active_workflow // "full-dev-cycle")
 ] | join("\n")' "$config_file")
 
@@ -209,7 +209,7 @@ for skill in $gsd_core_skills; do
 done
 
 # --- RELEASE phase ---
-release_skills="create-release"
+release_skills="silver-create-release"
 release_done=0
 release_total=0
 for _ in $release_skills; do ((release_total++)) || true; done

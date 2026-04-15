@@ -40,7 +40,7 @@ integration_setup
 write_default_config
 
 # Record some skills
-run_record_skill "quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
 run_record_skill "code-review" >/dev/null
 
 # stop-check still blocks (not all skills)

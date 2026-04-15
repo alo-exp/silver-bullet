@@ -48,8 +48,8 @@ Last-beat: 2026-04-15T00:00:00Z
 FLOW 7 (EXECUTE)
 EOF
 
-# Put quality-gates in state so we skip early-exit path
-printf 'quality-gates\n' >> "$TMPSTATE"
+# Put silver-quality-gates in state so we skip early-exit path
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 out=$(run_compliance_status)
 assert_contains "S1.1: FLOW N/M appears in output" "$out" "FLOW 2/4"
@@ -61,7 +61,7 @@ integration_teardown
 echo "--- S2: No WORKFLOW.md → legacy mode string in output ---"
 integration_setup
 write_default_config
-printf 'quality-gates\n' >> "$TMPSTATE"
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 # No WORKFLOW.md
 
 out=$(run_compliance_status)
@@ -107,7 +107,7 @@ integration_teardown
 echo "--- S4: Bug-2 fix — other digit-starting rows don't inflate PATH total ---"
 integration_setup
 write_default_config
-printf 'quality-gates\n' >> "$TMPSTATE"
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'EOF'
@@ -158,7 +158,7 @@ integration_teardown
 echo "--- S5: Symlinked WORKFLOW.md → ignored (security), legacy mode fallback ---"
 integration_setup
 write_default_config
-printf 'quality-gates\n' >> "$TMPSTATE"
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 mkdir -p "$TMPDIR_TEST/.planning"
 real_wf="/tmp/sb-test-real-workflow-$$.md"
@@ -180,7 +180,7 @@ integration_teardown
 echo "--- S6: Malformed WORKFLOW.md (no path rows) → legacy mode fallback ---"
 integration_setup
 write_default_config
-printf 'quality-gates\n' >> "$TMPSTATE"
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 mkdir -p "$TMPDIR_TEST/.planning"
 echo "This file has no path log rows at all." > "$TMPDIR_TEST/.planning/WORKFLOW.md"
@@ -194,7 +194,7 @@ integration_teardown
 echo "--- S7: Mixed complete/pending — count accuracy across full 7-path composition ---"
 integration_setup
 write_default_config
-printf 'quality-gates\n' >> "$TMPSTATE"
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'EOF'

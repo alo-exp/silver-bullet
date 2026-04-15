@@ -65,9 +65,9 @@ live_setup() {
 {
   "project": {"name":"live-test","src_pattern":"/src/","src_exclude_pattern":"__tests__|\\\\.test\\\\.","active_workflow":"full-dev-cycle"},
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
   },
   "state": {"state_file":"${REAL_STATE}","trivial_file":"${REAL_TRIVIAL}"}
 }
@@ -110,7 +110,7 @@ invoke_claude() {
 }
 
 # invoke_claude_permissive: bypasses file-read permission prompts.
-# Use this for skill-invocation tests where the skill reads files (quality-gates, etc.)
+# Use this for skill-invocation tests where the skill reads files (silver-quality-gates, etc.)
 # but hook deny decisions (permissionDecision:deny) are also bypassed — do NOT use
 # for enforcement tests.
 invoke_claude_permissive() {

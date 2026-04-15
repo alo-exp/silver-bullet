@@ -1,9 +1,9 @@
 ---
-name: create-release
+name: silver-create-release
 description: Generate structured release notes from git history since the last tag, then create a GitHub Release (for GitHub repos) or output notes for manual publishing
 ---
 
-# /create-release — Release Notes & GitHub Release
+# /silver-create-release — Release Notes & GitHub Release
 
 Use this skill after `/gsd:ship` to generate release notes and publish them.
 
@@ -61,7 +61,7 @@ Before determining version, verify the working tree is releasable:
 
 ## Step 2 — Determine New Version
 
-If the user provided a version argument (e.g., `/create-release v0.4.0`), use it.
+If the user provided a version argument (e.g., `/silver-create-release v0.4.0`), use it.
 
 Otherwise, suggest a version based on commits:
 - If any commit message starts with `feat!:` or contains `BREAKING CHANGE` → bump major

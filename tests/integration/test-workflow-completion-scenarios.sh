@@ -18,9 +18,9 @@ out=$(run_stop_check "Stop")
 assert_blocked "S1.1: stop-check blocks with empty state" "$out"
 
 # Step 2: Record all skills progressively
-skills=("quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+skills=("silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
         "testing-strategy" "documentation" "finishing-a-development-branch"
-        "deploy-checklist" "create-release" "verification-before-completion"
+        "deploy-checklist" "silver-create-release" "verification-before-completion"
         "test-driven-development" "tech-debt")
 for skill in "${skills[@]}"; do
   run_record_skill "$skill" >/dev/null
@@ -29,7 +29,7 @@ done
 out=$(run_stop_check "Stop")
 assert_allowed "S1.2: stop-check passes with all skills" "$out"
 
-# Step 4: completion-audit allows commit (intermediate tier — only needs quality-gates)
+# Step 4: completion-audit allows commit (intermediate tier — only needs silver-quality-gates)
 out=$(run_completion_audit "PreToolUse" "git commit -m 'feat: done'")
 assert_allowed "S1.3: commit allowed with all skills" "$out"
 
@@ -45,8 +45,8 @@ echo "--- Scenario 2: Commit allowed early, delivery blocked until complete ---"
 integration_setup
 write_default_config
 
-# Step 1: With only quality-gates, commit allowed
-printf 'quality-gates\n' > "$TMPSTATE"
+# Step 1: With only silver-quality-gates, commit allowed
+printf 'silver-quality-gates\n' > "$TMPSTATE"
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.1: commit allowed with planning only" "$out"
 
@@ -67,7 +67,7 @@ write_default_config
 
 # All skills present
 cat > "$TMPSTATE" << 'EOSKILLS'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -75,7 +75,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -121,7 +121,7 @@ write_default_config
 
 # Write all skills but with requesting-code-review BEFORE code-review
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 requesting-code-review
 code-review
 receiving-code-review
@@ -129,7 +129,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt

@@ -9,28 +9,28 @@
   },
   "skills": {
     "required_planning": [
-      "quality-gates"
+      "silver-quality-gates"
     ],
     "required_deploy": [
-      "quality-gates",
+      "silver-quality-gates",
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "create-release",
+      "silver-create-release",
       "verification-before-completion",
       "test-driven-development", "tech-debt"
     ],
     "all_tracked": [
-      "quality-gates", "blast-radius", "devops-quality-gates", "devops-skill-router",
+      "silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy",
       "architecture", "system-design",
       "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
-      "create-release",
+      "silver-create-release",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
-      "forensics", "silver-init",
+      "silver-forensics", "silver-init",
       "verification-before-completion",
       "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",

@@ -32,8 +32,8 @@ setup() {
 {
   "project": { "src_pattern": "/hooks/|/skills/|/templates/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review"],
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review"],
     "forbidden": []
   }
 }
@@ -131,8 +131,8 @@ cat > "$TMPCFG" << 'CFGEOF'
 {
   "project": { "src_pattern": "/hooks/|/skills/|/templates/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review"],
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review"],
     "forbidden": ["custom-forbidden-skill"]
   }
 }

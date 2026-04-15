@@ -1,9 +1,9 @@
 ---
-name: blast-radius
+name: silver-blast-radius
 description: Assess the blast radius of a proposed infrastructure or DevOps change before planning. Maps change scope, downstream dependencies, failure scenarios, rollback plan, and change window risk. Required before /devops-quality-gates in the devops-cycle workflow.
 ---
 
-# /blast-radius — Blast Radius Assessment
+# /silver-blast-radius — Blast Radius Assessment
 
 Performs a structured pre-change risk analysis before any infrastructure or
 DevOps change proceeds to quality gates or planning. Every field must be filled.

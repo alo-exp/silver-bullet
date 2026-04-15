@@ -34,14 +34,14 @@ echo "--- Scenario 2: Skill recorded and reflected in compliance ---"
 integration_setup
 write_default_config
 
-# Step 1: Record quality-gates
-run_record_skill "quality-gates"
+# Step 1: Record silver-quality-gates
+run_record_skill "silver-quality-gates"
 
 # Step 2: Verify it appears in state
-if grep -q "quality-gates" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.1: quality-gates recorded in state\n'
+if grep -q "silver-quality-gates" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S2.1: silver-quality-gates recorded in state\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: quality-gates not found in state\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: silver-quality-gates not found in state\n'
 fi
 
 # Step 3: compliance-status reflects progress
@@ -55,10 +55,10 @@ echo "--- Scenario 3: Duplicate skill not double-recorded ---"
 integration_setup
 write_default_config
 
-run_record_skill "quality-gates"
-run_record_skill "quality-gates"
+run_record_skill "silver-quality-gates"
+run_record_skill "silver-quality-gates"
 
-count=$(grep -c "quality-gates" "$TMPSTATE" 2>/dev/null || echo "0")
+count=$(grep -c "silver-quality-gates" "$TMPSTATE" 2>/dev/null || echo "0")
 if [[ "$count" -eq 1 ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S3.1: skill recorded exactly once (idempotent)\n'
 else

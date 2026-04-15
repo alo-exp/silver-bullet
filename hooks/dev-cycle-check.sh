@@ -205,12 +205,12 @@ To reset workflow state intentionally, run in your terminal:
   fi
 
   # Set default required_planning based on workflow if not overridden by config
-  # DevOps workflow: blast-radius and devops-quality-gates replace quality-gates
+  # DevOps workflow: silver-blast-radius and devops-quality-gates replace silver-quality-gates
   if [[ -z "$required_planning" ]]; then
     if [[ "$active_workflow" == "devops-cycle" ]]; then
-      required_planning="blast-radius devops-quality-gates"
+      required_planning="silver-blast-radius devops-quality-gates"
     else
-      required_planning="quality-gates"
+      required_planning="silver-quality-gates"
     fi
   fi
 

@@ -23,9 +23,9 @@ write_cfg() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["quality-gates","code-review"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -124,43 +124,43 @@ teardown
 # Test 2: git commit blocked without planning (intermediate tier, empty state)
 setup
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
-assert_blocks "git commit blocked without quality-gates" "$out"
+assert_blocks "git commit blocked without silver-quality-gates" "$out"
 assert_contains "block message mentions planning" "$out" "COMMIT BLOCKED"
 teardown
 
 # Test 3: git commit allowed with planning complete (intermediate tier)
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
-assert_passes "git commit allowed with quality-gates done" "$out"
+assert_passes "git commit allowed with silver-quality-gates done" "$out"
 teardown
 
 # Test 4: git push blocked without planning
 setup
 out=$(run_hook "PreToolUse" "git push origin feature/test")
-assert_blocks "git push blocked without quality-gates" "$out"
+assert_blocks "git push blocked without silver-quality-gates" "$out"
 teardown
 
 # Test 5: git push allowed with planning — even without finalization skills
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "git push origin feature/test")
-assert_passes "git push allowed with quality-gates (no finalization needed)" "$out"
+assert_passes "git push allowed with silver-quality-gates (no finalization needed)" "$out"
 teardown
 
 # Test 6: gh pr create blocked without full required_deploy
 echo "--- Group 2: Final delivery tier ---"
 setup
-echo "quality-gates" > "$TMPSTATE"  # only planning done, not full workflow
+echo "silver-quality-gates" > "$TMPSTATE"  # only planning done, not full workflow
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_blocks "gh pr create blocked with only quality-gates" "$out"
+assert_blocks "gh pr create blocked with only silver-quality-gates" "$out"
 assert_contains "block message mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
 teardown
 
 # Test 7: gh pr create passes with all required_deploy skills
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -168,7 +168,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -179,7 +179,7 @@ teardown
 
 # Test 8: deploy command blocked
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "npm run deploy")
 assert_blocks "deploy command blocked without full workflow" "$out"
 teardown
@@ -187,7 +187,7 @@ teardown
 # Test 9: gh release create blocked without required workflow skills
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
@@ -198,7 +198,7 @@ teardown
 # Test 10: gh release create passes with all required workflow skills (no §9 stages needed)
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -206,7 +206,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -220,14 +220,14 @@ echo "--- Group 3: Main branch handling ---"
 setup
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
 testing-strategy
 documentation
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -243,7 +243,7 @@ echo "--- Group 4: Ordering enforcement ---"
 setup
 # Put skills with requesting-code-review BEFORE code-review in the state file
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 requesting-code-review
 code-review
 receiving-code-review
@@ -251,7 +251,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -263,7 +263,7 @@ teardown
 # Test 13: Correct triad order passes cleanly
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -271,7 +271,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -288,13 +288,13 @@ else
 fi
 teardown
 
-# Test 14: DevOps workflow uses blast-radius for intermediate check
+# Test 14: DevOps workflow uses silver-blast-radius for intermediate check
 echo "--- Group 5: DevOps workflow ---"
 setup
 write_cfg "devops-cycle"
-# With empty state, git commit should fail requiring blast-radius + devops-quality-gates
+# With empty state, git commit should fail requiring silver-blast-radius + devops-quality-gates
 out=$(run_hook "PreToolUse" "git commit -m 'infra'")
-assert_blocks "devops: git commit blocked without blast-radius/devops-quality-gates" "$out"
+assert_blocks "devops: git commit blocked without silver-blast-radius/devops-quality-gates" "$out"
 teardown
 
 # Test 15: Trivial file bypass
@@ -309,16 +309,16 @@ teardown
 echo "--- Group 7: gh pr merge delivery gate ---"
 setup
 # Only planning done
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "gh pr merge --squash")
-assert_blocks "gh pr merge blocked with only quality-gates" "$out"
+assert_blocks "gh pr merge blocked with only silver-quality-gates" "$out"
 assert_contains "gh pr merge block mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
 teardown
 
 # Test 17: gh pr merge passes when all skills present (including review-loop-pass markers)
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -326,7 +326,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt

@@ -1,16 +1,16 @@
 ---
-name: forensics
-description: Root-cause investigation for completed sessions, abandoned sessions, verification failures, or mid-session stalls — classifies failure, walks investigation path, writes report to <project-root>/docs/forensics/
+name: silver-forensics
+description: Root-cause investigation for completed sessions, abandoned sessions, verification failures, or mid-session stalls — classifies failure, walks investigation path, writes report to <project-root>/docs/silver-forensics/
 ---
 
-# /forensics — Post-mortem Investigation
+# /silver-forensics — Post-mortem Investigation
 
 Use this skill when the root cause of a failure is **unknown and must be reconstructed
 from evidence**. This covers: completed sessions that left things broken, abandoned or
 timed-out sessions, step 7 verification failures, and mid-session stalls.
 
 **If you have an active error with a known cause**, use `/gsd:debug`
-instead. `/forensics` is for reconstruction, not live debugging.
+instead. `/silver-forensics` is for reconstruction, not live debugging.
 
 **In autonomous mode**: skip the user prompt in Step 2a of triage. Classify from evidence
 alone. If evidence is insufficient, default to Path 3 (General) and record
@@ -29,7 +29,7 @@ detected in [file]" in Evidence Gathered.
 
 Shell execution during investigation is limited to:
 - `git log`, `git show`, `git status`, `git diff` (with flags as specified in each path)
-- `mkdir -p <project-root>/docs/forensics/`
+- `mkdir -p <project-root>/docs/silver-forensics/`
 - Test runners: `npm test`, `pytest`, `cargo test`, `go test ./...`
 
 Do not execute other shell commands. If additional commands seem needed, note the
@@ -40,7 +40,7 @@ requirement in the post-mortem report under "Recommended Next Steps" for human e
 ## Step 1 — Locate the project root
 
 Walk up from `$PWD` until a `.silver-bullet.json` file is found. All evidence paths
-(`docs/sessions/`, `.planning/`, `docs/forensics/`) are relative to this root.
+(`docs/sessions/`, `.planning/`, `docs/silver-forensics/`) are relative to this root.
 The plugin root (where this SKILL.md lives) is irrelevant for evidence gathering.
 If `.silver-bullet.json` is not found after walking to the filesystem root (`/`),
 use `$PWD` as the project root and note "Project root not confirmed" in Evidence Gathered.
@@ -50,7 +50,7 @@ use `$PWD` as the project root and note "Project root not confirmed" in Evidence
 ## Step 1b — GSD-Awareness Routing
 
 Before proceeding to SB's own triage, check whether the issue is better handled by
-GSD's built-in forensics (`/gsd:forensics`).
+GSD's built-in silver-forensics (`/gsd:silver-forensics`).
 
 **Quick-check (run all three in parallel):**
 1. Does `.planning/` exist with phase directories?
@@ -62,18 +62,18 @@ GSD's built-in forensics (`/gsd:forensics`).
 
 | Evidence | Route to | Reason |
 |----------|----------|--------|
-| Issue mentions a specific GSD phase, plan, or execution anomaly (plan drift, stuck loop, scope drift, missing SUMMARY.md) | `/gsd:forensics` | GSD forensics specializes in workflow-level analysis of `.planning/` artifacts and execution patterns |
-| Issue is about session timeout, stall, SB enforcement failure, or session-level problems | SB forensics (continue to Step 2) | SB forensics handles session-level issues that GSD doesn't track |
-| Issue is about test failures after recent commits, wrong output, or general investigation | SB forensics (continue to Step 2) | General investigation path handles these |
-| Unclear — evidence could go either way | SB forensics (continue to Step 2) | SB's General path (Path 3) can further delegate if GSD-specific patterns emerge |
+| Issue mentions a specific GSD phase, plan, or execution anomaly (plan drift, stuck loop, scope drift, missing SUMMARY.md) | `/gsd:silver-forensics` | GSD silver-forensics specializes in workflow-level analysis of `.planning/` artifacts and execution patterns |
+| Issue is about session timeout, stall, SB enforcement failure, or session-level problems | SB silver-forensics (continue to Step 2) | SB silver-forensics handles session-level issues that GSD doesn't track |
+| Issue is about test failures after recent commits, wrong output, or general investigation | SB silver-forensics (continue to Step 2) | General investigation path handles these |
+| Unclear — evidence could go either way | SB silver-forensics (continue to Step 2) | SB's General path (Path 3) can further delegate if GSD-specific patterns emerge |
 
-**If routing to `/gsd:forensics`:**
+**If routing to `/gsd:silver-forensics`:**
 > "This looks like a GSD workflow issue (plan drift / execution anomaly / missing artifacts).
-> GSD has specialized forensics for this. Running `/gsd:forensics` instead."
+> GSD has specialized silver-forensics for this. Running `/gsd:silver-forensics` instead."
 
-Invoke `/gsd:forensics` via the Skill tool and stop. Do not proceed to Step 2.
+Invoke `/gsd:silver-forensics` via the Skill tool and stop. Do not proceed to Step 2.
 
-**If routing to SB forensics:** Continue to Step 2.
+**If routing to SB silver-forensics:** Continue to Step 2.
 
 ---
 
@@ -183,15 +183,15 @@ ROOT CAUSE: <one sentence> — <path taken> — <confidence: high/medium/low>
 
 ## Post-mortem Report
 
-1. Run `mkdir -p <project-root>/docs/forensics/` via Bash before writing.
+1. Run `mkdir -p <project-root>/docs/silver-forensics/` via Bash before writing.
 2. Determine slug:
    - If user supplied a slug argument, sanitize it: keep only letters, digits, hyphens,
      and dots; replace all other characters with hyphens; strip leading dots and hyphens;
      truncate to 80 characters.
    - If no argument, default to `<failure-type>-<YYYY-MM-DD>`.
-3. Check for collision: glob `<project-root>/docs/forensics/<slug>*.md`; if a match
+3. Check for collision: glob `<project-root>/docs/silver-forensics/<slug>*.md`; if a match
    exists, append `-2`, `-3`, etc. until unique.
-4. Write to `<project-root>/docs/forensics/YYYY-MM-DD-<slug>.md`:
+4. Write to `<project-root>/docs/silver-forensics/YYYY-MM-DD-<slug>.md`:
 
 ```markdown
 # Forensics Report — <slug>
@@ -253,5 +253,5 @@ Based on the root cause classification, use the appropriate follow-up:
 - **No session log found**: Skip session log step; proceed with git history + user
   description only. Note absence in post-mortem.
 - **No planning artifacts**: Skip `.planning/` step; note absence.
-- **`docs/forensics/` directory absent**: Create it with `mkdir -p` before writing.
-- **Slug collision**: glob `<project-root>/docs/forensics/<slug>*.md`; if a match exists, append `-2`, `-3`, etc. until unique. (Same logic as Post-mortem Report step 3.)
+- **`docs/silver-forensics/` directory absent**: Create it with `mkdir -p` before writing.
+- **Slug collision**: glob `<project-root>/docs/silver-forensics/<slug>*.md`; if a match exists, append `-2`, `-3`, etc. until unique. (Same logic as Post-mortem Report step 3.)

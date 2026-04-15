@@ -48,11 +48,11 @@ Wait for response, then proceed.
 | "where are we", "what's left", "show progress", "current status" | `gsd-progress` | Status only |
 | "pick up", "resume", "continue where" | `gsd-resume-work` | Session restore |
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup |
-| "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
-| "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
+| "quality review", "ilities", "architecture review", "quality dimensions" | `silver:silver-quality-gates` | Ad-hoc quality audit |
+| "blast radius", "change impact", "rollback plan" | `silver:silver-blast-radius` | Ad-hoc risk assessment |
 | "IaC quality", "devops quality", "terraform quality" | `silver:devops-quality-gates` | Ad-hoc DevOps quality |
-| "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Post-mortem investigation |
-| "release notes", "github release", "cut release", "tag release" | `silver:create-release` | Release artifact creation |
+| "root cause", "session failed", "what broke", "reconstruct" | `silver:silver-forensics` | Post-mortem investigation |
+| "release notes", "github release", "cut release", "tag release" | `silver:silver-create-release` | Release artifact creation |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC tool routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | Ingest external artifacts (JIRA, Figma, Google Docs) into SPEC.md + DESIGN.md, or fetch cross-repo spec |
 

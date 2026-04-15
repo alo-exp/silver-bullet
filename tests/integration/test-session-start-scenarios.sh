@@ -39,7 +39,7 @@ save_real_state
 
 # Pre-populate real state with skills
 cat > "$SB_REAL_STATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 EOF
 # Record a different branch in branch file to trigger reset
@@ -69,7 +69,7 @@ echo "feature/test" > "$SB_REAL_BRANCH"
 
 # Pre-populate state with skills AND session markers (gsd-*)
 cat > "$SB_REAL_STATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 gsd-execute-phase
 EOF
@@ -77,10 +77,10 @@ EOF
 out=$(run_session_start)
 
 # Skills should remain, markers should be cleaned
-if grep -q "quality-gates" "$SB_REAL_STATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.1: quality-gates skill retained\n'
+if grep -q "silver-quality-gates" "$SB_REAL_STATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S2.1: silver-quality-gates skill retained\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: quality-gates skill was removed\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: silver-quality-gates skill was removed\n'
 fi
 
 if grep -q "code-review" "$SB_REAL_STATE" 2>/dev/null; then

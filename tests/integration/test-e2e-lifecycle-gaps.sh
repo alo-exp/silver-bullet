@@ -30,26 +30,26 @@ integration_teardown
 
 # ── S2: Cross-session skill accumulation ──────────────────────────────────────
 # session-start resets gsd- markers but KEEPS skill records
-# for the same branch. Verify quality-gates persists after run_session_start.
+# for the same branch. Verify silver-quality-gates persists after run_session_start.
 echo "--- S2: Cross-session skill accumulation ---"
 integration_setup
 write_default_config
 
 # Record skills
-run_record_skill "quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
 run_record_skill "code-review"   >/dev/null
 
 # Confirm skills are present before simulated session restart
-assert_contains "S2.1: quality-gates recorded before restart" \
-  "$(cat "$TMPSTATE" 2>/dev/null || echo '')" "quality-gates"
+assert_contains "S2.1: silver-quality-gates recorded before restart" \
+  "$(cat "$TMPSTATE" 2>/dev/null || echo '')" "silver-quality-gates"
 
 # Simulate session restart on same branch
 run_session_start >/dev/null 2>&1 || true
 
 # Skills should persist (same branch — only session-specific markers are cleared)
 state_after=$(cat "$TMPSTATE" 2>/dev/null || echo "")
-assert_contains "S2.2: quality-gates persists after session restart (same branch)" \
-  "$state_after" "quality-gates"
+assert_contains "S2.2: silver-quality-gates persists after session restart (same branch)" \
+  "$state_after" "silver-quality-gates"
 assert_contains "S2.3: code-review persists after session restart (same branch)" \
   "$state_after" "code-review"
 
@@ -63,9 +63,9 @@ integration_setup
 write_default_config
 
 # Record all required_deploy skills EXCEPT verification-before-completion
-for skill in quality-gates code-review requesting-code-review receiving-code-review \
+for skill in silver-quality-gates code-review requesting-code-review receiving-code-review \
              testing-strategy documentation finishing-a-development-branch \
-             deploy-checklist create-release test-driven-development tech-debt; do
+             deploy-checklist silver-create-release test-driven-development tech-debt; do
   run_record_skill "$skill" >/dev/null
 done
 
@@ -143,9 +143,9 @@ integration_setup
 printf '{
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
   },
   "state": { "state_file": "%s", "trivial_file": "%s/trivial-test-%s" }
 }\n' "$TMPSTATE" "$SB_TEST_DIR" "$TEST_RUN_ID" > "$TMPCFG"
@@ -156,9 +156,9 @@ out=$(run_stop_check "Stop")
 assert_blocked "S5.1: stop-check blocks with empty state in devops-cycle workflow" "$out"
 
 # Record all devops required skills (including quality-gate stages and review loops)
-for skill in blast-radius devops-quality-gates code-review requesting-code-review \
+for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \
              receiving-code-review testing-strategy documentation \
-             finishing-a-development-branch deploy-checklist create-release \
+             finishing-a-development-branch deploy-checklist silver-create-release \
              verification-before-completion test-driven-development tech-debt \
              review-loop-pass-1 review-loop-pass-2; do
   echo "$skill" >> "$TMPSTATE"

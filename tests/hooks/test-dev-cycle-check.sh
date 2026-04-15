@@ -33,7 +33,7 @@ setup() {
     "src_exclude_pattern": "__tests__|\\\\.test\\\\.",
     "active_workflow": "full-dev-cycle"
   },
-  "skills": { "required_planning": ["quality-gates"] },
+  "skills": { "required_planning": ["silver-quality-gates"] },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
 EOF
@@ -128,20 +128,20 @@ echo "=== dev-cycle-check.sh tests ==="
 echo "--- Group 1: Stage A (no planning) ---"
 setup
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "Stage A: source edit blocked without quality-gates" "$out"
+assert_blocks "Stage A: source edit blocked without silver-quality-gates" "$out"
 assert_contains "Stage A block message mentions HARD STOP" "$out" "HARD STOP"
 teardown
 
 # Test 2: Stage A — no planning → HARD STOP on Write to src
 setup
 out=$(run_hook_write "PreToolUse" "$TMPFILE")
-assert_blocks "Stage A: Write to src blocked without quality-gates" "$out"
+assert_blocks "Stage A: Write to src blocked without silver-quality-gates" "$out"
 teardown
 
 # Test 3: Stage A — non-src file passes even without planning
 setup
 out=$(run_hook_edit "PreToolUse" "${TMPDIR_TEST}/README.md" "old" "new")
-assert_passes "non-src file passes without quality-gates" "$out"
+assert_passes "non-src file passes without silver-quality-gates" "$out"
 teardown
 
 # Test 4: Stage A — test file passes even without planning
@@ -156,7 +156,7 @@ teardown
 # Test 5: Stage B — planning done but no code-review → BLOCK
 echo "--- Group 2: Stage B (planning done, no code-review) ---"
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_blocks "Stage B: src edit blocked after planning, before code-review" "$out"
 assert_contains "Stage B block message mentions code-review" "$out" "code-review"
@@ -164,7 +164,7 @@ teardown
 
 # Test 6: Phase-skip detection — finalization before code-review
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 echo "testing-strategy" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 # Should mention phase skip AND be blocked at Stage B (no code-review)
@@ -174,7 +174,7 @@ teardown
 # Test 7: Stage C — code-review done, finalization remaining → ALLOW with hint
 echo "--- Group 3: Stage C (code-review done) ---"
 setup
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 echo "code-review" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "Stage C: src edit allowed after code-review (finalization remaining)" "$out"
@@ -185,7 +185,7 @@ teardown
 echo "--- Group 4: Stage D (all complete) ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 testing-strategy
@@ -237,7 +237,7 @@ assert_blocks "plugin cache edit is blocked (§8 boundary)" "$out"
 assert_contains "boundary block mentions THIRD-PARTY PLUGIN" "$out" "THIRD-PARTY PLUGIN BOUNDARY"
 teardown
 
-# Test 14: DevOps workflow uses blast-radius as required_planning
+# Test 14: DevOps workflow uses silver-blast-radius as required_planning
 echo "--- Group 7: DevOps workflow ---"
 setup
 cat > "$TMPCFG" << 'EOF'
@@ -253,13 +253,13 @@ cat > "$TMPCFG" << 'EOF'
 EOF
 sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
-# Only quality-gates in state (wrong for devops)
-echo "quality-gates" > "$TMPSTATE"
+# Only silver-quality-gates in state (wrong for devops)
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "devops: edit blocked with quality-gates (need blast-radius+devops-quality-gates)" "$out"
+assert_blocks "devops: edit blocked with silver-quality-gates (need silver-blast-radius+devops-quality-gates)" "$out"
 teardown
 
-# Test 15: DevOps workflow passes with blast-radius + devops-quality-gates
+# Test 15: DevOps workflow passes with silver-blast-radius + devops-quality-gates
 setup
 cat > "$TMPCFG" << 'EOF'
 {
@@ -274,10 +274,10 @@ cat > "$TMPCFG" << 'EOF'
 EOF
 sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
-echo "blast-radius" > "$TMPSTATE"
+echo "silver-blast-radius" > "$TMPSTATE"
 echo "devops-quality-gates" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "devops: Stage B — needs code-review even with blast-radius+devops-quality-gates" "$out"
+assert_blocks "devops: Stage B — needs code-review even with silver-blast-radius+devops-quality-gates" "$out"
 teardown
 
 # Tests 16-17: State file tamper detection

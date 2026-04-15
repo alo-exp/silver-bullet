@@ -28,7 +28,7 @@ kill %1                     # Stop server
 
 If this app has been tested before, clean up SB artifacts first:
 ```bash
-rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/workflows docs/sessions docs/forensics docs/CHANGELOG.md docs/KNOWLEDGE.md docs/PRD-Overview.md docs/Architecture-and-Design.md docs/Testing-Strategy-and-Plan.md docs/CICD.md
+rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/workflows docs/sessions docs/silver-forensics docs/CHANGELOG.md docs/KNOWLEDGE.md docs/PRD-Overview.md docs/Architecture-and-Design.md docs/Testing-Strategy-and-Plan.md docs/CICD.md
 ```
 
 Initialize git (if not already):
@@ -76,7 +76,7 @@ As SB drives the workflow, check off each step:
 
 ### Per-Phase Loop
 - [ ] `/gsd:discuss-phase` invoked with what/expect/fail explanations shown to user
-- [ ] `/quality-gates` invoked (8 quality dimensions checked)
+- [ ] `/silver-quality-gates` invoked (8 quality dimensions checked)
 - [ ] `/gsd:plan-phase` invoked (PLAN.md created)
 - [ ] `/test-driven-development` invoked BEFORE implementation code
 - [ ] `/gsd:execute-phase` invoked (commits produced)
@@ -97,7 +97,7 @@ As SB drives the workflow, check off each step:
 
 ### Ship & Release
 - [ ] `/gsd:ship` invoked (or equivalent for direct-to-main)
-- [ ] `/create-release` invoked
+- [ ] `/silver-create-release` invoked
 
 ---
 
@@ -136,7 +136,7 @@ cat ~/.claude/.silver-bullet/state | sort -u
 ```
 
 **Required skills in state file:**
-- [ ] `quality-gates`
+- [ ] `silver-quality-gates`
 - [ ] `code-review`
 - [ ] `requesting-code-review`
 - [ ] `receiving-code-review`
@@ -144,7 +144,7 @@ cat ~/.claude/.silver-bullet/state | sort -u
 - [ ] `documentation`
 - [ ] `finishing-a-development-branch`
 - [ ] `deploy-checklist`
-- [ ] `create-release`
+- [ ] `silver-create-release`
 - [ ] `verification-before-completion`
 - [ ] `test-driven-development`
 - [ ] `tech-debt`

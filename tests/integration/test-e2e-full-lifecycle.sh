@@ -25,14 +25,14 @@ assert_blocked "S1.4: source edit blocked before planning" "$out"
 
 integration_teardown
 
-# Scenario 2: Planning phase — discuss, quality-gates, plan
+# Scenario 2: Planning phase — discuss, silver-quality-gates, plan
 echo "--- Scenario 2: Planning phase ---"
 integration_setup
 write_default_config
 
 # Record GSD planning phase skills
 run_record_skill "gsd-discuss-phase" >/dev/null
-run_record_skill "quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
 
 # Compliance status should show planning progress
 out=$(run_compliance_status)
@@ -56,7 +56,7 @@ echo "--- Scenario 3: Code review unlocks source editing ---"
 integration_setup
 write_default_config
 
-printf 'quality-gates\n' > "$TMPSTATE"
+printf 'silver-quality-gates\n' > "$TMPSTATE"
 
 # Still blocked before code-review
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -77,7 +77,7 @@ echo "--- Scenario 4: Execute phase with atomic commits ---"
 integration_setup
 write_default_config
 
-printf 'quality-gates\ncode-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\n' > "$TMPSTATE"
 
 # Intermediate commits allowed with planning only
 out=$(run_completion_audit "PreToolUse" "git commit -m 'feat: add tags'")
@@ -102,7 +102,7 @@ echo "--- Scenario 5: Verify and review loop ---"
 integration_setup
 write_default_config
 
-printf 'quality-gates\ncode-review\ntest-driven-development\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\ntest-driven-development\n' > "$TMPSTATE"
 
 run_record_skill "gsd-verify-work" >/dev/null
 run_record_skill "requesting-code-review" >/dev/null
@@ -125,7 +125,7 @@ integration_setup
 write_default_config
 
 # Write all skills except delivery finalization
-printf 'quality-gates\ncode-review\nrequesting-code-review\nreceiving-code-review\ntest-driven-development\nverification-before-completion\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\nrequesting-code-review\nreceiving-code-review\ntest-driven-development\nverification-before-completion\n' > "$TMPSTATE"
 
 # PR still blocked
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
@@ -137,7 +137,7 @@ run_record_skill "tech-debt" >/dev/null
 run_record_skill "documentation" >/dev/null
 run_record_skill "finishing-a-development-branch" >/dev/null
 run_record_skill "deploy-checklist" >/dev/null
-run_record_skill "create-release" >/dev/null
+run_record_skill "silver-create-release" >/dev/null
 
 # PR create now allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
@@ -156,7 +156,7 @@ write_default_config
 
 # Write all required skills
 cat > "$TMPSTATE" << 'EOSKILLS'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -164,7 +164,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
@@ -189,7 +189,7 @@ integration_setup
 write_default_config
 
 cat > "$TMPSTATE" << 'EOSKILLS'
-quality-gates
+silver-quality-gates
 code-review
 requesting-code-review
 receiving-code-review
@@ -197,7 +197,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt

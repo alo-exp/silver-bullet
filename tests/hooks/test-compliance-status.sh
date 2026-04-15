@@ -25,9 +25,9 @@ write_cfg() {
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
-    "required_planning": ["quality-gates"],
-    "required_deploy": ["quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","create-release"],
-    "all_tracked": ["quality-gates","code-review"]
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release"],
+    "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}" }
 }
@@ -117,16 +117,16 @@ teardown
 echo "--- Test 3: Planning skill present -> PLANNING 1/1 ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
-assert_contains "quality-gates in state -> PLANNING 1/1" "$out" "PLANNING 1/1"
+assert_contains "silver-quality-gates in state -> PLANNING 1/1" "$out" "PLANNING 1/1"
 teardown
 
 # Test 4: Review skills present -> REVIEW 3/3
 echo "--- Test 4: Review skills complete -> REVIEW 3/3 ---"
 setup
 write_cfg
-printf 'quality-gates\ncode-review\nrequesting-code-review\nreceiving-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\nrequesting-code-review\nreceiving-code-review\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "review skills complete -> REVIEW 3/3" "$out" "REVIEW 3/3"
 teardown
@@ -144,18 +144,18 @@ teardown
 echo "--- Test 6: Next skill shown when planning incomplete ---"
 setup
 write_cfg
-# No skills recorded -> first missing planning skill is quality-gates
+# No skills recorded -> first missing planning skill is silver-quality-gates
 rm -f "$TMPSTATE"
 out=$(run_hook)
-assert_contains "no skills -> Next shows quality-gates" "$out" "Next:"
-assert_contains "no skills -> Next: quality-gates" "$out" "quality-gates"
+assert_contains "no skills -> Next shows silver-quality-gates" "$out" "Next:"
+assert_contains "no skills -> Next: silver-quality-gates" "$out" "silver-quality-gates"
 teardown
 
 # Test 7: Next skill advances past completed planning to review
 echo "--- Test 7: Next advances to review phase when planning complete ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 # Planning done; next should be in review phase
 assert_contains "planning done -> Next: code-review" "$out" "code-review"
@@ -165,7 +165,7 @@ teardown
 echo "--- Test 8: Autonomous mode shown in output ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 printf 'autonomous' > "${HOME}/.claude/.silver-bullet/mode"
 out=$(run_hook)
 assert_contains "autonomous mode file -> output shows autonomous" "$out" "autonomous"
@@ -177,7 +177,7 @@ teardown
 echo "--- Test 9: Invalid mode value defaults to interactive ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 printf 'INVALID_MODE; rm -rf /' > "${HOME}/.claude/.silver-bullet/mode"
 out=$(run_hook)
 assert_contains "invalid mode -> defaults to interactive" "$out" "interactive"
@@ -189,7 +189,7 @@ teardown
 echo "--- Test 10: Total step count correct ---"
 setup
 write_cfg
-printf 'quality-gates\ncode-review\nrequesting-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ncode-review\nrequesting-code-review\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "3 lines in state -> Silver Bullet: 3 steps" "$out" "3 steps"
 teardown
@@ -207,9 +207,9 @@ teardown
 echo "--- Test 12: Release phase counts ---"
 setup
 write_cfg
-printf 'create-release\n' > "$TMPSTATE"
+printf 'silver-create-release\n' > "$TMPSTATE"
 out=$(run_hook)
-assert_contains "create-release in state -> RELEASE 1/1" "$out" "RELEASE 1/1"
+assert_contains "silver-create-release in state -> RELEASE 1/1" "$out" "RELEASE 1/1"
 teardown
 
 # ── WORKFLOW.md path progress tests ──────────────────────────────────────────
@@ -220,7 +220,7 @@ echo "=== WORKFLOW.md path progress ==="
 echo "--- WF1: shows FLOW progress ---"
 setup
 write_cfg
-echo "quality-gates" > "$TMPSTATE"
+echo "silver-quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
 ## Flow Log

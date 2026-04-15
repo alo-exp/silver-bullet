@@ -17,8 +17,8 @@ out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.1: edit blocked with no planning (Stage A)" "$out"
 assert_contains "S1.2: mentions HARD STOP" "$out" "HARD STOP"
 
-# Record quality-gates only: Stage B block (code-review required)
-run_record_skill "quality-gates" >/dev/null
+# Record silver-quality-gates only: Stage B block (code-review required)
+run_record_skill "silver-quality-gates" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.3: edit blocked without code-review (Stage B)" "$out"
 assert_contains "S1.4: mentions code-review" "$out" "code-review"
@@ -39,8 +39,8 @@ write_default_config
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_blocked "S2.1: commit blocked with no planning" "$out"
 
-# Record quality-gates: commit now ALLOWED
-run_record_skill "quality-gates" >/dev/null
+# Record silver-quality-gates: commit now ALLOWED
+run_record_skill "silver-quality-gates" >/dev/null
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.2: commit allowed after planning" "$out"
 
@@ -52,14 +52,14 @@ integration_setup
 write_default_config
 
 # Only planning: PR blocked
-run_record_skill "quality-gates" >/dev/null
+run_record_skill "silver-quality-gates" >/dev/null
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S3.1: PR create blocked with only planning" "$out"
 
 # Record all required_deploy: PR now ALLOWED
-for skill in quality-gates code-review requesting-code-review receiving-code-review \
+for skill in silver-quality-gates code-review requesting-code-review receiving-code-review \
              testing-strategy documentation finishing-a-development-branch deploy-checklist \
-             create-release verification-before-completion test-driven-development tech-debt; do
+             silver-create-release verification-before-completion test-driven-development tech-debt; do
   run_record_skill "$skill" >/dev/null
 done
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
@@ -88,8 +88,8 @@ echo "--- Scenario 6: Phase-skip detection (finalization before code-review) ---
 integration_setup
 write_default_config
 
-# Record quality-gates + testing-strategy but NOT code-review
-run_record_skill "quality-gates" >/dev/null
+# Record silver-quality-gates + testing-strategy but NOT code-review
+run_record_skill "silver-quality-gates" >/dev/null
 run_record_skill "testing-strategy" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S6.1: edit blocked due to phase-skip (testing before code-review)" "$out"
@@ -127,7 +127,7 @@ write_default_config
 
 # Write state with requesting-code-review BEFORE code-review
 cat > "$TMPSTATE" << 'EOF'
-quality-gates
+silver-quality-gates
 requesting-code-review
 code-review
 receiving-code-review
@@ -135,7 +135,7 @@ testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
