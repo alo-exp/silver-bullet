@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='light'?'light':'dark');</script>
-<meta name="description" content="How systemic inefficiency across every layer of modern software infrastructure undermines digital sustainability — 13-slide deck by Shafqat Ullah for GDC Sustainability Townhall, April 2026.">
-<title>The Brute-Force Stack — GDC Sustainability Townhall 2026</title>
+<meta name="description" content="How systemic inefficiency across every layer of modern software infrastructure undermines digital sustainability — a research presentation by Shafqat Ullah, Ālo Labs.">
+<title>The Brute-Force Stack</title>
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
 <link rel="stylesheet" href="../tokens.css">
@@ -716,7 +716,7 @@
 <body>
 
 <div class="nav">
-  <span class="slide-counter" id="counter">Slide 1 / 13</span>
+  <span class="slide-counter" id="counter">Slide 1 / 10</span>
   <div class="nav-btns">
     <button onclick="prev()" aria-label="Previous slide">← Prev</button>
     <button onclick="next()" aria-label="Next slide">Next →</button>
@@ -728,31 +728,17 @@
 <!-- ═══ SLIDE 1: TITLE ═══ -->
 <div class="slide s-title active" id="slide-1">
   <div class="title-grid"></div>
-  <span class="eyebrow">GDC Sustainability Townhall · April 15, 2026</span>
   <h1>The <em>Brute-Force</em><br>Software Stack</h1>
   <p class="subtitle">How systemic inefficiency across every layer of modern software infrastructure undermines digital sustainability — and what we need to do about it.</p>
   <div class="speaker-line">
     <div>
       <div class="name">Shafqat Ullah</div>
-      <div class="role">SourceVO · Platform Engineering & AIOps</div>
+      <div class="role">Ālo Labs</div>
     </div>
-    <div class="dot"></div>
-    <div class="role">CODES / Global Digital Compact</div>
   </div>
 </div>
 
-<!-- ═══ SLIDE 2: THESIS ═══ -->
-<div class="slide s-thesis" id="slide-2">
-  <span class="slide-tag">02</span>
-  <p class="q">"The GDC made sustainability a principle.<br><em>Implementation makes it real.</em>"</p>
-  <p class="attrib">— CODES Secretariat, Townhall Invitation, April 2026</p>
-  <div style="margin-top:12px; max-width:780px;">
-    <p style="font-size:17px; color:var(--text-secondary); line-height:1.7; font-family:var(--font-body);">But implementation happens at the infrastructure layer — inside Kubernetes clusters, CI/CD pipelines, and cloud dashboards. That layer has almost no connection to GDC sustainability commitments. The people who control it have no sustainability metric, no mandate, and no tooling to act on what the Compact requires.</p>
-    <p style="font-size:17px; color:var(--text-secondary); line-height:1.7; margin-top:14px; font-family:var(--font-body);">This talk presents evidence for a hypothesis: the mainstream software stack is so fundamentally resource-inefficient at every layer that a typical workload consumes <strong style="color:var(--text-primary);">10–30× more energy</strong> than an optimised equivalent — and this compounds the digital sector's sustainability crisis at planetary scale.</p>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 3: STACK OVERVIEW ═══ -->
+<!-- ═══ SLIDE 2: STACK OVERVIEW ═══ -->
 <div class="slide s-content" id="slide-3">
   <span class="slide-tag">03</span>
   <div class="slide-header">
@@ -1079,66 +1065,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 11: GLOBAL SOUTH ═══ -->
-<div class="slide s-content" id="slide-11">
-  <span class="slide-tag">11</span>
-  <div class="slide-header">
-    <span class="layer-badge" style="background:var(--cyan);">Global South</span>
-    <h2>A second dimension — locking in carbon for the next billion users</h2>
-    <span class="sub">Bangladesh · EdTech · Digital infrastructure choices made now</span>
-  </div>
-  <div class="stat-grid cols-2" style="margin-bottom:16px;">
-    <div class="stat-card" style="border-top:3px solid var(--cyan);">
-      <div class="stat-num sm" style="color:var(--cyan);">15–20 yrs</div>
-      <div class="stat-label">Productive life of digital infrastructure</div>
-      <div class="stat-desc">Infrastructure choices made today for EdTech in Bangladesh, Southeast Asia, and Sub-Saharan Africa will be in production for 15–20 years — locking in efficiency or waste for decades</div>
-      <div class="stat-source">Infrastructure lifecycle analysis</div>
-    </div>
-    <div class="stat-card" style="border-top:3px solid var(--cyan);">
-      <div class="stat-num sm" style="color:var(--cyan);">Next 1B</div>
-      <div class="stat-label">Digital learners coming online</div>
-      <div class="stat-desc">CodersTrust Bangladesh and similar organisations are building digital education infrastructure now. Framework and language choices made at this foundation layer determine the carbon and resource cost for millions of users over the next two decades</div>
-      <div class="stat-source">CodersTrust / SourceVO operational context</div>
-    </div>
-  </div>
-  <div class="stat-wide" style="border-left-color:var(--cyan);">
-    <div class="num" style="color:var(--cyan); font-size:34px; min-width:80px;">GDC Obj. 1(e)</div>
-    <div class="text">
-      <div class="label">"Promote sustainability across the life cycle of digital technologies… context-specific measures to increase resource efficiency"</div>
-      <div class="desc">This commitment explicitly targets developing-country contexts and lifecycle responsibility. It cannot be fulfilled if the infrastructure layer — where the actual choices are made — has no sustainability mandate, metric, or tooling.</div>
-    </div>
-    <div class="src">Global Digital Compact text, Sept 2024</div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 12: CALL TO ACTION ═══ -->
-<div class="slide s-cta" id="slide-12">
-  <span class="slide-tag" style="color:rgba(255,255,255,0.3);">12</span>
-  <span class="eyebrow">Concrete asks for this townhall</span>
-  <h2>Making sustainability-by-default a runtime behaviour, not a design aspiration</h2>
-  <div class="asks">
-    <div class="ask-item">
-      <span class="ask-num">01</span>
-      <span class="ask-text"><strong>Include platform engineers in CODES working groups.</strong> DevOps and platform practitioners control the infrastructure layer where sustainability commitments live or die. They are currently absent from GDC implementation bodies.</span>
-    </div>
-    <div class="ask-item">
-      <span class="ask-num">02</span>
-      <span class="ask-text"><strong>Mandate sustainability metrics in CI/CD tooling.</strong> A "green build" status — surfacing carbon and energy impact at the point of infrastructure decisions — should be part of GDC implementation guidance, not an optional add-on.</span>
-    </div>
-    <div class="ask-item">
-      <span class="ask-num">03</span>
-      <span class="ask-text"><strong>Apply lifecycle sustainability to Global South infrastructure first.</strong> Digital infrastructure for developing countries must be built on efficient foundations from the start — not inherit the West's technical debt at scale.</span>
-    </div>
-    <div class="ask-item">
-      <span class="ask-num">04</span>
-      <span class="ask-text"><strong>Reference: Green Software Foundation's SCI metric, Carbon-Aware SDK, CODES digital sustainability frameworks</strong> — already-existing tools that operationalise the GDC's Objective 1(e) commitment at the platform layer.</span>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ SLIDE 13: SOURCES ═══ -->
-<div class="slide s-sources" id="slide-13">
-  <span class="slide-tag">13</span>
+<!-- ═══ SLIDE 10: SOURCES ═══ -->
+<div class="slide s-sources" id="slide-10">
+  <span class="slide-tag">10</span>
   <div class="slide-header">
     <span class="layer-badge">Sources</span>
     <h2>References & data provenance</h2>
@@ -1225,13 +1154,6 @@
     <div class="source-item">
       <span class="s-num">S12</span>
       <div class="s-body">
-        <div class="s-title">Global Digital Compact text — Objective 1(e)</div>
-        <div class="s-detail">un.org/pact-for-the-future/en/annex-i-global-digital-compact · Adopted Sept 2024, 193 Member States</div>
-      </div>
-    </div>
-    <div class="source-item">
-      <span class="s-num">S13</span>
-      <div class="s-body">
         <div class="s-title">Data Center Knowledge — Technical debt & sustainability, 2024</div>
         <div class="s-detail">20% CPU overhead from poorly optimised code = equivalent energy increase</div>
       </div>
@@ -1248,7 +1170,7 @@
 
 </div><!-- /deck -->
 
-<div class="progress"><div class="progress-fill" id="progress-fill" style="width:7.7%"></div></div>
+<div class="progress"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
 
 <script>
   const slides = document.querySelectorAll('.slide');
