@@ -122,6 +122,11 @@ FOR each phase in remaining_phases:
     - FLOW 9 (TDD) within FLOW 7 for implementation plans
     - FLOW 10 (REVIEW) after FLOW 7
     - FLOW 12 (SECURE) after FLOW 11
+  TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
+    Use Edit tool to change:  - [ ] **Phase {N}: ...
+    To:                       - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
+    Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
+    NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
   AFTER phase complete: advance to next phase
   UPDATE WORKFLOW.md Phase Iterations table
 END FOR

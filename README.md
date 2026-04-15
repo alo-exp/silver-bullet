@@ -237,7 +237,8 @@ The plugin doesn't rely on Claude reading instructions. It enforces compliance t
 | **7. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before Claude processes any message. |
 | **8. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
 | **9. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
-| **10. Redundant instructions + anti-rationalization** | CLAUDE.md + workflow file both enforce the same rules. Explicit rules against skipping, combining, or implicitly covering steps. |
+| **10. ROADMAP freshness gate** | `roadmap-freshness.sh` fires on every `git commit`. Blocks if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked — prevents milestone state from diverging from execution reality. |
+| **11. Redundant instructions + anti-rationalization** | CLAUDE.md + workflow file both enforce the same rules. Explicit rules against skipping, combining, or implicitly covering steps. |
 
 ## Customization
 
@@ -380,6 +381,9 @@ hooks/compliance-status.sh                 ────────────�
                                            ~/.claude/.silver-bullet/trivial (bypass flag)
 hooks/completion-audit.sh                  ~/.claude/.silver-bullet/mode (interactive|autonomous)
   → blocks commit/push/deploy              ~/.claude/.silver-bullet/session-log-path
+
+hooks/roadmap-freshness.sh
+  → blocks commit if phase SUMMARY.md staged without ROADMAP.md checkbox ticked
 
 hooks/stop-check.sh
   → blocks task-complete if skills missing (fires on Stop/SubagentStop)
