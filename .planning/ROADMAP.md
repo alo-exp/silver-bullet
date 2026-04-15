@@ -41,12 +41,12 @@
 
 - [x] **Phase 21: Foundation** - Path contracts, WORKFLOW.md spec, artifact-review-assessor, doc-scheme update (completed 2026-04-14)
 - [x] **Phase 22: Core Paths** - 6 essential paths every composition uses (BOOTSTRAP, ORIENT, PLAN, EXECUTE, VERIFY, SHIP) (completed 2026-04-14)
-- [ ] **Phase 23: Specialized Paths** - 6 context-triggered paths (EXPLORE, IDEATE, SPECIFY, DESIGN CONTRACT, UI QUALITY, DESIGN HANDOFF)
-- [ ] **Phase 24: Cross-Cutting Paths + Quality Gate Dual-Mode** - 7 cross-cutting paths plus dual-mode quality gates
+- [x] **Phase 23: Specialized Paths** - 6 context-triggered paths (EXPLORE, IDEATE, SPECIFY, DESIGN CONTRACT, UI QUALITY, DESIGN HANDOFF) (completed 2026-04-15)
+- [x] **Phase 24: Cross-Cutting Paths + Quality Gate Dual-Mode** - 7 cross-cutting paths plus dual-mode quality gates (completed 2026-04-15)
 - [x] **Phase 25: Composer Redesign** - /silver as composer with supervision loop, dynamic insertion, anti-stall (completed 2026-04-14)
 - [x] **Phase 26: Hook Alignment + silver:migrate** - 5 hooks modified for WORKFLOW.md awareness plus migration skill (completed 2026-04-14)
-- [ ] **Phase 27: silver-fast Redesign** - 3-tier complexity triage with gsd-quick flags and autonomous escalation
-- [ ] **Phase 28: Documentation Update** - silver-bullet.md, doc-scheme, ENFORCEMENT.md, full-dev-cycle demotion
+- [x] **Phase 27: silver-fast Redesign** - 3-tier complexity triage with gsd-quick flags and autonomous escalation (completed 2026-04-15)
+- [x] **Phase 28: Documentation Update** - silver-bullet.md, doc-scheme, ENFORCEMENT.md, full-dev-cycle demotion (completed 2026-04-15)
 - [x] **Phase 29: Help Center + Homepage** - Homepage refresh and help center rewrite for composable architecture (completed 2026-04-14)
 
 ## Phase Details
