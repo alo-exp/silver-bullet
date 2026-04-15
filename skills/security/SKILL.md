@@ -201,3 +201,11 @@ If existing code violates these rules:
 | "It's behind a firewall" | Firewalls get bypassed. Defense in depth. |
 | "We don't have sensitive data" | User emails, passwords, and usage patterns are sensitive. |
 | "This is just a prototype" | Prototypes become production. Secure from day one. |
+
+---
+
+## Backlog Capture (mandatory)
+
+After completing the security review, any low-priority or suggested findings that are not blocking must be **immediately added to the GSD backlog** using `/gsd-add-backlog`. Do NOT silently drop security suggestions — they must be captured or implemented.
+
+If no items were deferred, output: "No backlog items from this security review."

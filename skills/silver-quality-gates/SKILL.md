@@ -106,3 +106,20 @@ Output a report in this format:
   Do NOT proceed until all failures are resolved and this skill is re-run.
 
 **There are no exceptions.** A ❌ is a hard stop, not a warning.
+
+---
+
+## Step 5: Backlog capture (mandatory)
+
+After gate enforcement, scan the report for any items that:
+- Were marked ⚠️ N/A but may apply in a future phase
+- Were advisory suggestions noted during evaluation (not hard failures)
+- Were deferred "nice-to-have" improvements
+
+For each such item, **immediately add it to the GSD backlog** using `/gsd-add-backlog`. Do NOT silently drop suggested items — they must either be implemented now or captured in the backlog.
+
+```
+Skill(skill="gsd-add-backlog", args="{item description}")
+```
+
+If no items were deferred or suggested, output: "No backlog items to capture from this quality review."

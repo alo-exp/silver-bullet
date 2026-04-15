@@ -388,6 +388,8 @@ execution with atomic commits and SUMMARY.md. Same quality guarantees as the mai
 
 **If it fails:** Same recovery as the main PLAN and EXECUTE steps above.
 
+**Backlog enforcement (mandatory):** After receiving review findings, any low-priority or advisory items that are not being fixed MUST be added to the GSD backlog using `/gsd-add-backlog`. Items must not be silently dropped — either fix them now or capture them. If no items were deferred, explicitly note "No deferred review items."
+
 ---
 
 > **End of per-phase loop.** Return to DISCUSS for the next phase in ROADMAP.md.

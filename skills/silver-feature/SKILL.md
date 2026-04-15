@@ -370,6 +370,17 @@ Invoke `gsd-review --multi-ai` via the Skill tool. Purpose: cross-AI adversarial
 
 Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
 
+## Step 9e: Backlog capture from review
+
+After receiving review findings, scan REVIEW.md for any low-priority, deferred, or advisory items that were not fixed. **Every such item must be added to the GSD backlog immediately** — do not silently drop them.
+
+For each unfixed non-blocking finding:
+```
+Skill(skill="gsd-add-backlog", args="<finding description from REVIEW.md>")
+```
+
+If all findings were fixed or no advisory items exist, output: "No deferred review items to capture."
+
 ## Step 10: Security Review
 
 Invoke `silver:security` via the Skill tool. Non-skippable gate.
