@@ -37,7 +37,7 @@ All hooks check WORKFLOW.md first, falling back to legacy skill markers when WOR
 | `prompt-reminder.sh` | Includes current WORKFLOW.md position | Omits composition context |
 | `spec-floor-check.sh` | Advisory when FLOW 4 excluded from composition | Hard gate always |
 
-Detection: hooks check for `.planning/WORKFLOW.md` existence. Present = composable paths mode, absent = legacy mode.
+Detection: hooks check for `.planning/WORKFLOW.md` existence. Present = composable flows mode, absent = legacy mode.
 
 ## Skill Classification
 

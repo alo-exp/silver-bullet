@@ -16,7 +16,7 @@
 
 | What | How to invoke |
 |------|---------------|
-| `/silver` smart router | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
+| `/silver` smart orchestrator | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
 | Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |

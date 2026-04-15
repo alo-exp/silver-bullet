@@ -31,7 +31,7 @@ Mode:    {interactive | autonomous — from §10e or session selection}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -56,9 +56,9 @@ grep "^current_phase\|^current_plan" .planning/STATE.md 2>/dev/null
 grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
-Construct the proposed flow chain from the 18-flow catalog (FLOW 0-17), including only relevant paths based on the context scan. Standard full-feature chain:
+Construct the proposed flow chain from the 18-flow catalog (FLOW 0-17), including only relevant flows based on the context scan. Standard full-feature chain:
 
 FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (INTEL) → FLOW 3 (BRAINSTORM) → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (TDD) → FLOW 10 (REVIEW) → FLOW 11 (VERIFY) → FLOW 12 (SECURE) → FLOW 13 (SHIP)
 
@@ -68,7 +68,7 @@ Display the composition proposal to the user:
 
 ```
 ┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → ...
+│ Flows: FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → ...
 │ Skipped: FLOW 4 (SPECIFY) — SPEC.md exists
 │ Phase loop: Phases {start}-{end} (from ROADMAP.md)
 └────────────────────────────────────────────────
@@ -80,7 +80,7 @@ Approve composition? [Y/n]
 In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
 
 ```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
+⚡ Autonomous mode: auto-confirming composition — {flow count} flows, {skipped count} skipped
 ```
 
 ### 5. Create WORKFLOW.md
@@ -94,7 +94,7 @@ If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md
 
 ## Per-Phase Loop
 
-After composition proposal is confirmed, execute paths across phases using STATE.md for phase advancement.
+After composition proposal is confirmed, execute flows across phases using STATE.md for phase advancement.
 
 ### 1. Read Current Phase
 
@@ -116,7 +116,7 @@ For each remaining phase in the current milestone:
 ```
 FOR each phase in remaining_phases:
   EXECUTE FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
-  INSERT optional paths per composition proposal:
+  INSERT optional flows per composition proposal:
     - FLOW 6 (DESIGN CONTRACT) before FLOW 7 if UI discovered
     - FLOW 8 (UI QUALITY) after FLOW 7 if UI in scope
     - FLOW 9 (TDD) within FLOW 7 for implementation plans
@@ -129,39 +129,39 @@ END FOR
 
 ### 4. Update WORKFLOW.md After Each Phase
 
-After completing all paths for a phase, write to WORKFLOW.md Phase Iterations table:
+After completing all flows for a phase, write to WORKFLOW.md Phase Iterations table:
 
 ```
 | Phase {N} | FLOW 5 ✓ → FLOW 7 ✓ → FLOW 11 ✓ → FLOW 13 ✓ |
 ```
 
-### 5. PATH Delegation
+### 5. Flow Delegation
 
-The existing Step 0 through Step 17 sections below serve as the implementation of each PATH in the loop. The supervision loop (next section) runs BETWEEN each PATH execution.
+The existing Step 0 through Step 17 sections below serve as the implementation of each flow in the loop. The supervision loop (next section) runs BETWEEN each flow execution.
 
 ## Supervision Loop
 
-The supervision loop runs BETWEEN each PATH completion. It checks exit conditions, evaluates composition changes, detects stall, advances, and reports progress. This is implemented as inline logic at each PATH boundary.
+The supervision loop runs BETWEEN each flow completion. It checks exit conditions, evaluates composition changes, detects stall, advances, and reports progress. This is implemented as inline logic at each flow boundary.
 
-### After Each PATH Completes:
+### After Each Flow Completes:
 
 **Step SL-1: Exit Condition Check (D-07.1)**
 
-Verify the PATH's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
+Verify the flow's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
 
 ```
 ⚠ FLOW {N} exit condition not met: {condition description}
 Options:
   A. Retry FLOW {N}
   B. Skip with reason (document in WORKFLOW.md)
-  C. Insert FLOW 14 (DEBUG) before next path
+  C. Insert FLOW 14 (DEBUG) before next flow
 ```
 
 **Step SL-2: Composition Evaluation (D-07.2)**
 
 Re-evaluate context for dynamic insertion triggers:
 
-- **Execution failed** → insert FLOW 14 (DEBUG) before next path (per D-11):
+- **Execution failed** → insert FLOW 14 (DEBUG) before next flow (per D-11):
   - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
 - **UI files discovered in SUMMARY.md** → insert FLOW 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
   - Check SUMMARY.md for `*.tsx`, `*.css`, `*.html`, or `design/` references
@@ -171,9 +171,9 @@ Re-evaluate context for dynamic insertion triggers:
 
 Run 4-tier anti-stall detection:
 
-- **Tier 1 — Progress-based (D-16):** If no WORKFLOW.md path advancement in 10 minutes of execution wall-clock time, display:
+- **Tier 1 — Progress-based (D-16):** If no WORKFLOW.md flow advancement in 10 minutes of execution wall-clock time, display:
   ```
-  ⚠ STALL DETECTED: No path advancement in 10 min. Continue? [Y/debug/skip]
+  ⚠ STALL DETECTED: No flow advancement in 10 min. Continue? [Y/debug/skip]
   ```
 
 - **Tier 2 — Permission-stall (D-17):** If blocked waiting for user input >5 min in autonomous mode, auto-select recommended option (the first/default option) and log to WORKFLOW.md Autonomous Decisions table:
@@ -193,14 +193,14 @@ Run 4-tier anti-stall detection:
 
 **Step SL-4: Advance (D-07.4)**
 
-Move to the next path in the composition chain.
+Move to the next flow in the composition chain.
 
 **Step SL-5: Progress Report (D-09)**
 
-Display progress after each PATH:
+Display progress after each flow:
 
 ```
-PATH {current}/{total}: {name} ✓ | Context: ~{percent}% | Remaining: {list of remaining paths}
+FLOW {current}/{total}: {name} ✓ | Context: ~{percent}% | Remaining: {list of remaining flows}
 ```
 
 **Step SL-6: WORKFLOW.md Update (D-10)**

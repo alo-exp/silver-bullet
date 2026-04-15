@@ -4,9 +4,9 @@ description: "Route freeform text to the right Silver Bullet or GSD skill automa
 argument-hint: "<description of what you want to do>"
 ---
 
-# /silver — Smart Skill Router
+# /silver — Smart Skill Orchestrator
 
-Smart dispatcher for Silver Bullet skills. Accepts freeform natural language and routes to the most appropriate SB skill — or delegates to /gsd:do for GSD commands.
+Smart orchestrator for Silver Bullet skills. Accepts freeform natural language and routes to the most appropriate SB skill — or delegates to /gsd:do for GSD commands.
 
 Never does the work itself. Match intent, show routing decision, invoke the chosen skill.
 
@@ -57,8 +57,8 @@ Wait for response, then proceed.
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | Ingest external artifacts (JIRA, Figma, Google Docs) into SPEC.md + DESIGN.md, or fetch cross-repo spec |
 
 **Composer note:** Each silver-* workflow is a composition template. After routing,
-the workflow proposes a path composition to the user before executing. The router
-does not need to know about paths — it routes to the right workflow, which handles
+the workflow proposes a flow composition to the user before executing. The orchestrator
+does not need to know about flows — it routes to the right workflow, which handles
 composition internally.
 
 **"Ship" disambiguation:**
