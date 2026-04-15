@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.20.4** — All user-facing skills now use `/silver-*` naming convention; 22 internal skills hidden from slash command menu. Previous: v0.20.3 Google Chat release notifications; v0.20.2 shared Flow Log regex lib + 169-test suite.
+**Current version: v0.20.5** — `/silver` renamed from "Smart Skill Router" to "Smart Skill Orchestrator"; composable workflow building blocks renamed from "paths" to "flows" for consistency with the FLOW 0–17 catalog. Previous: v0.20.4 `/silver-*` naming convention + 22 internal skills hidden; v0.20.3 Google Chat release notifications.
 
 ## How It Works
 
@@ -90,7 +90,7 @@ apt install jq     # Linux
 ### 3. (Optional) Install DevOps plugins
 
 If you'll use the `devops-cycle` workflow, these optional plugins provide context-aware
-enrichment. Silver Bullet's skill router automatically selects the best plugin for
+enrichment. Silver Bullet's skill orchestrator automatically selects the best plugin for
 your IaC toolchain and cloud provider. None are required — the workflow works without them.
 
 ```

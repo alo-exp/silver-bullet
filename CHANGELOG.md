@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.20.5] — 2026-04-16
+
+### Changed
+- `/silver` skill: renamed from "Smart Skill Router" to "Smart Skill Orchestrator" — better reflects its role composing and sequencing workflows rather than just dispatching
+- Composable workflow building blocks renamed from "paths" to "flows" throughout: `silver-feature/SKILL.md` (20 occurrences in Composition Proposal and Supervision Loop), `silver/SKILL.md` (Composer note), `silver-bullet.md.base` §2h ("Composable Flows Catalog"), `ENFORCEMENT.md` ("composable flows mode"), `full-dev-cycle.md` both templates and docs copies
+
+### Tests
+- Total: 962 tests, 3/3 suites green
+
 ## [0.20.4] — 2026-04-16
 
 ### Changed
