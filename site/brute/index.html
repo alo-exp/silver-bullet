@@ -45,7 +45,20 @@
     font-family: var(--font-mono);
     letter-spacing: 0.04em;
   }
-  .nav-btns { display: flex; gap: 10px; }
+  .nav-btns { display: flex; gap: 10px; align-items: center; }
+  .theme-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    transition: border-color .15s, color .15s;
+    margin-right: 4px;
+  }
+  .theme-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
   .nav button {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -718,6 +731,7 @@
 <div class="nav">
   <span class="slide-counter" id="counter">Slide 1 / 10</span>
   <div class="nav-btns">
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle light/dark theme">🌙</button>
     <button onclick="prev()" aria-label="Previous slide">← Prev</button>
     <button onclick="next()" aria-label="Next slide">Next →</button>
   </div>
@@ -1190,6 +1204,21 @@
 
   function next() { showSlide(current + 1); }
   function prev() { showSlide(current - 1); }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') !== 'light';
+    const next = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('silver-bullet-theme', next);
+    document.getElementById('theme-btn').textContent = next === 'dark' ? '🌙' : '☀️';
+  }
+
+  // Sync button icon with current theme on load
+  (function() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    document.getElementById('theme-btn').textContent = theme === 'light' ? '☀️' : '🌙';
+  })();
 
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
