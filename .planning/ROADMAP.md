@@ -222,3 +222,5 @@ Items below are deferred, not yet scheduled to a milestone. Numbered 999.x.
 | 999.15 | Analyze composable flows for atomicity: split non-atomic flows, eliminate redundancy from arbitrary compositions, fix ordering issues that cause work at wrong step | user request 2026-04-16 | High | High |
 | 999.16 | Document `SILVER_BULLET_STATE_FILE` env var override in ENFORCEMENT.md or README — currently undocumented despite being used by hooks and tests | code review 2026-04-16 | Low | Low |
 | 999.17 | Add test for `hooks/session-start` security guard fallback path (invalid path outside `~/.claude/` falls back to default state file) | code review 2026-04-16 | Low | Low |
+| 999.18 | Ensure full implementation of `doc-scheme.base.md` is restored — verify all sections from the base schema are present and correctly implemented in the live documentation scheme | user request 2026-04-16 | High | Medium |
+| 999.19 | Implement the entire backlog (all items), working autonomously — run `/silver` to execute all 999.x backlog items end-to-end without manual intervention | user request 2026-04-16 | High | High |
