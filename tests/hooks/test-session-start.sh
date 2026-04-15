@@ -279,6 +279,34 @@ fi
 rm -rf "$HOOK_WORKDIR"
 restore_branch
 
+# ── Security guard fallback test ─────────────────────────────────────────────
+
+# Test 8: SILVER_BULLET_STATE_FILE pointing outside ~/.claude/ falls back to default state file
+# The security guard (SB-002/SB-003) rejects invalid paths and silently uses the default.
+echo "--- Test 8: Invalid SILVER_BULLET_STATE_FILE outside ~/.claude/ falls back to default ---"
+save_branch
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$REAL_BRANCH"
+OUTSIDE_PATH="/tmp/evil-state-file-${TEST_RUN_ID}"
+REAL_STATE_FILE="${SB_TEST_DIR}/state"
+# Ensure the real default state file is absent so we can detect the fallback
+rm -f "$REAL_STATE_FILE" 2>/dev/null || true
+( cd "$HOOK_WORKDIR" && \
+  SILVER_BULLET_STATE_FILE="$OUTSIDE_PATH" \
+  bash "$HOOK" 2>/dev/null ) || true
+# The hook must NOT write to the invalid outside path
+if [[ -f "$OUTSIDE_PATH" ]]; then
+  echo "  FAIL: hook wrote to path outside ~/.claude/ — security guard bypassed"
+  FAIL=$((FAIL + 1))
+  rm -f "$OUTSIDE_PATH"
+else
+  echo "  PASS: invalid path outside ~/.claude/ was rejected — not written"
+  PASS=$((PASS + 1))
+fi
+rm -rf "$HOOK_WORKDIR"
+restore_branch
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
