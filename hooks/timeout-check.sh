@@ -91,8 +91,8 @@ if [[ -f "$state_file" ]]; then
   current_state_mtime=$(_mtime "$state_file") || current_state_mtime=0
 fi
 
-if [[ "$current_state_mtime" -gt "$last_state_mtime" ]]; then
-  # State file changed — skill was recorded — reset progress baseline
+if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mtime" -ge "$session_start" ]]; then
+  # State file changed during this session — skill was recorded — reset progress baseline
   echo "$current_state_mtime" > "$last_state_mtime_file"
   echo "$call_count" > "$last_progress_file"
   last_progress_count=$call_count
