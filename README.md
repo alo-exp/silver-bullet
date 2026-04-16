@@ -8,7 +8,7 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.21.0** — Hook quality & docs: fixed 6 hook false-positives and deadlocks (UAT-gate header row, dev-cycle-check heredoc, CI status deadlock), added session-intent awareness to stop-check and completion-audit (empty state = non-dev session = silent exit), extracted trivial-bypass shared helper, added CI version-drift warning, and documented the trivial-session bypass mechanism fully in README and ARCHITECTURE. Previous: v0.20.11 trivial-session bypass for stop-check.
+**Current version: v0.21.1** — Patch: disabled `ensure-model-routing.sh` GSD agent frontmatter injection (SB must not modify third-party plugin files); hook now exits immediately, GSD-native `model_overrides` replacement tracked in backlog 999.20. Previous: v0.21.0 hook quality & docs.
 
 ## How It Works
 
