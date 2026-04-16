@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial",
+            "command": "umask 0077 && mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial",
             "async": false
           }
         ]
