@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
-# ensure-model-routing.sh — Reapply GSD agent model directives if a GSD update wiped them.
+# ensure-model-routing.sh — DISABLED (2026-04-16). See comment block below for rationale.
 #
-# GSD updates overwrite ~/.claude/agents/gsd-*.md with clean plugin versions,
-# removing any customisations. This script runs at session start as a canary-guarded
-# self-healing patch: if gsd-planner.md no longer has `model: opus`, all directives
-# are silently reapplied. Takes <50ms when patching is needed; ~2ms when up to date.
+# Original purpose: reapply GSD agent model: directives if a GSD update wiped them.
+# Discontinued: SB must not modify third-party plugin source files.
 #
-# Called by: hooks/session-start (inline, before Superpowers context injection)
-# Output:    none (silent repair) — log line written to SB state dir
-# Security:  only writes model: into files that already exist under ~/.claude/agents/;
-#            never creates new files; validates paths before writing.
+# Called by: hooks/session-start — call is commented out as of 2026-04-16.
+# Replacement: GSD-native model_overrides config. See backlog 999.19.
 # Compat:    bash 3.2+ (macOS default) — no associative arrays used.
 
 set -euo pipefail

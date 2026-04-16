@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests for hooks/ensure-model-routing.sh
-# Verifies canary logic, path security, sed replacement, python insertion, and model routing.
+# Hook is DISABLED (2026-04-16) — frontmatter injection into GSD agent files
+# is discontinued. Tests verify the hook is a safe no-op in all scenarios.
 
 set -euo pipefail
 
@@ -21,17 +22,6 @@ assert_fail() {
   local reason="$2"
   echo "  FAIL: $label — $reason"
   FAIL=$((FAIL + 1))
-}
-
-assert_file_contains() {
-  local label="$1"
-  local path="$2"
-  local needle="$3"
-  if grep -q "$needle" "$path" 2>/dev/null; then
-    assert_pass "$label"
-  else
-    assert_fail "$label" "expected '$needle' in $path"
-  fi
 }
 
 assert_file_not_contains() {
@@ -55,24 +45,7 @@ assert_exit_zero() {
   fi
 }
 
-assert_count_of() {
-  local label="$1"
-  local path="$2"
-  local pattern="$3"
-  local expected="$4"
-  local actual
-  actual=$(grep -c "$pattern" "$path" 2>/dev/null || true)
-  if [[ "$actual" -eq "$expected" ]]; then
-    assert_pass "$label"
-  else
-    assert_fail "$label" "expected $expected occurrences of '$pattern', got $actual"
-  fi
-}
-
 # ── Setup helper ──────────────────────────────────────────────────────────────
-# Creates a fake HOME with .claude/agents/ and .claude/.silver-bullet/
-# Usage: make_fake_home
-# Sets: FAKE_HOME, FAKE_AGENTS_DIR, FAKE_SB_DIR
 make_fake_home() {
   FAKE_HOME="$(mktemp -d)"
   FAKE_AGENTS_DIR="${FAKE_HOME}/.claude/agents"
@@ -80,8 +53,6 @@ make_fake_home() {
   mkdir -p "$FAKE_AGENTS_DIR" "$FAKE_SB_DIR"
 }
 
-# Creates a gsd-*.md with YAML frontmatter and optional extra frontmatter lines
-# Usage: make_agent_file <path> [extra_frontmatter_line]
 make_agent_file() {
   local path="$1"
   local extra="${2:-}"
@@ -111,66 +82,71 @@ cleanup_fake_home() {
 trap cleanup_fake_home EXIT
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
-echo "=== ensure-model-routing.sh tests ==="
+echo "=== ensure-model-routing.sh tests (hook DISABLED) ==="
 
-# ── S1: Canary stale -> all directives applied ────────────────────────────────
-echo "--- S1: Canary stale -> model directives applied ---"
+# ── S1: Hook exits 0 and makes no modifications when canary is stale ──────────
+# Previously this scenario verified patching ran. Now the hook is a no-op.
+echo "--- S1: Canary stale -> no-op (hook disabled) ---"
 make_fake_home
 
-# gsd-planner.md WITHOUT model: opus (canary stale)
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-planner.md"
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-security-auditor.md"
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-executor.md"
 
+before_planner=$(cat "${FAKE_AGENTS_DIR}/gsd-planner.md")
 exit_code=$(run_hook "$FAKE_HOME")
-assert_exit_zero "S1: hook exits 0" "$exit_code"
-assert_file_contains "S1: gsd-planner.md gets model: opus" \
-  "${FAKE_AGENTS_DIR}/gsd-planner.md" "^model: opus"
-assert_file_contains "S1: gsd-security-auditor.md gets model: opus" \
-  "${FAKE_AGENTS_DIR}/gsd-security-auditor.md" "^model: opus"
-assert_file_contains "S1: gsd-executor.md gets model: sonnet" \
-  "${FAKE_AGENTS_DIR}/gsd-executor.md" "^model: sonnet"
-# Log file should be written
-assert_file_contains "S1: audit log written" \
-  "${FAKE_SB_DIR}/model-routing-patch.log" "ensure-model-routing"
+
+assert_exit_zero "S1: hook exits 0 when canary stale" "$exit_code"
+
+after_planner=$(cat "${FAKE_AGENTS_DIR}/gsd-planner.md")
+if [[ "$before_planner" == "$after_planner" ]]; then
+  assert_pass "S1: gsd-planner.md not modified (no-op)"
+else
+  assert_fail "S1: gsd-planner.md not modified (no-op)" "file was unexpectedly modified"
+fi
+
+assert_file_not_contains "S1: no model: line injected into gsd-planner.md" \
+  "${FAKE_AGENTS_DIR}/gsd-planner.md" "^model:"
+assert_file_not_contains "S1: no model: line injected into gsd-security-auditor.md" \
+  "${FAKE_AGENTS_DIR}/gsd-security-auditor.md" "^model:"
+assert_file_not_contains "S1: no model: line injected into gsd-executor.md" \
+  "${FAKE_AGENTS_DIR}/gsd-executor.md" "^model:"
 
 cleanup_fake_home
 
-# ── S2: Canary fresh -> no-op ─────────────────────────────────────────────────
-echo "--- S2: Canary fresh (gsd-planner has model: opus) -> no-op ---"
+# ── S2: Hook exits 0 when canary is already correct ──────────────────────────
+echo "--- S2: Canary fresh -> exits 0 (no-op) ---"
 make_fake_home
 
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-planner.md" "model: opus"
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-executor.md"
 
-# Capture checksum before
-before_cksum=$(md5 -q "${FAKE_AGENTS_DIR}/gsd-planner.md" 2>/dev/null || md5sum "${FAKE_AGENTS_DIR}/gsd-planner.md" | awk '{print $1}')
-before_executor_cksum=$(md5 -q "${FAKE_AGENTS_DIR}/gsd-executor.md" 2>/dev/null || md5sum "${FAKE_AGENTS_DIR}/gsd-executor.md" | awk '{print $1}')
+before_planner=$(cat "${FAKE_AGENTS_DIR}/gsd-planner.md")
+before_executor=$(cat "${FAKE_AGENTS_DIR}/gsd-executor.md")
 
 exit_code=$(run_hook "$FAKE_HOME")
-assert_exit_zero "S2: hook exits 0" "$exit_code"
+assert_exit_zero "S2: hook exits 0 when canary fresh" "$exit_code"
 
-after_cksum=$(md5 -q "${FAKE_AGENTS_DIR}/gsd-planner.md" 2>/dev/null || md5sum "${FAKE_AGENTS_DIR}/gsd-planner.md" | awk '{print $1}')
-after_executor_cksum=$(md5 -q "${FAKE_AGENTS_DIR}/gsd-executor.md" 2>/dev/null || md5sum "${FAKE_AGENTS_DIR}/gsd-executor.md" | awk '{print $1}')
+after_planner=$(cat "${FAKE_AGENTS_DIR}/gsd-planner.md")
+after_executor=$(cat "${FAKE_AGENTS_DIR}/gsd-executor.md")
 
-if [[ "$before_cksum" == "$after_cksum" ]]; then
-  assert_pass "S2: gsd-planner.md not modified (no-op)"
+if [[ "$before_planner" == "$after_planner" ]]; then
+  assert_pass "S2: gsd-planner.md not modified"
 else
-  assert_fail "S2: gsd-planner.md not modified (no-op)" "checksum changed"
+  assert_fail "S2: gsd-planner.md not modified" "checksum changed"
 fi
 
-if [[ "$before_executor_cksum" == "$after_executor_cksum" ]]; then
-  assert_pass "S2: gsd-executor.md not modified (no-op)"
+if [[ "$before_executor" == "$after_executor" ]]; then
+  assert_pass "S2: gsd-executor.md not modified"
 else
-  assert_fail "S2: gsd-executor.md not modified (no-op)" "checksum changed"
+  assert_fail "S2: gsd-executor.md not modified" "checksum changed"
 fi
 
 cleanup_fake_home
 
-# ── S3: ~/.claude/agents/ directory missing -> silent exit 0 ─────────────────
-echo "--- S3: agents dir missing -> silent exit 0 ---"
+# ── S3: Hook exits 0 when agents dir is missing ───────────────────────────────
+echo "--- S3: agents dir missing -> exits 0 ---"
 make_fake_home
-# Remove agents dir entirely
 rm -rf "${FAKE_AGENTS_DIR}"
 
 exit_code=$(run_hook "$FAKE_HOME")
@@ -178,13 +154,11 @@ assert_exit_zero "S3: hook exits 0 when agents dir missing" "$exit_code"
 
 cleanup_fake_home
 
-# ── S4: Non-gsd-*.md files in agents dir are not processed ───────────────────
-echo "--- S4: non-gsd-*.md files are not processed by the hook ---"
+# ── S4: Non-gsd-*.md files are not touched ───────────────────────────────────
+echo "--- S4: non-gsd-*.md files are not processed ---"
 make_fake_home
 
-# Canary stale
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-planner.md"
-# A plain .md file that does not match gsd-*.md glob
 cat > "${FAKE_AGENTS_DIR}/my-custom-agent.md" << 'EOF'
 ---
 name: my-custom-agent
@@ -199,58 +173,32 @@ assert_exit_zero "S4: hook exits 0 with non-gsd file present" "$exit_code"
 
 after_custom=$(cat "${FAKE_AGENTS_DIR}/my-custom-agent.md")
 if [[ "$before_custom" == "$after_custom" ]]; then
-  assert_pass "S4: non-gsd-*.md file not touched by hook"
+  assert_pass "S4: non-gsd-*.md file not touched"
 else
-  assert_fail "S4: non-gsd-*.md file not touched by hook" "file was unexpectedly modified"
+  assert_fail "S4: non-gsd-*.md file not touched" "file was unexpectedly modified"
 fi
-
-# Verify the gsd file was still patched (hook ran normally)
-assert_file_contains "S4: gsd-planner.md still patched correctly" \
-  "${FAKE_AGENTS_DIR}/gsd-planner.md" "^model: opus"
 
 cleanup_fake_home
 
-# ── S5: gsd-executor.md has existing "model: sonnet" -> not duplicated ────────
-echo "--- S5: existing model: line replaced not duplicated ---"
+# ── S5: Existing model: lines in agent files are not changed ──────────────────
+# Previously this verified replacement behavior. Now no modification occurs.
+echo "--- S5: existing model: line not modified (hook disabled) ---"
 make_fake_home
 
-# Canary stale
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-planner.md"
-# Executor already has a model line (different value)
 make_agent_file "${FAKE_AGENTS_DIR}/gsd-executor.md" "model: haiku"
+
+before_executor=$(cat "${FAKE_AGENTS_DIR}/gsd-executor.md")
 
 exit_code=$(run_hook "$FAKE_HOME")
 assert_exit_zero "S5: hook exits 0" "$exit_code"
 
-assert_count_of "S5: exactly one model: line in gsd-executor.md" \
-  "${FAKE_AGENTS_DIR}/gsd-executor.md" "^model:" 1
-assert_file_contains "S5: model: sonnet (not haiku)" \
-  "${FAKE_AGENTS_DIR}/gsd-executor.md" "^model: sonnet"
-assert_file_not_contains "S5: no residual model: haiku" \
-  "${FAKE_AGENTS_DIR}/gsd-executor.md" "model: haiku"
-
-cleanup_fake_home
-
-# ── S6: model_for_agent routing — planner/security-auditor=opus, others=sonnet ─
-echo "--- S6: model_for_agent routing per agent name ---"
-make_fake_home
-
-make_agent_file "${FAKE_AGENTS_DIR}/gsd-planner.md"
-make_agent_file "${FAKE_AGENTS_DIR}/gsd-security-auditor.md"
-make_agent_file "${FAKE_AGENTS_DIR}/gsd-checker.md"
-make_agent_file "${FAKE_AGENTS_DIR}/gsd-executor.md"
-
-exit_code=$(run_hook "$FAKE_HOME")
-assert_exit_zero "S6: hook exits 0" "$exit_code"
-
-assert_file_contains "S6: gsd-planner -> opus" \
-  "${FAKE_AGENTS_DIR}/gsd-planner.md" "^model: opus"
-assert_file_contains "S6: gsd-security-auditor -> opus" \
-  "${FAKE_AGENTS_DIR}/gsd-security-auditor.md" "^model: opus"
-assert_file_contains "S6: gsd-checker -> sonnet" \
-  "${FAKE_AGENTS_DIR}/gsd-checker.md" "^model: sonnet"
-assert_file_contains "S6: gsd-executor -> sonnet" \
-  "${FAKE_AGENTS_DIR}/gsd-executor.md" "^model: sonnet"
+after_executor=$(cat "${FAKE_AGENTS_DIR}/gsd-executor.md")
+if [[ "$before_executor" == "$after_executor" ]]; then
+  assert_pass "S5: gsd-executor.md not modified (model: haiku preserved)"
+else
+  assert_fail "S5: gsd-executor.md not modified" "file was unexpectedly modified"
+fi
 
 cleanup_fake_home
 

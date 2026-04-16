@@ -82,9 +82,11 @@ assert_allowed "S3.2: completion-audit allows after all required skills recorded
 
 integration_teardown
 
-# ── S4: Model routing integration ─────────────────────────────────────────────
-# Verify ensure-model-routing.sh applies correct model tiers in a temp agents dir.
-echo "--- S4: Model routing integration ---"
+# ── S4: Model routing integration (hook DISABLED 2026-04-16) ─────────────────
+# ensure-model-routing.sh is disabled — it exits 0 immediately without modifying
+# any GSD agent files. Frontmatter injection into third-party plugin files is
+# discontinued. See hooks/ensure-model-routing.sh for rationale and backlog 999.19.
+echo "--- S4: Model routing integration (hook disabled — no-op) ---"
 
 FAKE_HOME=$(mktemp -d)
 FAKE_AGENTS="${FAKE_HOME}/.claude/agents"
@@ -98,36 +100,29 @@ for agent in gsd-planner gsd-security-auditor gsd-executor gsd-checker; do
   printf -- '---\ndescription: mock agent\n---\n# %s\n' "$agent" > "${FAKE_AGENTS}/${agent}.md"
 done
 
-# Run the hook with fake HOME — canary (gsd-planner) lacks model: opus → patching runs
-HOME="$FAKE_HOME" bash "$HOOK_EMR" 2>/dev/null || true
+before_planner=$(cat "${FAKE_AGENTS}/gsd-planner.md")
 
-planner_model=$(grep "^model:" "${FAKE_AGENTS}/gsd-planner.md" 2>/dev/null | head -1 || echo "")
-auditor_model=$(grep "^model:" "${FAKE_AGENTS}/gsd-security-auditor.md" 2>/dev/null | head -1 || echo "")
-executor_model=$(grep "^model:" "${FAKE_AGENTS}/gsd-executor.md" 2>/dev/null | head -1 || echo "")
-checker_model=$(grep "^model:" "${FAKE_AGENTS}/gsd-checker.md" 2>/dev/null | head -1 || echo "")
+# Run the hook — should exit 0 and make no modifications
+hook_exit=0
+HOME="$FAKE_HOME" bash "$HOOK_EMR" 2>/dev/null || hook_exit=$?
 
-if [[ "$planner_model" == "model: opus" ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.1: gsd-planner gets model: opus\n'
+if [[ "$hook_exit" -eq 0 ]]; then
+  PASS=$((PASS+1)); printf 'PASS: S4.1: ensure-model-routing.sh exits 0 (disabled no-op)\n'
 else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.1: gsd-planner model wrong: "%s"\n' "$planner_model"
+  FAIL=$((FAIL+1)); printf 'FAIL: S4.1: ensure-model-routing.sh exited %d, expected 0\n' "$hook_exit"
 fi
 
-if [[ "$auditor_model" == "model: opus" ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.2: gsd-security-auditor gets model: opus\n'
+after_planner=$(cat "${FAKE_AGENTS}/gsd-planner.md")
+if [[ "$before_planner" == "$after_planner" ]]; then
+  PASS=$((PASS+1)); printf 'PASS: S4.2: gsd-planner.md not modified by disabled hook\n'
 else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.2: gsd-security-auditor model wrong: "%s"\n' "$auditor_model"
+  FAIL=$((FAIL+1)); printf 'FAIL: S4.2: gsd-planner.md was unexpectedly modified\n'
 fi
 
-if [[ "$executor_model" == "model: sonnet" ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.3: gsd-executor gets model: sonnet\n'
+if ! grep -q "^model:" "${FAKE_AGENTS}/gsd-planner.md" 2>/dev/null; then
+  PASS=$((PASS+1)); printf 'PASS: S4.3: no model: frontmatter injected into gsd-planner.md\n'
 else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.3: gsd-executor model wrong: "%s"\n' "$executor_model"
-fi
-
-if [[ "$checker_model" == "model: sonnet" ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.4: gsd-checker gets model: sonnet\n'
-else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.4: gsd-checker model wrong: "%s"\n' "$checker_model"
+  FAIL=$((FAIL+1)); printf 'FAIL: S4.3: model: line was unexpectedly injected into gsd-planner.md\n'
 fi
 
 rm -rf "$FAKE_HOME"
