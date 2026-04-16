@@ -94,7 +94,11 @@ if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
 STOP all other work immediately. Do NOT proceed to any other step.
 Invoke /gsd:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
-Then: gh run view <run-id> --log-failed"
+Then: gh run view <run-id> --log-failed
+
+If you need to commit a CI fix: recreate the bypass file in your terminal (not in Claude):
+  touch ~/.claude/.silver-bullet/trivial
+This re-enables commits for the current session so you can push your fix."
 
   emit_block "$msg"
 

@@ -27,7 +27,7 @@ EOF
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
-  rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$TRIVIAL_FILE"
 }
 
 run_hook() {
@@ -108,6 +108,19 @@ setup
 touch "$TRIVIAL_FILE"
 out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"failure"}')
 assert_passes "trivial bypass suppresses CI check" "$out"
+teardown
+
+# Test 6: CI failure message includes escape instruction (HOOK-03)
+echo "--- Group 4: Escape instruction in CI failure message ---"
+setup
+out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"failure"}')
+assert_contains "HOOK-03: CI failure message includes trivial file escape instruction" "$out" "touch ~/.claude/.silver-bullet/trivial"
+teardown
+
+# Test 7: CI cancelled message also includes escape instruction
+setup
+out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"cancelled"}')
+assert_contains "HOOK-03: CI cancelled message includes trivial file escape instruction" "$out" "touch ~/.claude/.silver-bullet/trivial"
 teardown
 
 echo ""
