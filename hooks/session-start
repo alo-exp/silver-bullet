@@ -55,10 +55,10 @@ elif [[ -f "$state_file" ]]; then
   sed -i.bak '/^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
 fi
 
-# ── GSD agent model-routing self-heal ────────────────────────────────────────
-# GSD updates overwrite ~/.claude/agents/gsd-*.md, wiping model: directives.
-# Run the patch script silently — it exits in ~2ms if already correct.
-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ensure-model-routing.sh" 2>/dev/null || true
+# ── GSD agent model-routing self-heal (DISABLED 2026-04-16) ──────────────────
+# Model routing via frontmatter injection is discontinued. See ensure-model-routing.sh
+# for rationale. Use model_overrides in .planning/config.json instead.
+# "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ensure-model-routing.sh" 2>/dev/null || true
 
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default

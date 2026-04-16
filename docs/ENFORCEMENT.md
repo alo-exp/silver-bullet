@@ -12,7 +12,7 @@ Silver Bullet enforces workflow compliance through 7 independent layers. No sing
 | 4 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
 | 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
 | 6 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
-| 7 | **Model Routing** | `ensure-model-routing.sh` (PreToolUse) | Agent tool calls | Wrong model for task type |
+| 7 | **Model Routing** | `ensure-model-routing.sh` — DISABLED (backlog 999.19; use GSD-native `model_overrides`) | — | — |
 
 ## Dev Cycle Gate (4-Stage)
 
