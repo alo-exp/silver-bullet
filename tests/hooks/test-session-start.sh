@@ -307,6 +307,39 @@ fi
 rm -rf "$HOOK_WORKDIR"
 restore_branch
 
+# ── Branch file creation tests ───────────────────────────────────────────────
+
+# Test 9: Branch file absent → branch file written with current branch; state NOT wiped
+# Regression: absent branch_file caused stored_branch="" which made "main" != "" fire
+# the "branch changed" path, wiping state on every fresh-install / file-deleted run.
+echo "--- Test 9: Branch file absent -> branch file created; state preserved ---"
+save_branch
+rm -f "$REAL_BRANCH" 2>/dev/null || true   # ensure branch file is absent
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf 'silver-quality-gates\ngsd-discuss-phase\ncode-review\n' > "$TMPSTATE"
+run_hook "$HOOK_WORKDIR" >/dev/null
+# Branch file should now exist and contain the current branch
+assert_file_exists "branch file absent -> branch file created" "$REAL_BRANCH"
+if [[ -f "$REAL_BRANCH" ]]; then
+  stored=$(cat "$REAL_BRANCH")
+  if [[ "$stored" == "$new_branch" ]]; then
+    echo "  PASS: branch file contains current branch name"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: branch file should be '$new_branch', got '$stored'"
+    FAIL=$((FAIL + 1))
+  fi
+fi
+# State file must NOT have been wiped — skill recordings should survive
+assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
+assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
+# gsd-* markers should be stripped (new-session treatment, same as same-branch path)
+assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
+rm -rf "$HOOK_WORKDIR"
+restore_branch
+rm -f "$TMPSTATE"
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
