@@ -175,6 +175,55 @@ out=$(run_hook "gsd:complete-milestone")
 assert_blocks "gsd:complete-milestone (colon form) also blocked when UAT.md missing" "$out"
 teardown
 
+# Test 8: Summary table with FAIL column header — must NOT block
+echo "--- Group 8: Summary table FAIL header (HOOK-01) ---"
+setup
+cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
+spec-version: 1.0
+# UAT Summary
+
+| # | Criterion | PASS | FAIL | NOT-RUN | Total |
+|----|-----------|------|------|---------|-------|
+| 1  | Login     | 3    | 0    | 0       | 3     |
+| 2  | Logout    | 2    | 0    | 1       | 3     |
+EOF
+out=$(run_hook "gsd-complete-milestone")
+assert_passes "HOOK-01: FAIL in header row only — must NOT block" "$out"
+teardown
+
+# Test 9: Summary table with FAIL header AND FAIL data row — must block
+setup
+cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
+spec-version: 1.0
+# UAT Results
+
+| # | Criterion | PASS | FAIL | NOT-RUN | Total |
+|----|-----------|------|------|---------|-------|
+| 1  | Login     | 3    | 0    | 0       | 3     |
+
+| ID | Criterion | Result |
+|----|-----------|--------|
+| 1  | Login works | PASS |
+| 2  | Logout works | FAIL |
+EOF
+out=$(run_hook "gsd-complete-milestone")
+assert_blocks "HOOK-01: FAIL header + FAIL data row — must block" "$out"
+teardown
+
+# Test 10: Summary table header with Result column — not blocked
+setup
+cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
+spec-version: 1.0
+# UAT Summary
+
+| Status | Result | PASS | FAIL |
+|--------|--------|------|------|
+| Done   | OK     | 5    | 0    |
+EOF
+out=$(run_hook "gsd-complete-milestone")
+assert_passes "HOOK-01: header row with Status/Result + FAIL — must NOT block" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

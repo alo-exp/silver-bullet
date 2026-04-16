@@ -44,8 +44,10 @@ if [[ ! -f "$UAT" ]]; then
 fi
 
 # Check 2: No FAIL results allowed (UATG-03)
-if grep -qE '\| FAIL \|' "$UAT"; then
-  fail_count=$(grep -cE '\| FAIL \|' "$UAT" || true)
+# Two-pipe approach: find lines with | FAIL | then exclude header rows (which also contain
+# column names like #, Total, PASS, NOT-RUN, Status, Result).
+if grep -E '\| FAIL \|' "$UAT" | grep -qvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|'; then
+  fail_count=$(grep -E '\| FAIL \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' || true)
   emit_block "UAT GATE: ${fail_count} criterion/criteria marked FAIL in .planning/UAT.md. Resolve all failures before completing milestone."
   exit 0
 fi
