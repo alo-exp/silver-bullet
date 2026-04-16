@@ -732,7 +732,7 @@
 <body>
 
 <div class="nav">
-  <span class="slide-counter" id="counter">Slide 1 / 10</span>
+  <span class="slide-counter" id="counter">Slide 1 / 11</span>
   <div class="nav-btns">
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle light/dark theme">
       <span id="icon-moon"><i data-lucide="moon"></i></span>
@@ -758,9 +758,60 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 2: STACK OVERVIEW ═══ -->
+<!-- ═══ SLIDE 2: AI vs NON-AI ENERGY ═══ -->
 <div class="slide s-content" id="slide-2">
   <span class="slide-tag">02</span>
+  <div class="slide-header">
+    <span class="layer-badge" style="background:var(--accent);">Energy split</span>
+    <h2>AI compute vs. the rest — the energy gap is widening fast</h2>
+    <span class="sub">IEA Energy and AI Report, April 2025 · Global data centres, 2024 baseline</span>
+  </div>
+  <div class="stat-grid cols-2" style="margin-bottom:12px;">
+    <div class="stat-card accent-green">
+      <div class="stat-num green">15%</div>
+      <div class="stat-label">AI's share of global data centre energy — 2024</div>
+      <div class="stat-desc">~62 TWh from accelerated GPU servers (24% of server electricity). Non-AI compute: ~353 TWh — cloud, SaaS, web, storage. The pre-AI baseline.</div>
+      <div class="stat-source">IEA Energy and AI, April 2025</div>
+    </div>
+    <div class="stat-card accent-ink">
+      <div class="stat-num sm">35–50%</div>
+      <div class="stat-label">AI's projected share of data centre energy by 2030</div>
+      <div class="stat-desc">Of a total growing to 945 TWh. AI compute alone (~330–470 TWh) will match all of today's data centres combined — within six years.</div>
+      <div class="stat-source">IEA Energy and AI, April 2025</div>
+    </div>
+  </div>
+  <div class="compare-row" style="margin-bottom:12px;">
+    <div class="compare-item">
+      <div class="ci-label">AI / accelerated servers</div>
+      <div class="ci-name">GPU racks</div>
+      <div class="ci-val good">+30%/yr</div>
+      <div class="ci-sub">CAGR — doubles every 2.6 yrs</div>
+    </div>
+    <div class="vs-badge">vs.</div>
+    <div class="compare-item">
+      <div class="ci-label">Non-AI / conventional servers</div>
+      <div class="ci-name">CPU servers</div>
+      <div class="ci-val bad">+9%/yr</div>
+      <div class="ci-sub">CAGR — 3.3× slower growth</div>
+    </div>
+    <div class="vs-badge">→</div>
+    <div class="compare-item">
+      <div class="ci-label">Power draw per node</div>
+      <div class="ci-name">GPU vs. CPU server</div>
+      <div class="ci-val" style="color:var(--amber);">10×</div>
+      <div class="ci-sub">3,000–5,000 W vs. 300–500 W</div>
+    </div>
+  </div>
+  <div class="gap-callout">
+    <div class="gc-num">3.3×</div>
+    <div class="gc-text">AI compute is growing 3.3× faster than all other data centre workloads combined — and every layer of inefficiency in this stack now multiplies across hardware that consumes 10× more power per server.<br><span style="color:var(--text-dim); font-size:11px; font-family:var(--font-mono);">Accelerated servers account for ~50% of the entire net increase in global data centre electricity demand from 2024 to 2030.</span></div>
+    <div class="gc-src">IEA Energy and AI, April 2025 · Deloitte TMT Predictions 2025</div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3: STACK OVERVIEW ═══ -->
+<div class="slide s-content" id="slide-3">
+  <span class="slide-tag">03</span>
   <div class="slide-header">
     <span class="layer-badge">Overview</span>
     <h2>Six layers of compounding inefficiency</h2>
@@ -805,9 +856,9 @@
   <p class="footnote">Inefficiencies are multiplicative, not additive. Conservative estimates across all layers. Sources detailed in subsequent slides.</p>
 </div>
 
-<!-- ═══ SLIDE 3: LAYER 1 — HARDWARE ═══ -->
-<div class="slide s-content" id="slide-3">
-  <span class="slide-tag">03</span>
+<!-- ═══ SLIDE 4: LAYER 1 — HARDWARE ═══ -->
+<div class="slide s-content" id="slide-4">
+  <span class="slide-tag">04</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--red);">Layer 1</span>
     <h2>Hardware utilisation — paying to keep servers idle</h2>
@@ -841,9 +892,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 4: LAYER 2 — CLOUD ═══ -->
-<div class="slide s-content" id="slide-4">
-  <span class="slide-tag">04</span>
+<!-- ═══ SLIDE 5: LAYER 2 — CLOUD ═══ -->
+<div class="slide s-content" id="slide-5">
+  <span class="slide-tag">05</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--amber);">Layer 2</span>
     <h2>Cloud provisioning — a third of spend delivers nothing</h2>
@@ -879,9 +930,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 5: LAYER 3 — VIRTUALISATION ═══ -->
-<div class="slide s-content" id="slide-5">
-  <span class="slide-tag">05</span>
+<!-- ═══ SLIDE 6: LAYER 3 — VIRTUALISATION ═══ -->
+<div class="slide s-content" id="slide-6">
+  <span class="slide-tag">06</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--amber);">Layer 3</span>
     <h2>Virtualisation overhead — the abstraction tax</h2>
@@ -930,9 +981,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 6: LAYER 4 — LANGUAGE ═══ -->
-<div class="slide s-content" id="slide-6">
-  <span class="slide-tag">06</span>
+<!-- ═══ SLIDE 7: LAYER 4 — LANGUAGE ═══ -->
+<div class="slide s-content" id="slide-7">
+  <span class="slide-tag">07</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--accent);">Layer 4</span>
     <h2>Language choice — orders of magnitude in energy cost</h2>
@@ -969,9 +1020,9 @@
   <div class="caveat-box">⚠ Caveat: the 75× figure is benchmark-specific (compute-intensive algorithms). Real-world applications with I/O-heavy workloads show a ~4× gap. Both figures come from the same peer-reviewed source; context matters when citing.</div>
 </div>
 
-<!-- ═══ SLIDE 7: LAYER 5 — FRAMEWORKS ═══ -->
-<div class="slide s-content" id="slide-7">
-  <span class="slide-tag">07</span>
+<!-- ═══ SLIDE 8: LAYER 5 — FRAMEWORKS ═══ -->
+<div class="slide s-content" id="slide-8">
+  <span class="slide-tag">08</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--grad-2);">Layer 5</span>
     <h2>Framework overhead — the case of Laravel vs. the field</h2>
@@ -1007,9 +1058,9 @@
   <p class="footnote">Source: TechEmpower Framework Benchmarks Round 22/23 · JetBrains State of PHP 2025 · github.com/TechEmpower/FrameworkBenchmarks</p>
 </div>
 
-<!-- ═══ SLIDE 8: LAYER 6 — BLOAT ═══ -->
-<div class="slide s-content" id="slide-8">
-  <span class="slide-tag">08</span>
+<!-- ═══ SLIDE 9: LAYER 6 — BLOAT ═══ -->
+<div class="slide s-content" id="slide-9">
+  <span class="slide-tag">09</span>
   <div class="slide-header">
     <span class="layer-badge" style="background:var(--grad-1);">Layer 6</span>
     <h2>Software bloat & technical debt — invisible energy waste</h2>
@@ -1047,9 +1098,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 9: MACRO SCALE ═══ -->
-<div class="slide s-content" id="slide-9">
-  <span class="slide-tag">09</span>
+<!-- ═══ SLIDE 10: MACRO SCALE ═══ -->
+<div class="slide s-content" id="slide-10">
+  <span class="slide-tag">10</span>
   <div class="slide-header">
     <span class="layer-badge">Scale</span>
     <h2>Why this matters — the planetary dimension</h2>
@@ -1085,9 +1136,9 @@
   </div>
 </div>
 
-<!-- ═══ SLIDE 10: SOURCES ═══ -->
-<div class="slide s-sources" id="slide-10">
-  <span class="slide-tag">10</span>
+<!-- ═══ SLIDE 11: SOURCES ═══ -->
+<div class="slide s-sources" id="slide-11">
+  <span class="slide-tag">11</span>
   <div class="slide-header">
     <span class="layer-badge">Sources</span>
     <h2>References & data provenance</h2>
@@ -1095,94 +1146,94 @@
   </div>
   <div class="source-list">
     <div class="source-item">
-      <span class="s-num">S3</span>
+      <span class="s-num">S2</span>
+      <div class="s-body">
+        <div class="source-title">IEA Energy and AI Report, April 2025</div>
+        <div class="s-detail">iea.org/reports/energy-and-ai · AI = 15% (~62 TWh) of 415 TWh data centre energy (2024). +30%/yr vs +9%/yr conventional. Grows to 35–50% of 945 TWh by 2030.</div>
+      </div>
+    </div>
+    <div class="source-item">
+      <span class="s-num">S4</span>
       <div class="s-body">
         <div class="source-title">Fortune — Data centers underutilised</div>
         <div class="s-detail">fortune.com · Aug 2025 · 12–18% utilisation, 10M idle servers, $30B wasted</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S4</span>
+      <span class="s-num">S5</span>
       <div class="s-body">
         <div class="source-title">Flexera State of the Cloud Report 2025</div>
         <div class="s-detail">27–32% cloud waste, unchanged 2019–2025. $182B at $675B market size.</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S4</span>
+      <span class="s-num">S5</span>
       <div class="s-body">
         <div class="source-title">CNCF FinOps Survey 2024</div>
         <div class="s-detail">Kubernetes clusters: avg 10% CPU, 20% memory utilisation</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S4</span>
+      <span class="s-num">S5</span>
       <div class="s-body">
         <div class="source-title">Harness Cloud Cost Management Report 2025</div>
         <div class="s-detail">Median EC2 instance: 7–12% CPU utilisation</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S5</span>
+      <span class="s-num">S6</span>
       <div class="s-body">
         <div class="source-title">IEEE / Felter et al. — VM vs. Container benchmark</div>
         <div class="s-detail">KVM: ~30% throughput loss vs. native on Redis. Docker: &lt;5% overhead.</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S6</span>
+      <span class="s-num">S7</span>
       <div class="s-body">
         <div class="source-title">Pereira et al., ACM SLE 2017</div>
         <div class="s-detail">DOI: 10.1145/3136014.3136031 · Python 75× vs. C on CLBG benchmarks. Validated in Science of Computer Programming, 2021.</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S6</span>
+      <span class="s-num">S7</span>
       <div class="s-body">
         <div class="source-title">Green-Coding.io — Python energy efficiency revisit, 2024</div>
         <div class="s-detail">Real-world Python/C gap: ~4× (vs. 75× in pure-compute benchmarks)</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S6</span>
+      <span class="s-num">S7</span>
       <div class="s-body">
         <div class="source-title">JetBrains State of PHP 2025</div>
         <div class="s-detail">Laravel: 64% PHP market share. PHP powers 76.6% of all websites.</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S6</span>
+      <span class="s-num">S7</span>
       <div class="s-body">
         <div class="source-title">arXiv:2505.02346 — Compiled Python energy study, May 2025</div>
         <div class="s-detail">2.4–119× improvement from compiled vs. standard CPython runtime</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S7</span>
+      <span class="s-num">S8</span>
       <div class="s-body">
         <div class="source-title">TechEmpower Framework Benchmarks — Round 22 (2023) / Round 23 (2025)</div>
         <div class="s-detail">Laravel ~4,800 req/s (full board); ~2× slower than Symfony (HN thread confirmation). FastAPI: 167,592 req/s JSON. github.com/TechEmpower/FrameworkBenchmarks</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S8</span>
+      <span class="s-num">S9</span>
       <div class="s-body">
         <div class="source-title">Oxford Open Energy — "Black software", 2023</div>
         <div class="s-detail">doi.org/10.1093/ooenergy/oiac011 · Software bloat and higher-level languages compound energy inefficiency across the full stack</div>
       </div>
     </div>
     <div class="source-item">
-      <span class="s-num">S8</span>
+      <span class="s-num">S9</span>
       <div class="s-body">
         <div class="source-title">Data Center Knowledge — Technical debt & sustainability, 2024</div>
         <div class="s-detail">20% CPU overhead from poorly optimised code = equivalent energy increase</div>
-      </div>
-    </div>
-    <div class="source-item">
-      <span class="s-num">S9</span>
-      <div class="s-body">
-        <div class="source-title">IEA Energy and AI Report, April 2025</div>
-        <div class="s-detail">iea.org/reports/energy-and-ai · 415 TWh (2024) → 945 TWh (2030). 15%/yr growth, 4× other sectors.</div>
       </div>
     </div>
   </div>
