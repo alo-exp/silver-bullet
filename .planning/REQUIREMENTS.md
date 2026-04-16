@@ -1,96 +1,63 @@
-# Requirements: Silver Bullet v0.16.0
+# Requirements: Silver Bullet v0.21.0 Hook Quality & Docs
 
-**Defined:** 2026-04-10
-**Core Value:** Single enforced workflow — no artifact ships without structured quality validation
+**Milestone:** v0.21.0
+**Status:** Active
+**Last updated:** 2026-04-16
 
-## v1 Requirements
+---
 
-Requirements for v0.16.0 milestone. Each maps to roadmap phases.
+## Active Requirements
 
-### Configurable Review Depth (from v0.15.0 ARVW-11)
+### Hook Correctness (Bug Fixes)
 
-- [x] **ARVW-11a**: Review depth config schema added to `.planning/config.json` with per-artifact-type mapping (deep/standard/quick)
-- [x] **ARVW-11b**: `resolve_depth()` function in review-loop.md reads config at loop start, determines required_passes and check_mode
-- [x] **ARVW-11c**: `check_mode` parameter added to reviewer interface (full vs structural)
-- [x] **ARVW-11d**: Review loop display messages and audit trail updated to show depth context
-- [x] **ARVW-11e**: Default depth is "standard" when no config entry exists (backward compatible)
-- [x] **ARVW-11f**: Orchestration steps in SKILL.md updated to be depth-aware
+- [ ] **HOOK-01**: `uat-gate.sh` must not false-positive when a UAT.md summary table contains a FAIL column header — only data rows (not header rows) trigger the failure check. Resolves GitHub #5.
+- [ ] **HOOK-02**: `dev-cycle-check.sh` state-tamper detection must check that the write destination of a command points inside `~/.claude/.silver-bullet/`, not whether the path string appears anywhere in the command text (including heredoc body content). Resolves GitHub #8.
+- [ ] **HOOK-03**: `ci-status-check.sh` must not deadlock when CI fails — the hook must allow at least one subsequent `git commit` + `git push` cycle that can fix the failing CI run (via override flag, grace period, or explicit escape instruction at point of failure). Resolves GitHub #9.
 
-### Review Analytics (from v0.15.0 ARVW-10)
+### Hook Behavior (Enhancements)
 
-- [x] **ARVW-10a**: Review loop emits per-round metrics (artifact, round number, finding count, pass/fail, duration) at loop completion
-- [x] **ARVW-10b**: Metrics stored as JSON Lines in `.planning/review-analytics.jsonl` — append-only, one JSON object per review round
-- [x] **ARVW-10c**: `silver-review-stats` skill reads analytics file and produces summary table (pass rates, avg rounds, common findings by artifact type)
-- [x] **ARVW-10d**: Review loop instrumented to record timestamps for round duration calculation
-- [x] **ARVW-10e**: Analytics file rotation — when file exceeds 1000 lines, archive to `.planning/archive/review-analytics-{date}.jsonl`
+- [ ] **HOOK-04**: `stop-check.sh` must be session-intent-aware — the dev-cycle skill checklist must not fire for sessions where no code-producing work occurred (e.g. backlog reviews, Q&A, documentation-only, housekeeping). Resolves GitHub #3.
+- [ ] **HOOK-05**: `gsd-read-guard.js` must not emit the "will reject" advisory message when the file being edited was already read earlier in the same session — the message must only appear (if at all) when a file genuinely has not been read yet. Resolves GitHub #10.
 
-### Cross-Artifact Consistency (from v0.15.0 ARVW-09)
+### Maintainability (Refactor)
 
-- [x] **ARVW-09a**: Cross-artifact reviewer skill created — accepts list of artifacts, checks consistency across them
-- [x] **ARVW-09b**: SPEC.md ↔ REQUIREMENTS.md alignment: every AC maps to a requirement, every requirement has a source AC
-- [x] **ARVW-09c**: REQUIREMENTS.md ↔ ROADMAP.md alignment: every requirement maps to a phase, every phase requirement exists
-- [x] **ARVW-09d**: SPEC.md ↔ DESIGN.md alignment: every user story has design coverage, no orphaned components
-- [x] **ARVW-09e**: Cross-artifact review wired into milestone transition (gsd-complete-milestone) — blocks completion if inconsistencies found
+- [ ] **REF-01**: The trivial-bypass guard logic duplicated in `stop-check.sh` and `ci-status-check.sh` must be extracted into a single shared helper (e.g. `hooks/lib/trivial-bypass.sh`) sourced by both scripts. Resolves GitHub #6.
 
-## Traceability
+### CI / Chores
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| ARVW-11a | Phase 18 | Done |
-| ARVW-11b | Phase 18 | Done |
-| ARVW-11c | Phase 18 | Done |
-| ARVW-11d | Phase 18 | Done |
-| ARVW-11e | Phase 18 | Done |
-| ARVW-11f | Phase 18 | Done |
-| ARVW-10a | Phase 19 | Complete |
-| ARVW-10b | Phase 19 | Complete |
-| ARVW-10c | Phase 19 | Complete |
-| ARVW-10d | Phase 19 | Complete |
-| ARVW-10e | Phase 19 | Complete |
-| ARVW-09a | Phase 20 | Complete |
-| ARVW-09b | Phase 20 | Complete |
-| ARVW-09c | Phase 20 | Complete |
-| ARVW-09d | Phase 20 | Complete |
-| ARVW-09e | Phase 20 | Complete |
+- [ ] **CI-01**: The `SessionStart` hook command that creates the trivial bypass file must use `umask 0077` for consistency with all other Silver Bullet hook scripts. Resolves GitHub #4.
+- [ ] **CI-02**: CI must emit a non-blocking warning when `plugin.json`'s version field does not match the latest git tag (when a tag exists). Resolves GitHub #7.
 
-**Coverage:**
-- v1 requirements: 16 total
-- Mapped to phases: 16
-- Unmapped: 0 ✓
+### Documentation
 
-## Validated (from previous milestones)
+- [ ] **DOC-01**: The trivial-session bypass mechanism (the trivial file, how it is created and cleared, and how to recreate it manually) must be documented in user-facing docs (`README.md` or `docs/ARCHITECTURE.md`) so developers can find the escape hatch at point of failure. Resolves GitHub #11.
 
-- ✓ 7-layer enforcement architecture — v0.7.0
-- ✓ 8 quality dimension gates — v0.7.0
-- ✓ full-dev-cycle / devops-cycle workflows — v0.7.0
-- ✓ SENTINEL security hardening — v0.8.0
-- ✓ GSD-mainstay orchestration — v0.13.0
-- ✓ AI-driven spec creation, ingestion, validation — v0.14.0
-- ✓ Spec floor, PR traceability, UAT gate — v0.14.0
-- ✓ Step non-skip enforcement §3/§3a/§3d — v0.14.0
-- ✓ Granular artifact review rounds with 2-consecutive-clean-pass enforcement — v0.15.0
-- ✓ 8 new artifact reviewers + existing reviewer formalization — v0.15.0
-- ✓ Workflow integration: all producing steps wired to invoke reviewer — v0.15.0
-- ✓ v0.14.0 critical bug fixes — v0.15.0
+---
+
+## Future Requirements
+
+*(None identified — all issues are in scope for this milestone)*
+
+---
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Modifying GSD plugin files | §8 plugin boundary — reviewers are SB skills, not GSD modifications |
-| Replacing existing GSD plan-checker/code-reviewer | Formalize into framework, don't replace |
-| Review rounds for non-artifact outputs (console output, git commits) | Artifacts only — measurable, file-based |
-| Blocking on INFO-level findings | Only ISSUE-level blocks; INFO is advisory |
-
-## v2 Requirements
-
-Deferred to future release.
-
-### Advanced Review (beyond v0.16.0)
-
-- **ARVW-12**: Review round learning — reviewers adapt finding thresholds based on historical pass rates per artifact type
-- **ARVW-13**: Multi-reviewer orchestration — run multiple reviewers in parallel and merge findings
+- Replacing the trivial-bypass mechanism with a more sophisticated session-type system — the trivial file approach is sufficient and already shipped in v0.20.11
+- Modifying GSD plugin files — §8 boundary enforced
+- Adding new enforcement layers beyond the existing 7 — not part of this milestone
 
 ---
-*Requirements defined: 2026-04-10*
-*Last updated: 2026-04-10 after v0.16.0 milestone start*
+
+## Traceability
+
+| REQ-ID  | Phase | Status  |
+|---------|-------|---------|
+| HOOK-01 | —     | Pending |
+| HOOK-02 | —     | Pending |
+| HOOK-03 | —     | Pending |
+| HOOK-04 | —     | Pending |
+| HOOK-05 | —     | Pending |
+| REF-01  | —     | Pending |
+| CI-01   | —     | Pending |
+| CI-02   | —     | Pending |
+| DOC-01  | —     | Pending |
