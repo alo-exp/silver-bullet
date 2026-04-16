@@ -49,7 +49,7 @@
 
 ### v0.21.0 Hook Quality & Docs
 
-- [ ] **Phase 30: Shared Helper & CI Chores** - Extract trivial-bypass helper, fix umask, add version-drift CI warning
+- [x] **Phase 30: Shared Helper & CI Chores** - Extract trivial-bypass helper, fix umask, add version-drift CI warning (completed 2026-04-16)
 - [ ] **Phase 31: Hook Bug Fixes** - Fix false-positives in uat-gate and dev-cycle-check, fix ci-status-check deadlock
 - [ ] **Phase 32: Hook Behavior Enhancements** - Session-intent awareness for stop-check, noise reduction for read-guard
 - [ ] **Phase 33: Trivial-Session Bypass Documentation** - Document the bypass mechanism in user-facing docs
@@ -64,9 +64,9 @@
   1. A single shared helper file (e.g. `hooks/lib/trivial-bypass.sh`) exists and both `stop-check.sh` and `ci-status-check.sh` source it instead of inlining the trivial-bypass guard logic
   2. The `SessionStart` hook command that creates the trivial bypass file uses `umask 0077`, matching all other Silver Bullet hook scripts
   3. CI emits a visible, non-blocking warning when `plugin.json` version does not match the latest git tag -- the build does not fail, but the mismatch is surfaced
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 30-01-PLAN.md -- Extract shared trivial-bypass helper, fix SessionStart umask, add CI version-drift warning
+- [x] 30-01-PLAN.md -- Extract shared trivial-bypass helper, fix SessionStart umask, add CI version-drift warning
 
 ### Phase 31: Hook Bug Fixes
 **Goal**: Three hook correctness bugs are eliminated -- hooks no longer block users with false-positive errors or deadlock on CI failure
@@ -105,7 +105,7 @@ Phases 30 -> 31 -> 32 -> 33
 |-------|-----------|----------------|--------|-----------|
 | 1-20 | v0.9.0-v0.16.0 | 46/46 | Complete | 2026-04-10 |
 | 21-29 | v0.20.0 | 12/12 | Complete | 2026-04-15 |
-| 30. Shared Helper & CI Chores | v0.21.0 | 0/1 | Not started | - |
+| 30. Shared Helper & CI Chores | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
 | 31. Hook Bug Fixes | v0.21.0 | 0/0 | Not started | - |
 | 32. Hook Behavior Enhancements | v0.21.0 | 0/0 | Not started | - |
 | 33. Trivial-Session Bypass Docs | v0.21.0 | 0/0 | Not started | - |
