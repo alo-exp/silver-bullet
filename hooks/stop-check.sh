@@ -100,6 +100,9 @@ fi
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
+# HOOK-04: empty state file means no skills were tracked — non-dev session — skip enforcement
+[[ -z "$state_contents" ]] && exit 0
+
 # ── Build required skills list (Tier 2: full required_deploy list) ────────────
 # Source canonical required-skills list (single source of truth — TD-01 fix)
 # shellcheck source=lib/required-skills.sh

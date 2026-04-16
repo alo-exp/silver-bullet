@@ -194,6 +194,14 @@ out=$(run_hook)
 assert_passes "on main branch: all skills except finishing-a-development-branch -> no block" "$out"
 teardown
 
+# Test 6: Empty state file -> exit silently, no block (HOOK-04)
+echo "--- Test 6: Empty state file -> non-dev session, no block ---"
+setup
+# Do NOT write anything to the state file — leave it empty/non-existent
+out=$(run_hook)
+assert_passes "empty state file -> non-dev session -> no block" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
