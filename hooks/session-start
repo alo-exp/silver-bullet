@@ -44,7 +44,13 @@ fi
 stored_branch=""
 [[ -f "$branch_file" ]] && stored_branch=$(cat "$branch_file" 2>/dev/null || true)
 
-if [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
+if [[ -n "$current_branch" && ! -f "$branch_file" ]]; then
+  # Branch file absent (first run or deleted) — initialize it without wiping state.
+  # Treating absence as a "branch change" would wipe accumulated skill recordings,
+  # so we distinguish this case explicitly.
+  printf '%s' "$current_branch" > "$branch_file"
+  [[ -f "$state_file" ]] && sed -i.bak '/^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
+elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   # Branch changed — full state reset for fresh workflow
   rm -f "$state_file" 2>/dev/null || true
   printf '%s' "$current_branch" > "$branch_file"
