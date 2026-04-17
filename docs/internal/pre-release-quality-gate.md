@@ -10,21 +10,63 @@ The `/create-release` skill will not be invoked until all four stages pass.
 
 ---
 
-## Stage 1 — Code Review Triad
+## Stage 1 — Code Review (PATH 9: Three-Layer Parallel)
 
-Run all three review skills in sequence, then fix all issues. Repeat until clean.
+Runs SB's FLOW 9 / PATH 9 code-review structure against the release candidate
+(see `docs/composable-paths-contracts.md` §FLOW 9). Three independent review
+layers run in parallel; each layer has its own triage + fix sub-cycle; the
+overall stage iterates until **2 consecutive clean passes across all layers**.
 
-1. Invoke `/code-review` (Engineering) — structured quality review: security, performance, correctness, maintainability
-2. Invoke `/requesting-code-review` — dispatches `superpowers:code-reviewer` automated reviewer
-3. Invoke `/receiving-code-review` — triage combined feedback from steps 1–2
-4. Fix all accepted issues
-5. **Loop**: repeat steps 1–4 until `/receiving-code-review` produces zero accepted items
-6. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
-   Running verification commands manually is NOT a substitute for invoking this skill.
-   You need BOTH: (a) run the actual verification commands, AND (b) invoke the skill so
-   `record-skill.sh` tracks it. If you ran tests/CI/checks but did not invoke the skill,
-   you have NOT completed this step. Do NOT record the stage marker until BOTH are done.
-7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
+### Layer structure
+
+Each layer produces findings → triages via `superpowers:receiving-code-review`
+→ applies fixes via `gsd-code-review-fix`. All three always run. Layer D is
+conditional.
+
+| Layer | Reviewer skill | Frame | Triage | Fix |
+|-------|---------------|-------|--------|-----|
+| A (Always) | `gsd-code-review` | SB automated reviewer agents → `REVIEW.md` | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| B (Always) | `superpowers:requesting-code-review` (dispatches `superpowers:code-reviewer`) | Peer quality review via subagent | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| C (Always) | `engineering:code-review` | Structured review: security, performance, correctness, maintainability | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| D (As-needed) | `gsd-review --multi-ai` | Cross-AI adversarial peer review — required when change is architecturally significant or user requests it | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+
+### Execution
+
+1. **Parallel dispatch.** For each round, invoke Layers A, B, C (and D when
+   triggered). Sequential invocation is acceptable per D-65 — true Agent-tool
+   parallelism is an optimization, not a gate requirement.
+2. **Per-layer triage.** After each layer produces findings, run
+   `superpowers:receiving-code-review` against that layer's output. Do NOT
+   merge findings across layers before triage — each reviewer's frame stays
+   intact through its own triage pass.
+3. **Per-layer fix.** Apply accepted findings via `gsd-code-review-fix`
+   (atomic commits per finding). Non-accepted findings with rationale go to
+   `REVIEW.md` notes.
+4. **Backlog capture.** Before starting the next round, any low-priority /
+   deferred / advisory findings not fixed in this round MUST be filed via
+   `gsd-add-backlog` — do not silently drop them.
+5. **Round boundary.** A "clean round" = all 3 (or 4) layers produced zero
+   accepted findings in that round.
+6. **Loop**: run rounds until **2 consecutive clean rounds across all active
+   layers**. Match the review cycle discipline used in Stages 2 and 4.
+7. **MANDATORY — invoke `/superpowers:verification-before-completion`** via
+   the Skill tool. Running verification commands manually is NOT a substitute
+   for invoking the skill. You need BOTH: (a) run the actual verification
+   commands (tests, CI status, lint), AND (b) invoke the skill so
+   `record-skill.sh` tracks it. If you ran checks but did not invoke the
+   skill, you have NOT completed this step. Do NOT record the stage marker
+   until BOTH are done.
+8. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/state`
+
+### Retro-audit mode
+
+When this gate runs retroactively against an already-shipped release (no
+release candidate to fix), Layers A/B/C still run for findings, but the
+"fix and loop until 2 clean rounds" cycle is replaced by **"file every
+accepted finding as a backlog item for the next patch release"**. Stage
+markers are NOT recorded in retro-audit mode — the markers are reserved for
+gating a live release candidate. The user must declare retro-audit mode
+explicitly at the start of the gate.
 
 ---
 
