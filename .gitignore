@@ -1,3 +1,11 @@
+# Secrets — never commit credentials to this repo
+.env
+.env.*
+*.key
+*.pem
+id_rsa*
+secrets.json
+
 .DS_Store
 site/new/
 *.swp

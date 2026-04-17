@@ -49,9 +49,7 @@
     "state_file": "~/.claude/.silver-bullet/state",
     "trivial_file": "~/.claude/.silver-bullet/trivial"
   },
-  "notifications": {
-    "google_chat_webhook": "https://chat.googleapis.com/v1/spaces/AAQA4GJAMVA/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=N9gDn2-uSiT3xbN-iX7WjFPru5BNr7IBQA3BuKoq7ss"
-  },
+  "_notifications_comment": "Google Chat webhook is now read from the $SB_GCHAT_WEBHOOK env var (see skills/silver-create-release/SKILL.md). Do NOT commit webhook URLs to this file.",
   "semantic_compression": {
     "enabled": true,
     "context_budget_kb": 50,

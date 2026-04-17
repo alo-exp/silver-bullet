@@ -166,25 +166,35 @@ Do not proceed to Step 6 until README is confirmed updated.
 4. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
 
-5. **Send Google Chat notification** (if webhook configured):
+5. **Send Google Chat notification** (if webhook env var configured):
 
-   Read the webhook URL from `.silver-bullet.json`:
+   Read the webhook URL from the `SB_GCHAT_WEBHOOK` environment variable:
    ```
-   jq -r '.notifications.google_chat_webhook // ""' .silver-bullet.json 2>/dev/null
-   ```
-
-   If the URL is non-empty, POST the release notification:
-   ```
-   curl -s -X POST "<webhook_url>" \
-     -H "Content-Type: application/json" \
-     -d "{\"text\": \"🚀 *<version>* released\\n<one-line summary of top changes>\\n<release_url>\"}"
+   webhook="${SB_GCHAT_WEBHOOK:-}"
    ```
 
-   - `<version>` — the version tag (e.g. `v0.20.2`)
-   - `<one-line summary>` — the first non-empty section heading + item count from the release notes (e.g. `2 features, 1 fix`)
-   - `<release_url>` — the GitHub release URL returned by `gh release create`
+   **Security — do not commit webhook URLs.** The webhook contains an API key
+   and token that grant POST access to the Ālo labs chat space. It must live in
+   the shell environment (e.g. `~/.zshrc`, `~/.bashrc`, or a secret manager),
+   never in `.silver-bullet.json` or any other tracked file. The legacy
+   `notifications.google_chat_webhook` config field is no longer read.
 
-   If the webhook URL is absent or empty, skip silently — notification is optional.
+   If `$webhook` is non-empty, POST the release notification. Build the JSON
+   payload with `jq` to prevent injection from crafted version strings or
+   release notes:
+   ```
+   jq -n --arg v "$version" --arg t "$summary" --arg url "$release_url" \
+     '{text: "🚀 *\($v)* released\n\($t)\n\($url)"}' \
+     | curl -s -X POST "$webhook" \
+         -H "Content-Type: application/json" \
+         --data-binary @-
+   ```
+
+   - `$version` — the version tag (e.g. `v0.20.2`)
+   - `$summary` — the first non-empty section heading + item count from the release notes (e.g. `2 features, 1 fix`)
+   - `$release_url` — the GitHub release URL returned by `gh release create`
+
+   If `$SB_GCHAT_WEBHOOK` is unset or empty, skip silently — notification is optional.
    If the `curl` call fails, warn but do not fail the release:
    > "⚠️ Google Chat notification failed. Release was created successfully."
 
