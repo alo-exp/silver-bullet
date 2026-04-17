@@ -1,63 +1,57 @@
-# Requirements: Silver Bullet v0.21.0 Hook Quality & Docs
+# Requirements: Silver Bullet v0.22.0 Backlog Resolution
 
-**Milestone:** v0.21.0
+**Milestone:** v0.22.0
 **Status:** Active
-**Last updated:** 2026-04-16
+**Last updated:** 2026-04-18
+
+Scope: close all 11 open GitHub issues on alo-exp/silver-bullet (the entire project Backlog column as of 2026-04-18).
 
 ---
 
 ## Active Requirements
 
-### Hook Correctness (Bug Fixes)
+### Security P0 (Urgent)
 
-- [ ] **HOOK-01**: `uat-gate.sh` must not false-positive when a UAT.md summary table contains a FAIL column header — only data rows (not header rows) trigger the failure check. Resolves GitHub #5.
-- [ ] **HOOK-02**: `dev-cycle-check.sh` state-tamper detection must check that the write destination of a command points inside `~/.claude/.silver-bullet/`, not whether the path string appears anywhere in the command text (including heredoc body content). Resolves GitHub #8.
-- [ ] **HOOK-03**: `ci-status-check.sh` must not deadlock when CI fails — the hook must allow at least one subsequent `git commit` + `git push` cycle that can fix the failing CI run (via override flag, grace period, or explicit escape instruction at point of failure). Resolves GitHub #9.
+- [ ] **SEC-01**: The live Google Chat webhook token currently committed to the public repo must be rotated and scrubbed from git history, and any future re-introduction prevented (secret-scan hook or `.gitleaks` pre-commit). Resolves GitHub #24.
 
-### Hook Behavior (Enhancements)
+### Security Hardening (Stage 4)
 
-- [ ] **HOOK-04**: `stop-check.sh` must be session-intent-aware — the dev-cycle skill checklist must not fire for sessions where no code-producing work occurred (e.g. backlog reviews, Q&A, documentation-only, housekeeping). Resolves GitHub #3.
-- [ ] **HOOK-05**: `gsd-read-guard.js` must not emit the "will reject" advisory message when the file being edited was already read earlier in the same session — the message must only appear (if at all) when a file genuinely has not been read yet. Resolves GitHub #10.
+- [ ] **SEC-02**: All Silver Bullet hook writes that create, replace, or append to files inside `~/.claude/.silver-bullet/` must refuse to follow symlinks — writes to symlinked paths must fail fast with a clear error (no TOCTOU window). Resolves GitHub #25.
+- [ ] **SEC-03**: All hook scripts that construct JSON payloads or HTTP bodies must build them via `jq` (or equivalent structured serializer), not via `printf`/string concatenation. Hand-rolled escape/sanitization functions must be removed. Resolves GitHub #26.
+- [ ] **SEC-04**: Remaining medium/low severity hardening findings from the Stage 4 audit must be addressed as a batch (e.g. umask on state reads, TOCTOU on state-file reads, safer `rm` patterns, explicit `set -euo pipefail` audit across all hooks). Resolves GitHub #27.
 
-### Maintainability (Refactor)
+### Hook Correctness (HOOK-14 follow-up)
 
-- [ ] **REF-01**: The trivial-bypass guard logic duplicated in `stop-check.sh` and `ci-status-check.sh` must be extracted into a single shared helper (e.g. `hooks/lib/trivial-bypass.sh`) sourced by both scripts. Resolves GitHub #6.
+- [ ] **HOOK-06**: `stop-check.sh` must close all known fail-open edge cases — no control-flow path may silently `exit 0` on malformed input, missing config, or unexpected JSON shape; every such path must log the reason and fail closed. Resolves GitHub #17.
+- [ ] **HOOK-07**: `tests/hooks/test-stop-check.sh` coverage gaps must be filled — every branch added in HOOK-14 (and every branch exercised by HOOK-06) must have at least one positive and one negative test case. Resolves GitHub #18.
+- [ ] **HOOK-08**: `stop-check.sh` code quality polish — normalize comment style, align naming with other hooks, use numeric compare (`-eq`) instead of string compare where appropriate, renumber HOOK-* markers into a consistent sequence. Resolves GitHub #19.
 
-### CI / Chores
+### Consistency (Stage 2)
 
-- [ ] **CI-01**: The `SessionStart` hook command that creates the trivial bypass file must use `umask 0077` for consistency with all other Silver Bullet hook scripts. Resolves GitHub #4.
-- [ ] **CI-02**: CI must emit a non-blocking warning when `plugin.json`'s version field does not match the latest git tag (when a tag exists). Resolves GitHub #7.
+- [ ] **CONS-01**: All broken upstream skill references surfaced in the Stage 2 audit must be fixed — every `Skill(skill="...")` invocation and every cross-skill path reference must resolve to an existing skill file in the current plugin set (superpowers/engineering/design/gsd/silver-bullet). Resolves GitHub #21.
+- [ ] **CONS-02**: Hooks-vs-config duplication and schema drift must be eliminated — required-skill lists, config keys, and state-file paths must have a single source of truth consumed by all hooks (no divergence between `lib/required-skills.sh`, `silver-bullet.config.json.default`, and per-hook hardcoded arrays). Resolves GitHub #22.
 
-### Documentation
+### Gitignore Hygiene
 
-- [ ] **DOC-01**: The trivial-session bypass mechanism (the trivial file, how it is created and cleared, and how to recreate it manually) must be documented in user-facing docs (`README.md` or `docs/ARCHITECTURE.md`) so developers can find the escape hatch at point of failure. Resolves GitHub #11.
+- [ ] **IGNORE-01**: The project root `.gitignore` rule for `.claude/` must be narrowed to runtime-only subpaths — committed configuration (e.g. `.claude/settings.json`, `.claude/commands/`) must not be ignored; only session/state paths under `.claude/` (e.g. `.claude/projects/`, `.claude/local/`) remain ignored. Resolves GitHub #20.
+
+### Public-Facing Content Refresh
+
+- [ ] **DOC-02**: Stale versions, skill/hook/flow counts, and the CHANGELOG gap must be refreshed across all public-facing surfaces — README.md, site/index.html, site/help/*.html, docs/ARCHITECTURE.md, and CHANGELOG.md must reflect the v0.22.0 release state consistently. Resolves GitHub #23.
 
 ---
 
 ## Future Requirements
 
-*(None identified — all issues are in scope for this milestone)*
+*(None — scope is explicitly the full open issue set as of 2026-04-18)*
 
 ---
 
 ## Out of Scope
 
-- Replacing the trivial-bypass mechanism with a more sophisticated session-type system — the trivial file approach is sufficient and already shipped in v0.20.11
-- Modifying GSD plugin files — §8 boundary enforced
+- Modifying GSD / Superpowers / Engineering / Design plugin files — §8 boundary enforced
 - Adding new enforcement layers beyond the existing 7 — not part of this milestone
+- Migrating hook scripts to a different language (shell → node) — tracked separately if ever
+- Rearchitecting the webhook-notification mechanism — SEC-01 rotates + scrubs; redesign is a future milestone
 
 ---
-
-## Traceability
-
-| REQ-ID  | Phase    | Status  |
-|---------|----------|---------|
-| REF-01  | Phase 30 | Done    |
-| CI-01   | Phase 30 | Done    |
-| CI-02   | Phase 30 | Done    |
-| HOOK-01 | Phase 31 | Done    |
-| HOOK-02 | Phase 31 | Done    |
-| HOOK-03 | Phase 31 | Done    |
-| HOOK-04 | Phase 32 | Done    |
-| HOOK-05 | Phase 32 | Descoped |
-| DOC-01  | Phase 33 | Done    |

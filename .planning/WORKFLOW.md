@@ -47,4 +47,4 @@ Last-flow: 16
 Last-beat: 2026-04-18T00:00:00Z
 
 ## Next Flow
-FLOW 17 RELEASE — cut v0.21.0 release (gsd-audit-uat → gsd-audit-milestone → silver-create-release)
+FLOW 5 PLAN — plan Phase 34 (Security P0 Remediation) for milestone v0.22.0 Backlog Resolution

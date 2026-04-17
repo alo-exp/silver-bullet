@@ -8,7 +8,8 @@
 - :white_check_mark: **v0.14.0 Spec-Driven Development** - Phases 12-14 (shipped)
 - :white_check_mark: **v0.16.0 Artifact Review System** - Phases 15-20 (shipped)
 - :white_check_mark: **v0.20.0 Composable Paths Architecture** - Phases 21-29 (shipped)
-- :construction: **v0.21.0 Hook Quality & Docs** - Phases 30-33 (in progress)
+- :white_check_mark: **v0.21.0 Hook Quality & Docs** - Phases 30-33 (shipped)
+- :construction: **v0.22.0 Backlog Resolution** - Phases 34-38 (in progress)
 
 ## Phases
 
@@ -54,6 +55,14 @@
 - [x] **Phase 32: Hook Behavior Enhancements** - Session-intent awareness for stop-check, noise reduction for read-guard (completed 2026-04-16)
 - [x] **Phase 33: Trivial-Session Bypass Documentation** - Document the bypass mechanism in user-facing docs (completed 2026-04-16)
 
+### v0.22.0 Backlog Resolution
+
+- [ ] **Phase 34: Security P0 Remediation** - Rotate leaked Google Chat webhook token, scrub git history, add secret-scan guard (GitHub #24)
+- [ ] **Phase 35: Stage 4 Security Hardening** - Symlink-refusing state writes, jq-based JSON/body construction, medium/low hardening batch (GitHub #25, #26, #27)
+- [ ] **Phase 36: HOOK-14 Stop-Check Hardening** - Close fail-open edge cases, fill test coverage gaps, apply code quality polish (GitHub #17, #18, #19)
+- [ ] **Phase 37: Stage 2 Consistency Audit** - Fix broken upstream skill references, eliminate hooks+config duplication and schema drift (GitHub #21, #22)
+- [ ] **Phase 38: Gitignore & Docs Refresh** - Narrow `.claude/` gitignore rule, refresh stale versions/counts/CHANGELOG across public surfaces (GitHub #20, #23)
+
 ## Phase Details
 
 ### Phase 30: Shared Helper & CI Chores
@@ -98,10 +107,58 @@ Plans:
   2. The documentation includes instructions for manually recreating the trivial file as an escape hatch when a hook blocks unexpectedly
 **Plans**: TBD
 
+### Phase 34: Security P0 Remediation
+**Goal**: The leaked Google Chat webhook token is rotated and scrubbed from git history, and future re-introduction is automatically blocked
+**Depends on**: Nothing (first phase of v0.22.0; urgent — must ship first)
+**Requirements**: SEC-01
+**Success Criteria** (what must be TRUE):
+  1. The currently-committed webhook token is revoked at the provider and a new token is issued; the new token lives only in a secrets manager / env var, never in source
+  2. Git history is rewritten (via `git filter-repo` or BFG) to remove the token from all past commits; collaborators are notified to re-clone
+  3. A pre-commit / CI secret-scan gate (gitleaks or equivalent) is active and would have caught the original leak
+**Plans**: TBD
+
+### Phase 35: Stage 4 Security Hardening
+**Goal**: All Stage 4 security findings are resolved — state writes refuse symlinks, JSON/body payloads are jq-constructed, medium/low hardening batch is landed
+**Depends on**: Phase 34 (secret scrubbed before touching hooks that write state)
+**Requirements**: SEC-02, SEC-03, SEC-04
+**Success Criteria** (what must be TRUE):
+  1. Every hook write under `~/.claude/.silver-bullet/` uses `O_NOFOLLOW` / `test -L` pre-check or equivalent; tests prove writes to symlinked state paths fail fast
+  2. All JSON payloads and HTTP bodies in hooks are constructed via `jq -n ... | curl -d @-` (or equivalent); hand-rolled sanitizer functions are deleted
+  3. Medium/low hardening items (umask on state reads, TOCTOU on state-file reads, safer `rm` patterns, `set -euo pipefail` audit) are applied across all hooks
+**Plans**: TBD
+
+### Phase 36: HOOK-14 Stop-Check Hardening
+**Goal**: `stop-check.sh` is closed to fail-open edge cases, fully covered by tests, and consistently styled
+**Depends on**: Phase 35 (security hardening may touch same files; land stop-check polish after)
+**Requirements**: HOOK-06, HOOK-07, HOOK-08
+**Success Criteria** (what must be TRUE):
+  1. No code path in `stop-check.sh` silently exits 0 on malformed input, missing config, or unexpected JSON shape — every such path logs the reason and fails closed (or is explicitly marked fail-open with justification)
+  2. `tests/hooks/test-stop-check.sh` has positive + negative cases for every branch introduced in HOOK-14 and HOOK-06; line/branch coverage meets project floor
+  3. Comment style, variable naming, numeric vs. string compares, and HOOK-* numbering in `stop-check.sh` are normalized and consistent with sibling hooks
+**Plans**: TBD
+
+### Phase 37: Stage 2 Consistency Audit
+**Goal**: Broken skill references are fixed and hooks+config duplication/schema drift is eliminated
+**Depends on**: Phases 35 and 36 (hooks stable before dedup refactor)
+**Requirements**: CONS-01, CONS-02
+**Success Criteria** (what must be TRUE):
+  1. Every `Skill(skill="...")` invocation and every cross-skill path reference across the plugin resolves to an existing skill file; a CI check prevents regressions
+  2. Required-skill lists, config keys, and state-file paths have a single source of truth; `lib/required-skills.sh`, `silver-bullet.config.json.default`, and per-hook arrays cannot diverge (enforced by a lint or unit test)
+**Plans**: TBD
+
+### Phase 38: Gitignore & Docs Refresh
+**Goal**: The `.claude/` gitignore rule is narrowed to runtime-only paths, and all public-facing docs/site content consistently reflect v0.22.0 state
+**Depends on**: Phases 34-37 (docs refresh must reflect the landed changes)
+**Requirements**: IGNORE-01, DOC-02
+**Success Criteria** (what must be TRUE):
+  1. `.gitignore` ignores only session/state paths under `.claude/` (e.g. `.claude/projects/`, `.claude/local/`); committed config like `.claude/settings.json` and `.claude/commands/` is tracked
+  2. README.md, site/index.html, site/help/*.html, docs/ARCHITECTURE.md, and CHANGELOG.md all reflect the v0.22.0 release state — no stale versions, skill/hook/flow counts, or missing changelog entries
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -111,6 +168,11 @@ Phases 30 -> 31 -> 32 -> 33
 | 31. Hook Bug Fixes | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
 | 32. Hook Behavior Enhancements | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
 | 33. Trivial-Session Bypass Docs | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
+| 34. Security P0 Remediation | v0.22.0 | 0/0 | Planned     | — |
+| 35. Stage 4 Security Hardening | v0.22.0 | 0/0 | Planned     | — |
+| 36. HOOK-14 Stop-Check Hardening | v0.22.0 | 0/0 | Planned     | — |
+| 37. Stage 2 Consistency Audit | v0.22.0 | 0/0 | Planned     | — |
+| 38. Gitignore & Docs Refresh | v0.22.0 | 0/0 | Planned     | — |
 
 ## Backlog
 

@@ -56,16 +56,16 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.21.0 Hook Quality & Docs
+## Current Milestone: v0.22.0 Backlog Resolution
 
-**Goal:** Resolve all 9 pending GitHub issues — fix false-positive blocks and a deadlock in the hook layer, reduce advisory hook noise, extract duplicated logic, add CI quality checks, and document the trivial-session bypass mechanism for end users.
+**Goal:** Close all 11 open GitHub issues (the entire project Backlog column) — eliminate one SECURITY P0 (leaked webhook token), land Stage 4 security hardening, close out HOOK-14 fail-open/coverage/polish gaps, resolve Stage 2 consistency audit findings, narrow the `.claude/` gitignore rule, and refresh stale public-facing docs.
 
-**Target issues:**
-- Bugs: uat-gate false-positive on FAIL column header (#5), dev-cycle-check false-positive state-tamper via heredoc (#8), ci-status-check deadlock when CI fails (#9)
-- Enhancements: stop-check session intent awareness (#3), read-guard hook noise reduction (#10)
-- Refactor: extract duplicated trivial-bypass logic into shared helper (#6)
-- Chores: SessionStart umask consistency (#4), CI plugin.json version drift warning (#7)
-- Documentation: document trivial-session bypass mechanism in user-facing docs (#11)
+**Target issues (11 total, all on project Backlog column):**
+- 🔴 Security P0: leaked Google Chat webhook token in public repo (#24)
+- Stage 4 security hardening: symlink hardening on state-file writes (#25), jq-based JSON/body sanitizers (#26), medium/low hardening batch (#27)
+- HOOK-14 hardening: fail-open edge cases in stop-check.sh (#17), test coverage gaps in test-stop-check.sh (#18), code polish — comments/naming/numeric compare/HOOK numbering (#19)
+- Stage 2 consistency audit: broken upstream skill references (#21), hooks+config duplication and schema drift (#22)
+- Chores / docs: narrow `.claude/` gitignore rule to runtime-only subpaths (#20), stale versions + counts + CHANGELOG gap refresh (#23)
 
 ## Context
 
@@ -112,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after milestone v0.21.0 start*
+*Last updated: 2026-04-18 after milestone v0.22.0 start*
