@@ -287,13 +287,13 @@ skill, or SB skill.
 3. Invoke `/silver` via Skill tool, passing the original instruction as arguments
 4. `/silver` handles routing — SB does not do the work directly
 
-> **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver router exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
+> **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver orchestrator exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
 
 ---
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Each path is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` router classifies context and composes an ordered chain of paths tailored to the task. `WORKFLOW.md` tracks execution state — which paths have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-paths-contracts.md` for full path contracts.
+Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. `WORKFLOW.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
 **The eight workflows:**
 
@@ -327,9 +327,9 @@ When the user requests skipping a workflow step, SB:
 
 Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
-#### Composable Paths Catalog
+#### Composable Flows Catalog
 
-Each workflow composes from these 18 flows. See `docs/composable-paths-contracts.md` for full contracts.
+Each workflow composes from these 18 flows. See `docs/composable-flows-contracts.md` for full contracts.
 
 | Flow | Name | Purpose |
 |------|------|---------|
@@ -350,7 +350,7 @@ Each workflow composes from these 18 flows. See `docs/composable-paths-contracts
 | FLOW 14 | DEBUG | Debugging — systematic-debugging, gsd-debug (dynamic insertion on failure) |
 | FLOW 15 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 17 only |
 | FLOW 16 | DOCUMENT | Documentation — gsd-docs-update, engineering:documentation, episodic memory |
-| FLOW 17 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, create-release |
+| FLOW 17 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, silver-create-release |
 
 ---
 
@@ -424,9 +424,9 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 **Rules**:
 - Do NOT stop until the final outcome is achieved
 - Always use `/gsd:debug` for ANY bug encountered during execution
-- Always use `/forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
+- Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- `README.md` MUST be updated to reflect current version, features, and changes before release. `/create-release` will block if README is stale.
+- `README.md` MUST be updated to reflect current version, features, and changes before release. `/silver-create-release` will block if README is stale.
 - Always strictly adhere to this file and CLAUDE.md 100%
 
 > **Anti-Skip:** You are violating this rule if:
@@ -750,13 +750,13 @@ If a third-party skill's behavior needs adjustment, implement the change as:
 
 ## 9. Pre-Release Quality Gate
 
-Before ANY release (`/create-release`), the following four-stage quality gate MUST
+Before ANY release (`/silver-create-release`), the following four-stage quality gate MUST
 be completed in order. Each stage has its own completion criteria. Skipping a stage
 or declaring it complete without meeting the criteria violates Section 3.
 
 **IMPORTANT**: This gate runs AFTER the normal workflow finalization steps (testing,
-documentation, branch cleanup, deploy checklist) and BEFORE `/create-release`.
-The `/create-release` skill will not be invoked until all four stages pass.
+documentation, branch cleanup, deploy checklist) and BEFORE `/silver-create-release`.
+The `/silver-create-release` skill will not be invoked until all four stages pass.
 
 ### Stage 1 — Code Review Triad
 
@@ -852,7 +852,7 @@ If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependen
 issue, ambiguous design decision), log it under "Needs human review" and surface
 to the user before proceeding to the next stage.
 
-> **Anti-Skip:** You are violating this rule if you attempt /create-release without all four quality-gate-stage-N markers in the state file. completion-audit.sh will block the release. Each stage requires explicit /superpowers:verification-before-completion invocation — the marker alone is insufficient.
+> **Anti-Skip:** You are violating this rule if you attempt /silver-create-release without all four quality-gate-stage-N markers in the state file. completion-audit.sh will block the release. Each stage requires explicit /superpowers:verification-before-completion invocation — the marker alone is insufficient.
 
 ---
 

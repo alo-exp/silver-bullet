@@ -333,8 +333,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="composable-paths-context">FLOW 16 DOCUMENT and WORKFLOW.md</h2>
-      <p>In Silver Bullet's <a href="composable-workflow.html">composable paths architecture</a>, documentation maps to two distinct artifacts and one dedicated path:</p>
+      <h2 id="composable-flows-context">FLOW 16 DOCUMENT and WORKFLOW.md</h2>
+      <p>In Silver Bullet's <a href="composable-workflow.html">composable flows architecture</a>, documentation maps to two distinct artifacts and one dedicated path:</p>
       <ul>
         <li><strong>FLOW 16 DOCUMENT</strong> — runs always post-ship. Steps: <code>gsd-docs-update</code> (always), <code>engineering:documentation</code> (always), <code>engineering:tech-debt</code> (always), <code>gsd-milestone-summary</code> (as-needed), <code>episodic-memory:remembering-conversations</code> (always), and <code>gsd-session-report</code> (as-needed). Produces updated <code>docs/</code> and session log. This is what triggers the Documentation Scheme described on this page.</li>
         <li><strong>WORKFLOW.md</strong> — the real-time state tracking artifact for an active composition. Created when a composition begins, updated after every path completes. Records the active path, completed paths, deferred improvements, dynamic insertions, and the full composition plan. Unlike the three-layer documentation scheme (which is project-level and durable), <code>WORKFLOW.md</code> is composition-level and ephemeral — it exists for the duration of the current chain.</li>

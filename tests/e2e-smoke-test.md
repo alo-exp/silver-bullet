@@ -174,15 +174,15 @@ git clean -fd        # Remove untracked files
 
 ---
 
-## Composable Paths Verification (v0.20.0+)
+## Composable Flows Verification (v0.20.0+)
 
-After completing the standard smoke test above, verify composable paths features:
+After completing the standard smoke test above, verify composable flows features:
 
 ### WORKFLOW.md State Tracking
 1. Run `/silver:feature "add a health check endpoint"` on the test app
 2. Verify `.planning/WORKFLOW.md` is created during execution
-3. Check WORKFLOW.md contains: Composition section, Path Log table, Heartbeat section, Next Path
-4. Verify Path Log entries update as paths complete
+3. Check WORKFLOW.md contains: Composition section, Flow Log table, Heartbeat section, Next Flow
+4. Verify Flow Log entries update as flows complete
 
 ### Dual-Mode Hook Enforcement
 1. With WORKFLOW.md present, verify `dev-cycle-check.sh` shows FLOW progress (not just skill count)
@@ -197,8 +197,8 @@ After completing the standard smoke test above, verify composable paths features
 ### silver:migrate (Legacy Projects)
 1. On a project WITH .planning/ artifacts but WITHOUT WORKFLOW.md
 2. Run `/silver:migrate`
-3. Verify it scans artifacts, infers path completion, and proposes WORKFLOW.md
-4. Confirm generated WORKFLOW.md has correct path completion based on existing artifacts
+3. Verify it scans artifacts, infers flow completion, and proposes WORKFLOW.md
+4. Confirm generated WORKFLOW.md has correct flow completion based on existing artifacts
 
 ---
 

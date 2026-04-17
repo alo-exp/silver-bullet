@@ -10,10 +10,10 @@ The `/create-release` skill will not be invoked until all four stages pass.
 
 ---
 
-## Stage 1 — Code Review (PATH 9: Three-Layer Parallel)
+## Stage 1 — Code Review (FLOW 9: Three-Layer Parallel)
 
-Runs SB's FLOW 9 / PATH 9 code-review structure against the release candidate
-(see `docs/composable-paths-contracts.md` §FLOW 9). Three independent review
+Runs SB's FLOW 9 code-review structure against the release candidate
+(see `docs/composable-flows-contracts.md` §FLOW 9). Three independent review
 layers run in parallel; each layer has its own triage + fix sub-cycle; the
 overall stage iterates until **2 consecutive clean passes across all layers**.
 

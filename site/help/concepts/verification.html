@@ -224,8 +224,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="composable-paths-context">FLOW 11 VERIFY and Dual-Mode Quality Gates</h2>
-      <p>In Silver Bullet's <a href="composable-workflow.html">composable paths architecture</a>, verification maps to two distinct paths:</p>
+      <h2 id="composable-flows-context">FLOW 11 VERIFY and Dual-Mode Quality Gates</h2>
+      <p>In Silver Bullet's <a href="composable-workflow.html">composable flows architecture</a>, verification maps to two distinct paths:</p>
       <ul>
         <li><strong>FLOW 11 VERIFY</strong> — the non-skippable verification gate. Runs <code>gsd-verify-work</code>, <code>gsd-add-tests</code> (as-needed for coverage gaps), and <code>superpowers:verification-before-completion</code>. Produces <code>UAT.md</code> and <code>VERIFICATION.md</code>. Cannot be removed from any composition that includes FLOW 7 (EXECUTE).</li>
         <li><strong>FLOW 12 QUALITY GATE</strong> — dual-mode quality gate that appears <strong>twice</strong> in every composition: once as a <em>design-time checklist</em> before planning (9 quality dimensions), and once as an <em>adversarial audit</em> before shipping. The pre-ship instance runs after FLOW 11 VERIFY completes. Both instances must pass — all dimensions must pass in each.</li>

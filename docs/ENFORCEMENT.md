@@ -79,4 +79,4 @@ Silver Bullet detects and blocks:
 
 ## Scalability
 
-**Fixed** — this document describes structural layers that change only when enforcement architecture changes. Dual-mode hooks support both composable-paths projects (WORKFLOW.md) and legacy projects (skill markers). Not append-only.
+**Fixed** — this document describes structural layers that change only when enforcement architecture changes. Dual-mode hooks support both composable-flows projects (WORKFLOW.md) and legacy projects (skill markers). Not append-only.

@@ -1,4 +1,4 @@
-# Composable Paths — Contract Reference
+# Composable Flows — Contract Reference
 
 > Derived from [design spec](superpowers/specs/2026-04-14-composable-paths-design.md). The spec is the source of truth.
 
@@ -6,17 +6,17 @@
 
 ## Contract Schema
 
-Every path contract contains these 7 required fields:
+Every flow contract contains these 7 required fields:
 
 | Field | Description |
 |-------|-------------|
-| **Prerequisites** | Artifacts that MUST exist before this path runs |
-| **Trigger** | Context signals that cause /silver to include this path |
+| **Prerequisites** | Artifacts that MUST exist before this flow runs |
+| **Trigger** | Context signals that cause /silver to include this flow |
 | **Steps** | Ordered skill invocations — mandatory vs as-needed |
 | **Produces** | Artifacts created or modified |
 | **Review Cycle** | Artifact → reviewer → artifact-review-assessor → fix → 2-pass (or "None") |
 | **GSD Impact** | Which GSD state fields are read/written |
-| **Exit Condition** | What makes this path "complete" |
+| **Exit Condition** | What makes this flow "complete" |
 
 ---
 
@@ -110,7 +110,7 @@ Every path contract contains these 7 required fields:
 |-------|-------|
 | **Prerequisites** | FLOW 5 completed (PLAN.md exists) |
 | **Trigger** | Phase involves UI (keywords, file types, DESIGN.md existence) |
-| **Steps** | 1. design:design-system (Always in this path) · 2. design:ux-copy (As-needed) · 3. gsd-ui-phase (Always in this path) · 4. design:accessibility-review (As-needed — WCAG 2.1 AA) |
+| **Steps** | 1. design:design-system (Always in this flow) · 2. design:ux-copy (As-needed) · 3. gsd-ui-phase (Always in this flow) · 4. design:accessibility-review (As-needed — WCAG 2.1 AA) |
 | **Produces** | UI-SPEC.md |
 | **Review Cycle** | Iterative: user can loop steps 1-4. Claude suggests when solid; user decides exit. |
 | **GSD Impact** | gsd-ui-phase produces UI-SPEC.md, does not touch STATE.md |
@@ -126,7 +126,7 @@ Every path contract contains these 7 required fields:
 | **Trigger** | Always |
 | **Steps** | 1. superpowers:test-driven-development (As-needed — implementation plans only) · 2. gsd-execute-phase OR gsd-autonomous (Always) · 3. context7-plugin:context7-mcp (Ambient — available during execution) |
 | **Produces** | SUMMARY.md (per plan), code changes |
-| **Review Cycle** | Failure path: Insert FLOW 14 (DEBUG) dynamically |
+| **Review Cycle** | On failure: Insert FLOW 14 (DEBUG) dynamically |
 | **GSD Impact** | Heavy — reads/writes STATE.md, ROADMAP.md, REQUIREMENTS.md. Advances state position. All 10 GSD assumptions apply. |
 | **Exit Condition** | All PLAN.md files have SUMMARY.md, STATE.md advanced |
 
@@ -138,7 +138,7 @@ Every path contract contains these 7 required fields:
 |-------|-------|
 | **Prerequisites** | FLOW 7 completed with UI deliverables |
 | **Trigger** | FLOW 6 was in composition, OR SUMMARY.md contains UI file types |
-| **Steps** | 1. design:design-critique (Always in this path) · 2. gsd-ui-review (Always in this path — 6-pillar audit) · 3. design:accessibility-review (Always in this path) |
+| **Steps** | 1. design:design-critique (Always in this flow) · 2. gsd-ui-review (Always in this flow — 6-pillar audit) · 3. design:accessibility-review (Always in this flow) |
 | **Produces** | UI-REVIEW.md |
 | **Review Cycle** | UI-REVIEW.md → artifact-review-assessor → fix critical via GSD → re-audit |
 | **GSD Impact** | None. Fixes route through gsd-execute-phase --gaps-only |
@@ -236,7 +236,7 @@ Every path contract contains these 7 required fields:
 |-------|-------|
 | **Prerequisites** | All UI phases verified |
 | **Trigger** | Milestone has UI phases AND in release flow. Runs inside FLOW 17 only (between milestone audit and gap closure — never in per-phase sequence). |
-| **Steps** | 1. design:design-handoff (Always in this path) · 2. design:design-system (As-needed — final component inventory) |
+| **Steps** | 1. design:design-handoff (Always in this flow) · 2. design:design-system (As-needed — final component inventory) |
 | **Produces** | Handoff package |
 | **Review Cycle** | None |
 | **GSD Impact** | None |

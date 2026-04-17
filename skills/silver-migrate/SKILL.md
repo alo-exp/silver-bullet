@@ -1,11 +1,11 @@
 ---
 name: silver-migrate
-description: "Migrates an existing mid-milestone project to composable paths by generating WORKFLOW.md from current artifact state."
+description: "Migrates an existing mid-milestone project to composable flows by generating WORKFLOW.md from current artifact state."
 ---
 
 # silver:migrate
 
-> Migrates an existing mid-milestone project to composable paths by generating WORKFLOW.md from current artifact state.
+> Migrates an existing mid-milestone project to composable flows by generating WORKFLOW.md from current artifact state.
 
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`, so the plugin root is two directories up.
@@ -14,7 +14,7 @@ description: "Migrates an existing mid-milestone project to composable paths by 
 
 ## When to Use
 
-- Project started a milestone before composable paths architecture (v0.20.0)
+- Project started a milestone before composable flows architecture (v0.20.0)
 - `.planning/` directory exists with `STATE.md` but no `WORKFLOW.md`
 - User explicitly runs `/silver:migrate`
 
@@ -148,7 +148,7 @@ After user confirms (or after adjustments are agreed):
 2. Stage and commit:
    ```
    git add .planning/WORKFLOW.md
-   git commit -m "docs(workflow): migrate to composable paths via silver:migrate"
+   git commit -m "docs(workflow): migrate to composable flows via silver:migrate"
    ```
 3. Confirm to the user: "WORKFLOW.md written and committed. Your project is now on composable flows. Use /silver to continue from FLOW {N} ({NAME})."
 

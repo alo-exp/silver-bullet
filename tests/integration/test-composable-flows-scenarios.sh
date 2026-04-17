@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Tests for composable paths (WORKFLOW.md) enforcement scenarios
+# Tests for composable flows (WORKFLOW.md) enforcement scenarios
 # Validates dual-mode hook behavior: WORKFLOW.md-first with legacy fallback
 
 set -euo pipefail
 source "$(dirname "$0")/helpers/common.sh"
 
-echo "=== Composable Paths Scenarios ==="
+echo "=== Composable Flows Scenarios ==="
 
 # Scenario 1: WORKFLOW.md complete -> all hooks pass
 echo "--- S1: Full composition complete → hooks allow ---"

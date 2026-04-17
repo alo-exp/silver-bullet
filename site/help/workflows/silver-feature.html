@@ -130,13 +130,13 @@ footer a:hover{color:var(--accent-light)}
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable paths architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
+      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
       <p><strong>It never implements features directly — it orchestrates only.</strong> Every implementation step is delegated to the appropriate specialist skill (GSD, Superpowers, MultAI). This separation keeps the orchestration layer clean and each specialist focused.</p>
-      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Paths</a> for the full 18-flow catalog.</p>
+      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow catalog.</p>
 
       <div class="divider"></div>
 
-      <h2 id="composition">Composable Path Chain</h2>
+      <h2 id="composition">Composable Flow Chain</h2>
 
       <h3>Composition Proposal</h3>
       <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a path chain. For a typical feature request the proposed composition looks like:</p>

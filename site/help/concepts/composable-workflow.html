@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Composable Workflow Orchestration — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet's 18-path composable architecture works: /silver classifies context, composes a chain of paths dynamically, and supervises execution via WORKFLOW.md real-time tracking.">
+<meta name="description" content="How Silver Bullet's 18-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via WORKFLOW.md real-time tracking.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -139,7 +139,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#the-18-paths">The 18 Paths</a></li>
+        <li><a href="#the-18-flows">The 18 Paths</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
         <li><a href="#workflow-tracking">WORKFLOW.md Tracking</a></li>
         <li><a href="#supervision-loop">Supervision Loop</a></li>
@@ -149,18 +149,18 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
     <article class="doc-content">
 
-      <h2 id="overview">What are Composable Paths?</h2>
-      <p>Silver Bullet's composable paths architecture replaces fixed step-by-step pipelines with a catalog of 18 named paths. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of paths appropriate to the work — no two compositions need be identical.</p>
+      <h2 id="overview">What are Composable Flows?</h2>
+      <p>Silver Bullet's composable flows architecture replaces fixed step-by-step pipelines with a catalog of 18 named paths. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of flows appropriate to the work — no two compositions need be identical.</p>
       <p>Each path is a discrete unit with a contract: prerequisites, trigger signals, steps, produced artifacts, review cycle, GSD state impact, and exit condition. Paths compose into chains. Chains execute under supervision.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, VERIFY, REVIEW, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable paths can.</div>
+        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, VERIFY, REVIEW, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable flows can.</div>
       </div>
 
       <div class="divider"></div>
 
-      <h2 id="the-18-paths">The 18 Paths</h2>
+      <h2 id="the-18-flows">The 18 Paths</h2>
       <p>Every path has a number, a name, and a one-line description. The trigger column describes what causes <code>/silver</code> to include this path in a composition.</p>
 
       <table class="ref-table">
