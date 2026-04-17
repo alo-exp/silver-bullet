@@ -11,6 +11,16 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # User-scoped state directory (avoids world-readable /tmp/)
 SB_DIR="${HOME}/.claude/.silver-bullet"
 
@@ -48,12 +58,26 @@ sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
 mkdir -p "$sessions_dir"
 
 # --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
-if [[ -f "$SB_DIR"/sentinel-pid ]]; then
-  old_pid=$(cat "$SB_DIR"/sentinel-pid)
-  if kill -0 "$old_pid" 2>/dev/null && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
-    kill "$old_pid" 2>/dev/null || true
+if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
+  # M3 TOCTOU fix: sentinel file may contain "pid" (legacy) or "pid:start-time".
+  # Only kill when start-time matches — PID recycling window defeats pid-only check.
+  _sent_line=$(cat "$SB_DIR"/sentinel-pid 2>/dev/null || true)
+  old_pid="${_sent_line%%:*}"
+  old_start="${_sent_line#*:}"
+  [[ "$old_start" == "$old_pid" ]] && old_start=""   # no colon → legacy format
+  if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null \
+     && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
+    if [[ -n "$old_start" ]]; then
+      cur_start=$(ps -o lstart= -p "$old_pid" 2>/dev/null || true)
+      if [[ -n "$cur_start" && "$cur_start" == "$old_start" ]]; then
+        kill "$old_pid" 2>/dev/null || true
+      fi
+    else
+      # Legacy sentinel format — still kill (previous behaviour)
+      kill "$old_pid" 2>/dev/null || true
+    fi
   fi
-  rm -f "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
+  rm -f -- "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
         "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count
 fi
 
@@ -94,18 +118,22 @@ if [[ -n "$existing" ]]; then
 
   # Re-launch sentinel if autonomous (second-terminal re-trigger)
   if [[ "$mode" == "autonomous" ]]; then
+    sb_guard_nofollow "$SB_DIR"/session-start-time
+    sb_guard_nofollow "$SB_DIR"/timeout
+    sb_guard_nofollow "$SB_DIR"/sentinel-pid
     date +%s > "$SB_DIR"/session-start-time
     (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
     disown "$sentinel_pid"
-    echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid
+    _sent_start=$(ps -o lstart= -p "$sentinel_pid" 2>/dev/null || true)
+    printf '%s:%s\n' "$sentinel_pid" "$_sent_start" > "$SB_DIR"/sentinel-pid
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
       "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing"
   fi
 
-  printf '%s' "$existing" > "$SB_DIR"/session-log-path
+  sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path
   basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}' | tr -d '\n'
   exit 0
 fi
@@ -187,15 +215,19 @@ cat > "$log_file" << LOGEOF
 LOGEOF
 
 # --- Step 7: Write session start timestamp ---
+sb_guard_nofollow "$SB_DIR"/session-start-time
 date +%s > "$SB_DIR"/session-start-time
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
 if [[ "$mode" == "autonomous" ]]; then
+  sb_guard_nofollow "$SB_DIR"/timeout
+  sb_guard_nofollow "$SB_DIR"/sentinel-pid
   (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
   disown "$sentinel_pid"
-  echo "$sentinel_pid" > "$SB_DIR"/sentinel-pid
+  _sent_start=$(ps -o lstart= -p "$sentinel_pid" 2>/dev/null || true)
+  printf '%s:%s\n' "$sentinel_pid" "$_sent_start" > "$SB_DIR"/sentinel-pid
 fi
 
-printf '%s' "$log_file" > "$SB_DIR"/session-log-path
+sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$log_file" > "$SB_DIR"/session-log-path
 basename "$log_file" | jq -Rs '{"hookSpecificOutput":{"message":("📋 Session log created: docs/sessions/" + .)}}'

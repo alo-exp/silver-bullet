@@ -9,6 +9,16 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # Ensure user-scoped state directory exists
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
@@ -46,19 +56,21 @@ stored_branch=""
 
 if [[ -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]]; then
   # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
-  # without wiping state. Treating absence/empty as a "branch change" would wipe
-  # accumulated skill recordings, so we distinguish this case explicitly.
+  # without wiping state.
+  sb_guard_nofollow "$branch_file"
   printf '%s' "$current_branch" > "$branch_file"
-  [[ -f "$state_file" ]] && sed -i.bak '/^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
+  if [[ -f "$state_file" && ! -L "$state_file" ]]; then
+    sed -i.bak '/^gsd-/d' "$state_file" && rm -f -- "${state_file}.bak"
+  fi
 elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   # Branch changed — full state reset for fresh workflow
-  rm -f "$state_file" 2>/dev/null || true
+  sb_safe_write "$state_file"
+  rm -f -- "$state_file" 2>/dev/null || true
+  sb_guard_nofollow "$branch_file"
   printf '%s' "$current_branch" > "$branch_file"
-elif [[ -f "$state_file" ]]; then
+elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
   # Same branch — reset session-specific markers only
-  # Remove GSD command markers (force fresh workflow tracking per session)
-  # Keep skill invocation records (accumulate within the same branch/feature)
-  sed -i.bak '/^gsd-/d' "$state_file" && rm -f "${state_file}.bak"
+  sed -i.bak '/^gsd-/d' "$state_file" && rm -f -- "${state_file}.bak"
 fi
 
 # ── GSD agent model-routing self-heal (DISABLED 2026-04-16) ──────────────────
@@ -88,7 +100,7 @@ case "$trivial_file" in
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
-rm -f "$trivial_file" 2>/dev/null
+rm -f -- "$trivial_file" 2>/dev/null
 
 # Warn visibly if jq is unavailable — enforcement will be disabled
 if ! command -v jq >/dev/null 2>&1; then

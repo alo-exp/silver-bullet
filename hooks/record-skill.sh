@@ -8,6 +8,16 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
@@ -93,7 +103,9 @@ fi
 
 # --- Record skill (no duplicates) ---
 mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
-touch "$STATE_FILE"
+# SEC-02: refuse to write through a symlink at STATE_FILE
+sb_guard_nofollow "$STATE_FILE"
+touch -- "$STATE_FILE"
 if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
   printf '%s\n' "$skill" >> "$STATE_FILE"
 fi
