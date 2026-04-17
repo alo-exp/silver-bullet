@@ -96,6 +96,47 @@ if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
   on_main=true
 fi
 
+# ── HOOK-14: Skip enforcement for read-only/conversational sessions ───────────
+# If the working tree is clean AND the branch has no commits ahead of its
+# upstream (or origin/main, or main), this session produced no code changes
+# that need gating. State may be non-empty from a prior dev session that
+# already wrapped up, or from carry-over across turns on the same branch —
+# but a pure Q&A turn shouldn't be blocked by heavyweight completion skills.
+# Dirty tree or unpushed local commits → keep enforcing.
+# Fixes alo-exp/silver-bullet#14.
+if git -C "$PWD" rev-parse --git-dir >/dev/null 2>&1; then
+  # "Clean" here means no tracked modifications, no staged changes, and no
+  # untracked files in the working tree — equivalent to `git status --porcelain`
+  # being empty. Untracked new files typically indicate WIP code for this
+  # session and should still trigger enforcement.
+  _tree_clean=false
+  if [[ -z "$(git -C "$PWD" status --porcelain 2>/dev/null)" ]]; then
+    _tree_clean=true
+  fi
+
+  if [[ "$_tree_clean" == true ]]; then
+    _cmp_ref=""
+    if _upstream=$(git -C "$PWD" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null); then
+      _cmp_ref="$_upstream"
+    elif git -C "$PWD" rev-parse --verify origin/main >/dev/null 2>&1; then
+      _cmp_ref="origin/main"
+    elif git -C "$PWD" rev-parse --verify origin/master >/dev/null 2>&1; then
+      _cmp_ref="origin/master"
+    elif [[ "$on_main" != true ]] && git -C "$PWD" rev-parse --verify main >/dev/null 2>&1; then
+      _cmp_ref="main"
+    fi
+
+    _ahead="0"
+    if [[ -n "$_cmp_ref" ]]; then
+      _ahead=$(git -C "$PWD" rev-list --count "${_cmp_ref}..HEAD" 2>/dev/null || printf '0')
+    fi
+    if [[ "$_ahead" == "0" ]]; then
+      # Clean tree and no local-only commits → nothing to deploy → skip.
+      exit 0
+    fi
+  fi
+fi
+
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")

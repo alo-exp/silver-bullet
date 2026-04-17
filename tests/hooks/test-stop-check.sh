@@ -56,9 +56,13 @@ setup() {
   git -C "$TMPGIT" config user.name "Test"
   touch "$TMPGIT/.gitkeep"
   git -C "$TMPGIT" add .gitkeep
+  write_cfg
+  # Commit config on the default branch BEFORE forking feature/test so that
+  # feature/test does not appear as 1-ahead of main. Tests that need a clean
+  # working tree rely on `git status --porcelain` being empty (HOOK-14).
+  git -C "$TMPGIT" add .silver-bullet.json 2>/dev/null || true
   git -C "$TMPGIT" commit -q -m "init" 2>/dev/null || true
   git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
-  write_cfg
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 }
 
@@ -161,6 +165,10 @@ echo "--- Test 3: Missing skills -> block with skill names ---"
 setup
 # Only put one skill, leaving others missing
 echo "silver-quality-gates" > "$TMPSTATE"
+# Dirty the working tree so HOOK-14 does not short-circuit enforcement
+# (this test validates completion gate behaviour for an actual dev session).
+printf 'work-in-progress\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_blocks "missing skills -> decision:block" "$out"
 assert_contains "block output contains 'code-review'" "$out" "code-review"
@@ -200,6 +208,49 @@ setup
 # Do NOT write anything to the state file — leave it empty/non-existent
 out=$(run_hook)
 assert_passes "empty state file -> non-dev session -> no block" "$out"
+teardown
+
+# Test 7: HOOK-14 — clean tree + no commits ahead + non-empty state -> no block
+# Regression for issue #14: a conversational/read-only session on a branch that
+# carries state from a prior wrap-up should not be gated by completion skills.
+echo "--- Test 7: HOOK-14 clean tree + no ahead commits -> no block ---"
+setup
+# Non-empty state with only one skill — would normally block (missing many)
+echo "silver-quality-gates" > "$TMPSTATE"
+# Working tree is clean (setup already committed .gitkeep) and branch has no
+# commits ahead of its origin: the test repo has no upstream, no origin/main,
+# no main (we are on feature/test). HOOK-14 should still treat this as a
+# conversational session since the tree is clean and there's no comparison ref
+# → nothing to deploy → skip.
+out=$(run_hook)
+assert_passes "clean tree + non-empty state -> conversational session -> no block" "$out"
+teardown
+
+# Test 8: HOOK-14 — dirty working tree + non-empty state + missing skills -> block
+# Guardrail: a session with uncommitted changes should still enforce completion.
+echo "--- Test 8: HOOK-14 dirty tree -> still enforces ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Introduce an uncommitted change so `git diff --quiet` fails
+printf 'dirty\n' > "$TMPDIR_TEST/dirty.txt"
+git -C "$TMPDIR_TEST" add dirty.txt
+out=$(run_hook)
+assert_blocks "dirty tree + missing skills -> still blocks" "$out"
+teardown
+
+# Test 9: HOOK-14 — clean tree + commits ahead of origin -> still enforces
+echo "--- Test 9: HOOK-14 commits ahead of origin -> still enforces ---"
+setup
+# Create a fake origin/main pointing at the initial commit, then add a new
+# commit on feature/test so it's 1 ahead.
+git -C "$TMPDIR_TEST" branch main 2>/dev/null || true
+git -C "$TMPDIR_TEST" update-ref refs/remotes/origin/main "$(git -C "$TMPDIR_TEST" rev-parse HEAD)"
+printf 'more\n' > "$TMPDIR_TEST/more.txt"
+git -C "$TMPDIR_TEST" add more.txt
+git -C "$TMPDIR_TEST" commit -q -m "work" 2>/dev/null || true
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook)
+assert_blocks "clean tree but commits ahead -> still blocks" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
