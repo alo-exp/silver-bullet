@@ -4,6 +4,9 @@ site/new/
 *.swo
 .worktrees/
 
+# Claude Code runtime artifacts (per-session locks, worktree state)
+.claude/
+
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/
 tests/test-app/.planning/
