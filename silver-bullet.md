@@ -293,7 +293,7 @@ skill, or SB skill.
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Each path is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` router classifies context and composes an ordered chain of paths tailored to the task. `WORKFLOW.md` tracks execution state — which paths have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-flows-contracts.md` for full path contracts.
+Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Each path is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` router classifies context and composes an ordered chain of paths tailored to the task. `WORKFLOW.md` tracks execution state — which paths have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-paths-contracts.md` for full path contracts.
 
 **The eight workflows:**
 
@@ -329,7 +329,7 @@ Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-ve
 
 #### Composable Paths Catalog
 
-Each workflow composes from these 18 flows. See `docs/composable-flows-contracts.md` for full contracts.
+Each workflow composes from these 18 flows. See `docs/composable-paths-contracts.md` for full contracts.
 
 | Flow | Name | Purpose |
 |------|------|---------|
