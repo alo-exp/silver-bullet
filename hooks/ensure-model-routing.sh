@@ -64,7 +64,7 @@ patch_agent() {
 
   # If model: line already present (any value), replace it in-place.
   if grep -q "^model:" "$file" 2>/dev/null; then
-    sed -i.bak "s/^model:.*$/model: ${model}/" "$file" && rm -f "${file}.bak"
+    sed -i.bak "s/^model:.*$/model: ${model}/" "$file" && rm -f -- "${file}.bak"
     return 0
   fi
 

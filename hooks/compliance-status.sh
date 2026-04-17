@@ -19,6 +19,16 @@ fi
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # jq is required — silent exit if missing (session-start already warned visibly)
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -48,10 +58,10 @@ if [[ -n "$pwd_hash" ]]; then
       if [[ "$cached_mtime" == "$current_mtime" ]]; then
         config_file="$cached_path"
       else
-        rm -f "$cache_file"
+        rm -f -- "$cache_file"
       fi
     else
-      rm -f "$cache_file"
+      rm -f -- "$cache_file"
     fi
   fi
 fi
@@ -74,6 +84,7 @@ if [[ -z "$config_file" ]]; then
   if [[ -n "${pwd_hash:-}" ]]; then
     cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
     config_mtime=$(stat -f '%m' "$config_file" 2>/dev/null || stat -c '%Y' "$config_file" 2>/dev/null || echo "0")
+    sb_guard_nofollow "$cache_file"
     printf '%s\n%s' "$config_file" "$config_mtime" > "$cache_file"
   fi
 fi

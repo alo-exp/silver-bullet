@@ -9,6 +9,16 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
@@ -34,6 +44,7 @@ SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR"
 spec_session_file="${SB_STATE_DIR}/spec-session"
 
+sb_guard_nofollow "$spec_session_file"
 printf 'spec-version=%s\njira-id=%s\n' "${spec_version:-}" "${jira_id:-}" > "$spec_session_file"
 
 # Emit advisory

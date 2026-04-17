@@ -4,6 +4,16 @@ set -euo pipefail
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
 # Fail-visible: on unexpected error, exit 0 (silent no-op) rather than crash
 trap 'exit 0' ERR
 
@@ -62,6 +72,7 @@ if [[ -f "$call_count_file" ]]; then
   fi
 fi
 call_count=$((call_count + 1))
+sb_guard_nofollow "$call_count_file"
 echo "$call_count" > "$call_count_file"
 
 # Track tool calls since last skill was recorded (progress marker)
@@ -93,8 +104,10 @@ fi
 
 if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mtime" -ge "$session_start" ]]; then
   # State file changed during this session — skill was recorded — reset progress baseline
-  echo "$current_state_mtime" > "$last_state_mtime_file"
-  echo "$call_count" > "$last_progress_file"
+  sb_guard_nofollow "$last_state_mtime_file"
+echo "$current_state_mtime" > "$last_state_mtime_file"
+  sb_guard_nofollow "$last_progress_file"
+echo "$call_count" > "$last_progress_file"
   last_progress_count=$call_count
 fi
 
@@ -111,7 +124,8 @@ if [[ "$tier1_triggered" == true ]]; then
     fi
   fi
   count=$((count + 1))
-  echo "$count" > "$count_file"
+  sb_guard_nofollow "$count_file"
+echo "$count" > "$count_file"
   # Tier 1: Emit on 1st, 6th, 11th... call (count mod 5 == 1)
   if [[ $((count % 5)) -eq 1 ]]; then
     printf '{"hookSpecificOutput":{"message":"⚠️ Autonomous session running 10+ min. Check for stalls or log a blocker under Needs human review."}}'
