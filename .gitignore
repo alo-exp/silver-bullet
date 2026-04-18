@@ -12,8 +12,13 @@ site/new/
 *.swo
 .worktrees/
 
-# Claude Code runtime artifacts (per-session locks, worktree state)
-.claude/
+# Claude Code runtime artifacts (per-session, per-user)
+# Committed config (.claude/settings.json, .claude/commands/) stays tracked.
+.claude/projects/
+.claude/local/
+.claude/.silver-bullet/
+.claude/settings.local.json
+.claude/worktrees/
 
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/

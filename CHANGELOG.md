@@ -2,6 +2,46 @@
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-04-18
+
+**Backlog-resolution milestone.** Consolidates phases 34–38: security hardening,
+hook-correctness fixes, consistency repairs, gitignore narrowing, and a full
+public-surface refresh. Subsumes the undocumented 0.20.9 → 0.21.3 release window
+into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/silver-bullet/issues/14),
+[#16](https://github.com/alo-exp/silver-bullet/issues/16),
+[#20](https://github.com/alo-exp/silver-bullet/issues/20),
+[#23](https://github.com/alo-exp/silver-bullet/issues/23).
+
+### Security
+- **SEC-01** (P34, `6cb66c5`): moved the Google Chat release-notification webhook out of `skills/silver-create-release/SKILL.md` into the `GCHAT_RELEASE_WEBHOOK` env var; added a `secret-scan` CI job that fails the build on hard-coded webhook URLs.
+- **SEC-02** (P35, `e247ff3`): added `! -L` symlink guards to every hook that reads/writes state files (`stop-check.sh`, `session-start`, `completion-audit.sh`, trivial-flag touch/rm) — closes a symlink-replacement bypass on multi-user machines.
+- **SEC-03** (P35, `e247ff3`): replaced hand-rolled JSON string concatenation in hook stdout with `jq -n` payloads across every hook that emits `PreToolUse`/`Stop` structured output — eliminates injection via filenames or branch names containing quotes.
+- **SEC-04** (P35, `e247ff3`): batch security fixes across remaining hooks (safe `rm` patterns, `mktemp` for temp files, `set -euo pipefail` where missing).
+
+### Fixes
+- **HOOK-06** (P36, `4339060`): `stop-check.sh` no longer fails open when `.silver-bullet.json` is missing or unreadable — absent config now HARD-STOPs with a config-error message instead of silently allowing session end.
+- **HOOK-07** (P36, `4339060`): closed a race in `stop-check.sh` where a concurrent `record-skill.sh` write could cause the required-skills diff to observe a stale state file; added flock around state reads on Stop.
+- **HOOK-08** (P36, `4339060`): filled test coverage for the HOOK-14 trivial-session / clean-tree short-circuit paths in `stop-check.sh` (clean tree, dirty tree, trivial flag, read-only session matrix).
+- **HOOK-14** carryover: `stop-check` skips enforcement for read-only sessions ([#14](https://github.com/alo-exp/silver-bullet/issues/14) via `58d98fb` / `efdaab5`).
+
+### Consistency
+- **CONS-01** (P37, `0b86dc6`): repaired broken skill references — `/gsd:silver-forensics` → `/gsd-forensics`, legacy `/silver:*` colon-form refs in SKILL.md files updated to current `/silver-*` names.
+- **CONS-02** (P37, `0b86dc6`): reconciled `hooks.json` / `settings.json` schema drift; every hook entry now matches the Claude Code manifest schema and the registered hook script actually exists on disk.
+
+### Ignore
+- **IGNORE-01** (P38, this release, closes [#20](https://github.com/alo-exp/silver-bullet/issues/20)): narrowed the project `.gitignore` blanket `.claude/` rule to runtime-only subpaths (`projects/`, `local/`, `.silver-bullet/`, `settings.local.json`, `worktrees/`). Committed plugin config (`.claude/settings.json`, `.claude/commands/`) now tracked. Supersedes the interim fix in `c8b161a`.
+
+### Docs
+- **DOC-02** (P38, this release, closes [#23](https://github.com/alo-exp/silver-bullet/issues/23)): public-surface refresh across every user-visible file.
+  - `README.md`: `Current version` bumped from v0.21.3 → v0.22.0 with milestone summary.
+  - `site/index.html`: hero version badge v0.19.1 → v0.22.0; meta description / Twitter card skill count 39 → 41, added "18 hooks".
+  - `site/help/getting-started/index.html`, `site/help/concepts/index.html`: skill count 39 → 41; version range extended to v0.22.0; added composable-flows line.
+  - `docs/ARCHITECTURE.md`: design principle 2 corrected from "7 layers" → "10 layers" to match enforcement-layer count everywhere else.
+  - `CHANGELOG.md`: this entry, consolidating 0.20.9–0.21.3 gap into the 0.22.0 release note.
+
+### Tests
+- Total: 1112 passed, 13 failed (2/3 suites green) — unchanged from v0.21.3 baseline. Hook coverage: 18/18.
+
 ## [0.20.8] — 2026-04-16
 
 ### Fixed
