@@ -60,9 +60,10 @@ setup() {
   # Commit config on the default branch BEFORE forking feature/test so that
   # feature/test does not appear as 1-ahead of main. Tests that need a clean
   # working tree rely on `git status --porcelain` being empty (HOOK-14).
-  git -C "$TMPGIT" add .silver-bullet.json 2>/dev/null || true
-  git -C "$TMPGIT" commit -q -m "init" 2>/dev/null || true
-  git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
+  [[ -f "$TMPCFG" ]] || { echo "setup: write_cfg failed to produce $TMPCFG" >&2; exit 1; }
+  git -C "$TMPGIT" add .silver-bullet.json
+  git -C "$TMPGIT" commit -q -m "init"
+  git -C "$TMPGIT" checkout -q -b feature/test
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 }
 
@@ -160,8 +161,8 @@ out=$(run_hook)
 assert_passes "all required_deploy skills present -> no block" "$out"
 teardown
 
-# Test 3: Missing skills -> outputs block JSON with missing skill names
-echo "--- Test 3: Missing skills -> block with skill names ---"
+# Test 3: Missing skills + dirty tree -> outputs block JSON with missing skill names
+echo "--- Test 3: Missing skills + dirty tree -> block with skill names ---"
 setup
 # Only put one skill, leaving others missing
 echo "silver-quality-gates" > "$TMPSTATE"
@@ -251,6 +252,77 @@ git -C "$TMPDIR_TEST" commit -q -m "work" 2>/dev/null || true
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_blocks "clean tree but commits ahead -> still blocks" "$out"
+teardown
+
+# Test 7b: HOOK-14 — real origin/main present at HEAD, clean tree, non-empty
+# state with missing skills -> no block. Exercises the rev-list-returns-zero
+# happy path that Test 7 did not (Test 7 has no origin ref at all).
+echo "--- Test 7b: HOOK-14 clean tree + real origin/main at HEAD -> no block ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+git -C "$TMPDIR_TEST" update-ref refs/remotes/origin/main "$(git -C "$TMPDIR_TEST" rev-parse HEAD)"
+out=$(run_hook)
+assert_passes "origin/main at HEAD + clean tree + non-empty state -> no block" "$out"
+teardown
+
+# Test 10: HOOK-06 — hook invoked outside any git repository -> silent exit
+# Walk-up finds no config, no .git → silent exit is correct.
+echo "--- Test 10: HOOK-06 non-git-dir -> silent exit ---"
+OUTSIDE_DIR=$(mktemp -d)
+# Run hook with PWD set to a non-git dir; no config upstream either.
+out=$( cd "$OUTSIDE_DIR" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$HOOK" 2>/dev/null || true )
+assert_empty "non-git dir + no config -> silent exit" "$out"
+rm -rf "$OUTSIDE_DIR"
+
+# Test 11: HOOK-06 — stale upstream ref (rev-list fails) + missing skills -> block
+# Upstream is set but the ref does not resolve → rev-list fails → must
+# fall through to enforcement, not silently skip.
+echo "--- Test 11: HOOK-06 stale upstream -> fail-closed -> block ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Point branch at a non-existent upstream ref.
+git -C "$TMPDIR_TEST" config branch.feature/test.remote origin
+git -C "$TMPDIR_TEST" config branch.feature/test.merge refs/heads/does-not-exist
+out=$(run_hook)
+assert_blocks "stale/unresolvable upstream + missing skills -> blocks (fail-closed)" "$out"
+teardown
+
+# Test 12: HOOK-06 — gitignored untracked file + missing skills -> block
+# `.gitignore`d untracked files must be treated as dirty work
+# (untracked-files=all). Bug: default porcelain hides them.
+echo "--- Test 12: HOOK-06 gitignored untracked file -> block ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Add a gitignore entry and create an untracked file matching it.
+printf 'wip-notes.txt\n' > "$TMPDIR_TEST/.gitignore"
+git -C "$TMPDIR_TEST" add .gitignore
+git -C "$TMPDIR_TEST" commit -q -m "add gitignore"
+printf 'session work\n' > "$TMPDIR_TEST/wip-notes.txt"
+out=$(run_hook)
+assert_blocks "gitignored untracked file + missing skills -> blocks" "$out"
+teardown
+
+# Test 13: HOOK-06 — local main does NOT become a fallback anchor.
+# Scenario: feature/test has local-only work not present on local `main`,
+# no origin refs. Old code used local `main` as a fallback anchor, which
+# (with main 1 behind HEAD) would CORRECTLY block — but with main reset
+# AHEAD of HEAD would incorrectly pass. New code does not use local main
+# at all; with no anchor and a clean tree we honor HOOK-14's read-only
+# intent. Assert: HEAD ahead of local main + clean tree + no origin refs
+# results in skip (since there's nowhere to deploy — no remote configured).
+echo "--- Test 13: HOOK-06 local main not used as anchor -> skip on clean tree ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Create a local main at the init commit, feature/test is 1 ahead.
+git -C "$TMPDIR_TEST" branch main 2>/dev/null || true
+printf 'feature-work\n' > "$TMPDIR_TEST/feat.txt"
+git -C "$TMPDIR_TEST" add feat.txt
+git -C "$TMPDIR_TEST" commit -q -m "feature work"
+out=$(run_hook)
+# Clean tree, no origin anchor, no upstream configured: HOOK-14 skip path.
+# The commits-ahead-of-local-main are ignored because local main is not a
+# trusted anchor (user may have reset it).
+assert_passes "clean tree + no origin + local main exists -> skip (no anchor)" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

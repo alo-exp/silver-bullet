@@ -7,6 +7,16 @@ set -euo pipefail
 #
 # Exit format: {"decision":"block","reason":"..."} to block completion.
 # Silent exit 0 to allow completion.
+#
+# HOOK-NN markers in this file map to GitHub issue numbers on alo-exp/silver-bullet.
+# Firing order (first matching gate wins and exits 0):
+#   1. jq-missing warning          (fail-open, visible)
+#   2. ERR trap                    (fail-open, visible)
+#   3. No .silver-bullet.json      (fail-open — project not using SB)
+#   4. Trivial bypass              (lib/trivial-bypass.sh)
+#   5. HOOK-14 read-only gate      (fail-open — fixes #14, hardened #17)
+#   6. HOOK-04 empty state         (fail-open — non-dev session)
+#   7. Required-skills check       (block or exit 0)
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -14,6 +24,8 @@ umask 0077
 # jq is required — warn visibly if missing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
+  # Fail-open by design: without jq we cannot parse config; print a visible
+  # warning so the user knows enforcement is off.
   exit 0
 fi
 
@@ -37,7 +49,8 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 
-# No config → project not set up with Silver Bullet — silent exit
+# No config → project not set up with Silver Bullet.
+# Fail-open by design: stop-check is a no-op for non-SB projects.
 [[ -z "$config_file" ]] && exit 0
 
 # ── Read config values ────────────────────────────────────────────────────────
@@ -74,13 +87,13 @@ case "$trivial_file" in
 esac
 
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 
 # ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
 # shellcheck source=lib/trivial-bypass.sh
-if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
+if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
-  source "$_lib_dir/trivial-bypass.sh"
+  source "$lib_dir/trivial-bypass.sh"
   sb_trivial_bypass "$trivial_file"
 fi
 
@@ -97,43 +110,73 @@ if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
 fi
 
 # ── HOOK-14: Skip enforcement for read-only/conversational sessions ───────────
-# If the working tree is clean AND the branch has no commits ahead of its
-# upstream (or origin/main, or main), this session produced no code changes
-# that need gating. State may be non-empty from a prior dev session that
-# already wrapped up, or from carry-over across turns on the same branch —
-# but a pure Q&A turn shouldn't be blocked by heavyweight completion skills.
-# Dirty tree or unpushed local commits → keep enforcing.
-# Fixes alo-exp/silver-bullet#14.
-if git -C "$PWD" rev-parse --git-dir >/dev/null 2>&1; then
-  # "Clean" here means no tracked modifications, no staged changes, and no
-  # untracked files in the working tree — equivalent to `git status --porcelain`
-  # being empty. Untracked new files typically indicate WIP code for this
-  # session and should still trigger enforcement.
-  _tree_clean=false
-  if [[ -z "$(git -C "$PWD" status --porcelain 2>/dev/null)" ]]; then
-    _tree_clean=true
+# Clean tree + no local-only commits ahead of origin → nothing to deploy → skip.
+# Untracked files (including .gitignored ones) count as dirty — active work.
+# Fail-closed on rev-list/ref-resolution failure (HOOK-06 / #17).
+if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  tree_clean=false
+  # --untracked-files=all + --ignored=traditional: ignore user-local
+  # status.showUntrackedFiles, honor all untracked paths (including
+  # .gitignored locations — a session may only touch .claude/ which is
+  # commonly gitignored and would otherwise be invisible to porcelain).
+  if [[ -z "$(git -C "$PWD" status --porcelain --untracked-files=all --ignored=traditional 2>/dev/null)" ]]; then
+    tree_clean=true
   fi
 
-  if [[ "$_tree_clean" == true ]]; then
-    _cmp_ref=""
-    if _upstream=$(git -C "$PWD" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null); then
-      _cmp_ref="$_upstream"
-    elif git -C "$PWD" rev-parse --verify origin/main >/dev/null 2>&1; then
-      _cmp_ref="origin/main"
-    elif git -C "$PWD" rev-parse --verify origin/master >/dev/null 2>&1; then
-      _cmp_ref="origin/master"
-    elif [[ "$on_main" != true ]] && git -C "$PWD" rev-parse --verify main >/dev/null 2>&1; then
-      _cmp_ref="main"
+  if [[ "$tree_clean" == true ]]; then
+    # Pick a comparison anchor. Only origin/* refs are trusted; local `main`
+    # may have been reset by the user and is not a reliable baseline.
+    # upstream_broken=true means an upstream is configured for this branch
+    # but the ref does not resolve (pruned/renamed remote) — must fail-closed.
+    cmp_ref=""
+    upstream_broken=false
+    if [[ -n "$current_branch" ]] && \
+       git -C "$PWD" config --get "branch.${current_branch}.remote" >/dev/null 2>&1; then
+      # Branch has an upstream configured in .git/config. Try to resolve it.
+      if upstream=$(git -C "$PWD" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) \
+         && git -C "$PWD" rev-parse --verify "$upstream" >/dev/null 2>&1; then
+        cmp_ref="$upstream"
+      else
+        upstream_broken=true
+      fi
+    fi
+    if [[ -z "$cmp_ref" ]] && [[ "$upstream_broken" != true ]] && git -C "$PWD" rev-parse --verify origin/main >/dev/null 2>&1; then
+      cmp_ref="origin/main"
+    fi
+    if [[ -z "$cmp_ref" ]] && [[ "$upstream_broken" != true ]] && git -C "$PWD" rev-parse --verify origin/master >/dev/null 2>&1; then
+      cmp_ref="origin/master"
     fi
 
-    _ahead="0"
-    if [[ -n "$_cmp_ref" ]]; then
-      _ahead=$(git -C "$PWD" rev-list --count "${_cmp_ref}..HEAD" 2>/dev/null || printf '0')
-    fi
-    if [[ "$_ahead" == "0" ]]; then
-      # Clean tree and no local-only commits → nothing to deploy → skip.
+    if [[ "$upstream_broken" == true ]]; then
+      # Configured upstream does not resolve (pruned/renamed remote branch).
+      # Fail-closed: don't fall back to origin/main or local refs when the
+      # user has explicitly scoped the branch to a now-broken upstream.
+      :  # fall through to enforcement
+    elif [[ -n "$cmp_ref" ]]; then
+      # Separate rev-list failure from a legitimate 0-count result: on
+      # failure the conditional is false and we fall through to enforcement
+      # (fail-closed on unresolvable cmp_ref, HOOK-06 / #17).
+      if ahead_count=$(git -C "$PWD" rev-list --count "${cmp_ref}..HEAD" 2>/dev/null); then
+        if [[ "$ahead_count" =~ ^[0-9]+$ ]] && (( ahead_count == 0 )); then
+          # Clean tree and no local-only commits → nothing to deploy → skip.
+          # Fail-open by design: this is the whole point of HOOK-14.
+          exit 0
+        fi
+      fi
+      # rev-list failed OR non-numeric output OR ahead_count > 0 →
+      # fall through to enforcement (fail-closed).
+    elif [[ -n "$current_branch" ]]; then
+      # No origin anchor and no configured upstream, but on a named branch
+      # with a clean tree. Local `main`/`master` is intentionally NOT used
+      # as a fallback anchor — it may have been reset by the user and is
+      # not a reliable baseline (HOOK-06 / #17 finding #4). Without a
+      # trusted anchor there is nowhere to deploy to, so skip.
+      # Fail-open by design: clean tree + no remote target = read-only.
       exit 0
     fi
+    # Otherwise (cmp_ref empty AND branch empty/detached AND upstream not
+    # broken): detached-HEAD state. Fall through to enforcement — we can't
+    # prove "nothing to deploy" without either an anchor or a branch name.
   fi
 fi
 
@@ -141,15 +184,16 @@ fi
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
-# HOOK-04: empty state file means no skills were tracked — non-dev session — skip enforcement
+# HOOK-04: empty state file means no skills were tracked — non-dev session.
+# Fail-open by design: nothing to gate against.
 [[ -z "$state_contents" ]] && exit 0
 
 # ── Build required skills list (Tier 2: full required_deploy list) ────────────
 # Source canonical required-skills list (single source of truth — TD-01 fix)
 # shellcheck source=lib/required-skills.sh
-if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+if [[ -f "$lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
-  source "$_lib_dir/required-skills.sh"
+  source "$lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
   DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt review-loop-pass-1 review-loop-pass-2"
