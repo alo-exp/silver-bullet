@@ -315,7 +315,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 - TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
 - `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
 - Code review always uses the Superpowers framing pair: `silver:request-review` before and `silver:receive-review` after
-- Cross-AI review (`gsd-review --multi-ai`) triggers automatically for architecturally significant changes
+- Cross-AI review (`gsd-review --all`) triggers automatically for architecturally significant changes
 - `gsd-ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
 - When user selects Autonomous mode at session start, `gsd-autonomous` drives all remaining phases
 

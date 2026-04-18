@@ -283,7 +283,7 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --multi-ai) reviews completed code POST-execution. Both are independent.
+If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent.
 
 ## Step 2: Testing Strategy
 
@@ -374,7 +374,7 @@ If issues found in REVIEW.md: invoke `gsd-code-review-fix` via the Skill tool to
 
 **Only for architecturally significant changes or user request:**
 
-Invoke `gsd-review --multi-ai` via the Skill tool. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code.
+Invoke `gsd-review --all` via the Skill tool. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code. The `--all` flag fans out to every available external CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor).
 
 ## Step 9d: Receive Review
 

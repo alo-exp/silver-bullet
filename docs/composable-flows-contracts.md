@@ -152,7 +152,7 @@ Every flow contract contains these 7 required fields:
 |-------|-------|
 | **Prerequisites** | FLOW 7 completed |
 | **Trigger** | Always for any composition with FLOW 7 |
-| **Steps** | Layer A: gsd-code-review → superpowers:receiving-code-review → gsd-code-review-fix (automated). Layer B: superpowers:requesting-code-review → superpowers:receiving-code-review → gsd-code-review-fix (re-review). Layer C: engineering:code-review → superpowers:receiving-code-review → gsd-code-review-fix (engineering). Layer D (As-needed): gsd-review --multi-ai → superpowers:receiving-code-review → gsd-code-review-fix (cross-AI). |
+| **Steps** | Layer A: gsd-code-review → superpowers:receiving-code-review → gsd-code-review-fix (automated). Layer B: superpowers:requesting-code-review → superpowers:receiving-code-review → gsd-code-review-fix (re-review). Layer C: engineering:code-review → superpowers:receiving-code-review → gsd-code-review-fix (engineering). Layer D (As-needed): gsd-review --all → superpowers:receiving-code-review → gsd-code-review-fix (cross-AI). |
 | **Produces** | REVIEW.md |
 | **Review Cycle** | Entire cycle iterates until 2 consecutive clean passes across all layers |
 | **GSD Impact** | gsd-code-review produces REVIEW.md. gsd-code-review-fix applies fixes. Neither modifies STATE.md. |

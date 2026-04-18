@@ -28,7 +28,7 @@ conditional.
 | A (Always) | `gsd-code-review` | SB automated reviewer agents → `REVIEW.md` | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
 | B (Always) | `superpowers:requesting-code-review` (dispatches `superpowers:code-reviewer`) | Peer quality review via subagent | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
 | C (Always) | `engineering:code-review` | Structured review: security, performance, correctness, maintainability | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
-| D (As-needed) | `gsd-review --multi-ai` | Cross-AI adversarial peer review — required when change is architecturally significant or user requests it | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| D (As-needed) | `gsd-review --all` | Cross-AI adversarial peer review — required when change is architecturally significant or user requests it. `--all` fans out to every available CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor). | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
 
 ### Execution
 

@@ -69,6 +69,11 @@ jobs:
           bash tests/hooks/test-record-skill.sh
           bash tests/hooks/test-completion-audit.sh
           bash tests/hooks/test-dev-cycle-check.sh
+          bash tests/hooks/test-required-skills-consistency.sh
+
+      - name: Run skill-reference integrity check (CONS-01)
+        run: |
+          bash tests/integration/test-skill-refs.sh
 
       - name: Assert required_deploy is subset of all_tracked
         run: |

@@ -187,7 +187,7 @@ Run review sequence in order:
 1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
 2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
 3. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix` via the Skill tool.
-3. For architecturally significant UI systems: invoke `gsd-review --multi-ai` via the Skill tool (cross-AI adversarial review).
+3. For architecturally significant UI systems: invoke `gsd-review --all` via the Skill tool (cross-AI adversarial review across all available CLIs).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## FLOW 8: UI QUALITY — Post-execution UI audit

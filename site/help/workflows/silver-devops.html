@@ -193,7 +193,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>TDD is explicitly skipped for infra plans — not applicable.</strong> Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No <code>silver:tdd</code> invocation.</p>
 
       <h3>Step 7 — Code review (IaC review)</h3>
-      <p>Run review sequence: <code>silver:request-review</code> → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for arch-significant infra: <code>gsd-review --multi-ai</code>] → <code>silver:receive-review</code>.</p>
+      <p>Run review sequence: <code>silver:request-review</code> → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for arch-significant infra: <code>gsd-review --all</code>] → <code>silver:receive-review</code>.</p>
 
       <h3>Step 8 — IaC security and secrets verification</h3>
       <p>Invoke <code>gsd-secure-phase</code>. Confirms no credentials in code, correct IAM boundaries, secure defaults.</p>

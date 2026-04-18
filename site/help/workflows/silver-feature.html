@@ -240,7 +240,7 @@ footer a:hover{color:var(--accent-light)}
 
 A. Yes — run MultAI pre-spec review (multai:orchestrator)
 B. No — proceed with spec as-is</div>
-      <p><strong>Note:</strong> this step informs the spec PRE-implementation. Step 9c (gsd-review --multi-ai) reviews completed code POST-execution. Both steps are independent.</p>
+      <p><strong>Note:</strong> this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both steps are independent.</p>
 
       <h3>Step 2 — Testing strategy</h3>
       <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
@@ -273,7 +273,7 @@ B. No — proceed with spec as-is</div>
       <p>Only if gsd-verify-work surfaces coverage gaps: invoke <code>gsd-add-tests</code> to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>silver:request-review</code> (superpowers:requesting-code-review) → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for arch-significant changes: <code>gsd-review --multi-ai</code>] → <code>silver:receive-review</code> (superpowers:receiving-code-review).</p>
+      <p>Run in order: <code>silver:request-review</code> (superpowers:requesting-code-review) → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for arch-significant changes: <code>gsd-review --all</code>] → <code>silver:receive-review</code> (superpowers:receiving-code-review).</p>
 
       <h3>Step 10 — Security review</h3>
       <p>Invoke <code>silver:security</code>. <strong>Non-skippable gate — cannot be bypassed via §10.</strong></p>

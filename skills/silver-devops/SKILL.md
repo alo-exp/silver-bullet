@@ -152,7 +152,7 @@ If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
 Run review sequence in order:
 1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
 2. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant infra changes: invoke `gsd-review --multi-ai` via the Skill tool.
+3. For architecturally significant infra changes: invoke `gsd-review --all` via the Skill tool (fans out to all available external CLIs for cross-AI review).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## Step 8: IaC Security + Secrets Verification

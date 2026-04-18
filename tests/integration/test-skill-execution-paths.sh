@@ -32,7 +32,7 @@ EXTERNAL_SKILLS=(
   gsd-ship gsd-pr-branch gsd-complete-milestone gsd-audit-uat gsd-audit-milestone
   gsd-plan-milestone-gaps gsd-fast gsd-multai gsd-debug gsd-forensics
   gsd-docs-update gsd-milestone-summary gsd-ui-phase gsd-ui-review
-  "gsd-review --multi-ai"
+  "gsd-review --all"
   "superpowers:brainstorming" "superpowers:writing-plans" "superpowers:test-driven-development"
   "superpowers:finishing-a-development-branch" "superpowers:requesting-code-review"
   "superpowers:receiving-code-review" "superpowers:systematic-debugging"
