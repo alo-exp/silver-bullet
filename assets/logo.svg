@@ -1,0 +1,76 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Silver gradient for projectile -->
+    <linearGradient id="silver" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"  stop-color="#6b7684"/>
+      <stop offset="25%" stop-color="#cfd5dc"/>
+      <stop offset="50%" stop-color="#f5f7fa"/>
+      <stop offset="75%" stop-color="#cfd5dc"/>
+      <stop offset="100%" stop-color="#5c6773"/>
+    </linearGradient>
+    <!-- Brass/gold casing -->
+    <linearGradient id="brass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"  stop-color="#8a6b1f"/>
+      <stop offset="25%" stop-color="#d4ae52"/>
+      <stop offset="50%" stop-color="#f8e29a"/>
+      <stop offset="75%" stop-color="#caa041"/>
+      <stop offset="100%" stop-color="#6e5418"/>
+    </linearGradient>
+    <!-- Background radial -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%"  stop-color="#2a3548"/>
+      <stop offset="100%" stop-color="#0f1520"/>
+    </radialGradient>
+    <!-- Motion blur trail -->
+    <linearGradient id="trail" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%"  stop-color="#ffd56b" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffaa44" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#fff3c4" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect x="0" y="0" width="128" height="128" rx="24" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="127" height="127" rx="23.5" fill="none" stroke="#3a455a" stroke-width="1"/>
+
+  <!-- Motion trail behind bullet (fire streak) -->
+  <g transform="rotate(-30 64 64)" filter="url(#blur)">
+    <path d="M 56 88 L 52 124 L 64 124 L 60 88 Z" fill="url(#trail)"/>
+    <path d="M 64 88 L 64 124 L 72 124 L 68 88 Z" fill="url(#trail)" opacity="0.7"/>
+  </g>
+
+  <!-- Bullet — diagonal, upper-left to lower-right, centered -->
+  <g transform="rotate(-30 64 64)" filter="url(#shadow)">
+    <!-- Casing (brass cylinder) -->
+    <rect x="48" y="62" width="32" height="38" rx="1.5" fill="url(#brass)"/>
+    <!-- Casing groove (rim detail) -->
+    <rect x="47" y="92" width="34" height="2.5" fill="#5a4614"/>
+    <rect x="47" y="95" width="34" height="1.5" fill="#ffe9a8" opacity="0.7"/>
+    <!-- "SB" engraved into casing -->
+    <text x="64" y="82"
+          font-family="'Helvetica Neue', Arial, sans-serif"
+          font-weight="900"
+          font-size="14"
+          fill="#5a4614"
+          text-anchor="middle"
+          letter-spacing="-0.5"
+          opacity="0.85">SB</text>
+    <!-- Rim line between projectile and casing -->
+    <rect x="48" y="60" width="32" height="3" fill="#3a4250"/>
+    <!-- Projectile (silver) — rounded nose, pointing up -->
+    <path d="M 48 62
+             L 48 38
+             Q 48 18 64 12
+             Q 80 18 80 38
+             L 80 62 Z"
+          fill="url(#silver)"/>
+    <!-- Nose highlight -->
+    <ellipse cx="60" cy="22" rx="3" ry="8" fill="#ffffff" opacity="0.5"/>
+    <!-- Subtle tip glint -->
+    <circle cx="62" cy="16" r="1.5" fill="#ffffff" opacity="0.9"/>
+  </g>
+</svg>
