@@ -1,6 +1,6 @@
 ---
 name: silver-migrate
-description: "Migrates an existing mid-milestone project to composable flows by generating WORKFLOW.md from current artifact state."
+description: This skill should be used to migrate an existing mid-milestone project to composable flows by generating WORKFLOW.md from current artifact state.
 version: 0.1.0
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: silver-devops
-description: "SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship"
+description: This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---

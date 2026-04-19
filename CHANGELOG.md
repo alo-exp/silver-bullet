@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.23.1] — 2026-04-19
+
+**plugin-dev compliance patch.** Second-pass audit surfaced residual gaps from v0.23.0 that passed the first-pass checks but failed a stricter re-scan. Two consecutive clean audit passes achieved before release.
+
+### Skill descriptions
+- **DESC-NORM**: Normalized 32 remaining skill descriptions to the plugin-dev standard `"This skill should be used when/for/to ..."` opener. Prior release fixed 9; this release fixes the rest. All 41 skills now conform.
+- **DESC-GRAMMAR**: Fixed 6 imperative-verb grammar mismatches (`"used for apply"` → `"used to apply"`, etc.) across `artifact-review-assessor`, `devops-quality-gates`, `silver-blast-radius`, `silver-create-release`, `silver-migrate`, `silver-review-stats`, `silver-init`, `silver-update`, `silver`.
+
+### Writing style
+- **STYLE-02**: Fixed 3 residual second-person aphorisms in `security/SKILL.md` (`"your denylist"`, `"roll your own crypto"`, `"Rolling your own crypto"`). Dialog/error-message examples with 2nd-person left intact as legitimate example content.
+- **STYLE-03**: Fixed 2 additional 2nd-person violations in `silver-init` (`"You can safely delete..."`) and `silver-spec` (`"include in your phrasing"`).
+
+### Audit methodology
+Cleanroom multi-pass audit introduced: scan → fix → re-scan until two consecutive passes report zero findings across manifest fields, hook timeouts, skill frontmatter, description grammar, prose style, and JSON validity.
+
 ## [0.23.0] — 2026-04-19
 
 **plugin-dev compliance milestone.** Retroactively aligns 100% of Silver Bullet against the official Anthropic `plugin-dev` plugin standards — manifest, hooks, skills, and writing style.

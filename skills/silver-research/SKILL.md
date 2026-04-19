@@ -1,6 +1,6 @@
 ---
 name: silver-research
-description: "SB-orchestrated research workflow: explore → MultAI (landscape | tech-selection | competitive) → brainstorm → hand off to silver:feature or silver:devops"
+description: This skill should be used for SB-orchestrated research workflow: explore → MultAI (landscape | tech-selection | competitive) → brainstorm → hand off to silver:feature or silver:devops
 argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---

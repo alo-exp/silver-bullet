@@ -1,6 +1,6 @@
 ---
 name: silver-spec
-description: "AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft"
+description: This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
 argument-hint: "<feature name or description>"
 version: 0.1.0
 ---
@@ -103,7 +103,7 @@ Collect all answers and assumption blocks for Steps 5-8.
 | 8 | Data model | "What data does this feature create, read, update, or delete?" |
 | 9 | Open questions | "What do you not know yet that would affect the spec?" |
 
-**Assumption trigger patterns (include in your phrasing):**
+**Assumption trigger patterns (include in phrasing):**
 - Turn 1: "I'm assuming the primary user is [X] — is that right?"
 - Turn 2: "I'm assuming success means [X] for the user"
 - Turn 3: "I'm assuming [related capability] is not included in this release"

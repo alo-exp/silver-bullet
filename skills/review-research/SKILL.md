@@ -1,6 +1,6 @@
 ---
 name: review-research
-description: "RESEARCH.md artifact reviewer — validates that all findings cite evidence, confidence levels are justified, pitfalls are actionable, and recommendations are concrete and implementable"
+description: This skill should be used for RESEARCH.md artifact reviewer — validates that all findings cite evidence, confidence levels are justified, pitfalls are actionable, and recommendations are concrete and implementable
 argument-hint: "<research-path>"
 user-invocable: false
 version: 0.1.0

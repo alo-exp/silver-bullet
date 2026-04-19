@@ -1,6 +1,6 @@
 ---
 name: silver-update
-description: "Check for Silver Bullet updates, show changelog, and install if available"
+description: This skill should be used to check for Silver Bullet updates, show changelog, and install if available
 version: 0.1.0
 ---
 
