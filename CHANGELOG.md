@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.23.5] — 2026-04-19
+
+**Skill hardening patch.** Iterative audit of `silver-update` and `silver-migrate` SKILL.md files closed terminology drift, missing template sections, and unresolved bash placeholders. Source verified across 4 independent agent audits (last 2 passes clean).
+
+### silver-update
+- **UPD-01**: Added explicit trigger phrase to description (`when the user runs /silver:update`) for skill-development compliance.
+- **UPD-02**: Replaced fragile `curl | grep | sed` tag parse with `jq -r '.tag_name' | sed 's/^v//'` (jq is already a project prerequisite).
+- **UPD-03**: Bound `$LATEST`, `$NEW_CACHE`, `$COMMIT_SHA`, `$NOW` as real shell variables. Removed unquoted/unresolved `<latest-version>` placeholders from executable commands.
+- **UPD-04**: Atomic registry write — `mktemp` + `mv` with a concrete `jq --arg` expression that updates `version`, `installPath`, `lastUpdated`, `gitCommitSha`. Prevents mid-write corruption.
+- **UPD-05**: Cancel-path `rm -rf` guarded by `$HOME/.claude/plugins/cache/` prefix match.
+
+### silver-migrate
+- **MIG-01**: Description updated with explicit `/silver:migrate` trigger + pre-v0.20.0 context.
+- **MIG-02**: Fixed terminology drift — prose now consistently uses "flow/Flows" to match `templates/workflow.md.base` (`Flow Log`, `Next Flow`). Eliminates mismatched section headings in generated `.planning/WORKFLOW.md`.
+- **MIG-03**: Renamed "Next Path section" → "Next Flow section" so emitted heading matches the template.
+- **MIG-04**: Added instructions to emit `## Dynamic Insertions`, `## Autonomous Decisions`, and `## Deferred Improvements` empty-header tables (previously omitted — generated WORKFLOW.md was missing 3 template sections).
+- **MIG-05**: Template read path now uses `${PLUGIN_ROOT}/templates/workflow.md.base` so it no longer depends on the downstream project's CWD.
+- **MIG-06**: Disambiguated FLOW 13 (SHIP — `gsd-ship` / `deploy-checklist`) from FLOW 17 (RELEASE — `silver-create-release`). Previously both claimed `silver-create-release`.
+
 ## [0.23.4] — 2026-04-19
 
 **Marketplace hardening.** Fixes version drift, modernizes the marketplace `source` schema, and introduces a dedicated marketplace repo so future Ālo Labs plugins can be cataloged together.
