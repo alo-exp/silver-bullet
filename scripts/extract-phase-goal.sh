@@ -2,6 +2,7 @@
 # Extract current GSD phase goal from .planning/ files.
 # Outputs goal text to stdout, or empty string if no phase is active.
 set -euo pipefail
+trap 'exit 0' ERR
 
 planning_dir=".planning"
 [[ -d "$planning_dir" ]] || exit 0

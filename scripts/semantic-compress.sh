@@ -4,6 +4,7 @@
 # runs TF-IDF ranking (source prioritised over docs), and outputs
 # hookSpecificOutput.additionalContext JSON.
 set -euo pipefail
+trap 'exit 0' ERR
 
 # Security: restrict file creation permissions (user-only)
 umask 0077

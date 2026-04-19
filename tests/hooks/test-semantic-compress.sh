@@ -63,8 +63,10 @@ output3=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"gsd:exec
 assert_eq "cache hit: identical output on second call" "$output" "$output3"
 
 # Test 5: cache invalidation — modify file, output changes
-sleep 1  # ensure mtime differs from the prior write for reliable cache invalidation
 printf 'new_function_completely_different() { true; }\n' >> "$TMP/src/auth.sh"
+# Ensure mtime differs from cached value for reliable cache invalidation.
+# GNU touch -d is faster than sleep on Linux CI; BSD fallback uses sleep 1.
+touch -d '+2 seconds' "$TMP/src/auth.sh" 2>/dev/null || sleep 1
 output4=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"gsd:execute-phase"}}' | "$HOOK")
 context4=$(printf '%s' "$output4" | jq -r '.hookSpecificOutput.additionalContext')
 context1=$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')

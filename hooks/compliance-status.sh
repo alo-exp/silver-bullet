@@ -53,7 +53,10 @@ if [[ -n "$pwd_hash" ]]; then
     cached_path=$(sed -n '1p' "$cache_file")
     cached_mtime=$(sed -n '2p' "$cache_file")
     if [[ -n "$cached_path" && -f "$cached_path" ]]; then
-      current_mtime=$(stat -f '%m' "$cached_path" 2>/dev/null || stat -c '%Y' "$cached_path" 2>/dev/null || echo "0")
+      _cm=$(stat -f '%m' "$cached_path" 2>/dev/null || true)
+      if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm=$(stat -c '%Y' "$cached_path" 2>/dev/null || true); fi
+      if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm="0"; fi
+      current_mtime="$_cm"
       if [[ "$cached_mtime" == "$current_mtime" ]]; then
         config_file="$cached_path"
       else

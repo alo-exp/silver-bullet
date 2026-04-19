@@ -7,6 +7,7 @@
 # Multiline chunk text is newline-escaped (\n) when written to TMP_CHUNKS so
 # that each chunk occupies exactly one line. awk unescapes before scoring.
 set -euo pipefail
+trap 'exit 0' ERR
 
 QUERY="${1:-}"
 CHUNK_LINES=40                                 # force-split interval when no blank line found
