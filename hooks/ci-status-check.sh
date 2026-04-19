@@ -61,6 +61,22 @@ if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   sb_trivial_bypass
 fi
 
+# ── CI-red override bypass ────────────────────────────────────────────────────
+# Separate from trivial-session bypass — allows commits when CI is red so the
+# user can push a fix. Uses a dedicated flag to avoid semantic conflation (#31).
+_sb_state_dir="${HOME}/.claude/.silver-bullet"
+_ci_override_file="${_sb_state_dir}/ci-red-override"
+_trivial_file="${_sb_state_dir}/trivial"
+if [[ -f "$_ci_override_file" && ! -L "$_ci_override_file" ]]; then
+  exit 0
+fi
+# Backward compat (v0.23.6 → v0.24): accept trivial as CI-red override with warning.
+# Remove this block in v0.25.
+if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
+  printf '{"hookSpecificOutput":{"message":"[deprecation] ~/.claude/.silver-bullet/trivial used as CI-red override. This flag moved to ci-red-override in v0.23.6 and will stop working in v0.25. See silver-bullet#31."}}'
+  exit 0
+fi
+
 # gh CLI required for real runs; test override bypasses it
 if [[ -n "${GH_STATUS_OVERRIDE:-}" ]]; then
   run_json="$GH_STATUS_OVERRIDE"
@@ -96,9 +112,9 @@ Invoke /gsd:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed
 
-If you need to commit a CI fix: recreate the bypass file in your terminal (not in Claude):
-  touch ~/.claude/.silver-bullet/trivial
-This re-enables commits for the current session so you can push your fix."
+If you need to commit a CI fix: create the override file in your terminal (not in Claude):
+  touch ~/.claude/.silver-bullet/ci-red-override
+This lets you commit your fix while CI is red. Remove it once CI is green."
 
   emit_block "$msg"
 
