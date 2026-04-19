@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Fail-visible: on unexpected error, exit 0 (silent no-op) rather than crash
+trap 'exit 0' ERR
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -13,9 +15,6 @@ else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
   sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
-
-# Fail-visible: on unexpected error, exit 0 (silent no-op) rather than crash
-trap 'exit 0' ERR
 
 # PostToolUse hook (matcher: .*, async: false)
 # Two-tier anti-stall protection in autonomous mode:

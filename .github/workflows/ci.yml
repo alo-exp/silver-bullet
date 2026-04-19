@@ -74,7 +74,7 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get install -y shellcheck
-          shellcheck --exclude=SC2317,SC1091 hooks/*.sh scripts/*.sh
+          shellcheck --exclude=SC2317,SC1091 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 
       - name: Run hook unit tests
         run: |
@@ -82,6 +82,17 @@ jobs:
           fail=0
           for f in tests/hooks/test-*.sh; do
             name="$(basename "$f")"
+            bash "$f" || { echo "FAILED: $name"; fail=1; }
+          done
+          exit $fail
+
+      - name: Run integration tests
+        run: |
+          fail=0
+          for f in tests/integration/test-*.sh; do
+            name="$(basename "$f")"
+            # test-skill-refs.sh has its own dedicated step below — skip here
+            [[ "$name" == "test-skill-refs.sh" ]] && continue
             bash "$f" || { echo "FAILED: $name"; fail=1; }
           done
           exit $fail

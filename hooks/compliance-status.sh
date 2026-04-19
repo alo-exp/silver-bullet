@@ -82,8 +82,8 @@ if [[ -z "$config_file" ]]; then
     search_dir=$(dirname "$search_dir")
   done
 
-  # Cache result
-  if [[ -n "${pwd_hash:-}" ]]; then
+  # Cache result (only when config was actually found)
+  if [[ -n "${pwd_hash:-}" && -n "$config_file" ]]; then
     cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
     _cm=$(stat -f '%m' "$config_file" 2>/dev/null || true)
     if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm=$(stat -c '%Y' "$config_file" 2>/dev/null || true); fi

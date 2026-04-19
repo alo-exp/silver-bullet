@@ -11,6 +11,7 @@
 # Exit 1 = jq unavailable or JSON malformed
 
 set -euo pipefail
+trap 'exit 1' ERR
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 plugin_json="$repo_root/.claude-plugin/plugin.json"
@@ -25,9 +26,11 @@ if [[ "$plugin_v" == "$market_v" ]]; then
   echo "✓ Versions already in sync: $plugin_v"
 else
   tmp=$(mktemp)
+  trap 'rm -f "$tmp"' EXIT
   jq --arg v "$plugin_v" '(.plugins[] | select(.name=="silver-bullet") | .version) = $v' \
     "$marketplace_json" > "$tmp"
   mv "$tmp" "$marketplace_json"
+  trap - EXIT
   echo "✓ Updated in-repo marketplace.json: $market_v → $plugin_v"
 fi
 

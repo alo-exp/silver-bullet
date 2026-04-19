@@ -313,7 +313,7 @@ echo "--- Test 10: Branch file absent -> branch file created; state preserved --
 rm -f "$TMPBRANCH" 2>/dev/null || true   # ensure branch file is absent
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\ncode-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ngsd-discuss-phase\nquality-gate-stage-1\ncode-review\n' > "$TMPSTATE"
 run_hook "$HOOK_WORKDIR" >/dev/null
 # Branch file should now exist and contain the current branch
 assert_file_exists "branch file absent -> branch file created" "$TMPBRANCH"
@@ -334,6 +334,7 @@ assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTA
 # path (session-start line 72). This differs from the same-branch path, which only
 # strips gsd-* and preserves quality-gate-stage-* markers.
 assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_not_contains "branch file absent -> quality-gate-stage-* also stripped" "$TMPSTATE" "quality-gate-stage-1"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 

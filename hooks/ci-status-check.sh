@@ -57,11 +57,19 @@ done
 # user can push a fix. Uses a dedicated flag to avoid semantic conflation (#31).
 _sb_state_dir="${HOME}/.claude/.silver-bullet"
 _ci_override_file="${_sb_state_dir}/ci-red-override"
+# Default trivial path — used by backward compat check (always hardcoded
+# because that check specifically detects old-style usage of the default path).
 _trivial_file="${_sb_state_dir}/trivial"
+# Config-driven trivial path for the real trivial-session bypass; allows
+# projects to specify a custom state.trivial_file in .silver-bullet.json.
+_bypass_trivial="${_trivial_file}"
+_cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
+[[ -n "$_cfg_trivial" ]] && _bypass_trivial="$_cfg_trivial"
 if [[ -f "$_ci_override_file" && ! -L "$_ci_override_file" ]]; then
   exit 0
 fi
-# Backward compat (v0.23.6 → v0.24): check BEFORE sb_trivial_bypass — the
+# Backward compat (v0.23.6 → v0.24): always checks the hardcoded default path —
+# detects when the old default trivial file is used as CI-red override.
 # trivial-bypass helper exits 0 silently, which would swallow this notice.
 # Remove this block in v0.25.
 if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
@@ -75,7 +83,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/trivial-bypass.sh"
-  sb_trivial_bypass
+  sb_trivial_bypass "$_bypass_trivial"
 fi
 
 # gh CLI required for real runs; test override bypasses it
