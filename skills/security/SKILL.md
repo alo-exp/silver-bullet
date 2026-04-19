@@ -30,7 +30,7 @@ Every piece of data entering the system MUST be validated before use:
 | External API responses | Schema validation — don't trust upstream services blindly |
 | User-generated content | Sanitize for XSS, SQL injection, path traversal, command injection |
 
-**Allowlist over denylist.** Define what IS allowed, never what ISN'T. Attackers are creative; your denylist isn't.
+**Allowlist over denylist.** Define what IS allowed, never what ISN'T. Attackers are creative; a denylist is not.
 
 ### Rule 2: Authentication and Authorization
 
@@ -138,7 +138,7 @@ As you write code:
 - Add input validation at every API endpoint before any business logic.
 - Never log sensitive data (passwords, tokens, PII, credit cards).
 - Set security headers on every response (CSP, HSTS, X-Frame-Options).
-- Use crypto libraries, never roll your own encryption.
+- Use crypto libraries, never hand-rolled encryption.
 - Add rate limiting to authentication endpoints.
 
 ### During Review (code-review / receiving-code-review)
@@ -188,7 +188,7 @@ If existing code violates these rules:
 | Broad CORS (`*`) | Any origin can access API | Explicit origin allowlist |
 | Admin-by-default | Over-privileged users | Least privilege, role-based access |
 | Logging everything | Secrets in logs | Structured logging with redaction |
-| Rolling your own crypto | Guaranteed vulnerabilities | Use vetted libraries (libsodium, etc.) |
+| Rolling custom crypto | Guaranteed vulnerabilities | Use vetted libraries (libsodium, etc.) |
 
 ---
 

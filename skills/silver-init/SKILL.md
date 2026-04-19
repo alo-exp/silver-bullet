@@ -1,6 +1,6 @@
 ---
 name: silver-init
-description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
+description: This skill should be used to initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
 version: 0.1.0
 ---
 
@@ -751,7 +751,7 @@ Backups:
 Untouched:
 - docs/custom-guide.md (not part of SB scheme)
 
-You can safely delete the .pre-sb-backup files once you've verified the migration.
+The .pre-sb-backup files can be safely deleted once the migration is verified.
 ```
 
 ---

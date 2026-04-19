@@ -1,6 +1,6 @@
 ---
 name: review-cross-artifact
-description: "Cross-artifact consistency reviewer -- validates alignment across SPEC.md, REQUIREMENTS.md, ROADMAP.md, and DESIGN.md. Detects unmapped ACs, orphaned requirements, missing design coverage, and phantom phase requirements."
+description: This skill should be used for cross-artifact consistency reviewer -- validates alignment across SPEC.md, REQUIREMENTS.md, ROADMAP.md, and DESIGN.md. Detects unmapped ACs, orphaned requirements, missing design coverage, and phantom phase requirements.
 argument-hint: "--artifacts <spec-path> <requirements-path> <roadmap-path> [design-path]"
 user-invocable: false
 version: 0.1.0

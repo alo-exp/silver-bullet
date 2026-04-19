@@ -1,6 +1,6 @@
 ---
 name: silver-blast-radius
-description: Assess the blast radius of a proposed infrastructure or DevOps change before planning. Maps change scope, downstream dependencies, failure scenarios, rollback plan, and change window risk. Required before /devops-quality-gates in the devops-cycle workflow.
+description: This skill should be used to assess the blast radius of a proposed infrastructure or DevOps change before planning. Maps change scope, downstream dependencies, failure scenarios, rollback plan, and change window risk. Required before /devops-quality-gates in the devops-cycle workflow.
 version: 0.1.0
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: silver-quality-gates
-description: "Dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state."
+description: This skill should be used for dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state.
 version: 0.1.0
 ---
 

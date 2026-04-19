@@ -105,7 +105,7 @@ Every testable unit MUST have a small, focused interface:
 - **Max 1 responsibility** per testable unit. If the test setup is complex, the unit does too much.
 - **Max 10 lines of test setup.** If setup is longer than the test itself, refactor the code.
 
-**Test:** Count the mocks in your test. If you need more than 3 mocks, the component is coupled to too many things — split it.
+**Test:** Count the mocks in the test. If more than 3 mocks are needed, the component is coupled to too many things — split it.
 
 ### Rule 7: Test Isolation
 

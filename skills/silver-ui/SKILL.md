@@ -1,6 +1,6 @@
 ---
 name: silver-ui
-description: "Full SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship"
+description: This skill should be used for full SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
