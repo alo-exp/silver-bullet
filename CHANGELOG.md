@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.23.2] — 2026-04-19
+
+**plugin-dev compliance — broader-scope audit.** Re-ran the audit iteratively against a wider checklist (shellcheck, executability, schema, semver, name/dir parity, description length bounds) until two consecutive passes reported zero findings.
+
+### Hook lib cleanliness
+- **SHELL-01**: Added `# shellcheck shell=bash` directive to `hooks/lib/required-skills.sh` so shellcheck recognizes the shell for sourced-only files (SC2148).
+- **SHELL-02**: Added `# shellcheck disable=SC2034` to `DEFAULT_REQUIRED` and `DEVOPS_DEFAULT_REQUIRED` since they are consumed via `source`, not in-file.
+
+### Audit coverage (all passing)
+- All 41 skills: plugin-dev description opener, version field, no grammar mismatches
+- All 24 hook entries: `type` + `timeout` present
+- Shellcheck: zero warnings + zero errors across `hooks/*.sh` and `hooks/lib/*.sh`
+- plugin.json: all required fields (name, version, description, hooks, author, license)
+- All three JSON files valid
+- No 2nd-person imperative prose in skill bodies
+- All hook scripts executable
+- Semver compliant
+
 ## [0.23.1] — 2026-04-19
 
 **plugin-dev compliance patch.** Second-pass audit surfaced residual gaps from v0.23.0 that passed the first-pass checks but failed a stricter re-scan. Two consecutive clean audit passes achieved before release.

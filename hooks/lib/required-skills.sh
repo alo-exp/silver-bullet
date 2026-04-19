@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Silver Bullet — canonical required-deploy skill list (reader-shim)
 #
 # Single source of truth: templates/silver-bullet.config.json.default
@@ -50,12 +51,14 @@ __sb_rs_populate() {
   if [ -z "${value}" ]; then
     DEFAULT_REQUIRED="${__SB_RS_FALLBACK}"
   else
+    # shellcheck disable=SC2034  # sourced by hook scripts
     DEFAULT_REQUIRED="${value}"
   fi
   value="$(__sb_rs_load required_deploy_devops)"
   if [ -z "${value}" ]; then
     DEVOPS_DEFAULT_REQUIRED="${__SB_RS_FALLBACK}"
   else
+    # shellcheck disable=SC2034  # sourced by hook scripts
     DEVOPS_DEFAULT_REQUIRED="${value}"
   fi
 }
