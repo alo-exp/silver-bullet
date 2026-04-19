@@ -47,7 +47,7 @@ if [[ -z "$project_root" ]]; then
       project_root="$search_dir"
       break
     fi
-    [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]] && break
+    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then break; fi
     search_dir=$(dirname "$search_dir")
   done
 fi

@@ -39,17 +39,21 @@ mode_file_content=$(cat "$mode_file" 2>/dev/null || echo "interactive")
 [[ "$mode_file_content" != "autonomous" ]] && exit 0
 
 # Platform-aware stat helper: returns file mtime as epoch seconds
+# Validates output is a pure integer (guards against GNU stat multi-line output)
 _mtime() {
+  local _v
   if [[ "$(uname)" == "Darwin" ]]; then
-    stat -f %m "$1" 2>/dev/null
+    _v=$(stat -f %m "$1" 2>/dev/null || true)
   else
-    stat --format=%Y "$1" 2>/dev/null
+    _v=$(stat --format=%Y "$1" 2>/dev/null || true)
   fi
+  [[ "$_v" =~ ^[0-9]+$ ]] && printf '%s' "$_v" || printf '0'
 }
 
 # ── Session start anchor ──────────────────────────────────────────────────────
 session_start=$(cat "$SB_DIR/session-start-time" 2>/dev/null || echo "")
 [[ -z "$session_start" ]] && exit 0
+[[ "$session_start" =~ ^[0-9]+$ ]] || exit 0
 
 # ── Tier 1: Wall-clock timeout check ─────────────────────────────────────────
 flag_file="${TIMEOUT_FLAG_OVERRIDE:-$SB_DIR/timeout}"
