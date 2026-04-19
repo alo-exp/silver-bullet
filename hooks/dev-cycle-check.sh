@@ -252,7 +252,7 @@ To reset workflow state intentionally, run in your terminal:
   # --- Check if file/command matches src_pattern ---
   if [[ -n "$file_path" ]]; then
     # Edit/Write tool — check file path
-    if ! printf '%s' "$file_path" | grep -q "$src_pattern"; then
+    if ! printf '%s' "$file_path" | grep -qE "$src_pattern"; then
       exit 0
     fi
     # Check exclude pattern (test files)
@@ -261,7 +261,7 @@ To reset workflow state intentionally, run in your terminal:
     fi
   else
     # Bash tool — check if command string contains src_pattern
-    if ! printf '%s' "$command_str" | grep -q "$src_pattern"; then
+    if ! printf '%s' "$command_str" | grep -qE "$src_pattern"; then
       exit 0
     fi
     # Check exclude pattern for Bash commands too

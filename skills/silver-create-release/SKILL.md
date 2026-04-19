@@ -23,6 +23,7 @@ Shell execution is limited to:
 - `git describe --tags --abbrev=0` (find last tag)
 - `git tag -l` (list tags)
 - `git tag` (create tag)
+- `git tag -s` (create signed tag)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
@@ -130,8 +131,8 @@ Omit empty sections. Keep descriptions concise (one line per commit).
 
 ## Step 5 — Verify README is Current
 
-Before creating the release, verify that `README.md` mentions the new version
-or has been updated in the commits since the last tag:
+Before creating the release, verify that `README.md` was touched in the commits
+since the last tag (i.e. it has been updated as part of this release cycle):
 
 ```
 git log <last-tag>..HEAD --name-only -- README.md

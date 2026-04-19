@@ -315,7 +315,9 @@ assert_blocks "gh pr merge blocked with only silver-quality-gates" "$out"
 assert_contains "gh pr merge block mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
 teardown
 
-# Test 17: gh pr merge passes when all skills present (including review-loop-pass markers)
+# Test 17: gh pr merge passes when all required skills present (review-loop-pass markers
+# are NOT required — removed from required_deploy in v0.23.6 — but must not cause
+# spurious failures if present in state (e.g. from a pre-upgrade session).
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -330,11 +332,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
-review-loop-pass-1
-review-loop-pass-2
 EOF
 out=$(run_hook "PreToolUse" "gh pr merge --squash")
-assert_passes "gh pr merge passes with all skills + review-loop-pass markers" "$out"
+assert_passes "gh pr merge passes with all required skills (no review-loop-pass needed)" "$out"
 teardown
 
 # ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────

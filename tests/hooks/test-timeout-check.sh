@@ -2,6 +2,8 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$SCRIPT_DIR/../../hooks/timeout-check.sh"
+PASS=0
+FAIL=0
 
 # Ensure state directory exists
 mkdir -p "${HOME}/.claude/.silver-bullet"
@@ -31,19 +33,21 @@ touch /tmp/.sb-test-timeout-flag-$$
 rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
 out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
 if printf '%s' "$out" | grep -q "Autonomous session"; then
+  PASS=$((PASS + 1))
   printf 'PASS: current flag + autonomous → warning on call 1\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: expected warning, got: %s\n' "$out"
-  cleanup_tmp; exit 1
 fi
 
 # Test 2: second call → silent (count=2, 2 mod 5 != 1)
 out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
 if [[ -z "$out" ]]; then
+  PASS=$((PASS + 1))
   printf 'PASS: second call → silent (rate-limit)\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: expected silence on call 2, got: %s\n' "$out"
-  cleanup_tmp; exit 1
 fi
 
 # Test 3: no flag file → silent
@@ -52,10 +56,11 @@ write_mode "autonomous"
 write_start_time
 out=$(run_hook "")
 if [[ -z "$out" ]]; then
+  PASS=$((PASS + 1))
   printf 'PASS: absent flag → silent\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: expected silence with no flag, got: %s\n' "$out"
-  exit 1
 fi
 
 # Test 4: interactive mode → silent even with flag
@@ -66,10 +71,11 @@ sleep 1
 touch /tmp/.sb-test-timeout-flag-$$
 out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
 if [[ -z "$out" ]]; then
+  PASS=$((PASS + 1))
   printf 'PASS: interactive mode → silent\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: expected silence in interactive, got: %s\n' "$out"
-  cleanup_tmp; exit 1
 fi
 
 # Test 5: stale flag (mtime before session-start-time) → silent (macOS only)
@@ -83,10 +89,11 @@ if [[ "$(uname)" == "Darwin" ]]; then
   rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if [[ -z "$out" ]]; then
+    PASS=$((PASS + 1))
     printf 'PASS: stale flag → silent\n'
   else
+    FAIL=$((FAIL + 1))
     printf 'FAIL: expected silence for stale flag, got: %s\n' "$out"
-    cleanup_tmp; exit 1
   fi
 else
   printf 'SKIP: stale-flag test is macOS-only\n'
@@ -106,10 +113,11 @@ if [[ "$(uname)" == "Darwin" ]]; then
   touch -t 202001010000 "${HOME}/.claude/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if printf '%s' "$out" | grep -q "Autonomous session"; then
+    PASS=$((PASS + 1))
     printf 'PASS: stale warn-count resets to 0 → warning fires on first call\n'
   else
+    FAIL=$((FAIL + 1))
     printf 'FAIL: expected warning after stale warn-count reset, got: %s\n' "$out"
-    cleanup_tmp; exit 1
   fi
 else
   printf 'SKIP: stale warn-count test is macOS-only\n'
@@ -141,10 +149,11 @@ echo "0"  > "${SB_DIR}/last-state-mtime"
 # Don't create a state file — current_state_mtime will be 0 = last_state_mtime, no reset
 out=$(run_hook_tier2)
 if printf '%s' "$out" | grep -q "Check-in"; then
+  PASS=$((PASS + 1))
   printf 'PASS: T2-1: 30 calls since progress → Check-in warning fires\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: T2-1: expected "Check-in", got: %s\n' "$out"
-  cleanup_tier2; exit 1
 fi
 
 # Test T2-2: 60-call warning fires ("STALL WARNING" message)
@@ -157,10 +166,11 @@ echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
 if printf '%s' "$out" | grep -q "STALL WARNING"; then
+  PASS=$((PASS + 1))
   printf 'PASS: T2-2: 60 calls since progress → STALL WARNING fires\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: T2-2: expected "STALL WARNING", got: %s\n' "$out"
-  cleanup_tier2; exit 1
 fi
 
 # Test T2-3: 100-call warning fires ("STALL DETECTED" message)
@@ -173,10 +183,11 @@ echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
 if printf '%s' "$out" | grep -q "STALL DETECTED"; then
+  PASS=$((PASS + 1))
   printf 'PASS: T2-3: 100 calls since progress → STALL DETECTED fires\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: T2-3: expected "STALL DETECTED", got: %s\n' "$out"
-  cleanup_tier2; exit 1
 fi
 
 # Test T2-4: 31 calls → silent (not on a threshold boundary)
@@ -191,12 +202,16 @@ echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
 if [[ -z "$out" ]]; then
+  PASS=$((PASS + 1))
   printf 'PASS: T2-4: 31 calls (non-threshold) → silent\n'
 else
+  FAIL=$((FAIL + 1))
   printf 'FAIL: T2-4: expected silence at 31 calls, got: %s\n' "$out"
-  cleanup_tier2; exit 1
 fi
 
 cleanup_tier2
 cleanup_tmp
-printf 'All tests passed.\n'
+
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+[[ $FAIL -eq 0 ]] && exit 0 || exit 1

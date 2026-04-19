@@ -23,27 +23,29 @@ write_cfg() {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist"],
-    "all_tracked": ["silver-quality-gates","code-review"]
+    "required_deploy": [
+      "silver-quality-gates",
+      "code-review", "requesting-code-review", "receiving-code-review",
+      "testing-strategy", "documentation",
+      "finishing-a-development-branch", "deploy-checklist",
+      "silver-create-release",
+      "verification-before-completion",
+      "test-driven-development", "tech-debt"
+    ],
+    "all_tracked": [
+      "silver-quality-gates","code-review","requesting-code-review","receiving-code-review",
+      "testing-strategy","documentation","finishing-a-development-branch","deploy-checklist",
+      "silver-create-release","verification-before-completion","test-driven-development","tech-debt"
+    ]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
 EOF
 }
 
-write_cfg_with_release() {
-  cat > "$TMPCFG" << EOF
-{
-  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
-  "skills": {
-    "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release"],
-    "all_tracked": ["silver-quality-gates","code-review"]
-  },
-  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
-}
-EOF
-}
+# write_cfg_with_release is kept for backward compatibility; the full canonical list
+# already includes silver-create-release via write_cfg.
+write_cfg_with_release() { write_cfg; }
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
@@ -152,10 +154,16 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 code-review
+requesting-code-review
+receiving-code-review
 testing-strategy
 documentation
 finishing-a-development-branch
 deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
 EOF
 out=$(run_hook)
 assert_passes "all required_deploy skills present -> no block" "$out"
@@ -195,9 +203,15 @@ git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" c
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 code-review
+requesting-code-review
+receiving-code-review
 testing-strategy
 documentation
 deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
 EOF
 out=$(run_hook)
 assert_passes "on main branch: all skills except finishing-a-development-branch -> no block" "$out"

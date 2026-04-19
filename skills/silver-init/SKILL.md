@@ -195,7 +195,7 @@ Use AskUserQuestion:
 
 If user selects A, use the Edit tool to remove the offending hook entries from `.claude/settings.json`. If user selects B, STOP.
 
-### 1.6 MultAI plugin
+### 1.7 MultAI plugin
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
@@ -209,7 +209,7 @@ If no file found, use AskUserQuestion:
 If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
 If B: continue without stopping.
 
-### 1.7 Anthropic Engineering plugin
+### 1.8 Anthropic Engineering plugin
 
 Use the Glob tool to search for Engineering plugin skills in these paths:
 - `~/.claude/plugins/cache/engineering/skills/`
@@ -224,7 +224,7 @@ If no directory found, use AskUserQuestion:
 If A: re-run the Glob check. If still not found, STOP with: `❌ Engineering plugin still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
-### 1.8 Anthropic Product Management plugin
+### 1.9 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
@@ -552,11 +552,6 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 
 - **`references/ci-templates.md`** — CI workflow YAML templates for all supported stacks (Node.js, Python, Rust, Go, Java, Ruby, PHP, .NET, Elixir, Swift, Dart/Flutter)
 - **`references/doc-migration.md`** — Full documentation migration procedure: scan commands, mapping table, KNOWLEDGE.md split logic, user approval flow
-- **`references/stack-detection.md`** — Per-ecosystem tech stack string mapping (manifest file → stack label)
-
-### Scripts
-
-- **`scripts/merge-hooks.py`** — Idempotent hook merge script for Phase 3.7.5 (substitutes CLAUDE_PLUGIN_ROOT, deduplicates entries)
 - **`references/stack-detection.md`** — Per-ecosystem tech stack string mapping (manifest file → stack label)
 
 ### Scripts

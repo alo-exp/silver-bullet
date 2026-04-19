@@ -14,7 +14,7 @@ SB orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, contain
 - Uses silver:devops-quality-gates (7 IaC-adapted dimensions) instead of the standard 9-dimension sweep at BOTH pre-plan and pre-ship gates.
 - TDD is not applicable for infra plans — explicitly skipped.
 
-**The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, observability, change-safety. (Usability omitted — no user-facing interface in IaC. Extensibility omitted — IaC is declarative, not extensible.)
+**The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, reusability, extensibility. (Usability omitted — no user-facing interface in IaC.)
 
 Never implements infra changes directly — orchestrates only.
 
@@ -125,7 +125,7 @@ Invoke `silver:devops-skill-router` via the Skill tool. Purpose: route to the ri
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
+Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
 
 Note: this is NOT the standard 9-dimension silver:silver-quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
 

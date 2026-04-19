@@ -151,11 +151,13 @@ Tag signature: [SIGNED ✅ / UNSIGNED ⚠️ / INVALID ❌]
 Verify this SHA matches https://github.com/alo-exp/silver-bullet/releases/tag/v$LATEST
 ```
 
-If `$VERIFY_OUT` contains `Good signature` → show `SIGNED ✅` and proceed.
-If `$VERIFY_OUT` contains `error` or `BAD signature` → show `INVALID ❌` and **abort**:
-> "Tag signature verification failed. This release may have been tampered with. Do not install."
-If `$VERIFY_OUT` contains `no signature` or is otherwise empty → show `UNSIGNED ⚠️` with note:
-> "This tag has no cryptographic signature. Proceed only if you trust the source."
+Evaluate in this exact order (most specific first — `"error: no signature found"` contains `"error"` so order matters):
+
+1. If `$VERIFY_OUT` contains `Good signature` → show `SIGNED ✅` and proceed.
+2. If `$VERIFY_OUT` contains `no signature` or is otherwise empty → show `UNSIGNED ⚠️` with note:
+   > "This tag has no cryptographic signature. Proceed only if you trust the source."
+3. If `$VERIFY_OUT` contains `BAD signature` or `error` (catch-all for verification failures) → show `INVALID ❌` and **abort**:
+   > "Tag signature verification failed. This release may have been tampered with. Do not install."
 
 Use AskUserQuestion:
 - Question: "Proceed with installing v<latest-version> at commit <short-sha>?"

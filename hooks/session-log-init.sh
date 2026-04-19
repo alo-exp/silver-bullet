@@ -154,6 +154,7 @@ fi
 # --- Step 6: Create session log ---
 timestamp=$(date '+%H-%M-%S')
 log_file="$sessions_dir/${today}-${timestamp}.md"
+sb_safe_write "$log_file"
 
 cat > "$log_file" << LOGEOF
 # Session Log — ${today}

@@ -84,8 +84,8 @@ if [[ -z "$config_file" ]]; then
   if [[ -n "${pwd_hash:-}" ]]; then
     cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
     config_mtime=$(stat -f '%m' "$config_file" 2>/dev/null || stat -c '%Y' "$config_file" 2>/dev/null || echo "0")
-    sb_guard_nofollow "$cache_file"
-    printf '%s\n%s' "$config_file" "$config_mtime" > "$cache_file"
+    _tmp=$(mktemp "${HOME}/.claude/.silver-bullet/config-cache-XXXXXX")
+    printf '%s\n%s' "$config_file" "$config_mtime" > "$_tmp" && mv -f "$_tmp" "$cache_file" || rm -f -- "$_tmp"
   fi
 fi
 

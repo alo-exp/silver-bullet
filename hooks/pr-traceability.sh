@@ -90,7 +90,6 @@ new_body=$(jq -n -r \
 # Write to temp file and update PR (M10: trap ensures cleanup on signal)
 tmpfile=$(mktemp)
 trap 'rm -f -- "$tmpfile"' EXIT INT TERM
-sb_guard_nofollow "$tmpfile"
 printf '%s' "$new_body" > "$tmpfile"
 "$GH_BIN" pr edit "$pr_url" --body-file "$tmpfile" 2>/dev/null || true
 rm -f -- "$tmpfile"

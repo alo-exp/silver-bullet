@@ -52,15 +52,6 @@ while true; do
 done
 [[ -z "$config_file" ]] && exit 0
 
-# ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
-# shellcheck source=lib/trivial-bypass.sh
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
-if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
-  # shellcheck disable=SC1090
-  source "$_lib_dir/trivial-bypass.sh"
-  sb_trivial_bypass
-fi
-
 # ── CI-red override bypass ────────────────────────────────────────────────────
 # Separate from trivial-session bypass — allows commits when CI is red so the
 # user can push a fix. Uses a dedicated flag to avoid semantic conflation (#31).
@@ -70,11 +61,21 @@ _trivial_file="${_sb_state_dir}/trivial"
 if [[ -f "$_ci_override_file" && ! -L "$_ci_override_file" ]]; then
   exit 0
 fi
-# Backward compat (v0.23.6 → v0.24): accept trivial as CI-red override with warning.
+# Backward compat (v0.23.6 → v0.24): check BEFORE sb_trivial_bypass — the
+# trivial-bypass helper exits 0 silently, which would swallow this notice.
 # Remove this block in v0.25.
 if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
   printf '{"hookSpecificOutput":{"message":"[deprecation] ~/.claude/.silver-bullet/trivial used as CI-red override. This flag moved to ci-red-override in v0.23.6 and will stop working in v0.25. See silver-bullet#31."}}'
   exit 0
+fi
+
+# ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
+# shellcheck source=lib/trivial-bypass.sh
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "$_lib_dir/trivial-bypass.sh"
+  sb_trivial_bypass
 fi
 
 # gh CLI required for real runs; test override bypasses it

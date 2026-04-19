@@ -67,6 +67,38 @@ fi
 check "lib sources config (no hardcoded literal DEFAULT_REQUIRED)" \
   bash -c '! grep -qE "^DEFAULT_REQUIRED=\"silver-quality-gates" "'"$LIB"'"'
 
+# Cross-list validation: every skill in required_deploy must appear in all_tracked.
+# Without this, a skill can be required for deployment but never recordable (deadlock).
+CFG_ALL_TRACKED=$(jq -r '.skills.all_tracked | .[]' "$CONFIG" | sort -u)
+missing_from_tracked=()
+while IFS= read -r skill; do
+  if ! printf '%s\n' "$CFG_ALL_TRACKED" | grep -qx "$skill"; then
+    missing_from_tracked+=("$skill")
+  fi
+done < <(jq -r '.skills.required_deploy | .[]' "$CONFIG")
+
+check "all required_deploy skills are in all_tracked" \
+  test "${#missing_from_tracked[@]}" -eq 0
+if [[ ${#missing_from_tracked[@]} -gt 0 ]]; then
+  echo "    Skills in required_deploy but missing from all_tracked:"
+  for s in "${missing_from_tracked[@]}"; do echo "      - $s"; done
+fi
+
+# Same check for required_deploy_devops
+missing_from_tracked_devops=()
+while IFS= read -r skill; do
+  if ! printf '%s\n' "$CFG_ALL_TRACKED" | grep -qx "$skill"; then
+    missing_from_tracked_devops+=("$skill")
+  fi
+done < <(jq -r '.skills.required_deploy_devops | .[]' "$CONFIG" 2>/dev/null)
+
+check "all required_deploy_devops skills are in all_tracked" \
+  test "${#missing_from_tracked_devops[@]}" -eq 0
+if [[ ${#missing_from_tracked_devops[@]} -gt 0 ]]; then
+  echo "    Skills in required_deploy_devops but missing from all_tracked:"
+  for s in "${missing_from_tracked_devops[@]}"; do echo "      - $s"; done
+fi
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
