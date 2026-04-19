@@ -1,6 +1,6 @@
 ---
 name: usability
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces intuitive APIs, clear error messages, progressive disclosure, and developer/user experience so the system is a joy to use
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "improve error messages", "better UX for X", "make this more usable" — enforces intuitive APIs, clear error messages, progressive disclosure, and developer/user experience so the system is a joy to use
 user-invocable: false
 version: 0.1.0
 ---

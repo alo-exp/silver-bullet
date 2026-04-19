@@ -1,6 +1,6 @@
 ---
 name: security
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces defense in depth, input validation, secure defaults, and OWASP best practices to prevent vulnerabilities before they ship
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "harden X", "add auth", "validate input", "check for vulnerabilities", "secure endpoint" — enforces defense in depth, input validation, secure defaults, and OWASP best practices to prevent vulnerabilities before they ship
 user-invocable: false
 version: 0.1.0
 ---

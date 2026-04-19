@@ -1,6 +1,6 @@
 ---
 name: reliability
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces graceful degradation, proper error handling, retry strategies, and fault-tolerant patterns so systems stay up when things go wrong
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "add retries", "add error handling", "add circuit breaker", "handle failures" — enforces graceful degradation, proper error handling, retry strategies, and fault-tolerant patterns so systems stay up when things go wrong
 user-invocable: false
 version: 0.1.0
 ---

@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.23.3] — 2026-04-19
+
+**Full 100%-vs-100% plugin-dev compliance audit.** Extracted 66 requirements across all 7 plugin-dev skills + 2 validator agents, verified SB against each, fixed all FAIL + material WARN findings, and gated release on two consecutive independent clean audits. Full audit trail in `.planning/PLUGIN-DEV-COMPLIANCE.md`.
+
+### Resolved FAIL
+- **FAIL-01**: `silver-init/SKILL.md` reduced from 5,454 → 3,459 words (under skill-development's 5,000 hard max). Phase 3 scaffold detail extracted to `skills/silver-init/references/scaffold-steps.md`.
+
+### Resolved WARN
+- **WARN-01**: Added `trap 'exit 0' ERR` to the 4 hooks that lacked it (`completion-audit.sh`, `forbidden-skill-check.sh`, `roadmap-freshness.sh`, `stop-check.sh`). Now universal across all 17 registered hooks, matching the project's stated invariant.
+- **WARN-02**: Added concrete user-phrase triggers to all 9 quality-dimension skill descriptions (`security`, `reliability`, `modularity`, `scalability`, `testability`, `extensibility`, `reusability`, `usability`, `ai-llm-safety`). Triggers now phrase-based ("when the user asks to 'harden X'", "'add retries'", etc.) per skill-development §Description Quality.
+- **WARN-08**: Deleted dead hook script `hooks/ensure-model-routing.sh` (was executable but unregistered in `hooks.json`).
+- **WARN-09**: Added `"matcher": "startup|clear|compact"` to first SessionStart block in `hooks/hooks.json` for consistency.
+
+### Audit methodology
+Full systematic audit delegated to independent agents:
+1. Extract every MUST/SHOULD/anti-pattern from plugin-dev authority docs
+2. Verify 100% of SB (41 skills, 17 hooks, manifest, lib) against each requirement
+3. Write findings to `.planning/PLUGIN-DEV-COMPLIANCE.md` with file-level evidence
+4. Fix all FAIL + material WARN
+5. Re-audit independently until 2 consecutive clean passes
+6. Gate release on clean-pass verdict
+
+Final audit: **66 requirements checked, 59 PASS, 0 FAIL, 3 accepted WARN (deliberate design choices), 4 N/A.**
+
 ## [0.23.2] — 2026-04-19
 
 **plugin-dev compliance — broader-scope audit.** Re-ran the audit iteratively against a wider checklist (shellcheck, executability, schema, semver, name/dir parity, description length bounds) until two consecutive passes reported zero findings.

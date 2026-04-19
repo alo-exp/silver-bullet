@@ -1,6 +1,6 @@
 ---
 name: ai-llm-safety
-description: This skill should be used when designing, planning, implementing, or reviewing any system that involves LLM agents, tool use, prompt construction, or agentic workflows — enforces prompt injection defense, tool safety, and context integrity
+description: This skill should be used when designing, planning, implementing, or reviewing any system that involves LLM agents, tool use, prompt construction, or agentic workflows, or when the user asks to "add guardrails", "prevent prompt injection", "sanitize LLM output" — enforces prompt injection defense, tool safety, and context integrity
 user-invocable: false
 version: 0.1.0
 ---

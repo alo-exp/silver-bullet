@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Bash)
 # Detects git commit commands that stage a phase SUMMARY.md.

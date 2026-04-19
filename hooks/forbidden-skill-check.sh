@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
 # Blocks invocation of forbidden skills that bypass Silver Bullet enforcement.

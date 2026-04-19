@@ -1,6 +1,6 @@
 ---
 name: scalability
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces stateless design, efficient resource usage, and architectural patterns that handle 10x-100x growth without redesign
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "handle more load", "scale this out", "optimize for throughput" — enforces stateless design, efficient resource usage, and architectural patterns that handle 10x-100x growth without redesign
 user-invocable: false
 version: 0.1.0
 ---

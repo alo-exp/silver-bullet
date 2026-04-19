@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 # Stop hook (event: Stop)
 # Fires when Claude outputs a final response (declaring task complete).

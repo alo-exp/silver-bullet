@@ -1,6 +1,6 @@
 ---
 name: reusability
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces DRY, well-defined abstractions, and composable components so code is written once and used many times
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "generalize this", "extract shared util", "deduplicate this" — enforces DRY, well-defined abstractions, and composable components so code is written once and used many times
 user-invocable: false
 version: 0.1.0
 ---

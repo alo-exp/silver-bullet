@@ -1,6 +1,6 @@
 ---
 name: testability
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces dependency injection, pure functions, observable state, and seam-based design so every component can be tested in isolation
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "make this testable", "add dependency injection", "mock X" — enforces dependency injection, pure functions, observable state, and seam-based design so every component can be tested in isolation
 user-invocable: false
 version: 0.1.0
 ---

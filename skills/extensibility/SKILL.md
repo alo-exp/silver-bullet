@@ -1,6 +1,6 @@
 ---
 name: extensibility
-description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces open-closed design, plugin architectures, stable interfaces, and versioning so systems grow without breaking existing consumers
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "add plugin point", "make this pluggable", "add hooks for X" — enforces open-closed design, plugin architectures, stable interfaces, and versioning so systems grow without breaking existing consumers
 user-invocable: false
 version: 0.1.0
 ---
