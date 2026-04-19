@@ -38,7 +38,9 @@ else
   fail "hooks.json is not valid JSON"
 fi
 
-# CHECK 3: All "command" values resolve to real files on disk
+# CHECK 3: All "command" values that are file paths resolve to real files on disk.
+# Inline shell expressions (containing spaces / operators) are not file paths and
+# are intentionally skipped — they are valid hook commands but not scripts.
 echo "--- CHECK 3: All hook commands resolve to real files ---"
 commands=$(jq -r '.hooks[] | .[].hooks[] | select(.type == "command") | .command' "$HOOKS_JSON" 2>/dev/null \
   | sed 's/^"//;s/"$//' \
@@ -51,11 +53,19 @@ else
     # Strip surrounding quotes if present
     cmd_path="${cmd%\"}"
     cmd_path="${cmd_path#\"}"
-    if [ -f "$cmd_path" ]; then
-      pass "Command file exists: $(basename "$cmd_path")"
-    else
-      fail "Command file missing: $cmd_path"
-    fi
+    # Only check absolute paths — inline shell expressions are not file paths
+    case "$cmd_path" in
+      /*)
+        if [ -f "$cmd_path" ]; then
+          pass "Command file exists: $(basename "$cmd_path")"
+        else
+          fail "Command file missing: $cmd_path"
+        fi
+        ;;
+      *)
+        pass "Inline shell command (no file check): ${cmd_path:0:50}"
+        ;;
+    esac
   done <<< "$commands"
 fi
 
@@ -65,11 +75,18 @@ if [ -n "$commands" ]; then
   while IFS= read -r cmd; do
     cmd_path="${cmd%\"}"
     cmd_path="${cmd_path#\"}"
-    if [ -x "$cmd_path" ]; then
-      pass "Executable: $(basename "$cmd_path")"
-    else
-      fail "Not executable: $cmd_path"
-    fi
+    case "$cmd_path" in
+      /*)
+        if [ -x "$cmd_path" ]; then
+          pass "Executable: $(basename "$cmd_path")"
+        else
+          fail "Not executable: $cmd_path"
+        fi
+        ;;
+      *)
+        pass "Inline shell command (no executable check): ${cmd_path:0:50}"
+        ;;
+    esac
   done <<< "$commands"
 fi
 

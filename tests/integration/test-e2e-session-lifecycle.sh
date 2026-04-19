@@ -47,10 +47,11 @@ run_record_skill "code-review" >/dev/null
 out=$(run_stop_check "Stop")
 assert_blocked "S3.1: stop-check blocks with partial skills" "$out"
 
-# Clear state (simulate /compact reset)
-> "$TMPSTATE"
+# Clear state (simulate /compact reset) — seed with unrelated skill so HOOK-04
+# (empty-state fail-open) doesn't suppress enforcement; required skills still missing.
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
-assert_blocked "S3.2: stop-check blocks after state reset" "$out"
+assert_blocked "S3.2: stop-check blocks after state reset (only unrelated skill remains)" "$out"
 
 # Verify dev-cycle-check blocks again (planning gone)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")

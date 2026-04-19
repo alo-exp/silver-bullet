@@ -43,6 +43,15 @@ case "$state_file" in
   *) state_file="${SB_STATE_DIR}/state" ;;
 esac
 
+# Env var override for branch file — allows tests to mock branch without
+# touching the live ~/.claude/.silver-bullet/branch file.
+branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
+# Security: validate path stays within ~/.claude/
+case "$branch_file" in
+  "$HOME"/.claude/*) ;;
+  *) branch_file="${SB_STATE_DIR}/branch" ;;
+esac
+
 # Detect current git branch (safe: validates characters, falls back to empty)
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)

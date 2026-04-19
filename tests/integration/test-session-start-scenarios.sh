@@ -37,22 +37,23 @@ integration_setup
 write_default_config
 save_real_state
 
-# Pre-populate real state with skills
-cat > "$SB_REAL_STATE" << 'EOF'
+# Pre-populate env-var-backed state with skills
+cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 code-review
 EOF
-# Record a different branch in branch file to trigger reset
-echo "feature/old-branch" > "$SB_REAL_BRANCH"
+# Set mock branch to "old-branch" so session-start detects a change.
+# integration_setup created TMPBRANCH with "feature/test"; overwrite it here.
+printf 'feature/old-branch' > "$TMPBRANCH"
+# TMPDIR_TEST git repo is on "feature/test" → mismatch → full state reset
 
-# Run session-start from TMPDIR_TEST which is on feature/test branch
 out=$(run_session_start)
 
-# State file should be deleted (branch mismatch triggers full reset)
-if [[ ! -f "$SB_REAL_STATE" ]] || [[ ! -s "$SB_REAL_STATE" ]]; then
+# State file should be deleted/empty (branch mismatch triggers full reset)
+if [[ ! -f "$TMPSTATE" ]] || [[ ! -s "$TMPSTATE" ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S1.1: state deleted on branch change\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S1.1: state still exists after branch change (contents: %s)\n' "$(cat "$SB_REAL_STATE")"
+  FAIL=$((FAIL + 1)); printf 'FAIL: S1.1: state still exists after branch change (contents: %s)\n' "$(cat "$TMPSTATE")"
 fi
 
 restore_real_state
@@ -64,11 +65,9 @@ integration_setup
 write_default_config
 save_real_state
 
-# Store current branch (feature/test matches what integration_setup creates)
-echo "feature/test" > "$SB_REAL_BRANCH"
-
-# Pre-populate state with skills AND session markers (gsd-*)
-cat > "$SB_REAL_STATE" << 'EOF'
+# TMPBRANCH already contains "feature/test" from integration_setup.
+# Pre-populate env-var-backed state with skills AND session markers (gsd-*)
+cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 code-review
 gsd-execute-phase
@@ -76,21 +75,21 @@ EOF
 
 out=$(run_session_start)
 
-# Skills should remain, markers should be cleaned
-if grep -q "silver-quality-gates" "$SB_REAL_STATE" 2>/dev/null; then
+# Skills should remain, markers should be cleaned (both in $TMPSTATE via env var)
+if grep -q "silver-quality-gates" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S2.1: silver-quality-gates skill retained\n'
 else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: silver-quality-gates skill was removed\n'
 fi
 
-if grep -q "code-review" "$SB_REAL_STATE" 2>/dev/null; then
+if grep -q "code-review" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S2.2: code-review skill retained\n'
 else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.2: code-review skill was removed\n'
 fi
 
 # gsd-* markers should be removed
-if ! grep -q "gsd-" "$SB_REAL_STATE" 2>/dev/null; then
+if ! grep -q "gsd-" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S2.4: gsd- markers cleaned\n'
 else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.4: gsd- markers still present\n'

@@ -145,10 +145,13 @@ printf '{
   "state": { "state_file": "%s", "trivial_file": "%s/trivial-test-%s" }
 }\n' "$TMPSTATE" "$SB_TEST_DIR" "$TEST_RUN_ID" > "$TMPCFG"
 
-# Empty state → stop-check should block (missing devops skills)
-> "$TMPSTATE"
+# Non-empty state but missing all required devops skills → stop-check should block.
+# (HOOK-04 exits 0 on truly empty state — that's a non-dev session fail-open.
+#  We need at least one skill recorded to signal a dev session, but none of the
+#  required_deploy skills — so the required-skills gate fires.)
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
-assert_blocked "S5.1: stop-check blocks with empty state in devops-cycle workflow" "$out"
+assert_blocked "S5.1: stop-check blocks when required devops skills are missing" "$out"
 
 # Record all devops required skills (including quality-gate stages and review loops)
 for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \
