@@ -41,6 +41,18 @@ To update manually: reinstall via Claude Desktop plugin manager or clone from ht
 ```
 Then exit.
 
+**Validate the version string before proceeding.** After extracting `$LATEST`, verify it is a valid semver (`MAJOR.MINOR.PATCH` — digits only, no pre-release suffix):
+
+```bash
+if [[ -z "$LATEST" ]] || ! [[ "$LATEST" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "GitHub returned an unexpected version string: '${LATEST:-<empty>}'"
+  echo "Expected semver format (e.g. 0.23.6). Aborting to prevent path/ref corruption."
+  exit
+fi
+```
+
+If validation fails, output the message above and exit. Do not proceed — using a malformed value in `$NEW_CACHE` or `git clone --branch` can corrupt the plugin cache or silently clone the wrong ref.
+
 ### Step 3: Compare versions
 
 Parse both as semver (MAJOR.MINOR.PATCH) and compare numerically.
