@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.23.4] — 2026-04-19
+
+**Marketplace hardening.** Fixes version drift, modernizes the marketplace `source` schema, and introduces a dedicated marketplace repo so future Ālo Labs plugins can be cataloged together.
+
+### Marketplace
+- **MKTP-01**: Fixed stale version in `.claude-plugin/marketplace.json` (`0.13.1` → `0.23.4`). Was 10 releases out of date.
+- **MKTP-02**: Modernized `source` schema from the older nested `{"source":"url","url":"..."}` form to the current `"source": "github:alo-exp/silver-bullet"` shorthand.
+- **MKTP-03**: Created dedicated marketplace repo [alo-labs/claude-plugins](https://github.com/alo-labs/claude-plugins). End-users can now install via:
+  ```
+  /plugin marketplace add alo-labs/claude-plugins
+  /plugin install silver-bullet@alo-labs
+  ```
+  (The self-listed `.claude-plugin/marketplace.json` in this repo remains for direct-repo installs: `/plugin marketplace add alo-exp/silver-bullet`.)
+- **MKTP-04**: Added `scripts/sync-marketplace-version.sh` — bumps the in-repo marketplace.json to match plugin.json and prints the remote-sync command for the alo-labs/claude-plugins repo.
+- **MKTP-05**: Added CI guard in `.github/workflows/ci.yml` that fails the build if `plugin.json.version ≠ marketplace.json.plugins[silver-bullet].version`. Prevents future drift.
+
 ## [0.23.3] — 2026-04-19
 
 **Full 100%-vs-100% plugin-dev compliance audit.** Extracted 66 requirements across all 7 plugin-dev skills + 2 validator agents, verified SB against each, fixed all FAIL + material WARN findings, and gated release on two consecutive independent clean audits. Full audit trail in `.planning/PLUGIN-DEV-COMPLIANCE.md`.

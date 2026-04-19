@@ -1,22 +1,19 @@
 {
   "name": "alo-labs",
   "owner": {
-    "name": "Alo Labs",
+    "name": "Ālo Labs",
     "email": "hello@alolabs.io"
   },
   "metadata": {
-    "description": "Silver Bullet \u2014 AI-native software development enforcement for Claude Code",
+    "description": "Silver Bullet — AI-native software development enforcement for Claude Code",
     "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "silver-bullet",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/alo-exp/silver-bullet.git"
-      },
-      "description": "Silver Bullet enforces a complete AI-native SDLC: quality gates, GSD integration, Superpowers, guided dev cycle, and pre-release checks \u2014 all wired via Claude Code hooks.",
-      "version": "0.13.1",
+      "source": "github:alo-exp/silver-bullet",
+      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
+      "version": "0.23.4",
       "strict": true
     }
   ]

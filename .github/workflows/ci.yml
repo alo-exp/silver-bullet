@@ -30,6 +30,17 @@ jobs:
             echo "plugin.json version ($plugin_version) matches latest tag ($latest_tag)"
           fi
 
+      - name: Check marketplace.json version matches plugin.json
+        run: |
+          plugin_v=$(jq -r '.version' .claude-plugin/plugin.json)
+          market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' .claude-plugin/marketplace.json)
+          if [[ "$plugin_v" != "$market_v" ]]; then
+            echo "::error::Version drift — plugin.json=$plugin_v, marketplace.json=$market_v"
+            echo "Run: scripts/sync-marketplace-version.sh before tagging a release"
+            exit 1
+          fi
+          echo "Versions match: $plugin_v"
+
       - name: Check hook executability
         run: |
           for f in hooks/session-start hooks/*.sh scripts/*.sh; do
