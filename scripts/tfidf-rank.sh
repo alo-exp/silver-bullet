@@ -25,7 +25,7 @@ done
 # Format per line: file TAB start TAB end TAB escaped_chunk_text
 # Newlines in chunk text are stored as literal \n (two chars) to keep one line per chunk.
 TMP_CHUNKS=$(mktemp)
-trap 'rm -f "$TMP_CHUNKS"' EXIT
+trap 'rm -f -- "$TMP_CHUNKS"' EXIT
 
 for f in "${FILES[@]}"; do
   [[ -f "$f" ]] || continue
