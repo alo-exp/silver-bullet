@@ -2,6 +2,9 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
 # Load shared workflow utilities (TD-1: single source of truth for Flow Log regex)
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
@@ -15,9 +18,6 @@ fi
 # PostToolUse hook (matcher: .*)
 # Shows a compact compliance progress score on every tool use.
 # PERFORMANCE CRITICAL: must complete in <100ms. Minimal I/O.
-
-# Security: restrict file creation permissions (user-only)
-umask 0077
 
 # Source symlink-write guard (SEC-02)
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
