@@ -93,6 +93,7 @@ trap 'rm -f -- "$tmpfile"' EXIT INT TERM
 printf '%s' "$new_body" > "$tmpfile"
 "$GH_BIN" pr edit "$pr_url" --body-file "$tmpfile" 2>/dev/null || true
 rm -f -- "$tmpfile"
+trap - EXIT  # disarm — file already removed on success path
 
 # TRAC-04: Update SPEC.md Implementations section with PR URL
 SPEC=".planning/SPEC.md"

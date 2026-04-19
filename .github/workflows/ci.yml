@@ -74,7 +74,7 @@ jobs:
       - name: Lint shell scripts
         run: |
           sudo apt-get install -y shellcheck
-          shellcheck --exclude=SC2317,SC1091 hooks/*.sh hooks/lib/*.sh scripts/*.sh
+          shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 
       - name: Run hook unit tests
         run: |

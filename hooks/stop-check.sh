@@ -34,6 +34,9 @@ fi
 cat >/dev/null
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
+# Intentionally overrides the silent ERR trap set at line 3 — this hook
+# emits a visible warning rather than failing open silently, so the user
+# knows something unexpected occurred rather than seeing a clean block/allow.
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  stop-check.sh: unexpected error — skipping check\"}}" ; exit 0' ERR
 
 # ── Resolve config file by walking up from $PWD ──────────────────────────────

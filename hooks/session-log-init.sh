@@ -100,7 +100,7 @@ if [[ -n "$existing" ]]; then
     awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
       $0 == anch { printf "%s\n\n%s\n\n", hdr, ph }
       { print }
-    ' "$file" > "$tmp" && mv "$tmp" "$file"
+    ' "$file" > "$tmp" && mv "$tmp" "$file" || rm -f -- "$tmp"
   }
   if ! grep -q "^## Pre-answers$" "$existing" 2>/dev/null; then
     _insert_before "$existing" "## Task" "## Pre-answers" \
@@ -130,7 +130,7 @@ if [[ -n "$existing" ]]; then
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
-      "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing"
+      "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing" || rm -f -- "$_note_tmp"
   fi
 
   sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Fail-open: on any unexpected error, exit 0 silently — never block user prompts.
+trap 'exit 0' ERR
 
 # UserPromptSubmit hook
 # Fires before every user prompt is processed.
@@ -14,9 +16,6 @@ umask 0077
 command -v jq >/dev/null 2>&1 || exit 0
 
 # DO NOT read stdin — UserPromptSubmit hooks must not block on stdin for speed.
-
-# ── Error trap: on any failure, exit 0 silently ───────────────────────────────
-trap 'exit 0' ERR
 
 # ── Resolve config file by walking up from $PWD ──────────────────────────────
 config_file=""
