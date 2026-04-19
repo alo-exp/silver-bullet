@@ -78,7 +78,7 @@ jobs:
 
       - name: Run hook unit tests
         run: |
-          sudo apt-get install -y jq git file
+          sudo apt-get install -y jq git
           fail=0
           for f in tests/hooks/test-*.sh; do
             name="$(basename "$f")"
