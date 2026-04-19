@@ -86,10 +86,6 @@ elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
   rm -f -- "${state_file}.bak"
 fi
 
-# ── GSD agent model-routing self-heal (DISABLED 2026-04-16) ──────────────────
-# Model routing via frontmatter injection is discontinued. See ensure-model-routing.sh
-# for rationale. Use model_overrides in .planning/config.json instead.
-# "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ensure-model-routing.sh" 2>/dev/null || true
 
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default
