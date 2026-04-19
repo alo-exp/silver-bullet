@@ -147,9 +147,23 @@ Do not proceed to Step 6 until README is confirmed updated.
 
 ## Step 6 — Create Tag and Publish
 
-1. Create and push the tag:
-   ```
-   git tag <version>
+1. Check whether a signing key is configured, then create and push the tag:
+   ```bash
+   signing_key=$(git config --global user.signingkey 2>/dev/null || echo "")
+   gpg_format=$(git config --global gpg.format 2>/dev/null || echo "")
+
+   if [[ -n "$signing_key" || -n "$gpg_format" ]]; then
+     # Signing configured — create a signed tag
+     git tag -s <version> -m "Release <version>"
+     echo "✅ Tag signed with $(git config --global gpg.format || echo gpg) key"
+   else
+     # No signing key — create unsigned tag with advisory notice
+     git tag <version>
+     echo "⚠️  Tag created WITHOUT cryptographic signature. To enable signing:"
+     echo "    SSH: git config --global gpg.format ssh && git config --global user.signingkey ~/.ssh/id_ed25519.pub"
+     echo "    GPG: git config --global user.signingkey <your-key-id>"
+     echo "    See: https://docs.github.com/en/authentication/managing-commit-signature-verification"
+   fi
    git push origin <version>
    ```
 

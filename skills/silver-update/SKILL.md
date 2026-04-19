@@ -135,15 +135,27 @@ Get the commit SHA:
 COMMIT_SHA="$(git -C "$NEW_CACHE" rev-parse HEAD)"
 ```
 
-Display the SHA to the user before proceeding:
+Attempt tag signature verification:
+```bash
+VERIFY_OUT=$(git -C "$NEW_CACHE" tag -v "v$LATEST" 2>&1 || true)
 ```
-⚠️  Security check: Silver Bullet v$LATEST cloned at commit SHA:
+
+Display the SHA and verification result to the user:
+```
+🔐 Security check: Silver Bullet v$LATEST cloned at commit SHA:
     $COMMIT_SHA
 
-Note: This release tag is not cryptographically signed. Verify this SHA
-matches the expected commit at https://github.com/alo-exp/silver-bullet/releases
-if you have any security concerns.
+Tag signature: [SIGNED ✅ / UNSIGNED ⚠️ / INVALID ❌]
+[Show $VERIFY_OUT if signed or invalid]
+
+Verify this SHA matches https://github.com/alo-exp/silver-bullet/releases/tag/v$LATEST
 ```
+
+If `$VERIFY_OUT` contains `Good signature` → show `SIGNED ✅` and proceed.
+If `$VERIFY_OUT` contains `error` or `BAD signature` → show `INVALID ❌` and **abort**:
+> "Tag signature verification failed. This release may have been tampered with. Do not install."
+If `$VERIFY_OUT` contains `no signature` or is otherwise empty → show `UNSIGNED ⚠️` with note:
+> "This tag has no cryptographic signature. Proceed only if you trust the source."
 
 Use AskUserQuestion:
 - Question: "Proceed with installing v<latest-version> at commit <short-sha>?"
