@@ -9,7 +9,8 @@
 - :white_check_mark: **v0.16.0 Artifact Review System** - Phases 15-20 (shipped)
 - :white_check_mark: **v0.20.0 Composable Paths Architecture** - Phases 21-29 (shipped)
 - :white_check_mark: **v0.21.0 Hook Quality & Docs** - Phases 30-33 (shipped)
-- :construction: **v0.22.0 Backlog Resolution** - Phases 34-38 (in progress)
+- :white_check_mark: **v0.22.0 Backlog Resolution** - Phases 34-38 (shipped)
+- :construction: **v0.23.6 Patch: Issue Cleanup** - Phases 39-43 (in progress)
 
 ## Phases
 
@@ -57,11 +58,19 @@
 
 ### v0.22.0 Backlog Resolution
 
-- [ ] **Phase 34: Security P0 Remediation** - Rotate leaked Google Chat webhook token, scrub git history, add secret-scan guard (GitHub #24)
-- [ ] **Phase 35: Stage 4 Security Hardening** - Symlink-refusing state writes, jq-based JSON/body construction, medium/low hardening batch (GitHub #25, #26, #27)
-- [ ] **Phase 36: HOOK-14 Stop-Check Hardening** - Close fail-open edge cases, fill test coverage gaps, apply code quality polish (GitHub #17, #18, #19)
-- [ ] **Phase 37: Stage 2 Consistency Audit** - Fix broken upstream skill references, eliminate hooks+config duplication and schema drift (GitHub #21, #22)
-- [ ] **Phase 38: Gitignore & Docs Refresh** - Narrow `.claude/` gitignore rule, refresh stale versions/counts/CHANGELOG across public surfaces (GitHub #20, #23)
+- [x] **Phase 34: Security P0 Remediation** - Rotate leaked Google Chat webhook token, scrub git history, add secret-scan guard (GitHub #24) (completed 2026-04-19)
+- [x] **Phase 35: Stage 4 Security Hardening** - Symlink-refusing state writes, jq-based JSON/body construction, medium/low hardening batch (GitHub #25, #26, #27) (completed 2026-04-19)
+- [x] **Phase 36: HOOK-14 Stop-Check Hardening** - Close fail-open edge cases, fill test coverage gaps, apply code quality polish (GitHub #17, #18, #19) (completed 2026-04-19)
+- [x] **Phase 37: Stage 2 Consistency Audit** - Fix broken upstream skill references, eliminate hooks+config duplication and schema drift (GitHub #21, #22) (completed 2026-04-19)
+- [x] **Phase 38: Gitignore & Docs Refresh** - Narrow `.claude/` gitignore rule, refresh stale versions/counts/CHANGELOG across public surfaces (GitHub #20, #23) (completed 2026-04-19)
+
+### v0.23.6 Patch: Issue Cleanup
+
+- [ ] **Phase 39: CI Node.js 20 Deprecation Fix** - Upgrade GitHub Actions workflows to Node 24 (actions/checkout deprecation warning)
+- [ ] **Phase 40: Silver-Update Semver Validation** - Validate $LATEST as semver before use in paths/git refs (GitHub #29)
+- [ ] **Phase 41: Review-Loop-Pass Marker Fix** - Fix review-loop-pass marker mechanism blocked by tamper-detection hook (GitHub #30)
+- [ ] **Phase 42: Trivial Bypass-File Semantics** - Rename/clarify trivial file that conflates two distinct semantics (GitHub #31)
+- [ ] **Phase 43: Cryptographic Tag Signing** - Sign release tags cryptographically (GitHub #28)
 
 ## Phase Details
 
@@ -155,10 +164,60 @@ Plans:
   2. README.md, site/index.html, site/help/*.html, docs/ARCHITECTURE.md, and CHANGELOG.md all reflect the v0.22.0 release state — no stale versions, skill/hook/flow counts, or missing changelog entries
 **Plans**: TBD
 
+### Phase 39: CI Node.js 20 Deprecation Fix
+**Goal**: GitHub Actions workflows no longer run on the deprecated Node.js 20 runtime
+**Depends on**: Nothing (first phase of v0.23.6)
+**Requirements**: CI-NODE-01
+**Success Criteria** (what must be TRUE):
+  1. `.github/workflows/*.yml` files set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` env var or pin actions to Node 24-compatible versions; CI runs clean with no Node.js 20 deprecation annotations
+**Plans:** 0/1 plans complete
+Plans:
+- [ ] 39-01-PLAN.md — Upgrade GitHub Actions to Node 24
+
+### Phase 40: Silver-Update Semver Validation
+**Goal**: `silver-update` validates `$LATEST` is a valid semver string before using it in file paths or git refs, preventing silent corruption from malformed version strings
+**Depends on**: Phase 39
+**Requirements**: VALID-01
+**Success Criteria** (what must be TRUE):
+  1. `skills/silver-update/SKILL.md` contains explicit instruction to validate `$LATEST` matches `^v?[0-9]+\.[0-9]+\.[0-9]+` before using it in any path or git ref; malformed values produce a clear error and abort
+**Plans:** 0/1 plans complete
+Plans:
+- [ ] 40-01-PLAN.md — Add semver validation to silver-update
+
+### Phase 41: Review-Loop-Pass Marker Fix
+**Goal**: The review-loop-pass marker mechanism works correctly — markers can be written without being blocked by the tamper-detection hook
+**Depends on**: Phase 39
+**Requirements**: HOOK-09
+**Success Criteria** (what must be TRUE):
+  1. The review-loop-pass marker write path is whitelisted in `dev-cycle-check.sh` tamper detection (or the marker mechanism is redesigned to not write directly to the state file); review-loop completion can be recorded without hook interference
+**Plans:** 0/1 plans complete
+Plans:
+- [ ] 41-01-PLAN.md — Fix review-loop-pass marker tamper-detection conflict
+
+### Phase 42: Trivial Bypass-File Semantics
+**Goal**: The `~/.claude/.silver-bullet/trivial` file name and semantics are clarified — it currently conflates CI-red commit override with trivial-session bypass
+**Depends on**: Phase 41
+**Requirements**: SEM-01
+**Success Criteria** (what must be TRUE):
+  1. The trivial bypass file is either renamed to reflect its actual purpose, or documentation/comments clearly distinguish the two uses; hook code and user-facing docs are consistent
+**Plans:** 0/1 plans complete
+Plans:
+- [ ] 42-01-PLAN.md — Clarify/rename trivial bypass-file semantics
+
+### Phase 43: Cryptographic Tag Signing
+**Goal**: Release tags are cryptographically signed so users can verify authenticity
+**Depends on**: Phases 39-42
+**Requirements**: SEC-05
+**Success Criteria** (what must be TRUE):
+  1. `git tag` commands in the release workflow use `-s` (GPG) or equivalent sigstore/SSH signing; `git verify-tag v0.23.6` succeeds; signing key is documented
+**Plans:** 0/1 plans complete
+Plans:
+- [ ] 43-01-PLAN.md — Add cryptographic signing to release tags
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -168,11 +227,16 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38
 | 31. Hook Bug Fixes | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
 | 32. Hook Behavior Enhancements | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
 | 33. Trivial-Session Bypass Docs | v0.21.0 | 1/1 | Complete    | 2026-04-16 |
-| 34. Security P0 Remediation | v0.22.0 | 0/0 | Planned     | — |
-| 35. Stage 4 Security Hardening | v0.22.0 | 0/0 | Planned     | — |
-| 36. HOOK-14 Stop-Check Hardening | v0.22.0 | 0/0 | Planned     | — |
-| 37. Stage 2 Consistency Audit | v0.22.0 | 0/0 | Planned     | — |
-| 38. Gitignore & Docs Refresh | v0.22.0 | 0/0 | Planned     | — |
+| 34. Security P0 Remediation | v0.22.0 | 1/1 | Complete    | 2026-04-19 |
+| 35. Stage 4 Security Hardening | v0.22.0 | 1/1 | Complete    | 2026-04-19 |
+| 36. HOOK-14 Stop-Check Hardening | v0.22.0 | 1/1 | Complete    | 2026-04-19 |
+| 37. Stage 2 Consistency Audit | v0.22.0 | 1/1 | Complete    | 2026-04-19 |
+| 38. Gitignore & Docs Refresh | v0.22.0 | 1/1 | Complete    | 2026-04-19 |
+| 39. CI Node.js 20 Deprecation Fix | v0.23.6 | 0/1 | Planned     | — |
+| 40. Silver-Update Semver Validation | v0.23.6 | 0/1 | Planned     | — |
+| 41. Review-Loop-Pass Marker Fix | v0.23.6 | 0/1 | Planned     | — |
+| 42. Trivial Bypass-File Semantics | v0.23.6 | 0/1 | Planned     | — |
+| 43. Cryptographic Tag Signing | v0.23.6 | 0/1 | Planned     | — |
 
 ## Backlog
 
