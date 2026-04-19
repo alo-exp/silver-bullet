@@ -18,8 +18,7 @@
       "finishing-a-development-branch", "deploy-checklist",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development", "tech-debt",
-      "review-loop-pass-1", "review-loop-pass-2"
+      "test-driven-development", "tech-debt"
     ],
     "required_deploy_devops": [
       "silver-blast-radius",
@@ -29,8 +28,7 @@
       "finishing-a-development-branch", "deploy-checklist",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development", "tech-debt",
-      "review-loop-pass-1", "review-loop-pass-2"
+      "test-driven-development", "tech-debt"
     ],
     "all_tracked": [
       "silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "devops-skill-router",

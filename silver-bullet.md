@@ -470,21 +470,9 @@ The loop is self-limiting: it ends when two consecutive clean passes are produce
 
 ### Recording Review Loop Progress
 
-After each clean review pass (reviewer returns no issues), record the marker:
+Review loop completion is evidenced by the artifacts produced — a clean REVIEW.md or VERIFICATION.md with no open ISSUE-level findings after two consecutive passes. No state-file markers are required or written.
 
-```bash
-echo "review-loop-pass-1" >> ~/.claude/.silver-bullet/state
-```
-
-After a SECOND consecutive clean pass, record:
-
-```bash
-echo "review-loop-pass-2" >> ~/.claude/.silver-bullet/state
-```
-
-The completion audit hook requires `review-loop-pass-2` in the state file before allowing PR creation, deploy, or release. This converts the two-consecutive-approvals rule from a documentation-only requirement to a partially mechanical gate.
-
-> **Note:** This is an imperfect proxy — the markers are written by Claude and not independently verified. However, they add friction: Claude must explicitly claim two clean passes occurred, creating an auditable trail.
+The two-consecutive-approvals rule is enforced by process: the reviewer skill must return a clean pass twice before proceeding. Surface to the user if the reviewer raises an issue it cannot resolve (e.g. requires a decision, a missing dependency, or an external constraint).
 
 ### Per-Reviewer 2-Pass Requirements
 
