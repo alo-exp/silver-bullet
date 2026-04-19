@@ -125,7 +125,7 @@ if [[ "$tier1_triggered" == true ]]; then
   fi
   count=$((count + 1))
   sb_guard_nofollow "$count_file"
-echo "$count" > "$count_file"
+  echo "$count" > "$count_file"
   # Tier 1: Emit on 1st, 6th, 11th... call (count mod 5 == 1)
   if [[ $((count % 5)) -eq 1 ]]; then
     printf '{"hookSpecificOutput":{"message":"⚠️ Autonomous session running 10+ min. Check for stalls or log a blocker under Needs human review."}}'

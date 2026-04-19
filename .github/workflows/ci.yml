@@ -82,15 +82,6 @@ jobs:
           fail=0
           for f in tests/hooks/test-*.sh; do
             name="$(basename "$f")"
-            # test-semantic-compress.sh exercises MIME-type detection via the BSD
-            # file(1) command; the script exits non-zero on Ubuntu CI due to a
-            # platform-specific unbound-variable error. Skip until fixed.
-            # TODO: diagnose scripts/semantic-compress.sh "File: unbound variable"
-            # on ubuntu-latest and re-enable.
-            if [[ "$name" == "test-semantic-compress.sh" ]]; then
-              echo "SKIP: $name (ubuntu MIME-detection incompatibility — see TODO)"
-              continue
-            fi
             bash "$f" || { echo "FAILED: $name"; fail=1; }
           done
           exit $fail

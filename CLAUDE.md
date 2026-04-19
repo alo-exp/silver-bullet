@@ -14,6 +14,8 @@ Silver Bullet is a Claude Code plugin — an agentic process orchestrator that e
 - **Git repo**: https://github.com/alo-exp/silver-bullet.git
 - **Runtime prerequisite**: `jq` (all hooks fail-open with a visible warning when absent)
 
+> **Development rule**: All code edits go to **source files in this repo** (`hooks/`, `scripts/`, `skills/`, `templates/`, `tests/`, `.github/`, etc.). Never modify the installed plugin cache at `~/.claude/plugins/cache/alo-labs/silver-bullet/*/` — that is a read-only build artifact. Source changes here are what gets released and installed.
+
 ---
 
 ## Commands

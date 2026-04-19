@@ -20,7 +20,6 @@ fi
 umask 0077
 
 # Source symlink-write guard (SEC-02)
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   # shellcheck source=lib/nofollow-guard.sh
   source "$_lib_dir/nofollow-guard.sh"
@@ -83,7 +82,10 @@ if [[ -z "$config_file" ]]; then
   # Cache result
   if [[ -n "${pwd_hash:-}" ]]; then
     cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
-    config_mtime=$(stat -f '%m' "$config_file" 2>/dev/null || stat -c '%Y' "$config_file" 2>/dev/null || echo "0")
+    _cm=$(stat -f '%m' "$config_file" 2>/dev/null || true)
+    if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm=$(stat -c '%Y' "$config_file" 2>/dev/null || true); fi
+    if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm="0"; fi
+    config_mtime="$_cm"
     _tmp=$(mktemp "${HOME}/.claude/.silver-bullet/config-cache-XXXXXX")
     printf '%s\n%s' "$config_file" "$config_mtime" > "$_tmp"
     mv -f "$_tmp" "$cache_file" || rm -f -- "$_tmp"
