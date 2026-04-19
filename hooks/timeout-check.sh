@@ -59,7 +59,7 @@ session_start=$(cat "$SB_DIR/session-start-time" 2>/dev/null || echo "")
 flag_file="${TIMEOUT_FLAG_OVERRIDE:-$SB_DIR/timeout}"
 tier1_triggered=false
 if [[ -f "$flag_file" ]]; then
-  flag_mtime=$(_mtime "$flag_file") || flag_mtime=0
+  flag_mtime=$(_mtime "$flag_file")
   if [[ "$flag_mtime" -ge "$session_start" ]]; then
     tier1_triggered=true
   fi
@@ -70,7 +70,7 @@ fi
 call_count_file="$SB_DIR/call-count"
 call_count=0
 if [[ -f "$call_count_file" ]]; then
-  cc_mtime=$(_mtime "$call_count_file") || cc_mtime=0
+  cc_mtime=$(_mtime "$call_count_file")
   if [[ "$cc_mtime" -ge "$session_start" ]]; then
     call_count=$(cat "$call_count_file" 2>/dev/null || echo "0")
   fi
@@ -85,7 +85,7 @@ state_file="$SB_DIR/state"
 last_progress_file="$SB_DIR/last-progress-call"
 last_progress_count=0
 if [[ -f "$last_progress_file" ]]; then
-  lp_mtime=$(_mtime "$last_progress_file") || lp_mtime=0
+  lp_mtime=$(_mtime "$last_progress_file")
   if [[ "$lp_mtime" -ge "$session_start" ]]; then
     last_progress_count=$(cat "$last_progress_file" 2>/dev/null || echo "0")
   fi
@@ -95,7 +95,7 @@ fi
 last_state_mtime_file="$SB_DIR/last-state-mtime"
 last_state_mtime=0
 if [[ -f "$last_state_mtime_file" ]]; then
-  lsm_mtime=$(_mtime "$last_state_mtime_file") || lsm_mtime=0
+  lsm_mtime=$(_mtime "$last_state_mtime_file")
   if [[ "$lsm_mtime" -ge "$session_start" ]]; then
     last_state_mtime=$(cat "$last_state_mtime_file" 2>/dev/null || echo "0")
   fi
@@ -103,7 +103,7 @@ fi
 
 current_state_mtime=0
 if [[ -f "$state_file" ]]; then
-  current_state_mtime=$(_mtime "$state_file") || current_state_mtime=0
+  current_state_mtime=$(_mtime "$state_file")
 fi
 
 if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mtime" -ge "$session_start" ]]; then
@@ -122,7 +122,7 @@ if [[ "$tier1_triggered" == true ]]; then
   count_file="$SB_DIR/timeout-warn-count"
   count=0
   if [[ -f "$count_file" ]]; then
-    count_mtime=$(_mtime "$count_file") || count_mtime=0
+    count_mtime=$(_mtime "$count_file")
     if [[ "$count_mtime" -ge "$session_start" ]]; then
       count=$(cat "$count_file" 2>/dev/null || echo "0")
     fi

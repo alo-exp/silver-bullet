@@ -2,32 +2,12 @@
 # Integration test: Session-start hook scenarios
 # Tests branch change state reset, same-branch marker cleanup, trivial file removal, core-rules injection
 #
-# NOTE: session-start uses hardcoded SB_STATE_DIR/state and SB_STATE_DIR/branch paths,
-# not the SILVER_BULLET_STATE_FILE env var. Tests save/restore these files around each scenario.
+# NOTE: session-start reads state/branch via SILVER_BULLET_STATE_FILE and SILVER_BULLET_BRANCH_FILE
+# env var overrides (set by integration_setup in helpers/common.sh). No live ~/.claude/ files are
+# touched during these tests; save_real_state/restore_real_state are no longer needed.
 set -euo pipefail
 
 source "$(dirname "$0")/helpers/common.sh"
-
-SB_REAL_STATE="${SB_TEST_DIR}/state"
-SB_REAL_BRANCH="${SB_TEST_DIR}/branch"
-
-# Save and restore actual state/branch around each scenario
-save_real_state() {
-  cp -f "$SB_REAL_STATE" "${SB_REAL_STATE}.scenario-bak" 2>/dev/null || true
-  cp -f "$SB_REAL_BRANCH" "${SB_REAL_BRANCH}.scenario-bak" 2>/dev/null || true
-}
-restore_real_state() {
-  if [[ -f "${SB_REAL_STATE}.scenario-bak" ]]; then
-    mv "${SB_REAL_STATE}.scenario-bak" "$SB_REAL_STATE"
-  else
-    rm -f "$SB_REAL_STATE"
-  fi
-  if [[ -f "${SB_REAL_BRANCH}.scenario-bak" ]]; then
-    mv "${SB_REAL_BRANCH}.scenario-bak" "$SB_REAL_BRANCH"
-  else
-    rm -f "$SB_REAL_BRANCH"
-  fi
-}
 
 echo "=== Integration: Session-Start Scenarios ==="
 
@@ -35,7 +15,6 @@ echo "=== Integration: Session-Start Scenarios ==="
 echo "--- Scenario 1: Branch change resets state ---"
 integration_setup
 write_default_config
-save_real_state
 
 # Pre-populate env-var-backed state with skills
 cat > "$TMPSTATE" << 'EOF'
@@ -56,14 +35,12 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S1.1: state still exists after branch change (contents: %s)\n' "$(cat "$TMPSTATE")"
 fi
 
-restore_real_state
 integration_teardown
 
 # Scenario 2: Same branch cleans session markers but keeps skills
 echo "--- Scenario 2: Same branch cleans markers, keeps skills ---"
 integration_setup
 write_default_config
-save_real_state
 
 # TMPBRANCH already contains "feature/test" from integration_setup.
 # Pre-populate env-var-backed state with skills AND session markers (gsd-*)
@@ -95,7 +72,6 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.4: gsd- markers still present\n'
 fi
 
-restore_real_state
 integration_teardown
 
 # Scenario 3: Trivial file removed on session start
