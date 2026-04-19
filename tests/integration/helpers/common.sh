@@ -27,11 +27,16 @@ integration_setup() {
   mkdir -p "$TMPDIR_TEST/src"
   touch "$TMPDIR_TEST/src/app.js"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  # Mock branch file so session-start sees "feature/test" without touching
+  # the live ~/.claude/.silver-bullet/branch file.
+  TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  printf 'feature/test' > "$TMPBRANCH"
+  export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
 }
 
 integration_teardown() {
   rm -rf "$TMPDIR_TEST"
-  rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
 }
 
 write_default_config() {

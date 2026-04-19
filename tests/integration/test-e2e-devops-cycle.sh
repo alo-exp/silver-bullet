@@ -92,9 +92,11 @@ echo "--- Scenario 4: DevOps stop-check gate ---"
 integration_setup
 write_devops_config
 
-# Empty state: stop blocked
+# Non-empty state but missing all required devops skills → stop blocked.
+# (HOOK-04: empty state = non-dev session = fail-open; seed with unrelated skill.)
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
-assert_blocked "S4.1: stop-check blocks with empty devops state" "$out"
+assert_blocked "S4.1: stop-check blocks when all required devops skills are missing" "$out"
 
 # Record all devops required_deploy skills
 for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \

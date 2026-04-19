@@ -102,13 +102,15 @@ echo "--- Scenario 7: Stop-check gate ---"
 integration_setup
 write_default_config
 
-# Empty state: stop blocked
+# Non-empty state missing all required skills → stop blocked.
+# (HOOK-04: empty state = non-dev session = fail-open; seed with unrelated skill.)
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
-assert_blocked "S7.1: stop-check blocks with empty state" "$out"
+assert_blocked "S7.1: stop-check blocks when required skills are missing" "$out"
 
 # SubagentStop also blocked
 out=$(run_stop_check "SubagentStop")
-assert_blocked "S7.2: stop-check blocks SubagentStop with empty state" "$out"
+assert_blocked "S7.2: stop-check blocks SubagentStop when required skills are missing" "$out"
 
 # All skills + stages: stop allowed
 write_all_skills

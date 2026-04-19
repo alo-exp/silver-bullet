@@ -13,9 +13,11 @@ echo "--- Scenario 1: Full lifecycle from empty to delivery ---"
 integration_setup
 write_default_config
 
-# Step 1: Verify stop-check blocks with empty state
+# Step 1: Seed with a non-required skill so HOOK-04 (empty-state fail-open) doesn't
+# suppress enforcement, then verify stop-check blocks on missing required skills.
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
-assert_blocked "S1.1: stop-check blocks with empty state" "$out"
+assert_blocked "S1.1: stop-check blocks when required skills are missing" "$out"
 
 # Step 2: Record all skills progressively
 skills=("silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
@@ -146,11 +148,13 @@ echo "--- Scenario 6: stop-check and completion-audit consistency ---"
 integration_setup
 write_default_config
 
-# Empty state: both block
+# Seed with unrelated skill (HOOK-04: empty state = non-dev session = fail-open).
+# Completion-audit also blocks with missing required skills.
+printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out_stop=$(run_stop_check "Stop")
 out_audit=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
-assert_blocked "S6.1: stop-check blocks on empty" "$out_stop"
-assert_blocked "S6.2: completion-audit blocks on empty" "$out_audit"
+assert_blocked "S6.1: stop-check blocks when required skills are missing" "$out_stop"
+assert_blocked "S6.2: completion-audit blocks when required skills are missing" "$out_audit"
 
 # Full state: both allow
 write_all_skills
