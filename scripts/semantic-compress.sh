@@ -57,7 +57,7 @@ md5_str() {
   else
     md5sum "$tmp" 2>/dev/null | awk '{print $1}'
   fi
-  rm -f "$tmp"
+  rm -f -- "$tmp"
 }
 
 # Portable stat: file size

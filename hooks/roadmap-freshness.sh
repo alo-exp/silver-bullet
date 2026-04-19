@@ -105,3 +105,4 @@ if [[ -n "$unticked_phases" ]]; then
 fi
 
 printf '{"hookSpecificOutput":{"message":"ROADMAP freshness verified — phase checkbox(es) ticked."}}'
+exit 0

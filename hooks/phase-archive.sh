@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ phase-archive: archive failed — blocking clear to prevent data loss\"},\"decision\":\"block\"}" ; exit 0' ERR
+trap 'printf "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"phase-archive: archive failed — blocking clear to prevent data loss\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Bash)
 # Intercepts gsd-tools.cjs phases clear before it runs.

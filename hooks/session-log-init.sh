@@ -97,10 +97,14 @@ if [[ -n "$existing" ]]; then
     local file="$1" anchor="$2" header="$3" placeholder="$4"
     local tmp
     tmp=$(mktemp)
-    awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
+    if awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
       $0 == anch { printf "%s\n\n%s\n\n", hdr, ph }
       { print }
-    ' "$file" > "$tmp" && mv "$tmp" "$file" || rm -f -- "$tmp"
+    ' "$file" > "$tmp"; then
+      mv "$tmp" "$file"
+    else
+      rm -f -- "$tmp"
+    fi
   }
   if ! grep -q "^## Pre-answers$" "$existing" 2>/dev/null; then
     _insert_before "$existing" "## Task" "## Pre-answers" \
@@ -129,8 +133,12 @@ if [[ -n "$existing" ]]; then
     printf '%s:%s\n' "$sentinel_pid" "$_sent_start" > "$SB_DIR"/sentinel-pid
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
-    awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
-      "$existing" > "$_note_tmp" && mv "$_note_tmp" "$existing" || rm -f -- "$_note_tmp"
+    if awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
+      "$existing" > "$_note_tmp"; then
+      mv "$_note_tmp" "$existing"
+    else
+      rm -f -- "$_note_tmp"
+    fi
   fi
 
   sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path

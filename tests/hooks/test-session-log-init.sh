@@ -238,7 +238,9 @@ AUT_JSON='{"tool_name":"Bash","tool_input":{"command":"echo autonomous > ~/.clau
 if [[ -f "${SB_TEST_DIR}/sentinel-pid" ]]; then
   echo "  ✅ autonomous mode creates sentinel PID file"
   PASS=$((PASS + 1))
-  kill "$(cat "${SB_TEST_DIR}/sentinel-pid")" 2>/dev/null || true
+  _sentinel_contents=$(cat "${SB_TEST_DIR}/sentinel-pid" 2>/dev/null || true)
+  _sentinel_pid="${_sentinel_contents%%:*}"
+  [[ -n "$_sentinel_pid" ]] && kill "$_sentinel_pid" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/sentinel-pid" "${SB_TEST_DIR}/timeout" \
         "${SB_TEST_DIR}/session-start-time" "${SB_TEST_DIR}/timeout-warn-count"
 else
@@ -259,7 +261,9 @@ if [[ ! -f "${SB_TEST_DIR}/sentinel-pid" ]]; then
 else
   echo "  ❌ interactive mode should not create sentinel PID file"
   FAIL=$((FAIL + 1))
-  kill "$(cat "${SB_TEST_DIR}/sentinel-pid")" 2>/dev/null || true
+  _sentinel_contents=$(cat "${SB_TEST_DIR}/sentinel-pid" 2>/dev/null || true)
+  _sentinel_pid="${_sentinel_contents%%:*}"
+  [[ -n "$_sentinel_pid" ]] && kill "$_sentinel_pid" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/sentinel-pid"
 fi
 teardown

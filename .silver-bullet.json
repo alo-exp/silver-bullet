@@ -34,8 +34,7 @@
       "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
       "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-debug",
-      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase",
-      "silver-brainstorm-idea"
+      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase"
     ]
   },
   "devops_plugins": {

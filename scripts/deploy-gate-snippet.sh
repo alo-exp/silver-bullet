@@ -61,8 +61,8 @@ fi
 if [[ -f "$TRIVIAL_FILE" && ! -L "$TRIVIAL_FILE" ]]; then
   echo "[deploy-gate] ℹ️  Trivial change detected — workflow check skipped."
   # Safety: only delete regular files (not symlinks)
-  [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]] && rm -f "$STATE_FILE"
-  rm -f "$TRIVIAL_FILE"
+  [[ -f "$STATE_FILE" && ! -L "$STATE_FILE" ]] && rm -f -- "$STATE_FILE"
+  rm -f -- "$TRIVIAL_FILE"
   return 0 2>/dev/null || exit 0
 fi
 
@@ -98,5 +98,5 @@ fi
 
 # 5. All clear
 echo "[deploy-gate] ✅ All required workflow skills completed. Proceeding with deploy."
-rm -f "$STATE_FILE" "$TRIVIAL_FILE"
+rm -f -- "$STATE_FILE" "$TRIVIAL_FILE"
 return 0 2>/dev/null || exit 0

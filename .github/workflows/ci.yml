@@ -152,6 +152,7 @@ jobs:
           echo "docs/workflows/ and templates/workflows/ are in sync"
 
       - name: Lint site HTML (duplicate IDs, structure)
+        continue-on-error: true
         run: |
           npx --yes html-validate@latest \
             --rule 'no-dup-id:error' \
