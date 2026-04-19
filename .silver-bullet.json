@@ -12,7 +12,7 @@
     ],
     "required_deploy": [
       "silver-quality-gates",
-      "requesting-code-review", "receiving-code-review", "security",
+      "code-review", "requesting-code-review", "receiving-code-review",
       "testing-strategy", "documentation",
       "finishing-a-development-branch", "deploy-checklist",
       "silver-create-release",
