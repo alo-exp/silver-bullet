@@ -79,8 +79,10 @@ elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   sb_guard_nofollow "$branch_file"
   printf '%s' "$current_branch" > "$branch_file"
 elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
-  # Same branch — reset session-specific markers only
-  sed -i.bak '/^gsd-/d;/^quality-gate-stage-/d' "$state_file"
+  # Same branch — reset session-specific markers only (gsd-* are transient
+  # per-session GSD phase markers; quality-gate-stage-* must persist across
+  # restarts so pre-release gate progress is not lost on session reconnect).
+  sed -i.bak '/^gsd-/d' "$state_file"
   rm -f -- "${state_file}.bak"
 fi
 
