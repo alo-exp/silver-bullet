@@ -3,6 +3,7 @@ name: artifact-review-assessor
 description: "Triages artifact reviewer findings into MUST-FIX / NICE-TO-HAVE / DISMISS based on artifact contract -- prevents over-zealous reviews"
 argument-hint: "<review-findings> <artifact-path> [--contract-source <path>]"
 user-invocable: false
+version: 0.1.0
 ---
 
 # artifact-review-assessor

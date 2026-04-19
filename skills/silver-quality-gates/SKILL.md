@@ -1,6 +1,7 @@
 ---
 name: silver-quality-gates
 description: "Dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state."
+version: 0.1.0
 ---
 
 > **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.

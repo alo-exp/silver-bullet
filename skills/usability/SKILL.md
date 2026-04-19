@@ -1,7 +1,8 @@
 ---
 name: usability
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces intuitive APIs, clear error messages, progressive disclosure, and developer/user experience so the system is a joy to use
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces intuitive APIs, clear error messages, progressive disclosure, and developer/user experience so the system is a joy to use
 user-invocable: false
+version: 0.1.0
 ---
 
 # /usability — Usability-First Design Enforcement
@@ -132,7 +133,7 @@ If any item fails: **redesign before proceeding to implementation.**
 ### During Implementation (/gsd:execute-phase)
 
 As you write code:
-- Write the error message BEFORE writing the happy path. If you can't explain the error clearly, you don't understand the requirement.
+- Write the error message BEFORE writing the happy path. If the error cannot be explained clearly, don't understand the requirement.
 - Add loading states for every async operation.
 - Test keyboard navigation after building any interactive component.
 - Use semantic HTML (button for buttons, a for links, input for inputs).
@@ -151,8 +152,8 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to fix all usability issues in unrelated UI.
-- You ARE required to not make usability worse.
+- Not required to fix usability issues in unrelated UI.
+- Required: do not make usability worse.
 - If adding a new error case, write a helpful message (not "Error occurred").
 - If adding a new interactive element, ensure keyboard accessibility.
 

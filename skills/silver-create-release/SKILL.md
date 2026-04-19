@@ -1,6 +1,7 @@
 ---
 name: silver-create-release
 description: Generate structured release notes from git history since the last tag, then create a GitHub Release (for GitHub repos) or output notes for manual publishing
+version: 0.1.0
 ---
 
 # /silver-create-release — Release Notes & GitHub Release

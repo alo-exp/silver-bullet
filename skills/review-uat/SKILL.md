@@ -3,6 +3,7 @@ name: review-uat
 description: "UAT.md artifact reviewer — validates that every SPEC.md Acceptance Criterion has a UAT row, evidence is substantive (not 'looks good'), spec-version matches, and all results have pass/fail status with evidence"
 argument-hint: "<uat-path> [--source-inputs <spec-path>]"
 user-invocable: false
+version: 0.1.0
 ---
 
 # review-uat

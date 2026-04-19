@@ -2,6 +2,7 @@
 name: silver-bugfix
 description: "SB-orchestrated bug investigation and fix: triage → path A/B/C → TDD regression test → plan → execute → review → verify → ship"
 argument-hint: "<description of the bug or failure>"
+version: 0.1.0
 ---
 
 # /silver:bugfix — Bug, Regression, Test Failure Workflow

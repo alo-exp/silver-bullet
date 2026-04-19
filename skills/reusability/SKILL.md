@@ -1,7 +1,8 @@
 ---
 name: reusability
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces DRY, well-defined abstractions, and composable components so code is written once and used many times
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces DRY, well-defined abstractions, and composable components so code is written once and used many times
 user-invocable: false
+version: 0.1.0
 ---
 
 # /reusability — Reusable Design Enforcement
@@ -63,7 +64,7 @@ Not everything should be reused. Premature abstraction is worse than duplication
 
 ### Rule 5: Parameterize, Don't Fork
 
-When you need a variation of existing behavior:
+When a variation of existing behavior is needed:
 
 - **DO** add a parameter or configuration option to the existing component.
 - **DO NOT** copy the component and modify the copy.
@@ -131,10 +132,10 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to fix all duplication in unrelated files.
-- You ARE required to not introduce new duplication.
+- Not required to fix duplication in unrelated files.
+- Required: do not introduce new duplication.
 - If you're adding a 3rd+ copy of logic, extract to shared first.
-- If you're modifying a duplicated section, consider unifying as part of your change.
+- If modifying a duplicated section, consider unifying as part of the change.
 
 ---
 

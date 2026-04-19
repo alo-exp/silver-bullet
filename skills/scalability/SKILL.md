@@ -1,7 +1,8 @@
 ---
 name: scalability
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces stateless design, efficient resource usage, and architectural patterns that handle 10x-100x growth without redesign
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces stateless design, efficient resource usage, and architectural patterns that handle 10x-100x growth without redesign
 user-invocable: false
+version: 0.1.0
 ---
 
 # /scalability — Scalable Design Enforcement
@@ -149,8 +150,8 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to fix all scalability issues in unrelated code.
-- You ARE required to not make scalability worse.
+- Not required to fix scalability issues in unrelated code.
+- Required: do not make scalability worse.
 - If adding a new query to an endpoint, ensure it's indexed and paginated.
 - If adding a new external dependency, ensure it has timeouts and connection pooling.
 

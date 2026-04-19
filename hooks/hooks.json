@@ -6,7 +6,8 @@
           {
             "type": "command",
             "command": "umask 0077 && mkdir -p ~/.claude/.silver-bullet && { [ -L ~/.claude/.silver-bullet/trivial ] && rm -f -- ~/.claude/.silver-bullet/trivial; touch -- ~/.claude/.silver-bullet/trivial; }",
-            "async": false
+            "async": false,
+            "timeout": 5
           }
         ]
       },
@@ -16,7 +17,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -26,7 +28,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-session-record.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       }
@@ -38,7 +41,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -48,7 +52,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -58,7 +63,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -68,7 +74,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -78,7 +85,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -88,7 +96,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -98,7 +107,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 30
           }
         ]
       },
@@ -108,7 +118,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       }
@@ -120,7 +131,8 @@
           {
             "type": "command",
             "command": "rm -f -- ~/.claude/.silver-bullet/trivial",
-            "async": false
+            "async": false,
+            "timeout": 5
           }
         ]
       },
@@ -130,7 +142,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/semantic-compress.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 30
           }
         ]
       },
@@ -140,7 +153,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -150,7 +164,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -160,7 +175,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/compliance-status.sh\"",
-            "async": true
+            "async": true,
+            "timeout": 15
           }
         ]
       },
@@ -170,7 +186,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -180,7 +197,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pr-traceability.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -190,7 +208,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-log-init.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -200,7 +219,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 30
           }
         ]
       },
@@ -210,7 +230,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/timeout-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       }
@@ -222,7 +243,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       }
@@ -234,7 +256,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 15
           }
         ]
       }
@@ -246,7 +269,8 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-reminder.sh\"",
-            "async": false
+            "async": false,
+            "timeout": 10
           }
         ]
       }

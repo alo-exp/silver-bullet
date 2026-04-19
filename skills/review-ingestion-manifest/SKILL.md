@@ -3,6 +3,7 @@ name: review-ingestion-manifest
 description: "INGESTION_MANIFEST.md artifact reviewer — validates that all source artifacts are listed, statuses are accurate, failed artifacts have corresponding ARTIFACT MISSING blocks in the linked SPEC.md, and the manifest supports resumability"
 argument-hint: "<manifest-path> [--source-inputs <spec-path>]"
 user-invocable: false
+version: 0.1.0
 ---
 
 # review-ingestion-manifest

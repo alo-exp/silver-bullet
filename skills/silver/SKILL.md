@@ -2,6 +2,7 @@
 name: silver
 description: "Route freeform text to the right Silver Bullet or GSD skill automatically"
 argument-hint: "<description of what you want to do>"
+version: 0.1.0
 ---
 
 # /silver — Smart Skill Orchestrator

@@ -1,7 +1,8 @@
 ---
 name: modularity
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces small, focused modules so any change fits in context without compaction
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces small, focused modules so any change fits in context without compaction
 user-invocable: false
+version: 0.1.0
 ---
 
 # /modularity — Modular Design Enforcement
@@ -131,10 +132,10 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to fix all violations in unrelated files.
-- You ARE required to not make violations worse.
-- If the file you're modifying already exceeds the hard limit, include a split as part of your change.
-- If your change would push a file past the soft limit, split first.
+- Not required to fix violations in unrelated files.
+- Required: do not make violations worse.
+- If the file being modified already exceeds the hard limit, include a split as part of the change.
+- If the change would push a file past the soft limit, split first.
 
 ---
 

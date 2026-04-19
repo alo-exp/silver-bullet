@@ -1,6 +1,7 @@
 ---
 name: silver-update
 description: "Check for Silver Bullet updates, show changelog, and install if available"
+version: 0.1.0
 ---
 
 # /silver:update — Update Silver Bullet

@@ -1,14 +1,15 @@
 ---
 name: testability
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces dependency injection, pure functions, observable state, and seam-based design so every component can be tested in isolation
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces dependency injection, pure functions, observable state, and seam-based design so every component can be tested in isolation
 user-invocable: false
+version: 0.1.0
 ---
 
 # /testability — Testable Design Enforcement
 
 Every design, plan, and implementation MUST produce code that is easy to test in isolation. If it's hard to test, the design is wrong — not the test.
 
-**Why this matters:** Untestable code is unverifiable code. When you can't write a simple test for a component, it's because the component has too many hidden dependencies, side effects, or tightly coupled concerns. Testability is a direct measure of design quality.
+**Why this matters:** Untestable code is unverifiable code. When a simple test cannot be written for a component, it's because the component has too many hidden dependencies, side effects, or tightly coupled concerns. Testability is a direct measure of design quality.
 
 **When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
@@ -157,10 +158,10 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to refactor all untestable code in unrelated files.
-- You ARE required to make your NEW code testable.
+- Not required to refactor untestable code in unrelated files.
+- Required: make all new code testable.
 - If you're adding logic to an untestable function, extract the new logic into a testable helper.
-- If you're touching a function that hard-wires a dependency, make it injectable as part of your change.
+- If touching a function that hard-wires a dependency, make it injectable as part of the change.
 
 ---
 

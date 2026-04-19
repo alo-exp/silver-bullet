@@ -2,6 +2,7 @@
 name: silver-ui
 description: "Full SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship"
 argument-hint: "<UI feature or component description>"
+version: 0.1.0
 ---
 
 # /silver:ui — Frontend, Component, Interface Workflow

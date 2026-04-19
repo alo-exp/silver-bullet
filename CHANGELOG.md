@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-04-19
+
+**plugin-dev compliance milestone.** Retroactively aligns 100% of Silver Bullet against the official Anthropic `plugin-dev` plugin standards — manifest, hooks, skills, and writing style.
+
+### Plugin-dev Compliance (Phase 1 — Manifest & Hooks)
+- **PLUGIN-01**: Added `"hooks": "./hooks/hooks.json"` field to `.claude-plugin/plugin.json` per plugin-dev `plugin-structure` standard.
+- **PLUGIN-02**: Added explicit `timeout` fields to all 24 hook entries in `hooks/hooks.json` (values: 5–30s per hook criticality).
+- **PLUGIN-03**: Bumped `.claude-plugin/plugin.json` version to `0.23.0`.
+
+### plugin-dev Compliance (Phase 2 — Skill Descriptions & Versions)
+- **SKILL-DESC**: Fixed 9 skill descriptions from bare "Use when..." to plugin-dev standard "This skill should be used when..." format: `ai-llm-safety`, `extensibility`, `modularity`, `reliability`, `reusability`, `scalability`, `security`, `testability`, `usability`.
+- **SKILL-VER**: Added `version: 0.1.0` to YAML frontmatter of all 41 skills.
+
+### plugin-dev Compliance (Phase 3 — Progressive Disclosure)
+- **SILVER-FEATURE**: Extracted Supervision Loop detail (SL-1 → SL-6, ~400 words) to `skills/silver-feature/references/supervision-loop.md`; replaced with lean pointer. Word count: 3,049 → 2,704.
+- **SILVER-INIT**: Extracted 4 heavy sections to references/scripts:
+  - CI workflow YAML templates → `skills/silver-init/references/ci-templates.md` (13 stacks)
+  - Doc migration procedure → `skills/silver-init/references/doc-migration.md`
+  - Tech stack detection table → `skills/silver-init/references/stack-detection.md`
+  - Hooks-merge Python script → `skills/silver-init/scripts/merge-hooks.py` (executable, chmod 755)
+  - Word count: 6,446 → 5,419.
+
+### plugin-dev Compliance (Phase 4 — Writing Style)
+- **STYLE**: Fixed 23 second-person writing violations across 9 skills (imperative verb-first style):
+  - All 7 ilities skills: `"You are NOT required to X"` → `"Not required to X"`, `"You ARE required to not make X worse"` → `"Required: do not make X worse"`, and related pronoun drops.
+  - `silver-spec`: `"You MUST NOT proceed"` → `"Do NOT proceed"`.
+  - `devops-skill-router`: `"You can also invoke"` → `"Also invocable"`.
+
+### Documentation
+- **CLAUDE.md**: Complete rewrite — added commands (test suite, linting, validation), full architecture reference (hook event map, two-tier enforcement, state machine, shared libraries), key invariants.
+
 ## [0.22.0] — 2026-04-18
 
 **Backlog-resolution milestone.** Consolidates phases 34–38: security hardening,

@@ -3,6 +3,7 @@ name: review-design
 description: "DESIGN.md artifact reviewer — validates design quality against the SB design template: required sections, non-empty screen/component fields, behavior and state tables, and orphaned component detection against SPEC.md"
 argument-hint: "<design-path> [--source-inputs <spec-path>]"
 user-invocable: false
+version: 0.1.0
 ---
 
 # review-design

@@ -1,7 +1,8 @@
 ---
 name: extensibility
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces open-closed design, plugin architectures, stable interfaces, and versioning so systems grow without breaking existing consumers
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces open-closed design, plugin architectures, stable interfaces, and versioning so systems grow without breaking existing consumers
 user-invocable: false
+version: 0.1.0
 ---
 
 # /extensibility — Extensible Design Enforcement
@@ -169,8 +170,8 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to add extension points to all existing code.
-- You ARE required to not make extensibility worse.
+- Not required to add extension points to all existing code.
+- Required: do not make extensibility worse.
 - If you're adding a third `else if` for a new type, convert to a registry/strategy.
 - If you're modifying a public interface, ensure backward compatibility.
 

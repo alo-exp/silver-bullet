@@ -1,6 +1,7 @@
 ---
 name: silver-init
 description: Initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + CLAUDE.md + config + workflow files
+version: 0.1.0
 ---
 
 # /silver:init — Project Setup
@@ -420,21 +421,7 @@ Invoke `/gsd-scan` via the Skill tool. After it completes, continue.
 
 ### 2.3 Detect tech stack
 
-Based on which manifest file was found, set the tech stack string:
-- `package.json` → Read it and check for key dependencies (e.g., "react", "next", "express", "vue", "angular", "typescript", "bun", "deno"). Compose a string like "Node.js / TypeScript / React" based on what is found.
-- `pyproject.toml` → "Python" plus key dependencies (Django, Flask, FastAPI, etc.)
-- `Cargo.toml` → "Rust" plus key dependencies (axum, tokio, actix-web, etc.)
-- `go.mod` → "Go" plus key dependencies (gin, echo, fiber, etc.)
-- `pom.xml` → "Java / Maven" plus key deps (Spring Boot, Quarkus, etc.)
-- `build.gradle` → "Java / Gradle" or "Kotlin / Gradle" (check for `kotlin` plugin)
-- `build.gradle.kts` → "Kotlin / Gradle" plus key deps (Ktor, Spring, etc.)
-- `Gemfile` → "Ruby" plus key gems (Rails, Sinatra, Roda, etc.)
-- `composer.json` → "PHP" plus key packages (Laravel, Symfony, WordPress, etc.)
-- `mix.exs` → "Elixir" plus key deps (Phoenix, Ecto, etc.)
-- `Package.swift` → "Swift" plus key deps
-- `*.csproj` / `*.sln` → ".NET / C#" plus target framework (net8.0, net9.0, etc.)
-- `pubspec.yaml` → "Dart / Flutter"
-- If none found → "Unknown — please specify"
+Based on which manifest file was found, compose a stack string (e.g., "Node.js / TypeScript / React"). For per-stack mapping details, see **`references/stack-detection.md`**.
 
 ### 2.4 Detect repo URL
 
@@ -624,191 +611,7 @@ Check if a GitHub Actions CI workflow exists:
 test -d .github/workflows && ls .github/workflows/*.yml 2>/dev/null | head -1
 ```
 
-If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` based on the detected stack from Phase 2:
-
-**Node.js** (package.json found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-      - run: npm run lint --if-present
-      - run: npm run typecheck --if-present
-      - run: npm test --if-present
-```
-
-**Python** (pyproject.toml found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install -e ".[dev]" || pip install -e .
-      - run: ruff check . || true
-      - run: mypy . || true
-      - run: pytest
-```
-
-**Rust** (Cargo.toml found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo clippy
-      - run: cargo test
-```
-
-**Go** (go.mod found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with: { go-version: stable }
-      - run: go vet ./...
-      - run: go test ./...
-```
-
-**Java / Maven** (pom.xml found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { java-version: '21', distribution: temurin }
-      - run: ./mvnw --no-transfer-progress verify
-```
-
-**Java / Kotlin — Gradle** (build.gradle or build.gradle.kts found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { java-version: '21', distribution: temurin }
-      - run: ./gradlew check
-```
-
-**Ruby** (Gemfile found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
-        with: { bundler-cache: true }
-      - run: bundle exec rubocop --parallel || true
-      - run: bundle exec rspec
-```
-
-**PHP** (composer.json found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3', coverage: none }
-      - run: composer install --no-progress --prefer-dist
-      - run: composer run lint || true
-      - run: composer run test
-```
-
-**.NET / C#** (*.csproj or *.sln found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '9.x' }
-      - run: dotnet build --no-incremental
-      - run: dotnet test --no-build
-```
-
-**Elixir** (mix.exs found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: erlef/setup-beam@v1
-        with: { elixir-version: '1.17', otp-version: '27' }
-      - run: mix deps.get
-      - run: mix compile --warnings-as-errors
-      - run: mix credo --strict || true
-      - run: mix test
-```
-
-**Swift** (Package.swift found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: swift build
-      - run: swift test
-```
-
-**Dart / Flutter** (pubspec.yaml found):
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with: { channel: stable }
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter test
-```
-
-**Other**: prompt user to specify verify commands. Store in `.silver-bullet.json` under `"verify_commands": ["cmd1", "cmd2"]`.
+If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` based on the detected stack from Phase 2. Select the matching template from **`references/ci-templates.md`** and write it to `.github/workflows/ci.yml`. For unknown stacks, prompt user to specify verify commands and store under `"verify_commands"` in `.silver-bullet.json`.
 
 #### 3.3 Write CLAUDE.md (only when no existing CLAUDE.md)
 
@@ -854,43 +657,7 @@ Copy both workflow templates to `docs/workflows/`:
 
 If `docs/` exists, scan for documentation that can be migrated to the SB documentation scheme. The migration is **100% transparent** — every action requires explicit user approval. No files are deleted; originals are preserved as `.pre-sb-backup` copies.
 
-**Step A: Detect existing documentation patterns**
-
-Use the Bash tool to scan for common doc patterns:
-```bash
-echo "=== SCAN RESULTS ==="
-# Architecture docs (various naming conventions)
-for f in docs/Architecture*.md docs/architecture*.md docs/ARCHITECTURE*.md docs/design*.md docs/Design*.md docs/system-design*.md; do test -f "$f" && echo "ARCH: $f"; done
-# Testing docs
-for f in docs/Testing*.md docs/testing*.md docs/TESTING*.md docs/test-plan*.md docs/test-strategy*.md; do test -f "$f" && echo "TEST: $f"; done
-# Knowledge / lessons / decisions / ADRs
-for f in docs/KNOWLEDGE*.md docs/knowledge*.md docs/decisions*.md docs/adr/*.md docs/ADR/*.md docs/learnings*.md docs/lessons*.md; do test -f "$f" && echo "KNOW: $f"; done
-# Changelog
-for f in docs/CHANGELOG*.md docs/changelog*.md docs/changes*.md; do test -f "$f" && echo "CLOG: $f"; done
-# CI/CD docs
-for f in docs/CICD*.md docs/cicd*.md docs/CI*.md docs/ci-cd*.md docs/pipeline*.md docs/deploy*.md docs/deployment*.md; do test -f "$f" && echo "CICD: $f"; done
-# PRD / requirements / product docs
-for f in docs/PRD*.md docs/prd*.md docs/requirements*.md docs/product*.md docs/spec*.md; do test -f "$f" && echo "PRD: $f"; done
-# API docs
-for f in docs/API*.md docs/api*.md; do test -f "$f" && echo "API: $f"; done
-# Security docs
-for f in docs/SECURITY*.md docs/security*.md docs/threat-model*.md; do test -f "$f" && echo "SEC: $f"; done
-echo "=== END SCAN ==="
-```
-
-**Step B: Build migration plan**
-
-For each detected file, determine the migration action:
-
-| Detected Pattern | SB Target | Action |
-|-----------------|-----------|--------|
-| `Architecture-and-Design.md`, `architecture.md`, etc. | `docs/ARCHITECTURE.md` | Rename (preserve content) |
-| `Testing-Strategy-and-Plan.md`, `test-plan.md`, etc. | `docs/TESTING.md` | Rename (preserve content) |
-| `KNOWLEDGE.md` (single file) | `docs/knowledge/` directory | Split: project intelligence → `docs/knowledge/YYYY-MM.md`, portable lessons → `docs/lessons/YYYY-MM.md` |
-| `changelog.md` (lowercase or variant) | `docs/CHANGELOG.md` | Rename (preserve content) |
-| `cicd.md`, `pipeline.md`, `deploy.md` | `docs/CICD.md` | Rename (preserve content) |
-| File already matches SB naming | — | Skip (no action needed) |
-| Unrecognized doc | — | Leave in place (no action) |
+**Full migration procedure** is in **`references/doc-migration.md`** — including the scan commands, mapping table, KNOWLEDGE.md split logic, user approval flow, and summary output format.
 
 If no migration candidates are found, output `✓ No documentation migration needed — existing docs already match or no conflicts found.` and skip to Step 3.6.
 
@@ -1133,75 +900,10 @@ If `INSTALL_PATH` is empty or the command fails, skip this step silently and con
 **Merge hooks idempotently:**
 
 ```bash
-python3 - "$INSTALL_PATH" << 'PYEOF'
-import json, os, sys
-
-install_path = sys.argv[1]
-hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
-settings_path = os.path.expanduser('~/.claude/settings.json')
-
-# Load source hooks.json
-with open(hooks_src) as f:
-    src = json.load(f)
-
-sb_hooks = src.get('hooks', {})
-
-# Substitute actual install path for ${CLAUDE_PLUGIN_ROOT}
-def sub_path(obj, install_path):
-    if isinstance(obj, str):
-        return obj.replace('${CLAUDE_PLUGIN_ROOT}', install_path)
-    if isinstance(obj, list):
-        return [sub_path(i, install_path) for i in obj]
-    if isinstance(obj, dict):
-        return {k: sub_path(v, install_path) for k, v in obj.items()}
-    return obj
-
-sb_hooks = sub_path(sb_hooks, install_path)
-
-# Load or create settings.json
-if os.path.exists(settings_path):
-    with open(settings_path) as f:
-        settings = json.load(f)
-else:
-    settings = {}
-
-existing_hooks = settings.setdefault('hooks', {})
-
-# Merge: for each event, append only entries whose command is not already present
-for event, entries in sb_hooks.items():
-    existing_event = existing_hooks.setdefault(event, [])
-    for new_group in entries:
-        new_hooks_list = new_group.get('hooks', [])
-        for new_hook in new_hooks_list:
-            new_cmd = new_hook.get('command', '')
-            already_present = any(
-                h.get('command', '') == new_cmd
-                for group in existing_event
-                for h in group.get('hooks', [])
-            )
-            if not already_present:
-                # Find matching group by matcher or append new group
-                matcher = new_group.get('matcher', '')
-                matched = next(
-                    (g for g in existing_event
-                     if g.get('matcher', '') == matcher),
-                    None
-                )
-                if matched:
-                    matched.setdefault('hooks', []).append(new_hook)
-                else:
-                    existing_event.append({
-                        'matcher': matcher,
-                        'hooks': [new_hook]
-                    })
-
-with open(settings_path, 'w') as f:
-    json.dump(settings, f, indent=2)
-    f.write('\n')
-
-print('SB hooks registered in ~/.claude/settings.json')
-PYEOF
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
 ```
+
+The merge script (`scripts/merge-hooks.py`) substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path and appends only new hook entries — never duplicates.
 
 If the script exits nonzero (e.g., hooks.json not readable, settings.json not writable),
 display a warning but do NOT stop init:
@@ -1220,3 +922,20 @@ immediately as slash commands — no activation step required for those.
 
 Output:
 > Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.
+
+## Additional Resources
+
+### Reference Files
+
+- **`references/ci-templates.md`** — CI workflow YAML templates for all supported stacks (Node.js, Python, Rust, Go, Java, Ruby, PHP, .NET, Elixir, Swift, Dart/Flutter)
+- **`references/doc-migration.md`** — Full documentation migration procedure: scan commands, mapping table, KNOWLEDGE.md split logic, user approval flow
+- **`references/stack-detection.md`** — Per-ecosystem tech stack string mapping (manifest file → stack label)
+
+### Scripts
+
+- **`scripts/merge-hooks.py`** — Idempotent hook merge script for Phase 3.7.5 (substitutes CLAUDE_PLUGIN_ROOT, deduplicates entries)
+- **`references/stack-detection.md`** — Per-ecosystem tech stack string mapping (manifest file → stack label)
+
+### Scripts
+
+- **`scripts/merge-hooks.py`** — Idempotent hook merge script for Phase 3.7.5 (substitutes CLAUDE_PLUGIN_ROOT, deduplicates entries)

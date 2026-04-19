@@ -3,6 +3,7 @@ name: review-spec
 description: "SPEC.md artifact reviewer — validates spec quality against the SB spec template: required sections, non-empty overview, user story format, testable acceptance criteria, assumption completeness, and frontmatter fields"
 argument-hint: "<spec-path> [--source-inputs <jira-ticket> <figma-url>]"
 user-invocable: false
+version: 0.1.0
 ---
 
 # review-spec

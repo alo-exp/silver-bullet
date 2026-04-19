@@ -1,7 +1,8 @@
 ---
 name: reliability
-description: Use when designing, planning, implementing, or reviewing any non-trivial change — enforces graceful degradation, proper error handling, retry strategies, and fault-tolerant patterns so systems stay up when things go wrong
+description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change — enforces graceful degradation, proper error handling, retry strategies, and fault-tolerant patterns so systems stay up when things go wrong
 user-invocable: false
+version: 0.1.0
 ---
 
 # /reliability — Reliable Design Enforcement
@@ -161,8 +162,8 @@ Verify these as part of every code review:
 ### When Modifying Existing Code
 
 If existing code violates these rules:
-- You are NOT required to add circuit breakers to all existing external calls.
-- You ARE required to not make reliability worse.
+- Not required to add circuit breakers to all existing external calls.
+- Required: do not make reliability worse.
 - If adding a new external call, it MUST have timeout, retry, and error handling.
 - If you find a silent error swallowing in code you're touching, fix it.
 

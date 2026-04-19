@@ -2,6 +2,7 @@
 name: silver-feature
 description: "Full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver-quality-gates → GSD plan/execute/verify → ship"
 argument-hint: "<feature description>"
+version: 0.1.0
 ---
 
 # /silver:feature — Feature Development Workflow
@@ -146,81 +147,11 @@ The existing Step 0 through Step 17 sections below serve as the implementation o
 
 ## Supervision Loop
 
-The supervision loop runs BETWEEN each flow completion. It checks exit conditions, evaluates composition changes, detects stall, advances, and reports progress. This is implemented as inline logic at each flow boundary.
+The supervision loop runs BETWEEN each flow completion. It checks exit conditions, evaluates composition changes, detects stall, advances, and reports progress. Implement as inline logic at each flow boundary.
 
-### After Each Flow Completes:
+Six steps per boundary: **SL-1** exit-condition check → **SL-2** composition re-evaluation (debug/UI insertion triggers) → **SL-3** 4-tier anti-stall detection → **SL-4** advance → **SL-5** progress report → **SL-6** WORKFLOW.md update.
 
-**Step SL-1: Exit Condition Check (D-07.1)**
-
-Verify the flow's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
-
-```
-⚠ FLOW {N} exit condition not met: {condition description}
-Options:
-  A. Retry FLOW {N}
-  B. Skip with reason (document in WORKFLOW.md)
-  C. Insert FLOW 14 (DEBUG) before next flow
-```
-
-**Step SL-2: Composition Evaluation (D-07.2)**
-
-Re-evaluate context for dynamic insertion triggers:
-
-- **Execution failed** → insert FLOW 14 (DEBUG) before next flow (per D-11):
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
-- **UI files discovered in SUMMARY.md** → insert FLOW 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
-  - Check SUMMARY.md for `*.tsx`, `*.css`, `*.html`, or `design/` references
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
-
-**Step SL-3: Anti-Stall Check (D-07.3)**
-
-Run 4-tier anti-stall detection:
-
-- **Tier 1 — Progress-based (D-16):** If no WORKFLOW.md flow advancement in 10 minutes of execution wall-clock time, display:
-  ```
-  ⚠ STALL DETECTED: No flow advancement in 10 min. Continue? [Y/debug/skip]
-  ```
-
-- **Tier 2 — Permission-stall (D-17):** If blocked waiting for user input >5 min in autonomous mode, auto-select recommended option (the first/default option) and log to WORKFLOW.md Autonomous Decisions table:
-  ```
-  | {ISO timestamp} | Auto-selected option A for {decision} | Permission-stall: >5min wait in autonomous mode |
-  ```
-
-- **Tier 3 — Context exhaustion (D-18):** Monitor context window usage:
-  - If context >80%: display `/compact recommendation: Context window at ~80%. Consider running /compact before continuing.`
-  - If context >90%: display `Context exhaustion imminent. Running /compact before continuing.` then invoke `/compact`
-
-- **Tier 4 — Heartbeat sentinel (D-19):** Each path invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-flow:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
-  ```
-  ⚠ HEARTBEAT GAP: FLOW {N} may have stalled. Options: [retry/skip/debug]
-  ```
-  Heartbeat timestamps use ISO 8601 format (e.g., `2026-04-15T10:30:00Z`).
-
-**Step SL-4: Advance (D-07.4)**
-
-Move to the next flow in the composition chain.
-
-**Step SL-5: Progress Report (D-09)**
-
-Display progress after each flow:
-
-```
-FLOW {current}/{total}: {name} ✓ | Context: ~{percent}% | Remaining: {list of remaining flows}
-```
-
-**Step SL-6: WORKFLOW.md Update (D-10)**
-
-Write path status and timestamp to WORKFLOW.md Flow Log table:
-
-```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
-```
-
-Also update heartbeat fields:
-```
-Last-flow: {N}
-Last-beat: {ISO timestamp}
-```
+For full details on each step including stall-detection tiers, heartbeat sentinel, and WORKFLOW.md table formats, see **`references/supervision-loop.md`**.
 
 ---
 
@@ -490,3 +421,9 @@ Skill(skill="gsd-add-backlog", args="<deferred item description>")
 If no items were deferred during this session, output: "Post-work sweep: no deferred items to capture."
 
 **This step is non-negotiable.** Items deferred during execution and not captured here are permanently lost.
+
+## Additional Resources
+
+### Reference Files
+
+- **`references/supervision-loop.md`** — Full supervision loop step details (SL-1 through SL-6), anti-stall tiers, heartbeat sentinel, WORKFLOW.md formats

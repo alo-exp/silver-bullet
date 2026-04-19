@@ -2,6 +2,7 @@
 name: silver-devops
 description: "SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship"
 argument-hint: "<infrastructure or CI/CD change description>"
+version: 0.1.0
 ---
 
 # /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow

@@ -2,6 +2,7 @@
 name: devops-skill-router
 description: Context-aware routing table that maps IaC toolchain, cloud provider, and DevOps context to the best available plugin skill. Used by the devops-cycle workflow at contextual trigger points. Not a workflow step — a lookup utility.
 user-invocable: false
+version: 0.1.0
 ---
 
 # /devops-skill-router — Context-Aware DevOps Skill Routing
@@ -11,7 +12,7 @@ available plugin skill. Silver Bullet's devops-cycle workflow references this ro
 at contextual trigger points — it is NOT a required workflow step.
 
 **When to use**: The devops-cycle workflow invokes this router automatically at
-trigger points (DISCUSS, PLAN, EXECUTE, VERIFY, FINALIZATION). You can also invoke
+trigger points (DISCUSS, PLAN, EXECUTE, VERIFY, FINALIZATION). Also invocable
 it directly to find the best skill for a specific DevOps task.
 
 ---

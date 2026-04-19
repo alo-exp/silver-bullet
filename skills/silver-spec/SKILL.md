@@ -2,6 +2,7 @@
 name: silver-spec
 description: "AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft"
 argument-hint: "<feature name or description>"
+version: 0.1.0
 ---
 
 # /silver:spec -- Spec Elicitation Workflow
@@ -115,7 +116,7 @@ Collect all answers and assumption blocks for Steps 5-8.
 **Minimum turn enforcement:**
 
 Maintain an internal turn counter starting at 0. Increment after each completed turn.
-You MUST NOT proceed to Step 7 (Write SPEC.md) until the turn counter reaches at least 4.
+Do NOT proceed to Step 7 (Write SPEC.md) until the turn counter reaches at least 4.
 If the user requests to skip remaining turns before turn 4, respond:
 
 > "Spec elicitation requires a minimum of 4 turns to ensure adequate coverage. We've completed {N} so far. Let's continue with Turn {N+1}."
