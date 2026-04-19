@@ -83,6 +83,8 @@ jobs:
           bash tests/hooks/test-completion-audit.sh
           bash tests/hooks/test-dev-cycle-check.sh
           bash tests/hooks/test-required-skills-consistency.sh
+          bash tests/hooks/test-stop-check.sh
+          bash tests/hooks/test-timeout-check.sh
 
       - name: Run skill-reference integrity check (CONS-01)
         run: |
