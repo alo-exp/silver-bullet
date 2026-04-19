@@ -105,9 +105,9 @@ fi
 if [[ "$current_state_mtime" -gt "$last_state_mtime" ]] && [[ "$current_state_mtime" -ge "$session_start" ]]; then
   # State file changed during this session — skill was recorded — reset progress baseline
   sb_guard_nofollow "$last_state_mtime_file"
-echo "$current_state_mtime" > "$last_state_mtime_file"
+  echo "$current_state_mtime" > "$last_state_mtime_file"
   sb_guard_nofollow "$last_progress_file"
-echo "$call_count" > "$last_progress_file"
+  echo "$call_count" > "$last_progress_file"
   last_progress_count=$call_count
 fi
 
