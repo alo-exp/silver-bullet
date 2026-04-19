@@ -1,0 +1,110 @@
+name: Announce Release
+
+# Posts a Google Chat card when a GitHub release is published.
+# Webhook URL is stored in GCHAT_RELEASE_WEBHOOK — never commit the URL.
+# Can also be triggered manually via workflow_dispatch.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to announce (e.g. v0.23.4)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release metadata
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          [[ -z "$tag" ]] && { echo "No tag resolved"; exit 1; }
+
+          name=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json name --jq '.name // empty')
+          url=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url  --jq '.url')
+          # First ~400 chars of release body — strip leading whitespace, collapse blank lines
+          body=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // empty' \
+            | sed -E 's/^[[:space:]]+//' | awk 'NF{c++; print; if(c>=6) exit}')
+
+          {
+            echo "tag=$tag"
+            echo "title=${name:-$tag}"
+            echo "url=$url"
+          } >> "$GITHUB_OUTPUT"
+
+          # Multi-line body via heredoc
+          {
+            echo "body<<__EOF__"
+            echo "$body"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post to Google Chat
+        env:
+          WEBHOOK: ${{ secrets.GCHAT_RELEASE_WEBHOOK }}
+          TAG:   ${{ steps.meta.outputs.tag }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          URL:   ${{ steps.meta.outputs.url }}
+          BODY:  ${{ steps.meta.outputs.body }}
+        run: |
+          if [[ -z "$WEBHOOK" ]]; then
+            echo "::error::GCHAT_RELEASE_WEBHOOK secret is not set"
+            exit 1
+          fi
+
+          # Build Card v2 payload via jq to guarantee valid JSON escaping.
+          payload=$(jq -n \
+            --arg title "🚀 Silver Bullet $TAG released" \
+            --arg subtitle "$TITLE" \
+            --arg body "$BODY" \
+            --arg url "$URL" \
+            --arg logo "https://sb.alolabs.dev/logo.png" \
+            '{
+              cardsV2: [{
+                cardId: "sb-release",
+                card: {
+                  header: {
+                    title: $title,
+                    subtitle: $subtitle,
+                    imageUrl: $logo,
+                    imageType: "SQUARE"
+                  },
+                  sections: [{
+                    widgets: [
+                      { textParagraph: { text: $body } },
+                      {
+                        buttonList: {
+                          buttons: [{
+                            text: "View release",
+                            onClick: { openLink: { url: $url } }
+                          }]
+                        }
+                      }
+                    ]
+                  }]
+                }
+              }]
+            }')
+
+          http_code=$(curl -sS -o /tmp/gchat.out -w "%{http_code}" \
+            -H "Content-Type: application/json; charset=UTF-8" \
+            -X POST \
+            -d "$payload" \
+            "$WEBHOOK")
+
+          if [[ "$http_code" != "200" ]]; then
+            echo "::error::Google Chat webhook returned HTTP $http_code"
+            cat /tmp/gchat.out
+            exit 1
+          fi
+          echo "✓ Posted to Google Chat ($http_code)"
