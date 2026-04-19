@@ -60,13 +60,29 @@ md5_str() {
 }
 
 # Portable stat: file size
+# BSD stat uses -f '%z'; GNU stat uses -c '%s'.
+# Guard: only accept output that is a pure integer to avoid capturing
+# GNU stat's filesystem-info multi-line output (which begins with "  File: ...")
+# that would cause `[[ $sz -le $min_bytes ]]` to trigger "File: unbound variable"
+# under set -u when bash tries arithmetic evaluation on the non-numeric string.
 file_size() {
-  stat -f '%z' "$1" 2>/dev/null || stat -c '%s' "$1" 2>/dev/null || echo "0"
+  local _sz
+  _sz=$(stat -f '%z' "$1" 2>/dev/null || true)
+  if [[ "$_sz" =~ ^[0-9]+$ ]]; then printf '%s' "$_sz"; return; fi
+  _sz=$(stat -c '%s' "$1" 2>/dev/null || true)
+  if [[ "$_sz" =~ ^[0-9]+$ ]]; then printf '%s' "$_sz"; return; fi
+  printf '0'
 }
 
 # Portable stat: mtime
+# Same guard as file_size: only accept pure-integer output.
 file_mtime() {
-  stat -f '%m' "$1" 2>/dev/null || stat -c '%Y' "$1" 2>/dev/null || echo "0"
+  local _mt
+  _mt=$(stat -f '%m' "$1" 2>/dev/null || true)
+  if [[ "$_mt" =~ ^[0-9]+$ ]]; then printf '%s' "$_mt"; return; fi
+  _mt=$(stat -c '%Y' "$1" 2>/dev/null || true)
+  if [[ "$_mt" =~ ^[0-9]+$ ]]; then printf '%s' "$_mt"; return; fi
+  printf '0'
 }
 
 # Get phase goal — extract-phase-goal.sh uses .planning/ relative to CWD
