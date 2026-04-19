@@ -196,7 +196,7 @@ score_and_add() {
   # RETURN trap resets EXIT after normal function return (bash 4.0+).
   # Explicit rm at function end ensures cleanup in bash 3.2 (no RETURN trap).
   # shellcheck disable=SC2064
-  trap "rm -f '$TMP_COUNTS'; trap - EXIT" RETURN EXIT
+  trap "rm -f -- '$TMP_COUNTS'; trap - EXIT" RETURN EXIT
 
   local scored_line
   while IFS= read -r scored_line; do
@@ -221,7 +221,7 @@ score_and_add() {
     fi
     true
   done < <(printf '%s\n' "${files[@]}" | "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
-  rm -f "$TMP_COUNTS"  # explicit cleanup for bash 3.2 where RETURN trap is ignored
+  rm -f -- "$TMP_COUNTS"  # explicit cleanup for bash 3.2 where RETURN trap is ignored
   trap - EXIT           # disarm EXIT trap so a subsequent call can install its own
 }
 

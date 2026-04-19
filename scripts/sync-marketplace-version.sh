@@ -26,7 +26,7 @@ if [[ "$plugin_v" == "$market_v" ]]; then
   echo "✓ Versions already in sync: $plugin_v"
 else
   tmp=$(mktemp)
-  trap 'rm -f "$tmp"' EXIT
+  trap 'rm -f -- "$tmp"' EXIT
   jq --arg v "$plugin_v" '(.plugins[] | select(.name=="silver-bullet") | .version) = $v' \
     "$marketplace_json" > "$tmp"
   mv "$tmp" "$marketplace_json"
