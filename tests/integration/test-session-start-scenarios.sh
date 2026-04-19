@@ -102,10 +102,8 @@ integration_teardown
 echo "--- Scenario 3: Trivial file removed ---"
 integration_setup
 write_default_config
-save_real_state
-
-# Store matching branch
-echo "feature/test" > "$SB_REAL_BRANCH"
+# TMPBRANCH already contains "feature/test" from integration_setup.
+# session-start follows SILVER_BULLET_BRANCH_FILE — no need to write real branch file.
 
 # Create trivial file (using the path from config's state.trivial_file)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
@@ -118,17 +116,13 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S3.1: trivial file still exists after session start\n'
 fi
 
-restore_real_state
 integration_teardown
 
 # Scenario 4: Core-rules injected in output (or silent if no sp/core-rules found)
 echo "--- Scenario 4: Core-rules or silent output from session-start ---"
 integration_setup
 write_default_config
-save_real_state
-
-# Store matching branch
-echo "feature/test" > "$SB_REAL_BRANCH"
+# TMPBRANCH already contains "feature/test" from integration_setup.
 
 out=$(run_session_start)
 
@@ -142,7 +136,6 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S4.1: session-start output is neither valid JSON nor empty: %s\n' "$out"
 fi
 
-restore_real_state
 integration_teardown
 
 print_results

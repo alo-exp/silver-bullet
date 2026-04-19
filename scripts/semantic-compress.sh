@@ -190,7 +190,9 @@ score_and_add() {
   [[ ${#files[@]} -eq 0 ]] && return
 
   local TMP_COUNTS; TMP_COUNTS=$(mktemp)
-  trap 'rm -f "$TMP_COUNTS"' RETURN
+  # RETURN trap alone doesn't fire when exit is called (e.g. by the ERR trap).
+  # Adding EXIT ensures cleanup on both normal function return and early exit.
+  trap 'rm -f "$TMP_COUNTS"' RETURN EXIT
 
   local scored_line
   while IFS= read -r scored_line; do

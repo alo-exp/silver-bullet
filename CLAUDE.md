@@ -112,6 +112,10 @@ Skill invocations are recorded to `~/.claude/.silver-bullet/state` by `record-sk
 - **Branch-scoped**: wiped when `git branch` changes between sessions (tracked via `~/.claude/.silver-bullet/branch`)
 - **Trivial bypass**: if `~/.claude/.silver-bullet/trivial` file exists (real file, not symlink), all enforcement gates exit 0 — used for typo/config-only sessions; auto-created at SessionStart, removed on first Write/Edit
 
+**Test env-var overrides** (mirrors the `SILVER_BULLET_STATE_FILE` pattern):
+- `SILVER_BULLET_STATE_FILE` — overrides the default state file path (`~/.claude/.silver-bullet/state`); must remain under `~/.claude/`
+- `SILVER_BULLET_BRANCH_FILE` — overrides the branch-tracking file path (`~/.claude/.silver-bullet/branch`); must remain under `~/.claude/`. Used by integration tests (`tests/integration/helpers/common.sh`) to supply a per-test mock branch file so `session-start` does not read or mutate the live branch file during test runs.
+
 ### Shared Libraries (`hooks/lib/`)
 
 | File | Purpose |
