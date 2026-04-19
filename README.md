@@ -8,8 +8,6 @@ Brooks was right then. AI changes the equation now.
 
 Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 10 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
-**Current version: v0.22.0** — Backlog-resolution milestone covering security hardening, hook correctness, consistency fixes, and public-surface refresh. Highlights: Google Chat webhook moved out of source to env var + new secret-scan CI job (SEC-01), Stage-4 hook hardening with symlink guards and proper `jq` JSON payloads (SEC-02/03/04), `stop-check` HOOK-14 fail-open paths closed with full test coverage (HOOK-06/07/08), broken skill references and hooks/config schema drift reconciled (CONS-01/02), `.claude/` gitignore narrowed so committed plugin config (`settings.json`, `commands/`) stays tracked (IGNORE-01, [#20](https://github.com/alo-exp/silver-bullet/issues/20)), and every public surface (README, site, help center, architecture doc, CHANGELOG) brought back in sync (DOC-02, [#23](https://github.com/alo-exp/silver-bullet/issues/23)).
-
 ## How It Works
 
 When you edit source code without completing the planning phase, you see this:
