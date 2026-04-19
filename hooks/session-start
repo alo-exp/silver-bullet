@@ -60,7 +60,7 @@ if [[ -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]];
   sb_guard_nofollow "$branch_file"
   printf '%s' "$current_branch" > "$branch_file"
   if [[ -f "$state_file" && ! -L "$state_file" ]]; then
-    sed -i.bak '/^gsd-/d' "$state_file" && rm -f -- "${state_file}.bak"
+    sed -i.bak '/^gsd-/d;/^quality-gate-stage-/d' "$state_file" && rm -f -- "${state_file}.bak"
   fi
 elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   # Branch changed — full state reset for fresh workflow
@@ -70,7 +70,7 @@ elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   printf '%s' "$current_branch" > "$branch_file"
 elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
   # Same branch — reset session-specific markers only
-  sed -i.bak '/^gsd-/d' "$state_file" && rm -f -- "${state_file}.bak"
+  sed -i.bak '/^gsd-/d;/^quality-gate-stage-/d' "$state_file" && rm -f -- "${state_file}.bak"
 fi
 
 # ── GSD agent model-routing self-heal (DISABLED 2026-04-16) ──────────────────
