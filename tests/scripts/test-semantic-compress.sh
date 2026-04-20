@@ -121,8 +121,8 @@ python3 -c "print('normal source content\n' * 20)" > "$TMP/src/app.sh"
 # Credential files that MUST be excluded
 printf 'SECRET_KEY=abc123\n' > "$TMP/src/.env"
 printf 'SECRET_KEY=abc123\n' > "$TMP/src/.env.production"
-printf '%s\n' '-----BEGIN PRIVATE KEY-----' > "$TMP/src/private.pem"
-printf '%s\n' '-----BEGIN PRIVATE KEY-----' > "$TMP/src/id_rsa.key"
+printf '%s\n' 'fake-cert-content-for-testing' > "$TMP/src/private.pem"
+printf '%s\n' 'fake-key-content-for-testing' > "$TMP/src/id_rsa.key"
 # Non-credential file whose path contains "env" substring — must NOT be excluded
 python3 -c "print('environment configuration\n' * 20)" > "$TMP/src/environment.sh"
 result=$(cd "$TMP" && REPO_ROOT="$TMP" "$SCRIPT" 2>/dev/null || true)
