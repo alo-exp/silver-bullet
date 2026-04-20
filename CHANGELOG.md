@@ -2,6 +2,52 @@
 
 ## [Unreleased]
 
+## [0.23.8] — 2026-04-20
+
+**Pre-release quality gate patch.** Ten-round automated code-review sweep (Layers A/B/C × multiple passes) found and fixed shell-script safety regressions, incorrect hook output formats, and documentation drift. Rounds 9 and 10 both returned zero findings.
+
+### Shell script hardening
+- **RM-01**: All `rm -f` calls in `scripts/` hardened with `--` separator (`semantic-compress.sh`, `deploy-gate-snippet.sh`, `sync-marketplace-version.sh`, `tfidf-rank.sh`) — project invariant now covers both `hooks/` and `scripts/`.
+- **TRAP-01**: `phase-archive.sh` ERR trap output corrected from PostToolUse block format to PreToolUse `permissionDecision:deny` format — hook was emitting invalid JSON on archive failures.
+- **TRAP-02**: `pr-traceability.sh` trap disarm extended to include `INT TERM` (`trap - EXIT INT TERM`) — prior form left handlers live across `wait` calls.
+- **SC2015-01**: `session-log-init.sh` two `A&&B||C` awk pipelines rewritten as `if/then/else` — eliminates SC2015 false-success risk on `awk` exit.
+- **TRAIL-01**: `roadmap-freshness.sh` final code path now exits 0 explicitly after its informational `printf` — missing `exit 0` could propagate unexpected exit codes.
+
+### Test fixes
+- **TEST-01**: `test-session-log-init.sh` sentinel kill calls fixed to extract bare PID from `pid:lstart` format before `kill` — was passing the full `pid:lstart` string, causing `kill` to error silently.
+
+### Documentation & consistency
+- **DOC-01**: `site/index.html` version badge updated `v0.22.0` → `v0.23.8`.
+- **DOC-02**: `docs/internal/CICD.md` shellcheck command updated to match CI (`--exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh`); CI step table brought current with all pipeline steps added since v0.22.
+
+## [0.23.7] — 2026-04-20
+
+**Hotfix.** SC2015 rewrite of `compliance-status.sh` in v0.23.6 lost the executable bit on the file, causing the hook to fail silently.
+
+### Fixes
+- **HOT-01**: Restored `+x` permission on `compliance-status.sh` (lost during SC2015 rewrite).
+- **HOT-02**: Rewrote remaining `A&&B||C` patterns in `compliance-status.sh` as `if/then/else` to satisfy shellcheck SC2015 without the permission regression.
+- Additional code review pass (2 rounds, both clean before release).
+
+## [0.23.6] — 2026-04-20
+
+**Issue-cleanup patch.** Resolved 5 open GitHub issues: CI Node deprecation, semver validation in `silver-update`, review-loop-pass marker conflict, trivial-file name confusion, and cryptographic tag signing.
+
+### CI
+- **CI-01**: All GitHub Actions workflows opt into Node.js 24 via `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` — eliminates Node 20 deprecation warnings ahead of June 2026 deadline.
+
+### silver-update (#29)
+- **UPD-SEC-01**: `$LATEST` is validated as a semver string (`X.Y.Z`) before use in any file path or `git ref` — prevents path-traversal or ref injection from a crafted GitHub API response.
+
+### Enforcement — review-loop-pass (#30)
+- **ENF-01**: `review-loop-pass` marker removed from `required_deploy` list — the marker is written by `record-skill.sh` only after a manual Skill invocation, but the review-loop mechanism writes it via a direct state-file append, which `completion-audit.sh`'s tamper-detection hook blocked. Unblocking deploys that used the loop correctly.
+
+### Trivial bypass naming (#31)
+- **TRV-01**: Separated the two semantics that lived in a single touch-file (`trivial`): `trivial` now means "session has not modified any files" (bypass all enforcement); a new `ci-red-override` file is created when the user explicitly overrides a red CI gate. The two are no longer conflated.
+
+### Cryptographic tag signing (#28)
+- **SEC-01**: `silver-create-release` SKILL.md updated to sign Git tags with GPG when `git config user.signingkey` is set (`git tag -s`). Release process now optionally produces signed tags verifiable with `git tag -v`.
+
 ## [0.23.5] — 2026-04-19
 
 **Skill hardening patch.** Iterative audit of `silver-update` and `silver-migrate` SKILL.md files closed terminology drift, missing template sections, and unresolved bash placeholders. Source verified across 4 independent agent audits (last 2 passes clean).
