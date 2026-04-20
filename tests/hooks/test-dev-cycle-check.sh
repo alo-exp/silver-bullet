@@ -343,39 +343,58 @@ out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.js ${PLUGIN_CACHE_PATH}/some-plu
 assert_blocks "F-07: cp into plugin cache is still blocked" "$out"
 teardown
 
-# Tests 23-26: Hooks self-protection — execution vs write (fallback path, no CLAUDE_PLUGIN_ROOT)
-# The fallback uses pattern /silver-bullet[^/]*/hooks/ — use that directly
+# Tests 23-27: Hooks self-protection — execution vs write (fallback path, no CLAUDE_PLUGIN_ROOT)
+# After Bug 2 fix: fallback only blocks paths inside ${HOME}/.claude/ (the installed plugin
+# location). Use the real installed plugin hooks path for write-blocking tests.
 echo "--- Group 10: Hooks self-protection execution vs write ---"
-SB_HOOKS_PATH="/home/user/silver-bullet/hooks"
+SB_INSTALLED_HOOKS="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet/hooks"
 
-# Test 23: node execution of something in hooks dir should be ALLOWED
+# Test 23: node execution of something in installed hooks dir should be ALLOWED (no write op)
 setup
-out=$(run_hook_bash "PreToolUse" "node /home/user/silver-bullet/hooks/some-util.js --check")
-assert_passes "hooks-protect: node execution in hooks dir is allowed" "$out"
+out=$(run_hook_bash "PreToolUse" "node ${SB_INSTALLED_HOOKS}/some-util.js --check")
+assert_passes "hooks-protect: node execution in installed hooks dir is allowed" "$out"
 teardown
 
-# Test 24: node with redirect into hooks dir should be BLOCKED (write)
+# Test 24: node with redirect into installed hooks dir should be BLOCKED (write under ~/.claude/)
 setup
-out=$(run_hook_bash "PreToolUse" "node /home/user/silver-bullet/hooks/build.js > /home/user/silver-bullet/hooks/out.js")
-assert_blocks "hooks-protect: node with redirect into hooks dir is blocked" "$out"
+out=$(run_hook_bash "PreToolUse" "node ${SB_INSTALLED_HOOKS}/build.js > ${SB_INSTALLED_HOOKS}/out.js")
+assert_blocks "hooks-protect: node with redirect into installed hooks dir is blocked" "$out"
 teardown
 
-# Test 25: python3 execution in hooks dir should be ALLOWED
+# Test 25: python3 execution in installed hooks dir should be ALLOWED (no write op)
 setup
-out=$(run_hook_bash "PreToolUse" "python3 /home/user/silver-bullet/hooks/util.py --dry-run")
-assert_passes "hooks-protect: python3 execution in hooks dir is allowed" "$out"
+out=$(run_hook_bash "PreToolUse" "python3 ${SB_INSTALLED_HOOKS}/util.py --dry-run")
+assert_passes "hooks-protect: python3 execution in installed hooks dir is allowed" "$out"
 teardown
 
-# Test 26: ruby execution in hooks dir should be ALLOWED
+# Test 26: ruby execution in installed hooks dir should be ALLOWED (no write op)
 setup
-out=$(run_hook_bash "PreToolUse" "ruby /home/user/silver-bullet/hooks/util.rb --check")
-assert_passes "hooks-protect: ruby execution in hooks dir is allowed" "$out"
+out=$(run_hook_bash "PreToolUse" "ruby ${SB_INSTALLED_HOOKS}/util.rb --check")
+assert_passes "hooks-protect: ruby execution in installed hooks dir is allowed" "$out"
 teardown
 
-# Test 27: cp into hooks dir should still be BLOCKED
+# Test 27: cp into installed hooks dir should be BLOCKED (write under ~/.claude/)
 setup
-out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh /home/user/silver-bullet/hooks/dev-cycle-check.sh")
-assert_blocks "hooks-protect: cp into hooks dir is still blocked" "$out"
+out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh ${SB_INSTALLED_HOOKS}/dev-cycle-check.sh")
+assert_blocks "hooks-protect: cp into installed hooks dir is still blocked" "$out"
+teardown
+
+# Bug 2 regression: source repo hooks/ (outside ~/.claude/) must NOT be falsely blocked.
+# Before the fix the fallback used /silver-bullet[^/]*/hooks/ which caught both the
+# installed plugin AND the source repo, preventing legitimate hook edits in dev.
+echo "--- Group 11: Bug 2 regression — source repo hooks/ not falsely blocked ---"
+SB_SOURCE_HOOKS_DIR="$(dirname "$HOOK")"  # absolute path to this repo's hooks/ dir
+
+# Test 28: cp to source repo hooks/ is NOT blocked (path outside ~/.claude/)
+setup
+out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.sh ${SB_SOURCE_HOOKS_DIR}/dev-cycle-check.sh")
+assert_passes "Bug2: cp into source repo hooks/ not blocked (not under ~/.claude/)" "$out"
+teardown
+
+# Test 29: Edit to source repo hooks/ file is NOT blocked (path outside ~/.claude/)
+setup
+out=$(run_hook_edit "PreToolUse" "${SB_SOURCE_HOOKS_DIR}/dev-cycle-check.sh" "old content long enough to pass threshold" "new content long enough to pass threshold too")
+assert_passes "Bug2: Edit to source repo hooks/ not blocked (not under ~/.claude/)" "$out"
 teardown
 
 # ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────

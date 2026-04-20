@@ -98,14 +98,17 @@ See CLAUDE.md §8 for details."
     fi
   fi
 
-  # Fallback: detect hooks path by pattern if CLAUDE_PLUGIN_ROOT unavailable
+  # Fallback: detect hooks path by pattern if CLAUDE_PLUGIN_ROOT unavailable.
+  # IMPORTANT: Only block paths that are provably inside ${HOME}/.claude/ (the installed
+  # plugin location). Do NOT use a repo-name pattern — that would also match the silver-
+  # bullet source repo's own hooks/ directory and prevent legitimate source edits.
   if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
-    if [[ -n "$file_path" ]] && printf '%s' "$file_path" | grep -qE '/silver-bullet[^/]*/hooks/'; then
+    if [[ -n "$file_path" ]] && [[ "$file_path" == "${HOME}/.claude/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
-    if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE '/silver-bullet[^/]*/hooks/' && \
+    if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE "${HOME}/.claude/[^ ]*/hooks/" && \
        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bperl\b|\binstall\b)'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0

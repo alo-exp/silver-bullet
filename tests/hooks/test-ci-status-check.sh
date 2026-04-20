@@ -51,6 +51,14 @@ run_hook_no_project() {
   printf '%s' "$out"
 }
 
+run_hook_pretooluse() {
+  local cmd="$1"
+  local gh_output="$2"
+  local input
+  input=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd")
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | GH_STATUS_OVERRIDE="$gh_output" bash "$HOOK" 2>/dev/null )
+}
+
 assert_passes() {
   local label="$1"
   local output="$2"
@@ -129,6 +137,21 @@ setup
 touch "$TRIVIAL_FILE"
 out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"failure"}')
 assert_contains "trivial-as-CI-override emits deprecation notice" "$out" "deprecation"
+teardown
+
+# Bug 1 regression: git commit at PreToolUse must NOT be blocked when CI is red.
+# Blocking PreToolUse/commit creates a deadlock — Claude can't commit the fix that
+# would make CI green again. Only PostToolUse warns after commit; push is still blocked.
+echo "--- Group 6: Bug 1 regression — PreToolUse commit not blocked by CI red ---"
+setup
+out=$(run_hook_pretooluse "git commit -m fix" '{"status":"completed","conclusion":"failure"}')
+assert_passes "Bug1: git commit at PreToolUse not blocked when CI red (deadlock prevention)" "$out"
+teardown
+
+# Guard: git push at PreToolUse must STILL be blocked when CI is red
+setup
+out=$(run_hook_pretooluse "git push" '{"status":"completed","conclusion":"failure"}')
+assert_contains "Bug1 guard: git push at PreToolUse still blocked when CI red" "$out" "CI"
 teardown
 
 echo ""

@@ -5,11 +5,18 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# PostToolUse hook (matcher: Bash)
-# After git commit or push, checks last completed CI run status.
+# PreToolUse + PostToolUse hook (matcher: Bash)
+# Checks last completed CI run status before/after git push and deploy commands.
 # BLOCKING on failure — outputs decision:block and instructs immediate /gsd:debug.
 # Non-blocking for in_progress (informational only).
 # Scoped to current branch when possible to avoid cross-branch false positives.
+#
+# Trigger scope differs by event:
+#   PreToolUse:  git push, gh pr create/merge, gh release create
+#                (NOT git commit — blocking local commits creates a deadlock when
+#                 Claude needs to commit a CI fix; commits never touch the remote)
+#   PostToolUse: git commit, git push, gh pr create/merge, gh release create
+#                (warn after committing so Claude knows CI is red before pushing)
 
 # jq required — session-start already warns visibly if missing
 command -v jq >/dev/null 2>&1 || exit 0
@@ -34,8 +41,12 @@ emit_block() {
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
 [[ -z "$cmd" ]] && exit 0
 
-# Only fire on commit, push, PR create/merge, or release create
-printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
+# Trigger scope differs by event (see header comment above):
+if [[ "$hook_event" == "PreToolUse" ]]; then
+  printf '%s' "$cmd" | grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
+else
+  printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
+fi
 
 # ── Resolve config file — exit silently if not a Silver Bullet project ───────
 config_file=""
