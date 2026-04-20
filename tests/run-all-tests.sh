@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unified test runner: runs all hook unit tests AND integration scenario tests
+# Unified test runner: runs all hook unit tests, script unit tests, and integration scenario tests
 # Usage: bash tests/run-all-tests.sh
 set -euo pipefail
 
@@ -54,8 +54,9 @@ run_suite() {
   fi
 }
 
-# Run both suites
+# Run all suites
 run_suite "Hook Unit Tests" "$SCRIPT_DIR/hooks"
+run_suite "Script Unit Tests" "$SCRIPT_DIR/scripts"
 run_suite "Integration Scenario Tests" "$SCRIPT_DIR/integration"
 
 # Run coverage matrix
@@ -73,7 +74,7 @@ fi
 # Summary
 printf '\n========================================\n'
 printf '  TOTAL: %d passed, %d failed (%d/%d suites green)\n' \
-  "$TOTAL_PASS" "$TOTAL_FAIL" "$SUITE_PASS" $((SUITE_PASS + SUITE_FAIL))
+  "$TOTAL_PASS" "$TOTAL_FAIL" "$SUITE_PASS" "$((SUITE_PASS + SUITE_FAIL))"
 printf '========================================\n'
 
 [[ $TOTAL_FAIL -eq 0 && $coverage_exit -eq 0 ]] && exit 0 || exit 1
