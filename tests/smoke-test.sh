@@ -5,8 +5,8 @@ PASS=0; FAIL=0
 
 check() {
   local desc="$1"; local condition="$2"
-  if eval "$condition"; then echo "✅ $desc"; ((PASS++))
-  else echo "❌ $desc"; ((FAIL++)); fi
+  if eval "$condition"; then echo "✅ $desc"; PASS=$((PASS+1))
+  else echo "❌ $desc"; FAIL=$((FAIL+1)); fi
 }
 
 # === SKILLS EXIST ===
