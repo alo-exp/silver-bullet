@@ -77,7 +77,7 @@ esac
 # --- Tracked skills list ---
 # GSD command phases (tracked as gsd-* markers for compliance visibility)
 # These are recorded when /gsd:* commands fire via the Skill tool
-DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
+DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then
