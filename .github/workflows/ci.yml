@@ -138,6 +138,31 @@ jobs:
           all_count=$(jq '.skills.all_tracked | length' "$config")
           echo "required_deploy ($req_count) is a valid subset of all_tracked ($all_count)"
 
+      - name: Assert DEFAULT_REQUIRED is subset of DEFAULT_TRACKED in hook scripts
+        run: |
+          # stop-check.sh DEFAULT_REQUIRED lists skills the stop hook enforces.
+          # record-skill.sh DEFAULT_TRACKED lists skills the recording hook can write.
+          # If a skill is required but not tracked, it can never be satisfied — permanent block.
+          required=$(grep 'DEFAULT_REQUIRED="silver-' hooks/stop-check.sh \
+            | head -1 | sed 's/.*DEFAULT_REQUIRED="//;s/"$//')
+          tracked=$(grep '^DEFAULT_TRACKED=' hooks/record-skill.sh \
+            | head -1 | sed 's/^DEFAULT_TRACKED="//;s/"$//')
+          missing=""
+          for skill in $required; do
+            found=false
+            for t in $tracked; do
+              [[ "$skill" == "$t" ]] && found=true && break
+            done
+            [[ "$found" == false ]] && missing="${missing:+$missing }$skill"
+          done
+          if [[ -n "$missing" ]]; then
+            echo "ERROR: skills in DEFAULT_REQUIRED but missing from DEFAULT_TRACKED:"
+            for s in $missing; do echo "  - $s"; done
+            echo "Fix: add missing skills to DEFAULT_TRACKED in hooks/record-skill.sh"
+            exit 1
+          fi
+          echo "DEFAULT_REQUIRED is a valid subset of DEFAULT_TRACKED"
+
       - name: Check docs/workflows/ parity with templates/workflows/
         run: |
           # docs/workflows/ is the live copy; templates/workflows/ ships to user projects.
