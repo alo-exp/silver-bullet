@@ -1,4 +1,5 @@
 ---
+name: gsd-discuss
 id: gsd-discuss
 title: GSD — Discuss Phase
 description: Adaptive questioning to surface assumptions and lock decisions before planning

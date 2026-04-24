@@ -1,4 +1,5 @@
 ---
+name: gsd-plan
 id: gsd-plan
 title: GSD — Plan Phase
 description: Create PLAN.md with task breakdown, requirements mapping, and verification steps

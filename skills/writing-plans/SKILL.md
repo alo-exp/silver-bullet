@@ -1,4 +1,5 @@
 ---
+name: writing-plans
 id: writing-plans
 title: Writing Implementation Plans
 description: Convert approved spec and design into structured implementation plans

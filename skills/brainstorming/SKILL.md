@@ -1,4 +1,5 @@
 ---
+name: brainstorming
 id: brainstorming
 title: Brainstorming — Product Ideation
 description: Explore multiple approaches before committing to a design
