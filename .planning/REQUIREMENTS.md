@@ -72,30 +72,28 @@
 
 ## Traceability
 
-*(Filled by roadmapper)*
-
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| BUG-01 | — | — |
-| BUG-02 | — | — |
-| BUG-03 | — | — |
-| BUG-04 | — | — |
-| BUG-05 | — | — |
-| BUG-06 | — | — |
-| SEC-01 | — | — |
-| SEC-02 | — | — |
-| SEC-03 | — | — |
-| SEC-04 | — | — |
-| HOOK-01 | — | — |
-| HOOK-02 | — | — |
-| HOOK-03 | — | — |
-| QA-01 | — | — |
-| QA-02 | — | — |
-| QA-03 | — | — |
-| QA-04 | — | — |
-| QA-05 | — | — |
-| QA-06 | — | — |
-| DOC-01 | — | — |
-| FEAT-01 | — | — |
-| PR-01 | — | — |
-| PR-02 | — | — |
+| BUG-01 | Phase 44 | Pending |
+| BUG-02 | Phase 44 | Pending |
+| BUG-03 | Phase 44 | Pending |
+| BUG-04 | Phase 44 | Pending |
+| BUG-05 | Phase 44 | Pending |
+| BUG-06 | Phase 44 | Pending |
+| PR-01  | Phase 44 | Pending |
+| PR-02  | Phase 44 | Pending |
+| SEC-01 | Phase 45 | Pending |
+| SEC-02 | Phase 45 | Pending |
+| SEC-03 | Phase 45 | Pending |
+| SEC-04 | Phase 45 | Pending |
+| HOOK-01 | Phase 46 | Pending |
+| HOOK-02 | Phase 46 | Pending |
+| HOOK-03 | Phase 46 | Pending |
+| QA-01 | Phase 47 | Pending |
+| QA-02 | Phase 47 | Pending |
+| QA-03 | Phase 47 | Pending |
+| QA-04 | Phase 47 | Pending |
+| QA-05 | Phase 47 | Pending |
+| QA-06 | Phase 47 | Pending |
+| DOC-01 | Phase 48 | Pending |
+| FEAT-01 | Phase 48 | Pending |
