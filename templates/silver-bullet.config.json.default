@@ -84,7 +84,8 @@
       "gsd-ui-phase",
       "gsd-ui-review",
       "gsd-secure-phase",
-      "silver-remove"
+      "silver-remove",
+      "silver-rem"
     ],
     "forbidden": []
   },
