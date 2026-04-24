@@ -12,11 +12,10 @@ Check GitHub for the latest Silver Bullet release, display what changed since yo
 
 ### Step 1: Read installed version
 
-Read `~/.claude/plugins/installed_plugins.json` and extract the `silver-bullet@silver-bullet` entry:
-- `version` — currently installed version (e.g. `0.12.0`)
-- `installPath` — cache path (e.g. `~/.claude/plugins/cache/silver-bullet/silver-bullet/0.12.0`)
+Read `~/.claude/plugins/installed_plugins.json`. Try the `silver-bullet@alo-labs` key first; if absent, fall back to the `silver-bullet@silver-bullet` key (legacy installation):
 
-If the entry is missing, treat installed version as `0.0.0` and installPath as unknown.
+- `version` — currently installed version (e.g. `0.24.1`)
+- If neither key exists, treat installed version as `0.0.0`.
 
 Display:
 ```
@@ -51,7 +50,7 @@ if [[ -z "$LATEST" ]] || ! [[ "$LATEST" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 ```
 
-If validation fails, output the message above and exit. Do not proceed — using a malformed value in `$NEW_CACHE` or `git clone --branch` can corrupt the plugin cache or silently clone the wrong ref.
+If validation fails, output the message above and exit. Do not proceed — passing a malformed version string to the marketplace install command can cause an incorrect or failed install.
 
 ### Step 3: Compare versions
 
@@ -102,73 +101,35 @@ Display:
 
 ────────────────────────────────────────────────────────────
 
-⚠️  **Note:** The update clones the new release into the plugin cache and
-updates the plugin registry. Your project files (CLAUDE.md, silver-bullet.md,
-hooks, config) are never touched — only the plugin cache is updated.
+⚠️  **Note:** The update installs the new release via the Claude CLI marketplace.
+Your project files (CLAUDE.md, silver-bullet.md, hooks, config) are never
+touched — only the plugin cache and registry are updated by the marketplace.
 ```
 
 Use AskUserQuestion:
 - Question: "Proceed with update to vA.B.C?"
 - Options:
-  - "A. Yes, update now" — clone new version and update registry
+  - "A. Yes, update now" — install via marketplace and clean up stale entries
   - "B. No, cancel" — exit without changes
 
 If user cancels, exit.
 
 ### Step 5: Install the update
 
-Bind the latest version to a variable (from Step 2's parse) and determine the new cache path:
+Run the marketplace install command:
+
 ```bash
-LATEST="<latest-version>"   # e.g. 0.23.4 — from Step 2
-NEW_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet/$LATEST"
+claude mcp install silver-bullet@alo-labs
 ```
 
-Clone the new release (release tags use the `v<semver>` format — e.g. `v0.23.4`):
-```bash
-git clone --depth 1 --branch "v$LATEST" https://github.com/alo-exp/silver-bullet.git "$NEW_CACHE"
+If the command fails (non-zero exit code), display the error output and exit without proceeding to cleanup:
+
+```
+Update failed. The marketplace install did not complete successfully.
+Please try again or install manually via the Claude Desktop plugin manager.
 ```
 
-If clone fails, show error and exit without modifying the registry.
-
-Get the commit SHA:
-```bash
-COMMIT_SHA="$(git -C "$NEW_CACHE" rev-parse HEAD)"
-```
-
-Attempt tag signature verification:
-```bash
-VERIFY_OUT=$(git -C "$NEW_CACHE" tag -v "v$LATEST" 2>&1 || true)
-```
-
-Display the SHA and verification result to the user:
-```
-🔐 Security check: Silver Bullet v$LATEST cloned at commit SHA:
-    $COMMIT_SHA
-
-Tag signature: [SIGNED ✅ / UNSIGNED ⚠️ / INVALID ❌]
-[Show $VERIFY_OUT if signed or invalid]
-
-Verify this SHA matches https://github.com/alo-exp/silver-bullet/releases/tag/v$LATEST
-```
-
-Evaluate in this exact order (most specific first — `"error: no signature found"` contains `"error"` so order matters):
-
-1. If `$VERIFY_OUT` contains `Good signature` → show `SIGNED ✅` and proceed.
-2. If `$VERIFY_OUT` contains `no signature` or is otherwise empty → show `UNSIGNED ⚠️` with note:
-   > "This tag has no cryptographic signature. Proceed only if you trust the source."
-3. If `$VERIFY_OUT` contains `BAD signature` or `error` (catch-all for verification failures) → show `INVALID ❌` and **abort**:
-   > "Tag signature verification failed. This release may have been tampered with. Do not install."
-
-Use AskUserQuestion:
-- Question: "Proceed with installing v<latest-version> at commit <short-sha>?"
-- Options: "A. Yes, install" / "B. Cancel"
-
-If user cancels, remove the freshly-cloned cache safely and exit without modifying the registry:
-```bash
-if [[ -n "${NEW_CACHE:-}" && "$NEW_CACHE" == "$HOME/.claude/plugins/cache/"* && -d "$NEW_CACHE" ]]; then
-  rm -rf "$NEW_CACHE"
-fi
-```
+Do not modify the registry or attempt cleanup if the install step fails.
 
 ### Step 6: Update the plugin registry
 
