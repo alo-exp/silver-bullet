@@ -176,6 +176,21 @@ else
 fi
 teardown
 
+# Guard: compound 'git commit && git push' at PostToolUse must emit decision:block.
+# The negative grep for git push in the warn-not-block condition detects the push
+# component and routes to emit_block — protecting against compound commands slipping
+# through as if they were commit-only.
+setup
+out=$(run_hook "git commit -m fix && git push" '{"status":"completed","conclusion":"failure"}')
+if printf '%s' "$out" | grep -qE '"decision"\s*:\s*"block"'; then
+  echo "  ✅ Bug2 guard: compound 'git commit && git push' at PostToolUse still decision:blocked when CI red"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ Bug2 guard: compound 'git commit && git push' at PostToolUse should be blocked but got: $out"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
