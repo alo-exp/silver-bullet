@@ -62,10 +62,12 @@ No per-phase loop — research is a single-pass engagement that hands off to the
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
-│ Skipped: FLOW 7/11/13 — research produces artifacts, not shipped code
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                                    │
+├──────────────────────────────────────────────────────────────────┤
+│ Flows: EXPLORE → IDEATE → SPECIFY                                │
+│ Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only  │
+└──────────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 

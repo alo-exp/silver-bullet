@@ -66,14 +66,16 @@ Short chain — release produces a versioned milestone artifact, not implementat
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 12 (QUALITY GATE) → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE)
-│ Skipped: FLOW 15 (DESIGN HANDOFF) — no UI phases detected
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                                │
+├──────────────────────────────────────────────────────────────┤
+│ Flows: QUALITY GATE → DOCUMENT → RELEASE                     │
+│ Skipped: DESIGN HANDOFF — no UI phases detected              │
+└──────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 
-(If UI milestone detected, FLOW 15 appears between FLOW 12 and FLOW 16.)
+(If UI milestone detected, DESIGN HANDOFF appears between QUALITY GATE and DOCUMENT.)
 
 ### 4. Auto-Confirm in Autonomous Mode
 

@@ -68,11 +68,13 @@ FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (INTEL) → FLOW 3 (BRAINSTORM
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Flows: FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → ...
-│ Skipped: FLOW 4 (SPECIFY) — SPEC.md exists
-│ Phase loop: Phases {start}-{end} (from ROADMAP.md)
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                    │
+├──────────────────────────────────────────────────┤
+│ Flows: BOOTSTRAP → ORIENT → PLAN → ...           │
+│ Skipped: SPECIFY — SPEC.md exists                │
+│ Phase loop: Phases {start}-{end} (from ROADMAP)  │
+└──────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 

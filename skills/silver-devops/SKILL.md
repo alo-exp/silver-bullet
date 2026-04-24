@@ -70,10 +70,12 @@ Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLO
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 1 (ORIENT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
-│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists; FLOW 6/8 — no UI in infra workflow
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                                │
+├──────────────────────────────────────────────────────────────┤
+│ Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP      │
+│ Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra    │
+└──────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 

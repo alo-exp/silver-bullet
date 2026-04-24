@@ -67,10 +67,12 @@ Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — t
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) → ...
-│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                                        │
+├──────────────────────────────────────────────────────────────────────┤
+│ Flows: ORIENT → DESIGN CONTRACT → PLAN → EXECUTE → UI QUALITY → ...  │
+│ Skipped: BOOTSTRAP — .planning/ exists                               │
+└──────────────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 

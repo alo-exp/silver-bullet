@@ -60,10 +60,12 @@ Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOT
 Display the composition proposal to the user:
 
 ```
-┌─ COMPOSITION PROPOSAL ─────────────────────────
-│ Paths: FLOW 1 (ORIENT) → FLOW 14 (DEBUG) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
-│ Skipped: FLOW 0 (BOOTSTRAP) — .planning/ exists
-└────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────┐
+│ SILVER BULLET ► FLOW COMPOSED                                │
+├──────────────────────────────────────────────────────────────┤
+│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → VERIFY → SHIP       │
+│ Skipped: BOOTSTRAP — .planning/ exists                       │
+└──────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
 ```
 
