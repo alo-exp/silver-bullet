@@ -1,25 +1,25 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.21.0
-milestone_name: Hook Quality & Docs
+milestone: v0.25.0
+milestone_name: Issue Capture & Retrospective Scan
 current_plan: 1
-status: executing
-stopped_at: Phase 53 complete — UPD-01 + UPD-02 satisfied; silver-update SKILL.md overhauled (07c37b8, a7114e0); Phase 54 (silver-scan) next
-last_updated: "2026-04-24T12:00:01.969Z"
+status: complete
+stopped_at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc)
+last_updated: "2026-04-24T12:05:28Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
-  completed_phases: 8
-  total_plans: 23
-  completed_plans: 14
-  percent: 61
+  completed_phases: 9
+  total_plans: 24
+  completed_plans: 15
+  percent: 69
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 53 — silver-update Overhaul (COMPLETE)
+**Active phase:** Phase 54 — silver-scan (COMPLETE)
 **Current plan:** 1
 
 Last activity: 2026-04-24
@@ -29,16 +29,16 @@ Last activity: 2026-04-24
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** Phase 54 — silver-scan
+**Current focus:** Phase 54 complete — v0.25.0 milestone ready for pre-release gate
 
 ## Current Position
 
-Phase: 54 (silver-scan) — EXECUTING
-Plan: 1 of 1
-Status: Executing Phase 54
-Last activity: 2026-04-24 -- Phase 54 execution started
+Phase: 54 (silver-scan) — COMPLETE
+Plan: 1 of 1 (complete)
+Status: Phase 54 complete; all v0.25.0 phases (49-54) complete
+Last activity: 2026-04-24 -- Phase 54 execution complete
 
-Progress: [█████████░] 67%
+Progress: [█████████░] 69%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [█████████░] 67%
 | 052-silver-forensics-audit | 052-01 | 4 min | 1 | 1 |
 | 052-silver-forensics-audit | 052-02 | 5 min | 2 | 2 |
 | 053-silver-update-overhaul | 053-01 | 2 min | 2 | 1 |
+| 054-silver-scan | 054-01 | 3 min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -108,6 +109,12 @@ Progress: [█████████░] 67%
 - Phase 53 plan 01: Step 1 reads alo-labs key first, falls back to legacy silver-bullet@silver-bullet key — supports installs from before and after this overhaul
 - Phase 53 plan 01: Step 6 uses jq del (not update) — stale key deleted atomically; marketplace manages its own alo-labs entry independently
 - Phase 53 plan 01: second AskUserQuestion (pre-install SHA confirmation) removed along with git clone — marketplace install does not expose a verifiable SHA
+- Phase 54 plan 01: sequential session log processing (not parallel) because /silver-add has a sequencing constraint
+- Phase 54 plan 01: 20-candidate cap per run prevents context window exhaustion (SCAN-03 / T-054-04 mitigation)
+- Phase 54 plan 01: stale detection uses first 4+ words of item title as keyword — avoids false negatives from minor rewording while minimizing shell injection surface
+- Phase 54 plan 01: knowledge/lessons re-scan is a separate Step 7 pass from deferred-item Step 3 scan — cleaner signal separation, different section targets
+- Phase 54 plan 01: ## Needs human review with *(none)* content is explicitly skipped — section cleared by session author means no candidate
+- Phase 54 plan 01: autonomous decisions with only pre-answer routing entries skipped as candidates — not deferrable items
 
 ### Pending Todos
 
@@ -120,4 +127,4 @@ Progress: [█████████░] 67%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 53 complete — UPD-01 + UPD-02 satisfied; silver-update SKILL.md overhauled (07c37b8, a7114e0); Phase 54 (silver-scan) next
+Stopped at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc); all v0.25.0 phases (49-54) complete; pre-release gate next
