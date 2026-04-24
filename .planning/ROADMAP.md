@@ -12,7 +12,7 @@
 - :white_check_mark: **v0.22.0 Backlog Resolution** - Phases 34-38 (shipped)
 - :white_check_mark: **v0.23.8 Patch: Issue Cleanup** - Phases 39-43 (shipped)
 - :white_check_mark: **v0.24.0 Stability · Security · Quality** - Phases 44-48 (shipped)
-- :construction: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (in progress)
+- :white_check_mark: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (shipped 2026-04-24)
 
 ## Phases
 

@@ -50,14 +50,6 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [x] Auto-capture enforcement: SB instructs coding agent to file all deferred/skipped items to PM system on the fly (v0.25.0)
-- [x] Continuous knowledge/lessons capture enforcement: coding agent captures knowledge/lessons insights via /silver-rem on the fly (v0.25.0)
-- [x] /silver-add skill: classify item, file to GitHub Issues/project board or local docs/, assign ID — validated Phase 49 (v0.25.0)
-- [x] /silver-remove skill: remove issue/backlog item by ID from PM system or local docs/ — validated Phase 50 (v0.25.0)
-- [x] /silver-rem skill: capture knowledge or lessons item per doc-scheme.md into knowledge/YYYY-MM.md or lessons/YYYY-MM.md — validated Phase 50 (v0.25.0)
-- [x] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
-- [x] /silver-forensics audit: 100% functional equivalence vs gsd-forensics — validated Phase 52 (v0.25.0)
-- [x] /silver-scan skill: retrospective session scan, find deferred issues/backlog AND knowledge/lessons items, assess relevance, silver-add/silver-rem relevant ones — validated Phase 54 (v0.25.0)
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
 
@@ -69,19 +61,13 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.25.0 Issue Capture & Retrospective Scan
+## Completed Milestone: v0.25.0 Issue Capture & Retrospective Scan (shipped 2026-04-24)
 
 **Goal:** Give Silver Bullet a closed-loop deferred-item capture system — automatic on-the-fly filing to the user's PM/issue tracker during execution, two new skills for adding/removing items, a forensics audit, and a retrospective session scan.
 
-**Target features:**
-- Auto-capture enforcement: SB instructs the coding agent to file ALL deferred/skipped items (defects, tech debt, open questions, unfinished work, housekeeping) to the user's PM system in real time, with industry-standard issue/backlog descriptions
-- Continuous knowledge/lessons capture: SB instructs the coding agent to capture knowledge and lessons insights on the fly via /silver-rem per doc-scheme.md
-- /silver-add: classify item as issue or backlog, file to GitHub Issues+project board (or local docs/ markdown if no PM system), assign an ID, return it
-- /silver-remove: remove any issue/backlog item by ID from PM system or local docs/
-- /silver-rem: capture a knowledge or lessons item per doc-scheme.md format (knowledge/YYYY-MM.md or lessons/YYYY-MM.md); used by silver-scan and called on the fly during execution
-- Post-release summary: after milestone complete + release, auto-display all items filed during the milestone
-- /silver-forensics audit: verify 100% functional equivalence between existing silver-forensics and gsd-forensics (prerequisite for silver-scan)
-- /silver-scan: retrospectively scan ALL project sessions from beginning, identify deferred items not yet addressed (issues/backlog AND knowledge/lessons not recorded), assess relevance, silver-add/silver-rem relevant ones
+**Shipped:** All 24 requirements satisfied across 6 phases (49-54). Release: https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0
+
+## Current Milestone: (none — v0.25.0 complete, next milestone TBD)
 
 ## Context
 
@@ -90,7 +76,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.23.10
+- Current version: v0.25.0
 
 ## Constraints
 
@@ -128,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 54 (silver-scan) complete — v0.25.0 all phases done; pre-release quality gate next*
+*Last updated: 2026-04-24 — v0.25.0 milestone complete and shipped; next milestone TBD*
