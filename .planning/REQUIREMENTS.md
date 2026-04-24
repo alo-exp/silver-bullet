@@ -29,9 +29,9 @@ Scope: closed-loop deferred-item capture system — automatic filing to user's P
 
 ### Primitive Skills — Knowledge & Lessons (MEM)
 
-- [ ] **MEM-01**: User can invoke `/silver-rem` with a knowledge insight; the skill appends a formatted entry to `docs/knowledge/YYYY-MM.md` under the appropriate doc-scheme.md category (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions)
-- [ ] **MEM-02**: User can invoke `/silver-rem` with a lessons-learned insight; the skill appends a formatted entry to `docs/lessons/YYYY-MM.md` under the appropriate doc-scheme.md category tag (`domain:`, `stack:`, `practice:`, `devops:`, `design:`)
-- [ ] **MEM-03**: silver-rem updates `docs/knowledge/INDEX.md` when a new monthly knowledge file (`YYYY-MM.md`) is first created, and creates the file with the correct monthly header if it does not yet exist
+- [x] **MEM-01**: User can invoke `/silver-rem` with a knowledge insight; the skill appends a formatted entry to `docs/knowledge/YYYY-MM.md` under the appropriate doc-scheme.md category (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions)
+- [x] **MEM-02**: User can invoke `/silver-rem` with a lessons-learned insight; the skill appends a formatted entry to `docs/lessons/YYYY-MM.md` under the appropriate doc-scheme.md category tag (`domain:`, `stack:`, `practice:`, `devops:`, `design:`)
+- [x] **MEM-03**: silver-rem updates `docs/knowledge/INDEX.md` when a new monthly knowledge file (`YYYY-MM.md`) is first created, and creates the file with the correct monthly header if it does not yet exist
 
 ### Auto-Capture Enforcement (CAPT)
 

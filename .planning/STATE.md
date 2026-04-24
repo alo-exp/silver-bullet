@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 050-01
-status: Phase 50 plan 01 complete
-last_updated: "2026-04-24T10:05:22Z"
+current_plan: 050-02
+status: Phase 50 complete — both silver-remove and silver-rem skills authored and registered
+last_updated: "2026-04-24T10:11:43Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 2
-  completed_plans: 2
-  percent: 28
+  completed_plans: 4
+  percent: 50
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 50 — silver-remove & silver-rem
-**Current plan:** 050-02 (next)
+**Active phase:** Phase 51 — Auto-Capture Enforcement (next)
+**Current plan:** 050-02 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -32,12 +32,12 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 50 — silver-remove & silver-rem (IN PROGRESS)
-Plan: 050-01 (COMPLETE) — silver-remove SKILL.md + config update
-Status: Plan 050-01 done — silver-remove skill complete; ready for 050-02 (silver-rem)
-Last activity: 2026-04-24 — Phase 50 plan 01 complete
+Phase: 50 — silver-remove & silver-rem (COMPLETE)
+Plan: 050-02 (COMPLETE) — silver-rem SKILL.md + config update
+Status: Phase 50 done — silver-remove and silver-rem skills complete; ready for Phase 51 (auto-capture enforcement)
+Last activity: 2026-04-24 — Phase 50 plan 02 complete
 
-Progress: [███░░░░░░░] 28%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [███░░░░░░░] 28%
 |-------|------|----------|-------|-------|
 | 049-silver-add | 049-01 | 3 min | 2 | 3 |
 | 050-silver-remove-silver-rem | 050-01 | 2 min | 2 | 3 |
+| 050-silver-remove-silver-rem | 050-02 | 2 min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -73,6 +74,10 @@ Progress: [███░░░░░░░] 28%
 - Phase 50 plan 01: silver-remove closes GitHub issues (gh issue close --reason 'not planned') — GitHub REST/GraphQL requires delete_repo scope for deletion; close is the correct primitive
 - Phase 50 plan 01: silver-remove ID routing is prefix-based (SB-I → ISSUES.md, SB-B → BACKLOG.md) — path derived only from prefix, never user input (prevents path traversal T-050-02)
 - Phase 50 plan 01: integer ID with issue_tracker=gsd returns error — clarity over permissiveness
+- Phase 50 plan 02: IS_NEW_FILE=false skips INDEX.md update entirely — only new monthly file creation warrants an INDEX.md write; prevents churn
+- Phase 50 plan 02: knowledge files pre-populate all 5 category headings at creation; lessons files add headings on first use (matches live doc-scheme.md format)
+- Phase 50 plan 02: docs/knowledge/INDEX.md tracks both Latest knowledge: and Latest lessons: pointers; silver-rem updates only the relevant pointer based on INSIGHT_TYPE
+- Phase 50 plan 02: default classification is knowledge when ambiguous — more common during active work; prevents over-routing to lessons
 
 ### Pending Todos
 
@@ -85,4 +90,4 @@ Progress: [███░░░░░░░] 28%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 50 plan 050-01 complete — silver-remove SKILL.md written (202 lines), silver-remove added to skills.all_tracked in both config files; REM-01 and REM-02 satisfied
+Stopped at: Phase 50 plan 050-02 complete — silver-rem SKILL.md written (283 lines), silver-rem added to skills.all_tracked in both config files; MEM-01, MEM-02, MEM-03 satisfied; Phase 50 fully complete

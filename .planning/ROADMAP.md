@@ -85,7 +85,7 @@
 ### v0.25.0 Issue Capture & Retrospective Scan
 
 - [x] **Phase 49: silver-add** - New /silver-add skill: classify, file to GitHub Issues+board or local docs/, cache board IDs, rate-limit resilience (completed 2026-04-24)
-- [ ] **Phase 50: silver-remove & silver-rem** - New /silver-remove and /silver-rem skills: remove issues by ID and capture knowledge/lessons per doc-scheme
+- [x] **Phase 50: silver-remove & silver-rem** - New /silver-remove and /silver-rem skills: remove issues by ID and capture knowledge/lessons per doc-scheme (completed 2026-04-24)
 - [ ] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template
 - [ ] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan
 - [ ] **Phase 53: silver-update Overhaul** - Migrate /silver-update to marketplace install method; clean up stale legacy installations
@@ -323,7 +323,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 050-01-PLAN.md — Write silver-remove SKILL.md (GitHub close + local inline removal); add silver-remove to all_tracked (completed 2026-04-24)
-- [ ] 050-02-PLAN.md — Write silver-rem SKILL.md (knowledge/lessons monthly append, INDEX.md management); add silver-rem to all_tracked
+- [x] 050-02-PLAN.md — Write silver-rem SKILL.md (knowledge/lessons monthly append, INDEX.md management); add silver-rem to all_tracked (completed 2026-04-24)
 
 ### Phase 51: Auto-Capture Enforcement
 **Goal**: The coding agent is instructed at every enforcement layer to file deferred items and knowledge/lessons insights in real time, and a post-release summary is generated after each milestone
@@ -395,7 +395,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 47. Consistency & Quality | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
-| 50. silver-remove & silver-rem | v0.25.0 | 1/2 | In progress | - |
+| 50. silver-remove & silver-rem | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
 | 51. Auto-Capture Enforcement | v0.25.0 | 0/0 | Not started | - |
 | 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
 | 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |
