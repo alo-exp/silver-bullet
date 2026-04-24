@@ -180,7 +180,22 @@ Invoke `silver:security` via the Skill tool. Non-skippable.
 
 ## Step 7a: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `gsd-add-backlog`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver-add`.
+
+### Deferred-Item Capture (mandatory)
+
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+
+```
+Skill(skill="silver-add", args="<description of deferred item>")
+```
+
+**Classification quick-reference:**
+- Bug, regression, broken behavior, blocking question, unfinished work → files as **issue**
+- Feature request, tech debt, advisory finding, informational question, housekeeping → files as **backlog**
+- When ambiguous → files as **backlog** (do not over-alarm with issues)
+
+**Minimum bar:** Only file items with distinct impact OR that block future work OR represent a conscious deferred decision. Do not file transient notes or items already addressed this session.
 
 ## Step 7b: Quality Gates
 
