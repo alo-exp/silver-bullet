@@ -229,7 +229,7 @@ The plugin doesn't rely on Claude reading instructions. It enforces compliance t
 | **2. Stage enforcer** | `dev-cycle-check.sh` fires on every Edit/Write/Bash. HARD STOP if quality gates incomplete and you're touching source code. |
 | **3. Compliance status** | `compliance-status.sh` fires on every tool use. Shows progress score so Claude always knows where it stands. |
 | **4. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
-| **5. CI gate** | `ci-status-check.sh` intercepts `git push`. Blocks if the most recent CI run is failing — broken builds cannot be pushed. |
+| **5. CI gate** | `ci-status-check.sh` checks CI status on git operations. `git push`, `gh pr create`, and `gh release create` are **blocked** when CI is failing — broken builds cannot reach the remote. `git commit` emits a **warning** only (never blocked — committing a CI fix must always succeed). |
 | **6. Stop hook** | `stop-check.sh` fires when Claude declares a task complete. Blocks if required skills are missing — survives compaction. |
 | **7. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before Claude processes any message. |
 | **8. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
@@ -321,23 +321,28 @@ Silver Bullet tracks whether a session has done code-producing work via a touch-
 | Hook | Effect when trivial file exists |
 |------|---------------------------------|
 | `stop-check.sh` | Skips the skill checklist at session end |
-| `ci-status-check.sh` | Skips the CI failure block on commit/push |
+| `ci-status-check.sh` | Skips the CI failure warning on commit and the push/PR/release block |
 | `completion-audit.sh` | Skips the planning completeness gate |
 
 ### Manual escape hatch
 
-If a hook is blocking you and you need to proceed — for example, CI failed, you edited the fix, and now `ci-status-check` is blocking the commit needed to push that fix — recreate the file in your terminal:
+If a hook is blocking you and you need to proceed — for example, the planning completeness gate is blocking a documentation-only session — recreate the file in your terminal:
 
 ```bash
 touch ~/.claude/.silver-bullet/trivial
 ```
 
-This re-enables commits for the rest of the session. The file will be cleared again on the next file edit, so the bypass is temporary.
+This suppresses enforcement for the rest of the session. The file will be cleared again on the next file edit, so the bypass is temporary.
 
 Common scenarios where this helps:
-- **CI fix commit**: CI fails → you edit the fix (trivial file removed) → `ci-status-check` blocks the commit → run `touch` to unblock.
 - **Non-dev session end**: `stop-check` blocks at session end for a documentation-only or read-only session → run `touch` to unblock.
 - **Documentation-only commit**: `completion-audit` blocks a docs-only commit → run `touch` to unblock.
+
+> **CI-red push (use the dedicated override instead):** `git commit` is never blocked by the CI gate — it warns only. If CI is failing and you need to *push* a fix, use the dedicated CI override rather than the trivial bypass:
+> ```bash
+> touch ~/.claude/.silver-bullet/ci-red-override
+> ```
+> This bypasses only the CI gate. Remove it once CI is green.
 
 ### Trivial changes (copy edits and typo fixes)
 

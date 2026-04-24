@@ -132,9 +132,9 @@ Invoke /gsd:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed
 
-If you need to commit a CI fix: create the override file in your terminal (not in Claude):
+If you need to push a CI fix: create the override file in your terminal (not in Claude):
   touch ~/.claude/.silver-bullet/ci-red-override
-This lets you commit your fix while CI is red. Remove it once CI is green."
+This lets you push your fix while CI is red. Remove it once CI is green."
 
   # PostToolUse/git commit: warn only — the commit already happened; emitting
   # decision:block here confuses the model about whether the commit succeeded and
