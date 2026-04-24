@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 052-01 (COMPLETE)
-status: Phase 52 in progress — Plan 052-01 complete; ready for 052-02
-stopped_at: Phase 52 plan 052-01 complete — audit report written (0e01607); 13 gaps documented; FORN-01 satisfied; Plan 052-02 (gap fixes) next
-last_updated: "2026-04-24T11:19:00Z"
+current_plan: 052-02 (COMPLETE)
+status: Phase 52 complete — ready for Phase 53 planning
+stopped_at: Phase 52 complete — all 13 gaps fixed in silver-forensics/SKILL.md (0673b3a); Fix Log appended to audit report (2754b38); FORN-01 and FORN-02 satisfied; Phase 53 (silver-update Overhaul) next
+last_updated: "2026-04-24T11:35:00Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 20
-  completed_plans: 12
-  percent: 60
+  completed_plans: 13
+  percent: 67
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 52 — silver-forensics Audit (in progress)
-**Current plan:** 052-01 (COMPLETE)
+**Active phase:** Phase 53 — silver-update Overhaul (not started)
+**Current plan:** 052-02 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -33,20 +33,20 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 52 — silver-forensics Audit (in progress)
-Plan: 052-01 (COMPLETE) — structured audit report written; 13 gaps documented across Dimensions 1, 2, 5, and 6
-Status: Phase 52 Plan 1 complete — FORN-01 satisfied; Plan 052-02 (gap fixes) next
-Last activity: 2026-04-24 — Phase 52 plan 01 complete
+Phase: 52 — silver-forensics Audit (COMPLETE); Phase 53 — silver-update Overhaul (not started)
+Plan: 052-02 (COMPLETE) — all 13 gaps fixed in silver-forensics/SKILL.md; Fix Log in audit report
+Status: Phase 52 complete — FORN-01 + FORN-02 satisfied; Phase 53 planning next
+Last activity: 2026-04-24 — Phase 52 complete
 
-Progress: [████████░░] 60%
+Progress: [█████████░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
-- Average duration: 3.6 min
-- Total execution time: 29 min
+- Total plans completed: 9
+- Average duration: 3.8 min
+- Total execution time: 34 min
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -58,6 +58,7 @@ Progress: [████████░░] 60%
 | 051-auto-capture-enforcement | 051-03 | 5 min | 2 | 2 |
 | 051-auto-capture-enforcement | 051-04 | 3 min | 1 | 1 |
 | 052-silver-forensics-audit | 052-01 | 4 min | 1 | 1 |
+| 052-silver-forensics-audit | 052-02 | 5 min | 2 | 2 |
 
 *Updated after each plan completion*
 
@@ -99,6 +100,9 @@ Progress: [████████░░] 60%
 - Phase 52 plan 01: Dimensions 3 (GSD-awareness routing) and 4 (root-cause format) are equivalent — no fixes needed in silver-forensics for these
 - Phase 52 plan 01: silver-forensics has stronger UNTRUSTED DATA protection (input side) but is missing output-side redaction rules (absolute paths, API key redaction from diffs) — 13 gaps total across Dimensions 1, 2, 5, and 6
 - Phase 52 plan 01: FORN-01 satisfied by audit report at .planning/052-FORENSICS-AUDIT.md; 13 numbered gaps (G-01 through G-13) ready for Plan 052-02
+- Phase 52 plan 02: G-12/G-13 redaction rules placed in existing Security Boundary section (co-located with input-side rules) — no separate sub-section needed
+- Phase 52 plan 02: Artifact Completeness matrix (G-09) added to report Evidence Gathered as ### sub-section; worktrees field (G-11) added as bullet — both needed independently
+- Phase 52 plan 02: FORN-02 satisfied — all 13 gaps fixed (commit 0673b3a); Fix Log appended to audit report (commit 2754b38); Phase 52 complete
 
 ### Pending Todos
 
@@ -111,4 +115,4 @@ Progress: [████████░░] 60%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 52 plan 052-01 complete — audit report written (0e01607); 13 gaps documented; FORN-01 satisfied; Plan 052-02 (gap fixes) next
+Stopped at: Phase 52 complete — FORN-01 + FORN-02 satisfied; 13 gaps fixed in silver-forensics/SKILL.md (0673b3a); Fix Log in audit report (2754b38); Phase 53 (silver-update Overhaul) planning next

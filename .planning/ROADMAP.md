@@ -87,7 +87,7 @@
 - [x] **Phase 49: silver-add** - New /silver-add skill: classify, file to GitHub Issues+board or local docs/, cache board IDs, rate-limit resilience (completed 2026-04-24)
 - [x] **Phase 50: silver-remove & silver-rem** - New /silver-remove and /silver-rem skills: remove issues by ID and capture knowledge/lessons per doc-scheme (completed 2026-04-24)
 - [x] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template (completed 2026-04-24)
-- [ ] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan
+- [x] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan (completed 2026-04-24)
 - [ ] **Phase 53: silver-update Overhaul** - Migrate /silver-update to marketplace install method; clean up stale legacy installations
 - [ ] **Phase 54: silver-scan** - New /silver-scan retrospective scan skill: glob sessions, cross-reference history, human-gated filing via silver-add and silver-rem
 
@@ -351,7 +351,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 052-01-PLAN.md — Read both skill files and produce structured audit report at .planning/052-FORENSICS-AUDIT.md covering all six functional dimensions (FORN-01) (completed 2026-04-24)
-- [ ] 052-02-PLAN.md — Apply all gaps from audit report to skills/silver-forensics/SKILL.md; append Fix Log to audit report (FORN-02)
+- [x] 052-02-PLAN.md — Apply all gaps from audit report to skills/silver-forensics/SKILL.md; append Fix Log to audit report (FORN-02) (completed 2026-04-24)
 
 ### Phase 53: silver-update Overhaul
 **Goal**: /silver-update installs updates exclusively via the Claude CLI marketplace method and removes any stale legacy installations automatically
@@ -405,6 +405,6 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
 | 50. silver-remove & silver-rem | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
 | 51. Auto-Capture Enforcement | v0.25.0 | 4/4 | Complete    | 2026-04-24 |
-| 52. silver-forensics Audit | v0.25.0 | 1/2 | In progress | 2026-04-24 |
+| 52. silver-forensics Audit | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
 | 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |
 | 54. silver-scan | v0.25.0 | 0/0 | Not started | - |
