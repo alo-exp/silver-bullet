@@ -11,7 +11,8 @@
 - :white_check_mark: **v0.21.0 Hook Quality & Docs** - Phases 30-33 (shipped)
 - :white_check_mark: **v0.22.0 Backlog Resolution** - Phases 34-38 (shipped)
 - :white_check_mark: **v0.23.8 Patch: Issue Cleanup** - Phases 39-43 (shipped)
-- :construction: **v0.24.0 Stability · Security · Quality** - Phases 44-48 (in progress)
+- :white_check_mark: **v0.24.0 Stability · Security · Quality** - Phases 44-48 (shipped)
+- :construction: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (in progress)
 
 ## Phases
 
@@ -81,6 +82,15 @@
 - [x] **Phase 47: Consistency & Quality** - Cross-cutting improvements: gitignore, skill refs, hook dedup, doc-scheme, tamper regex
 - [x] **Phase 48: Content Refresh & PM Feature** - Refresh stale public-facing content; add PM system awareness to /silver:init
 
+### v0.25.0 Issue Capture & Retrospective Scan
+
+- [ ] **Phase 49: silver-add** - New /silver-add skill: classify, file to GitHub Issues+board or local docs/, cache board IDs, rate-limit resilience
+- [ ] **Phase 50: silver-remove & silver-rem** - New /silver-remove and /silver-rem skills: remove issues by ID and capture knowledge/lessons per doc-scheme
+- [ ] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template
+- [ ] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan
+- [ ] **Phase 53: silver-update Overhaul** - Migrate /silver-update to marketplace install method; clean up stale legacy installations
+- [ ] **Phase 54: silver-scan** - New /silver-scan retrospective scan skill: glob sessions, cross-reference history, human-gated filing via silver-add and silver-rem
+
 ## Phase Details
 
 ### Phase 30: Shared Helper & CI Chores
@@ -136,7 +146,7 @@ Plans:
 **Plans**: TBD
 
 ### Phase 35: Stage 4 Security Hardening
-**Goal**: All Stage 4 security findings are resolved -- state writes refuse symlinks, JSON/body payloads are jq-constructed, medium/low hardening batch is landed
+**Goal**: All Stage 4 security findings are resolved -- state writes refuse symlinks, JSON/body payloads are jq-constructed, medium/low findings are resolved
 **Depends on**: Phase 34 (secret scrubbed before touching hooks that write state)
 **Requirements**: SEC-02, SEC-03, SEC-04
 **Success Criteria** (what must be TRUE):
@@ -286,10 +296,75 @@ Plans:
 **UI hint**: yes
 **Plans**: TBD
 
+### Phase 49: silver-add
+**Goal**: Users and coding agents can file any deferred or identified work item to the correct PM destination with a stable, referenceable ID
+**Depends on**: Phase 48 (FEAT-01 must be complete — `issue_tracker` field must exist in `.silver-bullet.json`)
+**Requirements**: ADD-01, ADD-02, ADD-03, ADD-04, ADD-05
+**Success Criteria** (what must be TRUE):
+  1. User can invoke `/silver-add` with a plain-text description and receive back a stable ID (GitHub issue number or local `SB-I-N` / `SB-B-N`) after the item is classified and filed
+  2. When `issue_tracker = "github"`, the filed item appears as a GitHub Issue with a `filed-by-silver-bullet` label AND is placed in the Backlog column of the project board — verified via `gh issue view` and `gh project item-list`
+  3. When `issue_tracker` is absent or `"gsd"`, the item is appended with a sequential ID to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md` (directory created if absent) — no GitHub API calls are made
+  4. On the second and subsequent GitHub invocations within a session, silver-add reads project board node ID, Status field ID, and Backlog option ID from `.silver-bullet.json` under `_github_project` rather than re-querying `gh project list`
+  5. A GitHub secondary rate-limit response (HTTP 403/429) causes silver-add to retry with exponential backoff rather than failing immediately; the current session log's `## Items Filed` section gains one line per successful filing
+**Plans**: TBD
+
+### Phase 50: silver-remove & silver-rem
+**Goal**: Users can remove a tracked item by ID and capture knowledge or lessons insights into the correct monthly doc file
+**Depends on**: Phase 49 (silver-remove needs the ID schema and file locations established by silver-add; silver-rem needs the doc-scheme knowledge directory structure to be understood before writing to it)
+**Requirements**: REM-01, REM-02, MEM-01, MEM-02, MEM-03
+**Success Criteria** (what must be TRUE):
+  1. User can invoke `/silver-remove <id>` with a GitHub issue number; the issue is closed with reason `"not planned"` and a `removed-by-silver-bullet` label — or deleted if the user has `delete_repo` scope — and the skill always prints which action was taken
+  2. User can invoke `/silver-remove SB-I-N` or `/silver-remove SB-B-N`; the matching entry in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md` is marked `[REMOVED YYYY-MM-DD]` inline without deleting the line
+  3. User can invoke `/silver-rem` with a knowledge insight; a formatted entry appears in `docs/knowledge/YYYY-MM.md` under the matching doc-scheme category (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, or Open Questions)
+  4. User can invoke `/silver-rem` with a lessons-learned insight; a formatted entry appears in `docs/lessons/YYYY-MM.md` under the matching doc-scheme category tag (`domain:`, `stack:`, `practice:`, `devops:`, or `design:`)
+  5. When a new monthly `docs/knowledge/YYYY-MM.md` file is created for the first time, `docs/knowledge/INDEX.md` is updated with the new month entry and the file is created with the correct monthly header
+**Plans**: TBD
+
+### Phase 51: Auto-Capture Enforcement
+**Goal**: The coding agent is instructed at every enforcement layer to file deferred items and knowledge/lessons insights in real time, and a post-release summary is generated after each milestone
+**Depends on**: Phase 49 (enforcement references `/silver-add` by name; the skill must exist before instructions invoke it), Phase 50 (enforcement references `/silver-rem`; the skill must exist before instructions invoke it)
+**Requirements**: CAPT-01, CAPT-02, CAPT-03, CAPT-04, CAPT-05
+**Success Criteria** (what must be TRUE):
+  1. `silver-bullet.md` §3b and `templates/silver-bullet.md.base` §3b (updated in the same commit) contain an explicit deferred-capture instruction block with a classification rubric distinguishing issue from backlog, and a separate instruction to call `/silver-rem` for knowledge and lessons insights
+  2. Each of the five producing skill files (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-fast`) contains its own per-skill deferred-capture step calling `/silver-add` — not solely relying on `silver-bullet.md` for enforcement
+  3. A new session log's `## Items Filed` section exists from the moment the log is initialized — `session-log-init.sh` (or the equivalent hook) creates this section in every new session log
+  4. After `gsd-complete-milestone` succeeds, `silver-release` Step 9b reads all `## Items Filed` entries from session logs within the milestone window and presents a consolidated summary table of all items filed and knowledge/lessons recorded
+**Plans**: TBD
+
+### Phase 52: silver-forensics Audit
+**Goal**: silver-forensics is verified to be 100% functionally equivalent to gsd-forensics across all diagnostic dimensions, and any gaps are fixed before silver-scan is designed
+**Depends on**: Phase 48 (no dependency on v0.25.0 phases; independent audit that must complete before Phase 54)
+**Requirements**: FORN-01, FORN-02
+**Success Criteria** (what must be TRUE):
+  1. An audit report comparing `skills/silver-forensics/SKILL.md` against `gsd-forensics` across all six functional dimensions (session classification paths, evidence-gathering steps, GSD-awareness routing table, root-cause statement format, post-mortem report schema, UNTRUSTED DATA security boundary) is written to `.planning/` as evidence
+  2. Every gap or divergence identified in the audit is fixed in `skills/silver-forensics/SKILL.md` before Phase 54 (silver-scan) begins; the audit report documents which gaps were found and what was changed
+**Plans**: TBD
+
+### Phase 53: silver-update Overhaul
+**Goal**: /silver-update installs updates exclusively via the Claude CLI marketplace method and removes any stale legacy installations automatically
+**Depends on**: Phase 48 (independent of other v0.25.0 phases; can execute any time after v0.24.0)
+**Requirements**: UPD-01, UPD-02
+**Success Criteria** (what must be TRUE):
+  1. User can invoke `/silver-update` and the update is performed via `claude mcp install silver-bullet@alo-labs` (or equivalent marketplace CLI command) — no manual `git clone` steps appear in the skill instructions; version check and changelog display still occur before the install step
+  2. After a successful marketplace install, `/silver-update` scans `~/.claude/plugins/cache/` and `~/.claude/plugins/installed_plugins.json` for stale silver-bullet entries (including those under the legacy `silver-bullet@silver-bullet` key) and removes them, leaving only the newly installed version registered
+**Plans**: TBD
+
+### Phase 54: silver-scan
+**Goal**: Users can retrospectively scan all project session logs to surface unaddressed deferred items and unrecorded knowledge/lessons insights, then file them with human approval
+**Depends on**: Phase 49 (silver-add must exist for silver-scan to call it), Phase 52 (forensics audit must confirm the session-log evidence model before silver-scan is implemented)
+**Requirements**: SCAN-01, SCAN-02, SCAN-03, SCAN-04, SCAN-05
+**Success Criteria** (what must be TRUE):
+  1. User can invoke `/silver-scan` and the skill globs `docs/sessions/*.md`, reads each file for deferred-item signals (structured sections and keyword grep), and presents only unresolved candidates — items confirmed as addressed by git history, CHANGELOG, or open-issue cross-reference are automatically excluded as stale
+  2. For each unresolved candidate, silver-scan presents the item with context and a Y/n prompt before calling `/silver-add` — no item is filed without explicit user approval; the run stops at 20 candidates to prevent context overload
+  3. silver-scan also detects knowledge/lessons insights in session logs not yet recorded in `docs/knowledge/` or `docs/lessons/`, presents them with Y/n, and calls `/silver-rem` for approved ones
+  4. After the scan completes, a summary is displayed: total sessions scanned, deferred items found vs. filed (with assigned IDs) vs. skipped as stale or rejected, and knowledge/lessons entries recorded
+**Pre-release gate**: Before CI and releasing this phase, execute the 4-stage `docs/internal/pre-release-quality-gate.md`
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -314,6 +389,12 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 46. HOOK-14 Closure | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 47. Consistency & Quality | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
+| 49. silver-add | v0.25.0 | 0/0 | Not started | - |
+| 50. silver-remove & silver-rem | v0.25.0 | 0/0 | Not started | - |
+| 51. Auto-Capture Enforcement | v0.25.0 | 0/0 | Not started | - |
+| 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
+| 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |
+| 54. silver-scan | v0.25.0 | 0/0 | Not started | - |
 
 ## Backlog
 
