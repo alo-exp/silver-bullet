@@ -426,7 +426,7 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 - Always use `/gsd:debug` for ANY bug encountered during execution
 - Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- `README.md` MUST be updated to reflect current version, features, and changes before release. `/silver-create-release` will block if README is stale.
+- `README.md` MUST be updated to reflect current version, features, and changes before release (docs generation in `/silver:release` Steps 3a/3b). The version badge is updated automatically by `/silver-create-release` Step 5b — do not update it manually.
 - Always strictly adhere to this file and CLAUDE.md 100%
 
 > **Anti-Skip:** You are violating this rule if:
@@ -455,7 +455,7 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 | Research | RESEARCH.md | /artifact-reviewer --reviewer review-research | YES | /gsd:plan-phase (researcher) |
 | Ingestion | INGESTION_MANIFEST.md | /artifact-reviewer --reviewer review-ingestion-manifest | YES | /silver:ingest Step 7 |
 | UAT generation | UAT.md | /artifact-reviewer --reviewer review-uat | YES | /silver:feature Step 17.0 |
-| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 7 |
+| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 6 |
 
 If ANY of these steps produces findings on the first pass, you MUST fix the findings and re-run the review. The step is complete ONLY after two consecutive clean passes.
 
