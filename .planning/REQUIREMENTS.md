@@ -9,23 +9,23 @@ Requirements for v0.26.0. Each maps to roadmap phases.
 
 ### Bug Fixes
 
-- [ ] **BUG-01**: T2-1 test case in `tests/hooks/test-timeout-check.sh` passes (root cause identified; hook emits expected string or test expectation corrected with rationale)
-- [ ] **BUG-02**: `docs/internal/pre-release-quality-gate.md` stage-marker steps removed or corrected so `dev-cycle-check.sh` does not block their execution; hook regex tightened to avoid matching the pattern inside string literals (e.g. heredocs, `gh issue create` bodies)
-- [ ] **BUG-03**: `silver-add` `gh auth` OAuth scope check uses precise regex `grep -qE '(Token scopes|Scopes):.*\bproject\b'` instead of broad `grep -q 'project'`
-- [ ] **BUG-04**: `silver-remove` sed command replaced with portable tmpfile+mv pattern that works on both macOS and Linux/CI
-- [ ] **BUG-05**: `session-log-init.sh` sentinel TOCTOU fix uses UUID token file rather than locale-sensitive `lstart` string comparison
+- [x] **BUG-01**: T2-1 test case in `tests/hooks/test-timeout-check.sh` passes (root cause identified; hook emits expected string or test expectation corrected with rationale)
+- [x] **BUG-02**: `docs/internal/pre-release-quality-gate.md` stage-marker steps removed or corrected so `dev-cycle-check.sh` does not block their execution; hook regex tightened to avoid matching the pattern inside string literals (e.g. heredocs, `gh issue create` bodies)
+- [x] **BUG-03**: `silver-add` `gh auth` OAuth scope check uses precise regex `grep -qE '(Token scopes|Scopes):.*\bproject\b'` instead of broad `grep -q 'project'`
+- [x] **BUG-04**: `silver-remove` sed command replaced with portable tmpfile+mv pattern that works on both macOS and Linux/CI
+- [x] **BUG-05**: `session-log-init.sh` sentinel TOCTOU fix uses UUID token file rather than locale-sensitive `lstart` string comparison
 
 ### CI Hardening
 
-- [ ] **CI-01**: GitHub Actions CI step added that fails the build when `docs/workflows/` and `templates/workflows/` diverge (diff step runs on every PR and push to main)
-- [ ] **CI-02**: GitHub Actions CI step added that fails the build if any `required_deploy` skill is absent from `all_tracked`, and if `.silver-bullet.json` skills diverge from `templates/silver-bullet.config.json.default`
+- [x] **CI-01**: GitHub Actions CI step added that fails the build when `docs/workflows/` and `templates/workflows/` diverge (diff step runs on every PR and push to main)
+- [x] **CI-02**: GitHub Actions CI step added that fails the build if any `required_deploy` skill is absent from `all_tracked`, and if `.silver-bullet.json` skills diverge from `templates/silver-bullet.config.json.default`
 
 ### Skill Quality
 
-- [ ] **QUAL-01**: Session log discovery pattern (`ls | sort | tail -1`) standardized to `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1` across `silver-add`, `silver-rem`, and `silver-release` skills
-- [ ] **QUAL-02**: `silver-rem` INDEX.md mutation steps include explicit `awk`/`sed` commands for both table-row insertion and pointer-line replacement (no prose-only instructions)
-- [ ] **QUAL-03**: `silver-scan` Step 4 adds a local-tracker cross-reference check (Step 4-iv): when `issue_tracker != 'github'`, grep `docs/issues/ISSUES.md` and `docs/issues/BACKLOG.md` to exclude already-filed candidates from re-presentation
-- [ ] **QUAL-04**: `silver-scan` summary block explains the two-pass counter structure (deferred items `CANDIDATE_COUNT` vs knowledge/lessons `KL_FOUND`) to avoid user confusion
+- [x] **QUAL-01**: Session log discovery pattern (`ls | sort | tail -1`) standardized to `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1` across `silver-add`, `silver-rem`, and `silver-release` skills
+- [x] **QUAL-02**: `silver-rem` INDEX.md mutation steps include explicit `awk`/`sed` commands for both table-row insertion and pointer-line replacement (no prose-only instructions)
+- [x] **QUAL-03**: `silver-scan` Step 4 adds a local-tracker cross-reference check (Step 4-iv): when `issue_tracker != 'github'`, grep `docs/issues/ISSUES.md` and `docs/issues/BACKLOG.md` to exclude already-filed candidates from re-presentation
+- [x] **QUAL-04**: `silver-scan` summary block explains the two-pass counter structure (deferred items `CANDIDATE_COUNT` vs knowledge/lessons `KL_FOUND`) to avoid user confusion
 
 ### Release Ordering (Pre-completed)
 
@@ -56,24 +56,24 @@ Requirements for v0.26.0. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUG-01 | Phase 55 | Pending |
-| BUG-02 | Phase 55 | Pending |
-| BUG-03 | Phase 56 | Pending |
-| BUG-04 | Phase 56 | Pending |
-| BUG-05 | Phase 55 | Pending |
-| CI-01 | Phase 57 | Pending |
-| CI-02 | Phase 57 | Pending |
-| QUAL-01 | Phase 56 | Pending |
-| QUAL-02 | Phase 56 | Pending |
-| QUAL-03 | Phase 58 | Pending |
-| QUAL-04 | Phase 58 | Pending |
+| BUG-01 | Phase 55 | Complete |
+| BUG-02 | Phase 55 | Complete |
+| BUG-03 | Phase 56 | Complete |
+| BUG-04 | Phase 56 | Complete |
+| BUG-05 | Phase 55 | Complete |
+| CI-01 | Phase 57 | Complete |
+| CI-02 | Phase 57 | Complete |
+| QUAL-01 | Phase 56 | Complete |
+| QUAL-02 | Phase 56 | Complete |
+| QUAL-03 | Phase 58 | Complete |
+| QUAL-04 | Phase 58 | Complete |
 | REL-01 | Phase 55 | Complete |
 
 **Coverage:**
-- v1 requirements: 12 total (11 pending + 1 pre-completed)
+- v1 requirements: 12 total (12/12 complete)
 - Mapped to phases: 12
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-25*
-*Last updated: 2026-04-25 after milestone v0.26.0 initialization*
+*Last updated: 2026-04-25 — all 12 requirements complete (phases 55-58)*
