@@ -129,6 +129,8 @@ Verify these as part of every code review:
 - No circular dependencies introduced
 - New modules have well-defined interfaces
 
+**Adversarial mode rule: No future credit.** When reviewing, reject any reasoning that defers a current violation to a future action (backlog item, next phase, open issue). The review grades the code as it exists now. A planned fix is not a fix; a GitHub issue is not code. If a file violates the limits today, the review outcome is ❌ Fail — regardless of intent, roadmap, or tracking.
+
 ### When Modifying Existing Code
 
 If existing code violates these rules:
@@ -176,3 +178,6 @@ When a file needs to be split, use these patterns:
 | "This file is the natural home for this" | If it exceeds the limit, it's not. Find a better home. |
 | "It's all related" | Related is not the same as same-responsibility. |
 | "The framework forces this structure" | Most frameworks work fine with smaller modules. Check. |
+| "It's tracked in the backlog / GitHub issue #N" | A planned fix is not a fix. The violation exists now. ❌ Fail. Fix it or accept the block. |
+| "The current milestone plan addresses this" | Planning intent ≠ code compliance. The gate evaluates actual structure, not intent. ❌ Fail until the code is changed. |
+| "We'll fix this in the next phase / sprint" | Future tense is not present tense. Rate the current state. ❌ Fail if the rule is violated today. |
