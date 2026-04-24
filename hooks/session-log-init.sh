@@ -119,6 +119,10 @@ if [[ -n "$existing" ]]; then
     _insert_before "$existing" "## Agent Teams dispatched" \
       "## Skill gap check (post-plan)" "(filled after plan is written)"
   fi
+  if ! grep -q "^## Items Filed$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Knowledge & Lessons additions" \
+      "## Items Filed" "(none)"
+  fi
 
   # Re-launch sentinel if autonomous (second-terminal re-trigger)
   if [[ "$mode" == "autonomous" ]]; then
@@ -217,6 +221,10 @@ cat > "$log_file" << LOGEOF
 ## Outcome
 
 (filled at documentation step)
+
+## Items Filed
+
+(none)
 
 ## Knowledge & Lessons additions
 
