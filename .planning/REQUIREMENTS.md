@@ -36,7 +36,7 @@ Scope: closed-loop deferred-item capture system — automatic filing to user's P
 ### Auto-Capture Enforcement (CAPT)
 
 - [ ] **CAPT-01**: `silver-bullet.md` §3b and `templates/silver-bullet.md.base` §3b (updated in the same commit, non-negotiable) instruct the coding agent to call `/silver-add` for every deferred, skipped, or identified work item during execution — with an explicit classification rubric distinguishing issue from backlog
-- [ ] **CAPT-02**: `silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, and `silver-fast` skill files each contain a per-skill explicit deferred-capture instruction calling `/silver-add` (replacing existing `gsd-add-backlog` calls where present)
+- [x] **CAPT-02**: `silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, and `silver-fast` skill files each contain a per-skill explicit deferred-capture instruction calling `/silver-add` (replacing existing `gsd-add-backlog` calls where present)
 - [ ] **CAPT-03**: `silver-bullet.md` §3b and `templates/silver-bullet.md.base` §3b (same commit as CAPT-01) also instruct the coding agent to call `/silver-rem` for every knowledge insight or lesson learned observed during execution
 - [ ] **CAPT-04**: `session-log-init.sh` (or equivalent session log template hook) gains an `## Items Filed` section so silver-add and silver-rem calls are recorded per session with item ID and title
 - [ ] **CAPT-05**: `silver-release` gains a Step 9b that reads all `## Items Filed` entries from session logs within the milestone window (using milestone start date from `STATE.md` frontmatter) and presents a consolidated post-release summary of all items filed and knowledge/lessons recorded
