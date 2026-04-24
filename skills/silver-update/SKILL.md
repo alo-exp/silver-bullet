@@ -131,27 +131,36 @@ Please try again or install manually via the Claude Desktop plugin manager.
 
 Do not modify the registry or attempt cleanup if the install step fails.
 
-### Step 6: Update the plugin registry
+### Step 6: Remove stale legacy entries
 
-Read `~/.claude/plugins/installed_plugins.json`, update the `silver-bullet@silver-bullet` entry:
-- `version` → latest version string
-- `installPath` → new cache path (absolute, with `$HOME` expanded)
-- `lastUpdated` → current ISO timestamp
-- `gitCommitSha` → SHA from step 5
+After the marketplace install succeeds, clean up any residual legacy installations.
 
-Write the updated JSON back to `~/.claude/plugins/installed_plugins.json` **atomically** (tmpfile + `mv`) to avoid registry corruption on mid-write crash:
+**6a. Remove stale registry entry:**
+
+Check whether `installed_plugins.json` contains the legacy `silver-bullet@silver-bullet` key. If it does, remove it atomically:
 
 ```bash
 REG="$HOME/.claude/plugins/installed_plugins.json"
-TMP="$(mktemp "${REG}.XXXXXX")"
-NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-jq --arg v "$LATEST" \
-   --arg p "$NEW_CACHE" \
-   --arg t "$NOW" \
-   --arg sha "$COMMIT_SHA" \
-   '."silver-bullet@silver-bullet" |= (.version = $v | .installPath = $p | .lastUpdated = $t | .gitCommitSha = $sha)' \
-   "$REG" > "$TMP" && mv "$TMP" "$REG"
+if jq -e '."silver-bullet@silver-bullet"' "$REG" > /dev/null 2>&1; then
+  TMP="$(mktemp "${REG}.XXXXXX")"
+  jq 'del(."silver-bullet@silver-bullet")' "$REG" > "$TMP" && mv "$TMP" "$REG"
+fi
 ```
+
+**6b. Remove stale cache directory:**
+
+Check whether `~/.claude/plugins/cache/silver-bullet/silver-bullet/` exists. If it does, remove it:
+
+```bash
+STALE_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet"
+if [[ -d "$STALE_CACHE" ]]; then
+  rm -rf "$STALE_CACHE"
+fi
+```
+
+Do NOT remove `~/.claude/plugins/cache/silver-bullet/alo-labs/` — that is the newly installed version.
+
+If either cleanup step fails, log the error but do not abort — the install already succeeded.
 
 ### Step 7: Display result
 
@@ -160,10 +169,9 @@ jq --arg v "$LATEST" \
 ║  Silver Bullet Updated: vX.Y.Z → vA.B.C                   ║
 ╚═══════════════════════════════════════════════════════════╝
 
-⚠️  Restart Claude Desktop to pick up the new skills and hooks.
+Installed via Claude CLI marketplace (silver-bullet@alo-labs).
 
-Old cache kept at: ~/.claude/plugins/cache/silver-bullet/silver-bullet/X.Y.Z
-New cache at:      ~/.claude/plugins/cache/silver-bullet/silver-bullet/A.B.C
+⚠️  Restart Claude Desktop to pick up the new skills and hooks.
 
 [View full changelog](https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md)
 ```
