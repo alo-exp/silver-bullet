@@ -11,6 +11,7 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Security | `docs/SECURITY.md` | Current posture + audit archive index |
 | Release | `docs/RELEASE.md` | Release process, CI, versioning |
 | Testing | `docs/TESTING.md` | Test pyramid, coverage goals |
+| Skill Harness | `tests/forge-test-app/run-forge-sb-tests.sh` | 60+ skill scenario validation |
 | Tech Debt | `docs/tech-debt.md` | Active debt register (max 20 items) |
 | Changelog | `docs/CHANGELOG.md` | Version history |
 | PRD Overview | `docs/PRD-Overview.md` | Product vision, requirement areas |

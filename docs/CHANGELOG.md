@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-04-24 — forge-sb-skill-test-harness
+**What**: Created comprehensive test harness for all 60+ forge-sb skills using todo app as realistic development scenario
+**Commits**: —
+**Skills run**: tdd, gsd-execute, gsd-plan, gsd-review, writing-plans
+**Virtual cost**: ~$0.30 (MiniMax-M2.7, medium complexity)
+**KNOWLEDGE.md**: updated (skills added to project)
+
 ## 2026-04-16 — trivial-session-bypass
 **What**: Added trivial-session bypass to stop-check — SessionStart creates ~/.claude/.silver-bullet/trivial, PostToolUse Write/Edit/MultiEdit removes it; skill gate only fires when files were actually modified.
 **Commits**: 7848b92

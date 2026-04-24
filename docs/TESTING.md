@@ -82,6 +82,72 @@ Not part of CI — run manually at ~$0.10–$0.60/run via `tests/live/run-live-t
 
 These tests exercise the interactive migration step in `skills/silver-init/SKILL.md` (Phase 3.5.5). The migration is non-destructive by design — originals are backed up as `.pre-sb-backup` before any rename or split.
 
+## Forge-Silver Bullet Skill Test Harness
+
+The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 57+ installed skills against realistic todo app development scenarios.
+
+### Test Classification
+
+| Type | What | Location | Speed |
+|------|------|----------|-------|
+| **API unit tests** | Todo API endpoints (CRUD, health) | `tests/forge-test-app/tests/api.test.js` | <1s |
+| **Skill scenario tests** | Each skill has documented trigger + workflow | `tests/forge-test-app/SCENARIOS/*.md` | <5s |
+| **Integration smoke** | Full harness runs all scenarios | `tests/forge-test-app/run-forge-sb-tests.sh` | <30s |
+
+### Coverage Goals
+
+| Skill Category | Skills | Coverage |
+|---------------|--------|----------|
+| Silver Core Workflow | 10 | 100% (scenario documented) |
+| Silver Extended | 11 | 100% |
+| GSD Workflow | 12 | 100% |
+| Quality & Methodology | 10 | 100% |
+| Review & Assessment | 11 | 100% |
+| Planning & Documentation | 4 | 100% |
+| DevOps & Routing | 2 | 100% |
+
+**Total: 60 skills tested**
+
+### Running the Harness
+
+```bash
+cd tests/forge-test-app
+npm install  # Only needed once
+bash run-forge-sb-tests.sh
+```
+
+### Skill Trigger Examples
+
+| Skill | Trigger Phrase |
+|-------|---------------|
+| `silver-feature` | "I need to add a feature" |
+| `silver-bugfix` | "The delete button doesn't work" |
+| `tdd` | "Add feature using TDD" |
+| `gsd-execute` | "Implement the endpoint" |
+| `gsd-secure` | "Audit API for vulnerabilities" |
+
+### Adding New Skill Scenarios
+
+Create `tests/forge-test-app/SCENARIOS/{skill-name}.md`:
+
+```markdown
+# {Skill Name} Skill Scenario
+
+## Skill: {skill-name}
+## Context: One-line context
+
+### Scenario: Brief description
+
+**Trigger:** "trigger phrase"
+
+**Workflow:**
+1. Step one
+2. Step two
+3. Step three
+```
+
+The harness checks for scenario file existence — if found, skill shows ✓ in test output.
+
 ## Skip Policy
 
 Do **not** test:
