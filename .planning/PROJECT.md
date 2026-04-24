@@ -40,15 +40,18 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ Existing reviewers formalized into 2-pass framework (plan-checker, code-reviewer, verifier, security-auditor) — v0.15.0
 - ✓ Workflow integration: all producing steps wired to invoke reviewer before completing — v0.15.0
 - ✓ v0.14.0 critical bug fixes: shell injection, heredoc injection, Confluence failure path, version mismatch display — v0.15.0
+- ✓ /silver-add skill: classify item as issue/backlog, file to GitHub Issues+board or local docs/issues/, cache board IDs, rate-limit resilience — v0.25.0 Phase 49
 
 ### Active
 
 - [ ] Auto-capture enforcement: SB instructs coding agent to file all deferred/skipped items to PM system on the fly (v0.25.0)
-- [ ] /silver-add skill: classify item, file to GitHub Issues/project board or local docs/, assign ID (v0.25.0)
+- [ ] Continuous knowledge/lessons capture enforcement: coding agent captures knowledge/lessons insights via /silver-rem on the fly (v0.25.0)
+- [x] /silver-add skill: classify item, file to GitHub Issues/project board or local docs/, assign ID — validated Phase 49 (v0.25.0)
 - [ ] /silver-remove skill: remove issue/backlog item by ID from PM system or local docs/ (v0.25.0)
+- [ ] /silver-rem skill: capture knowledge or lessons item per doc-scheme.md into knowledge/YYYY-MM.md or lessons/YYYY-MM.md (v0.25.0)
 - [ ] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
 - [ ] /silver-forensics audit: 100% functional equivalence vs gsd-forensics (v0.25.0)
-- [ ] /silver-scan skill: retrospective session scan, find deferred items, assess relevance, silver-add relevant ones (v0.25.0)
+- [ ] /silver-scan skill: retrospective session scan, find deferred issues/backlog AND knowledge/lessons items, assess relevance, silver-add/silver-rem relevant ones (v0.25.0)
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
 
@@ -66,11 +69,13 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 **Target features:**
 - Auto-capture enforcement: SB instructs the coding agent to file ALL deferred/skipped items (defects, tech debt, open questions, unfinished work, housekeeping) to the user's PM system in real time, with industry-standard issue/backlog descriptions
+- Continuous knowledge/lessons capture: SB instructs the coding agent to capture knowledge and lessons insights on the fly via /silver-rem per doc-scheme.md
 - /silver-add: classify item as issue or backlog, file to GitHub Issues+project board (or local docs/ markdown if no PM system), assign an ID, return it
 - /silver-remove: remove any issue/backlog item by ID from PM system or local docs/
+- /silver-rem: capture a knowledge or lessons item per doc-scheme.md format (knowledge/YYYY-MM.md or lessons/YYYY-MM.md); used by silver-scan and called on the fly during execution
 - Post-release summary: after milestone complete + release, auto-display all items filed during the milestone
 - /silver-forensics audit: verify 100% functional equivalence between existing silver-forensics and gsd-forensics (prerequisite for silver-scan)
-- /silver-scan: retrospectively scan ALL project sessions from beginning, identify deferred items not yet addressed, assess relevance, silver-add relevant ones
+- /silver-scan: retrospectively scan ALL project sessions from beginning, identify deferred items not yet addressed (issues/backlog AND knowledge/lessons not recorded), assess relevance, silver-add/silver-rem relevant ones
 
 ## Context
 
@@ -117,4 +122,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after milestone v0.25.0 start*
+*Last updated: 2026-04-24 after Phase 49 (silver-add) complete*
