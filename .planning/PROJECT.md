@@ -43,10 +43,14 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [ ] Cross-artifact consistency reviewer — validates SPEC.md ↔ DESIGN.md ↔ REQUIREMENTS.md are mutually consistent (ARVW-09)
-- [ ] Review round analytics — track review round counts, common finding patterns, time-to-clean-pass metrics (ARVW-10)
+- [ ] Fix session-stability bugs: trivial bypass ordering, branch newline, tamper guard scope, heredoc false-positive, admin bypass, quality-gates modularity (v0.24.0)
+- [ ] Stage 4 security hardening: symlink writes, jq sanitizers, medium/low batch, semver validation (v0.24.0)
+- [ ] HOOK-14 closure: fail-open edges, test coverage, code polish (v0.24.0)
+- [ ] Consistency fixes: .gitignore, upstream skill refs, hook duplication, doc-scheme enforcement, tamper regex (v0.24.0)
+- [ ] Public-facing content refresh: stale versions, counts, CHANGELOG (v0.24.0)
+- [ ] PM system awareness in /silver:init (v0.24.0)
+- [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
-- [ ] v0.21.0 remaining requirements (HOOK-01 through HOOK-05, DOC-01) — phases 31-33
 
 ### Out of Scope
 
@@ -56,16 +60,18 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.22.0 Backlog Resolution
+## Current Milestone: v0.24.0 Stability · Security · Quality
 
-**Goal:** Close all 11 open GitHub issues (the entire project Backlog column) — eliminate one SECURITY P0 (leaked webhook token), land Stage 4 security hardening, close out HOOK-14 fail-open/coverage/polish gaps, resolve Stage 2 consistency audit findings, narrow the `.claude/` gitignore rule, and refresh stale public-facing docs.
+**Goal:** Clear the full 21-issue backlog — fix 6 critical session-stability bugs, land Stage 4 security hardening, close out HOOK-14 polish, resolve consistency drift across skills and hooks, refresh public-facing content, and add PM system awareness to `/silver:init`.
 
-**Target issues (11 total, all on project Backlog column):**
-- 🔴 Security P0: leaked Google Chat webhook token in public repo (#24)
-- Stage 4 security hardening: symlink hardening on state-file writes (#25), jq-based JSON/body sanitizers (#26), medium/low hardening batch (#27)
-- HOOK-14 hardening: fail-open edge cases in stop-check.sh (#17), test coverage gaps in test-stop-check.sh (#18), code polish — comments/naming/numeric compare/HOOK numbering (#19)
-- Stage 2 consistency audit: broken upstream skill references (#21), hooks+config duplication and schema drift (#22)
-- Chores / docs: narrow `.claude/` gitignore rule to runtime-only subpaths (#20), stale versions + counts + CHANGELOG gap refresh (#23)
+**Target items (23 total — 21 issues + 2 open PRs):**
+- 🔴 Session-stability bugs: trivial bypass ordering (#42), branch newline corruption (#44), tamper guard scope (#45), completion-audit heredoc (#46), stop-check admin bypass (#41), quality-gates modularity false-fail (#43)
+- 🔒 Security: symlink hardening (#25), jq sanitizers (#26), medium/low batch (#27), silver-update semver (#29)
+- 🔧 HOOK-14 polish: fail-open edges (#17), test coverage (#18), code polish (#19)
+- 📐 Consistency: .gitignore narrow (#20), broken skill refs (#21), hook duplication (#22), doc-scheme enforcement (#33), tamper regex (#36), doc-scheme ports (#39)
+- 📄 Content: stale versions/counts/CHANGELOG (#23)
+- ✨ Feature: PM system in /silver:init (#40)
+- 🔀 Merge PRs: forge doc-scheme gate (#37), silver-ui doc-scheme gate (#38)
 
 ## Context
 
@@ -74,7 +80,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.15.3
+- Current version: v0.23.10
 
 ## Constraints
 
@@ -112,4 +118,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after milestone v0.22.0 start*
+*Last updated: 2026-04-24 after milestone v0.24.0 start*
