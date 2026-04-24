@@ -1,410 +1,491 @@
-# Feature Research
+# Features Research — Issue Capture & Retrospective Scan
 
-**Domain:** AI-driven spec creation, JIRA ingestion, multi-repo orchestration, pre-build validation — agentic SDLC orchestrator
-**Researched:** 2026-04-09
-**Confidence:** MEDIUM (ecosystem patterns confirmed; SB-specific orchestration design is novel)
+**Domain:** AI agent/orchestrator deferred-item capture, retrospective scanning, issue lifecycle management
+**Researched:** 2026-04-24
+**Confidence:** HIGH for SB-internal patterns (evidence from existing skills and forensics report); MEDIUM for external ecosystem comparisons (web search + Backlog.md)
 
 ---
 
-## Capability Area A: JIRA Ingestion
+## /silver-add
 
 ### Table Stakes
 
+These are behaviors any issue-capture command must have to be considered complete. Missing any
+one of these makes the skill feel broken.
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Read JIRA ticket by ID via MCP | Teams expect AI to read what's already tracked | LOW | Atlassian MCP is available; endpoint migrates from /v1/sse → /v1/mcp after June 30 2026 — use /v1/mcp now |
-| Extract title, description, acceptance criteria, labels, linked issues | Raw data needed for spec generation | LOW | JIRA MCP returns structured JSON; orchestration skill parses fields |
-| Surface linked artifacts (Google Docs, Confluence pages) from ticket | Specs are rarely self-contained in JIRA; context lives elsewhere | MEDIUM | Requires follow-up fetches via Google Docs MCP or Confluence MCP; SB orchestrates chain |
-| Display extracted ticket summary before proceeding | User must confirm what SB read before it runs | LOW | Verification step; prevents hallucination propagation |
+| Read `issue_tracker` from `.silver-bullet.json` before filing | SB already wires `github`/`gsd` routing in silver-feature; silver-add must be consistent | LOW | Config already exists; just read it |
+| Accept freeform text and classify internally | Caller (coding agent or user) shouldn't need to know GitHub label taxonomy | LOW | Classification via keyword heuristics + LLM judgment |
+| Return a stable ID the caller can reference | Auto-capture enforcement needs to log the ID it was given | LOW | GitHub: issue number (`#123`); local: slug or line ref |
+| Emit a one-line confirmation with the ID | Closure signal for the calling context | LOW | e.g. `Filed #47 — "Refactor auth token refresh" [bug]` |
+| Deduplicate near-identical titles before filing | Calling agents filing on-the-fly will sometimes duplicate items across parallel waves | MEDIUM | Fuzzy match against open issues; prompt on collision, don't silently skip |
+| No mandatory user interaction in non-interactive (autonomous) mode | Auto-capture must work without prompting | LOW | Classify autonomously; surface result only |
 
 ### Differentiators
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Auto-classify ticket type (feature / bug / spike / chore) and route to correct SB workflow | Saves routing decision that currently requires human judgment | MEDIUM | Reuse silver router classification logic; add JIRA-context signals |
-| Pull linked sub-tasks and treat as spec breakdown seed | Converts existing JIRA structure into SB phase outline automatically | MEDIUM | silver-feature Step 0 complexity triage can consume this |
-| Cross-reference ticket with linked Confluence spec and flag inconsistencies | Catches drift between JIRA acceptance criteria and written spec | HIGH | Requires Confluence MCP + diff logic; strong differentiator vs Rovo Dev |
+| Project board placement (GitHub mode) | A filed issue not on the project board is invisible to the team; SB's own CLAUDE.md already encodes the two-step create+add pattern | MEDIUM | Requires `gh project item-add` + `gh project item-edit --single-select-option-id <backlog-id>` |
+| Source attribution in issue body | Issues filed during a session should reference the session log filename that triggered them | LOW | Append `<!-- filed by silver-add from docs/sessions/YYYY-MM-DD-slug.md -->` to body |
+| Milestone tagging | GitHub milestone field links the issue to the current GSD milestone version | LOW | Read current version from `.planning/ROADMAP.md` or `silver-bullet.md`; set `--milestone` |
+| Type-specific label sets | `bug` vs `enhancement` vs `tech-debt` vs `open-question` each map to a different label combination | LOW | Codify label taxonomy once; reuse across all silver-* skills |
 
-### Anti-Features
+### UX Flow
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Bidirectional JIRA sync (SB writes back to JIRA) | Feels complete | Creates write conflicts, permission risks, audit failures | SB generates a Markdown artifact; user pastes update to JIRA manually or via one-shot write at end of spec |
-| Poll JIRA for updates during a session | "Always current" | Breaks determinism — mid-session ticket edits corrupt running context | Snapshot ticket at session start; treat as immutable input |
+**Interactive (user calls /silver-add directly):**
 
-### Existing Skills to Reuse
-- `silver` router (classification logic for ticket type → workflow)
-- `silver-feature`, `silver-bugfix`, `silver-research` (downstream workflow targets after routing)
+```
+1. Read `.silver-bullet.json` → determine issue_tracker
+2. Accept freeform description (argument or prompt if none given)
+3. Classify: what type is this item?
+   - bug / defect — broken behavior, test failure, regression
+   - tech-debt — known shortcut, deferred refactor, hardcoded value
+   - enhancement / feature — new capability or behavior change
+   - open-question — decision not yet made, research needed
+   - housekeeping — docs, chore, configuration drift
+4. Show proposed title + type + one-line body preview
+5. Confirm (Y/n) — auto-confirm in autonomous mode
+6. File to PM system (see below)
+7. Output: "Filed #<id> — <title> [<type>]"
+```
 
-### New Skills Needed
-- `silver-spec` — orchestration skill that wraps JIRA ingestion + spec creation pipeline (A+B+C+D)
+**Auto-capture (coding agent calls silver-add inline during execution):**
+
+```
+1-3 same as above, but skip step 4-5 (no confirmation)
+4. File immediately
+5. Append to session log "## Items Filed" section (if session log exists and is open):
+   - #<id> [<type>] <title>
+```
+
+**Classification heuristics (for autonomous classification without user input):**
+
+The coding agent's calling phrase is the strongest signal. Map phrases to types:
+
+| Phrase pattern in calling context | Classified as |
+|-----------------------------------|---------------|
+| "skipping X for now", "skip this", "skipped X" | tech-debt or enhancement (if new capability) |
+| "out of scope for this phase", "descoped" | enhancement |
+| "fix later", "broken", "failing", "regression", "error" | bug |
+| "TODO", "FIXME", "HACK", "hardcoded" | tech-debt |
+| "unclear", "open question", "need to decide", "need research" | open-question |
+| "clean up", "rename", "reorganize", "update docs" | housekeeping |
+| No strong signal | enhancement (default) |
+
+### Issue Fields (GitHub mode)
+
+Fields written at `gh issue create` time:
+
+| Field | Source | Example |
+|-------|--------|---------|
+| `--title` | Derived from description (first sentence, max 72 chars) | "Refactor auth token refresh to use refresh_token field" |
+| `--body` | Full description + source attribution block | See body template below |
+| `--label` | Type-to-label map | `bug`, `enhancement`, `tech-debt`, `question`, `chore` |
+| `--milestone` | Current GSD milestone version (if GitHub milestone exists) | `v0.25.0` |
+| `--repo` | `git remote get-url origin` | `alo-exp/silver-bullet` |
+
+After create, add to project board:
+
+| Operation | Command |
+|-----------|---------|
+| Add to project | `gh project item-add <project-number> --owner <owner> --url <issue-url> --format json` |
+| Set Status = Backlog | `gh project item-edit --project-id <node-id> --id <item-id> --field-id <status-field-id> --single-select-option-id <backlog-option-id>` |
+
+**Body template:**
+
+```markdown
+<description>
+
+---
+**Type:** <type>
+**Filed by:** silver-add
+**Source session:** <session-log-filename or "interactive">
+**Filed:** <YYYY-MM-DD>
+```
+
+**Project board discovery (one-time, cached in `.silver-bullet.json`):**
+
+On first GitHub filing, if no `_github_project` cache exists in `.silver-bullet.json`:
+1. `gh project list --owner <owner>` — find the project number
+2. `gh project field-list <number> --owner <owner> --format json` — extract Status field id + Backlog option id
+3. Store in `.silver-bullet.json` under `_github_project: { number, node_id, status_field_id, backlog_option_id }`
+4. Reuse on all subsequent calls — no re-discovery
+
+If no project board found: fall back to plain `gh issue create` without board placement; warn user.
+
+### Issue Fields (Local/GSD mode)
+
+When `issue_tracker = "gsd"`, file to local markdown. Two options, in order of preference:
+
+1. **`gsd-add-backlog` skill** — if the GSD skill is available, invoke it (already used by silver-feature, silver-bugfix, silver-ui; this is the established SB pattern)
+2. **Direct append** — if `gsd-add-backlog` is unavailable, append to `.planning/ROADMAP.md` under `## Backlog`:
+
+```markdown
+- [ ] [<type>] <title> — <one-line description> *(filed <YYYY-MM-DD>)*
+```
+
+Return value in GSD mode: the ROADMAP.md line number or a slug constructed as `backlog-YYYYMMDD-<N>`.
 
 ---
 
-## Capability Area B: AI-Driven Spec Creation
+## /silver-remove
 
 ### Table Stakes
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Step-by-step requirements elicitation dialogue | PM/BA expects to be guided, not to know the questions | MEDIUM | Structured prompt sequence: problem statement → user goals → constraints → acceptance criteria |
-| UX flow generation from requirements | Design step is part of spec, not separate | MEDIUM | Produces user-story-mapped flow; can reuse `design-handoff` Engineering/Design plugin |
-| Assumption surfacing during elicitation | Critical gap — PMs often don't know what they're assuming | MEDIUM | Explicit "assumptions I'm making" list appended to each section |
-| Structured .md output matching industry spec template | Repos need version-controllable specs, not chat transcripts | LOW | Template: Problem → Goals → Out of Scope → User Stories → UX Flow → Acceptance Criteria → Open Questions |
+| Accept an ID and remove the item | Core purpose | LOW | GitHub: `gh issue close #<N>` (close, not delete — GitHub doesn't allow delete via CLI); local: remove ROADMAP.md line |
+| Confirm before removing in interactive mode; skip confirm in autonomous | Destructive operation | LOW | Show title before proceeding |
+| Output confirmation of what was removed | Caller needs to know it worked | LOW | e.g. `Closed #47 — "Refactor auth token refresh"` |
+| Distinguish "close" (done) from "delete" (wrong item) | Different intent, different labels | LOW | GitHub: close with `--comment "Resolved"` vs close with `--comment "Filed in error"` |
 
-### Differentiators
+### UX Flow
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Multi-turn refinement loop (PM can push back, SB revises) | Spec quality requires iteration, not one-shot generation | MEDIUM | Session state management; .planning/spec-draft.md as live scratch |
-| Spec versioning (v1, v2… tracked in git) | Audit trail for stakeholders | LOW | gsd-ship at end of each spec iteration; git history is the version log |
-| Stakeholder-framing mode (write for eng vs write for exec) | Same spec, different audiences | LOW | Prompt parameter; reuse `stakeholder-update` skill framing |
-| Guided brainstorm before spec (what should this feature even do?) | Many PMs arrive without clear problem definition | MEDIUM | Reuse `product-brainstorm` step already in silver-feature Step 1c |
+```
+1. Accept ID argument (required — error if missing)
+2. Resolve item:
+   - GitHub mode: `gh issue view #<N> --json title,state` — verify it exists and is open
+   - Local mode: search ROADMAP.md for matching slug or line
+3. Display: "Remove #<N> — <title>? [Y/n]" (skip in autonomous mode)
+4. Accept reason: "done" (default) or "error" / "won't fix" / "duplicate"
+5. Execute removal:
+   - GitHub: `gh issue close #<N> --comment "<reason>"`
+   - Local: remove matching line from ROADMAP.md
+6. Output: "Removed #<N> — <title> [reason: <reason>]"
+```
 
-### Anti-Features
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Fully autonomous spec (no PM input) | "Just generate a spec from the ticket" | Produces hallucinated requirements; uncatchable until implementation | Minimum 3 PM confirmation checkpoints in elicitation flow |
-| Natural-language-only output (no structured .md) | Feels conversational | Breaks downstream validation and multi-repo referencing | Always produce structured .md; show conversational summary separately |
-
-### Existing Skills to Reuse
-- `product-brainstorm` (already in silver-feature; invoke before elicitation for fuzzy requests)
-- `write-spec` (Engineering/Design plugin — invoke as sub-skill for formal output generation)
-- `stakeholder-update` (framing for different audiences)
-- `design-handoff`, `user-research` (Design plugin skills for UX flow generation)
-- `architecture` (Engineering plugin — for technical constraints section of spec)
-
-### New Skills Needed
-- `silver-spec` orchestration skill (owns the elicitation dialogue, calls sub-skills above)
+**Error cases:**
+- ID not found: "No open item found with ID #<N>. Check `gh issue list` or ROADMAP.md."
+- Already closed: "Item #<N> is already closed (state: closed)."
+- Malformed ID: "ID must be a number (GitHub mode) or a backlog slug (GSD mode)."
 
 ---
 
-## Capability Area C: External Artifact Ingestion (Google Docs, PPT, Figma)
+## /silver-scan
 
 ### Table Stakes
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Accept Google Doc URL, extract structured text for spec input | Teams store PRDs in Google Docs; SB must read them | MEDIUM | Google Docs MCP or Drive MCP; extract headings + body; skip embedded images initially |
-| Accept Figma file URL, extract component hierarchy + design tokens | Designers deliver specs in Figma; engineers need structured output | MEDIUM | Figma MCP (available as of Jan 2026 interactive support); extracts spacing, colors, font tokens, Auto Layout, layer names |
-| Incorporate artifact at any workflow step, not only at start | PMs add Figma links mid-spec; must not restart | MEDIUM | silver-spec maintains artifact registry; re-ingests and merges on demand |
-| Summarize artifact before incorporating (user confirms) | Prevents bad input from silently corrupting spec | LOW | Show 3-bullet summary + ask "incorporate this?" |
+| Scan ALL session logs in `docs/sessions/` from beginning | Forensics report identified this as the trigger — items noted in old sessions never reached any backlog | MEDIUM | Glob `docs/sessions/*.md`, sort by filename ascending |
+| Detect deferred/skipped/ignored items from session log text | Core value of the skill | MEDIUM | Text heuristics on structured sections (see below) |
+| Cross-reference detected items against current open issues | Don't re-file what's already tracked | MEDIUM | GitHub: `gh issue list --state open`; local: read ROADMAP.md backlog |
+| Assess relevance before filing | Old deferred items may be obsolete; don't file stale noise | MEDIUM | LLM judgment: is this still relevant given current codebase state? |
+| Require user approval before filing each item (interactive) | User must validate "relevant" classification before items go to PM | LOW | Present items one-by-one or as batch with approve/skip per item |
+| Produce a scan report as output | Audit trail of what was found, what was filed, what was skipped | LOW | Write to `docs/silver-forensics/silver-scan-YYYY-MM-DD.md` |
+| Skip already-addressed items | Items that appear in session logs AND have been resolved should not be re-filed | MEDIUM | Cross-ref against git log + CHANGELOG.md + closed issues |
 
-### Differentiators
+### Deferred-Item Detection Heuristics
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Figma → acceptance criteria extraction (e.g., "button must be 44px minimum tap target") | Closes design-to-spec gap automatically | HIGH | Parse token values → derive testable criteria; HIGH value but HIGH complexity |
-| Conflict detection between Figma and written spec | "Figma says modal, spec says drawer — which is authoritative?" | HIGH | Requires semantic comparison; flag conflicts, user resolves |
-| PPT ingestion (extract slide titles + bullets as requirement seeds) | Stakeholder decks often contain implicit requirements | MEDIUM | Use file-read or export-to-text; lower fidelity than Figma MCP |
+Session logs have a well-defined structure (see `docs/sessions/*.md`). Detection operates on these sections in priority order:
 
-### Anti-Features
+**Section: `## Needs human review`**
+- Any non-empty, non-`*(none)*` entry is a candidate deferred item
+- Extract each bullet point as a candidate
+- Type: infer from content (bug if "failing"/"broken", open-question if "unclear"/"decide", tech-debt otherwise)
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Auto-apply Figma design tokens as CSS variables in the codebase | "Complete the loop" | Scope creep — this is silver-ui territory, not spec | Route to silver-ui after spec is finalized; keep spec pure |
-| Parse image content from PPT slides | Full visual understanding | Unreliable without vision pipeline; results vary by slide design | Text-only extraction; flag "slides with only images — manual review needed" |
+**Section: `## Autonomous decisions`**
+- Look for patterns:
+  - "excluded from ... because" → scope descope → `enhancement` candidate
+  - "deferred as tech debt" → `tech-debt` candidate
+  - "skipped ... conditional" → `housekeeping` candidate
 
-### Existing Skills to Reuse
-- `silver-ui` (Figma → code implementation after spec is done; NOT during spec)
-- `design-critique`, `accessibility-review` (Design plugin; invoke against extracted Figma output)
+**Section: `## Outcome`**
+- Look for "Awaiting" followed by incomplete items → `tech-debt` or `enhancement` candidate
+- Pattern: "Awaiting [X, Y, Z]" where X/Y/Z are unfulfilled steps
 
-### New Skills Needed
-- Artifact ingestion logic lives inside `silver-spec` as a sub-routine, not a standalone skill
-- New router signal in `silver` for "I have a Figma/Google Doc/PPT" intent → `silver-spec`
+**Section: `## Files changed`**
+- TODO/FIXME comments embedded in change descriptions → `tech-debt` candidate
+- "placeholder" in filename or description → `housekeeping` candidate
 
----
+**Section: `## Knowledge & Lessons additions` / `## KNOWLEDGE.md additions`**
+- Open questions noted with `[OPEN]` tag → `open-question` candidate
+- "resolved — deferred as tech debt" → `tech-debt` candidate
 
-## Capability Area D: Standardized Spec Output
+**Free text anywhere in session log:**
+Apply these phrase patterns (case-insensitive):
 
-### Table Stakes
+| Pattern | Classification |
+|---------|---------------|
+| `skip(ped|ping) .{3,60} (for now|later|future)` | tech-debt or enhancement |
+| `out of scope (for|in) this (phase|session|milestone)` | enhancement |
+| `defer(red)? (as|to) (tech.debt|backlog|next)` | tech-debt |
+| `TODO[:\s]` | tech-debt or housekeeping |
+| `FIXME[:\s]` | bug |
+| `will (address|fix|do|handle|revisit) (later|in.*phase|in.*milestone)` | tech-debt |
+| `open question:` | open-question |
+| `not (yet|currently) (implemented|supported|tracked)` | enhancement or tech-debt |
+| `[Pp]lanned for (future|v\d+|next)` | enhancement |
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Single canonical .md spec file per feature in repo | Version-control spec alongside code | LOW | Location: `.planning/specs/{feature-slug}.md` |
-| Spec template with fixed sections (Problem, Goals, Out of Scope, User Stories, UX Flow, Acceptance Criteria, Open Questions) | Industry standard; cross-team readability | LOW | Provide template in silver-bullet; generate via `write-spec` sub-skill |
-| Spec metadata header (version, date, author, JIRA ticket ID, status) | Traceability requires structured metadata | LOW | YAML frontmatter block |
-| Spec status lifecycle (Draft → Review → Approved → Implemented) | Stakeholders need to know spec state | LOW | Status field in frontmatter; updated by SB at workflow transitions |
+### Session Log Patterns to Match
 
-### Differentiators
+The existing SB session log format has these known source fields:
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Auto-generate spec from elicitation transcript (no human-authored .md) | PM never touches markdown | MEDIUM | SB synthesizes structured spec from elicitation dialogue; PM approves |
-| Spec changelog (what changed between v1 and v2, highlighted) | Stakeholder review needs diff visibility | MEDIUM | Git diff + summarization; low implementation cost if git history is clean |
+```
+## Needs human review
+*(none)*                          ← SKIP (empty)
+- Some item that needs attention  ← CANDIDATE
 
-### Anti-Features
+## Autonomous decisions
+- accessibility-review excluded from required_deploy — [reason]  ← CANDIDATE (descoped item)
+- finalization_skills derivation — deferred as tech debt          ← CANDIDATE (explicit defer)
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| PDF export | "Non-technical stakeholders can't read .md" | Scope creep; requires toolchain; adds fragile step | Use GitHub/GitLab rendered markdown preview; link is shareable |
-| Confluence auto-publish | "Single source of truth in Confluence" | Creates dual-write problem; spec in repo drifts from Confluence | Repo is source of truth; Confluence gets a link to the rendered spec |
+## Outcome
+Phase 2 complete. [...] Awaiting CI gate, deploy-checklist, ship  ← CANDIDATE ("Awaiting" = incomplete)
 
-### Existing Skills to Reuse
-- `write-spec` (Engineering/Design plugin — primary sub-skill for .md generation)
-- gsd-commit via `gsd-ship` (commits finalized spec to repo)
+## Knowledge & Lessons additions / ## KNOWLEDGE.md additions
+- Open questions: finalization_skills runtime derivation (resolved — deferred as tech debt)  ← CANDIDATE
+```
 
----
+**CONTEXT.md deferred section** (in `.planning/phases/*/NN-CONTEXT.md`):
 
-## Capability Area E: Multi-Repo Spec Referencing
+```xml
+<deferred>
+## Deferred Ideas
+None — discussion stayed within phase scope   ← SKIP if "None"
+- Some deferred idea                          ← CANDIDATE if non-empty
+</deferred>
+```
 
-### Table Stakes
+**Tech debt register** (`docs/tech-debt.md`):
+- Each table row is a candidate; cross-reference against open issues to avoid duplication
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Mobile/sub-repos can reference main repo spec by relative or absolute URL | Avoids spec duplication; one source of truth | MEDIUM | Standard: spec URL in `.planning/specs/` of main repo; mobile repo reads via HTTP or git submodule |
-| SB loads referenced spec at session start in mobile repo | Implementation sessions need full context without copy-paste | MEDIUM | silver-feature in mobile repo: detect spec reference, fetch, load into context |
-| Surface spec-to-implementation gaps when starting work in mobile repo | Mobile team may receive spec after design changes | MEDIUM | Compare spec acceptance criteria against existing mobile codebase intel |
+**Forensics reports** (`docs/silver-forensics/*.md`):
+- `## Open Items Identified` table → each row is a candidate
+- `## Recommended Next Steps` checklist → unchecked items are candidates
 
-### Differentiators
+**Relevance assessment criteria** (LLM judgment, after detection):
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Spec lock version (mobile repo pins to spec v2; main repo is on v3) | Prevents mid-sprint spec drift from breaking mobile build | MEDIUM | Semver in spec frontmatter; mobile repo references pinned version |
-| Cross-repo spec change notification (main spec updated — mobile repo has stale reference) | Prevents silent drift | HIGH | Requires either git webhook or SB pre-flight check at session start |
-
-### Anti-Features
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Git submodule for specs | "Automatic sync" | Submodule conflicts are operationally painful; adds git complexity | Simple URL reference in silver-bullet.md §10 config; SB fetches on demand |
-
-### Existing Skills to Reuse
-- `silver-feature`, `silver-ui` (already run in mobile repos; add spec-load pre-flight step)
-- `gsd-intel` (feeds mobile repo codebase understanding into spec gap analysis)
-
-### New Skills Needed
-- Spec reference resolution added to silver-feature pre-flight, not a standalone skill
-
----
-
-## Capability Area F: Pre-Build Spec Validation
-
-### Table Stakes
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Gap analysis (spec sections that are empty or too vague to implement) | Prevents mid-implementation "what does this mean?" blockers | MEDIUM | Heuristic: flag acceptance criteria with no measurable outcome; flag user stories with no actor |
-| Assumption surfacing (implicit dependencies not stated in spec) | Uncaught assumptions are the #1 cause of spec-implementation mismatch | MEDIUM | Pattern: "assumes X exists", "assumes user is authenticated", etc. |
-| Conflict detection (spec sections that contradict each other) | Silent contradictions surface as bugs, not spec errors | MEDIUM | Semantic comparison of acceptance criteria pairs; flag "Criteria A says X; Criteria B says not-X" |
-| Hard stop if spec is below minimum viability threshold | Prevents implementation from starting on broken foundation | LOW | Configurable threshold (e.g., ≥3 user stories + ≥1 AC per story required) |
-
-### Differentiators
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Spec score (0-100, weighted by completeness + clarity + testability) | Actionable quality signal for PM and engineering lead | MEDIUM | Scoring rubric embeds in silver-spec validation step |
-| Auto-generate clarifying questions from gap analysis | PM gets a list of "before implementation starts, answer these" | LOW | High-value, low-complexity; just format the gap list as questions |
-| Validation report as .md artifact | Audit trail before implementation kicks off | LOW | `.planning/specs/{slug}-validation.md`; committed with spec |
-
-### Anti-Features
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Block gsd-plan unless spec passes validation | "Strict gate" | Over-constrains fast-path and urgent bugfixes | Warn prominently; allow override with explicit acknowledgment (logged to audit trail) |
-
-### Existing Skills to Reuse
-- `quality-gates` (8-dimension pattern — reuse rubric structure for spec scoring)
-- `silver-research` (can investigate ambiguous spec assumptions via research workflow)
-
-### New Skills Needed
-- Validation logic lives in `silver-spec` as a phase ("validate" mode vs "create" mode)
+| Signal | Weight | Notes |
+|--------|--------|-------|
+| Item references code/files that still exist | HIGH positive | `grep` or Read to verify |
+| Item is in CHANGELOG.md as completed | HIGH negative (skip) | Already done |
+| Item is in a closed GitHub issue | HIGH negative (skip) | Already tracked + resolved |
+| Item references a phase that is now archived (has VERIFICATION.md) | MEDIUM negative | Likely resolved; flag as "possibly stale" for user review |
+| Item is referenced in tech-debt.md as still open | HIGH positive | Explicitly unresolved |
+| Item's "awaiting" work is now in git history | HIGH negative (skip) | Work was done |
+| Item dates from >6 months ago | LOW negative | Apply extra scrutiny; present to user with age warning |
 
 ---
 
-## Capability Area G: PR → Spec Traceability
+## Auto-Capture Enforcement
 
-### Table Stakes
+### How it works in practice (what the coding agent is instructed to do)
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| PR description includes spec reference (spec file path + version) | Reviewers need to know what spec drove implementation | LOW | silver-feature ship step: auto-append spec reference block to PR description |
-| Commit messages reference spec slug (e.g., `spec: payment-flow-v2`) | Git history is traceable to requirements | LOW | Convention enforced in silver-feature gsd-commit step |
-| Spec status updated to "Implemented" when PR merges | Closes the loop without manual tracking | MEDIUM | Post-merge hook or silver-release step updates spec frontmatter status |
+Auto-capture enforcement is **instruction-level** — it goes into SB's execution skill instructions (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-fast, and the composable flows in `docs/workflows/`). It is not a hook.
 
-### Differentiators
+**Why not a hook?** Hooks fire on tool events (PreToolUse, PostToolUse) and cannot introspect the semantic content of what the agent just decided to defer. Only instruction-level text can create the behavior "when you decide to skip or defer something, call silver-add before moving on."
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| RTM (Requirements Traceability Matrix) auto-generated at release | Compliance teams need per-release traceability report | HIGH | silver-release generates .md RTM from spec + PR + commit cross-reference |
-| CI gate blocks merge if PR has no spec reference | Enforces traceability without relying on discipline | MEDIUM | Pre-receive hook (pattern already in SB hook infrastructure); check PR body for spec block |
+**Current state:** silver-feature already has a "During-execution deferred capture" instruction block that routes to `gsd-add-backlog`. The v0.25.0 upgrade replaces those `gsd-add-backlog` calls with `silver:add` and extends the pattern to all other orchestration skills.
 
-### Anti-Features
+**The enforced behavior, fully described:**
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| JIRA auto-transition to "Done" on PR merge | "Full automation" | Write-back to JIRA requires sensitive token scope; failure modes are loud | SB outputs "update JIRA ticket X to Done" as a user action item post-merge |
+```
+When the coding agent encounters any of the following during execution:
+  - A decision to skip a task ("too complex for this phase", "not in scope")
+  - A decision to defer a fix ("will clean up later", "known issue, leaving for now")
+  - A code review advisory item that won't be fixed immediately
+  - A tech debt item identified during /tech-debt skill invocation
+  - An open question that wasn't resolved during /gsd-discuss-phase
+  - A failing test that won't be fixed in this session
+  - A FIXME or TODO in code being written
 
-### Existing Skills to Reuse
-- `silver-release` (already generates release notes; extend to include RTM section)
-- `create-release` (already runs at milestone; add spec cross-reference to changelog)
-- SB hook infrastructure (§7 hooks; add spec-reference pre-merge check)
+The agent MUST:
+1. Invoke silver:add with a description of the deferred item BEFORE continuing
+2. Record the returned ID in the session log's "## Items Filed" section
+3. NOT proceed to the next task until silver-add confirms filing
+
+The agent MUST NOT:
+- Accumulate deferred items for end-of-session batch filing (anti-pattern: context is lost)
+- Silently drop deferred items (the root cause identified in the 2026-04-16 forensics report)
+- File items after the session ends (silver-scan handles retroactive discovery; auto-capture handles real-time)
+```
+
+**Where the instructions live:**
+
+| Skill file | Where the block goes |
+|------------|---------------------|
+| `skills/silver-feature/SKILL.md` | Replace existing `gsd-add-backlog` block in "During-execution deferred capture" |
+| `skills/silver-bugfix/SKILL.md` | Same — add equivalent block |
+| `skills/silver-ui/SKILL.md` | Same |
+| `skills/silver-devops/SKILL.md` | Same |
+| `skills/silver-fast/SKILL.md` | Add block before Step 3 (execute) |
+| `docs/workflows/full-dev-cycle.md` | Add to EXECUTE flow supervision loop |
+| `docs/workflows/devops-cycle.md` | Add to EXECUTE flow supervision loop |
+| `templates/` mirrors | Must stay in byte-identical sync with docs/workflows/ |
+
+**Session log integration:**
+
+The session log template (used by `session-log-init.sh` hook) needs a new section:
+
+```markdown
+## Items Filed
+
+*(none — auto-populated by silver-add)*
+```
+
+Each `silver-add` invocation appends a line here:
+```
+- #47 [tech-debt] Derive finalization_skills from .silver-bullet.json at runtime
+- #48 [bug] T2-1 test failure in test-timeout-check.sh (pre-existing)
+```
+
+This section becomes the input for the Post-Release Summary.
 
 ---
 
-## Capability Area H: GSD Minimum Spec Floor
+## Post-Release Summary
 
-### Table Stakes
+### What to display and when
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| silver-fast requires at minimum: one-line problem statement + one acceptance criterion | Fast-path should not mean spec-free | LOW | Add spec floor check to silver-fast Step 0; if missing, 30-second guided elicitation |
-| silver-feature requires: full spec (all sections non-empty) before gsd-plan | Implementation without spec is undocumented guesswork | LOW | Already has quality-gates pre-flight; add spec-completeness check |
-| Spec floor violation is a warning, not a hard block, with explicit acknowledgment | Urgent production fixes can't wait for full spec | LOW | Override requires typing "OVERRIDE: [reason]"; reason logged to audit trail |
+**Trigger:** At the end of `silver:release` Step 9 (`gsd-complete-milestone`), after milestone archival succeeds.
 
-### Differentiators
+**Source:** The session logs for all sessions in the milestone. Specifically, scan every `docs/sessions/*.md` that was modified or created since the milestone start date (read from `.planning/ROADMAP.md` milestone header or `STATE.md`).
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Configurable spec floor per workflow type in silver-bullet.md §10 | Teams have different standards for bugfixes vs features | LOW | §10 already supports per-workflow preferences; extend with spec floor config |
+**What to display:**
 
-### Existing Skills to Reuse
-- All SB orchestration skills (spec floor check is a shared pre-flight block, added to each)
-- `quality-gates` rubric structure for floor definition
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SILVER BULLET ► MILESTONE v0.25.0 — ITEMS FILED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
----
+Items filed to backlog during this milestone:
 
-## Capability Area I: UAT as Formal Pipeline Gate
+  #47 [tech-debt]    Derive finalization_skills from .silver-bullet.json at runtime
+  #48 [bug]          T2-1 test failure in test-timeout-check.sh
+  #51 [enhancement]  Add project board discovery caching to silver-init
+  #52 [housekeeping] Update docs/KNOWLEDGE.md — missing artifact referenced in session
 
-### Table Stakes
+Total: 4 items
+Tracker: github (alo-exp/silver-bullet)
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| UAT checklist auto-generated from spec acceptance criteria | Manual UAT checklist writing is error-prone and skipped | MEDIUM | Map each AC → one UAT test case; produce as .md checklist |
-| UAT gate in silver-release: implementation must be verified against spec before ship | Release without UAT is de facto no UAT | MEDIUM | silver-release pre-flight: load spec + load UAT results + compare |
-| UAT result captured as .md artifact (pass/fail per criterion) | Audit trail for stakeholders and compliance | LOW | `.planning/specs/{slug}-uat.md`; committed before release |
+View backlog: gh issue list --label backlog --state open
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
-### Differentiators
+**What NOT to display:**
+- Items that were filed and then closed (resolved) within the same milestone
+- Items from sessions before the current milestone
+- The full body of each issue (title only in the summary; ID is the reference)
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| AI-assisted UAT execution (SB walks tester through each criterion interactively) | Non-technical testers can run structured UAT without knowing the spec format | MEDIUM | Guided mode in silver-release: show criterion, tester confirms pass/fail, SB records |
-| Regression UAT (re-run prior spec ACs when related code changes) | Catches regressions that automated tests miss | HIGH | Requires spec-to-code mapping; defer to v2 |
+**Fallback (no items filed):**
 
-### Anti-Features
+```
+No items filed to backlog during this milestone.
+(Auto-capture was active but nothing was deferred.)
+```
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Automated UAT (AI self-signs off) | "Remove human from loop" | UAT exists precisely because AI-written code can be technically correct but wrong for the user | Human confirmation required per criterion; AI facilitates, human decides |
+**Fallback (GSD mode / no GitHub):**
 
-### Existing Skills to Reuse
-- `silver-release` (extend to include UAT gate pre-flight)
-- `testing-strategy` (Engineering plugin — invoke for UAT test case design)
-- `gsd-verify-work` (already a non-skippable gate; extend verification checklist with spec AC coverage)
+```
+Items filed to backlog during this milestone:
+
+  backlog-20260424-1 [tech-debt]    Derive finalization_skills at runtime
+  backlog-20260424-2 [bug]          T2-1 test failure
+
+View backlog: cat .planning/ROADMAP.md | grep "^- \[ \]"
+```
+
+**Implementation approach:**
+
+1. During silver-release Step 9, before calling `gsd-complete-milestone`:
+   - Determine milestone start date from `STATE.md` or ROADMAP active milestone header
+   - Glob `docs/sessions/*.md`, filter to files with mtime >= milestone start
+   - For each, extract the `## Items Filed` section
+   - Aggregate all IDs + titles
+   - Cross-reference with current open issues to filter out already-closed ones
+   - Display summary
+2. Then invoke `gsd-complete-milestone` to archive
+
+**Dependency:** Post-Release Summary requires the `## Items Filed` section in session logs (added by auto-capture enforcement) and `silver:add` returning stable IDs. Both must land in the same milestone.
 
 ---
 
 ## Feature Dependencies
 
 ```
-[A: JIRA Ingestion]
-    └──feeds──> [B: AI-Driven Spec Creation]
-                    └──produces──> [D: Standardized Spec Output]
-                                       └──enables──> [E: Multi-Repo Referencing]
-                                       └──enables──> [F: Pre-Build Validation]
-                                                          └──gates──> implementation start
-                                       └──enables──> [G: PR Traceability]
-                                       └──enables──> [I: UAT Gate]
+[silver-add]
+    └── required by → [auto-capture enforcement] (calling convention)
+    └── required by → [silver-scan] (files discovered items)
+    └── required by → [post-release summary] (IDs come from silver-add)
+    └── reads → [issue_tracker in .silver-bullet.json] (already exists)
+    └── reads → [_github_project cache in .silver-bullet.json] (new field)
 
-[C: External Artifact Ingestion]
-    └──feeds──> [B: AI-Driven Spec Creation] (at any point)
+[silver-remove]
+    └── reads → [issue_tracker in .silver-bullet.json]
+    └── independent of silver-add (can remove manually created issues too)
 
-[H: Minimum Spec Floor]
-    └──requires──> [D: Standardized Spec Output] (knows what "minimum" means)
-    └──applies-to──> all SB orchestration workflows (silver-feature, silver-bugfix, silver-fast)
+[silver-scan]
+    └── requires → [silver-add] (for filing discovered items)
+    └── reads → [docs/sessions/*.md] (already exists)
+    └── reads → [.planning/phases/*/CONTEXT.md <deferred> sections] (already exists)
+    └── reads → [docs/tech-debt.md] (already exists)
+    └── reads → [docs/silver-forensics/*.md] (already exists)
+    └── cross-refs → [gh issue list] or [ROADMAP.md backlog] (already exists)
 
-[F: Pre-Build Validation]
-    └──requires──> [D: Standardized Spec Output]
-    └──gates──> [G: PR Traceability] (nothing to trace without a valid spec)
+[auto-capture enforcement]
+    └── requires → [silver-add] (the thing it calls)
+    └── modifies → [session log ## Items Filed section] (new section)
+    └── lives in → [silver-feature, silver-bugfix, silver-ui, silver-devops, silver-fast skill files]
+    └── lives in → [docs/workflows/ + templates/workflows/ (must stay in sync)]
 
-[I: UAT Gate]
-    └──requires──> [D: Standardized Spec Output]
-    └──requires──> [F: Pre-Build Validation] (implementation must have started from valid spec)
-    └──gates──> silver-release
+[post-release summary]
+    └── requires → [## Items Filed section in session logs] (from auto-capture)
+    └── requires → [silver-add returning stable IDs] (from silver-add)
+    └── lives in → [silver-release Step 9]
+    └── reads → [STATE.md or ROADMAP.md milestone dates]
 ```
 
-### Dependency Notes
+---
 
-- **A is optional** — B can run without JIRA if PM provides context manually; A is an accelerator, not a prerequisite for B.
-- **D is the linchpin** — E, F, G, H, I all assume a canonical .md spec exists. D must be in Phase 1.
-- **C is additive at any phase** — Figma/Google Doc ingestion enriches B but does not block it.
-- **H is a horizontal concern** — applies to all orchestration skills; implement as a shared pre-flight block, not a standalone phase.
-- **F before implementation** — validation must fire before gsd-plan, not after.
+## Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Batch filing at session end | Session end is after the context window shrinks; deferred item descriptions become vague | File immediately at the moment of deferral (auto-capture) |
+| silver-add as a webhook/hook | Hooks can't reason about semantic content of agent decisions | Instruction-level enforcement in skill files |
+| Reopening closed GitHub issues in silver-scan | Disruptive; items closed for a reason | Create new issues for re-discovered problems; link to the closed one in the body |
+| silver-scan auto-filing without user approval | Retrospective items may be stale; false positives waste PM bandwidth | Present candidates with relevance assessment; require per-item Y/n |
+| Deleting GitHub issues in silver-remove | GitHub CLI does not support issue deletion | Close with a reason comment; this is the GitHub-native pattern |
+| Global CLAUDE.md encoding of project board IDs | User's global CLAUDE.md already has this pattern for the alo-exp repos; silver-add must cache project-specific data in `.silver-bullet.json`, not the global config | Cache in `.silver-bullet.json` `_github_project` field |
+| Separate "issue" vs "backlog" classification at silver-add call time | Adds a classification decision to every auto-capture call during execution | All items go to Backlog status on the project board; the type label (bug/tech-debt/etc.) carries the classification |
 
 ---
 
-## MVP Definition (v0.14.0)
+## Complexity Assessment
 
-### Launch With (Phase 1 — Foundation)
-
-- [x] D: Standardized spec output — template + .md generation via write-spec sub-skill
-- [x] B: AI-driven spec creation — silver-spec skill with elicitation dialogue
-- [x] H: Minimum spec floor — spec floor check added to silver-feature, silver-fast
-- [x] F: Pre-build validation (basic) — gap analysis + assumption surfacing; no conflict detection yet
-
-### Add After Foundation (Phase 2 — Ingestion)
-
-- [x] A: JIRA ingestion — MCP connector + ticket-to-spec pipeline
-- [x] C: External artifact ingestion — Figma MCP + Google Docs MCP + artifact registry in silver-spec
-
-### Complete the Pipeline (Phase 3 — Traceability + Gates)
-
-- [x] G: PR traceability — spec reference in PR description + commit convention
-- [x] E: Multi-repo spec referencing — spec load pre-flight in mobile repo workflows
-- [x] I: UAT gate — UAT checklist from AC + UAT artifact + silver-release pre-flight gate
+| Feature | Implementation Complexity | Notes |
+|---------|--------------------------|-------|
+| silver-add (GSD mode) | LOW | `gsd-add-backlog` call wrapper + classification heuristics |
+| silver-add (GitHub mode, no board) | LOW | `gh issue create` with labels |
+| silver-add (GitHub mode, with board) | MEDIUM | Board discovery + two-step create+add; caching reduces subsequent calls to LOW |
+| silver-remove | LOW | `gh issue close` or ROADMAP.md edit |
+| auto-capture enforcement (instruction update) | LOW | Text changes to 5 skill files + 2 workflow files + templates |
+| session log ## Items Filed section | LOW | Add to session-log-init.sh template |
+| silver-scan (detection heuristics) | MEDIUM | Regex patterns on known section formats; validated by existing forensics report |
+| silver-scan (relevance assessment) | MEDIUM | LLM judgment call + git log / issue list cross-reference |
+| silver-scan (report output) | LOW | Structured markdown; same pattern as forensics report |
+| post-release summary | LOW | Aggregate ## Items Filed sections + display |
 
 ---
 
-## Feature Prioritization Matrix
+## Existing Infrastructure to Reuse
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| D: Standardized spec output | HIGH | LOW | P1 |
-| B: AI-driven spec creation (silver-spec skill) | HIGH | MEDIUM | P1 |
-| H: Minimum spec floor | HIGH | LOW | P1 |
-| F: Pre-build validation (gap + assumptions) | HIGH | MEDIUM | P1 |
-| A: JIRA ingestion | MEDIUM | MEDIUM | P2 |
-| C: External artifact ingestion (Figma + Docs) | MEDIUM | MEDIUM | P2 |
-| G: PR traceability (spec reference in PR) | HIGH | LOW | P2 |
-| E: Multi-repo spec referencing | MEDIUM | MEDIUM | P2 |
-| I: UAT gate | HIGH | MEDIUM | P2 |
-| F: Conflict detection in validation | MEDIUM | HIGH | P3 |
-| G: RTM auto-generation at release | MEDIUM | HIGH | P3 |
-| Figma → AC extraction (design tokens → criteria) | HIGH | HIGH | P3 |
-| Regression UAT (spec-to-code mapping) | HIGH | HIGH | P3 |
+| Component | How silver-add/scan/remove uses it |
+|-----------|-----------------------------------|
+| `issue_tracker` in `.silver-bullet.json` | Primary routing decision; already wired in silver-feature, silver-bugfix, silver-ui |
+| `gsd-add-backlog` skill | GSD-mode filing; already the established pattern |
+| `gh issue create` CLI | GitHub-mode filing; already used by user's CLAUDE.md conventions |
+| `gh project item-add` + `gh project item-edit` | Board placement; already documented in user's global CLAUDE.md |
+| `docs/sessions/*.md` | silver-scan input; already created by session-log-init.sh |
+| `docs/silver-forensics/` | silver-scan report output location; pattern from silver-forensics |
+| `.planning/phases/*/CONTEXT.md` `<deferred>` tag | silver-scan input; known structured format |
+| `docs/tech-debt.md` | silver-scan input; tabular format, parseable |
+| `silver-release` Step 9 | post-release summary trigger point; already the milestone close step |
+| `security` boundary pattern from silver-forensics | silver-scan reads UNTRUSTED session log content; apply same security note |
 
 ---
 
-## Reuse vs New Skills Summary
-
-| Capability | Reuse | New Required |
-|------------|-------|-------------|
-| JIRA ingestion | silver router (classification), silver-feature (downstream target) | silver-spec (ingestion + routing sub-routines) |
-| AI-driven spec creation | write-spec, product-brainstorm, user-research, design-handoff, stakeholder-update, architecture | silver-spec (orchestration skill owning elicitation dialogue) |
-| Figma/Docs ingestion | silver-ui (post-spec), design-critique, accessibility-review | Artifact ingestion sub-routine inside silver-spec |
-| Standardized spec output | write-spec, gsd-ship (commit) | Spec template file; metadata frontmatter convention |
-| Multi-repo referencing | silver-feature, silver-ui, gsd-intel | Pre-flight spec-load block added to existing skills |
-| Pre-build validation | quality-gates (rubric structure), silver-research (for ambiguous assumptions) | Validation phase inside silver-spec; spec score rubric |
-| PR traceability | silver-release, create-release, SB hook infrastructure | PR description spec-block template; post-merge status hook |
-| Minimum spec floor | quality-gates (rubric), all orchestration skills (add pre-flight) | Shared spec-floor-check block; §10 config extension |
-| UAT gate | silver-release, testing-strategy, gsd-verify-work | UAT checklist generator; UAT artifact template; release pre-flight extension |
-
-**Single new skill: `silver-spec`** — owns A+B+C+D orchestration. All other capabilities are extensions to existing skills or new pre-flight blocks.
-
----
-
-## Sources
-
-- [Atlassian Rovo Dev — Agentic Workflow (JIRA MCP patterns)](https://community.atlassian.com/forums/Atlassian-AI-Rovo-articles/A-Deep-Dive-into-Rovo-Dev-and-Atlassian-AI-s-Agentic-Workflow/ba-p/3140356)
-- [Jira MCP Integration Guide — Composio](https://composio.dev/content/jira-mcp-server)
-- [Claude Code + Figma MCP — Medium 2026](https://medium.com/design-bootcamp/how-to-connect-claude-code-with-figma-mcp-d7f543b49f76)
-- [How a Traceability Matrix Fits into Modern CI/CD — Medium 2026](https://medium.com/@sancharini.panda/how-a-traceability-matrix-fits-into-modern-ci-cd-workflows-714c5a6862af)
-- [Spec-Driven AI SDLC — Infogain](https://www.infogain.com/blog/cracking-spec-driven-development-our-adobe-commerce-cloud-journey/)
-- [AI-Driven SDLC Best Practices 2026 — MetaCTO](https://www.metacto.com/blogs/mapping-ai-tools-to-every-phase-of-your-sdlc)
-- [Requirements Traceability Matrix — Perforce](https://www.perforce.com/resources/alm/requirements-traceability-matrix)
-- [Claude Code MCP Connectors — claude.ai docs](https://code.claude.com/docs/en/mcp)
-
----
-*Feature research for: Silver Bullet v0.14.0 — AI-Driven Spec & Multi-Repo Orchestration*
-*Researched: 2026-04-09*
+*Feature research for: Silver Bullet v0.25.0 — Issue Capture & Retrospective Scan*
+*Researched: 2026-04-24*

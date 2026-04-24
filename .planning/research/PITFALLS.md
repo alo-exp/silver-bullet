@@ -1,303 +1,177 @@
-# Pitfalls Research
+# Pitfalls Research — Issue Capture & Retrospective Scan
 
-**Domain:** AI-driven spec creation, external artifact ingestion, multi-repo orchestration, pre-build validation — added to existing agentic SDLC orchestrator (Silver Bullet v0.14.0)
-**Researched:** 2026-04-09
-**Confidence:** MEDIUM (WebSearch verified with official sources; SB-specific integration risks derived from architecture analysis)
-
----
-
-## Critical Pitfalls
-
-### Pitfall 1: Spec Creation Becomes Process Theater
-
-**What goes wrong:**
-SB guides PM/BA through a multi-step elicitation workflow that produces a well-formatted `.md` spec file, but the output is a paper artifact with no semantic connection to what actually gets built. The AI fills in gaps with plausible-sounding assumptions, the PM approves without scrutiny because the format looks professional, and implementation proceeds from a document that says what the AI guessed rather than what the stakeholder meant. This is what Thoughtworks flags as "a bias toward heavy up-front specification" — the workflow looks rigorous but produces false confidence.
-
-**Why it happens:**
-Spec creation is optimized for format compliance (does the file exist? does it have all sections?) rather than semantic fidelity (does this match what the stakeholder actually needs?). LLMs are excellent at producing well-structured documents from partial information; that strength becomes a liability when the output cannot be distinguished from a genuinely complete spec.
-
-**How to avoid:**
-- Elicitation must surface explicit unknowns, not fill them. Every gap the AI cannot resolve from provided context must become a named `[ASSUMPTION: ...]` block inline in the spec, not a plausible placeholder.
-- Gate the spec-creation skill on stakeholder sign-off of assumption blocks specifically — not just the full document.
-- The GSD minimum spec floor (feature H) must validate assumption density, not just section presence. A spec with zero assumption blocks on a complex feature is a red flag, not a success signal.
-- Use the pre-build validation gate (feature F) to re-surface assumption blocks at implementation start, not just at spec-creation time.
-
-**Warning signs:**
-- Spec files have no `[ASSUMPTION:]` blocks despite complex or ambiguous input
-- PM sign-off happens in under 5 minutes on a multi-section spec
-- Spec uses future-tense vague language ("the system will handle...") without concrete acceptance criteria
-- Elicitation conversation ends without any stakeholder questions being asked back
-
-**Phase to address:**
-Spec creation phase (Feature B). Elicitation skill must be designed assumption-first from the start. Cannot be retrofitted after the output format is established.
+**Milestone:** v0.25.0 — Issue Capture & Retrospective Scan
+**Domain:** Adding issue-tracking integration, retrospective session scanning, and auto-capture enforcement to existing AI orchestrator (Silver Bullet)
+**Researched:** 2026-04-24
+**Confidence:** HIGH (GitHub API limits from official docs; enforcement failure modes from AGENTIF benchmark and SB architecture analysis; integration patterns from prior SB pitfalls file and milestone history)
 
 ---
 
-### Pitfall 2: MCP Connector Instability Breaks the Ingestion Pipeline
+## Pitfall 1: Auto-Capture Becomes a Noise Engine
 
-**What goes wrong:**
-JIRA, Figma, and Google Docs MCP connectors are treated as stable APIs. When a connector times out, returns partial data, or the external tool changes its schema, the ingestion skill fails silently or mid-session. The user is left with a partially-ingested artifact and no clear recovery path. Because SB's enforcement model is hook-based, a failed ingestion that doesn't throw a hard error passes enforcement checks while producing a degraded spec.
+**Risk:**
+The coding agent is instructed to call `silver-add` on every deferred or skipped item it encounters during execution. In practice it over-triggers: every TODO comment, every "we could improve this later" throwaway in its own reasoning, every exploratory file it touched but did not commit — all become filed issues. Within a single milestone the tracker fills with 30-50 low-signal items. The signal-to-noise ratio collapses and users stop reading the captured list. The post-release summary that was meant to surface real tech debt instead presents a wall of junk.
 
-**Why it happens:**
-MCP servers for third-party tools (Figma, Atlassian) are rapidly evolving — Figma launched its MCP server in early 2026, Atlassian MCP integration is still maturing. Early MCP implementations have inconsistent error surfaces. The "use MCP connectors, not custom API integrations" architectural principle (correct long-term) means SB inherits whatever instability exists in the connector layer.
+**Why it happens in SB specifically:**
+SB's enforcement model is invocation-based, not outcome-based (per `silver-bullet.md` §1: "record-skill.sh records that a skill was called; it cannot verify the skill produced a meaningful result"). An instruction to "call silver-add on all deferred items" will be followed literally: anything the agent decides is deferred will trigger a call, with no quality filter on what constitutes a filing-worthy item. SB has no prior art for output-quality gating on agent-initiated skill calls — all existing enforcement gates apply to human-triggered workflows.
 
-**How to avoid:**
-- Treat every MCP ingestion call as failable. Skills must distinguish between: (a) connector not configured, (b) connector returned empty, (c) connector returned partial data, (d) connector returned error.
-- Each ingestion skill must produce a manifest of what was ingested and what was skipped/failed, written to the spec directory alongside the artifact.
-- Never let ingestion failure silently produce an empty section in a spec. Missing artifact = explicit `[ARTIFACT MISSING: reason]` block.
-- Do not chain ingestion steps without checkpointing. If Figma ingestion fails after JIRA succeeds, the session must be resumable from the JIRA checkpoint.
+**Prevention:**
+- Define a strict classification rubric in the auto-capture instruction that the agent MUST evaluate before calling `silver-add`. Minimum bar: item has a distinct user-visible impact OR blocks future work. Transient exploration, comments without action, and sub-1-hour fixes do NOT qualify.
+- Add a required `signal_level` field to `silver-add` (low/medium/high). Items filed as `low` during auto-capture must be aggregated and shown as a collapsed summary, not individual entries.
+- Cap auto-capture to a maximum of 5 items per session phase. If the agent would exceed 5, it must bundle remaining items into a single "batch" entry rather than filing each individually.
+- Test the auto-capture instruction in isolation with a session that has known noise before wiring it into the main enforcement path.
 
-**Warning signs:**
-- Ingestion skill has no explicit error-state outputs
-- Spec sections reference external artifacts without a manifest file showing what was actually retrieved
-- No retry or fallback path when MCP server returns empty
-- Skills assume MCP tool calls succeed without checking return value
-
-**Phase to address:**
-JIRA ingestion phase (Feature A) and external artifact ingestion phase (Feature C). Error surface design must be first-class, not an afterthought.
+**Phase to address:** Auto-capture enforcement phase (before wiring into any workflow). Classification rubric must be written before the instruction is added to `silver-bullet.md`.
 
 ---
 
-### Pitfall 3: Multi-Repo Spec Referencing Creates Stale Truth
+## Pitfall 2: silver-remove Silently Becomes silver-close on GitHub
 
-**What goes wrong:**
-Main repo holds the canonical spec. Mobile repos reference it via path, symlink, or copy. Over time: main repo spec is updated, mobile repos are not notified, implementations in mobile repos proceed against stale spec. There is no semantic conflict — code compiles, tests pass — but three implementations encode different assumptions. This is the "agentic drift" failure mode documented in multi-agent research: invisible divergence that only surfaces at integration time.
+**Risk:**
+Users invoke `/silver-remove <id>` expecting the issue to disappear. GitHub's REST API does not support issue deletion. The `gh issue delete` CLI uses the GraphQL `deleteIssue` mutation — which requires the `delete_repo` scope, a highly privileged permission that most users will not have granted and that admins will refuse to add to a personal access token scoped for issue management. The skill either silently falls back to closing the issue (user doesn't know), errors with a cryptic permission message, or worse — succeeds for local-markdown items but fails for GitHub items with no clear error path.
 
-**Why it happens:**
-Cross-repo coordination requires active synchronization. Passive reference (a path in a config file pointing to another repo's spec) provides no mechanism for change notification. Teams assume the reference is live; it is actually a snapshot at the time of last clone or copy.
+**Why it happens in SB specifically:**
+SB already has precedent for this: the `issue_tracker` field in `.silver-bullet.json` distinguishes GitHub vs. local-markdown backends (added in FEAT-01, v0.24.0). But `silver-remove` must implement a two-code-path removal, and the GitHub path has no clean "delete" primitive — it has a close with label. The skill design must acknowledge this from the start or it will be discovered at first user invocation.
 
-**How to avoid:**
-- Main repo specs must carry a version header (`spec-version:`) that changes on any material update.
-- Mobile repo spec-referencing skill must validate the referenced spec version against a stored baseline at session start. Version mismatch = blocked session with diff summary.
-- The pre-build validation gate (Feature F) must run cross-repo spec consistency as a first check, not an afterthought.
-- Avoid symlinks and path references entirely. The canonical pattern is: main repo spec → versioned artifact with explicit version pin in mobile repo config. Mobile repo owner must explicitly bump the pin after reviewing the diff.
-- UAT gate (Feature I) must compare implementation against the spec version that was pinned at build start, not the current spec version.
+**Prevention:**
+- Define `silver-remove` behavior explicitly in the skill: for GitHub backend, "remove" means close with reason `not planned` plus label `sb-removed`. Document this in the skill's user-facing output so the user sees exactly what happened.
+- Attempt `gh issue delete` first. If it fails with permission error (exit code non-zero with "scope" in stderr), fall back to close-with-label automatically, print: "GitHub does not allow deletion without admin scope — closed as not-planned instead."
+- For local-markdown backend, deletion is a file-line removal — implement this fully rather than treating both backends identically.
+- Never silently do something different from what the user requested. Always print what action was taken and what the ID resolves to post-remove.
 
-**Warning signs:**
-- Mobile repo references main repo spec without a pinned version
-- No notification mechanism when main repo spec changes
-- Pre-build validation skips cross-repo checks for speed
-- UAT compares against "current spec" rather than "spec at build time"
-
-**Phase to address:**
-Multi-repo spec referencing phase (Feature E) — version protocol must be established before any mobile repo integration work begins.
+**Phase to address:** silver-remove implementation phase. The GitHub permission model must be resolved in the skill design document before a single line of skill instructions is written.
 
 ---
 
-### Pitfall 4: Pre-Build Validation Gate Becomes a Rubber Stamp
+## Pitfall 3: silver-scan False-Positives on Already-Resolved Items
 
-**What goes wrong:**
-The gap-analysis and conflict-detection gate runs, produces a report, and the session proceeds regardless of findings. Users learn that the gate always completes (never actually blocks) and treat it as noise. Within a few weeks it is universally skipped via the fast-path. This is the "too many manual approval steps slow delivery" antipattern — a gate that doesn't gate.
+**Risk:**
+`silver-scan` reads all past session logs, identifies items mentioned as deferred/skipped/TODO, and calls `silver-add` on the relevant ones. But session logs record what was deferred at the time — not what was resolved later. A tech debt item mentioned in session 3 that was resolved in session 7 will appear as "unresolved" to a scanner that reads logs sequentially without cross-referencing the resolution record. The scan output includes items that have already shipped, creating a false backlog that erodes user trust in the scan's utility.
 
-**Why it happens:**
-Gate designers are reluctant to make hard blocks because they fear false positives blocking legitimate work. The compromise is a soft-gate: it reports but doesn't stop. Soft gates lose enforcement power immediately because users learn they can ignore them.
+**Why it happens in SB specifically:**
+SB session logs (in `docs/sessions/`) record deferred items in a `Needs human review` section and autonomous decisions in `Autonomous decisions`. There is no `Resolved in` field. The scan has no structured signal to determine whether an item found in an old log was addressed by a later session. The scanner must infer resolution from: git history (did a commit reference the item?), subsequent session logs (was it mentioned again with "fixed"), or the current state of the tracker (is an open issue still open?). Each inference is imperfect and prone to false negatives.
 
-**How to avoid:**
-- Define a two-tier model at design time: **hard blocks** (missing required spec section, unresolved assumption block that maps to a blocking dependency) vs. **soft warnings** (style issues, non-critical gaps). Hard blocks must halt the session. Soft warnings must be acknowledged by name, not dismissed globally.
-- The gate must produce a machine-readable output (not just prose) that downstream skills can consume to verify which findings were resolved vs. deferred.
-- Gate findings that were deferred must auto-surface at PR-creation time via the traceability link (Feature G). You cannot defer a hard-block finding without it appearing in the PR description.
-- Calibrate the gate with real spec samples before shipping. If the gate hard-blocks more than 30% of clean specs in testing, the blocking criteria are miscalibrated — fix the criteria, not the gate model.
+**Prevention:**
+- Before `silver-scan` calls `silver-add` on any found item, it MUST run a resolution check: (1) search git log for the item's keyword, (2) check if an open GitHub issue or local-markdown entry with matching description already exists, (3) check if any later session log's `Files changed` or `Outcome` section mentions the item as resolved.
+- Items that pass none of the three resolution checks are candidates for `silver-add`. Items that pass any one check are logged as "likely resolved — skipped" in the scan output.
+- `silver-scan` must produce a human-readable candidate list BEFORE filing anything. The user approves the list (or a subset) before `silver-add` is called. Silver-scan is a reconnaissance tool, not an autonomous filer.
+- Cap the scan to a single phase-window at a time (not all sessions from the beginning in one run) to keep the candidate list reviewable.
 
-**Warning signs:**
-- Gate output is prose-only with no structured finding objects
-- No distinction between blocking and non-blocking findings
-- Fast-path bypasses the gate entirely without recording that it was bypassed
-- Gate completion metric is tracked but not gate-block metric
-
-**Phase to address:**
-Pre-build validation phase (Feature F). Gate architecture (hard vs. soft) must be decided before implementation, not after first user complaints.
+**Phase to address:** silver-scan design phase, before any session-reading logic is implemented. The resolution-check protocol must be defined as a precondition of the scan, not retrofitted after false positives are observed.
 
 ---
 
-### Pitfall 5: GSD Minimum Spec Floor Breaks the Fast-Path Value Proposition
+## Pitfall 4: GitHub API Secondary Rate Limit Hit During silver-scan Batch Filing
 
-**What goes wrong:**
-The fast-path (`/silver fast`) exists because sometimes a developer needs to ship a small, well-understood change without full SDLC ceremony. Adding a minimum spec floor that requires a formatted spec document to be present before GSD execution turns fast-path into slow-path with a different label. Developers bypass it entirely, undermining both the spec floor and the fast-path's legitimate use case.
+**Risk:**
+`silver-scan` identifies 15-20 items across all historical sessions and calls `silver-add` for each. Each `silver-add` for a GitHub backend requires two API calls: `gh issue create` (REST, content-generating request) + `gh project item-add` (GraphQL). GitHub's secondary rate limit for content-generating requests is 80 per minute and 500 per hour. A batch of 20 items fired in rapid succession will hit the 80/minute content-creation secondary limit, causing 403/429 responses. If `silver-add` has no retry or throttle logic, the scan fails mid-batch, leaving partial results — some items filed, some not — with no record of which succeeded.
 
-**Why it happens:**
-Enforcement designers apply the same spec requirements uniformly across all workflows because consistency is easier than calibration. The result is a floor designed for feature work applied to a bug fix or a config change, where the overhead is disproportionate to the risk.
+**Why it happens in SB specifically:**
+SB's existing GitHub integrations (CI status check hook, pr-traceability hook) are single-call operations — they never batch. No existing SB skill has needed rate-limit retry logic. `silver-scan` introduces the first bulk-write scenario in SB's GitHub integration history. The `gh` CLI does not implement rate-limit handling by default; it surfaces the raw HTTP error.
 
-**How to avoid:**
-- The minimum spec floor must be calibrated by change type, not applied uniformly. A bug fix in a single file needs a different floor than a new feature spanning three services.
-- Fast-path must have its own explicit, minimal spec format — not a subset of the full spec. A three-field inline spec (problem statement, proposed change, acceptance test) is a valid spec floor for fast-path. Requiring a full spec document is not.
-- The floor must be machine-checkable in under 10 seconds. If spec floor validation requires AI inference (reading prose for completeness), it is not a floor, it is a gate — apply the gate model instead.
-- Record fast-path sessions that bypassed the spec floor with an explicit audit trail. Do not silently allow bypass; require an explicit override with a one-line reason. This preserves enforcement integrity without blocking work.
+**Prevention:**
+- `silver-add` must be implemented with a minimum 2-second sleep between each call when invoked from `silver-scan` batch mode. For batches of 10+ items, use 4-second intervals to stay well below the 80/min content-creation limit.
+- `silver-scan` must write a local manifest of each item's filing status (filed/pending/failed) before starting the batch. If interrupted by a rate limit, the manifest allows resuming from where it left off rather than re-scanning.
+- Treat any 403 or 429 from the GitHub CLI as a retry signal, not an error. Back off with `Retry-After` header value (or 60 seconds if absent), retry up to 3 times, then mark the item as `pending-retry` in the manifest.
+- Include the manifest file path in the scan output so the user can monitor progress on large batches.
 
-**Warning signs:**
-- Fast-path spec floor uses the same schema as full spec
-- Fast-path floor validation takes longer than 10 seconds
-- No distinction between a floor (minimum present) and a gate (quality assessed)
-- Users report that `/silver fast` takes as long as `/silver feature`
-
-**Phase to address:**
-GSD minimum spec floor phase (Feature H). Must be designed in parallel with the full spec workflow, not adapted from it afterward.
+**Phase to address:** silver-add implementation phase (before silver-scan is built on top of it). Rate-limit resilience must be in silver-add itself, not in silver-scan's orchestration layer.
 
 ---
 
-### Pitfall 6: New Spec Skills Break Existing 7-Layer Enforcement
+## Pitfall 5: Local Markdown ID Collisions When Issue Tracker is "gsd"
 
-**What goes wrong:**
-New spec-creation and ingestion skills are added as orchestration commands that invoke GSD execution. Somewhere in the wiring, a hook that was previously always-on is not triggered (because the new skill invokes a GSD sub-command differently), or a quality gate is bypassed because the new skill produces outputs in a format the existing gate does not recognize. Enforcement appears intact because hooks still fire, but the new code paths have holes.
+**Risk:**
+When `issue_tracker` is `"gsd"` (local markdown, no GitHub), `silver-add` assigns IDs to items stored in `docs/issues/` and `docs/backlog/`. If IDs are generated by counting existing files or by timestamp, two rapid-fire `silver-add` calls in the same second (which auto-capture can produce) generate the same ID. One file overwrites the other silently. Or, if issues and backlog items share an ID namespace, `ISSUE-007` and `BACKLOG-007` can both exist — `silver-remove 7` is ambiguous: remove from which namespace?
 
-**Why it happens:**
-Existing enforcement was designed around the full-dev-cycle and devops-cycle workflow paths. New skills that create specs rather than code follow a different execution path — they may not trigger the same hook sequence. The 7-layer model assumes all meaningful work flows through the enforcement-wired paths; new paths that bypass that flow inherit none of the enforcement.
+**Why it happens in SB specifically:**
+SB has no prior local-markdown ID assignment logic. The risk is in the design: if ID is `count(ls docs/issues/) + 1`, two concurrent `silver-add` calls both see N files, both assign ID N+1, last write wins. SB's auto-capture enforcement fires during a single session, but the coding agent can invoke skills in parallel (wave-based execution is a GSD feature SB orchestrates). This makes collision a real risk, not a theoretical one.
 
-**How to avoid:**
-- Before implementing any new skill, map its execution path against the 7-layer enforcement model and identify which layers it touches vs. which it bypasses.
-- Spec-creating skills must be treated as writing-phase equivalents: they produce artifacts (spec files) that are subject to enforcement just as code files are.
-- Template parity constraint already exists for `docs/workflows/` vs `templates/workflows/` — extend this pattern to spec templates: a `templates/specs/` canonical form that spec skills must produce against, allowing gate validation of spec outputs.
-- Run the full hook suite against a new skill's output in a dry-run mode before shipping. Document which enforcement layers were exercised.
+**Prevention:**
+- Assign IDs using a monotonically-incrementing counter stored in a dedicated file (`docs/issues/.next-id` and `docs/backlog/.next-id`), incremented with an atomic read-then-write. In shell: `flock` on the counter file before reading, increment, write back, release.
+- Issue IDs and backlog IDs must share a single namespace (SB-001, SB-002...) rather than two separate namespaces. `silver-remove SB-007` is then unambiguous — look it up in the index.
+- On init, `silver-add` must check that the target file does not exist before writing. If it does, increment the counter again and retry rather than overwriting.
+- `silver-scan` batch mode must call `silver-add` sequentially (never in parallel) to avoid concurrent counter reads.
 
-**Warning signs:**
-- A new skill is added without a corresponding enforcement coverage map
-- Spec files are written to the repo without going through any quality gate
-- Hook firing is verified for the happy path only, not the error/partial path
-- SENTINEL security hardening (P-1 through P-7) has not been reviewed for new MCP ingestion paths that introduce external data into the repo
-
-**Phase to address:**
-Every phase. This is an integration risk that applies to each new feature (A through I). Each feature's implementation phase must include an enforcement coverage verification step before merge.
+**Phase to address:** silver-add implementation phase. ID assignment scheme must be decided before the first file is written — changing it post-hoc requires migrating all existing IDs.
 
 ---
 
-### Pitfall 7: PR-to-Spec Traceability Becomes a Post-Hoc Annotation
+## Pitfall 6: Auto-Capture Instructions Not Honored Across All Skill Contexts
 
-**What goes wrong:**
-Traceability is implemented as a PR description template that asks developers to fill in which spec drove the implementation. Developers either leave it blank, fill it in incorrectly from memory, or link to the wrong spec version. The result is a traceability log that is factually unreliable — it has the appearance of audit trail without the substance.
+**Risk:**
+The auto-capture enforcement is added to `silver-bullet.md` as a global instruction. It works in sessions that flow through the standard `full-dev-cycle` workflow because SB's hooks ensure `silver-bullet.md` is read at session startup. But sessions initiated via `/silver fast` (the fast-path), sessions using Forge delegation, and sub-agent spawned by `Agent teams dispatched` operate in their own context windows with no guarantee that `silver-bullet.md` is re-read in full. The auto-capture instruction is silently absent in those contexts.
 
-**Why it happens:**
-Traceability implemented as a human-filled form is always unreliable. Humans fill in forms at PR creation time under time pressure, from memory, with no validation that the link is correct.
+**Why it happens in SB specifically:**
+SB's `silver-bullet.md §0` requires reading the file at session startup, but sub-agents spawned via the `Agent` tool receive only the instructions passed in their invocation prompt. They do not automatically inherit the parent's `silver-bullet.md` context. The Forge delegation path (when `.forge-delegation-active` exists) routes work through a different context entirely. AGENTIF benchmarks show that even the best LLMs follow fewer than 30% of multi-constraint instructions perfectly in agentic scenarios — an instruction buried in §N of a long orchestration file has lower compliance than one surfaced in the immediate task prompt.
 
-**How to avoid:**
-- Traceability must be machine-generated, not human-filled. The implementation session must record the spec artifact and version that was active at session start. The PR-creation skill reads this session record and auto-populates the traceability link.
-- The session record must be written at session start, not at session end. If it is written at end, it can be omitted when a session ends abnormally.
-- Traceability link validation must be a gate at PR creation: if no session record exists for the branch, the PR description must contain a manual override with explicit reason, not just an empty field.
-- The PR-to-spec link must reference the pinned spec version (from the multi-repo versioning protocol), not the current head of the spec file.
+**Prevention:**
+- Auto-capture instructions must be embedded directly in the skill files that generate deferred items (`silver-feature`, `silver-bugfix`, `silver-devops`, etc.) as an explicit step, not only in `silver-bullet.md`. A skill that produces deferred items must contain: "If this step produces a deferred item, call `silver-add` before proceeding to the next step."
+- For Forge-delegated sessions, the Forge SKILL.md task prompt must include the auto-capture instruction in the `INJECTED SKILLS` field.
+- The stop-check hook (`stop-check.sh`) is the enforcement backstop: if `silver-bullet.json` has `auto_capture: true` and the session produced deferred items (detectable from session log `Needs human review` entries) but no `silver-add` was recorded in the state file, stop-check must soft-warn (not hard-block — filing can happen post-session).
+- Test auto-capture compliance in: (1) standard session, (2) `/silver fast` session, (3) a session with Agent-team dispatch.
 
-**Warning signs:**
-- Traceability is implemented as a PR template field
-- No session record is written at the start of implementation sessions
-- Traceability links point to file paths rather than versioned artifacts
-- No validation that a linked spec file actually exists at link creation time
-
-**Phase to address:**
-PR-to-spec traceability phase (Feature G). Must be designed from the session-record pattern, not from the PR-description pattern.
+**Phase to address:** Auto-capture enforcement phase. Instruction placement must be designed before any enforcement is tested — retrofitting multi-context enforcement after the fact requires modifying every skill file individually.
 
 ---
 
-## Technical Debt Patterns
+## Pitfall 7: silver-scan Scope Creep Produces Unmanageable Output
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Spec floor = subset of full spec schema | Faster to implement, single schema to maintain | Fast-path overhead grows with full spec; developers bypass | Never — design separate minimal spec schema for fast-path |
-| Ingestion errors reported as warnings, not failures | No false-positive session blocks | Degraded specs pass enforcement; silent quality decay | Never for artifact-referenced spec sections |
-| Multi-repo spec reference = file path with no version | Simple to implement, works immediately | Spec drift undetectable until integration failure | Never for specs that drive mobile implementation |
-| Pre-build gate = soft-report-only | No blocked sessions in early rollout | Gate ignored within weeks; zero enforcement value | Never — if it doesn't block, it's a report, not a gate |
-| Traceability = PR template field | Zero implementation cost | Unreliable data from day one | Never if traceability is claimed as a compliance feature |
-| Assumption blocks = optional | Cleaner spec documents | Process theater; false confidence in spec completeness | Never for cross-functional or external-facing features |
+**Risk:**
+`silver-scan` is instructed to scan ALL past sessions from the beginning of the project. Silver Bullet has sessions dating back through v0.9.0 — potentially 40+ session logs. Scanning all of them in a single run produces a candidate list of 80-120 items spanning years of context. The user cannot meaningfully review this list. If auto-filing is enabled, it becomes a noise engine (Pitfall 1 at scale). If it requires manual review, the review itself takes longer than just re-doing the work.
 
----
+**Why it happens in SB specifically:**
+SB projects are long-lived (SB itself is on its 20th milestone). Session logs accumulate without a pruning mechanism. The `silver-scan` specification says "ALL project sessions from beginning" — this instruction is correct for a new feature but catastrophic as a default for mature projects with long histories.
 
-## Integration Gotchas
+**Prevention:**
+- `silver-scan` must default to scanning only the last N sessions (default: 10, configurable via `--sessions N` flag or `.silver-bullet.json` scan config). Full-history scan requires explicit `--all-history` flag with a warning.
+- Provide a `--since <version>` or `--since <date>` filter so users can scope the scan to a specific milestone or time window.
+- Cap the total candidate list at 20 items per scan run. If the scan finds more candidates than the cap, show the top 20 sorted by recency and signal-level, and tell the user how many were truncated and how to retrieve them.
+- Write each scan run's full candidate list to a file (`docs/silver-scan/<date>-candidates.md`) so it persists for async review rather than requiring the user to act immediately during the session.
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| JIRA MCP | Assume ticket fields map cleanly to spec sections | JIRA fields are org-specific; build a field mapping config, default to `[UNMAPPED]` not empty |
-| Figma MCP | Treat Figma file as read-only design source | Figma MCP is write-capable (as of 2026); scope connector permissions to read-only explicitly |
-| Google Docs MCP | Pull full document content into spec context | Documents can be large; extract only linked sections, record extraction boundaries in manifest |
-| Multi-repo ref | Use relative file paths | Paths break when repo is cloned to different directory; use repo-root-relative paths with repo identifier |
-| MCP connector auth | Store tokens in env vars with no rotation | MCP connector tokens must be scoped, documented in SB setup, and not embedded in skill files |
-| JIRA ticket ingestion | Ingest linked artifacts automatically | Linked artifacts (PPT, Figma, Docs) need explicit user confirmation before ingestion — scope creep risk |
+**Phase to address:** silver-scan design phase. Scope controls must be in the skill specification before implementation — adding a cap after a user runs a full-history scan on a large project and gets overwhelmed is too late.
 
 ---
 
-## Performance Traps
+## Pitfall 8: Post-Release Summary Breaks Enforcement Integrity on the Stop Hook
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Pre-build gap analysis runs full spec diff on every session start | Sessions feel slow; users skip spec floor | Run gap analysis incrementally on changed sections only | Immediately on any spec > 5 sections |
-| Multi-repo spec validation fetches all referenced specs at session start | Long session startup in mobile repos | Cache spec versions locally with TTL; only re-fetch on version mismatch signal | On first multi-repo project with 3+ repos |
-| MCP ingestion is synchronous in session startup | Session hangs if external tool is slow | Run ingestion as async background task with inline placeholder; user continues when ready | On any JIRA instance with slow API response |
-| Elicitation conversation history grows unbounded | Spec creation sessions hit context limits in long elicitation | Summarize conversation history at each elicitation checkpoint | On features requiring more than 10 elicitation turns |
+**Risk:**
+The post-release summary is meant to fire automatically after `silver-create-release` completes. But `silver-create-release` is gated by `stop-check.sh` (via `required_deploy`). If the post-release summary calls `silver-add` (to ensure items are filed before summary) and those calls write to GitHub or local markdown after the completion gate fires, the hook's assumption that "all work is done when stop fires" is violated. Alternatively, if the summary is shown in the stop hook's output, it competes with the stop hook's block/allow decision, creating confusing UX.
 
----
+**Why it happens in SB specifically:**
+SB's stop-check hook has a strict invocation model: it fires on the `Stop` event and either blocks or allows. It cannot initiate new work (it is a read-only enforcer). Adding a post-release summary that shows items filed during the milestone requires reading state that was accumulated over the entire milestone — this is a reporting concern, not an enforcement concern. Wiring it into the stop hook would require the hook to read the session state file's filing history, which is new behavior not currently supported.
 
-## Security Mistakes
+**Prevention:**
+- Post-release summary is NOT a stop-hook concern. Implement it as an explicit step in `silver-create-release/SKILL.md` — the final step before the skill concludes. The skill reads the current session's state file for all `silver-add` invocations recorded during the milestone and formats them as a summary.
+- The state file (`~/.claude/.silver-bullet/<project>/state`) must record each `silver-add` call with its ID and title, not just that the skill was called. This requires a small change to `record-skill.sh` (or a new `record-filing.sh` helper) to append filing metadata.
+- The summary step in `silver-create-release` must be non-blocking: if no items were filed, print "No items filed this milestone." and continue. Never let an empty summary prevent the release from completing.
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| JIRA ticket content written verbatim into repo spec files | Sensitive JIRA content (customer PII, internal pricing) lands in repo history | Sanitization step: user reviews extracted content before it is committed to repo |
-| Figma connector granted write permissions | Agent could modify design files during ingestion | Scope Figma MCP to read-only; document required permission scope in SB setup |
-| Google Docs content from shared links with no auth check | Pulls content from a doc the user shouldn't have access to | Validate that the authenticated user has explicit access to each doc before ingestion |
-| Spec files contain assumption blocks with internal business logic | Internal architecture/pricing details in public-facing repo specs | SENTINEL P-7 check must cover spec files, not just code files |
-| Session records written with full MCP response payloads | Large sensitive payloads in repo commit history | Session records store metadata only (artifact ID, version, timestamp) — never raw MCP response body |
+**Phase to address:** Post-release summary phase AND the silver-add implementation phase (state recording must be in place before the summary can read it). These two features are tightly coupled.
 
 ---
 
-## UX Pitfalls
+## Summary
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Elicitation asks all questions upfront in a single prompt | PM/BA overwhelmed; gives short answers to escape the form | One-question-at-a-time elicitation with context-aware follow-up based on previous answer |
-| Spec floor error message says "spec missing" without saying what's missing | Developer re-reads every spec section looking for the gap | Error must name the specific missing field and provide a fill-in template |
-| Multi-repo version mismatch blocks session with no diff shown | Developer has no idea what changed in the main spec | Block must include a one-screen diff summary of what changed between pinned version and current |
-| Pre-build validation report is prose-only | Developer reads it once, cannot act on it systematically | Report must include a numbered finding list with finding-ID for tracking deferred items |
-| Fast-path override requires a reason but gives no examples | Developer writes "quick fix" which provides no audit value | Provide 3-5 suggested override reasons with a free-text option |
+**Top 3 most critical pitfalls to design against from the start:**
 
----
+**1. Auto-Capture Noise Engine (Pitfall 1)**
+If the classification rubric is not written before the auto-capture instruction is added to `silver-bullet.md`, the first real-world session will file 20+ junk items and users will disable the feature. The rubric is a prerequisite, not a refinement.
 
-## "Looks Done But Isn't" Checklist
+**2. silver-scan False-Positives on Resolved Items (Pitfall 3)**
+Silver-scan's value proposition is that it surfaces real unresolved debt. If it surfaces already-shipped items, users will never trust its output again. The resolution-check protocol (git log cross-reference + open-issue check + later-session search) must be built into the scan before it touches any real session history. The human-approval gate before filing is mandatory, not optional.
 
-- [ ] **Spec creation:** Has assumption detection — verify that a complex input with 3+ ambiguities produces at least 3 `[ASSUMPTION:]` blocks, not a clean spec
-- [ ] **JIRA ingestion:** Has ingestion manifest — verify that after ingestion, a `INGESTION_MANIFEST.md` exists in the spec directory listing what was retrieved and what was skipped
-- [ ] **Multi-repo referencing:** Has version pinning — verify that mobile repo config contains a spec version pin, not a file path
-- [ ] **Pre-build validation:** Has hard-block behavior — verify that a spec with a missing required section actually halts the session, not just logs a warning
-- [ ] **Fast-path floor:** Has separate schema — verify that the fast-path spec format is a distinct file from the full spec format, not a subset of the same schema
-- [ ] **PR traceability:** Is machine-generated — verify that the traceability link in the PR was written by the session record, not by a PR template field
-- [ ] **Enforcement coverage:** New skills covered — verify that each new skill has a documented enforcement coverage map showing which of the 7 layers it exercises
-- [ ] **UAT gate:** Uses pinned spec — verify that UAT compares implementation against the spec version pinned at build start, not the current spec head
+**3. Auto-Capture Not Honored Across All Skill Contexts (Pitfall 6)**
+The auto-capture instruction placed only in `silver-bullet.md` will be silently absent in `/silver fast` sessions, Forge-delegated sessions, and sub-agent spawned contexts. Unless the instruction is embedded directly in each producing skill file AND the stop-hook provides a soft-warn backstop, compliance will be inconsistent and the feature will appear to "work sometimes."
 
 ---
 
-## Recovery Strategies
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Spec theater already shipped (no assumption tracking) | HIGH | Retroactively audit existing specs for assumption density; add assumption extraction as a required re-validation step before next build |
-| MCP instability caused corrupted spec | LOW | Ingestion manifest makes recovery mechanical: re-run failed ingestion steps from manifest, patch missing sections |
-| Multi-repo spec drift already occurred | MEDIUM | Run cross-repo gap analysis as a one-time audit; require explicit version re-pin from mobile repo owner with diff acknowledgment |
-| Pre-build gate became rubber stamp | MEDIUM | Introduce hard-block criteria in a new gate version; communicate criteria in advance; run one calibration sprint with real specs before enforcing |
-| Fast-path bypass habit formed | LOW | Add bypass audit trail retroactively; surface bypass frequency in a session stats report; adjust floor criteria if bypass rate is high for legitimate reasons |
-| Enforcement gap in new skill | MEDIUM | Map skill execution path against 7-layer model; add missing hook triggers; run regression on existing workflows to confirm no hook regressions introduced |
-
----
-
-## Pitfall-to-Phase Mapping
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Spec creation as process theater | Feature B (AI-driven spec creation) | Elicitation skill produces assumption blocks on ambiguous input in testing |
-| MCP connector instability | Feature A (JIRA ingestion), Feature C (artifact ingestion) | Simulated connector failure produces explicit error output, not silent empty section |
-| Multi-repo spec drift | Feature E (multi-repo referencing) | Mobile repo session blocked when spec version pin mismatches main repo current version |
-| Pre-build gate rubber stamp | Feature F (pre-build validation) | Session halted when required spec section is absent; finding logged in machine-readable format |
-| Spec floor breaking fast-path | Feature H (GSD minimum spec floor) | Fast-path session with 3-field inline spec passes floor check in under 10 seconds |
-| New skills breaking enforcement | All phases (A through I) | Enforcement coverage map documented and reviewed before each feature merges |
-| Traceability as post-hoc annotation | Feature G (PR-to-spec traceability) | PR traceability link is populated from session record, not PR template, on first implementation session |
-| UAT against wrong spec version | Feature I (UAT gate) | UAT uses spec version pinned at build start; version mismatch with current spec produces a warning in UAT report |
-
----
-
-## Sources
-
-- Thoughtworks Technology Radar Vol. 33 (2025): Spec-driven development in "Assess" ring, heavy up-front specification antipattern
-- DEV Community: [Agentic Drift — It's Hard to Be Multiple Developers at Once](https://dev.to/helgesverre/agentic-drift-its-hard-to-be-multiple-developers-at-once-4872) — semantic conflict in parallel agent work
-- AgileVerify: [Quality Gates in CI/CD: What Should Really Block a Release in 2026](https://agileverify.com/quality-gates-in-ci-cd-what-should-really-block-a-release-in-2026/) — hard vs. soft gate model
-- Figma Blog: [Introducing Figma MCP Server](https://www.figma.com/blog/introducing-figma-mcp-server/) — write capability risk, Feb 2026
-- SiliconANGLE: [Atlassian embeds agents into Jira and embraces MCP](https://siliconangle.com/2026/02/25/atlassian-embeds-agents-jira-embraces-mcp-third-party-integrations/) — MCP maturity status
-- Augment Code: [What Is Spec-Driven Development](https://www.augmentcode.com/guides/what-is-spec-driven-development) — static spec failure modes (4 documented types)
-- arxiv 2512.08296: Towards a Science of Scaling Agent Systems — coordination tax in multi-agent information fragmentation
-- CommBank Technology / Medium: [Enforcing Compliance While Retaining Agency](https://medium.com/commbank-technology/enforcing-compliance-while-retaining-agency-a-rule-based-policy-engine-approach-for-react-agents-a9a8a1b4a88c) — policy enforcement non-determinism in agentic systems
-- SB PROJECT.md architecture analysis: plugin boundary constraint (§8), enforcement integrity constraint, GSD/SB separation of concerns
-
----
-*Pitfalls research for: AI-driven spec creation, external artifact ingestion, multi-repo orchestration, pre-build validation — Silver Bullet v0.14.0*
-*Researched: 2026-04-09*
+*Sources:*
+- GitHub Docs: [Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) — 80 content-creating requests/min, 500/hour secondary limit
+- GitHub Community: [GitHub API — Issue Deletion](https://github.com/orgs/community/discussions/46529) — REST API does not support deletion; GraphQL deleteIssue requires delete_repo scope
+- GitHub Community: [Hitting secondary rate limit on issue creation](https://github.com/orgs/community/discussions/50326) — confirmed failure mode for batch issue creation
+- AGENTIF benchmark (arxiv 2505.16944): LLMs follow fewer than 30% of multi-constraint agentic instructions perfectly — basis for Pitfall 6 enforcement placement strategy
+- A Benchmark for Evaluating Outcome-Driven Constraint Violations (arxiv 2512.20798) — violation rates 11.5-66.7% across 12 state-of-the-art LLMs
+- SB PROJECT.md: `issue_tracker` field, enforcement invocation-based model (§1), `silver-bullet.md` context read requirement
+- SB REQUIREMENTS.md v0.24.0 FEAT-01: issue_tracker field established as the backend-switching primitive
+- SB silver-bullet.md §1: "record-skill.sh records that a skill was called; it cannot verify the skill produced a meaningful result" — enforcement model analysis
+- SB `.planning/research/PITFALLS.md` (prior milestone): enforcement gap analysis pattern, integration gotcha model

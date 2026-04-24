@@ -1,272 +1,340 @@
-# Stack Research
+# Stack Research — Issue Capture & Retrospective Scan
 
-**Domain:** AI-driven spec creation, external artifact ingestion, multi-repo orchestration
-**Researched:** 2026-04-09
-**Confidence:** MEDIUM — MCP connector schemas verified via community sources and GitHub; official Atlassian tool listing incomplete in public docs
+**Milestone:** v0.25.0 — Issue Capture & Retrospective Scan
+**Researched:** 2026-04-24
+**Confidence:** HIGH — all gh CLI commands verified against the installed binary (gh 2.x with `project` scope confirmed active on this machine)
 
 ---
 
 ## Scope
 
-This file covers ONLY the stack additions needed for the v0.14.0 milestone. The existing SB stack (Node.js, shell hooks, markdown skills, GSD/Superpowers/Engineering/Design plugins) is already validated and out of scope.
+Stack additions needed for four new capabilities:
+1. `/silver-add` — classify and file item to GitHub Issues + project board, or local markdown
+2. `/silver-remove` — remove item by ID from GitHub or local markdown
+3. `/silver-scan` — glob session logs + git log, extract deferred items
+4. Auto-capture enforcement — SB instructs coding agent to call silver-add on the fly
 
-Four capabilities require stack investigation:
-
-1. JIRA ingestion via MCP connector
-2. Figma design extraction via MCP connector
-3. Google Docs/PPT ingestion via MCP or CLI
-4. Multi-repo spec referencing between main and mobile repos
+The existing SB stack (shell hooks, markdown skills, `jq`, `gh` CLI, `git`) is already present and validated. No new tools or runtimes are required.
 
 ---
 
-## 1. JIRA Ingestion — Atlassian MCP Connector
+## GitHub Integration (gh CLI)
 
-### Recommended: Official Atlassian Remote MCP Server
+### Prerequisite: `project` scope
 
-| Item | Detail |
-|------|--------|
-| Source | `atlassian/atlassian-mcp-server` (official) or `sooperset/mcp-atlassian` (community, 72 tools) |
-| Transport | SSE (deprecated after 2026-06-30) → migrate to API token + stdio |
-| Auth | API token (stable, no re-auth mid-session) or OAuth 2.1 |
-| Tool names (verified) | `jira_search` (JQL or natural language), `jira_get_issue`, `jira_create_issue`, `jira_update_issue`, `jira_transition_issue` |
-
-**Data returned by `jira_get_issue`** (MEDIUM confidence — confirmed from community sources, not official schema):
-
-- Issue key, summary, description (full text)
-- Status, assignee, reporter, priority, labels, components
-- Acceptance criteria field (separate from description in newer Jira projects)
-- Epic metadata and custom fields
-- Linked issues (issue keys + link type)
-- Attachment *metadata* (filename, URL, MIME type) — **NOT attachment content**
-- Embedded Confluence page URLs in description
-
-**Critical gap — attachment content is not returned.** If a JIRA ticket links to a PDF or image attachment, the MCP returns metadata only. Actual content fetch requires a separate HTTP call or a dedicated Google Drive / Confluence MCP. Track issue: `sooperset/mcp-atlassian#589`.
-
-**Confluence content** (linked pages from JIRA descriptions): fetched via `confluence_get_page` — returns full page markdown. This IS available.
-
-### How SB Skills Invoke It
-
-SB skills invoke MCP tools via natural-language instructions in SKILL.md. When a skill says "fetch JIRA ticket {key}", Claude identifies the configured MCP server and calls `jira_get_issue`. No custom Node.js wrappers needed — the MCP transport handles authentication and request lifecycle.
-
-**Integration point:** Create a new `silver-spec-ingest` skill that:
-1. Accepts JIRA ticket key as `$ARGUMENTS`
-2. Calls `jira_get_issue` to pull ticket fields
-3. Calls `confluence_get_page` for each linked Confluence URL found in the description
-4. Assembles a structured context object (ticket summary, description, AC, linked Confluence pages)
-5. Passes assembled context to the AI-driven spec creation skill as input
-
-### Configuration (user-side, not SB-side)
-
-SB does NOT configure MCP servers — that is Claude Desktop / Claude Code configuration owned by the user. SB skill instructions should include a prerequisite check:
+GitHub Projects V2 operations require the `project` OAuth scope. This scope is confirmed present on the development machine. The silver-add skill must check for it and instruct the user to re-auth if missing:
 
 ```bash
-# Skill prerequisite check pattern (inline in SKILL.md)
-# Verify Atlassian MCP is configured before proceeding
+# Verify project scope is present
+gh auth status 2>&1 | grep -q "project" || echo "MISSING_SCOPE"
+
+# If missing, user runs:
+# gh auth refresh -s project
 ```
 
-Document the required Claude config in `silver-bullet.md` prerequisites section, not in SB code.
+### Creating a GitHub Issue
+
+```bash
+# Basic — issue only
+ISSUE_URL=$(gh issue create \
+  --repo <owner>/<repo> \
+  --title "<title>" \
+  --body "<body>" \
+  --label "<label>" \
+  --json url -q '.url')
+
+# Extract issue number from URL for ID assignment
+ISSUE_NUM=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
+```
+
+**Flag notes (verified):**
+- `--title` and `--body` are non-interactive when both provided
+- `--label` accepts comma-separated values or multiple `--label` flags
+- `--json url -q '.url'` returns only the URL, suitable for capture and downstream use
+- `--repo` not needed when running inside the project repo (uses `origin` remote automatically)
+- `--project title` flag exists but is unreliable for project board placement — use the two-step approach below instead
+
+**Labels to standardise for silver-add:**
+- `bug` — defect or broken behaviour
+- `tech-debt` — code quality / architectural debt
+- `enhancement` — deferred feature or improvement
+- `question` — open question needing resolution
+- `housekeeping` — cleanup, docs, configuration drift
+
+### Adding Issue to Project Board (two-step)
+
+`gh issue create --project` is unreliable when the project is org-scoped (it matches by title and can miss). Use the explicit two-step instead:
+
+```bash
+# Step 1: Add to project, capture item ID
+ITEM_ID=$(gh project item-add <project-number> \
+  --owner <org-or-user> \
+  --url "$ISSUE_URL" \
+  --format json | jq -r '.id')
+
+# Step 2: Set Status field to "Backlog"
+gh project item-edit \
+  --project-id <project-node-id> \
+  --id "$ITEM_ID" \
+  --field-id <status-field-id> \
+  --single-select-option-id <backlog-option-id>
+```
+
+**Known IDs for alo-exp/silver-bullet project (Silver Bullet, project #4):**
+
+| Item | Value |
+|------|-------|
+| Project number | `4` |
+| Project node ID | `PVT_kwDOA5OQY84BU8tb` |
+| Status field ID | `PVTSSF_lADOA5OQY84BU8tbzhMcRXE` |
+| Backlog option ID | `7e62dc72` |
+| Todo option ID | `01205c50` |
+| In Progress option ID | `8a08e86b` |
+| Done option ID | `57588370` |
+
+These IDs are stable (GraphQL node IDs do not change). Cache them in `.silver-bullet.json` under a `github_project` key during `silver-init` or first `silver-add` run, so skills do not need to re-query `gh project field-list` every invocation.
+
+**Proposed `.silver-bullet.json` addition:**
+```json
+"issue_tracker": "github",
+"github_project": {
+  "owner": "alo-exp",
+  "number": 4,
+  "node_id": "PVT_kwDOA5OQY84BU8tb",
+  "status_field_id": "PVTSSF_lADOA5OQY84BU8tbzhMcRXE",
+  "backlog_option_id": "7e62dc72"
+}
+```
+
+The `silver-add` skill reads these fields; if absent, falls back to `gh project list` + `gh project field-list` discovery and writes the result back.
+
+### Discovering Project IDs (first-time / missing config)
+
+```bash
+# 1. Find project number and node ID
+gh project list --owner <owner> --format json | jq '.projects[] | select(.title=="<project-title>") | {number, id}'
+
+# 2. Find Status field ID and option IDs
+gh project field-list <number> --owner <owner> --format json \
+  | jq '.fields[] | select(.name=="Status") | {id, options}'
+```
+
+### Closing vs Deleting a GitHub Issue
+
+`silver-remove` should **close** by default, not delete. Deletion is permanent and loses history. Use delete only when the item was filed by mistake (e.g., duplicate, test noise).
+
+```bash
+# Close with reason (preferred for silver-remove)
+gh issue close <number> --reason "not planned" --comment "Removed via /silver-remove: <reason>"
+
+# Delete permanently (only when --force flag passed to silver-remove)
+gh issue delete <number> --yes
+```
+
+### Listing Issues by Label (for silver-scan dedup)
+
+```bash
+# Check if a similar issue already exists before filing
+gh issue list \
+  --label "tech-debt" \
+  --state open \
+  --json number,title,url \
+  --search "<keywords>"
+```
+
+Use this in `silver-add` to surface potential duplicates before creating a new issue. Output a warning to the agent; do not block filing automatically.
 
 ---
 
-## 2. Figma Design Extraction — Figma MCP Server
+## Local Fallback (no PM system — `issue_tracker: "gsd"`)
 
-### Recommended: Official Figma MCP Server (Remote)
+When `issue_tracker` is `"gsd"` or absent, `silver-add` writes to local markdown files. This is the default for projects not using GitHub Issues.
 
-| Item | Detail |
-|------|--------|
-| Source | Official Figma remote MCP server (not third-party) |
-| Status | Beta — free during beta, usage-based paid after |
-| Supported clients | Claude Code, VS Code, Cursor, Windsurf, Codex |
-| Transport | Remote MCP (SSE) — no local install required |
+### File Structure
 
-**Tools / data available** (MEDIUM confidence — official docs light on schema):
+```
+docs/
+  ISSUES.md    — bugs, defects, broken behaviour (type: issue)
+  BACKLOG.md   — enhancements, tech debt, housekeeping, questions (type: backlog)
+```
 
-- `get_design_context` — structured representation of a Figma selection (React + Tailwind approximation); translatable to any framework
-- `get_variable_defs` — design tokens: color values, spacing, typography from selected frames
-- Component names, layout structure, layer hierarchy
-- FigJam diagram content
-- Variables and styles used in a selection
+### ID Assignment
 
-**Key limitation:** Write-to-canvas (creating Figma content from code) requires the remote server and will become paid. For SB's purpose (reading/extracting design context into specs), read-only extraction is sufficient and the current free beta covers it.
+Use a sequential integer scoped to the file. Each file maintains its own counter, independent of the other. ID format: `SB-<type>-<number>` where type is `I` (issue) or `B` (backlog).
 
-**What Figma MCP does NOT return:**
+```
+SB-I-1, SB-I-2, ...   (docs/ISSUES.md)
+SB-B-1, SB-B-2, ...   (docs/BACKLOG.md)
+```
 
-- Full design file as exportable assets
-- PNG/SVG renders of components (requires Figma REST API export, not MCP)
-- Prototype flow definitions (partially — FigJam content is accessible but flow logic is limited)
+**ID generation approach:** Read the file, grep for existing IDs, take max + 1. No external counter file needed.
 
-### How SB Skills Invoke It
+```bash
+# Get next issue ID
+NEXT=$(grep -oP 'SB-I-\K[0-9]+' docs/ISSUES.md 2>/dev/null | sort -n | tail -1)
+NEXT_ID="SB-I-$((${NEXT:-0} + 1))"
 
-Same pattern as Atlassian: natural-language instructions in SKILL.md. "Extract design context from the selected Figma frame" triggers Claude to call `get_design_context`.
+# Get next backlog ID
+NEXT=$(grep -oP 'SB-B-\K[0-9]+' docs/BACKLOG.md 2>/dev/null | sort -n | tail -1)
+NEXT_ID="SB-B-$((${NEXT:-0} + 1))"
+```
 
-**Constraint:** The user must have the target Figma frame open and selected in Figma before invoking the skill. SB skill must include a prompt step: "Open the Figma file and select the frame(s) you want to extract, then continue."
+### Entry Format
 
-**Integration point:** Create a `silver-spec-ingest` skill step (shared with JIRA ingestion) that includes an optional Figma branch:
-1. Ask: "Do you have a Figma design to incorporate? (Y/N)"
-2. If Y: prompt user to select frame in Figma, then call `get_design_context` + `get_variable_defs`
-3. Append extracted design tokens and component structure to spec context object
-
----
-
-## 3. Google Docs / PPT Ingestion
-
-### Recommended: Community Google Drive MCP or Google Workspace CLI
-
-Two viable options — choose based on user environment:
-
-**Option A: Google Drive MCP Server (Claude Desktop)**
-
-| Item | Detail |
-|------|--------|
-| Source | `piotr-agier/google-drive-mcp` or `a-bonus/google-docs-mcp` (community, not official Google) |
-| Confidence | LOW — no official Google MCP server as of research date |
-| Auth | OAuth 2.0 (requires user to grant access) |
-| Transport | stdio (local Claude Desktop) |
-
-Capabilities: read Google Docs content, Sheets data, Slides text, Drive file search/navigation, manage folders.
-
-**Option B: Google Workspace CLI (recommended when Claude Code is the client)**
-
-| Item | Detail |
-|------|--------|
-| Source | Google open-source Workspace CLI |
-| Confidence | MEDIUM — Google-published, documented |
-| Auth | Service account or OAuth |
-| Transport | Shell subprocess from skill |
-
-Capabilities: read Google Docs as structured markdown, read Sheets as CSV/JSON, Drive file listing. Better for agentic shell-based workflows than MCP.
-
-**PPT/PPTX ingestion gap:** Neither option has strong PowerPoint native support. Google Slides content is readable as text via the Workspace CLI (slide text, speaker notes). Binary .pptx files from non-Google sources are not directly readable — convert to Google Slides first, or accept text-only extraction.
-
-**Recommendation:** Default to community Google Drive MCP for Claude Desktop users. For Claude Code environments, use the Workspace CLI via Bash tool in skill steps. SB skill should detect the environment and branch accordingly, or document both paths in `silver-bullet.md`.
-
-### Integration point
-
-Add a `silver-spec-ingest` skill step for Google Docs:
-1. Accept a Google Doc URL or file name as input
-2. Call Drive MCP `read_document` (or Workspace CLI equivalent) to fetch content as markdown
-3. Append to spec context object alongside JIRA and Figma content
-
----
-
-## 4. Multi-Repo Spec Referencing
-
-### Recommended: "Spine" / Virtual Monorepo Pattern (zero new tooling)
-
-| Item | Detail |
-|------|--------|
-| Approach | CLAUDE.md context layering + explicit spec file paths |
-| Tooling | None — standard git, markdown, and bash |
-| Confidence | HIGH — well-documented community pattern, no experimental features |
-
-**Pattern:**
-
-Main repo (silver-bullet or project main repo) holds canonical specs in `.planning/specs/`. Mobile/secondary repos reference them by absolute path or relative-to-workspace path in their own `silver-bullet.md` or `CLAUDE.md`:
+Each entry is a level-3 heading followed by metadata and description. This makes entries parseable by grep/awk and human-readable.
 
 ```markdown
-## Spec Source of Truth
-Main repo specs: ~/projects/main-repo/.planning/specs/
-Reference before implementing: read the relevant spec file before writing any code.
+### SB-I-3 — Short title of the issue
+
+**Type:** bug | tech-debt | enhancement | question | housekeeping
+**Filed:** 2026-04-24
+**Source:** session | scan | manual
+**Status:** open
+
+Description of the issue, what is broken or needed, and relevant context.
+
+---
 ```
 
-**How it works in practice:**
+### Removal (silver-remove for local files)
 
-1. Main repo spec creation produces `.planning/specs/FEATURE-NAME.md` (standardized format)
-2. Mobile repo's `silver-bullet.md` includes a "Spec References" section pointing to main repo paths
-3. When a mobile repo session starts, the SB `silver-init` hook or session preamble reads the referenced spec file
-4. SB skill in the mobile repo reads the spec and uses it as ground truth for implementation
+Identify the entry by ID, then delete from heading to the next `---` separator.
 
-**No symlinks, no git submodules** — those have known issues with Claude Code's Glob/Grep/LS tools not traversing submodule boundaries. Plain file path references in markdown are simpler and more reliable.
+```bash
+# Delete entry block by ID (SB-I-3) using awk
+awk '/^### SB-I-3 —/{found=1} found && /^---$/{print; found=0; next} !found{print}' \
+  docs/ISSUES.md > docs/ISSUES.md.tmp && mv docs/ISSUES.md.tmp docs/ISSUES.md
+```
 
-**Alternative: Git subtree (read-only)** — pull specs from main repo into mobile repo's `.planning/specs/` as a git subtree sync. More operationally complex, useful only if mobile repo CI needs specs without main repo access. Avoid unless required.
+The skill should print the deleted entry text before removing it, so the agent can confirm.
 
-### What NOT to use
+### Initialization
 
-| Avoid | Why |
-|-------|-----|
-| Git submodules for spec sharing | Claude Code tools don't traverse submodule boundaries; symlink discovery issues |
-| Copying spec files manually | Drift risk; no single source of truth |
-| Shared npm package with specs | Overkill; specs are text files, not code |
+If `docs/ISSUES.md` or `docs/BACKLOG.md` do not exist, create them with a standard header on first `silver-add` call. Do not create them during `silver-init` — only on demand.
+
+```markdown
+# Issues
+
+Bugs and defects filed via /silver-add. Managed by Silver Bullet.
+Remove entries with /silver-remove <id>.
+
+---
+```
 
 ---
 
-## Stack Summary: What SB v0.14.0 Actually Needs
+## Session Log Parsing
 
-| Need | Solution | New Code Required? |
-|------|----------|--------------------|
-| JIRA ticket ingestion | Official Atlassian MCP (user-configured) | No — new SKILL.md only |
-| Confluence linked page fetch | `confluence_get_page` via same MCP | No — part of same skill |
-| Figma design extraction | Official Figma remote MCP (user-configured) | No — new SKILL.md step |
-| Google Docs ingestion | Community Google Drive MCP or Workspace CLI | No — new SKILL.md step |
-| Multi-repo spec references | Plain path references in silver-bullet.md | No — documentation + silver-bullet.md template update |
-| Spec output format | Standardized markdown files in `.planning/specs/` | New directory convention only |
-| Orchestration skill | `silver-spec-ingest` skill + `silver-spec-create` skill | Yes — 2 new SKILL.md files |
+### Glob Pattern
 
-**Zero custom API integrations.** All external data access goes through MCP connectors that the user configures in their Claude Desktop / Claude Code environment. SB's job is to orchestrate the calls via skill instructions, not to implement the transport layer.
+Session logs follow the naming convention `docs/sessions/*.md`. This is established by `silver-init` Phase 3.6 which creates `docs/sessions/.gitkeep`.
+
+```bash
+# All session logs, sorted by filename (chronological by date-prefix)
+ls docs/sessions/*.md 2>/dev/null | sort
+
+# Or via find for more control
+find docs/sessions -name "*.md" -type f | sort
+```
+
+The two confirmed log files follow `YYYY-MM-DD-<description>.md` and `YYYY-MM-DD-HH-MM-SS.md` naming — both are just `*.md` under `docs/sessions/`, so the glob catches both.
+
+### Deferred Item Signals in Session Logs
+
+Scan each session log for these textual signals, which indicate items that were deferred or not completed:
+
+**Section-level signals** (look in these sections):
+- `## Needs human review` — items flagged for human attention
+- `## Autonomous decisions` — decisions made without user input that may need revisiting
+- `## Outcome` — incomplete outcomes (look for "pending", "awaiting", "not yet", "deferred")
+
+**Inline signals** (grep within body text):
+```bash
+# Patterns indicating deferred work
+grep -iE "(deferred|skipped|TODO|FIXME|out of scope|not addressed|pending|future|follow-up|tech.?debt|open question)" \
+  docs/sessions/*.md
+```
+
+**Structured grep for silver-scan:**
+```bash
+# Per-file scan with filename context
+for f in docs/sessions/*.md; do
+  echo "=== $f ==="
+  grep -n -iE "(deferred|skipped|TODO|FIXME|not addressed|pending|follow.?up|tech.?debt|open question|out of scope)" "$f"
+done
+```
+
+### Git History Parsing
+
+Use `git log` to surface commits that mention deferrals or known-issue markers:
+
+```bash
+# Commits mentioning deferrals (last 200 commits, or since a given date)
+git log --oneline --since="<milestone-start-date>" \
+  --grep="TODO\|FIXME\|deferred\|skip\|workaround\|tech.debt" -i
+
+# Full commit messages for candidate commits
+git log --format="%H %s%n%b" --since="<milestone-start-date>" \
+  | grep -A5 -iE "(TODO|FIXME|deferred|tech.?debt)"
+```
+
+For `/silver-scan`, the skill should:
+1. Prompt the user for a date range (or default to since last release tag)
+2. Glob all `docs/sessions/*.md` files in that range by filename date prefix
+3. Run the grep patterns above across session logs
+4. Run git log grep across commit history
+5. Deduplicate findings (same text appearing in both session log and commit)
+6. Present findings with relevance context; ask which to file via `silver-add`
+
+### Existing Issue Dedup
+
+Before prompting the user to file a found item, check against open GitHub issues (if `issue_tracker: "github"`) or grep local markdown files (if local):
+
+```bash
+# GitHub dedup
+gh issue list --state open --json number,title | jq '.[] | .title'
+
+# Local dedup
+grep "^### SB-" docs/ISSUES.md docs/BACKLOG.md 2>/dev/null
+```
+
+---
+
+## Auto-Capture Enforcement
+
+Auto-capture means the skills that orchestrate work (silver-feature, silver-bugfix, silver-devops, silver-ui) instruct the coding agent to call `/silver:add` whenever it defers, descopes, or skips an item. This is a skill-level instruction change, not a hook.
+
+The routing logic already partially exists in `silver-feature` SKILL.md (Step 7 and Step 18). The v0.25.0 change replaces the inline `gsd-add-backlog` calls with `silver-add` skill invocations:
+
+**Before (current):**
+```
+Skill(skill="gsd-add-backlog", args="<description>")
+```
+
+**After (v0.25.0):**
+```
+Skill(skill="silver-add", args="<description>")
+```
+
+The `silver-add` skill handles routing to GitHub or local based on `issue_tracker` — the orchestrating skills no longer need to know about routing. This is the correct abstraction boundary.
 
 ---
 
-## Skill Architecture for New Capabilities
+## Verdict
 
-New skills to create (SKILL.md only, no Node.js):
+**Use gh CLI for all GitHub operations.** No GraphQL API calls directly — `gh project item-add` and `gh project item-edit` expose the GitHub Projects V2 GraphQL API through a verified CLI interface. The `project` scope is already granted on this machine.
 
-| Skill | Purpose |
-|-------|---------|
-| `silver-spec-ingest` | Ingest JIRA ticket + linked artifacts (Confluence, Figma, Google Docs) into a structured context object |
-| `silver-spec-create` | AI-driven requirements elicitation + spec authoring, consuming context from silver-spec-ingest |
+**Two-step issue + board placement** is the correct pattern. The `--project` flag on `gh issue create` is unreliable for org-scoped projects; explicit `item-add` + `item-edit` is deterministic.
 
-Both plug into the existing `silver-feature` workflow at Step 1c (before brainstorm), replacing or supplementing the brainstorm when a JIRA ticket or external artifacts are the primary inputs.
+**Cache project IDs in `.silver-bullet.json`** under a `github_project` key. One-time discovery via `gh project list` + `gh project field-list`, then read from config on every subsequent call. This avoids one extra API round-trip per `silver-add` invocation.
 
----
+**Local fallback uses `SB-I-N` / `SB-B-N` IDs** in `docs/ISSUES.md` and `docs/BACKLOG.md`. Sequential integer, grep-derived, no counter file. Markdown heading structure makes entries grep-parseable for dedup and removal.
 
-## Alternatives Considered
+**Session log scanning uses `docs/sessions/*.md` glob + keyword grep.** No parser library needed — the session log format is unstructured markdown, and keyword matching with `grep -iE` is sufficient. Git log `--grep` supplements with commit-level signals.
 
-| Recommended | Alternative | Why Not |
-|-------------|-------------|---------|
-| Official Atlassian MCP | Custom JIRA REST API client (Node.js) | Custom integrations are explicitly out of scope per PROJECT.md; MCP handles auth, rate limiting, and permission scoping |
-| Official Figma remote MCP | Third-party `arinspunk/claude-talk-to-figma-mcp` | Official is maintained by Figma; third-party requires WebSocket relay server setup |
-| Community Google Drive MCP | Hardcoded Google Drive REST API calls | Same reason as JIRA — MCP pattern is consistent with project philosophy |
-| Spine/path-reference pattern | Git submodules | Submodule boundaries block Claude Code's file traversal tools |
+**No new tools or runtimes required.** `jq`, `gh`, `git`, and `grep` are already available in the SB environment. The four new skills are SKILL.md files only — no new shell scripts or Node.js modules needed beyond what already exists.
 
 ---
 
-## What NOT to Build
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Custom JIRA REST client in Node.js | Reinvents what Atlassian MCP provides; violates PROJECT.md "Out of Scope" constraint | Atlassian MCP connector |
-| Custom Figma REST export pipeline | Reinvents Figma MCP; adds maintenance burden | Figma remote MCP |
-| Attachment content fetching for JIRA | Not supported by any MCP today; would require custom REST + storage | Document limitation; accept text fields only |
-| .pptx binary parsing | No reliable Node.js approach; requires LibreOffice or cloud conversion | Accept Google Slides text extraction only; document limitation |
-| Centralized spec sync daemon | Operational complexity; solves a problem users don't have if path references work | Plain markdown path references |
-
----
-
-## Prerequisites for Users (document in silver-bullet.md)
-
-Users must have these MCP servers configured before using JIRA/Figma/Google ingestion features:
-
-1. **JIRA:** Atlassian MCP server configured in `~/.claude/claude_desktop_config.json` with valid API token
-2. **Figma:** Figma remote MCP server connected to their Figma account
-3. **Google Docs:** Google Drive MCP or Workspace CLI authenticated with OAuth
-4. **Multi-repo:** Mobile repos must have `silver-bullet.md` updated with main repo spec path
-
-SB `silver-spec-ingest` skill should include a prerequisite check step that verifies MCP connectivity before attempting ingestion.
-
----
-
-## Sources
-
-- [Atlassian Remote MCP Server (official)](https://www.atlassian.com/platform/remote-mcp-server) — capability overview, MEDIUM confidence
-- [sooperset/mcp-atlassian GitHub](https://github.com/sooperset/mcp-atlassian) — 72 tools, community implementation, HIGH confidence for tool inventory
-- [JIRA attachment limitation issue #589](https://github.com/sooperset/mcp-atlassian/issues/589) — confirmed attachment content not supported
-- [Atlassian MCP attachment feature request #15](https://github.com/atlassian/atlassian-mcp-server/issues/15) — official server also lacks attachment download
-- [Figma MCP Server guide (official)](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) — capabilities overview, MEDIUM confidence
-- [piotr-agier/google-drive-mcp](https://github.com/piotr-agier/google-drive-mcp) — community Google Drive MCP, LOW confidence (unofficial)
-- [Google Cloud MCP servers overview](https://docs.cloud.google.com/mcp/overview) — official Google MCP landscape
-- [Virtual Monorepo Pattern](https://medium.com/devops-ai/the-virtual-monorepo-pattern-how-i-gave-claude-code-full-system-context-across-35-repos-43b310c97db8) — multi-repo context approach, MEDIUM confidence
-- [Spine Pattern for multi-repo](https://tsoporan.com/blog/spine-pattern-multi-repo-ai-development/) — alternative multi-repo pattern reference
-
----
-*Stack research for: Silver Bullet v0.14.0 — AI-driven spec, external artifact ingestion, multi-repo orchestration*
-*Researched: 2026-04-09*
+*Stack research for: Silver Bullet v0.25.0 — Issue Capture & Retrospective Scan*
+*Researched: 2026-04-24*
