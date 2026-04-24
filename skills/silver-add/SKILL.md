@@ -216,7 +216,7 @@ If any `gh` command returns non-zero exit and stderr contains `"secondary rate l
 - Wait 60 seconds, retry.
 - If retry fails, wait 120 seconds, retry again.
 - If retry fails a third time, wait 240 seconds, retry a final time.
-- If all three retries fail, output: "Rate limit retry exhausted after 3 attempts. The GitHub Issue was created (#${ISSUE_NUM}) but board placement failed. Try running /silver-add again in a few minutes." Set `FILED_ID` to `"#${ISSUE_NUM}"` and proceed to Step 7 with a warning. Do NOT proceed to Step 6.
+- If all three retries fail, output: "Rate limit retry exhausted after 3 attempts. The GitHub Issue was created (#${ISSUE_NUM}) but board placement failed. Try running /silver-add again in a few minutes." Set `FILED_ID` to `"#${ISSUE_NUM}"` and proceed to Step 6 (session log) then Step 7 with a warning — the filing must be recorded even when board placement fails.
 
 Add to board:
 ```bash
