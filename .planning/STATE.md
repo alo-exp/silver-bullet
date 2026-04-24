@@ -1,26 +1,26 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.21.0
-milestone_name: Hook Quality & Docs
-current_plan: Not started
-status: completed
-stopped_at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc); all v0.25.0 phases (49-54) complete; pre-release gate next
-last_updated: "2026-04-24T12:15:55.533Z"
+milestone: v0.25.0
+milestone_name: Issue Capture & Retrospective Scan
+current_plan: complete
+status: milestone_complete
+stopped_at: v0.25.0 shipped 2026-04-24 — all 24 requirements satisfied; GitHub release https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0; milestone archived; next milestone TBD
+last_updated: "2026-04-24T00:00:00.000Z"
 last_activity: 2026-04-24
 progress:
-  total_phases: 25
-  completed_phases: 9
-  total_plans: 23
-  completed_plans: 15
-  percent: 65
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.24.1
-**Active phase:** Phase 54 — silver-scan (COMPLETE)
-**Current plan:** Not started
+**Current version:** v0.25.0
+**Active phase:** (none — milestone complete)
+**Current plan:** (none)
 
 Last activity: 2026-04-24
 
@@ -29,16 +29,16 @@ Last activity: 2026-04-24
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** Phase 54 complete — v0.25.0 milestone ready for pre-release gate
+**Current focus:** v0.25.0 milestone complete and shipped — next milestone TBD
 
 ## Current Position
 
-Phase: 054
-Plan: 1 of 1 (complete)
-Status: Phase 54 complete; all v0.25.0 phases (49-54) complete
-Last activity: 2026-04-24 -- Phase 54 execution complete
+Phase: (none — milestone complete)
+Plan: (none)
+Status: v0.25.0 shipped 2026-04-24; all 6 phases (49-54) complete; all 24 requirements satisfied
+Last activity: 2026-04-24 -- milestone archived, release published
 
-Progress: [█████████░] 69%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -127,4 +127,4 @@ Progress: [█████████░] 69%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc); all v0.25.0 phases (49-54) complete; pre-release gate next
+Stopped at: v0.25.0 milestone complete — all phases archived, GitHub release published at https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0; next milestone TBD
