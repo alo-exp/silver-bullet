@@ -113,6 +113,16 @@ Invoke `gsd-quick` via the Skill tool with the composed flags and $ARGUMENTS.
 
 After gsd-quick completes, run scope expansion check (Step 4).
 
+### Deferred-Item Capture (Tier 2 only)
+
+After Tier 2 (gsd-quick) execution, any item scoped out during execution MUST be filed via `/silver-add`:
+
+```
+Skill(skill="silver-add", args="<description of deferred item>")
+```
+
+**Note:** Tier 1 (trivial changes) → no capture needed. Tier 3 → escalates to `/silver-feature`, which handles its own deferred-item capture.
+
 ## Step 3: Tier 3 — Escalate to silver-feature
 
 **Only reached when Step 0 classifies as Tier 3 (Complex).**
