@@ -31,9 +31,9 @@ Shell execution during this skill is limited to:
 - `git remote get-url origin`
 - `gh issue close`, `gh issue edit`, `gh label create`, `gh auth status`
 - `grep -q`, `grep -oE` (for ID format validation and heading existence check)
-- `sed -i ''` (BSD sed, macOS — inline heading replacement)
+- `sed` (redirected output — for inline heading replacement)
 - `date +%Y-%m-%d`
-- `mktemp`, `mv` (not used in this skill but listed for completeness — not needed here)
+- `mktemp`, `mv` — tmpfile+mv pattern for portable atomic file rewrite
 
 Do not execute other shell commands. Note requirements in output for human execution.
 

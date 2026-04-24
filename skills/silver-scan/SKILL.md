@@ -49,7 +49,7 @@ Walk up from `$PWD` until `.silver-bullet.json` is found. All session log paths 
 ## Step 2 — Enumerate session logs (SCAN-01)
 
 ```bash
-SESSION_LOGS=$(ls docs/sessions/*.md 2>/dev/null | sort)
+SESSION_LOGS=$(find docs/sessions -maxdepth 1 -name '*.md' -print 2>/dev/null | sort)
 TOTAL_SESSIONS=$(echo "$SESSION_LOGS" | grep -c '\.md$' || echo 0)
 ```
 
@@ -63,6 +63,7 @@ Initialize counters:
 ITEMS_FOUND=0
 ITEMS_FILED=0
 ITEMS_STALE=0
+ITEMS_TRACKED=0
 ITEMS_REJECTED=0
 FILED_IDS=""
 KL_FOUND=0
@@ -117,7 +118,7 @@ For each candidate item from Step 3, perform stale check in this order (stop at 
 grep -qF "ITEM_TITLE_KEYWORD" docs/issues/ISSUES.md docs/issues/BACKLOG.md 2>/dev/null
 ```
 
-The `-F` flag treats the keyword as a fixed string (not regex). If a match is found, mark item as ALREADY_TRACKED (skip presentation — it is already filed in the local tracker). If neither file exists, skip this sub-step silently.
+The `-F` flag treats the keyword as a fixed string (not regex). If a match is found, mark item as ALREADY_TRACKED and increment `ITEMS_TRACKED` (skip presentation — it is already filed in the local tracker). If neither file exists, skip this sub-step silently.
 
 If item is marked STALE: increment `ITEMS_STALE`, do NOT present to user. Log: "Stale (addressed in git/CHANGELOG): ITEM_TITLE".
 
@@ -230,6 +231,7 @@ Sessions scanned:      TOTAL_SESSIONS
 ── Pass 1: Deferred items (Steps 3–6) ──────────────────
 Deferred items found:  ITEMS_FOUND
   Marked stale:        ITEMS_STALE
+  Already tracked:     ITEMS_TRACKED
   Presented to you:    CANDIDATE_COUNT
   Filed:               ITEMS_FILED  (IDs: FILED_IDS)
   Rejected by you:     ITEMS_REJECTED
