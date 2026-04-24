@@ -59,6 +59,15 @@ case "$ITEM_ID" in
   [0-9]*)         ISSUE_NUM="$ITEM_ID";      ID_TYPE="github-raw" ;;
   *)  echo "ERROR: Unrecognized ID format '${ITEM_ID}'. Expected: SB-I-N, SB-B-N, #N, or N."; exit 1 ;;
 esac
+
+# Strict format guard for local IDs — enforce pure numeric suffix and no trailing content
+# (the case glob allows trailing characters after the digit; reject them here)
+if [[ "$ID_TYPE" = "local-issue" || "$ID_TYPE" = "local-backlog" ]]; then
+  if ! [[ "$ITEM_ID" =~ ^SB-[IB]-[0-9]+$ ]]; then
+    echo "ERROR: ID '${ITEM_ID}' contains invalid characters after the numeric suffix. Expected format: SB-I-N or SB-B-N (digits only)."
+    exit 1
+  fi
+fi
 ```
 
 If `ID_TYPE` is `"github"` or `"github-raw"`: read `TRACKER` from config. If `TRACKER` != `"github"`, output:
