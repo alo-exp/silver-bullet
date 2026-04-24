@@ -217,3 +217,35 @@ The Step 7 issue creation also references: "I'll format the findings and redact 
 - Total gaps: 13
 - Gaps requiring SKILL.md edits: 13 (all)
 - Dimensions equivalent: Dimension 3 (GSD-awareness routing, N/A to reference), Dimension 4 (root-cause statement format)
+
+---
+
+## Fix Log
+
+Applied fixes from the ## Gaps Found table to `skills/silver-forensics/SKILL.md` (commit 0673b3a).
+
+| Gap ID | Dimension | Change Made | Status |
+|--------|-----------|-------------|--------|
+| G-01 | 1 | Added scope-drift check to Path 2 Step 4: read PLAN.md `files_modified`, compare against `git log --name-only -20` output, flag out-of-scope files | FIXED |
+| G-02 | 1 | Added regression signal step to Path 2 Step 6: `git log --oneline -20 \| grep -iE "fix test\|revert\|broken\|regression\|fail"` before test execution | FIXED |
+| G-03 | 1 | Added file-frequency analysis to Step 2b item 3: `git log --name-only --format="" -20 \| sort \| uniq -c \| sort -rn \| head -20`; flag 3+ consecutive edits to same file | FIXED |
+| G-04 | 2 | Expanded Step 2b git log from `-10` to `-30`; added parallel timestamped call `git log --format="%H %ai %s" -30` for gap analysis | FIXED |
+| G-05 | 2 | Added `git status --short` and `git diff --stat` to Step 2b item 4 as crash/interruption detection signals | FIXED |
+| G-06 | 2 | Added phase artifact completeness check to Step 2b item 6: enumerate `.planning/phases/*/`, record presence of PLAN.md, SUMMARY.md, VERIFICATION.md, CONTEXT.md, RESEARCH.md per phase | FIXED |
+| G-07 | 2 | Added SESSION_REPORT.md to Step 2b item 7: read `.planning/reports/SESSION_REPORT.md` if present, extract last session outcomes | FIXED |
+| G-08 | 2 | Added `git worktree list` to Step 2b item 8; >1 worktree flagged as orphaned/crash signal | FIXED |
+| G-09 | 5 | Added `### Artifact Completeness` sub-section with Phase/PLAN/CONTEXT/RESEARCH/SUMMARY/VERIFICATION matrix table to post-mortem report Evidence Gathered | FIXED |
+| G-10 | 5 | Added per-finding `— Confidence: HIGH \| MEDIUM \| LOW` annotation to all Evidence Gathered bullet entries in report schema | FIXED |
+| G-11 | 5 | Added `- Worktrees: <count — list if >1>` field to Evidence Gathered section in report schema | FIXED |
+| G-12 | 6 | Added output-side path redaction rule to Security Boundary: strip `$HOME` prefix, use `~` or project-relative form in all report fields | FIXED |
+| G-13 | 6 | Added API key/token redaction + 50-line diff truncation rule to Security Boundary; applies before writing Evidence Gathered excerpts from `git show`/`git diff` | FIXED |
+
+**Invariants preserved:**
+- GSD-awareness routing table (Step 1b): intact
+- Three-path classification model (Session-level / Task-level / General): intact
+- ROOT CAUSE one-liner format (`ROOT CAUSE: <sentence> — <path> — <confidence>`): intact
+- Slug-based collision-safe naming (`YYYY-MM-DD-<slug>.md`): intact
+- Allowed Commands security section: intact
+- Output directory (`docs/silver-forensics/`): intact
+
+**FORN-02 status:** All 13 gaps fixed. `skills/silver-forensics/SKILL.md` is now functionally equivalent to `gsd-forensics` across all six dimensions.
