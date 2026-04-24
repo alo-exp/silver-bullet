@@ -291,9 +291,22 @@ Write the mutated content back to `docs/knowledge/INDEX.md` using tmpfile+mv (at
 
 ```bash
 TMP=$(mktemp)
-# Read INDEX.md, perform both mutations, write to TMP
-# Then atomically replace:
-mv "$TMP" docs/knowledge/INDEX.md
+awk -v month="$MONTH" '
+  /^\| / { last_tbl=NR }
+  { lines[NR]=$0 }
+  END {
+    for (i=1; i<=NR; i++) {
+      if (i==last_tbl) {
+        print lines[i]
+        printf "| %s | [%s.md](%s.md) | Knowledge for this month |\n", month, month, month
+      } else if (lines[i] ~ /^Latest knowledge:/) {
+        printf "Latest knowledge: `docs/knowledge/%s.md`\n", month
+      } else {
+        print lines[i]
+      }
+    }
+  }
+' docs/knowledge/INDEX.md > "$TMP" && mv "$TMP" docs/knowledge/INDEX.md
 ```
 
 Display: "Updated docs/knowledge/INDEX.md — added ${MONTH} row and updated Latest knowledge pointer."
@@ -307,7 +320,13 @@ Replace the line starting with `Latest lessons:` with:
 Latest lessons: `docs/lessons/YYYY-MM.md`
 ```
 
-Write back atomically with tmpfile+mv.
+```bash
+TMP=$(mktemp)
+awk -v month="$MONTH" '
+  /^Latest lessons:/ { printf "Latest lessons: `docs/lessons/%s.md`\n", month; next }
+  { print }
+' docs/knowledge/INDEX.md > "$TMP" && mv "$TMP" docs/knowledge/INDEX.md
+```
 
 Display: "Updated docs/knowledge/INDEX.md — updated Latest lessons pointer."
 
@@ -319,7 +338,7 @@ Display: "Updated docs/knowledge/INDEX.md — updated Latest lessons pointer."
 
 Locate the current session log:
 ```bash
-SESSION_LOG=$(ls docs/sessions/*.md 2>/dev/null | sort | tail -1)
+SESSION_LOG=$(find docs/sessions -maxdepth 1 -name '*.md' -print 2>/dev/null | sort | tail -1)
 ```
 
 If SESSION_LOG is empty or no file found: skip silently — no error.
