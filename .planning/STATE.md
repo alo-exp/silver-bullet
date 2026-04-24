@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.24.0
-milestone_name: Stability · Security · Quality
+milestone: v0.25.0
+milestone_name: Issue Capture & Retrospective Scan
 current_plan: —
-status: Roadmap ready
+status: Defining requirements
 last_updated: "2026-04-24T00:00:00Z"
 last_activity: 2026-04-24
 progress:
-  total_phases: 5
+  total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,8 +17,8 @@ progress:
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.23.10
-**Active phase:** Phase 44 — Session Stability Bugs + Open PRs
+**Current version:** v0.24.1
+**Active phase:** Not started (defining requirements)
 **Current plan:** None
 
 Last activity: 2026-04-24
@@ -28,14 +28,14 @@ Last activity: 2026-04-24
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** v0.24.0 Phase 44 — clearing 6 session-stability bugs + merging 2 open PRs
+**Current focus:** v0.25.0 milestone — closed-loop deferred-item capture system + retrospective scan
 
 ## Current Position
 
-Phase: 44 of 48 (Session Stability Bugs + Open PRs)
-Plan: — of — in current phase
-Status: Roadmap ready
-Last activity: 2026-04-24 — Milestone v0.24.0 roadmap created (5 phases, 23 requirements)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-24 — Milestone v0.25.0 started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -55,15 +55,14 @@ Progress: [░░░░░░░░░░] 0%
 
 - v0.22.0 shipped as tag v0.22.0 (commit a3c2505); ROADMAP/STATE reconciled 2026-04-20
 - v0.23.8 scope: CI Node.js 20 fix + GitHub issues #28, #29, #30, #31 (all resolved)
-- #24 closed as accepted residual (webhook deleted by repo owner 2026-04-20)
-- v0.23.9 scope: Bug 1 (ci-status-check deadlock at PreToolUse/commit) + Bug 2 (dev-cycle false positive on source repo hooks/)
+- v0.24.0 shipped as v0.24.1 (patch bump); all 23 requirements completed
+- FEAT-01 (PM system in /silver:init) completed in v0.24.0 — `issue_tracker` field now in .silver-bullet.json; v0.25.0 builds on this
 - GSD is sole execution engine; WORKFLOW.md tracks composition, STATE.md tracks GSD execution
-- v0.23.10 scope: Forge-SB port (PR #35, 34 Forge-native skills), ci-status-check Bug 2 (#32 PostToolUse/commit warn-not-block), doc-scheme gate (#33), core-rules cleanup (#30), installer curl|bash, 4-stage pre-release quality gate
-- v0.24.0 scope: full 21-issue backlog clearout -- 6 session-stability bugs, Stage 4 security, HOOK-14 closure, consistency audit, content refresh, PM system feature
+- v0.25.0 scope: closed-loop deferred-item capture (silver-add, silver-remove, auto-enforcement, post-release summary) + forensics audit + silver-scan
 
 ### Pending Todos
 
-(none)
+- 2026-04-24: Complete requirements definition and roadmap for v0.25.0 (in progress)
 
 ### Blockers/Concerns
 
@@ -72,4 +71,4 @@ Progress: [░░░░░░░░░░] 0%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Roadmap created -- Phase 44 ready to plan
+Stopped at: Milestone v0.25.0 started — defining requirements

@@ -43,12 +43,12 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [ ] Fix session-stability bugs: trivial bypass ordering, branch newline, tamper guard scope, heredoc false-positive, admin bypass, quality-gates modularity (v0.24.0)
-- [ ] Stage 4 security hardening: symlink writes, jq sanitizers, medium/low batch, semver validation (v0.24.0)
-- [ ] HOOK-14 closure: fail-open edges, test coverage, code polish (v0.24.0)
-- [ ] Consistency fixes: .gitignore, upstream skill refs, hook duplication, doc-scheme enforcement, tamper regex (v0.24.0)
-- [ ] Public-facing content refresh: stale versions, counts, CHANGELOG (v0.24.0)
-- [ ] PM system awareness in /silver:init (v0.24.0)
+- [ ] Auto-capture enforcement: SB instructs coding agent to file all deferred/skipped items to PM system on the fly (v0.25.0)
+- [ ] /silver-add skill: classify item, file to GitHub Issues/project board or local docs/, assign ID (v0.25.0)
+- [ ] /silver-remove skill: remove issue/backlog item by ID from PM system or local docs/ (v0.25.0)
+- [ ] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
+- [ ] /silver-forensics audit: 100% functional equivalence vs gsd-forensics (v0.25.0)
+- [ ] /silver-scan skill: retrospective session scan, find deferred items, assess relevance, silver-add relevant ones (v0.25.0)
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
 
@@ -60,18 +60,17 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.24.0 Stability · Security · Quality
+## Current Milestone: v0.25.0 Issue Capture & Retrospective Scan
 
-**Goal:** Clear the full 21-issue backlog — fix 6 critical session-stability bugs, land Stage 4 security hardening, close out HOOK-14 polish, resolve consistency drift across skills and hooks, refresh public-facing content, and add PM system awareness to `/silver:init`.
+**Goal:** Give Silver Bullet a closed-loop deferred-item capture system — automatic on-the-fly filing to the user's PM/issue tracker during execution, two new skills for adding/removing items, a forensics audit, and a retrospective session scan.
 
-**Target items (23 total — 21 issues + 2 open PRs):**
-- 🔴 Session-stability bugs: trivial bypass ordering (#42), branch newline corruption (#44), tamper guard scope (#45), completion-audit heredoc (#46), stop-check admin bypass (#41), quality-gates modularity false-fail (#43)
-- 🔒 Security: symlink hardening (#25), jq sanitizers (#26), medium/low batch (#27), silver-update semver (#29)
-- 🔧 HOOK-14 polish: fail-open edges (#17), test coverage (#18), code polish (#19)
-- 📐 Consistency: .gitignore narrow (#20), broken skill refs (#21), hook duplication (#22), doc-scheme enforcement (#33), tamper regex (#36), doc-scheme ports (#39)
-- 📄 Content: stale versions/counts/CHANGELOG (#23)
-- ✨ Feature: PM system in /silver:init (#40)
-- 🔀 Merge PRs: forge doc-scheme gate (#37), silver-ui doc-scheme gate (#38)
+**Target features:**
+- Auto-capture enforcement: SB instructs the coding agent to file ALL deferred/skipped items (defects, tech debt, open questions, unfinished work, housekeeping) to the user's PM system in real time, with industry-standard issue/backlog descriptions
+- /silver-add: classify item as issue or backlog, file to GitHub Issues+project board (or local docs/ markdown if no PM system), assign an ID, return it
+- /silver-remove: remove any issue/backlog item by ID from PM system or local docs/
+- Post-release summary: after milestone complete + release, auto-display all items filed during the milestone
+- /silver-forensics audit: verify 100% functional equivalence between existing silver-forensics and gsd-forensics (prerequisite for silver-scan)
+- /silver-scan: retrospectively scan ALL project sessions from beginning, identify deferred items not yet addressed, assess relevance, silver-add relevant ones
 
 ## Context
 
@@ -118,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after milestone v0.24.0 start*
+*Last updated: 2026-04-24 after milestone v0.25.0 start*
