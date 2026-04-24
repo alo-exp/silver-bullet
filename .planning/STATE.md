@@ -2,23 +2,23 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: —
-status: Ready to plan
-last_updated: "2026-04-24T00:00:00Z"
+current_plan: 049-02
+status: Phase 49 complete
+last_updated: "2026-04-24T09:37:30Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 49 — silver-add
+**Active phase:** Phase 50 — silver-remove & silver-rem
 **Current plan:** None
 
 Last activity: 2026-04-24
@@ -32,20 +32,24 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 49 — silver-add
-Plan: —
-Status: Ready to plan
-Last activity: 2026-04-24 — Roadmap created for v0.25.0
+Phase: 49 — silver-add (COMPLETE)
+Plan: 049-01 (COMPLETE)
+Status: Phase 49 done — ready for Phase 50
+Last activity: 2026-04-24 — Phase 49 plan 01 complete
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: 3 min
+- Total execution time: 3 min
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 049-silver-add | 049-01 | 3 min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -61,10 +65,14 @@ Progress: [░░░░░░░░░░] 0%
 - v0.25.0 scope: closed-loop deferred-item capture (silver-add, silver-remove, silver-rem, auto-enforcement for issues+knowledge+lessons, post-release summary) + forensics audit + silver-scan (scans for issues/backlog AND knowledge/lessons items)
 - v0.25.0 roadmap: 6 phases (49-54); silver-add first (foundation), silver-remove+silver-rem second, auto-capture enforcement third, forensics audit fourth (independent; prerequisite for silver-scan), silver-update overhaul fifth (independent), silver-scan last (depends on phases 49 and 52)
 - Pre-release gate: execute 4-stage docs/internal/pre-release-quality-gate.md before CI and releasing (noted in Phase 54)
+- Phase 49: local issue files use docs/issues/ISSUES.md and docs/issues/BACKLOG.md (confirmed by REQUIREMENTS.md ADD-03; authoritative over earlier STACK.md draft)
+- Phase 49: _github_project uses underscore prefix in .silver-bullet.json to signal derived/cached field (not user-configurable)
+- Phase 49: classification default is backlog when ambiguous — prevents over-alarming with issues
+- Phase 49: minimum bar criterion prevents noise items during auto-capture (no transient TODOs, no items already addressed)
 
 ### Pending Todos
 
-(none — roadmap complete, ready to plan Phase 49)
+(none)
 
 ### Blockers/Concerns
 
@@ -73,4 +81,4 @@ Progress: [░░░░░░░░░░] 0%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Roadmap created for v0.25.0 — 6 phases (49-54), 24 requirements mapped, ready to plan Phase 49
+Stopped at: Phase 49 plan 049-01 complete — silver-add SKILL.md written, silver-add added to skills.all_tracked in both config files

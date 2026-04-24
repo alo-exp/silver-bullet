@@ -306,7 +306,9 @@ Plans:
   3. When `issue_tracker` is absent or `"gsd"`, the item is appended with a sequential ID to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md` (directory created if absent) — no GitHub API calls are made
   4. On the second and subsequent GitHub invocations within a session, silver-add reads project board node ID, Status field ID, and Backlog option ID from `.silver-bullet.json` under `_github_project` rather than re-querying `gh project list`
   5. A GitHub secondary rate-limit response (HTTP 403/429) causes silver-add to retry with exponential backoff rather than failing immediately; the current session log's `## Items Filed` section gains one line per successful filing
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [x] 049-01-PLAN.md — Write silver-add SKILL.md with GitHub + local routing, caching, rate limit retry, and session log recording; add silver-add to skills.all_tracked in both config files (completed 2026-04-24)
 
 ### Phase 50: silver-remove & silver-rem
 **Goal**: Users can remove a tracked item by ID and capture knowledge or lessons insights into the correct monthly doc file
@@ -389,7 +391,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 46. HOOK-14 Closure | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 47. Consistency & Quality | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
-| 49. silver-add | v0.25.0 | 0/0 | Not started | - |
+| 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
 | 50. silver-remove & silver-rem | v0.25.0 | 0/0 | Not started | - |
 | 51. Auto-Capture Enforcement | v0.25.0 | 0/0 | Not started | - |
 | 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
