@@ -111,6 +111,14 @@ For each candidate item from Step 3, perform stale check in this order (stop at 
 
 **iii. GitHub issues check (optional — only when `issue_tracker = "github"` in `.silver-bullet.json`):** Run `gh issue list --search "ITEM_TITLE_KEYWORD" --state all --json number,title,state --limit 5`. If any result has `state=CLOSED`, mark item STALE. If any result has `state=OPEN`, the item is NOT stale (it is already tracked — mark as TRACKED and skip presentation). If `gh` CLI is unavailable or not authenticated, skip this sub-step silently.
 
+**iv. Local tracker cross-reference (only when `issue_tracker != "github"`):** When `issue_tracker` is `"gsd"` or absent, items are tracked in local markdown files. Run:
+
+```bash
+grep -qF "ITEM_TITLE_KEYWORD" docs/issues/ISSUES.md docs/issues/BACKLOG.md 2>/dev/null
+```
+
+The `-F` flag treats the keyword as a fixed string (not regex). If a match is found, mark item as ALREADY_TRACKED (skip presentation — it is already filed in the local tracker). If neither file exists, skip this sub-step silently.
+
 If item is marked STALE: increment `ITEMS_STALE`, do NOT present to user. Log: "Stale (addressed in git/CHANGELOG): ITEM_TITLE".
 
 ---
@@ -218,18 +226,26 @@ Output the following summary block:
 === silver-scan Complete ===
 
 Sessions scanned:      TOTAL_SESSIONS
+
+── Pass 1: Deferred items (Steps 3–6) ──────────────────
 Deferred items found:  ITEMS_FOUND
   Marked stale:        ITEMS_STALE
   Presented to you:    CANDIDATE_COUNT
   Filed:               ITEMS_FILED  (IDs: FILED_IDS)
   Rejected by you:     ITEMS_REJECTED
 
-Knowledge/lessons:
-  Candidates found:    KL_FOUND
-  Recorded:            KL_RECORDED
+── Pass 2: Knowledge & lessons insights (Steps 7–8) ────
+Candidates found:      KL_FOUND
+Recorded:              KL_RECORDED
 
 Run /silver-scan again to process any remaining items beyond the 20-candidate cap.
 ```
+
+Note on counters: `CANDIDATE_COUNT` and `KL_FOUND` come from two separate passes over the session logs.
+- **Pass 1** (Steps 3–6) scans for deferred items, TODOs, and skipped work. `CANDIDATE_COUNT` counts the candidates presented to the user after stale filtering (up to 20).
+- **Pass 2** (Steps 7–8) scans for knowledge and lessons insights. `KL_FOUND` counts unrecorded insight candidates found (also capped at 20 per run).
+
+The two passes are intentionally independent — a session log can contribute candidates to both passes.
 
 If `FILED_IDS` is empty: show "(none)" instead of the IDs.
 
