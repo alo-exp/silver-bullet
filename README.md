@@ -1,5 +1,7 @@
 # Silver Bullet
 
+[![version](https://img.shields.io/badge/version-v0.24.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.24.0)
+
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
 > *"There is no single development, in either technology or management technique, which by itself promises even one order-of-magnitude improvement..."* — Fred Brooks, 1986

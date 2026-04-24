@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.24.0] — 2026-04-24
+
+**Stability · Security · Quality milestone.** Fixes 6 session-stability bugs blocking day-to-day use, ports doc-scheme compliance gates to bugfix and devops workflows, tightens tamper-detection to stop false-positive blocks on commit messages, and adds project management system awareness to `/silver:init`.
+
+### Session Stability (BUG)
+
+- **BUG-01** (`f15615c`): Fixed trivial bypass SessionStart ordering — reordered hooks.json so `session-start` runs before `trivial-touch`, ensuring the trivial file survives all hook firings for admin sessions.
+- **BUG-02** (`f15615c`): Fixed branch file written without trailing newline causing `mainmain` concatenation and spurious state wipes.
+- **BUG-03** (`f15615c`): Scoped `dev-cycle-check.sh` tamper guard to the state file only — branch and trivial files are no longer falsely blocked.
+- **BUG-04** (`e877602`): Fixed `completion-audit.sh` matching against full expanded heredoc body — now checks only the first command line, preventing false-positive `COMMIT BLOCKED` errors.
+- **BUG-05** (`f15615c`): Purely administrative sessions (no Write/Edit calls) now correctly bypass enforcement via the trivial mechanism fixed by BUG-01.
+- **BUG-06** (`0ca5f99`): `modularity/SKILL.md` Rationalization Prevention table extended with 3 planning-intent excuse rows and an Adversarial mode rule — "tracked in backlog / milestone plan / next phase" are no longer accepted as deferrals during review.
+
+### Consistency & Quality (QA)
+
+- **QA-05** (`dfe856d`): `dev-cycle-check.sh` tamper-detection now skips `git`/`gh` commands entirely and checks only the first command line — prevents false-positive blocks when commit messages or `gh --body` arguments mention the state file path. Two new tests (17e, 17f) cover the fix.
+- **QA-06** (`dfe856d`): Doc-scheme compliance gate (conditional pre-ship step) ported to `silver-bugfix` (Step 7c), `silver-devops` (Step 10b), and both forge variants.
+
+### Feature (FEAT)
+
+- **FEAT-01** (`dfe856d`): `/silver:init` now prompts for project management system (GitHub Issues or GSD) in new Step 2.8. Answer written as `issue_tracker` field in `.silver-bullet.json` (default: `"gsd"`). `silver-feature` backlog-capture steps now route to `gh issue create` or `gsd-add-backlog` based on the configured value.
+
+### Skills — doc-scheme gates (#37, #38)
+
+- **DOC-SCH-03**: Added doc-scheme compliance gate to both `silver-ui` variants (PR #38).
+- **DOC-SCH-04**: Forward-ported doc-scheme compliance gate to `forge/skills/silver-feature` and `forge/skills/silver-ui` (PR #37).
+
 ## [0.23.10] — 2026-04-24
 
 **Forge-SB port + ci-status-check deadlock fix (Bug 2).** Ships Silver Bullet for Forge (34 Forge-native skills), fixes the remaining CI-gate deadlock (#32 — PostToolUse commit was hard-blocked; now warns only), and closes three open issues (#30, #33, installer curl|bash). Pre-release quality gate: 4-stage automated review (code review, consistency audit, public content refresh, security), all four stages clean.
