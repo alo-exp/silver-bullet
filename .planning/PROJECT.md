@@ -44,6 +44,8 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ /silver-remove skill: close GitHub issue as "not planned" or inline-mark [REMOVED] in local docs/ — v0.25.0 Phase 50
 - ✓ /silver-rem skill: classify and append knowledge/lessons insights to monthly docs/ files, INDEX.md managed — v0.25.0 Phase 50
 - ✓ Auto-capture enforcement: §3b-i (/silver-add) and §3b-ii (/silver-rem) mandatory capture instructions in silver-bullet.md + template; all 5 producing skills wired; session logs gain ## Items Filed; silver-release Step 9b post-release summary — v0.25.0 Phase 51
+- ✓ /silver-forensics audit: 13 gaps identified and fixed across all 6 functional dimensions; 100% functional equivalence with gsd-forensics confirmed — v0.25.0 Phase 52
+- ✓ /silver-update overhaul: marketplace install via `claude mcp install silver-bullet@alo-labs` replaces git clone; stale legacy entries cleaned up atomically post-install — v0.25.0 Phase 53
 
 ### Active
 
@@ -53,7 +55,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - [x] /silver-remove skill: remove issue/backlog item by ID from PM system or local docs/ — validated Phase 50 (v0.25.0)
 - [x] /silver-rem skill: capture knowledge or lessons item per doc-scheme.md into knowledge/YYYY-MM.md or lessons/YYYY-MM.md — validated Phase 50 (v0.25.0)
 - [x] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
-- [ ] /silver-forensics audit: 100% functional equivalence vs gsd-forensics (v0.25.0)
+- [x] /silver-forensics audit: 100% functional equivalence vs gsd-forensics — validated Phase 52 (v0.25.0)
 - [ ] /silver-scan skill: retrospective session scan, find deferred issues/backlog AND knowledge/lessons items, assess relevance, silver-add/silver-rem relevant ones (v0.25.0)
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
@@ -125,4 +127,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 51 (auto-capture enforcement) complete*
+*Last updated: 2026-04-24 after Phase 53 (silver-update overhaul) complete*
