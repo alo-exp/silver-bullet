@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.25.0
-milestone_name: Issue Capture & Retrospective Scan
-current_plan: 1
-status: complete
-stopped_at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc)
-last_updated: "2026-04-24T12:05:28Z"
+milestone: v0.21.0
+milestone_name: Hook Quality & Docs
+current_plan: Not started
+status: completed
+stopped_at: Phase 54 complete — SCAN-01 through SCAN-05 satisfied; silver-scan SKILL.md created (3679980); silver-scan registered in both config files (ead80fc); all v0.25.0 phases (49-54) complete; pre-release gate next
+last_updated: "2026-04-24T12:15:55.533Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
   completed_phases: 9
-  total_plans: 24
+  total_plans: 23
   completed_plans: 15
-  percent: 69
+  percent: 65
 ---
 
 # Project State
@@ -20,7 +20,7 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.24.1
 **Active phase:** Phase 54 — silver-scan (COMPLETE)
-**Current plan:** 1
+**Current plan:** Not started
 
 Last activity: 2026-04-24
 
@@ -33,7 +33,7 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 54 (silver-scan) — COMPLETE
+Phase: 054
 Plan: 1 of 1 (complete)
 Status: Phase 54 complete; all v0.25.0 phases (49-54) complete
 Last activity: 2026-04-24 -- Phase 54 execution complete
@@ -44,7 +44,7 @@ Progress: [█████████░] 69%
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 3.8 min
 - Total execution time: 34 min
 
