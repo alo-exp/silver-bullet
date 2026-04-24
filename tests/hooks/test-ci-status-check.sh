@@ -154,6 +154,28 @@ out=$(run_hook_pretooluse "git push" '{"status":"completed","conclusion":"failur
 assert_contains "Bug1 guard: git push at PreToolUse still blocked when CI red" "$out" "CI"
 teardown
 
+# Bug 2 regression (#32): git commit at PostToolUse must NOT emit decision:block.
+# The commit already happened; blocking PostToolUse confuses the model about whether
+# the commit succeeded and can create a deadlock when trying to commit a CI fix.
+echo "--- Group 7: Bug 2 regression (#32) — PostToolUse commit is warn-not-block ---"
+setup
+out=$(run_hook "git commit -m fix" '{"status":"completed","conclusion":"failure"}')
+assert_passes "Bug2: git commit at PostToolUse not decision:blocked when CI red" "$out"
+assert_contains "Bug2: git commit at PostToolUse still emits CI warning" "$out" "CI"
+teardown
+
+# Guard: git push at PostToolUse must STILL emit decision:block when CI is red
+setup
+out=$(run_hook "git push" '{"status":"completed","conclusion":"failure"}')
+if printf '%s' "$out" | grep -qE '"decision"\s*:\s*"block"'; then
+  echo "  ✅ Bug2 guard: git push at PostToolUse still decision:blocked when CI red"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ Bug2 guard: git push at PostToolUse should be blocked but got: $out"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

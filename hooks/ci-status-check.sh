@@ -136,7 +136,18 @@ If you need to commit a CI fix: create the override file in your terminal (not i
   touch ~/.claude/.silver-bullet/ci-red-override
 This lets you commit your fix while CI is red. Remove it once CI is green."
 
-  emit_block "$msg"
+  # PostToolUse/git commit: warn only — the commit already happened; emitting
+  # decision:block here confuses the model about whether the commit succeeded and
+  # can cause deadlock (can't commit the CI fix because PostToolUse blocks it).
+  # Push, PR, and release operations are still hard-blocked (remote-state mutations).
+  if [[ "$hook_event" == "PostToolUse" ]] && \
+     printf '%s' "$cmd" | grep -qE '\bgit commit\b' && \
+     ! printf '%s' "$cmd" | grep -qE '\bgit push\b|\bgh pr\b|\bgh release\b'; then
+    json_msg=$(printf '%s' "$msg" | jq -Rs '.')
+    printf '{"hookSpecificOutput":{"message":%s}}' "$json_msg"
+  else
+    emit_block "$msg"
+  fi
 
 elif [[ "$status" == "in_progress" ]]; then
   printf '{"hookSpecificOutput":{"message":"ℹ️ CI in progress. Step 17 will poll for result before deploy."}}'
