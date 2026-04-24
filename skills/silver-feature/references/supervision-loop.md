@@ -7,22 +7,22 @@ The supervision loop runs BETWEEN each flow completion in silver-feature and sil
 Verify the flow's exit condition was met (per `docs/composable-flows-contracts.md`). If the exit condition is NOT met:
 
 ```
-⚠ FLOW {N} exit condition not met: {condition description}
+⚠ FLOW {name} exit condition not met: {condition description}
 Options:
-  A. Retry FLOW {N}
+  A. Retry FLOW {name}
   B. Skip with reason (document in WORKFLOW.md)
-  C. Insert FLOW 14 (DEBUG) before next flow
+  C. Insert FLOW DEBUG before next flow
 ```
 
 ## SL-2: Composition Evaluation (D-07.2)
 
 Re-evaluate context for dynamic insertion triggers:
 
-- **Execution failed** → insert FLOW 14 (DEBUG) before next flow (per D-11):
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 14 (DEBUG) | Execution failed: {reason} | {timestamp} |`
-- **UI files discovered in SUMMARY.md** → insert FLOW 6 (DESIGN CONTRACT) if not already in composition (per D-11, D-12):
+- **Execution failed** → insert FLOW DEBUG before next flow (per D-11):
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After {name} | FLOW DEBUG | Execution failed: {reason} | {timestamp} |`
+- **UI files discovered in SUMMARY.md** → insert FLOW DESIGN CONTRACT if not already in composition (per D-11, D-12):
   - Check SUMMARY.md for `*.tsx`, `*.css`, `*.html`, or `design/` references
-  - Record in WORKFLOW.md Dynamic Insertions table: `| After FLOW {N} | FLOW 6 (DESIGN CONTRACT) | UI files discovered | {timestamp} |`
+  - Record in WORKFLOW.md Dynamic Insertions table: `| After {name} | FLOW DESIGN CONTRACT | UI files discovered | {timestamp} |`
 
 ## SL-3: Anti-Stall Check (D-07.3)
 
@@ -44,7 +44,7 @@ Run 4-tier anti-stall detection:
 
 **Tier 4 — Heartbeat sentinel (D-19):** Each flow invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-flow:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
 ```
-⚠ HEARTBEAT GAP: FLOW {N} may have stalled. Options: [retry/skip/debug]
+⚠ HEARTBEAT GAP: FLOW {name} may have stalled. Options: [retry/skip/debug]
 ```
 Heartbeat timestamps use ISO 8601 format (e.g., `2026-04-15T10:30:00Z`).
 
@@ -65,7 +65,7 @@ FLOW {current}/{total}: {name} ✓ | Context: ~{percent}% | Remaining: {list of 
 Write flow status and timestamp to WORKFLOW.md Flow Log table:
 
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+| {#} | FLOW {name} | complete | {artifacts produced} | ✓ |
 ```
 
 Also update heartbeat fields:

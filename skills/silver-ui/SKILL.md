@@ -155,7 +155,7 @@ Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: 9 dimensions w
 
 Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
-## FLOW 6: DESIGN CONTRACT — UI specification (iterative)
+## FLOW DESIGN CONTRACT — UI specification (iterative)
 
 **Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
 
@@ -193,7 +193,7 @@ Run review sequence in order:
 3. For architecturally significant UI systems: invoke `gsd-review --all` via the Skill tool (cross-AI adversarial review across all available CLIs).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
-## FLOW 8: UI QUALITY — Post-execution UI audit
+## FLOW UI QUALITY — Post-execution UI audit
 
 **Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
 

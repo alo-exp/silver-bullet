@@ -20,7 +20,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 0: BOOTSTRAP
+### FLOW BOOTSTRAP
 
 | Field | Value |
 |-------|-------|
@@ -34,7 +34,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 1: ORIENT
+### FLOW ORIENT
 
 | Field | Value |
 |-------|-------|
@@ -48,7 +48,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 2: EXPLORE
+### FLOW EXPLORE
 
 | Field | Value |
 |-------|-------|
@@ -62,7 +62,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 3: IDEATE
+### FLOW IDEATE
 
 | Field | Value |
 |-------|-------|
@@ -76,7 +76,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 4: SPECIFY
+### FLOW SPECIFY
 
 | Field | Value |
 |-------|-------|
@@ -90,7 +90,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 5: PLAN
+### FLOW PLAN
 
 | Field | Value |
 |-------|-------|
@@ -104,7 +104,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 6: DESIGN CONTRACT
+### FLOW DESIGN CONTRACT
 
 | Field | Value |
 |-------|-------|
@@ -118,7 +118,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 7: EXECUTE
+### FLOW EXECUTE
 
 | Field | Value |
 |-------|-------|
@@ -132,7 +132,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 8: UI QUALITY
+### FLOW UI QUALITY
 
 | Field | Value |
 |-------|-------|
@@ -146,7 +146,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 9: REVIEW
+### FLOW REVIEW
 
 | Field | Value |
 |-------|-------|
@@ -160,7 +160,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 10: SECURE
+### FLOW SECURE
 
 | Field | Value |
 |-------|-------|
@@ -174,7 +174,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 11: VERIFY
+### FLOW VERIFY
 
 | Field | Value |
 |-------|-------|
@@ -188,7 +188,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 12: QUALITY GATE
+### FLOW QUALITY GATE
 
 | Field | Value |
 |-------|-------|
@@ -202,7 +202,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 13: SHIP
+### FLOW SHIP
 
 | Field | Value |
 |-------|-------|
@@ -216,7 +216,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 14: DEBUG
+### FLOW DEBUG
 
 | Field | Value |
 |-------|-------|
@@ -230,7 +230,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 15: DESIGN HANDOFF
+### FLOW DESIGN HANDOFF
 
 | Field | Value |
 |-------|-------|
@@ -244,7 +244,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 16: DOCUMENT
+### FLOW DOCUMENT
 
 | Field | Value |
 |-------|-------|
@@ -258,7 +258,7 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW 17: RELEASE
+### FLOW RELEASE
 
 | Field | Value |
 |-------|-------|
