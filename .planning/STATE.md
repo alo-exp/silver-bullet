@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 050-02
-status: Phase 50 complete — both silver-remove and silver-rem skills authored and registered
-last_updated: "2026-04-24T10:11:43Z"
+current_plan: 051-01
+status: Phase 51 plan 01 complete — §3b-i and §3b-ii enforcement instructions added to silver-bullet.md and template atomically
+last_updated: "2026-04-24T10:38:48Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 6
@@ -18,8 +18,8 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 51 — Auto-Capture Enforcement (next)
-**Current plan:** 050-02 (COMPLETE)
+**Active phase:** Phase 51 — Auto-Capture Enforcement (in progress)
+**Current plan:** 051-01 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -32,10 +32,10 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 50 — silver-remove & silver-rem (COMPLETE)
-Plan: 050-02 (COMPLETE) — silver-rem SKILL.md + config update
-Status: Phase 50 done — silver-remove and silver-rem skills complete; ready for Phase 51 (auto-capture enforcement)
-Last activity: 2026-04-24 — Phase 50 plan 02 complete
+Phase: 51 — Auto-Capture Enforcement (in progress)
+Plan: 051-01 (COMPLETE) — §3b-i deferred-item capture and §3b-ii knowledge/lessons capture added to silver-bullet.md and template
+Status: Phase 51 plan 01 done — CAPT-01 and CAPT-03 satisfied; both files committed atomically
+Last activity: 2026-04-24 — Phase 51 plan 01 complete
 
 Progress: [█████░░░░░] 50%
 
@@ -52,6 +52,7 @@ Progress: [█████░░░░░] 50%
 | 049-silver-add | 049-01 | 3 min | 2 | 3 |
 | 050-silver-remove-silver-rem | 050-01 | 2 min | 2 | 3 |
 | 050-silver-remove-silver-rem | 050-02 | 2 min | 2 | 3 |
+| 051-auto-capture-enforcement | 051-01 | 2 min | 2 | 2 |
 
 *Updated after each plan completion*
 
@@ -78,6 +79,8 @@ Progress: [█████░░░░░] 50%
 - Phase 50 plan 02: knowledge files pre-populate all 5 category headings at creation; lessons files add headings on first use (matches live doc-scheme.md format)
 - Phase 50 plan 02: docs/knowledge/INDEX.md tracks both Latest knowledge: and Latest lessons: pointers; silver-rem updates only the relevant pointer based on INSIGHT_TYPE
 - Phase 50 plan 02: default classification is knowledge when ambiguous — more common during active work; prevents over-routing to lessons
+- Phase 51 plan 01: §3b-i and §3b-ii inserted after existing GSD Command Tracking Anti-Skip note, before §3c — existing §3b content preserved intact
+- Phase 51 plan 01: both silver-bullet.md and templates/silver-bullet.md.base updated atomically in one commit — template-parity constraint satisfied (CAPT-01, CAPT-03)
 
 ### Pending Todos
 
@@ -90,4 +93,4 @@ Progress: [█████░░░░░] 50%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 50 plan 050-02 complete — silver-rem SKILL.md written (283 lines), silver-rem added to skills.all_tracked in both config files; MEM-01, MEM-02, MEM-03 satisfied; Phase 50 fully complete
+Stopped at: Phase 51 plan 051-01 complete — §3b-i (deferred-item capture via /silver-add) and §3b-ii (knowledge/lessons capture via /silver-rem) added to silver-bullet.md and templates/silver-bullet.md.base in one atomic commit 7cab250; CAPT-01 and CAPT-03 satisfied

@@ -334,7 +334,9 @@ Plans:
   2. Each of the five producing skill files (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-fast`) contains its own per-skill deferred-capture step calling `/silver-add` — not solely relying on `silver-bullet.md` for enforcement
   3. A new session log's `## Items Filed` section exists from the moment the log is initialized — `session-log-init.sh` (or the equivalent hook) creates this section in every new session log
   4. After `gsd-complete-milestone` succeeds, `silver-release` Step 9b reads all `## Items Filed` entries from session logs within the milestone window and presents a consolidated summary table of all items filed and knowledge/lessons recorded
-**Plans**: TBD
+**Plans:** 1+ plans
+Plans:
+- [x] 051-01-PLAN.md — Add §3b-i (deferred-item capture via /silver-add) and §3b-ii (knowledge/lessons capture via /silver-rem) to silver-bullet.md and templates/silver-bullet.md.base atomically (completed 2026-04-24)
 
 ### Phase 52: silver-forensics Audit
 **Goal**: silver-forensics is verified to be 100% functionally equivalent to gsd-forensics across all diagnostic dimensions, and any gaps are fixed before silver-scan is designed
@@ -396,7 +398,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
 | 50. silver-remove & silver-rem | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
-| 51. Auto-Capture Enforcement | v0.25.0 | 0/0 | Not started | - |
+| 51. Auto-Capture Enforcement | v0.25.0 | 1/? | In progress | - |
 | 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
 | 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |
 | 54. silver-scan | v0.25.0 | 0/0 | Not started | - |
