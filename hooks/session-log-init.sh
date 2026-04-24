@@ -134,11 +134,14 @@ if [[ -n "$existing" ]]; then
     date +%s > "$SB_DIR"/session-start-time
     (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
-    disown "$sentinel_pid"
     _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
     sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
-    touch "$SB_DIR/sentinel-lock-$_uuid"
-    printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+    if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+      printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+      disown "$sentinel_pid"
+    else
+      kill "$sentinel_pid" 2>/dev/null || true
+    fi
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     if awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
@@ -245,11 +248,14 @@ if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/sentinel-pid
   (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
-  disown "$sentinel_pid"
   _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
   sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
-  touch "$SB_DIR/sentinel-lock-$_uuid"
-  printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+  if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+    printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+    disown "$sentinel_pid"
+  else
+    kill "$sentinel_pid" 2>/dev/null || true
+  fi
 fi
 
 sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$log_file" > "$SB_DIR"/session-log-path
