@@ -320,7 +320,10 @@ Plans:
   3. User can invoke `/silver-rem` with a knowledge insight; a formatted entry appears in `docs/knowledge/YYYY-MM.md` under the matching doc-scheme category (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, or Open Questions)
   4. User can invoke `/silver-rem` with a lessons-learned insight; a formatted entry appears in `docs/lessons/YYYY-MM.md` under the matching doc-scheme category tag (`domain:`, `stack:`, `practice:`, `devops:`, or `design:`)
   5. When a new monthly `docs/knowledge/YYYY-MM.md` file is created for the first time, `docs/knowledge/INDEX.md` is updated with the new month entry and the file is created with the correct monthly header
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [x] 050-01-PLAN.md — Write silver-remove SKILL.md (GitHub close + local inline removal); add silver-remove to all_tracked (completed 2026-04-24)
+- [ ] 050-02-PLAN.md — Write silver-rem SKILL.md (knowledge/lessons monthly append, INDEX.md management); add silver-rem to all_tracked
 
 ### Phase 51: Auto-Capture Enforcement
 **Goal**: The coding agent is instructed at every enforcement layer to file deferred items and knowledge/lessons insights in real time, and a post-release summary is generated after each milestone
@@ -392,7 +395,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 47. Consistency & Quality | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
-| 50. silver-remove & silver-rem | v0.25.0 | 0/0 | Not started | - |
+| 50. silver-remove & silver-rem | v0.25.0 | 1/2 | In progress | - |
 | 51. Auto-Capture Enforcement | v0.25.0 | 0/0 | Not started | - |
 | 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
 | 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |

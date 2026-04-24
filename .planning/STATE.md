@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 049-02
-status: Phase 49 complete
-last_updated: "2026-04-24T09:37:30Z"
+current_plan: 050-01
+status: Phase 50 plan 01 complete
+last_updated: "2026-04-24T10:05:22Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 17
+  total_plans: 2
+  completed_plans: 2
+  percent: 28
 ---
 
 # Project State
@@ -19,7 +19,7 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.24.1
 **Active phase:** Phase 50 — silver-remove & silver-rem
-**Current plan:** None
+**Current plan:** 050-02 (next)
 
 Last activity: 2026-04-24
 
@@ -32,24 +32,25 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 49 — silver-add (COMPLETE)
-Plan: 049-01 (COMPLETE)
-Status: Phase 49 done — ready for Phase 50
-Last activity: 2026-04-24 — Phase 49 plan 01 complete
+Phase: 50 — silver-remove & silver-rem (IN PROGRESS)
+Plan: 050-01 (COMPLETE) — silver-remove SKILL.md + config update
+Status: Plan 050-01 done — silver-remove skill complete; ready for 050-02 (silver-rem)
+Last activity: 2026-04-24 — Phase 50 plan 01 complete
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 28%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 3 min
-- Total execution time: 3 min
+- Total plans completed: 2
+- Average duration: 2.5 min
+- Total execution time: 5 min
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 049-silver-add | 049-01 | 3 min | 2 | 3 |
+| 050-silver-remove-silver-rem | 050-01 | 2 min | 2 | 3 |
 
 *Updated after each plan completion*
 
@@ -69,6 +70,9 @@ Progress: [██░░░░░░░░] 17%
 - Phase 49: _github_project uses underscore prefix in .silver-bullet.json to signal derived/cached field (not user-configurable)
 - Phase 49: classification default is backlog when ambiguous — prevents over-alarming with issues
 - Phase 49: minimum bar criterion prevents noise items during auto-capture (no transient TODOs, no items already addressed)
+- Phase 50 plan 01: silver-remove closes GitHub issues (gh issue close --reason 'not planned') — GitHub REST/GraphQL requires delete_repo scope for deletion; close is the correct primitive
+- Phase 50 plan 01: silver-remove ID routing is prefix-based (SB-I → ISSUES.md, SB-B → BACKLOG.md) — path derived only from prefix, never user input (prevents path traversal T-050-02)
+- Phase 50 plan 01: integer ID with issue_tracker=gsd returns error — clarity over permissiveness
 
 ### Pending Todos
 
@@ -81,4 +85,4 @@ Progress: [██░░░░░░░░] 17%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 49 plan 049-01 complete — silver-add SKILL.md written, silver-add added to skills.all_tracked in both config files
+Stopped at: Phase 50 plan 050-01 complete — silver-remove SKILL.md written (202 lines), silver-remove added to skills.all_tracked in both config files; REM-01 and REM-02 satisfied

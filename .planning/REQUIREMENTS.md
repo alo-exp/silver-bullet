@@ -24,8 +24,8 @@ Scope: closed-loop deferred-item capture system — automatic filing to user's P
 
 ### Primitive Skills — Remove (REM)
 
-- [ ] **REM-01**: User can invoke `/silver-remove <id>`; when `issue_tracker = "github"`, closes the GitHub Issue with `"not planned"` reason and `removed-by-silver-bullet` label (GitHub does not support issue deletion via REST/GraphQL API without `delete_repo` scope)
-- [ ] **REM-02**: When no PM system is configured, silver-remove marks the item as `[REMOVED YYYY-MM-DD]` inline in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md` by matching the `SB-I-N` or `SB-B-N` ID
+- [x] **REM-01**: User can invoke `/silver-remove <id>`; when `issue_tracker = "github"`, closes the GitHub Issue with `"not planned"` reason and `removed-by-silver-bullet` label (GitHub does not support issue deletion via REST/GraphQL API without `delete_repo` scope)
+- [x] **REM-02**: When no PM system is configured, silver-remove marks the item as `[REMOVED YYYY-MM-DD]` inline in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md` by matching the `SB-I-N` or `SB-B-N` ID
 
 ### Primitive Skills — Knowledge & Lessons (MEM)
 
