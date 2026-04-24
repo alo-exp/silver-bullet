@@ -65,6 +65,14 @@ Run code review (trigger: "code review"). Focus on:
 ### Step 9: QUALITY GATES (pre-ship)
 Run quality gates (trigger: "quality gates").
 
+**PATH 10b: DOC-SCHEME COMPLIANCE (conditional)**
+Only if `docs/doc-scheme.md` exists: before raising the PR, verify:
+1. `docs/CHANGELOG.md` — has an entry for this phase (newest-first). Write it if missing.
+2. `docs/ARCHITECTURE.md` — does not say "in progress" for completed phases. Update if stale.
+3. `docs/knowledge/YYYY-MM.md` — append architectural patterns, API gotchas, or key decisions if any.
+4. `docs/lessons/YYYY-MM.md` — append portable lessons learned if any.
+Do NOT proceed to Step 10 until all four checks pass. If `docs/doc-scheme.md` does not exist, skip this path.
+
 ### Step 10: SHIP
 Create PR (trigger: "ship").
 
