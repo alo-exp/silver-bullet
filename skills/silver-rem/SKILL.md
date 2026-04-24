@@ -230,8 +230,8 @@ DATE=$(date +%Y-%m-%d)
 if grep -q "^## ${CATEGORY}$" "$TARGET"; then
   # Heading exists — insert entry immediately AFTER the heading (not at EOF)
   TMP=$(mktemp)
-  awk -v h="## ${CATEGORY}" -v d="${DATE}" -v ins="${INSIGHT}" \
-    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ins; done=1; next} {print}' \
+  INSIGHT="${INSIGHT}" awk -v h="## ${CATEGORY}" -v d="${DATE}" \
+    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ENVIRON["INSIGHT"]; done=1; next} {print}' \
     "$TARGET" > "$TMP" && mv "$TMP" "$TARGET"
 else
   # Heading absent — add heading then entry at end of file
@@ -249,8 +249,8 @@ HEADING="## ${CATEGORY_TAG}"
 if grep -q "^${HEADING}$" "$TARGET"; then
   # Heading exists — insert entry immediately after the heading (not at EOF)
   TMP=$(mktemp)
-  awk -v h="${HEADING}" -v d="${DATE}" -v ins="${INSIGHT}" \
-    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ins; done=1; next} {print}' \
+  INSIGHT="${INSIGHT}" awk -v h="${HEADING}" -v d="${DATE}" \
+    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ENVIRON["INSIGHT"]; done=1; next} {print}' \
     "$TARGET" > "$TMP" && mv "$TMP" "$TARGET"
 else
   # Heading absent — add heading then entry at end of file

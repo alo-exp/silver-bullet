@@ -259,4 +259,4 @@ If no candidates were found at all: show "No unresolved deferred items found. Se
 
 - **No `## Knowledge & Lessons additions` section in any log**: Knowledge/lessons candidate list may be empty. `KL_FOUND` remains 0. Step 8 is skipped (no candidates to present). Summary shows `KL_FOUND: 0`.
 
-- **`docs/knowledge/` or `docs/lessons/` directories absent**: `grep -rl "KEYWORD" docs/knowledge/ docs/lessons/ 2>/dev/null` exits non-zero silently. Treat as no match — no existing files to check against. All extracted knowledge/lessons signals proceed as new candidates.
+- **`docs/knowledge/` or `docs/lessons/` directories absent**: `grep -rlF "KEYWORD" docs/knowledge/ docs/lessons/ 2>/dev/null` exits non-zero silently. Treat as no match — no existing files to check against. All extracted knowledge/lessons signals proceed as new candidates.

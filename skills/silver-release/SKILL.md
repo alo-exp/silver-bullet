@@ -17,10 +17,10 @@ Never publishes directly — orchestrates only.
 
 ## Pre-flight: Load Preferences
 
-Read `silver-bullet.md §10` to load user workflow preferences before any other step.
+Read the **User Workflow Preferences** section of `silver-bullet.md` to load user workflow preferences before any other step.
 
 ```bash
-grep -A 50 "^## 10\. User Workflow Preferences" silver-bullet.md | head -60
+grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 ```
 
 Display banner:
@@ -156,11 +156,11 @@ Track iteration count (starts at 0).
 > Release gap limit reached (2 gap-closure iterations completed). Remaining gaps:
 > {list gaps from gsd-audit-milestone output}
 >
-> A. Release anyway — document gaps as known issues, proceed to Step 3
+> A. Release anyway — document gaps as known issues, proceed to Step 3a
 > B. Extend milestone — defer release, continue work outside this workflow
 > C. Abort release — do not ship, requires manual decision to resume
 
-Wait for user selection. If A: proceed to Step 3 with gaps documented. If B or C: exit workflow.
+Wait for user selection. If A: proceed to Step 3a with gaps documented. If B or C: exit workflow.
 
 **When iteration count < 2:**
 

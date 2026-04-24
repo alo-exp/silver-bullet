@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.24.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.24.1)
+[![version](https://img.shields.io/badge/version-v0.25.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -205,6 +205,10 @@ Skills installed by this plugin that extend the workflow:
 | `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
 | `/silver-forensics` | After a completed, failed, or abandoned session — routes to GSD forensics for workflow issues, handles session-level issues directly |
 | `/silver-create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
+| `/silver-add` | Classify and file an issue or backlog item — routes to GitHub Issues + project board or local `docs/issues/` |
+| `/silver-remove` | Remove an issue or backlog item by ID — closes GitHub issues or marks `[REMOVED]` in local docs |
+| `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
+| `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, cross-references git/CHANGELOG/GitHub Issues, files survivors via `/silver-add` and `/silver-rem` |
 
 ### `/silver-forensics`
 
@@ -245,7 +249,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.2.0",
+  "version": "0.25.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",

@@ -13,10 +13,10 @@ Never implements features directly — orchestrates only.
 
 ## Pre-flight: Load Preferences
 
-Read `silver-bullet.md §10` to load user workflow preferences before any other step. Silently apply any stored routing, skip, tool, MultAI, or mode preferences throughout this workflow.
+Read the **User Workflow Preferences** section of `silver-bullet.md` to load user workflow preferences before any other step. Silently apply any stored routing, skip, tool, MultAI, or mode preferences throughout this workflow.
 
 ```bash
-grep -A 50 "^## 10\. User Workflow Preferences" silver-bullet.md | head -60
+grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 ```
 
 Display banner:

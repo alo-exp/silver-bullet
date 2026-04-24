@@ -454,7 +454,7 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 | Research | RESEARCH.md | /artifact-reviewer --reviewer review-research | YES | /gsd:plan-phase (researcher) |
 | Ingestion | INGESTION_MANIFEST.md | /artifact-reviewer --reviewer review-ingestion-manifest | YES | /silver:ingest Step 7 |
 | UAT generation | UAT.md | /artifact-reviewer --reviewer review-uat | YES | /silver:feature Step 17.0 |
-| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 7.5 |
+| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 7 |
 
 If ANY of these steps produces findings on the first pass, you MUST fix the findings and re-run the review. The step is complete ONLY after two consecutive clean passes.
 

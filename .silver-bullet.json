@@ -1,4 +1,5 @@
 {
+  "config_version": "0.25.0",
   "version": "0.25.0",
   "project": {
     "name": "silver-bullet",
@@ -24,6 +25,22 @@
       "test-driven-development",
       "tech-debt"
     ],
+    "required_deploy_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "code-review",
+      "requesting-code-review",
+      "receiving-code-review",
+      "testing-strategy",
+      "documentation",
+      "finishing-a-development-branch",
+      "deploy-checklist",
+      "silver-create-release",
+      "verification-before-completion",
+      "test-driven-development",
+      "tech-debt"
+    ],
+    "forbidden": [],
     "all_tracked": [
       "silver-quality-gates",
       "silver-blast-radius",

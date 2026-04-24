@@ -36,6 +36,8 @@
 - Fixed `silver-remove` to add strict `^SB-[IB]-[0-9]+$` regex guard after case statement, rejecting IDs with non-numeric trailing content.
 - Fixed template §9 section: cleared live Silver Bullet project preferences from Mode Preferences table; corrected §10 cross-references to §9 within template.
 - Bumped `version` and `config_version` in `templates/silver-bullet.config.json.default` to `0.25.0`.
+- Fixed all 9 orchestrator skills pre-flight grep to use `[0-9]\+\.` instead of `10\.` when reading User Workflow Preferences — the section is §10 in the SB dev repo but §9 in every template-installed user project.
+- Fixed `silver-rem` Step 6 `awk -v ins="${INSIGHT}"` injection vector (issue #57): insight text now passed via `ENVIRON["INSIGHT"]` to bypass awk's backslash-sequence interpretation of `-v` assignment values. Applies to both knowledge and lessons entry insertion.
 
 ## [0.24.0] — 2026-04-24
 
