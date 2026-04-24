@@ -232,6 +232,25 @@ Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any techn
 
 Invoke `silver:silver-quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
 
+## Step 13b: Doc-Scheme Compliance (conditional)
+
+**Only if `docs/doc-scheme.md` exists in the project:**
+
+```bash
+[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+```
+
+Before raising the PR, verify documentation is up to date per the scheme:
+
+1. **`docs/CHANGELOG.md`** — must have an entry for the phase just completed (newest-first). If missing, write it now: one entry summarising what shipped.
+2. **`docs/ARCHITECTURE.md`** — must NOT say "in progress" for completed phases. If stale, update §Current State to reflect completed state.
+3. **`docs/knowledge/YYYY-MM.md`** (current month) — if architectural patterns, API gotchas, or key decisions were encountered, append them now.
+4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned, append them now.
+
+**Gate:** Do NOT proceed to Step 14 until all four checks pass. Missing doc entries are a pre-ship defect — write them before continuing.
+
+If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 14.
+
 ## Step 14: Finishing Branch
 
 Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool.
