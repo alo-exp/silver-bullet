@@ -141,15 +141,17 @@ Insert the release entry at the top of `CHANGELOG.md` (after the `# Changelog` h
 ---
 ```
 
-Use a tmpfile+mv pattern (portable, no `sed -i ''` macOS dependency):
+Use a head/printf/tail pattern — `awk -v` does not support multiline variable values, so the entry is built with `printf` which handles embedded newlines correctly:
 
 ```bash
 VERSION_BARE="${VERSION#v}"   # strip leading 'v' if present
 TODAY=$(date '+%Y-%m-%d')
 TMP=$(mktemp)
-awk -v entry="## [${VERSION_BARE}] — ${TODAY}\n\n${RELEASE_NOTES_BODY}\n\n---" \
-  'NR==1 { print; print ""; print entry; next } { print }' CHANGELOG.md > "$TMP" \
-  && mv "$TMP" CHANGELOG.md
+{
+  head -1 CHANGELOG.md
+  printf '\n## [%s] — %s\n\n%s\n\n---\n' "$VERSION_BARE" "$TODAY" "$RELEASE_NOTES_BODY"
+  tail -n +2 CHANGELOG.md
+} > "$TMP" && mv "$TMP" CHANGELOG.md
 ```
 
 If `CHANGELOG.md` does not exist, create it with:
