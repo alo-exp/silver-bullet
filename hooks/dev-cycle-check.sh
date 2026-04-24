@@ -135,12 +135,12 @@ To reset the workflow state, remove the file from your terminal (not from Claude
       exit 0
     fi
   elif [[ -n "$command_str" ]]; then
-    # Bash write to .silver-bullet/state, /branch, or /trivial -> block
+    # Bash write to .silver-bullet/state -> block (branch and trivial are NOT state-managed)
     # Single combined pattern: write operator must precede state path with no heredoc
     # delimiter (<) between them. This prevents false-positives from heredoc body content.
     is_whitelisted_append=false
     if [[ "$is_whitelisted_append" == false ]] && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/(state|branch|trivial|mode)'; then
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/state\b'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
 Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
