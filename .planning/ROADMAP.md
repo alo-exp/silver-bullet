@@ -89,7 +89,7 @@
 - [x] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template (completed 2026-04-24)
 - [x] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan (completed 2026-04-24)
 - [x] **Phase 53: silver-update Overhaul** - Migrate /silver-update to marketplace install method; clean up stale legacy installations (completed 2026-04-24)
-- [ ] **Phase 54: silver-scan** - New /silver-scan retrospective scan skill: glob sessions, cross-reference history, human-gated filing via silver-add and silver-rem
+- [x] **Phase 54: silver-scan** - New /silver-scan retrospective scan skill: glob sessions, cross-reference history, human-gated filing via silver-add and silver-rem (completed 2026-04-24)
 
 ## Phase Details
 
@@ -398,7 +398,7 @@ Plans:
 **Pre-release gate**: Before CI and releasing this phase, execute the 4-stage `docs/internal/pre-release-quality-gate.md`
 **Plans:** 1 plan
 Plans:
-- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
+- [x] 054-01-PLAN.md — Write silver-scan SKILL.md (SCAN-01 through SCAN-05); register silver-scan in skills.all_tracked in both config files (completed 2026-04-24)
 
 ## Progress
 
@@ -433,4 +433,4 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 51. Auto-Capture Enforcement | v0.25.0 | 4/4 | Complete    | 2026-04-24 |
 | 52. silver-forensics Audit | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
 | 53. silver-update Overhaul | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
-| 54. silver-scan | v0.25.0 | 0/0 | Not started | - |
+| 54. silver-scan | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
