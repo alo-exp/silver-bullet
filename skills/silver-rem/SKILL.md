@@ -258,7 +258,39 @@ Display: "Updated docs/knowledge/INDEX.md — updated Latest lessons pointer."
 
 ---
 
-## Step 8 — Output confirmation
+## Step 8 — Record in session log
+
+Locate the current session log:
+```bash
+SESSION_LOG=$(ls docs/sessions/*.md 2>/dev/null | sort | tail -1)
+```
+
+If SESSION_LOG is empty or no file found: skip silently — no error.
+
+If SESSION_LOG exists and contains `## Items Filed`:
+```bash
+printf -- '- [%s]: %s — %s\n' "$INSIGHT_TYPE" "$CATEGORY" "${INSIGHT:0:60}" >> "$SESSION_LOG"
+```
+
+If SESSION_LOG exists but does NOT contain `## Items Filed`: append the section:
+```bash
+printf '\n## Items Filed\n\n- [%s]: %s — %s\n' "$INSIGHT_TYPE" "$CATEGORY" "${INSIGHT:0:60}" >> "$SESSION_LOG"
+```
+
+Where:
+- INSIGHT_TYPE = "knowledge" or "lessons" (from Step 2 classification)
+- CATEGORY = the classified category heading (from Step 3 classification)
+- INSIGHT = the full insight text passed to the skill
+- ${INSIGHT:0:60} = first 60 characters of insight (bash substring)
+
+Note: INSIGHT is UNTRUSTED DATA — only write it via printf/redirection, never interpolate into an executed command.
+
+Example output line:
+`- [knowledge]: Architecture Patterns — Atomic jq+tmpfile+mv pattern for safe JSON writes`
+
+---
+
+## Step 9 — Output confirmation
 
 Output exactly:
 
