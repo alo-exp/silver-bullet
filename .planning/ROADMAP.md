@@ -86,7 +86,7 @@
 
 - [x] **Phase 49: silver-add** - New /silver-add skill: classify, file to GitHub Issues+board or local docs/, cache board IDs, rate-limit resilience (completed 2026-04-24)
 - [x] **Phase 50: silver-remove & silver-rem** - New /silver-remove and /silver-rem skills: remove issues by ID and capture knowledge/lessons per doc-scheme (completed 2026-04-24)
-- [ ] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template
+- [x] **Phase 51: Auto-Capture Enforcement** - Wire silver-add + silver-rem calls into silver-bullet.md §3b, all producing skill files, and session log template (completed 2026-04-24)
 - [ ] **Phase 52: silver-forensics Audit** - Audit silver-forensics against gsd-forensics for 100% functional equivalence; fix all gaps before silver-scan
 - [ ] **Phase 53: silver-update Overhaul** - Migrate /silver-update to marketplace install method; clean up stale legacy installations
 - [ ] **Phase 54: silver-scan** - New /silver-scan retrospective scan skill: glob sessions, cross-reference history, human-gated filing via silver-add and silver-rem

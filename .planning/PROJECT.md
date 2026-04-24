@@ -43,15 +43,16 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ /silver-add skill: classify item as issue/backlog, file to GitHub Issues+board or local docs/issues/, cache board IDs, rate-limit resilience — v0.25.0 Phase 49
 - ✓ /silver-remove skill: close GitHub issue as "not planned" or inline-mark [REMOVED] in local docs/ — v0.25.0 Phase 50
 - ✓ /silver-rem skill: classify and append knowledge/lessons insights to monthly docs/ files, INDEX.md managed — v0.25.0 Phase 50
+- ✓ Auto-capture enforcement: §3b-i (/silver-add) and §3b-ii (/silver-rem) mandatory capture instructions in silver-bullet.md + template; all 5 producing skills wired; session logs gain ## Items Filed; silver-release Step 9b post-release summary — v0.25.0 Phase 51
 
 ### Active
 
-- [ ] Auto-capture enforcement: SB instructs coding agent to file all deferred/skipped items to PM system on the fly (v0.25.0)
-- [ ] Continuous knowledge/lessons capture enforcement: coding agent captures knowledge/lessons insights via /silver-rem on the fly (v0.25.0)
+- [x] Auto-capture enforcement: SB instructs coding agent to file all deferred/skipped items to PM system on the fly (v0.25.0)
+- [x] Continuous knowledge/lessons capture enforcement: coding agent captures knowledge/lessons insights via /silver-rem on the fly (v0.25.0)
 - [x] /silver-add skill: classify item, file to GitHub Issues/project board or local docs/, assign ID — validated Phase 49 (v0.25.0)
 - [x] /silver-remove skill: remove issue/backlog item by ID from PM system or local docs/ — validated Phase 50 (v0.25.0)
 - [x] /silver-rem skill: capture knowledge or lessons item per doc-scheme.md into knowledge/YYYY-MM.md or lessons/YYYY-MM.md — validated Phase 50 (v0.25.0)
-- [ ] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
+- [x] Post-release summary: auto-display all items filed during milestone after release (v0.25.0)
 - [ ] /silver-forensics audit: 100% functional equivalence vs gsd-forensics (v0.25.0)
 - [ ] /silver-scan skill: retrospective session scan, find deferred issues/backlog AND knowledge/lessons items, assess relevance, silver-add/silver-rem relevant ones (v0.25.0)
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
@@ -124,4 +125,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 50 (silver-remove & silver-rem) complete*
+*Last updated: 2026-04-24 after Phase 51 (auto-capture enforcement) complete*

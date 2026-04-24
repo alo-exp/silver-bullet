@@ -1,11 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.21.0
-milestone_name: Hook Quality & Docs
+milestone: v0.25.0
+milestone_name: Issue Capture & Retrospective Scan
 current_plan: 051-04 (COMPLETE)
-status: completed
-stopped_at: Phase 51 plan 051-04 complete — silver-release Step 9b added (c2a66bc); CAPT-05 satisfied; all 5 CAPT requirements complete
-last_updated: "2026-04-24T10:54:56Z"
+status: Phase 51 complete — ready for Phase 52 (silver-forensics Audit)
+last_updated: "2026-04-24T11:30:00Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
@@ -19,7 +18,7 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 51 — Auto-Capture Enforcement (COMPLETE)
+**Active phase:** Phase 52 — silver-forensics Audit (next)
 **Current plan:** 051-04 (COMPLETE)
 
 Last activity: 2026-04-24
