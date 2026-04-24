@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 052-02 (COMPLETE)
-status: Phase 52 complete — ready for Phase 53 planning
-stopped_at: Phase 52 complete — all 13 gaps fixed in silver-forensics/SKILL.md (0673b3a); Fix Log appended to audit report (2754b38); FORN-01 and FORN-02 satisfied; Phase 53 (silver-update Overhaul) next
-last_updated: "2026-04-24T11:35:00Z"
+current_plan: 053-01 (COMPLETE)
+status: Phase 53 complete — UPD-01 and UPD-02 satisfied; Phase 54 (silver-scan) next
+stopped_at: Phase 53 complete — silver-update SKILL.md overhauled (marketplace install + stale cleanup); commits 07c37b8 and a7114e0; Phase 54 (silver-scan) next
+last_updated: "2026-04-24T11:43:31Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
@@ -19,8 +19,8 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 53 — silver-update Overhaul (not started)
-**Current plan:** 052-02 (COMPLETE)
+**Active phase:** Phase 53 — silver-update Overhaul (COMPLETE)
+**Current plan:** 053-01 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -33,10 +33,10 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 52 — silver-forensics Audit (COMPLETE); Phase 53 — silver-update Overhaul (not started)
-Plan: 052-02 (COMPLETE) — all 13 gaps fixed in silver-forensics/SKILL.md; Fix Log in audit report
-Status: Phase 52 complete — FORN-01 + FORN-02 satisfied; Phase 53 planning next
-Last activity: 2026-04-24 — Phase 52 complete
+Phase: 53 — silver-update Overhaul (COMPLETE); Phase 54 — silver-scan (not started)
+Plan: 053-01 (COMPLETE) — silver-update SKILL.md overhauled: marketplace install + stale cleanup
+Status: Phase 53 complete — UPD-01 + UPD-02 satisfied; Phase 54 (silver-scan) next
+Last activity: 2026-04-24 — Phase 53 complete
 
 Progress: [█████████░] 67%
 
@@ -59,6 +59,7 @@ Progress: [█████████░] 67%
 | 051-auto-capture-enforcement | 051-04 | 3 min | 1 | 1 |
 | 052-silver-forensics-audit | 052-01 | 4 min | 1 | 1 |
 | 052-silver-forensics-audit | 052-02 | 5 min | 2 | 2 |
+| 053-silver-update-overhaul | 053-01 | 2 min | 2 | 1 |
 
 *Updated after each plan completion*
 
@@ -103,6 +104,10 @@ Progress: [█████████░] 67%
 - Phase 52 plan 02: G-12/G-13 redaction rules placed in existing Security Boundary section (co-located with input-side rules) — no separate sub-section needed
 - Phase 52 plan 02: Artifact Completeness matrix (G-09) added to report Evidence Gathered as ### sub-section; worktrees field (G-11) added as bullet — both needed independently
 - Phase 52 plan 02: FORN-02 satisfied — all 13 gaps fixed (commit 0673b3a); Fix Log appended to audit report (commit 2754b38); Phase 52 complete
+- Phase 53 plan 01: claude mcp install silver-bullet@alo-labs is the sole install mechanism — git clone path removed entirely from silver-update/SKILL.md
+- Phase 53 plan 01: Step 1 reads alo-labs key first, falls back to legacy silver-bullet@silver-bullet key — supports installs from before and after this overhaul
+- Phase 53 plan 01: Step 6 uses jq del (not update) — stale key deleted atomically; marketplace manages its own alo-labs entry independently
+- Phase 53 plan 01: second AskUserQuestion (pre-install SHA confirmation) removed along with git clone — marketplace install does not expose a verifiable SHA
 
 ### Pending Todos
 
@@ -115,4 +120,4 @@ Progress: [█████████░] 67%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 52 complete — FORN-01 + FORN-02 satisfied; 13 gaps fixed in silver-forensics/SKILL.md (0673b3a); Fix Log in audit report (2754b38); Phase 53 (silver-update Overhaul) planning next
+Stopped at: Phase 53 complete — UPD-01 + UPD-02 satisfied; silver-update SKILL.md overhauled (07c37b8, a7114e0); Phase 54 (silver-scan) next
