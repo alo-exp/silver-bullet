@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
 current_plan: —
-status: Defining requirements
+status: Ready to plan
 last_updated: "2026-04-24T00:00:00Z"
 last_activity: 2026-04-24
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,7 +18,7 @@ progress:
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Not started (defining requirements)
+**Active phase:** Phase 49 — silver-add
 **Current plan:** None
 
 Last activity: 2026-04-24
@@ -32,10 +32,10 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 49 — silver-add
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-24 — Milestone v0.25.0 started
+Status: Ready to plan
+Last activity: 2026-04-24 — Roadmap created for v0.25.0
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,11 +58,13 @@ Progress: [░░░░░░░░░░] 0%
 - v0.24.0 shipped as v0.24.1 (patch bump); all 23 requirements completed
 - FEAT-01 (PM system in /silver:init) completed in v0.24.0 — `issue_tracker` field now in .silver-bullet.json; v0.25.0 builds on this
 - GSD is sole execution engine; WORKFLOW.md tracks composition, STATE.md tracks GSD execution
-- v0.25.0 scope: closed-loop deferred-item capture (silver-add, silver-remove, auto-enforcement, post-release summary) + forensics audit + silver-scan
+- v0.25.0 scope: closed-loop deferred-item capture (silver-add, silver-remove, silver-rem, auto-enforcement for issues+knowledge+lessons, post-release summary) + forensics audit + silver-scan (scans for issues/backlog AND knowledge/lessons items)
+- v0.25.0 roadmap: 6 phases (49-54); silver-add first (foundation), silver-remove+silver-rem second, auto-capture enforcement third, forensics audit fourth (independent; prerequisite for silver-scan), silver-update overhaul fifth (independent), silver-scan last (depends on phases 49 and 52)
+- Pre-release gate: execute 4-stage docs/internal/pre-release-quality-gate.md before CI and releasing (noted in Phase 54)
 
 ### Pending Todos
 
-- 2026-04-24: Complete requirements definition and roadmap for v0.25.0 (in progress)
+(none — roadmap complete, ready to plan Phase 49)
 
 ### Blockers/Concerns
 
@@ -71,4 +73,4 @@ Progress: [░░░░░░░░░░] 0%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Milestone v0.25.0 started — defining requirements
+Stopped at: Roadmap created for v0.25.0 — 6 phases (49-54), 24 requirements mapped, ready to plan Phase 49

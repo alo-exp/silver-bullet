@@ -102,10 +102,10 @@ Scope: closed-loop deferred-item capture system — automatic filing to user's P
 | CAPT-05 | Phase 51 | Pending |
 | FORN-01 | Phase 52 | Pending |
 | FORN-02 | Phase 52 | Pending |
-| SCAN-01 | Phase 53 | Pending |
-| SCAN-02 | Phase 53 | Pending |
-| SCAN-03 | Phase 53 | Pending |
-| SCAN-04 | Phase 53 | Pending |
-| SCAN-05 | Phase 53 | Pending |
-| UPD-01 | Phase 54 | Pending |
-| UPD-02 | Phase 54 | Pending |
+| UPD-01 | Phase 53 | Pending |
+| UPD-02 | Phase 53 | Pending |
+| SCAN-01 | Phase 54 | Pending |
+| SCAN-02 | Phase 54 | Pending |
+| SCAN-03 | Phase 54 | Pending |
+| SCAN-04 | Phase 54 | Pending |
+| SCAN-05 | Phase 54 | Pending |
