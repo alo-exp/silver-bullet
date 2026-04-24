@@ -69,7 +69,8 @@
       "gsd-ui-review",
       "gsd-secure-phase",
       "silver-remove",
-      "silver-rem"
+      "silver-rem",
+      "silver-scan"
     ]
   },
   "devops_plugins": {
