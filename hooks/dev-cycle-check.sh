@@ -145,8 +145,8 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
     _state_in_dquote='"[^"]*\.claude/[^/]+/state[^"]*"'
     _state_in_squote="'[^']*\\.claude/[^/]+/state[^']*'"
-    _state_redirect_dquote='(>>|[[:space:]]>[^>&=]|\btee\b)[[:space:]]*"[^"]*\.claude/[^/]+/state'
-    _state_redirect_squote="(>>|[[:space:]]>[^>&=]|\btee\b)[[:space:]]*'[^']*\\.claude/[^/]+/state"
+    _state_redirect_dquote='(>>|[[:space:]]>[^>&=]|\btee\b)[^"]*"[^"]*\.claude/[^/]+/state'
+    _state_redirect_squote="(>>|[[:space:]]>[^>&=]|\btee\b)[^']*'[^']*\\.claude/[^/]+/state"
     _quote_exempt=false
     if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_dquote" && \
        ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote"; then
