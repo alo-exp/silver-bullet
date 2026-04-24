@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    h1 { color: #333; }
+    #app { display: flex; flex-direction: column; gap: 10px; }
+    input { padding: 10px; font-size: 16px; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 10px; border: 1px solid #ddd; margin: 5px 0; display: flex; justify-content: space-between; }
+    .completed { text-decoration: line-through; color: #999; }
+    button { padding: 5px 10px; }
+    .delete-btn { background: #ff4444; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Todo App</h1>
+  <div id="app">
+    <input type="text" id="new-todo" placeholder="What needs to be done?">
+    <button id="add-btn">Add</button>
+    <ul id="todo-list"></ul>
+  </div>
+  <script>
+    const API = '/api/todos';
+    async function loadTodos() {
+      const res = await fetch(API);
+      const todos = await res.json();
+      document.getElementById('todo-list').innerHTML = todos.map(t => '<li>' + t.title + '</li>').join('');
+    }
+    async function addTodo() {
+      const title = document.getElementById('new-todo').value;
+      if (!title) return;
+      await fetch(API, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ title }) });
+      document.getElementById('new-todo').value = '';
+      loadTodos();
+    }
+    document.getElementById('add-btn').onclick = addTodo;
+    document.getElementById('new-todo').onkeypress = e => { if (e.key === 'Enter') addTodo(); };
+    loadTodos();
+  </script>
+</body>
+</html>

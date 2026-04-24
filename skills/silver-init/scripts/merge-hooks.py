@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 Idempotently merge Silver Bullet hooks from hooks.json into ~/.claude/settings.json.
+Purges stale SB hook entries from previous installs before registering new ones.
 Usage: python3 merge_hooks.py <sb_install_path>
 """
-import json, os, sys
+import json, os, re, sys
 
 install_path = sys.argv[1]
 hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
@@ -25,6 +26,13 @@ def sub_path(obj, install_path):
 
 sb_hooks = sub_path(sb_hooks, install_path)
 
+# Matches any SB hook from any version in the plugin cache
+SB_HOOK_RE = re.compile(r'/silver-bullet/\d+\.\d+\.\d+/hooks/')
+
+def is_stale_sb_hook(hook):
+    cmd = hook.get('command', '')
+    return bool(SB_HOOK_RE.search(cmd)) and install_path not in cmd
+
 if os.path.exists(settings_path):
     with open(settings_path) as f:
         settings = json.load(f)
@@ -32,6 +40,19 @@ else:
     settings = {}
 
 existing_hooks = settings.setdefault('hooks', {})
+
+# Purge stale SB entries from previous installs before adding current version
+for event in list(existing_hooks.keys()):
+    cleaned = []
+    for group in existing_hooks[event]:
+        kept = [h for h in group.get('hooks', []) if not is_stale_sb_hook(h)]
+        if kept:
+            group['hooks'] = kept
+            cleaned.append(group)
+    if cleaned:
+        existing_hooks[event] = cleaned
+    else:
+        del existing_hooks[event]
 
 for event, entries in sb_hooks.items():
     existing_event = existing_hooks.setdefault(event, [])

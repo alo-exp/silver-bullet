@@ -1,0 +1,6 @@
+2026-04-22T12:11:06Z	1f5e2916-4d16-4e41-837f-8606ba6bd241	sidekick-1776859866-8606ba6b	In site/index.html, the GSD ecosystem card (around line 1108) has class 'ecosyst
+2026-04-22T12:12:24Z	be905aad-d763-4a26-96a6-5fb8344b28ec	sidekick-1776859944-5fb8344b	In site/index.html, in The Ecosystem section (around line 1102), change the h2 h
+2026-04-22T12:16:10Z	a044d763-7862-426b-b7b2-e272f4f6cf15	sidekick-1776860170-e272f4f6	In site/index.html, in the 'How It Compares' section, make these 3 text changes:
+2026-04-22T12:17:04Z	e30e2020-b37a-4251-906e-fafe0b13a560	sidekick-1776860224-fafe0b13	Commit and push the staged changes to site/index.html. Commit message: 'docs(sit
+2026-04-22T12:20:56Z	11656ad9-91d2-4f53-9a1a-2625090c2676	sidekick-1776860456-2625090c	In site/index.html, in the Silver Bullet compare card, find the bullet text 'com
+2026-04-22T12:22:53Z	6e70c62c-b1ac-4b5f-b48a-6f47b6beab09	sidekick-1776860573-6f47b6be	Stage site/index.html, commit with message 'docs(site): capitalize Composable in
