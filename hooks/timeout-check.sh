@@ -80,7 +80,7 @@ echo "$call_count" > "$call_count_file"
 
 # Track tool calls since last skill was recorded (progress marker)
 # When the state file changes (new skill recorded), reset the progress baseline
-state_file="$SB_DIR/state"
+state_file="${SILVER_BULLET_STATE_FILE:-$SB_DIR/state}"
 last_progress_file="$SB_DIR/last-progress-call"
 last_progress_count=0
 if [[ -f "$last_progress_file" ]]; then

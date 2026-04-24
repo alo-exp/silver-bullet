@@ -139,8 +139,13 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     # QA-05: match only the first line (prevents heredoc body false-positives) and skip
     # git/gh commands entirely — those never write to state files but may mention the state
     # path in -m / --body string arguments, causing false-positive blocks (issue #36).
+    # Also skip when the path appears only inside a quoted string literal (not a real redirect).
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
+    _state_in_dquote='"[^"]*\.claude/[^/]+/state[^"]*"'
+    _state_in_squote="'[^']*\\.claude/[^/]+/state[^']*'"
     if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
+       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_dquote" && \
+       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_squote" && \
        printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/state\b'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
