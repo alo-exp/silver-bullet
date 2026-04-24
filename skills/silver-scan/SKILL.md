@@ -86,7 +86,7 @@ Extract candidate items from these locations in order of descending signal stren
 - `## Autonomous decisions` — MEDIUM signal (agent decided without human; may need review)
 - Lines matching `<deferred>...</deferred>` XML tags (single-line or spanning to `</deferred>`)
 
-**ii. Keyword grep** — scan full file for lines containing any of: `deferred`, `TODO`, `FIXME`, `tech-debt`, `out of scope`, `unfinished`, `skip`, `later` (case-insensitive). For each match, extract the matching line plus 2 lines of context (`grep -n -i -A2`).
+**ii. Keyword grep** — scan full file for lines containing any of: `deferred`, `TODO`, `tech-debt`, `out of scope`, `unfinished`, `skip`, `later`, or standard fix-marker keywords (case-insensitive). For each match, extract the matching line plus 2 lines of context (`grep -n -i -A2`).
 
 For each found signal, derive:
 
