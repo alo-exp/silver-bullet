@@ -27,10 +27,12 @@ Derive the target file path from the current date (`date +%Y-%m`) — never from
 Shell execution during this skill is limited to:
 - `jq` — config reads (project root detection only)
 - `date +%Y-%m`, `date +%Y-%m-%d` — timestamp generation
+- `jq -r '.project.name'` — read project name from config for knowledge file header
 - `grep -q` — category heading existence check, file content checks
 - `mkdir -p docs/knowledge/`, `mkdir -p docs/lessons/` — directory creation on first write
 - `printf`, `cat`, `>>` (append) — entry writing and file creation
-- `mktemp`, `mv` — for INDEX.md atomic rewrite (read file, mutate in-memory, write back)
+- `awk` — insert entry immediately after matching category heading (Step 6)
+- `mktemp`, `mv` — atomic rewrite for both Step 6 (heading-aware insert) and INDEX.md (Step 7)
 - `wc -l` — size cap check (300-line limit per doc-scheme.md)
 
 Do not execute other shell commands. Note requirements in output for human execution.
@@ -116,9 +118,10 @@ Display: "Target: ${TARGET} (new file: ${IS_NEW_FILE})"
 
 ```bash
 mkdir -p docs/knowledge/
+PROJECT_NAME=$(jq -r '.project.name // "unknown"' .silver-bullet.json 2>/dev/null || echo "unknown")
 cat > "$TARGET" << EOF
 ---
-project: Silver Bullet
+project: ${PROJECT_NAME}
 period: ${MONTH}
 type: knowledge
 ---
@@ -169,7 +172,45 @@ if [ "$IS_NEW_FILE" = false ]; then
     TARGET="${TARGET%.md}-b.md"
     IS_NEW_FILE=false
     [ ! -f "$TARGET" ] && IS_NEW_FILE=true
-    # If the -b file is also new, create it with the correct header (same as above)
+    # If the -b file is also new, create it with the correct header
+    if [ "$IS_NEW_FILE" = true ]; then
+      PROJECT_NAME=$(jq -r '.project.name // "unknown"' .silver-bullet.json 2>/dev/null || echo "unknown")
+      if [ "$INSIGHT_TYPE" = "knowledge" ]; then
+        mkdir -p docs/knowledge/
+        cat > "$TARGET" << EOF
+---
+project: ${PROJECT_NAME}
+period: ${MONTH}
+type: knowledge
+---
+
+# Project Knowledge — ${MONTH}
+
+## Architecture Patterns
+
+## Known Gotchas
+
+## Key Decisions
+
+## Recurring Patterns
+
+## Open Questions
+
+EOF
+      else
+        mkdir -p docs/lessons/
+        cat > "$TARGET" << EOF
+---
+period: ${MONTH}
+type: lessons
+categories: []
+---
+
+# Lessons Learned — ${MONTH}
+
+EOF
+      fi
+    fi
   fi
 fi
 ```
@@ -185,25 +226,35 @@ Display: "Monthly file at 300+ lines — appending to ${MONTH}-b.md instead."
 Check whether the heading already exists in the file:
 
 ```bash
+DATE=$(date +%Y-%m-%d)
 if grep -q "^## ${CATEGORY}$" "$TARGET"; then
-  # Heading exists — append entry at end of file
-  printf "\n%s — %s\n" "$(date +%Y-%m-%d)" "$INSIGHT" >> "$TARGET"
+  # Heading exists — insert entry immediately AFTER the heading (not at EOF)
+  TMP=$(mktemp)
+  awk -v h="## ${CATEGORY}" -v d="${DATE}" -v ins="${INSIGHT}" \
+    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ins; done=1; next} {print}' \
+    "$TARGET" > "$TMP" && mv "$TMP" "$TARGET"
 else
-  # Heading absent — add heading then entry
-  printf "\n## %s\n\n%s — %s\n" "$CATEGORY" "$(date +%Y-%m-%d)" "$INSIGHT" >> "$TARGET"
+  # Heading absent — add heading then entry at end of file
+  printf "\n## %s\n\n%s — %s\n" "$CATEGORY" "$DATE" "$INSIGHT" >> "$TARGET"
 fi
 ```
 
-Note: For new knowledge files created with all five headings pre-populated (IS_NEW_FILE=true), the heading will already exist — the first branch always applies. For existing knowledge files, the heading will also exist (it was pre-populated at creation) unless the file was created before this convention — the second branch handles that case.
+Note: For new knowledge files created with all five headings pre-populated (IS_NEW_FILE=true), the heading will already exist — the first branch always applies. Entries are inserted right after their category heading so that each section remains self-contained.
 
 **For lessons entries** — `CATEGORY_TAG` is in `namespace:subcategory` format:
 
 ```bash
+DATE=$(date +%Y-%m-%d)
 HEADING="## ${CATEGORY_TAG}"
 if grep -q "^${HEADING}$" "$TARGET"; then
-  printf "\n%s — %s\n" "$(date +%Y-%m-%d)" "$INSIGHT" >> "$TARGET"
+  # Heading exists — insert entry immediately after the heading (not at EOF)
+  TMP=$(mktemp)
+  awk -v h="${HEADING}" -v d="${DATE}" -v ins="${INSIGHT}" \
+    'BEGIN{done=0} $0==h && !done{print; printf "\n%s — %s\n",d,ins; done=1; next} {print}' \
+    "$TARGET" > "$TMP" && mv "$TMP" "$TARGET"
 else
-  printf "\n%s\n\n%s — %s\n" "$HEADING" "$(date +%Y-%m-%d)" "$INSIGHT" >> "$TARGET"
+  # Heading absent — add heading then entry at end of file
+  printf "\n%s\n\n%s — %s\n" "$HEADING" "$DATE" "$INSIGHT" >> "$TARGET"
 fi
 ```
 
@@ -211,7 +262,13 @@ fi
 
 ## Step 7 — Update docs/knowledge/INDEX.md when IS_NEW_FILE=true
 
-Execute this step ONLY when IS_NEW_FILE=true. Skip entirely if IS_NEW_FILE=false.
+Execute this step ONLY when IS_NEW_FILE=true AND `$TARGET` does NOT end in `-b.md` (or any later overflow suffix like `-c.md`). Skip entirely if IS_NEW_FILE=false or if this is an overflow file — only the first file created for a given month triggers INDEX.md changes.
+
+```bash
+if [[ "$IS_NEW_FILE" = true && "$TARGET" != *-b.md && "$TARGET" != *-c.md ]]; then
+  # proceed with INDEX.md updates below
+fi
+```
 
 Read the current contents of `docs/knowledge/INDEX.md` into memory.
 
