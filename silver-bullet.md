@@ -527,6 +527,39 @@ These markers allow `compliance-status.sh` to display a GSD phase counter (e.g. 
 
 > **Anti-Skip:** You are violating this rule if you invoke a GSD command outside the Skill tool. Markers are recorded only by the PostToolUse:Skill hook — there is no other recording mechanism, and manual state writes are blocked.
 
+### 3b-i. Deferred-Item Capture (mandatory, all sessions)
+
+During execution, any item that is skipped, descoped, deferred, or identified for future work MUST be filed via `/silver-add` **immediately** — not at session end:
+
+```
+Skill(skill="silver-add", args="<description of deferred item>")
+```
+
+**Classification rubric:**
+- **Issue** — broken behavior, crash, regression, test failure, blocking open question, unfinished work left in broken/incomplete state, verification failure
+- **Backlog** — feature request deferred to future milestone, tech debt (known shortcut, hardcoded value, missing abstraction), housekeeping, informational open question, advisory review finding not addressed now
+
+**Default when ambiguous:** classify as backlog — do not over-alarm with issues.
+**Minimum bar:** item must have distinct user-visible impact OR block future work OR represent a conscious deferred decision. Do not file transient exploration notes or items already addressed in this session.
+
+> **Anti-Skip:** You are violating this rule if you identify a deferred item and do not invoke `/silver-add` before moving to the next task.
+
+### 3b-ii. Knowledge and Lessons Capture (mandatory, all sessions)
+
+During execution, any architectural insight, key decision, project-local gotcha, recurring pattern, or portable lesson observed MUST be captured via `/silver-rem`:
+
+```
+Skill(skill="silver-rem", args="<insight or lesson text>")
+```
+
+**Route:**
+- Insight references THIS project (architectural decision, project-local gotcha, key decision, recurring pattern, open question for this project) → **knowledge**
+- Insight is portable across projects (stack behavior, good practice, anti-pattern, process insight) → **lessons**
+
+**Default when ambiguous:** classify as knowledge.
+
+> **Anti-Skip:** You are violating this rule if you observe a valuable insight during execution and do not invoke `/silver-rem` before the session ends.
+
 ## 3c. Completion Claim Verification
 
 **Rule:** Whenever any plugin, skill, or subagent (GSD, Superpowers, Design, Engineering, or any other) declares a task, plan, phase, or step complete, SB MUST invoke `/verification-before-completion` via the Skill tool before accepting that claim and moving on.
