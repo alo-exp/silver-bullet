@@ -81,7 +81,7 @@ if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
   fi
   rm -f -- "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
         "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count \
-        "$SB_DIR"/sentinel-lock-*
+        "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
 fi
 
 # --- Step 5: Mode detection + dedup guard (combined) ---
