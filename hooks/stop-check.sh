@@ -94,6 +94,11 @@ esac
 lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 
 # ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
+# Admin session detection (BUG-05): purely administrative sessions (no Write/Edit
+# tool calls) are detected via the trivial file, which is created at SessionStart
+# and removed on the first Write/Edit PostToolUse. After the BUG-01 SessionStart
+# ordering fix, the trivial file reliably survives all hook firings for admin
+# sessions, so this bypass correctly exits 0 without any manual user action.
 # shellcheck source=lib/trivial-bypass.sh
 if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090

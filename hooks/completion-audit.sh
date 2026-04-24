@@ -59,20 +59,26 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 # ── Classify the command ──────────────────────────────────────────────────────
 # is_intermediate: git commit / git push (atomic commits during development)
 # is_completion:   gh pr create / deploy / gh release create (final delivery gates)
+#
+# BUG-04 fix: classify against the FIRST LINE of the command only.
+# Heredoc bodies (lines 2+) can contain text matching these patterns — e.g. a
+# commit message that mentions "deploy" or "gh release create" — causing false-
+# positive COMMIT BLOCKED blocks. The actual invocation is always on line 1.
 is_intermediate=false
 is_completion=false
+cmd_first_line=$(printf '%s' "$cmd" | head -1)
 
-if printf '%s' "$cmd" | grep -qE '\bgit commit\b'; then
+if printf '%s' "$cmd_first_line" | grep -qE '\bgit commit\b'; then
   is_intermediate=true
-elif printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgit push\b'; then
   is_intermediate=true
-elif printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr create\b'; then
   is_completion=true
-elif printf '%s' "$cmd" | grep -qE '\bgh pr merge\b'; then
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr merge\b'; then
   is_completion=true
-elif printf '%s' "$cmd" | grep -iqE '\bdeploy\b'; then
+elif printf '%s' "$cmd_first_line" | grep -iqE '\bdeploy\b'; then
   is_completion=true
-elif printf '%s' "$cmd" | grep -qE '\bgh release create\b'; then
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
   is_completion=true
 fi
 
