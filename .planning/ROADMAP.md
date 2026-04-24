@@ -78,8 +78,8 @@
 - [x] **Phase 44: Session Stability Bugs + Open PRs** - Fix 6 critical session-stability bugs blocking day-to-day use; merge 2 open doc-scheme PRs
 - [x] **Phase 45: Security Hardening** - Stage 4 security pass: symlink writes, jq sanitizers, medium/low batch, semver validation
 - [x] **Phase 46: HOOK-14 Closure** - Close fail-open edges in stop-check.sh, fill test coverage gaps, apply code polish
-- [ ] **Phase 47: Consistency & Quality** - Cross-cutting improvements: gitignore, skill refs, hook dedup, doc-scheme, tamper regex
-- [ ] **Phase 48: Content Refresh & PM Feature** - Refresh stale public-facing content; add PM system awareness to /silver:init
+- [x] **Phase 47: Consistency & Quality** - Cross-cutting improvements: gitignore, skill refs, hook dedup, doc-scheme, tamper regex
+- [x] **Phase 48: Content Refresh & PM Feature** - Refresh stale public-facing content; add PM system awareness to /silver:init
 
 ## Phase Details
 
@@ -312,8 +312,8 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 44. Session Stability Bugs + Open PRs | v0.24.0 | 4/4 | Complete    | 2026-04-24 |
 | 45. Security Hardening | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 46. HOOK-14 Closure | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
-| 47. Consistency & Quality | v0.24.0 | 0/1 | In progress | - |
-| 48. Content Refresh & PM Feature | v0.24.0 | 0/1 | Not started | - |
+| 47. Consistency & Quality | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
+| 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 
 ## Backlog
 
