@@ -235,7 +235,12 @@ Plans:
   5. `stop-check.sh` correctly skips enforcement for purely administrative sessions (no Write/Edit calls, no git diff output) without requiring trivial bypass
   6. The quality-gates Modularity dimension does not pass silently when the current milestone plan addresses a violation; the gate fires on code structure, not planning intent
   7. PR #37 (forge doc-scheme gate) and PR #38 (silver-ui doc-scheme gate) are merged and their changes are present on main
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 044-01-PLAN.md -- Fix BUG-01 (SessionStart ordering), BUG-02 (branch newline), BUG-03 (tamper guard scope)
+- [ ] 044-02-PLAN.md -- Fix BUG-04 (completion-audit heredoc), BUG-05 (stop-check admin bypass)
+- [ ] 044-03-PLAN.md -- Fix BUG-06 (modularity planning-intent rationalization)
+- [ ] 044-04-PLAN.md -- Merge PR-01 (PR #37 forge doc-scheme) and PR-02 (PR #38 silver-ui doc-scheme)
 
 ### Phase 45: Security Hardening
 **Goal**: Stage 4 security hardening is complete -- all state file writes are symlink-safe, JSON/body payloads are jq-constructed, medium/low findings are resolved, and silver-update validates semver
@@ -304,7 +309,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 41. Review-Loop-Pass Marker Fix | v0.23.8 | 1/1 | Complete    | 2026-04-24 |
 | 42. Trivial Bypass-File Semantics | v0.23.8 | 1/1 | Complete    | 2026-04-24 |
 | 43. Cryptographic Tag Signing | v0.23.8 | 1/1 | Complete    | 2026-04-24 |
-| 44. Session Stability Bugs + Open PRs | v0.24.0 | 0/TBD | Not started | - |
+| 44. Session Stability Bugs + Open PRs | v0.24.0 | 0/4 | Not started | - |
 | 45. Security Hardening | v0.24.0 | 0/TBD | Not started | - |
 | 46. HOOK-14 Closure | v0.24.0 | 0/TBD | Not started | - |
 | 47. Consistency & Quality | v0.24.0 | 0/TBD | Not started | - |
