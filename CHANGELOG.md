@@ -1,6 +1,61 @@
 # Changelog
 
-## [Unreleased]
+## [0.23.10] — 2026-04-24
+
+**Forge-SB port + ci-status-check deadlock fix (Bug 2).** Ships Silver Bullet for Forge (34 Forge-native skills), fixes the remaining CI-gate deadlock (#32 — PostToolUse commit was hard-blocked; now warns only), and closes three open issues (#30, #33, installer curl|bash). Pre-release quality gate: 4-stage automated review (code review, consistency audit, public content refresh, security), all four stages clean.
+
+### Forge-SB port (PR #35)
+
+- **FORGE-01**: Added `forge/skills/` directory with 34 Forge-native SKILL.md files mirroring the Silver Bullet CC skill set — GSD workflows (12), quality dimensions (9 + master), Superpowers dependencies (7), silver orchestrators (6), plus AGENTS.md global and project templates.
+- **FORGE-02**: Added `forge/scripts/install.sh` and `forge/AGENTS.md` — entry point for Forge-based projects. Forge uses `id:` frontmatter and `AGENTS.md` files; CC uses `name:` and `/plugin install`.
+- **FORGE-03**: Added `forge/skills/tests/smoke_test.sh` — 33-assertion smoke test (all skills present + installer exists). All green before merge.
+- **FORGE-04**: Restored `forge/skills/` after post-merge cleanup accidentally deleted it (d804e76).
+- **FORGE-05**: Added missing `name:` frontmatter to forge-sb ported CC wrapper skills that were missing it.
+
+### Hooks — ci-status-check.sh (#32)
+
+- **BUG2-01**: PostToolUse/`git commit` now emits a **warning** instead of `decision:block` — the commit has already happened; blocking PostToolUse confused the model about whether the commit succeeded and created a deadlock when trying to commit a CI fix. Push, PR, and release operations remain hard-blocked.
+- **BUG2-02**: Corrected the `ci-red-override` escape instruction in the CI failure message from "If you need to commit a CI fix" → "If you need to **push** a CI fix" — `git commit` is never blocked by the CI gate, so the instruction now accurately describes the only operation that needs the override.
+- **BUG2-03**: Added Group 6 regression test (PreToolUse commit not blocked when CI red) and Group 7 regression tests (PostToolUse commit is warn-not-block, with a compound `git commit && git push` guard ensuring the push component routes to `emit_block`). Test suite: 14 tests, 14/0. Full suite: 1300/0, 4/4 green.
+- **DOC-01**: README Layer 5 description updated to reflect the warn/block split for commit vs. push/PR/release.
+- **DOC-02**: README manual escape hatch section rewritten — removed stale "CI fix commit" scenario; added dedicated ci-red-override guidance with correct "push" framing.
+- **DOC-03**: `site/index.html` version badge updated `v0.23.8` → `v0.23.10`.
+
+### Skills — doc-scheme compliance gate (#33)
+
+- **DOC-SCH-01**: Added Step 13b to `silver-feature/SKILL.md` — before raising a PR, check whether `docs/doc-scheme.md` exists; if it does, gate on 4 doc updates (CHANGELOG entry, ARCHITECTURE current state, `knowledge/`, `lessons/`) before proceeding to Step 14 (finishing branch). Missing entries are treated as pre-ship defects.
+- **DOC-SCH-02**: Added a `## Documentation` section to the `writing-plans` PLAN.md template so the doc-scheme obligation is visible at plan-writing time, not just at ship time.
+
+### Skills — enforcement cleanup (#30)
+
+- **RULES-01**: Removed misleading `review-loop-pass` bash snippet from `core-rules.md §3a` — the snippet showed `echo "review-loop-pass" >> state`, which tamper-detection blocks and which was removed from `required_deploy` in v0.23.6. The doc was describing a mechanism that no longer works.
+
+### silver-init
+
+- **INIT-01**: `silver-init/SKILL.md` — purge stale hook entries on update. When re-running `/silver:init` on an existing project, obsolete hook registrations from prior versions are removed before adding current ones.
+
+### Installer
+
+- **INST-01**: `scripts/install.sh` — support `curl | bash` remote install pattern. The installer now detects when it is running from a pipe (no TTY) and skips interactive prompts, enabling `curl -fsSL https://… | bash` one-liner installs.
+
+### Cleanup
+
+- **CLN-01**: Removed orphan `skills/ai-llm-safety/ai-llm-safety/SKILL.md` double-nested directory created by a path-join bug. The canonical file at `skills/ai-llm-safety/SKILL.md` is unaffected.
+- **CLN-02**: Stripped `FLOW N` serial numbers from execution headings and templates — numbers were redundant with section titles and made reordering flows expensive.
+- **CLN-03**: Updated composition proposal box style — full border, clean flow names.
+- **CLN-04**: `site/index.html` copy improvements — capitalize "Composable" in compare card; use "orchestrates" language in Ecosystem and Compare sections.
+
+## [0.23.9] — 2026-04-20
+
+**Hotfix — ci-status-check deadlock (Bug 1) + dev-cycle false positive.** Two hook bugs introduced in v0.23.8 and surfaced in production. Both have TDD regression tests; suite at 1152/0, 4/4 green before tagging.
+
+### Hooks — ci-status-check.sh (Bug 1)
+
+- **BUG1-01**: `ci-status-check.sh` was blocking `git commit` at **PreToolUse** when CI was red, creating an unrecoverable deadlock — Claude could not commit the fix needed to make CI green. Fixed by splitting the trigger scope by hook event: PreToolUse blocks only `git push` and deploy operations (never `git commit`); PostToolUse warns after commit so Claude knows CI is red before pushing.
+
+### Hooks — dev-cycle-check.sh
+
+- **DC-01**: The fallback self-protection pattern `/silver-bullet[^/]*/hooks/` (used when `CLAUDE_PLUGIN_ROOT` is unset) also matched the silver-bullet source repo's own `hooks/` directory, blocking legitimate hook edits during development. Restricted the fallback to paths provably inside `${HOME}/.claude/` (the installed plugin location only).
 
 ## [0.23.8] — 2026-04-20
 
