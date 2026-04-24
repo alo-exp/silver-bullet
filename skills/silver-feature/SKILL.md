@@ -268,12 +268,10 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification l
 
 **During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
 
-**Backlog routing:** Before filing any backlog item, check `issue_tracker` in `.silver-bullet.json`:
-- `"github"` → `gh issue create --repo <git_remote> --title "<title>" --body "<description>"`
-- `"gsd"` (default) → `Skill(skill="gsd-add-backlog", args="<description>")`
+**Deferred item routing:** File immediately via `/silver-add`:
 
 ```
-Skill(skill="gsd-add-backlog", args="<description of deferred item>")
+Skill(skill="silver-add", args="<description of deferred item>")
 ```
 
 ## Step 7a: TDD Gate (implementation plans only)
@@ -323,7 +321,7 @@ After receiving review findings, scan REVIEW.md for any low-priority, deferred, 
 
 For each unfixed non-blocking finding:
 ```
-Skill(skill="gsd-add-backlog", args="<finding description from REVIEW.md>")
+Skill(skill="silver-add", args="<finding description from REVIEW.md>")
 ```
 
 If all findings were fixed or no advisory items exist, output: "No deferred review items to capture."
@@ -342,7 +340,7 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap 
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured in the GSD backlog via `gsd-add-backlog`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver-add`.
 
 ## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
@@ -438,9 +436,9 @@ After all work for this feature/phase is complete, perform a final deferred-item
 2. Review any items marked "future", "TODO", "later", or "out of scope" in SUMMARYs, PLANs, or discussion
 3. Review any items explicitly deferred during execution (e.g., "skipping X for now")
 
-**Every deferred item that has not yet been captured must be added now** (use backlog routing from Step 7 — check `issue_tracker` in `.silver-bullet.json`):
+**Every deferred item that has not yet been captured must be added now** via `/silver-add`:
 ```
-Skill(skill="gsd-add-backlog", args="<deferred item description>")
+Skill(skill="silver-add", args="<deferred item description>")
 ```
 
 If no items were deferred during this session, output: "Post-work sweep: no deferred items to capture."
