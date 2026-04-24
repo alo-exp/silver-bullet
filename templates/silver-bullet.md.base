@@ -309,7 +309,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
-- `silver:security` is always mandatory — cannot be skipped via §10
+- `silver:security` is always mandatory — cannot be skipped via §9
 - `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
 - TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
 - `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
@@ -322,7 +322,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §10 if user chooses A permanently — **before committing, display the exact text being written to §10 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
 Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
@@ -775,22 +775,22 @@ Initially empty — all workflow defaults apply. Read at every relevant decision
 
 Last updated: (not yet set)
 
-### 9a. Routing Preferences
+### 10a. Routing Preferences
 | Work type | Override route | Since |
 |-----------|---------------|-------|
 
-### 9b. Step Skip Preferences
+### 10b. Step Skip Preferences
 | Workflow | Step skipped | Condition | Since |
 |----------|-------------|-----------|-------|
 
-### 9c. Tool Preferences
+### 10c. Tool Preferences
 | Decision point | Preferred tool | Since |
 |----------------|---------------|-------|
 
-### 9d. MultAI Preferences
+### 10d. MultAI Preferences
 | Trigger | Disposition | Since |
 |---------|-------------|-------|
 
-### 9e. Mode Preferences
+### 10e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|

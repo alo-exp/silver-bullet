@@ -141,9 +141,9 @@ Check whether `installed_plugins.json` contains the legacy `silver-bullet@silver
 
 ```bash
 REG="$HOME/.claude/plugins/installed_plugins.json"
-if jq -e '."silver-bullet@silver-bullet"' "$REG" > /dev/null 2>&1; then
+if jq -e '.plugins["silver-bullet@silver-bullet"]' "$REG" > /dev/null 2>&1; then
   TMP="$(mktemp "${REG}.XXXXXX")"
-  jq 'del(."silver-bullet@silver-bullet")' "$REG" > "$TMP" && mv "$TMP" "$REG"
+  jq 'del(.plugins["silver-bullet@silver-bullet"])' "$REG" > "$TMP" && mv "$TMP" "$REG"
 fi
 ```
 

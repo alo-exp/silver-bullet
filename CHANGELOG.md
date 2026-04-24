@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.25.0] — 2026-04-24
+
+**Issue Capture & Retrospective Scan milestone.** Closes the loop on deferred-item capture: two new filing skills (`/silver-add`, `/silver-remove`), a knowledge/lessons capture skill (`/silver-rem`), mandatory auto-capture enforcement in all orchestrator skills, a forensics audit (13 gaps fixed, 100% equivalence with gsd-forensics), a marketplace-based update overhaul (`silver-update`), and a retrospective session scanner (`/silver-scan`).
+
+### New Skills (FEAT)
+
+- **FEAT-SCAN** (`3679980`, `5e434e3`): `/silver-scan` — retrospective session scanner. Globs `docs/sessions/*.md`, detects deferred items and knowledge/lessons insights, cross-references git log / CHANGELOG / GitHub Issues to exclude already-addressed items, Y/n human gate per candidate (20-cap per pass), files via `/silver-add` and `/silver-rem`.
+- **FEAT-ADD** (Phase 49): `/silver-add` — classify-and-file skill for issues and backlog items. Routes to GitHub Issues + project board or local `docs/issues/ISSUES.md` / `BACKLOG.md`. Assigns IDs, caches board discovery, rate-limit resilient.
+- **FEAT-REMOVE** (Phase 50): `/silver-remove` — removes issues/backlog items by ID. Closes GitHub issues as "not planned" or inline-marks `[REMOVED]` in local docs.
+- **FEAT-REM** (Phase 50): `/silver-rem` — captures knowledge or lessons insights into `docs/knowledge/YYYY-MM.md` or `docs/lessons/YYYY-MM.md` per doc-scheme. Updates `docs/knowledge/INDEX.md` on new monthly file creation.
+
+### Enforcement (CAPT)
+
+- **CAPT-01/CAPT-03** (Phase 51): `silver-bullet.md` and `templates/silver-bullet.md.base` gain §3b-i and §3b-ii — mandatory auto-capture instructions. All five orchestrator skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-fast) wired with Deferred-Item Capture blocks.
+- **CAPT-02** (Phase 51): Session logs gain `## Items Filed` section. `silver-release` Step 9b presents consolidated post-release filing summary.
+
+### Skills — Update & Forensics (UPD / FORN)
+
+- **UPD-01/UPD-02** (Phase 53): `silver-update` overhauled — `claude mcp install silver-bullet@alo-labs` replaces git clone as sole install mechanism. Step 6 atomically removes stale `silver-bullet@silver-bullet` registry entry and cache directory post-install.
+- **FORN-01/FORN-02** (Phase 52): `silver-forensics` audited against gsd-forensics across 6 functional dimensions. 13 gaps identified and fixed: scope-drift detection, stuck-loop file-frequency analysis, regression grep, evidence gathering expanded to 8 items, artifact completeness matrix, output-side redaction (path stripping, API key scrubbing, diff truncation).
+
+### Bug Fixes (pre-release review)
+
+- Fixed `silver-bullet.md` and template §5.1 to check `silver-bullet@alo-labs` registry key first (fallback to legacy key) — post-marketplace-update the legacy key is deleted.
+- Fixed `silver-rem` hardcoded "Silver Bullet" project name in knowledge frontmatter; now reads from `.project.name` in config.
+- Fixed `silver-rem` knowledge/lessons entries to insert immediately after the category heading (not at EOF).
+- Fixed `silver-rem` overflow (-b) files missing YAML frontmatter and category headings on creation.
+- Fixed `silver-scan` Step 7b missing `-F` flag on knowledge/lessons cross-reference grep (untrusted session log content).
+- Fixed `silver-scan` `CANDIDATE_COUNT` now counts all presented candidates (Y+n), not just filed items.
+- Fixed `silver-add` Step 4e rate-limit path now proceeds to session log (Step 6) before output step.
+- Fixed `silver-release` Step 9b.2 `(none)` grep to use `-F` (portable fixed-string match).
+- Fixed `silver-update` Step 6a jq path to use `.plugins["silver-bullet@silver-bullet"]` (correct nested structure).
+- Fixed `silver-update` Step 6b `rm -rf` to guard against unset `$HOME`, symlinks, and path prefix.
+- Fixed `silver-remove` to add strict `^SB-[IB]-[0-9]+$` regex guard after case statement, rejecting IDs with non-numeric trailing content.
+- Fixed template §9 section: cleared live Silver Bullet project preferences from Mode Preferences table; corrected §10 cross-references to §9 within template.
+- Bumped `version` and `config_version` in `templates/silver-bullet.config.json.default` to `0.25.0`.
+
 ## [0.24.0] — 2026-04-24
 
 **Stability · Security · Quality milestone.** Fixes 6 session-stability bugs blocking day-to-day use, ports doc-scheme compliance gates to bugfix and devops workflows, tightens tamper-detection to stop false-positive blocks on commit messages, and adds project management system awareness to `/silver:init`.
