@@ -73,6 +73,13 @@ Arrange tasks in dependency order:
 
 ## Timeline Estimate
 <rough estimate>
+
+## Documentation (if docs/doc-scheme.md exists)
+At finalization, before shipping:
+- docs/CHANGELOG.md — one newest-first entry for this phase
+- docs/ARCHITECTURE.md — update §Current State if architecture changed
+- docs/knowledge/YYYY-MM.md — patterns, gotchas, key decisions
+- docs/lessons/YYYY-MM.md — portable lessons learned
 ```
 
 ### Step 5: Review with Quality Gates

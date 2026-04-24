@@ -46,6 +46,14 @@ Run security quality dimension (trigger: "security"). Write SECURITY.md.
 **PATH 10: QUALITY GATES (pre-ship) [NON-SKIPPABLE]**
 Run all 9 quality dimensions in pre-ship mode. Fix any ❌.
 
+**PATH 10b: DOC-SCHEME COMPLIANCE (conditional)**
+Only if `docs/doc-scheme.md` exists: before raising the PR, verify:
+1. `docs/CHANGELOG.md` — has an entry for this phase (newest-first). Write it if missing.
+2. `docs/ARCHITECTURE.md` — does not say "in progress" for completed phases. Update if stale.
+3. `docs/knowledge/YYYY-MM.md` — append architectural patterns, API gotchas, or key decisions if any.
+4. `docs/lessons/YYYY-MM.md` — append portable lessons learned if any.
+Do NOT proceed to PATH 11 until all four checks pass. If `docs/doc-scheme.md` does not exist, skip this path.
+
 **PATH 11: SHIP**
 Run gsd-ship procedure (trigger: "ship"). Create PR.
 
