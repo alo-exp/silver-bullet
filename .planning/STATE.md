@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 051-01
-status: Phase 51 plan 01 complete — §3b-i and §3b-ii enforcement instructions added to silver-bullet.md and template atomically
-last_updated: "2026-04-24T10:38:48Z"
+current_plan: 051-02
+status: Phase 51 plan 02 complete — all 5 producing skills updated: gsd-add-backlog replaced with silver-add, Deferred-Item Capture blocks added
+last_updated: "2026-04-24T10:45:56Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 2
-  completed_plans: 4
-  percent: 50
+  completed_plans: 5
+  percent: 55
 ---
 
 # Project State
@@ -19,7 +19,7 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.24.1
 **Active phase:** Phase 51 — Auto-Capture Enforcement (in progress)
-**Current plan:** 051-01 (COMPLETE)
+**Current plan:** 051-02 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -33,9 +33,9 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 ## Current Position
 
 Phase: 51 — Auto-Capture Enforcement (in progress)
-Plan: 051-01 (COMPLETE) — §3b-i deferred-item capture and §3b-ii knowledge/lessons capture added to silver-bullet.md and template
-Status: Phase 51 plan 01 done — CAPT-01 and CAPT-03 satisfied; both files committed atomically
-Last activity: 2026-04-24 — Phase 51 plan 01 complete
+Plan: 051-02 (COMPLETE) — all 5 producing skills updated: gsd-add-backlog → silver-add, Deferred-Item Capture blocks added
+Status: Phase 51 plan 02 done — CAPT-02 satisfied; zero gsd-add-backlog occurrences remain in any producing skill
+Last activity: 2026-04-24 — Phase 51 plan 02 complete
 
 Progress: [█████░░░░░] 50%
 
@@ -53,6 +53,7 @@ Progress: [█████░░░░░] 50%
 | 050-silver-remove-silver-rem | 050-01 | 2 min | 2 | 3 |
 | 050-silver-remove-silver-rem | 050-02 | 2 min | 2 | 3 |
 | 051-auto-capture-enforcement | 051-01 | 2 min | 2 | 2 |
+| 051-auto-capture-enforcement | 051-02 | 8 min | 5 | 5 |
 
 *Updated after each plan completion*
 
@@ -81,6 +82,9 @@ Progress: [█████░░░░░] 50%
 - Phase 50 plan 02: default classification is knowledge when ambiguous — more common during active work; prevents over-routing to lessons
 - Phase 51 plan 01: §3b-i and §3b-ii inserted after existing GSD Command Tracking Anti-Skip note, before §3c — existing §3b content preserved intact
 - Phase 51 plan 01: both silver-bullet.md and templates/silver-bullet.md.base updated atomically in one commit — template-parity constraint satisfied (CAPT-01, CAPT-03)
+- Phase 51 plan 02: silver-feature existing Steps 7 and 18 serve as per-skill capture instructions — updated in place (no redundant block added)
+- Phase 51 plan 02: silver-fast uses Tier 2-scoped capture block — Tier 1 is trivial (no capture), Tier 3 delegates to silver-feature which handles its own capture
+- Phase 51 plan 02: Deferred-Item Capture blocks inserted immediately before the pre-ship quality gate step in each skill — ensures capture is last mandatory checkpoint before shipping
 
 ### Pending Todos
 
@@ -93,4 +97,4 @@ Progress: [█████░░░░░] 50%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 51 plan 051-01 complete — §3b-i (deferred-item capture via /silver-add) and §3b-ii (knowledge/lessons capture via /silver-rem) added to silver-bullet.md and templates/silver-bullet.md.base in one atomic commit 7cab250; CAPT-01 and CAPT-03 satisfied
+Stopped at: Phase 51 plan 051-02 complete — all 5 producing skills updated (silver-feature e8503c3, silver-bugfix a93c37b, silver-ui 24526b3, silver-devops ef148c0, silver-fast 462828b); zero gsd-add-backlog occurrences remain; CAPT-02 satisfied
