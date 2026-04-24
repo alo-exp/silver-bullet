@@ -1,28 +1,28 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.25.0
-milestone_name: Issue Capture & Retrospective Scan
-current_plan: complete
-status: milestone_complete
-stopped_at: v0.25.0 shipped 2026-04-24 — all 24 requirements satisfied; GitHub release https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0; milestone archived; next milestone TBD
-last_updated: "2026-04-24T00:00:00.000Z"
-last_activity: 2026-04-24
+milestone: v0.26.0
+milestone_name: Bug Fixes, CI Hardening & Skill Quality
+current_plan: none
+status: defining_requirements
+stopped_at: ""
+last_updated: "2026-04-25T00:00:00.000Z"
+last_activity: 2026-04-25
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.25.0
-**Active phase:** (none — milestone complete)
+**Current version:** v0.25.1
+**Active phase:** (none — defining requirements)
 **Current plan:** (none)
 
-Last activity: 2026-04-24
+Last activity: 2026-04-25
 
 ## Project Reference
 

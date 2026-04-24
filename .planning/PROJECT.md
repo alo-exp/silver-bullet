@@ -67,7 +67,15 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 **Shipped:** All 24 requirements satisfied across 6 phases (49-54). Release: https://github.com/alo-exp/silver-bullet/releases/tag/v0.25.0
 
-## Current Milestone: (none — v0.25.0 complete, next milestone TBD)
+## Current Milestone: v0.26.0 Bug Fixes, CI Hardening & Skill Quality
+
+**Goal:** Close 12 actionable GitHub issues — bug fixes in hooks and skills, CI parity/correctness checks, and skill quality improvements — all with obvious solutions requiring no design analysis.
+
+**Target features:**
+- Bug fixes: timeout-check T2-1 test failure, quality-gate doc/hook conflict, silver-add scope check regex, sed portability, sentinel TOCTOU
+- CI hardening: workflow parity diff step, jq config assertions for required_deploy/all_tracked sync
+- Skill quality: session log discovery standardization, silver-rem INDEX.md mutations, silver-scan local-tracker cross-reference, silver-scan KL counter explanation
+- Release ordering fix (already committed in v0.26.0 branch): tag created after gsd-complete-milestone to eliminate mandatory patch releases
 
 ## Context
 
@@ -76,7 +84,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.25.0
+- Current version: v0.25.1
 
 ## Constraints
 
