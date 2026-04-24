@@ -24,6 +24,7 @@ site/new/
 tests/test-app/node_modules/
 tests/test-app/.planning/
 tests/test-app/.silver-bullet.json
+tests/forge-test-app/node_modules/
 tests/test-app/silver-bullet.md
 tests/test-app/CLAUDE.md
 tests/test-app/docs/

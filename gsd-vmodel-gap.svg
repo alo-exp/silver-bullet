@@ -1,0 +1,340 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" font-family="Arial, sans-serif" font-size="11">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#c0392b"/>
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="820" fill="#f8f9fa"/>
+
+  <!-- Title -->
+  <text x="700" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">GSD Plugin — Triple V-Model Gap Analysis</text>
+  <text x="700" y="46" text-anchor="middle" font-size="11" fill="#555">Based on SEI CMU "Using V-Models for Testing" (Firesmith). Colour = GSD coverage.</text>
+
+  <!-- LEGEND -->
+  <rect x="30" y="58" width="14" height="14" fill="#27ae60" rx="3"/>
+  <text x="48" y="70" fill="#222" font-size="10">Present</text>
+  <rect x="105" y="58" width="14" height="14" fill="#f39c12" rx="3"/>
+  <text x="123" y="70" fill="#222" font-size="10">Partial</text>
+  <rect x="175" y="58" width="14" height="14" fill="#c0392b" rx="3"/>
+  <text x="193" y="70" fill="#222" font-size="10">Missing / Gap</text>
+  <rect x="280" y="58" width="14" height="14" fill="#2980b9" rx="3" opacity="0.3"/>
+  <text x="298" y="70" fill="#222" font-size="10">3rd V (Test Verification) — entirely absent in GSD</text>
+
+  <!-- ═══════════════════════════════════════════════
+       VALIDATION DASHED LINE (horizontal separator)
+  ═══════════════════════════════════════════════ -->
+  <line x1="30" y1="185" x2="1370" y2="185" stroke="#888" stroke-dasharray="8,5" stroke-width="1.5"/>
+  <text x="690" y="180" text-anchor="middle" font-size="10" fill="#888" font-style="italic">── Validation (User-level) ──</text>
+  <text x="690" y="245" text-anchor="middle" font-size="10" fill="#888" font-style="italic">── Verification (System/Arch/Component/Unit) ──</text>
+
+  <!-- ═══════════════════════════════════════════════
+       ROW 1 — USER REQUIREMENTS (top, above dashed)
+  ═══════════════════════════════════════════════ -->
+
+  <!-- User Requirements Models — Partial -->
+  <rect x="30" y="100" width="160" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="110" y="122" text-anchor="middle" font-weight="bold" fill="white" font-size="10">User Requirements</text>
+  <text x="110" y="136" text-anchor="middle" fill="white" font-size="10">Models</text>
+  <text x="110" y="152" text-anchor="middle" fill="white" font-size="9">GSD: SPEC.md</text>
+  <text x="110" y="164" text-anchor="middle" fill="white" font-size="9">(partial — no RTM)</text>
+
+  <!-- User Requirements Model Tests — MISSING -->
+  <rect x="230" y="100" width="160" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="310" y="122" text-anchor="middle" font-weight="bold" fill="white" font-size="10">User Rqmts</text>
+  <text x="310" y="136" text-anchor="middle" fill="white" font-size="10">Model Tests</text>
+  <text x="310" y="152" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="310" y="164" text-anchor="middle" fill="white" font-size="9">No model-level tests</text>
+
+  <!-- User Rqmts Model Test Verification — MISSING (3rd V) -->
+  <rect x="430" y="100" width="160" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="510" y="122" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">User Rqmts Model</text>
+  <text x="510" y="136" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="510" y="152" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="510" y="164" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- RIGHT SIDE ROW 1 -->
+  <!-- Operational System — Partial -->
+  <rect x="830" y="100" width="140" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="900" y="122" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Operational</text>
+  <text x="900" y="136" text-anchor="middle" fill="white" font-size="10">System</text>
+  <text x="900" y="152" text-anchor="middle" fill="white" font-size="9">GSD: deploy only</text>
+  <text x="900" y="164" text-anchor="middle" fill="white" font-size="9">No ops testing</text>
+
+  <!-- Acceptance Tests — Partial -->
+  <rect x="992" y="100" width="150" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="1067" y="122" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Acceptance /</text>
+  <text x="1067" y="136" text-anchor="middle" fill="white" font-size="10">Operational Tests</text>
+  <text x="1067" y="152" text-anchor="middle" fill="white" font-size="9">GSD: gsd-verify-work</text>
+  <text x="1067" y="164" text-anchor="middle" fill="white" font-size="9">informal, untraced</text>
+
+  <!-- Acceptance Test Verification — MISSING (3rd V) -->
+  <rect x="1160" y="100" width="170" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="1245" y="122" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Acceptance Test</text>
+  <text x="1245" y="136" text-anchor="middle" fill="#1a5276" font-size="10">Verification</text>
+  <text x="1245" y="152" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="1245" y="164" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- dashed cross-check line: User Rqmts Test Ver → Operational -->
+  <line x1="590" y1="135" x2="830" y2="135" stroke="#2980b9" stroke-dasharray="6,4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       ROW 2 — SYSTEM REQUIREMENTS
+  ═══════════════════════════════════════════════ -->
+  <!-- System Rqmts Models — MISSING (no distinct level) -->
+  <rect x="30" y="205" width="160" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="110" y="227" text-anchor="middle" font-weight="bold" fill="white" font-size="10">System Requirements</text>
+  <text x="110" y="241" text-anchor="middle" fill="white" font-size="10">Models</text>
+  <text x="110" y="257" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="110" y="269" text-anchor="middle" fill="white" font-size="9">Collapsed into SPEC.md</text>
+
+  <!-- System Rqmts Model Tests — MISSING -->
+  <rect x="230" y="205" width="160" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="310" y="227" text-anchor="middle" font-weight="bold" fill="white" font-size="10">System Rqmts</text>
+  <text x="310" y="241" text-anchor="middle" fill="white" font-size="10">Model Tests</text>
+  <text x="310" y="257" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="310" y="269" text-anchor="middle" fill="white" font-size="9">No system-level test plan</text>
+
+  <!-- System Rqmts Model Test Verification — MISSING (3rd V) -->
+  <rect x="430" y="205" width="160" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="510" y="227" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">System Rqmts Model</text>
+  <text x="510" y="241" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="510" y="257" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="510" y="269" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- RIGHT ROW 2 -->
+  <!-- Integrated System — Present -->
+  <rect x="830" y="205" width="140" height="70" rx="6" fill="#27ae60" opacity="0.85" filter="url(#shadow)"/>
+  <text x="900" y="227" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Integrated</text>
+  <text x="900" y="241" text-anchor="middle" fill="white" font-size="10">System</text>
+  <text x="900" y="257" text-anchor="middle" fill="white" font-size="9">GSD: gsd-execute-phase</text>
+  <text x="900" y="269" text-anchor="middle" fill="white" font-size="9">wave-based assembly</text>
+
+  <!-- System Tests — Partial -->
+  <rect x="992" y="205" width="150" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="1067" y="227" text-anchor="middle" font-weight="bold" fill="white" font-size="10">System Tests</text>
+  <text x="1067" y="241" text-anchor="middle" fill="white" font-size="10"> </text>
+  <text x="1067" y="257" text-anchor="middle" fill="white" font-size="9">GSD: E2E via gsd-add-tests</text>
+  <text x="1067" y="269" text-anchor="middle" fill="white" font-size="9">not sys-req-traced</text>
+
+  <!-- System Test Verification — MISSING (3rd V) -->
+  <rect x="1160" y="205" width="170" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="1245" y="227" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">System Test</text>
+  <text x="1245" y="241" text-anchor="middle" fill="#1a5276" font-size="10">Verification</text>
+  <text x="1245" y="257" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="1245" y="269" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- dashed cross-check: System Rqmts → Integrated System -->
+  <line x1="590" y1="240" x2="830" y2="240" stroke="#2980b9" stroke-dasharray="6,4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       ROW 3 — ARCHITECTURAL
+  ═══════════════════════════════════════════════ -->
+  <rect x="30" y="310" width="160" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="110" y="332" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Architectural</text>
+  <text x="110" y="346" text-anchor="middle" fill="white" font-size="10">Models</text>
+  <text x="110" y="362" text-anchor="middle" fill="white" font-size="9">GSD: RESEARCH.md</text>
+  <text x="110" y="374" text-anchor="middle" fill="white" font-size="9">no fitness functions</text>
+
+  <rect x="230" y="310" width="160" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="310" y="332" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Architectural Model</text>
+  <text x="310" y="346" text-anchor="middle" fill="white" font-size="10">Tests</text>
+  <text x="310" y="362" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="310" y="374" text-anchor="middle" fill="white" font-size="9">No arch fitness tests</text>
+
+  <rect x="430" y="310" width="160" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="510" y="332" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Architectural Model</text>
+  <text x="510" y="346" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="510" y="362" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="510" y="374" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- Subsystems — MISSING -->
+  <rect x="830" y="310" width="140" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="900" y="332" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Subsystems</text>
+  <text x="900" y="346" text-anchor="middle" fill="white" font-size="10"> </text>
+  <text x="900" y="362" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="900" y="374" text-anchor="middle" fill="white" font-size="9">No subsystem layer</text>
+
+  <!-- Subsystem Integration Tests — MISSING -->
+  <rect x="992" y="310" width="150" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="1067" y="332" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Subsystem Integration</text>
+  <text x="1067" y="346" text-anchor="middle" fill="white" font-size="10">Tests</text>
+  <text x="1067" y="362" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="1067" y="374" text-anchor="middle" fill="white" font-size="9">No subsystem layer</text>
+
+  <!-- Subsystem Integration Test Verification — MISSING (3rd V) -->
+  <rect x="1160" y="310" width="170" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="1245" y="332" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Subsystem Integration</text>
+  <text x="1245" y="346" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="1245" y="362" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="1245" y="374" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- dashed cross-check: Arch Model Test Ver → Subsystems -->
+  <line x1="590" y1="345" x2="830" y2="345" stroke="#2980b9" stroke-dasharray="6,4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       ROW 4 — COMPONENT DESIGN
+  ═══════════════════════════════════════════════ -->
+  <rect x="30" y="415" width="160" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="110" y="437" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Component Design</text>
+  <text x="110" y="451" text-anchor="middle" fill="white" font-size="10">Models</text>
+  <text x="110" y="467" text-anchor="middle" fill="white" font-size="9">GSD: PLAN.md</text>
+  <text x="110" y="479" text-anchor="middle" fill="white" font-size="9">no interface contracts</text>
+
+  <rect x="230" y="415" width="160" height="70" rx="6" fill="#c0392b" opacity="0.85" filter="url(#shadow)"/>
+  <text x="310" y="437" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Component Design</text>
+  <text x="310" y="451" text-anchor="middle" fill="white" font-size="10">Model Tests</text>
+  <text x="310" y="467" text-anchor="middle" fill="white" font-size="9">GSD: MISSING</text>
+  <text x="310" y="479" text-anchor="middle" fill="white" font-size="9">No design-level tests</text>
+
+  <rect x="430" y="415" width="160" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="510" y="437" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Component Design</text>
+  <text x="510" y="451" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="510" y="467" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="510" y="479" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- Components — Present -->
+  <rect x="830" y="415" width="140" height="70" rx="6" fill="#27ae60" opacity="0.85" filter="url(#shadow)"/>
+  <text x="900" y="437" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Components</text>
+  <text x="900" y="451" text-anchor="middle" fill="white" font-size="10"> </text>
+  <text x="900" y="467" text-anchor="middle" fill="white" font-size="9">GSD: gsd-execute-phase</text>
+  <text x="900" y="479" text-anchor="middle" fill="white" font-size="9">atomic commits</text>
+
+  <!-- Component Integration Tests — Partial -->
+  <rect x="992" y="415" width="150" height="70" rx="6" fill="#f39c12" opacity="0.85" filter="url(#shadow)"/>
+  <text x="1067" y="437" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Component Integration</text>
+  <text x="1067" y="451" text-anchor="middle" fill="white" font-size="10">Tests</text>
+  <text x="1067" y="467" text-anchor="middle" fill="white" font-size="9">GSD: gsd-validate-phase</text>
+  <text x="1067" y="479" text-anchor="middle" fill="white" font-size="9">Nyquist sampling only</text>
+
+  <!-- Component Integration Test Verification — MISSING (3rd V) -->
+  <rect x="1160" y="415" width="170" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="1245" y="437" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Component Integration</text>
+  <text x="1245" y="451" text-anchor="middle" fill="#1a5276" font-size="10">Test Verification</text>
+  <text x="1245" y="467" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="1245" y="479" text-anchor="middle" fill="#1a5276" font-size="9">No test QA in GSD</text>
+
+  <!-- dashed cross-check: Comp Design Test Ver → Components -->
+  <line x1="590" y1="450" x2="830" y2="450" stroke="#2980b9" stroke-dasharray="6,4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       ROW 5 — UNIT (bottom)
+  ═══════════════════════════════════════════════ -->
+  <!-- Units — Present -->
+  <rect x="540" y="550" width="140" height="70" rx="6" fill="#27ae60" opacity="0.85" filter="url(#shadow)"/>
+  <text x="610" y="572" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Units</text>
+  <text x="610" y="590" text-anchor="middle" fill="white" font-size="9">GSD: gsd-execute-phase</text>
+  <text x="610" y="604" text-anchor="middle" fill="white" font-size="9">wave tasks</text>
+
+  <!-- Unit Tests — Present -->
+  <rect x="700" y="550" width="140" height="70" rx="6" fill="#27ae60" opacity="0.85" filter="url(#shadow)"/>
+  <text x="770" y="572" text-anchor="middle" font-weight="bold" fill="white" font-size="10">Unit Tests</text>
+  <text x="770" y="590" text-anchor="middle" fill="white" font-size="9">GSD: gsd-add-tests</text>
+  <text x="770" y="604" text-anchor="middle" fill="white" font-size="9">RED-GREEN protocol</text>
+
+  <!-- Unit Test Verification — MISSING (3rd V) -->
+  <rect x="860" y="550" width="160" height="70" rx="6" fill="#2980b9" opacity="0.35" stroke="#2980b9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="940" y="572" text-anchor="middle" font-weight="bold" fill="#1a5276" font-size="10">Unit Test</text>
+  <text x="940" y="586" text-anchor="middle" fill="#1a5276" font-size="10">Verification</text>
+  <text x="940" y="602" text-anchor="middle" fill="#c0392b" font-size="9" font-weight="bold">3rd V — ABSENT</text>
+  <text x="940" y="614" text-anchor="middle" fill="#1a5276" font-size="9">No mutation testing</text>
+
+  <!-- ═══════════════════════════════════════════════
+       DIAGONAL ARROWS (left side, top-down)
+  ═══════════════════════════════════════════════ -->
+  <!-- Row1 → Row2 -->
+  <line x1="110" y1="170" x2="110" y2="205" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row2 → Row3 -->
+  <line x1="110" y1="275" x2="110" y2="310" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row3 → Row4 -->
+  <line x1="110" y1="380" x2="110" y2="415" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row4 → Units (diagonal) -->
+  <line x1="190" y1="485" x2="540" y2="555" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       BIDIRECTIONAL ARROWS (↔) within each row
+  ═══════════════════════════════════════════════ -->
+  <!-- Row 1 left -->
+  <line x1="190" y1="135" x2="230" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="230" y1="128" x2="190" y2="128" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="135" x2="430" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="128" x2="390" y2="128" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 1 right -->
+  <line x1="970" y1="135" x2="992" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="992" y1="128" x2="970" y2="128" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1142" y1="135" x2="1160" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1160" y1="128" x2="1142" y2="128" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 2 left -->
+  <line x1="190" y1="240" x2="230" y2="240" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="230" y1="233" x2="190" y2="233" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="240" x2="430" y2="240" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="233" x2="390" y2="233" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 2 right -->
+  <line x1="970" y1="240" x2="992" y2="240" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="992" y1="233" x2="970" y2="233" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1142" y1="240" x2="1160" y2="240" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1160" y1="233" x2="1142" y2="233" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 3 -->
+  <line x1="190" y1="345" x2="230" y2="345" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="230" y1="338" x2="190" y2="338" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="345" x2="430" y2="345" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="338" x2="390" y2="338" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="970" y1="345" x2="992" y2="345" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="992" y1="338" x2="970" y2="338" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1142" y1="345" x2="1160" y2="345" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1160" y1="338" x2="1142" y2="338" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 4 -->
+  <line x1="190" y1="450" x2="230" y2="450" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="230" y1="443" x2="190" y2="443" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="450" x2="430" y2="450" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="443" x2="390" y2="443" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="970" y1="450" x2="992" y2="450" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="992" y1="443" x2="970" y2="443" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1142" y1="450" x2="1160" y2="450" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1160" y1="443" x2="1142" y2="443" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 5 (unit) -->
+  <line x1="680" y1="585" x2="700" y2="585" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="700" y1="578" x2="680" y2="578" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="840" y1="585" x2="860" y2="585" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="860" y1="578" x2="840" y2="578" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Right side diagonal: Row4 → Unit Tests -->
+  <line x1="830" y1="485" x2="700" y2="555" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       GAP CALLOUT BOXES (bottom)
+  ═══════════════════════════════════════════════ -->
+  <rect x="30" y="660" width="1340" height="140" rx="8" fill="white" stroke="#ddd" stroke-width="1"/>
+  <text x="700" y="680" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a1a2e">Critical Gap Summary</text>
+
+  <!-- Gap 1 -->
+  <rect x="50" y="692" width="10" height="10" fill="#2980b9" rx="2" opacity="0.5"/>
+  <text x="66" y="702" font-size="10" fill="#1a1a2e" font-weight="bold">Gap 1 — 3rd V entirely absent</text>
+  <text x="66" y="715" font-size="9" fill="#555">GSD has no mechanism to verify tests are correct. Mutation testing, test plan review, and false-positive detection are all missing.</text>
+
+  <!-- Gap 2 -->
+  <rect x="50" y="724" width="10" height="10" fill="#c0392b" rx="2"/>
+  <text x="66" y="734" font-size="10" fill="#1a1a2e" font-weight="bold">Gap 2 — Left-side model tests absent</text>
+  <text x="66" y="747" font-size="9" fill="#555">GSD creates artifacts (SPEC, RESEARCH, PLAN) but never tests those models before implementation. The left V column is skipped.</text>
+
+  <!-- Gap 3 -->
+  <rect x="700" y="692" width="10" height="10" fill="#c0392b" rx="2"/>
+  <text x="716" y="702" font-size="10" fill="#1a1a2e" font-weight="bold">Gap 3 — System vs. User requirements collapsed</text>
+  <text x="716" y="715" font-size="9" fill="#555">SPEC.md conflates user needs and system requirements. No RTM between the two levels exists.</text>
+
+  <!-- Gap 4 -->
+  <rect x="700" y="724" width="10" height="10" fill="#c0392b" rx="2"/>
+  <text x="716" y="734" font-size="10" fill="#1a1a2e" font-weight="bold">Gap 4 — Subsystem layer missing; bidirectional traceability one-way</text>
+  <text x="716" y="747" font-size="9" fill="#555">No subsystem integration phase. Test failures loop to code fixes, not model revisions — arrows run one way only.</text>
+
+  <!-- Severity note -->
+  <text x="700" y="778" text-anchor="middle" font-size="10" fill="#888" font-style="italic">Severity: Blue-dashed = Critical (3rd V) | Red = High | Orange = Medium | Green = Present/Covered</text>
+
+</svg>
