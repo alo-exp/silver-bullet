@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.23.8
-milestone_name: Patch — Issue Cleanup
+milestone: v0.23.10
+milestone_name: Forge-SB Port + CI Deadlock Fixes
 current_plan: complete
 status: complete
-stopped_at: Milestone v0.23.8 shipped — all 5 phases (39-43) complete; v0.23.9 shipped Bug 1 + Bug 2 fixes
+stopped_at: Milestone v0.23.10 shipped — Forge-SB port (PR #35), ci-status-check Bug 2 (#32), doc-scheme gate (#33), core-rules cleanup (#30), installer curl|bash
 last_updated: "2026-04-24T00:00:00Z"
 last_activity: 2026-04-24
 progress:
@@ -18,7 +18,7 @@ progress:
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.23.9
+**Current version:** v0.23.10
 **Active phase:** None — milestone complete
 **Current plan:** None
 
@@ -29,14 +29,14 @@ Last activity: 2026-04-24
 See: .planning/PROJECT.md
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** No active milestone — v0.23.8 and v0.23.9 shipped
+**Current focus:** No active milestone — v0.23.10 shipped
 
 ## Current Position
 
 Phase: 43 (complete)
 Plan: 1 of 1
 Status: Complete
-Last activity: 2026-04-24 — v0.23.8 shipped (issues #28, #29, #30, #31 + CI deprecation); v0.23.9 shipped (Bug 1 CI deadlock + Bug 2 source-repo false positive)
+Last activity: 2026-04-24 — v0.23.10 shipped (Forge-SB port PR #35; ci-status-check Bug 2 #32; doc-scheme gate #33; core-rules cleanup #30; installer curl|bash; 4-stage pre-release quality gate passed)
 
 Progress: [██████████] 100%
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 - v0.23.9 scope: Bug 1 (ci-status-check deadlock at PreToolUse/commit) + Bug 2 (dev-cycle false positive on source repo hooks/)
 - GSD is sole execution engine; WORKFLOW.md tracks composition, STATE.md tracks GSD execution
 - STATE.md reconciled 2026-04-24 — work done outside GSD phase framework, state updated retroactively
+- v0.23.10 scope: Forge-SB port (PR #35, 34 Forge-native skills), ci-status-check Bug 2 (#32 PostToolUse/commit warn-not-block), doc-scheme gate (#33), core-rules cleanup (#30), installer curl|bash, 4-stage pre-release quality gate
 
 ### Pending Todos
 
@@ -72,8 +73,9 @@ Progress: [██████████] 100%
 ## Quick Tasks Completed
 
 - 2026-04-24: Reconciled GSD state — marked phases 39-43 complete (shipped in v0.23.8)
+- 2026-04-24: v0.23.10 released — GitHub Release created, tag v0.23.10 pushed, CI green
 
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Milestone v0.23.8/v0.23.9 complete — no active milestone, ready for next milestone planning
+Stopped at: Milestone v0.23.10 complete — GitHub Release live, no active milestone, ready for next milestone planning
