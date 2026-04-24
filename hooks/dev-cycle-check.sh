@@ -156,6 +156,13 @@ To reset the workflow state, remove the file from your terminal (not from Claude
        ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
       _quote_exempt=true
     fi
+    # Veto: if the state path is a redirect target in ANY quote style, never exempt —
+    # prevents a mixed-quote-style bypass where the two independent if blocks above
+    # could set _quote_exempt=true from one context while the other is a redirect target.
+    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote" || \
+       printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
+      _quote_exempt=false
+    fi
     if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
        ! $_quote_exempt && \
        printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/state\b'; then
