@@ -220,3 +220,82 @@ Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push 
 **Only after Step 8 (gsd-ship) confirms success:**
 
 Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, prepare for next version. This is the final step — milestone is officially closed after this.
+
+## Step 9b: Post-Release Items Summary
+
+**Trigger:** Execute this step only after Step 9 (`gsd-complete-milestone`) has completed successfully.
+
+Generate a consolidated summary of all items filed and knowledge/lessons recorded during this milestone.
+
+### Step 9b.1: Determine milestone window
+
+```bash
+# Read milestone name from STATE.md frontmatter
+MILESTONE=$(grep '^milestone:' .planning/STATE.md | awk '{print $2}')
+
+# Get the previous milestone release tag date (lower bound for session log filter)
+# Finds the second-to-last semver tag — the tag before the one just created
+PREV_TAG=$(git tag --sort=version:refname | grep '^v[0-9]' | tail -2 | head -1)
+MILESTONE_START=$(git log --format="%ai" "$PREV_TAG" -1 2>/dev/null | cut -d' ' -f1 || echo "1970-01-01")
+```
+
+If PREV_TAG is empty or git log fails: use `MILESTONE_START="1970-01-01"` (include all logs).
+
+### Step 9b.2: Collect Items Filed from session logs
+
+```bash
+# Session logs are named docs/sessions/YYYY-MM-DD-HH-MM-SS.md
+# Filter to logs whose filename date is on or after MILESTONE_START
+items_filed=""
+sessions_scanned=0
+for log in docs/sessions/*.md; do
+  [ -f "$log" ] || continue
+  log_date=$(basename "$log" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}')
+  if [[ "$log_date" > "$MILESTONE_START" ]] || [[ "$log_date" = "$MILESTONE_START" ]]; then
+    sessions_scanned=$((sessions_scanned + 1))
+    # Extract lines from ## Items Filed section until next ## heading
+    section=$(awk '/^## Items Filed$/{found=1; next} found && /^## /{exit} found{print}' "$log")
+    if [ -n "$section" ] && ! echo "$section" | grep -q "^(none)$"; then
+      items_filed="${items_filed}${section}"$'\n'
+    fi
+  fi
+done
+```
+
+### Step 9b.3: Present consolidated summary
+
+If `items_filed` is empty:
+
+Output:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
+
+No items were recorded during this milestone via /silver-add or /silver-rem.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+If `items_filed` is non-empty, separate items by prefix:
+- Lines starting with `- SB-` or `- #` → filed via /silver-add (issues/backlog)
+- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver-rem
+
+Output a formatted summary:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
+
+Issues & Backlog filed via /silver-add:
+{list of SB-/# lines, or "(none)"}
+
+Knowledge & Lessons recorded via /silver-rem:
+{list of [knowledge]/[lessons] lines, or "(none)"}
+
+Total: {N} issues/backlog items, {M} knowledge/lessons entries
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
