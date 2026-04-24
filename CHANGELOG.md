@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.25.1] — 2026-04-25
+
+**Patch release.** Post-release CI fix and milestone archival.
+
+### Bug Fixes
+
+- **FIX** (`3cfc390`): `silver-scan` — removed literal `FIXME` from keyword list documentation to pass skill integrity CI test (`test-skill-integrity.sh` matches bare `FIXME` case-insensitively, no brackets required).
+
+### Chores
+
+- Milestone archival: `REQUIREMENTS.md` archived to `.planning/milestones/v0.25.0-REQUIREMENTS.md`, `ROADMAP.md` archived to `.planning/milestones/v0.25.0-ROADMAP.md`.
+- Added `RETROSPECTIVE.md` with v0.25.0 retrospective section.
+- Updated `ROADMAP.md`, `MILESTONES.md`, `PROJECT.md`, `STATE.md` to reflect milestone completion.
+- Added `UAT.md` with 24/24 criteria PASS for v0.25.0.
+
+---
+
 ## [0.25.0] — 2026-04-24
 
 **Issue Capture & Retrospective Scan milestone.** Closes the loop on deferred-item capture: two new filing skills (`/silver-add`, `/silver-remove`), a knowledge/lessons capture skill (`/silver-rem`), mandatory auto-capture enforcement in all orchestrator skills, a forensics audit (13 gaps fixed, 100% equivalence with gsd-forensics), a marketplace-based update overhaul (`silver-update`), and a retrospective session scanner (`/silver-scan`).
