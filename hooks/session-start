@@ -67,7 +67,7 @@ if [[ -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]];
   # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
   # without wiping state.
   sb_guard_nofollow "$branch_file"
-  printf '%s' "$current_branch" > "$branch_file"
+  printf '%s\n' "$current_branch" > "$branch_file"
   if [[ -f "$state_file" && ! -L "$state_file" ]]; then
     sed -i.bak '/^gsd-/d;/^quality-gate-stage-/d' "$state_file"
     rm -f -- "${state_file}.bak"
@@ -77,7 +77,7 @@ elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
   sb_safe_write "$state_file"
   rm -f -- "$state_file" 2>/dev/null || true
   sb_guard_nofollow "$branch_file"
-  printf '%s' "$current_branch" > "$branch_file"
+  printf '%s\n' "$current_branch" > "$branch_file"
 elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
   # Same branch — reset session-specific markers only (gsd-* are transient
   # per-session GSD phase markers; quality-gate-stage-* must persist across

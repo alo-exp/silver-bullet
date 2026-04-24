@@ -302,10 +302,16 @@ out=$(run_hook_bash "PreToolUse" "printf 'fake' > ~/.claude/.silver-bullet/state
 assert_blocks "tamper: direct write to state path is still blocked (HOOK-02)" "$out"
 teardown
 
-# Test 17c: tee to state path is STILL blocked after HOOK-02 fix
+# Test 17c: tee to state file is STILL blocked (BUG-03: only state is guarded, not trivial/branch)
+setup
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ~/.claude/.silver-bullet/state")
+assert_blocks "tamper: tee to state file is still blocked (BUG-03)" "$out"
+teardown
+
+# Test 17d: tee to trivial file is now ALLOWED (BUG-03 fix — trivial is not state-managed)
 setup
 out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ~/.claude/.silver-bullet/trivial")
-assert_blocks "tamper: tee to state path is still blocked (HOOK-02)" "$out"
+assert_passes "tamper: tee to trivial file is allowed (BUG-03 fix)" "$out"
 teardown
 
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
