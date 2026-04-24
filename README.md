@@ -225,7 +225,7 @@ When a session produces wrong output, stalls, or is abandoned, `/forensics` guid
 
 ---
 
-## Ten Enforcement Layers
+## Eleven Enforcement Layers
 
 The plugin doesn't rely on Claude reading instructions. It enforces compliance through hooks that fire automatically:
 
