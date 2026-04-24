@@ -255,7 +255,7 @@ for log in docs/sessions/*.md; do
     sessions_scanned=$((sessions_scanned + 1))
     # Extract lines from ## Items Filed section until next ## heading
     section=$(awk '/^## Items Filed$/{found=1; next} found && /^## /{exit} found{print}' "$log")
-    if [ -n "$section" ] && ! echo "$section" | grep -q "^(none)$"; then
+    if [ -n "$section" ] && ! echo "$section" | grep -qF '(none)'; then
       items_filed="${items_filed}${section}"$'\n'
     fi
   fi
