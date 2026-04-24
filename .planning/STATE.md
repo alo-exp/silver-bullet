@@ -2,24 +2,25 @@
 gsd_state_version: 1.0
 milestone: v0.25.0
 milestone_name: Issue Capture & Retrospective Scan
-current_plan: 051-04 (COMPLETE)
-status: Phase 51 complete — ready for Phase 52 (silver-forensics Audit)
-last_updated: "2026-04-24T11:30:00Z"
+current_plan: 052-01 (COMPLETE)
+status: Phase 52 in progress — Plan 052-01 complete; ready for 052-02
+stopped_at: Phase 52 plan 052-01 complete — audit report written (0e01607); 13 gaps documented; FORN-01 satisfied; Plan 052-02 (gap fixes) next
+last_updated: "2026-04-24T11:19:00Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
   completed_phases: 5
-  total_plans: 19
-  completed_plans: 11
-  percent: 58
+  total_plans: 20
+  completed_plans: 12
+  percent: 60
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 52 — silver-forensics Audit (next)
-**Current plan:** 051-04 (COMPLETE)
+**Active phase:** Phase 52 — silver-forensics Audit (in progress)
+**Current plan:** 052-01 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -32,20 +33,20 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 51 — Auto-Capture Enforcement (COMPLETE)
-Plan: 051-04 (COMPLETE) — silver-release Step 9b added; post-release items summary scans milestone-window session logs
-Status: Phase 51 complete — all CAPT-01 through CAPT-05 satisfied; silver-release presents post-release summary after milestone close
-Last activity: 2026-04-24 — Phase 51 plan 04 complete
+Phase: 52 — silver-forensics Audit (in progress)
+Plan: 052-01 (COMPLETE) — structured audit report written; 13 gaps documented across Dimensions 1, 2, 5, and 6
+Status: Phase 52 Plan 1 complete — FORN-01 satisfied; Plan 052-02 (gap fixes) next
+Last activity: 2026-04-24 — Phase 52 plan 01 complete
 
-Progress: [███████░░░] 65%
+Progress: [████████░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2
-- Average duration: 2.5 min
-- Total execution time: 5 min
+- Total plans completed: 8
+- Average duration: 3.6 min
+- Total execution time: 29 min
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -56,6 +57,7 @@ Progress: [███████░░░] 65%
 | 051-auto-capture-enforcement | 051-02 | 8 min | 5 | 5 |
 | 051-auto-capture-enforcement | 051-03 | 5 min | 2 | 2 |
 | 051-auto-capture-enforcement | 051-04 | 3 min | 1 | 1 |
+| 052-silver-forensics-audit | 052-01 | 4 min | 1 | 1 |
 
 *Updated after each plan completion*
 
@@ -94,6 +96,9 @@ Progress: [███████░░░] 65%
 - Phase 51 plan 04: PREV_TAG derived dynamically via git tag --sort=version:refname | grep '^v[0-9]' | tail -2 | head -1 — no hardcoded version; MILESTONE_START fallback 1970-01-01
 - Phase 51 plan 04: awk used for Items Filed section extraction — avoids shell interpolation of untrusted session log content (T-051-08 mitigation)
 - Phase 51 plan 04: item classification by line prefix in summary: SB-/# for silver-add items; [knowledge]:/[lessons]: for silver-rem entries
+- Phase 52 plan 01: Dimensions 3 (GSD-awareness routing) and 4 (root-cause format) are equivalent — no fixes needed in silver-forensics for these
+- Phase 52 plan 01: silver-forensics has stronger UNTRUSTED DATA protection (input side) but is missing output-side redaction rules (absolute paths, API key redaction from diffs) — 13 gaps total across Dimensions 1, 2, 5, and 6
+- Phase 52 plan 01: FORN-01 satisfied by audit report at .planning/052-FORENSICS-AUDIT.md; 13 numbered gaps (G-01 through G-13) ready for Plan 052-02
 
 ### Pending Todos
 
@@ -106,4 +111,4 @@ Progress: [███████░░░] 65%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 51 plan 051-04 complete — silver-release SKILL.md Step 9b added (c2a66bc); CAPT-05 satisfied; all Phase 51 CAPT requirements complete
+Stopped at: Phase 52 plan 052-01 complete — audit report written (0e01607); 13 gaps documented; FORN-01 satisfied; Plan 052-02 (gap fixes) next
