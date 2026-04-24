@@ -124,7 +124,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `stop-check.sh` dev-cycle skill checklist does not fire for sessions where no code-producing work occurred (e.g. backlog reviews, Q&A, documentation-only, housekeeping)
   2. `gsd-read-guard.js` does not emit the "will reject" advisory message when the file being edited was already read earlier in the same session -- the message only appears when a file genuinely has not been read yet
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 33: Trivial-Session Bypass Documentation
 **Goal**: Developers can find, understand, and manually invoke the trivial-session bypass mechanism from user-facing documentation
@@ -133,7 +135,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User-facing documentation (README.md or docs/ARCHITECTURE.md) explains what the trivial file is, how it is created automatically at session start, and how it is cleared when files are modified
   2. The documentation includes instructions for manually recreating the trivial file as an escape hatch when a hook blocks unexpectedly
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 34: Security P0 Remediation
 **Goal**: The leaked Google Chat webhook token is rotated and scrubbed from git history, and future re-introduction is automatically blocked
@@ -143,7 +147,9 @@ Plans:
   1. The currently-committed webhook token is revoked at the provider and a new token is issued; the new token lives only in a secrets manager / env var, never in source
   2. Git history is rewritten (via `git filter-repo` or BFG) to remove the token from all past commits; collaborators are notified to re-clone
   3. A pre-commit / CI secret-scan gate (gitleaks or equivalent) is active and would have caught the original leak
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 35: Stage 4 Security Hardening
 **Goal**: All Stage 4 security findings are resolved -- state writes refuse symlinks, JSON/body payloads are jq-constructed, medium/low findings are resolved
@@ -153,7 +159,9 @@ Plans:
   1. Every hook write under `~/.claude/.silver-bullet/` uses `O_NOFOLLOW` / `test -L` pre-check or equivalent; tests prove writes to symlinked state paths fail fast
   2. All JSON payloads and HTTP bodies in hooks are constructed via `jq -n ... | curl -d @-` (or equivalent); hand-rolled sanitizer functions are deleted
   3. Medium/low hardening items (umask on state reads, TOCTOU on state-file reads, safer `rm` patterns, `set -euo pipefail` audit) are applied across all hooks
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 36: HOOK-14 Stop-Check Hardening
 **Goal**: `stop-check.sh` is closed to fail-open edge cases, fully covered by tests, and consistently styled
@@ -163,7 +171,9 @@ Plans:
   1. No code path in `stop-check.sh` silently exits 0 on malformed input, missing config, or unexpected JSON shape -- every such path logs the reason and fails closed (or is explicitly marked fail-open with justification)
   2. `tests/hooks/test-stop-check.sh` has positive + negative cases for every branch introduced in HOOK-14 and HOOK-06; line/branch coverage meets project floor
   3. Comment style, variable naming, numeric vs. string compares, and HOOK-* numbering in `stop-check.sh` are normalized and consistent with sibling hooks
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 37: Stage 2 Consistency Audit
 **Goal**: Broken skill references are fixed and hooks+config duplication/schema drift is eliminated
@@ -172,7 +182,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Every `Skill(skill="...")` invocation and every cross-skill path reference across the plugin resolves to an existing skill file; a CI check prevents regressions
   2. Required-skill lists, config keys, and state-file paths have a single source of truth; `lib/required-skills.sh`, `silver-bullet.config.json.default`, and per-hook arrays cannot diverge (enforced by a lint or unit test)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 38: Gitignore & Docs Refresh
 **Goal**: The `.claude/` gitignore rule is narrowed to runtime-only paths, and all public-facing docs/site content consistently reflect v0.22.0 state
@@ -181,7 +193,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `.gitignore` ignores only session/state paths under `.claude/` (e.g. `.claude/projects/`, `.claude/local/`); committed config like `.claude/settings.json` and `.claude/commands/` is tracked
   2. README.md, site/index.html, site/help/*.html, docs/ARCHITECTURE.md, and CHANGELOG.md all reflect the v0.22.0 release state -- no stale versions, skill/hook/flow counts, or missing changelog entries
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 39: CI Node.js 20 Deprecation Fix
 **Goal**: GitHub Actions workflows no longer run on the deprecated Node.js 20 runtime
@@ -261,7 +275,9 @@ Plans:
   2. Hand-rolled sanitizer strings in `pr-traceability.sh` and `silver-create-release/SKILL.md` are replaced with jq-based construction; the old sanitizer functions are removed
   3. Medium/low hardening items from the audit batch are applied: TOCTOU kill fix, phase-archive slug filter, ReDoS-safe regex, M8 core-rules tamper conflict resolved, plugin cache integrity check, tmpfile trap cleanup
   4. `silver-update/SKILL.md` rejects any `$LATEST` value that does not match `^v?[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$`; the skill aborts with a user-visible error on malformed input
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 46: HOOK-14 Closure
 **Goal**: `stop-check.sh` is hardened against all identified fail-open edge cases, comprehensively tested, and consistently styled
@@ -271,7 +287,9 @@ Plans:
   1. All six identified edge cases in `stop-check.sh` (rev-list failure, gitignored untracked files, stale upstream ref, local-main fallback, detached HEAD, `--git-dir` guard) are handled explicitly -- no path silently exits 0 without logging
   2. `tests/hooks/test-stop-check.sh` covers every branch introduced by HOOK-14 including: real upstream zero-ahead scenario (Test 7b), setup-error swallowing prevention, non-git-dir path handling, and all baseline audit cases (Tests 1, 2, 4, 5, 6 confirmed passing without false negatives)
   3. Variable names, comment style, arithmetic comparisons, and HOOK-NN convention markers in `stop-check.sh` are consistent with sibling hook scripts; `--is-inside-work-tree` guard is present where required
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 47: Consistency & Quality
 **Goal**: Cross-cutting inconsistencies across hooks, skills, and config are resolved -- gitignore is narrowed, skill references resolve, duplication is eliminated, doc-scheme gates are ported, and tamper regex is tightened
@@ -283,7 +301,9 @@ Plans:
   3. Config-walk logic is extracted to `hooks/lib/find-config.sh` and used by all 6 hooks that currently duplicate it; trivial-bypass is consistently applied across all blocking hooks
   4. `superpowers:executing-plans` (step 15), `silver-feature` (PATH 13), and `superpowers:writing-plans` include explicit doc-scheme compliance instructions; `silver-devops` and `silver-bugfix` carry the Step 13b / PATH 10b doc-scheme gate
   5. `dev-cycle-check.sh` tamper-detection regex matches only leading command tokens -- heredoc bodies and commit message content no longer trigger false positives
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 48: Content Refresh & PM Feature
 **Goal**: All public-facing content accurately reflects current state, and `/silver:init` captures the project's issue tracker preference for use by backlog-filing skills
@@ -294,7 +314,9 @@ Plans:
   2. `/silver:init` prompts the user for their project management system (GitHub Issues, Linear, Jira, or none) and writes an `issue_tracker` field to `.silver-bullet.json`
   3. Skills that file backlog items (e.g. `silver-feature`, `silver-bugfix`, `silver-devops`) read `issue_tracker` from `.silver-bullet.json` and route issue creation to the configured system rather than defaulting to GitHub Issues unconditionally
 **UI hint**: yes
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 49: silver-add
 **Goal**: Users and coding agents can file any deferred or identified work item to the correct PM destination with a stable, referenceable ID
@@ -360,7 +382,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can invoke `/silver-update` and the update is performed via `claude mcp install silver-bullet@alo-labs` (or equivalent marketplace CLI command) — no manual `git clone` steps appear in the skill instructions; version check and changelog display still occur before the install step
   2. After a successful marketplace install, `/silver-update` scans `~/.claude/plugins/cache/` and `~/.claude/plugins/installed_plugins.json` for stale silver-bullet entries (including those under the legacy `silver-bullet@silver-bullet` key) and removes them, leaving only the newly installed version registered
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ### Phase 54: silver-scan
 **Goal**: Users can retrospectively scan all project session logs to surface unaddressed deferred items and unrecorded knowledge/lessons insights, then file them with human approval
@@ -372,7 +396,9 @@ Plans:
   3. silver-scan also detects knowledge/lessons insights in session logs not yet recorded in `docs/knowledge/` or `docs/lessons/`, presents them with Y/n, and calls `/silver-rem` for approved ones
   4. After the scan completes, a summary is displayed: total sessions scanned, deferred items found vs. filed (with assigned IDs) vs. skipped as stale or rejected, and knowledge/lessons entries recorded
 **Pre-release gate**: Before CI and releasing this phase, execute the 4-stage `docs/internal/pre-release-quality-gate.md`
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 053-01-PLAN.md — Rewrite Steps 1, 4, 5, 6, and 7 of silver-update/SKILL.md: marketplace install via claude mcp install, stale registry/cache cleanup (UPD-01, UPD-02)
 
 ## Progress
 
