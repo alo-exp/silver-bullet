@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v0.21.0
 milestone_name: Hook Quality & Docs
-current_plan: 051-03 (COMPLETE)
+current_plan: 051-04 (COMPLETE)
 status: completed
-stopped_at: Phase 51 plan 051-03 complete — session-log-init.sh skeleton and idempotency block updated (008d395); silver-rem Step 8 session log recording added (879f76b); CAPT-04 satisfied
-last_updated: "2026-04-24T10:52:00Z"
+stopped_at: Phase 51 plan 051-04 complete — silver-release Step 9b added (c2a66bc); CAPT-05 satisfied; all 5 CAPT requirements complete
+last_updated: "2026-04-24T10:54:56Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 25
   completed_phases: 5
   total_plans: 19
-  completed_plans: 10
-  percent: 53
+  completed_plans: 11
+  percent: 58
 ---
 
 # Project State
 
 **Project:** Silver Bullet
 **Current version:** v0.24.1
-**Active phase:** Phase 51 — Auto-Capture Enforcement (in progress)
-**Current plan:** 051-03 (COMPLETE)
+**Active phase:** Phase 51 — Auto-Capture Enforcement (COMPLETE)
+**Current plan:** 051-04 (COMPLETE)
 
 Last activity: 2026-04-24
 
@@ -33,12 +33,12 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 
 ## Current Position
 
-Phase: 51 — Auto-Capture Enforcement (in progress)
-Plan: 051-03 (COMPLETE) — session-log-init.sh skeleton and idempotency block updated; silver-rem session log recording step added
-Status: Phase 51 plan 03 done — CAPT-04 satisfied; ## Items Filed section in new and existing session logs; silver-rem records to session log
-Last activity: 2026-04-24 — Phase 51 plan 03 complete
+Phase: 51 — Auto-Capture Enforcement (COMPLETE)
+Plan: 051-04 (COMPLETE) — silver-release Step 9b added; post-release items summary scans milestone-window session logs
+Status: Phase 51 complete — all CAPT-01 through CAPT-05 satisfied; silver-release presents post-release summary after milestone close
+Last activity: 2026-04-24 — Phase 51 plan 04 complete
 
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 65%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [██████░░░░] 60%
 | 051-auto-capture-enforcement | 051-01 | 2 min | 2 | 2 |
 | 051-auto-capture-enforcement | 051-02 | 8 min | 5 | 5 |
 | 051-auto-capture-enforcement | 051-03 | 5 min | 2 | 2 |
+| 051-auto-capture-enforcement | 051-04 | 3 min | 1 | 1 |
 
 *Updated after each plan completion*
 
@@ -90,6 +91,10 @@ Progress: [██████░░░░] 60%
 - Phase 51 plan 03: Items Filed idempotency uses anchored grep -q '^## Items Filed$' — prevents false positives on partial heading matches in existing logs
 - Phase 51 plan 03: silver-rem records [INSIGHT_TYPE]: CATEGORY — {first 60 chars} (not a FILED_ID) — mirrors classification output, not issue ID format
 - Phase 51 plan 03: printf fallback appends ## Items Filed section to session log if absent — graceful degradation for logs created before this plan
+- Phase 51 plan 04: Step 9b triggers only after Step 9 (gsd-complete-milestone) confirms success — summary operates on stable post-close state
+- Phase 51 plan 04: PREV_TAG derived dynamically via git tag --sort=version:refname | grep '^v[0-9]' | tail -2 | head -1 — no hardcoded version; MILESTONE_START fallback 1970-01-01
+- Phase 51 plan 04: awk used for Items Filed section extraction — avoids shell interpolation of untrusted session log content (T-051-08 mitigation)
+- Phase 51 plan 04: item classification by line prefix in summary: SB-/# for silver-add items; [knowledge]:/[lessons]: for silver-rem entries
 
 ### Pending Todos
 
@@ -102,4 +107,4 @@ Progress: [██████░░░░] 60%
 ## Session Continuity
 
 Last session: 2026-04-24
-Stopped at: Phase 51 plan 051-03 complete — session-log-init.sh updated (008d395), silver-rem SKILL.md Step 8 added (879f76b); CAPT-04 satisfied; bash -n syntax check passes
+Stopped at: Phase 51 plan 051-04 complete — silver-release SKILL.md Step 9b added (c2a66bc); CAPT-05 satisfied; all Phase 51 CAPT requirements complete

@@ -339,6 +339,7 @@ Plans:
 - [x] 051-01-PLAN.md — Add §3b-i (deferred-item capture via /silver-add) and §3b-ii (knowledge/lessons capture via /silver-rem) to silver-bullet.md and templates/silver-bullet.md.base atomically (completed 2026-04-24)
 - [x] 051-02-PLAN.md — Replace all gsd-add-backlog occurrences with silver-add in silver-feature/bugfix/ui; add Deferred-Item Capture blocks to all 5 producing skills (completed 2026-04-24)
 - [x] 051-03-PLAN.md — Add ## Items Filed section to session-log-init.sh skeleton and idempotency block; add silver-rem session log recording step (CAPT-04) (completed 2026-04-24)
+- [x] 051-04-PLAN.md — Add Step 9b post-release items summary to silver-release SKILL.md; reads ## Items Filed from milestone-window session logs after gsd-complete-milestone (CAPT-05) (completed 2026-04-24)
 
 ### Phase 52: silver-forensics Audit
 **Goal**: silver-forensics is verified to be 100% functionally equivalent to gsd-forensics across all diagnostic dimensions, and any gaps are fixed before silver-scan is designed
@@ -400,7 +401,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 48. Content Refresh & PM Feature | v0.24.0 | 1/1 | Complete    | 2026-04-24 |
 | 49. silver-add | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
 | 50. silver-remove & silver-rem | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
-| 51. Auto-Capture Enforcement | v0.25.0 | 3/? | In progress | - |
+| 51. Auto-Capture Enforcement | v0.25.0 | 4/4 | Complete    | 2026-04-24 |
 | 52. silver-forensics Audit | v0.25.0 | 0/0 | Not started | - |
 | 53. silver-update Overhaul | v0.25.0 | 0/0 | Not started | - |
 | 54. silver-scan | v0.25.0 | 0/0 | Not started | - |
