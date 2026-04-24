@@ -314,6 +314,18 @@ out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ~/.claude/.silver-bullet/trivia
 assert_passes "tamper: tee to trivial file is allowed (BUG-03 fix)" "$out"
 teardown
 
+# Test 17e: git commit mentioning state path in -m is NOT blocked (QA-05)
+setup
+out=$(run_hook_bash "PreToolUse" "git commit -m \"fix: removes >> ~/.claude/.silver-bullet/state pattern from docs\"")
+assert_passes "tamper: git commit -m with state path in message is NOT blocked (QA-05)" "$out"
+teardown
+
+# Test 17f: gh issue create mentioning state path in --body is NOT blocked (QA-05)
+setup
+out=$(run_hook_bash "PreToolUse" "gh issue create --title 'test' --body 'writes to > ~/.claude/.silver-bullet/state'")
+assert_passes "tamper: gh issue create with state path in body is NOT blocked (QA-05)" "$out"
+teardown
+
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
 # Use expanded $HOME path so the plugin_cache grep actually fires in the hook
 PLUGIN_CACHE_PATH="${HOME}/.claude/plugins/cache"

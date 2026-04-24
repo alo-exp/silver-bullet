@@ -170,6 +170,25 @@ Invoke `gsd-verify-work` via the Skill tool. Purpose: deployment verification an
 
 Invoke `silver:devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
 
+## Step 10b: Doc-Scheme Compliance (conditional)
+
+**Only if `docs/doc-scheme.md` exists in the project:**
+
+```bash
+[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+```
+
+Before deploying, verify documentation is up to date per the scheme:
+
+1. **`docs/CHANGELOG.md`** — must have an entry for the infrastructure change (newest-first). If missing, write it now.
+2. **`docs/ARCHITECTURE.md`** — update §Current State if the change altered infrastructure topology, pipeline stages, or deployment targets.
+3. **`docs/knowledge/YYYY-MM.md`** (current month) — if IaC patterns, provider quirks, or config gotchas were encountered, append them.
+4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable DevOps lessons were learned, append them.
+
+**Gate:** Do NOT proceed to Step 11 until all applicable checks pass.
+
+If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 11.
+
 ## Step 11: Ship / Deploy
 
 Invoke `gsd-ship` via the Skill tool. Purpose: push branch, deploy, create PR.

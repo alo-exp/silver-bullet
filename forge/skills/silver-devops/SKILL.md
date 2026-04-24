@@ -71,6 +71,9 @@ Run code review (trigger: "code review"). Focus on:
 ### Step 9: QUALITY GATES (pre-ship)
 Run quality gates (trigger: "quality gates").
 
+### Step 9b: Doc-Scheme Compliance (conditional)
+If `docs/doc-scheme.md` exists: verify CHANGELOG entry, ARCHITECTURE currency (infra topology changes), knowledge/lessons entries before deploying. Skip if absent.
+
 ### Step 10: DEPLOY
 Deploy infrastructure:
 - Apply to staging first

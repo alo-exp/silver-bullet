@@ -60,6 +60,7 @@
     "state_file": "~/.claude/.silver-bullet/state",
     "trivial_file": "~/.claude/.silver-bullet/trivial"
   },
+  "issue_tracker": "gsd",
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {
     "enabled": true,

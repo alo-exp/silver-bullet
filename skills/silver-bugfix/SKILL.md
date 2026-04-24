@@ -186,6 +186,25 @@ Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any techn
 
 Invoke `silver:silver-quality-gates` via the Skill tool (affected quality dimensions for the changed code). Non-skippable.
 
+## Step 7c: Doc-Scheme Compliance (conditional)
+
+**Only if `docs/doc-scheme.md` exists in the project:**
+
+```bash
+[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+```
+
+Before raising the PR, verify documentation is up to date per the scheme:
+
+1. **`docs/CHANGELOG.md`** — must have an entry for this fix (newest-first). If missing, write it now.
+2. **`docs/ARCHITECTURE.md`** — update §Current State if the fix changed any architectural constraints.
+3. **`docs/knowledge/YYYY-MM.md`** (current month) — if root-cause patterns or API gotchas were discovered, append them.
+4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned during diagnosis, append them.
+
+**Gate:** Do NOT proceed to Step 8 until all applicable checks pass.
+
+If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 8.
+
 ## Step 8: Ship
 
 Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR.

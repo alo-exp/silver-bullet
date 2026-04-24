@@ -497,6 +497,24 @@ If already set to `auto` or `bypassPermissions` → skip silently.
 
 > **Note on Autonomous mode:** If the user selects Autonomous, SB will invoke `gsd-autonomous` at workflow execution steps rather than `gsd-execute-phase`. `gsd-autonomous` handles full phase execution without checkpoints. This preference is stored in §10e of `silver-bullet.md`.
 
+### 2.8 Project management system
+
+Use AskUserQuestion:
+- Question: "Which project management system should Silver Bullet use when filing issues and backlog items?"
+- Options:
+  - "A. GitHub Issues (this repo) — recommended for GitHub-hosted projects"
+  - "B. None / GSD — use GSD's .planning/ROADMAP.md (default, no external system)"
+
+Record the answer as `issue_tracker` in `.silver-bullet.json`:
+- Option A → `"issue_tracker": "github"`
+- Option B → `"issue_tracker": "gsd"`
+
+This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver-feature`, `silver-bugfix`, `silver-devops`, `silver-ui`) read this field and route issue creation accordingly:
+- `github` → create a GitHub Issue via `gh issue create` + add to project board
+- `gsd` → add to `.planning/ROADMAP.md` backlog section as today
+
+Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"gsd"` if user skips or closes the prompt.
+
 ---
 
 ## Phase 3: Scaffold

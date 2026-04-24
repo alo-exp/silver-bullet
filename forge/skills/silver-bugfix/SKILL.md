@@ -50,6 +50,9 @@ Run code review on the fix (trigger: "code review").
 ### Step 7: Quality Gates (pre-ship)
 Run quality gates (trigger: "quality gates") before shipping.
 
+### Step 7b: Doc-Scheme Compliance (conditional)
+If `docs/doc-scheme.md` exists: verify CHANGELOG entry, ARCHITECTURE currency, knowledge/lessons entries before shipping. Skip if absent.
+
 ### Step 8: Ship
 Create PR with fix (trigger: "ship").
 

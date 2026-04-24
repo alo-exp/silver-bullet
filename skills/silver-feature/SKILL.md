@@ -266,7 +266,11 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification l
 
 **Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
-**During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the GSD backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
+**During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
+
+**Backlog routing:** Before filing any backlog item, check `issue_tracker` in `.silver-bullet.json`:
+- `"github"` → `gh issue create --repo <git_remote> --title "<title>" --body "<description>"`
+- `"gsd"` (default) → `Skill(skill="gsd-add-backlog", args="<description>")`
 
 ```
 Skill(skill="gsd-add-backlog", args="<description of deferred item>")
@@ -434,7 +438,7 @@ After all work for this feature/phase is complete, perform a final deferred-item
 2. Review any items marked "future", "TODO", "later", or "out of scope" in SUMMARYs, PLANs, or discussion
 3. Review any items explicitly deferred during execution (e.g., "skipping X for now")
 
-**Every deferred item that has not yet been captured in the GSD backlog must be added now:**
+**Every deferred item that has not yet been captured must be added now** (use backlog routing from Step 7 — check `issue_tracker` in `.silver-bullet.json`):
 ```
 Skill(skill="gsd-add-backlog", args="<deferred item description>")
 ```
