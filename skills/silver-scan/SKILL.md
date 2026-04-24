@@ -140,12 +140,13 @@ ITEM_CONTEXT (first 300 chars)
 File this item via /silver-add? [Y/n]
 ```
 
-**ii.** Use AskUserQuestion tool:
+**ii.** Increment `CANDIDATE_COUNT` (before asking — this counter tracks candidates presented, regardless of user choice).
+
+Use AskUserQuestion tool:
 - Question: "File this item? [Y to file via /silver-add / n to skip]"
 - Options: ["Y", "n"]
 
 **iii.** If user answers Y:
-- Increment `CANDIDATE_COUNT`
 - Invoke /silver-add via the Skill tool, passing `ITEM_TITLE` + `ITEM_CONTEXT` as the description. Wait for /silver-add to complete and return `FILED_ID`.
 - Append `FILED_ID` to `FILED_IDS` list (comma-separated).
 - Increment `ITEMS_FILED`.
@@ -171,7 +172,7 @@ For each file in `SESSION_LOGS` (re-scan pass, separate from Step 3):
 **7b — Cross-reference against recorded files.** For each candidate insight:
 
 - Extract a keyword from the insight (first 5+ meaningful words).
-- Run `grep -rl "KEYWORD" docs/knowledge/ docs/lessons/ 2>/dev/null` — if a match exists, the insight is already recorded; mark ALREADY_RECORDED and skip.
+- Run `grep -rlF "KEYWORD" docs/knowledge/ docs/lessons/ 2>/dev/null` — if a match exists, the insight is already recorded; mark ALREADY_RECORDED and skip. The `-F` flag treats KEYWORD as a fixed string (not regex) since it comes from untrusted session log content.
 - Also check against `## Items Filed` entries extracted in 7a-ii — if the insight text matches an already-filed entry from this or another session log, mark ALREADY_RECORDED.
 
 **7c — Collect unrecorded insight candidates** sorted by signal strength (legacy `## Knowledge & Lessons additions` section first, autonomous decisions last).
