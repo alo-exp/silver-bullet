@@ -152,9 +152,13 @@ fi
 Check whether `~/.claude/plugins/cache/silver-bullet/silver-bullet/` exists. If it does, remove it:
 
 ```bash
-STALE_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet"
-if [[ -d "$STALE_CACHE" ]]; then
-  rm -rf "$STALE_CACHE"
+if [[ -z "$HOME" ]]; then
+  echo "WARNING: HOME is unset — skipping stale cache cleanup."
+else
+  STALE_CACHE="${HOME}/.claude/plugins/cache/silver-bullet/silver-bullet"
+  if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
+    rm -rf "$STALE_CACHE"
+  fi
 fi
 ```
 
