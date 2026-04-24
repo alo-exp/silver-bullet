@@ -32,12 +32,19 @@ Read `docs/workflows/full-dev-cycle.md` before starting any non-trivial task. If
 
 ## Review Loop (Section 3a)
 
-Review loop must produce two consecutive clean passes — write review-loop-pass-1 and review-loop-pass-2 markers after each clean pass:
-```bash
-echo "review-loop-pass-1" >> ~/.claude/.silver-bullet/state
-echo "review-loop-pass-2" >> ~/.claude/.silver-bullet/state
-```
-These markers are required by the completion audit hook before PR creation, deploy, or release.
+Review loop must produce two consecutive clean passes. Run the audit skill twice in sequence:
+
+1. Invoke the audit skill (e.g. `silver:quality-gates`, `gsd-code-review`, or the applicable review skill)
+2. If issues found: fix them, then re-run
+3. If clean pass: run the audit again immediately (second pass)
+4. If second pass is also clean: two consecutive clean passes confirmed — proceed
+
+**Do NOT write to state files directly.** The tamper-detection hook blocks any Bash command
+that writes to `~/.claude/.silver-bullet/state` or adjacent files. State is recorded automatically
+when skills are invoked via the Skill tool.
+
+The two-consecutive-pass requirement is a workflow discipline, not a state file marker.
+No hook checks for `review-loop-pass-*` tokens — verification is evidence-based (audit output).
 
 ## Anti-Rationalization
 
