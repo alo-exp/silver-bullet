@@ -109,5 +109,6 @@
     "chunk_size_bytes": 1024,
     "top_chunks_per_file": 3,
     "debug": false
-  }
+  },
+  "issue_tracker": "github"
 }
