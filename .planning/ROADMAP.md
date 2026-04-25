@@ -464,10 +464,24 @@ Plans:
 **Plans:** Hotfix-style execution (direct commits). Evidence: 1339-test suite + 4-stage pre-release quality gate.
 - [x] Phase 58 complete — QUAL-03, QUAL-04 satisfied (2026-04-25)
 
+### Phase 59: Code Review Chores
+**Goal**: Four small code-review chore fixes are applied: orphan sentinel-lock files are cleaned up at session startup, the silver-add auth scope grep is case-insensitive, dead quality-gate-stage sed pattern is removed from session-start, and silver-create-release CHANGELOG printf uses explicit %s to strip trailing newlines from the body.
+**Depends on**: Phase 58
+**Requirements**: CHR-01, CHR-02, CHR-03, CHR-04
+**Success Criteria** (what must be TRUE):
+  1. session-log-init.sh has an unconditional rm -f "$SB_DIR"/sentinel-lock-* after the sentinel-pid if-block so orphan lock files from crashed sessions are removed at startup
+  2. silver-add Step 4a scope check uses grep -qiE so Token scopes matches regardless of capitalization
+  3. hooks/session-start contains no reference to quality-gate-stage- -- the dead sed pattern and stale comment are gone
+  4. silver-create-release Step 5 strips trailing whitespace from RELEASE_NOTES_BODY before the printf call -- no extra blank lines appear before --- in CHANGELOG.md
+**Plans:** 1 plan
+Plans:
+- [ ] 059-01-PLAN.md -- CHR-01: sentinel-lock orphan cleanup; CHR-02: case-insensitive scope grep; CHR-03: dead sed removal; CHR-04: trailing-newline strip
+
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -502,3 +516,4 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 56. Skill Bug Fixes & Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
 | 57. CI Hardening | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
 | 58. silver-scan Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
+| 59. Code Review Chores | v0.27.0 | 0/1 | In Progress |  |
