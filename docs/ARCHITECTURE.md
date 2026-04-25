@@ -64,7 +64,7 @@ The hooks validate that the trivial file is a regular file (`-f`) and not a syml
 ## Design Principles
 
 1. **Never modify third-party plugins.** All enforcement is additive to the host project.
-2. **10 layers, no single bypass.** Enforcement survives context window resets because hooks
+2. **11 layers, no single bypass.** Enforcement survives context window resets because hooks
    re-fire on every tool call, not just at session start.
 3. **User instructions always take precedence.** `CLAUDE.md` user rules override SB defaults.
 4. **Non-destructive file operations.** Hooks are read-only except for the state/mode files they
@@ -78,7 +78,7 @@ The hooks validate that the trivial file is a regular file (`-f`) and not a syml
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Language | Bash + Node.js | Bash for hooks (no runtime dep); Node for scripts that need JSON parsing |
+| Language | Bash | Pure Bash hooks and scripts; `jq` for JSON parsing (no Node.js runtime required) |
 | Config format | JSON | Machine-readable by hooks and CI; human-readable for customization |
 | Skill format | Markdown | Loaded natively by Claude Code's Skill tool |
 | State format | Line-delimited text | `grep -q` lookups; append-only; trivially auditable |

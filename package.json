@@ -1,6 +1,6 @@
 {
   "name": "silver-bullet",
-  "version": "0.24.1",
+  "version": "0.26.0",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
   "author": "Alo Labs <info@alolabs.dev>",
   "license": "MIT",
