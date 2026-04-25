@@ -11,9 +11,21 @@
   "plugins": [
     {
       "name": "silver-bullet",
-      "source": "github:alo-exp/silver-bullet",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/silver-bullet"
+      },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
       "version": "0.26.0",
+      "author": {
+        "name": "Alo Labs",
+        "email": "info@alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/silver-bullet",
+      "repository": "https://github.com/alo-exp/silver-bullet",
+      "license": "MIT",
+      "keywords": ["silver-bullet", "enforcement", "orchestrator", "gsd", "devops", "quality-gates", "ci-cd"],
+      "category": "development",
       "strict": true
     }
   ]
