@@ -14,7 +14,7 @@ SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"; }
+cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"; }
 trap cleanup_all EXIT
 
 write_cfg() {
@@ -67,12 +67,20 @@ setup() {
   git -C "$TMPGIT" commit -q -m "init"
   git -C "$TMPGIT" checkout -q -b feature/test
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  # Branch file: supply a test-local file matching the test's git branch so
+  # branch-scope validation in stop-check.sh uses controlled input, not the
+  # live ~/.claude/.silver-bullet/branch file from the user's current session.
+  TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  printf 'feature/test\n' > "$TMPBRANCH_FILE"
+  export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH_FILE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  unset SILVER_BULLET_BRANCH_FILE
 }
 
 run_hook() {
@@ -337,6 +345,26 @@ out=$(run_hook)
 # The commits-ahead-of-local-main are ignored because local main is not a
 # trusted anchor (user may have reset it).
 assert_passes "clean tree + no origin + local main exists -> skip (no anchor)" "$out"
+teardown
+
+# Test 14: Branch-scope validation — state recorded on a different branch -> no block
+# Reproduces the worktree cross-project contamination bug: when session-start
+# doesn't run (e.g. session resumed) the state file retains skills from another
+# branch. stop-check must treat this as stale state and skip enforcement.
+echo "--- Test 14: Cross-branch stale state -> no block ---"
+setup
+# Partial skills that would normally block (missing most required_deploy skills)
+echo "silver-quality-gates" > "$TMPSTATE"
+# Dirty the working tree so HOOK-14 doesn't short-circuit
+printf 'work\n' > "$TMPDIR_TEST/work.txt"
+git -C "$TMPDIR_TEST" add work.txt
+# Overwrite the branch file with a DIFFERENT branch than feature/test (simulates
+# stale state from a prior session on another branch/project)
+printf 'phase/10-other-project\n' > "$TMPBRANCH_FILE"
+out=$(run_hook)
+# Restore correct branch so teardown is clean
+printf 'feature/test\n' > "$TMPBRANCH_FILE"
+assert_passes "stale cross-branch state (branch file mismatch) -> skip enforcement" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

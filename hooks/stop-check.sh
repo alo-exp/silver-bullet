@@ -197,6 +197,27 @@ state_contents=""
 # Fail-open by design: nothing to gate against.
 [[ -z "$state_contents" ]] && exit 0
 
+# ── Branch-scope validation: skip if state is from a different branch ─────────
+# State is branch-scoped by session-start. If the branch file and current branch
+# diverge (session-start didn't run, ran on a different context, or a concurrent
+# session overwrote the file), the state is stale — enforcing against it would
+# block legitimate work on a different branch with another branch's skill history.
+# Fail-open by design: stale cross-branch state should never block the current branch.
+sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
+# Security: validate path stays within ~/.claude/ (mirrors session-start pattern)
+case "$sb_branch_file" in
+  "$HOME"/.claude/*) ;;
+  *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
+esac
+stored_state_branch=""
+if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
+  stored_state_branch=$(head -1 "$sb_branch_file" 2>/dev/null | tr -d '\n' || true)
+fi
+if [[ -n "$stored_state_branch" && -n "$current_branch" && \
+      "$stored_state_branch" != "$current_branch" ]]; then
+  exit 0
+fi
+
 # ── Build required skills list (Tier 2: full required_deploy list) ────────────
 # Source canonical required-skills list (single source of truth — TD-01 fix)
 # shellcheck source=lib/required-skills.sh
