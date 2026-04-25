@@ -62,6 +62,14 @@ fi
 if [[ -f "$SPEC" ]]; then
   uat_version=$(grep -m1 '^spec-version:' "$UAT" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
   spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
+  # Validate against allowlist before interpolating into block message (SEC: content injection guard)
+  # Only digits-and-dots (e.g. 1.0, 2.3.1) are accepted; invalid values skip the check safely
+  if ! printf '%s' "${uat_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+    uat_version=""
+  fi
+  if ! printf '%s' "${spec_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+    spec_version=""
+  fi
   if [[ -n "$uat_version" && -n "$spec_version" && "$uat_version" != "$spec_version" ]]; then
     emit_block "UAT GATE: UAT was run against spec v${uat_version} but current SPEC.md is v${spec_version}. Re-run UAT against the current spec."
     exit 0

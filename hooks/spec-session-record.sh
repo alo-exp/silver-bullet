@@ -39,6 +39,16 @@ fi
 spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
 jira_id=$(grep -m1 '^jira-id:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
 
+# Validate against allowlists before any interpolation (SEC: content injection guard)
+# spec-version: digits and dots only (e.g. 1.0, 2.3.1)
+if ! printf '%s' "${spec_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+  spec_version=""
+fi
+# jira-id: PROJECT-NNN format (e.g. FOO-123)
+if ! printf '%s' "${jira_id:-}" | grep -qE '^[A-Z][A-Z0-9_]*-[0-9]+$'; then
+  jira_id=""
+fi
+
 # Write spec-session file (empty values are fine — do not block)
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR"
@@ -47,9 +57,10 @@ spec_session_file="${SB_STATE_DIR}/spec-session"
 sb_guard_nofollow "$spec_session_file"
 printf 'spec-version=%s\njira-id=%s\n' "${spec_version:-}" "${jira_id:-}" > "$spec_session_file"
 
-# Emit advisory
+# Emit advisory (jq-mediated encoding prevents JSON injection)
 version_display="${spec_version:-unknown}"
 jira_display="${jira_id:-n/a}"
-printf '{"hookSpecificOutput":{"message":"Spec session: SPEC.md v%s, JIRA: %s"}}' "$version_display" "$jira_display"
+_msg="Spec session: SPEC.md v${version_display}, JIRA: ${jira_display}"
+printf '{"hookSpecificOutput":{"message":%s}}' "$(printf '%s' "$_msg" | jq -Rs '.')"
 
 exit 0
