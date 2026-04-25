@@ -19,7 +19,7 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
 | **Static — template parity** | `diff docs/workflows/ templates/workflows/` byte-for-byte | CI step | <1s |
 | **Static — doc content grep** | Assert REQUIRED markers and skill names in workflow files | CI step | <1s |
 | **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
-| **Script unit — bash/node** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
+| **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -31,12 +31,14 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
 | `compliance-status.sh` | Key progress calculation paths | Covered via integration patterns |
 | `completion-audit.sh` | block vs. pass for each required skill group | Partial |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
-| JSON config correctness | required_deploy + all_tracked exact-match assertions | **0%** — CI gap (tech debt) |
-| Template parity | docs/ == templates/ | **0%** — CI gap (tech debt) |
+| JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
+| Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 
 ## Phase 2 — New Test Requirements
 
-### Priority 1: Config JSON CI assertions (score 35)
+> **Status:** Priorities 1 and 2 implemented in v0.26.0 (CI-02 and CI-01). Priority 3 remains open (SB-B-3 backlog).
+
+### Priority 1: Config JSON CI assertions (score 35) ✅ Done — v0.26.0
 ```yaml
 - name: Validate required_deploy contents
   run: |
@@ -53,7 +55,7 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
          <(jq '.skills' templates/silver-bullet.config.json.default)
 ```
 
-### Priority 2: Template parity CI step (score 30)
+### Priority 2: Template parity CI step (score 30) ✅ Done — v0.26.0
 ```yaml
 - name: Workflow template parity
   run: |
@@ -84,7 +86,7 @@ These tests exercise the interactive migration step in `skills/silver-init/SKILL
 
 ## Forge-Silver Bullet Skill Test Harness
 
-The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 57+ installed skills against realistic todo app development scenarios.
+The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 61 installed skills against realistic todo app development scenarios.
 
 ### Test Classification
 
@@ -106,7 +108,7 @@ The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 
 | Planning & Documentation | 4 | 100% |
 | DevOps & Routing | 2 | 100% |
 
-**Total: 60 skills tested**
+**Total: 61 skills tested**
 
 ### Running the Harness
 
