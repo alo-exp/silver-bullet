@@ -69,7 +69,7 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Ten enforcement layers enforce compliance:
+Eleven enforcement layers enforce compliance:
 
 1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
