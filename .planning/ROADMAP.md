@@ -104,7 +104,7 @@
 
 - [x] **Phase 59: Code Review Chores** - sentinel-lock cleanup on startup, silver-add gh auth -i flag, dead sed removal from session-start, CHANGELOG trailing-newline fix (CHR-01–04) (completed 2026-04-25)
 - [x] **Phase 60: Test Coverage** - sentinel-lock-uuid assertion in Test 8, quote-literal exemption edge-case tests (TST-01–02) (completed 2026-04-25)
-- [ ] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04)
+- [x] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04) (completed 2026-04-26)
 - [ ] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03)
 - [ ] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
 - [ ] **Phase 64: Verification & Init Improvements** - verification-before-completion design, permissions re-prompting root cause, CLAUDE.md conflict resolution in /silver:init, FLOW parallelism design note (VFY-01, BUG-06, INIT-01, FLOW-01)
