@@ -13,7 +13,7 @@
 - :white_check_mark: **v0.23.8 Patch: Issue Cleanup** - Phases 39-43 (shipped)
 - :white_check_mark: **v0.24.0 Stability · Security · Quality** - Phases 44-48 (shipped)
 - :white_check_mark: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (shipped 2026-04-24)
-- **v0.26.0 Bug Fixes, CI Hardening & Skill Quality** - Phases 55-58 (in progress)
+- :white_check_mark: **v0.26.0 Bug Fixes, CI Hardening & Skill Quality** - Phases 55-58 (shipped 2026-04-25)
 
 ## Phases
 
@@ -417,7 +417,8 @@ Plans:
   2. `dev-cycle-check.sh` does not block execution of steps described in `docs/internal/pre-release-quality-gate.md` -- stage-marker syntax in that doc either no longer matches the hook's blocking pattern, or the hook regex is tightened to avoid matching pattern occurrences inside heredocs and `gh issue create` bodies
   3. `session-log-init.sh` sentinel uses a UUID token file (e.g. via `uuidgen` or `/proc/sys/kernel/random/uuid`) rather than a locale-sensitive `lstart` string comparison -- TOCTOU race eliminated
   4. `silver-release` tags the GitHub Release only after `gsd-complete-milestone` completes; `silver-create-release` commits CHANGELOG.md and README badge before creating the tag -- no post-release patch required to fix version artifacts
-**Plans**: TBD
+**Plans:** Hotfix-style execution (direct commits). Evidence: 1339-test suite (18/18 hooks) + 4-stage pre-release quality gate.
+- [x] Phase 55 complete — BUG-01, BUG-02, BUG-05, REL-01 satisfied (2026-04-25)
 
 ### Phase 56: Skill Bug Fixes & Quality
 **Goal**: Four skill-level correctness and quality issues are resolved -- OAuth scope check is precise, sed is portable, session log discovery is standardized, and silver-rem INDEX.md mutations are explicit
@@ -428,7 +429,8 @@ Plans:
   2. `silver-remove` sed inline-edit command is replaced with a portable tmpfile+mv pattern; the replacement works on both macOS (`sed -i ''`) and Linux/CI (`sed -i`) without error
   3. Session log discovery uses `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1` in `silver-add`, `silver-rem`, and `silver-release` -- the fragile `ls | sort | tail -1` pattern is gone from all three skill files
   4. `silver-rem` INDEX.md mutation steps include concrete `awk` or `sed` commands for both table-row insertion and pointer-line replacement -- no prose-only instructions remain that could be interpreted ambiguously
-**Plans**: TBD
+**Plans:** Hotfix-style execution (direct commits). Evidence: 1339-test suite + 4-stage pre-release quality gate.
+- [x] Phase 56 complete — BUG-03, BUG-04, QUAL-01, QUAL-02 satisfied (2026-04-25)
 
 ### Phase 57: CI Hardening
 **Goal**: GitHub Actions CI actively verifies two critical sync invariants on every PR and push to main -- workflow file parity and config skill consistency
@@ -438,7 +440,8 @@ Plans:
   1. A CI step runs `diff -r docs/workflows/ templates/workflows/` (or equivalent) on every PR and push to main; the build fails with a clear diff output when the two directories diverge
   2. A CI step reads `required_deploy` from `templates/silver-bullet.config.json.default` and asserts every entry is also present in `all_tracked`; the build fails if any `required_deploy` skill is absent from `all_tracked`
   3. A CI step compares `.silver-bullet.json` skill lists against `templates/silver-bullet.config.json.default`; the build fails if the two files diverge on any skill list key -- preventing silent schema drift
-**Plans**: TBD
+**Plans:** Hotfix-style execution (direct commits). Evidence: CI workflow added + jq assertion output verified.
+- [x] Phase 57 complete — CI-01, CI-02 satisfied (2026-04-25)
 
 ### Phase 58: silver-scan Quality
 **Goal**: silver-scan correctly excludes already-filed items when using local issue tracking and clearly explains its two-pass counter structure to users
@@ -448,7 +451,8 @@ Plans:
   1. When `issue_tracker != 'github'`, silver-scan Step 4 greps `docs/issues/ISSUES.md` and `docs/issues/BACKLOG.md` for each candidate item before presenting it -- items already present in either file are excluded from re-presentation to the user
   2. The silver-scan summary block displayed after each run shows two labeled counts: deferred-item candidates found/filed (`CANDIDATE_COUNT`) and knowledge/lessons entries found/recorded (`KL_FOUND`) -- users can immediately understand which counter refers to which pass
   3. `silver-scan` SKILL.md contains an inline comment or note explaining the two-pass structure (deferred items pass first, knowledge/lessons pass second) so future maintainers do not conflate the two counters
-**Plans**: TBD
+**Plans:** Hotfix-style execution (direct commits). Evidence: 1339-test suite + 4-stage pre-release quality gate.
+- [x] Phase 58 complete — QUAL-03, QUAL-04 satisfied (2026-04-25)
 
 ## Progress
 
@@ -484,7 +488,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 52. silver-forensics Audit | v0.25.0 | 2/2 | Complete    | 2026-04-24 |
 | 53. silver-update Overhaul | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
 | 54. silver-scan | v0.25.0 | 1/1 | Complete    | 2026-04-24 |
-| 55. Hook & Script Bug Fixes | v0.26.0 | 0/TBD | Not started | - |
-| 56. Skill Bug Fixes & Quality | v0.26.0 | 0/TBD | Not started | - |
-| 57. CI Hardening | v0.26.0 | 0/TBD | Not started | - |
-| 58. silver-scan Quality | v0.26.0 | 0/TBD | Not started | - |
+| 55. Hook & Script Bug Fixes | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
+| 56. Skill Bug Fixes & Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
+| 57. CI Hardening | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
+| 58. silver-scan Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
