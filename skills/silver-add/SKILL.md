@@ -104,7 +104,7 @@ Execute only when `TRACKER` = `"github"`.
 
 Run:
 ```bash
-gh auth status 2>&1 | grep -qE '(Token scopes|Scopes):.*\bproject\b'
+gh auth status 2>&1 | grep -qiE '(Token scopes|Scopes):.*\bproject\b'
 ```
 
 If the `project` scope is absent from the scopes line, output:
