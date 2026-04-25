@@ -1,18 +1,18 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.21.0
-milestone_name: Hook Quality & Docs
-current_plan: 062-02 complete
-status: Plan 02 executed; 4 fixes applied to 3 HTML files
-stopped_at: Phase 62 Plan 02 complete (DOC-03) — help site HTML audit; 4 fixes applied to getting-started, reference, silver-ui pages
-last_updated: "2026-04-25T20:55:09.765Z"
+milestone: v0.27.0
+milestone_name: Chores, Docs, CI Hardening & Stop Hook Audit
+current_plan: none
+status: in_progress
+stopped_at: ""
+last_updated: "2026-04-26T00:00:00.000Z"
 last_activity: 2026-04-26
 progress:
-  total_phases: 49
-  completed_phases: 21
-  total_plans: 43
-  completed_plans: 39
-  percent: 91
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -20,7 +20,7 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.26.0 (v0.27.0 in progress)
 **Active phase:** Phase 62: Documentation Refresh
-**Current plan:** 062-02 complete
+**Current plan:** (none)
 
 Last activity: 2026-04-26
 
@@ -29,14 +29,14 @@ Last activity: 2026-04-26
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** Phase 62 Plan 02 (DOC-03) complete; 062-01 and 062-03 remain
+**Current focus:** Phase 62 plans executed (DOC-01–03); next: code review + verify Phase 62, then plan/execute Phase 63 (HK-01) and Phase 64 (VFY-01, BUG-06, INIT-01, FLOW-01)
 
 ## Current Position
 
 Phase: 62 — Documentation Refresh
-Plan: 062-02 complete (DOC-03 — help site HTML audit and fix)
-Status: Plan 02 executed; 4 fixes applied to 3 HTML files
-Last activity: 2026-04-26 -- Phase 62 Plan 02 executed (DOC-03 resolved, install command fixed, stale version refs removed, Step 16 nav anchor added)
+Plan: (both plans executed — awaiting code review and verification)
+Status: Phase 62 plans complete; code review and verification pending
+Last activity: 2026-04-26 -- Phase 62 Plans 01+02 executed (DOC-01: sb-without-gsd.md, DOC-02: sb-vs-gsd.md, DOC-03: help site HTML audit, 4 fixes applied)
 
 Progress: [███░░░░░░░] 50% (3/6 phases)
 
@@ -51,7 +51,7 @@ Progress: [███░░░░░░░] 50% (3/6 phases)
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 061 | 01 | 12min | 5 | 3 |
-| 062 | 02 | 18min | 2 | 3 |
+| 062 | 01+02 | 20min | 4 | 5 |
 
 *Updated after each plan completion*
 
@@ -72,6 +72,7 @@ Progress: [███░░░░░░░] 50% (3/6 phases)
 - v0.27.0 execution model: standard GSD plan-phase per phase; Phase 63 (Stop Hook Audit) is the only design-heavy phase
 - SKL-03 no-op: PATH N / PATH-N patterns already converted to FLOW throughout; no changes needed
 - silver-rem size-cap overflow block condensed to prose + single wc -l example (eliminates duplicate heredoc templates)
+- Premature v0.27.0 release deleted; executor went out of scope — Phase 62 plans reverted release commit
 
 ### Pending Todos
 
@@ -83,5 +84,5 @@ Progress: [███░░░░░░░] 50% (3/6 phases)
 
 ## Session Continuity
 
-Last session: 2026-04-25T20:55:09.756Z
-Stopped at: Phase 62 Plan 02 complete (DOC-03) — help site HTML audit; 4 fixes applied to getting-started, reference, silver-ui pages
+Last session: 2026-04-26
+Stopped at: Phase 62 plans 01+02 executed; need code review + verification before advancing to Phase 63
