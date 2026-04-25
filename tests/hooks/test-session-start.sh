@@ -331,9 +331,9 @@ fi
 assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
 assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
 # Both branch-file-absent and same-branch paths strip gsd-* markers only (CHR-03:
-# quality-gate-stage-* pattern removed as dead code — never written to state).
+# removed /^quality-gate-stage-/d — no enforcement hook checks these markers).
 assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_contains "branch file absent -> quality-gate-stage-* preserved (dead markers, not stripped)" "$TMPSTATE" "quality-gate-stage-1"
+assert_file_contains "branch file absent -> quality-gate-stage-* preserved (not stripped)" "$TMPSTATE" "quality-gate-stage-1"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
