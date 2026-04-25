@@ -478,6 +478,18 @@ Plans:
 - [x] 059-01-PLAN.md -- CHR-01: sentinel-lock orphan cleanup; CHR-02: case-insensitive scope grep; CHR-03: dead sed removal; CHR-04: trailing-newline strip (complete)
 - [x] Phase 59 complete — CHR-01, CHR-02, CHR-03, CHR-04 satisfied (2026-04-25)
 
+### Phase 60: Test Coverage
+**Goal**: Two missing test coverage items are added: Test 8 in test-session-log-init.sh asserts the sentinel-lock-uuid file is created, and test-dev-cycle-check.sh gains two tests exercising the quote-literal exemption edge cases.
+**Depends on**: Phase 59
+**Requirements**: TST-01, TST-02
+**Success Criteria** (what must be TRUE):
+  1. Test 8 in test-session-log-init.sh asserts `-f "${SB_TEST_DIR}/sentinel-lock-${_sentinel_uuid}"` exists after autonomous sentinel launch
+  2. test-dev-cycle-check.sh Test 17g asserts echo with quoted state path is NOT blocked (exemption fires)
+  3. test-dev-cycle-check.sh Test 17h asserts tee with quoted state path IS blocked (exemption abuse caught)
+**Plans:** 1 plan
+Plans:
+- [ ] 060-01-PLAN.md -- TST-01: sentinel-lock-uuid assertion in Test 8; TST-02: quote-literal exemption edge-case tests
+
 
 ## Progress
 
