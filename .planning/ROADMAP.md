@@ -506,10 +506,23 @@ Plans:
 - [x] Phase 62 complete — DOC-01, DOC-02, DOC-03 satisfied; WR-01–WR-06 + IN-01–IN-04 code review fixes applied (2026-04-26)
 
 
+### Phase 63: Stop Hook Audit
+**Goal**: All known Stop hook false-positive scenarios are enumerated with reproduction steps; each confirmed false-positive is either fixed in code or documented with a rationale for deferral; the audit is linked from silver-bullet.md §1 Automated Enforcement section.
+**Depends on**: Phase 62
+**Requirements**: HK-01
+**Success Criteria** (what must be TRUE):
+  1. `docs/internal/stop-hook-audit.md` exists with >= 7 scenario entries, each containing name, trigger condition, reproduction steps, severity, and disposition
+  2. Each confirmed false-positive is either fixed in `hooks/stop-check.sh` (with a test) or documented with a rationale for deferral
+  3. silver-bullet.md §1 Automated Enforcement section contains a reference link to `docs/internal/stop-hook-audit.md`
+**Plans:** 1 plan
+Plans:
+- [ ] 063-01-PLAN.md -- HK-01: enumerate false-positive scenarios, fix confirmed ones, document deferred, link from §1
+
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62 -> 63
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -548,3 +561,4 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 60. Test Coverage | v0.27.0 | 1/1 | Complete    | 2026-04-25 |
 | 61. Skill Quality & Rename | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
+| 63. Stop Hook Audit | v0.27.0 | 0/1 | In Progress | — |
