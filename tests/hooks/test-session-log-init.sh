@@ -240,9 +240,19 @@ if [[ -f "${SB_TEST_DIR}/sentinel-pid" ]]; then
   PASS=$((PASS + 1))
   _sentinel_contents=$(cat "${SB_TEST_DIR}/sentinel-pid" 2>/dev/null || true)
   _sentinel_pid="${_sentinel_contents%%:*}"
+  _sentinel_uuid="${_sentinel_contents#*:}"
+  # TST-01: assert sentinel-lock-<uuid> file is also created
+  if [[ -n "$_sentinel_uuid" && "$_sentinel_uuid" != "$_sentinel_pid" && -f "${SB_TEST_DIR}/sentinel-lock-${_sentinel_uuid}" ]]; then
+    echo "  ✅ autonomous mode creates sentinel-lock-<uuid> file"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ expected sentinel-lock-<uuid> file not found (uuid=${_sentinel_uuid})"
+    FAIL=$((FAIL + 1))
+  fi
   [[ -n "$_sentinel_pid" ]] && kill "$_sentinel_pid" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/sentinel-pid" "${SB_TEST_DIR}/timeout" \
-        "${SB_TEST_DIR}/session-start-time" "${SB_TEST_DIR}/timeout-warn-count"
+        "${SB_TEST_DIR}/session-start-time" "${SB_TEST_DIR}/timeout-warn-count" \
+        "${SB_TEST_DIR}/sentinel-lock-"*
 else
   echo "  ❌ expected sentinel PID file, not found"
   FAIL=$((FAIL + 1))

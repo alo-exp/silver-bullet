@@ -326,6 +326,18 @@ out=$(run_hook_bash "PreToolUse" "gh issue create --title 'test' --body 'writes 
 assert_passes "tamper: gh issue create with state path in body is NOT blocked (QA-05)" "$out"
 teardown
 
+# Test 17g: state path inside a quoted non-redirect argument is NOT blocked (quote-literal exemption)
+setup
+out=$(run_hook_bash "PreToolUse" "echo \"path is ~/.claude/.silver-bullet/state\"")
+assert_passes "tamper: state path in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
+teardown
+
+# Test 17h: tee with quoted state path IS still blocked (exemption abuse — redirect target)
+setup
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"~/.claude/.silver-bullet/state\"")
+assert_blocks "tamper: tee with quoted state path is still blocked (exemption abuse)" "$out"
+teardown
+
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
 # Use expanded $HOME path so the plugin_cache grep actually fires in the hook
 PLUGIN_CACHE_PATH="${HOME}/.claude/plugins/cache"
