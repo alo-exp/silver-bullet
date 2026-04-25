@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.27.0] — 2026-04-26
+
+### Documentation
+
+- `docs(062-01): create sb-without-gsd.md and sb-vs-gsd.md (DOC-01, DOC-02)` (591f643): new guides for SB-only install path and GSD vs SB comparison
+- `docs(062-02): fix install command and stale version refs in getting-started and reference pages` (a5857e4): correct /plugin install command, remove stale v0.14–v0.22 and v0.19+ qualifiers
+- `docs(062-02): add Step 16 sidebar link and anchor id in silver-ui.html` (7684671): milestone completion step now navigable from sidebar
+
+### Bug Fixes
+
+- `fix: correct marketplace source format and enrich plugin metadata` (7aa72a1): marketplace install source corrected to alo-labs/silver-bullet format
+- `fix(061): apply code review WR-01 and WR-02 findings` (e7319c4): skill quality gate review findings resolved
+- `fix(060): resolve WR-02 and IN-01 from code review` (ee7da5b): test coverage code review fixes
+- `fix(059): resolve WR-01 — accurate quality-gate-stage documentation` (48495f3): quality gate docs corrected
+- `fix(059): apply CHR-01–04 code-review chore fixes` (d2cbd65): four code-review chores resolved
+- `fix(stop-check): skip enforcement when state is from a different branch` (4624e6d): cross-branch state false-positives eliminated
+
+### Tests
+
+- `test(060): add TST-01 and TST-02 test coverage` (a947bba): new test coverage for TST-01, TST-02
+
+### Chores
+
+- `chore(skills): trim silver-add/silver-rem to <300 lines; fix §10a→9a subsection labels` (24ef1e5): skill size compliance and label fixes
+
+---
+
 ## [0.26.0] — 2026-04-25
 
 ### Bug Fixes
