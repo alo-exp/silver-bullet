@@ -85,7 +85,7 @@ This table shows exactly where Silver Bullet hands off to GSD inside each compos
 
 ## What SB Covers That GSD Does Not
 
-- **11-layer hook enforcement** — hooks fire on every Claude Code tool use; GSD has no equivalent enforcement layer
+- **18-hook enforcement layer** — hooks fire on every Claude Code tool use; GSD has no equivalent enforcement layer
 - **Pre-code-edit quality gate** — `dev-cycle-check.sh` issues a HARD STOP if planning quality gates are incomplete before any source file is touched
 - **Post-session skill checklist** — `stop-check.sh` blocks task-complete if required skills are missing, and survives context compaction
 - **Prompt re-injection** — `prompt-reminder.sh` re-injects the missing-skill list before every user message, preventing drift in long sessions

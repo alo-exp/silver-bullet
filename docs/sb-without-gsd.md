@@ -38,7 +38,7 @@ or standalone skills described below.
 
 ### Enforcement Hooks (all active)
 
-All 19 hook scripts fire on their configured Claude Code events regardless of whether GSD is
+All 18 hook scripts fire on their configured Claude Code events regardless of whether GSD is
 installed. These are the Silver Bullet enforcement layer.
 
 | Hook | Event | What it enforces |
@@ -46,7 +46,7 @@ installed. These are the Silver Bullet enforcement layer.
 | `session-start` | SessionStart | Injects Superpowers + Design context; injects `core-rules.md` at session open; resets branch-scoped state |
 | `spec-session-record.sh` | SessionStart | Records spec version at session open for UAT gate staleness detection |
 | `record-skill.sh` | PostToolUse/Skill | Records every skill invocation to the state file; powers compliance display |
-| `dev-cycle-check.sh` | PreToolUse/Bash, Edit, Write | HARD STOP if planning quality gates are incomplete before source code edits |
+| `dev-cycle-check.sh` | PreToolUse + PostToolUse / Edit, Write, Bash | HARD STOP if planning quality gates are incomplete before source code edits |
 | `compliance-status.sh` | PostToolUse/\* | Displays workflow progress score on every tool use (informational) |
 | `completion-audit.sh` | PreToolUse/Bash + PostToolUse/Bash | Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete |
 | `ci-status-check.sh` | PreToolUse/Bash + PostToolUse/Bash | Blocks `git push`, `gh pr create`, and `gh release create` when CI is failing; warns on `git commit` |
@@ -57,11 +57,10 @@ installed. These are the Silver Bullet enforcement layer.
 | `phase-archive.sh` | PreToolUse/Bash | Archives GSD planning artifacts when a git commit includes a phase SUMMARY |
 | `semantic-compress.sh` | PostToolUse/Skill | TF-IDF context compression after skill invocations to manage context window |
 | `session-log-init.sh` | PostToolUse/Bash | Creates a session log file on the first Bash use |
-| `timeout-check.sh` | PostToolUse/Bash | Monitors for stall conditions and fires an anti-stall warning |
+| `timeout-check.sh` | PostToolUse/* | Monitors for stall conditions and fires an anti-stall warning |
 | `pr-traceability.sh` | PostToolUse/Bash | Appends spec reference, requirement IDs, and deferred items to PR descriptions |
 | `spec-floor-check.sh` | PreToolUse/Bash | Verifies SPEC.md is present and at minimum version before spec-gated operations |
 | `uat-gate.sh` | PreToolUse/Skill | Blocks `gsd-complete-milestone` if UAT.md is missing, contains failures, or was run against a stale spec |
-| `ensure-model-routing.sh` | PostToolUse/Bash | Verifies `.planning/config.json` has `model_profile` set for GSD subagent routing |
 
 ### Standalone Skills (all active without GSD)
 
@@ -97,8 +96,8 @@ installed, they stall immediately at the first `gsd-*` invocation.
 | `/silver:bugfix` | `gsd-debug`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship` | Parallel debug dispatch, execution, verification, and shipping all fail |
 | `/silver:ui` | `gsd-ui-phase`, `gsd-ui-review`, `gsd-execute-phase`, `gsd-verify-work` | UI design capture, visual review, execution, and verification all fail |
 | `/silver:devops` | `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship` | Execution, verification, and shipping all fail |
-| `/silver:research` | `gsd-brainstorm`, `gsd-intel`, `gsd-plan-phase` | Research dispatch, intelligence gathering, and planning all fail |
-| `/silver:release` | `gsd-ship`, `gsd-complete-milestone`, `gsd-audit-milestone` | Phase shipping, milestone completion, and audit all fail |
+| `/silver:research` | `gsd-explore` (via `silver:explore`); receiving workflow (`silver:feature` / `silver:devops`) also requires GSD | Fuzzy clarification and the receiving implementation workflow fail; MultAI research and brainstorm steps still run |
+| `/silver:release` | `gsd-ship`, `gsd-complete-milestone`, `gsd-audit-milestone`, `gsd-audit-uat` | Phase shipping, UAT gate, milestone completion, and audit all fail |
 | `/silver:fast` | `gsd-fast` | The quick-task execution mode is unavailable |
 
 ### GSD Skills (not available)
