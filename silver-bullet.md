@@ -311,7 +311,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
-- `silver:security` is always mandatory — cannot be skipped via §10
+- `silver:security` is always mandatory — cannot be skipped via §9
 - `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
 - TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
 - `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
@@ -324,7 +324,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §10 if user chooses A permanently — **before committing, display the exact text being written to §10 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
 Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
@@ -406,8 +406,8 @@ You MUST NOT:
 - Claim work is complete without running `/gsd:verify-work`
 - Accept a completion claim from any plugin or skill (GSD, Superpowers, etc.) without invoking `/verification-before-completion` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
-- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §10 preferences — these gates are permanent
-- Write runtime preference updates to §10 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §9 preferences — these gates are permanent
+- Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute a GSD phase (plan, execute, verify) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next GSD phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 - Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST dispatch it as a subagent via the Agent tool so it runs in a fresh, independent context window. If subagent dispatch is not possible, ask the user to run `/compact` before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.

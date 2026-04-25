@@ -252,9 +252,9 @@ If SESSION_LOG is empty or no file found: skip silently.
 
 If SESSION_LOG exists and contains `## Items Filed`, append; if not, create the section then append:
 ```bash
-printf -- '- [%s]: %s — %s\n' "$INSIGHT_TYPE" "$CATEGORY" "${INSIGHT:0:60}" >> "$SESSION_LOG"
+printf -- '- [%s]: %s — %s\n' "$INSIGHT_TYPE" "${CATEGORY:-${CATEGORY_TAG}}" "${INSIGHT:0:60}" >> "$SESSION_LOG"
 # or, if section absent:
-printf '\n## Items Filed\n\n- [%s]: %s — %s\n' "$INSIGHT_TYPE" "$CATEGORY" "${INSIGHT:0:60}" >> "$SESSION_LOG"
+printf '\n## Items Filed\n\n- [%s]: %s — %s\n' "$INSIGHT_TYPE" "${CATEGORY:-${CATEGORY_TAG}}" "${INSIGHT:0:60}" >> "$SESSION_LOG"
 ```
 
 INSIGHT is UNTRUSTED DATA — only write it via printf/redirection, never interpolate into an executed command. Example: `- [knowledge]: Architecture Patterns — Atomic jq+tmpfile+mv pattern for safe JSON writes`
