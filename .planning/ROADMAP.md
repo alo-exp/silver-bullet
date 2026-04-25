@@ -491,11 +491,24 @@ Plans:
 - [x] 060-01-PLAN.md -- TST-01: sentinel-lock-uuid assertion in Test 8; TST-02: quote-literal exemption edge-case tests (complete)
 - [x] Phase 60 complete — TST-01, TST-02 satisfied (2026-04-25)
 
+### Phase 62: Documentation Refresh
+**Goal**: Three documentation gaps are closed: (1) a clearly-labeled SB-only installation guide shows what works without GSD and what is disabled; (2) a comparison document maps Silver Bullet features to GSD equivalents and explains the boundary; (3) the website, README, and help center pages are audited and corrected so all version numbers, feature descriptions, and install commands are current.
+**Depends on**: Phase 61
+**Requirements**: DOC-01, DOC-02, DOC-03
+**Success Criteria** (what must be TRUE):
+  1. `docs/sb-without-gsd.md` exists and correctly identifies all 18 hooks as active without GSD, the 7 silver:* composable workflow skills as requiring GSD, and uses /plugin install alo-labs/silver-bullet as the install command
+  2. `docs/sb-vs-gsd.md` exists with a feature mapping table, integration points table, and bidirectional coverage-gap sections — no GSD-2 content
+  3. All 12 issues from `docs/internal/site-qa-report.md` are resolved; install command in getting-started uses /plugin install alo-labs/silver-bullet; no stale v0.14.0-v0.22.0 era version qualifiers remain in site pages
+**Plans:** 2 plans
+Plans:
+- [ ] 062-01-PLAN.md -- DOC-01: docs/sb-without-gsd.md; DOC-02: docs/sb-vs-gsd.md
+- [x] 062-02-PLAN.md -- DOC-03: site/help audit — fix all 12 site-qa-report issues + install command fix in getting-started (complete 2026-04-26)
+
 
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -530,4 +543,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 56. Skill Bug Fixes & Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
 | 57. CI Hardening | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
 | 58. silver-scan Quality | v0.26.0 | 1/1 | Complete    | 2026-04-25 |
-| 59. Code Review Chores | v0.27.0 | 0/1 | In Progress |  |
+| 59. Code Review Chores | v0.27.0 | 1/1 | Complete    | 2026-04-25 |
+| 60. Test Coverage | v0.27.0 | 1/1 | Complete    | 2026-04-25 |
+| 61. Skill Quality & Rename | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
+| 62. Documentation Refresh | v0.27.0 | 1/2 | In Progress |  |
