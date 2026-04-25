@@ -66,6 +66,18 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
+## Current Milestone: v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit
+
+**Goal:** Close 18 GitHub issues — follow-up chores from v0.26.0 code review, test coverage gaps, skill trimming, paths→flows rename, documentation refresh, and the high-priority Stop hook false-positive audit.
+
+**Target features:**
+- Code review chores: sentinel-lock cleanup, gh auth -i, dead sed removal, CHANGELOG trailing newline (#78–#81)
+- Test coverage: sentinel-lock-uuid assertion, quote-literal exemption edge cases (#76–#77)
+- Skill quality: trim silver-add/silver-rem SKILL.md, paths→flows rename, §9/§10 numbering fix (#59, #61, #62, #83)
+- Docs refresh: SB-only install path, GSD vs SB comparison doc, full content audit (#70, #73, #74)
+- Stop hook audit: enumerate + fix/document all false-positive scenarios (#71)
+- Verification & init: verification-before-completion design, permissions re-prompting investigation, CLAUDE.md conflict resolution, FLOW parallelism design (#64, #69, #72, #75)
+
 ## Completed Milestone: v0.26.0 Bug Fixes, CI Hardening & Skill Quality (shipped 2026-04-25)
 
 **Goal:** Close 12 actionable GitHub issues — bug fixes in hooks and skills, CI parity/correctness checks, skill quality improvements, and security hardening (SENTINEL v2.3).
@@ -128,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-25 — v0.26.0 milestone complete and shipped*
+*Last updated: 2026-04-25 — v0.27.0 milestone started; 18 requirements defined across 6 phases (59–64)*

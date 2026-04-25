@@ -1,25 +1,25 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.26.0
-milestone_name: Bug Fixes, CI Hardening & Skill Quality
+milestone: v0.27.0
+milestone_name: Chores, Docs, CI Hardening & Stop Hook Audit
 current_plan: none
-status: milestone_complete
+status: requirements_defined
 stopped_at: ""
 last_updated: "2026-04-25T00:00:00.000Z"
 last_activity: 2026-04-25
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.26.0
-**Active phase:** (none — milestone complete)
+**Current version:** v0.26.0 (v0.27.0 in progress)
+**Active phase:** (none — defining roadmap)
 **Current plan:** (none)
 
 Last activity: 2026-04-25
@@ -29,42 +29,28 @@ Last activity: 2026-04-25
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** v0.26.0 complete — 12/12 requirements satisfied; pending: silver:create-release (tag + GitHub Release)
+**Current focus:** v0.27.0 requirements defined — 18 requirements across 6 phases (59–64); next: plan Phase 59
 
 ## Current Position
 
-Phase: (none — all 4 phases complete)
+Phase: (none — milestone just initialized)
 Plan: (none)
-Status: Milestone complete — 4/4 phases done, 12/12 requirements satisfied, archival in progress
-Last activity: 2026-04-25 -- v0.26.0 all phases complete; gsd-complete-milestone archival underway
+Status: Requirements defined — 18 requirements, 6 phases, roadmap being created
+Last activity: 2026-04-25 -- v0.27.0 milestone initialized; REQUIREMENTS.md written; roadmap in progress
 
-Progress: [██████████] 100% (4/4 phases)
+Progress: [░░░░░░░░░░] 0% (0/6 phases)
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (v0.26.0 reference):**
 
-- Total plans completed: 14
-- Average duration: 3.4 min
-- Total execution time: ~48 min
+- Total plans completed: 4 hotfix phases
+- Average duration: ~2.5 min
+- Total execution time: ~10 min
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
-| 049-silver-add | 049-01 | 3 min | 2 | 3 |
-| 050-silver-remove-silver-rem | 050-01 | 2 min | 2 | 3 |
-| 050-silver-remove-silver-rem | 050-02 | 2 min | 2 | 3 |
-| 051-auto-capture-enforcement | 051-01 | 2 min | 2 | 2 |
-| 051-auto-capture-enforcement | 051-02 | 8 min | 5 | 5 |
-| 051-auto-capture-enforcement | 051-03 | 5 min | 2 | 2 |
-| 051-auto-capture-enforcement | 051-04 | 3 min | 1 | 1 |
-| 052-silver-forensics-audit | 052-01 | 4 min | 1 | 1 |
-| 052-silver-forensics-audit | 052-02 | 5 min | 2 | 2 |
-| 053-silver-update-overhaul | 053-01 | 2 min | 2 | 1 |
-| 054-silver-scan | 054-01 | 3 min | 2 | 3 |
-| 055-hook-script-bug-fixes | hotfix | ~3 min | 3 | 6 |
-| 056-skill-bug-fixes-quality | hotfix | ~3 min | 4 | 4 |
-| 057-ci-hardening | hotfix | ~2 min | 2 | 1 |
-| 058-silver-scan-quality | hotfix | ~2 min | 2 | 1 |
+| (none yet) | | | | |
 
 *Updated after each plan completion*
 
@@ -75,16 +61,14 @@ Progress: [██████████] 100% (4/4 phases)
 - v0.22.0 shipped as tag v0.22.0 (commit a3c2505); ROADMAP/STATE reconciled 2026-04-20
 - v0.23.8 scope: CI Node.js 20 fix + GitHub issues #28, #29, #30, #31 (all resolved)
 - v0.24.0 shipped as v0.24.1 (patch bump); all 23 requirements completed
-- FEAT-01 (PM system in /silver:init) completed in v0.24.0 — `issue_tracker` field now in .silver-bullet.json; v0.25.0 builds on this
+- FEAT-01 (PM system in /silver:init) completed in v0.24.0
 - GSD is sole execution engine; WORKFLOW.md tracks composition, STATE.md tracks GSD execution
-- v0.25.0 scope: closed-loop deferred-item capture (silver-add, silver-remove, silver-rem, auto-enforcement for issues+knowledge+lessons, post-release summary) + forensics audit + silver-scan (scans for issues/backlog AND knowledge/lessons items)
-- v0.26.0 scope: 12 requirements (11 pending + REL-01 pre-completed in commit 94835ee); 4 phases (55-58)
-- v0.26.0 execution model: hotfix-style direct commits; test evidence via 1339-test suite (18/18 hooks) + 4-stage pre-release quality gate (2 consecutive clean rounds)
-- v0.26.0 SENTINEL v2.3: Rounds 1-3 run; Rounds 2+3 CLEAR; 3 High findings (H-1/H-2/H-3) fixed in commit e7fe6a0
-- REL-01: silver-release reordered — silver-create-release runs AFTER gsd-complete-milestone to ensure tag lands after archival commits
+- v0.25.0 scope: closed-loop deferred-item capture + forensics audit + silver-scan
+- v0.26.0 execution model: hotfix-style direct commits; test evidence via 1339-test suite + 4-stage quality gate
+- REL-01: silver-release reordered — silver-create-release runs AFTER gsd-complete-milestone
 - UUID token TOCTOU fix (BUG-05): platform-independent; eliminates locale-sensitive lstart comparison
-- POSIX tmpfile+mv (BUG-04): works on macOS (BSD sed) and Linux (GNU sed) identically
-- CI jq assertions (CI-02): automation catches skill list drift on every PR; manual review missed it for 3+ releases
+- v0.27.0 scope: 18 requirements (follow-up chores, test coverage, skill quality, paths→flows rename, docs, stop hook audit, verification/init design)
+- v0.27.0 execution model: standard GSD plan-phase per phase; Phase 63 (Stop Hook Audit) is the only design-heavy phase
 
 ### Pending Todos
 
@@ -97,4 +81,4 @@ Progress: [██████████] 100% (4/4 phases)
 ## Session Continuity
 
 Last session: 2026-04-25
-Stopped at: v0.26.0 milestone complete — gsd-complete-milestone archival done; next: silver:create-release (CHANGELOG + README badge + git tag v0.26.0 + GitHub Release)
+Stopped at: v0.27.0 milestone initialized — REQUIREMENTS.md written, PROJECT.md/STATE.md updated, ROADMAP.md in progress; next: /gsd-plan-phase 59
