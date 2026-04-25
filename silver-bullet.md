@@ -80,7 +80,8 @@ Eleven enforcement layers enforce compliance:
 7. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_deploy skills are missing
 8. **UserPromptSubmit reminder** (UserPromptSubmit) — Re-injects missing skills list before every user message
 9. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
-10. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
+10. **ROADMAP freshness gate** (PreToolUse/Bash) — `roadmap-freshness.sh` blocks `git commit` if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked; prevents milestone state from diverging from execution reality
+11. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
     explicit rules against skipping, combining, or implicitly covering steps
 
 **Enforcement model**: Hooks are **invocation-based**, not outcome-based.
