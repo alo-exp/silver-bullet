@@ -31,7 +31,7 @@ Shell execution during this skill is limited to:
 - `grep -oE`, `sort -n`, `tail -1`
 - `mkdir -p docs/issues/`
 - `mktemp`, `mv` (for atomic config write)
-- `ls docs/sessions/*.md | sort | tail -1` (for session log discovery)
+- `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1` (for session log discovery)
 
 Do not execute other shell commands. Note requirements in output for human execution.
 
@@ -104,10 +104,10 @@ Execute only when `TRACKER` = `"github"`.
 
 Run:
 ```bash
-gh auth status 2>&1 | grep -q "project"
+gh auth status 2>&1 | grep -qE '(Token scopes|Scopes):.*\bproject\b'
 ```
 
-If the string "project" is absent from the output, output:
+If the `project` scope is absent from the scopes line, output:
 
 > "GitHub project board access requires the 'project' OAuth scope. Run: `gh auth refresh -s project` — then retry /silver-add."
 
@@ -320,7 +320,7 @@ Where `YYYY-MM-DD` is today's date and `FULL_DESCRIPTION` is the complete user-s
 
 Locate the current session log:
 ```bash
-SESSION_LOG=$(ls docs/sessions/*.md 2>/dev/null | sort | tail -1)
+SESSION_LOG=$(find docs/sessions -maxdepth 1 -name '*.md' -print 2>/dev/null | sort | tail -1)
 ```
 
 If `SESSION_LOG` is empty (no session log found): skip this step silently with no error output.

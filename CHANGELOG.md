@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.26.0] — 2026-04-25
+
+### Bug Fixes
+
+- `fix(phase-55): BUG-01/02/05 — hook & script bug fixes` (6587b62): T2-1 test fix, dev-cycle-check regex tightened, session-log-init TOCTOU fixed with UUID token
+- `fix(phase-56): BUG-03/04 + QUAL-01/02 — skill bug fixes & quality` (001d00b): silver-add precise OAuth scope regex, silver-remove POSIX tmpfile+mv, session log discovery standardized, silver-rem INDEX.md mutations explicit
+- `fix(silver-release): move tag creation after gsd-complete-milestone to eliminate post-release patches` (94835ee)
+- `fix(silver-create-release): replace awk -v multiline with head/printf/tail for CHANGELOG` (1cb992b)
+- `fix(dev-cycle-check): tighten quote-exemption to block quoted redirect targets` (ecc5f16)
+- `fix(dev-cycle-check): add veto to prevent mixed-quote-style bypass` (26e96db)
+- `fix(session-log-init): write lock file and sentinel-pid before disown` (869e987)
+- `fix(review-r2): sentinel-lock cleanup + tee process-sub bypass gap` (f573b82)
+
+### CI Hardening
+
+- `feat(phase-57): CI-01/02 — CI hardening` (38bab1d): diff step enforces docs/workflows/ vs templates/workflows/ parity; jq assertions for required_deploy/all_tracked correctness
+
+### Skill Quality
+
+- `feat(phase-58): QUAL-03/04 — silver-scan quality improvements` (2d32132): local-tracker cross-reference in Step 4-iv; two-pass counter explanation in summary block
+
+### Security
+
+- `fix(security): add content injection guards to 3 hooks (SENTINEL H-1/H-2/H-3)` (e7fe6a0): allowlist regex + jq encoding in spec-session-record.sh, uat-gate.sh, roadmap-freshness.sh — SENTINEL v2.3 CLEAR
+
+### Documentation & Chores
+
+- `docs: accuracy fixes for v0.26.0 release` (7a57517): enforce 11-layer count, fix Node.js → Bash, update version badges
+- `docs(consistency): fix enforcement layer count to 11 across all docs` (6c61778)
+- `docs(site): update skill count, layer count, and version across site` (24b13b6)
+- `chore: archive v0.26.0 milestone` (2084661)
+
+---
+
 ## [0.25.1] — 2026-04-25
 
 **Patch release.** Post-release CI fix and milestone archival.

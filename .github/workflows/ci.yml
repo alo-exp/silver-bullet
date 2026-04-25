@@ -138,6 +138,27 @@ jobs:
           all_count=$(jq '.skills.all_tracked | length' "$config")
           echo "required_deploy ($req_count) is a valid subset of all_tracked ($all_count)"
 
+      - name: Assert .silver-bullet.json skills match template default
+        run: |
+          # The repo's .silver-bullet.json is the dogfood config.
+          # Its skills arrays must stay in sync with templates/silver-bullet.config.json.default
+          # so that silver-update installs the correct required skill lists.
+          config=".silver-bullet.json"
+          template="templates/silver-bullet.config.json.default"
+          fail=0
+          for key in required_deploy all_tracked required_planning required_deploy_devops; do
+            live=$(jq -r --arg k "$key" '.skills[$k] // [] | sort | .[]' "$config")
+            tmpl=$(jq -r --arg k "$key" '.skills[$k] // [] | sort | .[]' "$template")
+            if [[ "$live" != "$tmpl" ]]; then
+              echo "ERROR: skills.$key differs between $config and $template"
+              echo "  $config:  $(jq -r --arg k "$key" '.skills[$k] // [] | join(", ")' "$config")"
+              echo "  $template: $(jq -r --arg k "$key" '.skills[$k] // [] | join(", ")' "$template")"
+              fail=1
+            fi
+          done
+          [[ "$fail" -eq 0 ]] && echo "skills arrays are in sync between $config and $template"
+          exit $fail
+
       - name: Assert DEFAULT_REQUIRED is subset of DEFAULT_TRACKED in hook scripts
         run: |
           # stop-check.sh DEFAULT_REQUIRED lists skills the stop hook enforces.

@@ -69,7 +69,7 @@ At the very start of any new session, perform these steps automatically:
 
 ## 1. Automated Enforcement
 
-Ten enforcement layers enforce compliance:
+Eleven enforcement layers enforce compliance:
 
 1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
@@ -80,7 +80,8 @@ Ten enforcement layers enforce compliance:
 7. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_deploy skills are missing
 8. **UserPromptSubmit reminder** (UserPromptSubmit) — Re-injects missing skills list before every user message
 9. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
-10. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
+10. **ROADMAP freshness gate** (PreToolUse/Bash) — `roadmap-freshness.sh` blocks `git commit` if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked; prevents milestone state from diverging from execution reality
+11. **Redundant instructions + anti-rationalization** — Workflow file + CLAUDE.md both enforce;
     explicit rules against skipping, combining, or implicitly covering steps
 
 **Enforcement model**: Hooks are **invocation-based**, not outcome-based.
@@ -425,7 +426,7 @@ GSD steps MUST be invoked as slash commands in the correct phase order.
 - Always use `/gsd:debug` for ANY bug encountered during execution
 - Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/gsd:debug` instead.
 - CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/gsd:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- `README.md` MUST be updated to reflect current version, features, and changes before release. `/silver-create-release` will block if README is stale.
+- `README.md` MUST be updated to reflect current version, features, and changes before release (docs generation in `/silver:release` Steps 3a/3b). The version badge is updated automatically by `/silver-create-release` Step 5b — do not update it manually.
 - Always strictly adhere to this file and CLAUDE.md 100%
 
 > **Anti-Skip:** You are violating this rule if:
@@ -454,7 +455,7 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 | Research | RESEARCH.md | /artifact-reviewer --reviewer review-research | YES | /gsd:plan-phase (researcher) |
 | Ingestion | INGESTION_MANIFEST.md | /artifact-reviewer --reviewer review-ingestion-manifest | YES | /silver:ingest Step 7 |
 | UAT generation | UAT.md | /artifact-reviewer --reviewer review-uat | YES | /silver:feature Step 17.0 |
-| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 7 |
+| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 6 |
 
 If ANY of these steps produces findings on the first pass, you MUST fix the findings and re-run the review. The step is complete ONLY after two consecutive clean passes.
 
@@ -775,22 +776,22 @@ Initially empty — all workflow defaults apply. Read at every relevant decision
 
 Last updated: (not yet set)
 
-### 10a. Routing Preferences
+### 9a. Routing Preferences
 | Work type | Override route | Since |
 |-----------|---------------|-------|
 
-### 10b. Step Skip Preferences
+### 9b. Step Skip Preferences
 | Workflow | Step skipped | Condition | Since |
 |----------|-------------|-----------|-------|
 
-### 10c. Tool Preferences
+### 9c. Tool Preferences
 | Decision point | Preferred tool | Since |
 |----------------|---------------|-------|
 
-### 10d. MultAI Preferences
+### 9d. MultAI Preferences
 | Trigger | Disposition | Since |
 |---------|-------------|-------|
 
-### 10e. Mode Preferences
+### 9e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|

@@ -63,22 +63,25 @@ if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
   # Only kill when start-time matches — PID recycling window defeats pid-only check.
   _sent_line=$(cat "$SB_DIR"/sentinel-pid 2>/dev/null || true)
   old_pid="${_sent_line%%:*}"
-  old_start="${_sent_line#*:}"
-  [[ "$old_start" == "$old_pid" ]] && old_start=""   # no colon → legacy format
+  old_token="${_sent_line#*:}"
+  [[ "$old_token" == "$old_pid" ]] && old_token=""   # no colon → legacy format
   if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null \
      && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
-    if [[ -n "$old_start" ]]; then
-      cur_start=$(ps -o lstart= -p "$old_pid" 2>/dev/null || true)
-      if [[ -n "$cur_start" && "$cur_start" == "$old_start" ]]; then
+    if [[ -n "$old_token" ]]; then
+      # UUID token file: only kill if lock file exists — proves it is the same process instance
+      _old_lock="$SB_DIR/sentinel-lock-$old_token"
+      if [[ -f "$_old_lock" && ! -L "$_old_lock" ]]; then
         kill "$old_pid" 2>/dev/null || true
+        rm -f -- "$_old_lock"
       fi
     else
-      # Legacy sentinel format — still kill (previous behaviour)
+      # Legacy format (lstart string) — kill based on user check only (previous behaviour)
       kill "$old_pid" 2>/dev/null || true
     fi
   fi
   rm -f -- "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
-        "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count
+        "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count \
+        "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
 fi
 
 # --- Step 5: Mode detection + dedup guard (combined) ---
@@ -132,9 +135,14 @@ if [[ -n "$existing" ]]; then
     date +%s > "$SB_DIR"/session-start-time
     (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
-    disown "$sentinel_pid"
-    _sent_start=$(ps -o lstart= -p "$sentinel_pid" 2>/dev/null || true)
-    printf '%s:%s\n' "$sentinel_pid" "$_sent_start" > "$SB_DIR"/sentinel-pid
+    _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
+    sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
+    if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+      printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+      disown "$sentinel_pid"
+    else
+      kill "$sentinel_pid" 2>/dev/null || true
+    fi
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     if awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
@@ -241,9 +249,14 @@ if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/sentinel-pid
   (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
-  disown "$sentinel_pid"
-  _sent_start=$(ps -o lstart= -p "$sentinel_pid" 2>/dev/null || true)
-  printf '%s:%s\n' "$sentinel_pid" "$_sent_start" > "$SB_DIR"/sentinel-pid
+  _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
+  sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
+  if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+    printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+    disown "$sentinel_pid"
+  else
+    kill "$sentinel_pid" 2>/dev/null || true
+  fi
 fi
 
 sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$log_file" > "$SB_DIR"/session-log-path

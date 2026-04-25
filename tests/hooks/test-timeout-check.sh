@@ -125,16 +125,17 @@ fi
 
 # ── Tier 2: Call-count based anti-stall tests ────────────────────────────────
 SB_DIR="${HOME}/.claude/.silver-bullet"
+T2_STATE_FILE="/tmp/.sb-t2-state-test-$$"
 
 cleanup_tier2() {
   rm -f "${SB_DIR}/call-count" "${SB_DIR}/last-progress-call" \
         "${SB_DIR}/last-state-mtime" "${SB_DIR}/mode" \
-        "${SB_DIR}/session-start-time"
+        "${SB_DIR}/session-start-time" "$T2_STATE_FILE"
 }
 
 run_hook_tier2() {
   printf '{"tool_name":"Bash","tool_input":{"command":"git status"}}' \
-    | bash "$HOOK"
+    | SILVER_BULLET_STATE_FILE="$T2_STATE_FILE" bash "$HOOK"
 }
 
 # Test T2-1: 30-call warning fires ("Check-in" message)

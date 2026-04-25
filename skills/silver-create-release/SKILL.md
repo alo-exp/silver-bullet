@@ -129,20 +129,74 @@ Omit empty sections. Keep descriptions concise (one line per commit).
 
 ---
 
-## Step 5 — Verify README is Current
+## Step 5 — Update CHANGELOG.md
 
-Before creating the release, verify that `README.md` was touched in the commits
-since the last tag (i.e. it has been updated as part of this release cycle):
+Insert the release entry at the top of `CHANGELOG.md` (after the `# Changelog` heading line):
 
 ```
-git log <last-tag>..HEAD --name-only -- README.md
+## [<version-without-v>] — <YYYY-MM-DD>
+
+<release notes body — same content as Step 4 output, without the `# <version>` heading>
+
+---
 ```
 
-If README was NOT updated: **STOP and warn**:
-> "README.md has not been updated since the last release. Update README before
-> creating the release."
+Use a head/printf/tail pattern — `awk -v` does not support multiline variable values, so the entry is built with `printf` which handles embedded newlines correctly:
 
-Do not proceed to Step 6 until README is confirmed updated.
+```bash
+VERSION_BARE="${VERSION#v}"   # strip leading 'v' if present
+TODAY=$(date '+%Y-%m-%d')
+TMP=$(mktemp)
+{
+  head -1 CHANGELOG.md
+  printf '\n## [%s] — %s\n\n%s\n\n---\n' "$VERSION_BARE" "$TODAY" "$RELEASE_NOTES_BODY"
+  tail -n +2 CHANGELOG.md
+} > "$TMP" && mv "$TMP" CHANGELOG.md
+```
+
+If `CHANGELOG.md` does not exist, create it with:
+```
+# Changelog
+
+## [<version-without-v>] — <YYYY-MM-DD>
+
+<release notes body>
+```
+
+---
+
+## Step 5b — Update README.md Version Badge
+
+Find the version badge line in `README.md` and update both the badge URL and the release link to the new version. Use a portable tmpfile+mv pattern:
+
+```bash
+TMP=$(mktemp)
+awk -v new_ver="$VERSION" '
+  /img\.shields\.io\/badge\/version-v/ {
+    sub(/version-v[^-]*-/, "version-" new_ver "-")
+    sub(/releases\/tag\/v[^)]*/, "releases/tag/" new_ver)
+  }
+  { print }
+' README.md > "$TMP" && mv "$TMP" README.md
+```
+
+If `README.md` has no version badge, skip this step silently.
+
+---
+
+## Step 5c — Commit CHANGELOG and README
+
+Commit the CHANGELOG and README changes before creating the tag:
+
+```bash
+git add CHANGELOG.md README.md
+git commit -m "chore(release): update CHANGELOG and README badge for <version>"
+git push
+```
+
+If neither file changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
+
+> **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
 ---
 

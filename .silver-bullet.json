@@ -1,6 +1,6 @@
 {
   "config_version": "0.25.0",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "project": {
     "name": "silver-bullet",
     "src_pattern": "/hooks/|/skills/|/templates/",

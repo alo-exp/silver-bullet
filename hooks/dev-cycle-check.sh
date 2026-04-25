@@ -139,8 +139,32 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     # QA-05: match only the first line (prevents heredoc body false-positives) and skip
     # git/gh commands entirely — those never write to state files but may mention the state
     # path in -m / --body string arguments, causing false-positive blocks (issue #36).
+    # Also skip when the path appears only inside a quoted non-redirect argument (not a real
+    # redirect). The redirect-target patterns below prevent the exemption from firing when the
+    # quoted path IS the target of a redirect operator (e.g. tee "~/.claude/.../state").
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
+    _state_in_dquote='"[^"]*\.claude/[^/]+/state[^"]*"'
+    _state_in_squote="'[^']*\\.claude/[^/]+/state[^']*'"
+    _state_redirect_dquote='(>>|[[:space:]]>[^>&=]|\btee\b)[^"]*"[^"]*\.claude/[^/]+/state'
+    _state_redirect_squote="(>>|[[:space:]]>[^>&=]|\btee\b)[^']*'[^']*\\.claude/[^/]+/state"
+    _quote_exempt=false
+    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_dquote" && \
+       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote"; then
+      _quote_exempt=true
+    fi
+    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_squote" && \
+       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
+      _quote_exempt=true
+    fi
+    # Veto: if the state path is a redirect target in ANY quote style, never exempt —
+    # prevents a mixed-quote-style bypass where the two independent if blocks above
+    # could set _quote_exempt=true from one context while the other is a redirect target.
+    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote" || \
+       printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
+      _quote_exempt=false
+    fi
     if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
+       ! $_quote_exempt && \
        printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/state\b'; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
