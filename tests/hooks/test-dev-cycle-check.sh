@@ -332,10 +332,22 @@ out=$(run_hook_bash "PreToolUse" "echo \"path is ~/.claude/.silver-bullet/state\
 assert_passes "tamper: state path in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
 teardown
 
+# Test 17g2: same as 17g but with $HOME-expanded path (real session form)
+setup
+out=$(run_hook_bash "PreToolUse" "echo \"path is ${HOME}/.claude/.silver-bullet/state\"")
+assert_passes "tamper: expanded-path in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
+teardown
+
 # Test 17h: tee with quoted state path IS still blocked (exemption abuse — redirect target)
 setup
 out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"~/.claude/.silver-bullet/state\"")
 assert_blocks "tamper: tee with quoted state path is still blocked (exemption abuse)" "$out"
+teardown
+
+# Test 17h2: same as 17h but with $HOME-expanded path (real session form)
+setup
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${HOME}/.claude/.silver-bullet/state\"")
+assert_blocks "tamper: tee with expanded quoted state path is still blocked (exemption abuse)" "$out"
 teardown
 
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
