@@ -330,11 +330,10 @@ fi
 # State file must NOT have been wiped — skill recordings should survive
 assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
 assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Both gsd-* AND quality-gate-stage-* markers are stripped on the branch-file-absent
-# path (session-start line 72). This differs from the same-branch path, which only
-# strips gsd-* and preserves quality-gate-stage-* markers.
+# Both branch-file-absent and same-branch paths strip gsd-* markers only (CHR-03:
+# quality-gate-stage-* pattern removed as dead code — never written to state).
 assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_not_contains "branch file absent -> quality-gate-stage-* also stripped" "$TMPSTATE" "quality-gate-stage-1"
+assert_file_contains "branch file absent -> quality-gate-stage-* preserved (dead markers, not stripped)" "$TMPSTATE" "quality-gate-stage-1"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 

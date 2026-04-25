@@ -83,6 +83,9 @@ if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
         "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count \
         "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
 fi
+# Unconditional cleanup: remove any orphan sentinel-lock files left by sessions
+# that crashed before sentinel-pid was written (conditional block above won't catch these).
+rm -f -- "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
 
 # --- Step 5: Mode detection + dedup guard (combined) ---
 today=$(date '+%Y-%m-%d')

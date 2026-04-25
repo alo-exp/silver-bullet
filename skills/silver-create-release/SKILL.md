@@ -144,6 +144,7 @@ Insert the release entry at the top of `CHANGELOG.md` (after the `# Changelog` h
 Use a head/printf/tail pattern — `awk -v` does not support multiline variable values, so the entry is built with `printf` which handles embedded newlines correctly:
 
 ```bash
+RELEASE_NOTES_BODY=$(printf '%s' "$RELEASE_NOTES_BODY" | sed 's/[[:space:]]*$//')
 VERSION_BARE="${VERSION#v}"   # strip leading 'v' if present
 TODAY=$(date '+%Y-%m-%d')
 TMP=$(mktemp)
