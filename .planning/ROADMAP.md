@@ -102,7 +102,7 @@
 
 ### v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit
 
-- [ ] **Phase 59: Code Review Chores** - sentinel-lock cleanup on startup, silver-add gh auth -i flag, dead sed removal from session-start, CHANGELOG trailing-newline fix (CHR-01–04)
+- [x] **Phase 59: Code Review Chores** - sentinel-lock cleanup on startup, silver-add gh auth -i flag, dead sed removal from session-start, CHANGELOG trailing-newline fix (CHR-01–04) (completed 2026-04-25)
 - [ ] **Phase 60: Test Coverage** - sentinel-lock-uuid assertion in Test 8, quote-literal exemption edge-case tests (TST-01–02)
 - [ ] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04)
 - [ ] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03)
@@ -475,7 +475,8 @@ Plans:
   4. silver-create-release Step 5 strips trailing whitespace from RELEASE_NOTES_BODY before the printf call -- no extra blank lines appear before --- in CHANGELOG.md
 **Plans:** 1 plan
 Plans:
-- [ ] 059-01-PLAN.md -- CHR-01: sentinel-lock orphan cleanup; CHR-02: case-insensitive scope grep; CHR-03: dead sed removal; CHR-04: trailing-newline strip
+- [x] 059-01-PLAN.md -- CHR-01: sentinel-lock orphan cleanup; CHR-02: case-insensitive scope grep; CHR-03: dead sed removal; CHR-04: trailing-newline strip (complete)
+- [x] Phase 59 complete — CHR-01, CHR-02, CHR-03, CHR-04 satisfied (2026-04-25)
 
 
 ## Progress
