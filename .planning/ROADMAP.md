@@ -103,7 +103,7 @@
 ### v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit
 
 - [x] **Phase 59: Code Review Chores** - sentinel-lock cleanup on startup, silver-add gh auth -i flag, dead sed removal from session-start, CHANGELOG trailing-newline fix (CHR-01–04) (completed 2026-04-25)
-- [ ] **Phase 60: Test Coverage** - sentinel-lock-uuid assertion in Test 8, quote-literal exemption edge-case tests (TST-01–02)
+- [x] **Phase 60: Test Coverage** - sentinel-lock-uuid assertion in Test 8, quote-literal exemption edge-case tests (TST-01–02) (completed 2026-04-25)
 - [ ] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04)
 - [ ] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03)
 - [ ] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
@@ -488,7 +488,8 @@ Plans:
   3. test-dev-cycle-check.sh Test 17h asserts tee with quoted state path IS blocked (exemption abuse caught)
 **Plans:** 1 plan
 Plans:
-- [ ] 060-01-PLAN.md -- TST-01: sentinel-lock-uuid assertion in Test 8; TST-02: quote-literal exemption edge-case tests
+- [x] 060-01-PLAN.md -- TST-01: sentinel-lock-uuid assertion in Test 8; TST-02: quote-literal exemption edge-case tests (complete)
+- [x] Phase 60 complete — TST-01, TST-02 satisfied (2026-04-25)
 
 
 ## Progress
