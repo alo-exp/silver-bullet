@@ -94,10 +94,10 @@
 
 ### v0.26.0 Bug Fixes, CI Hardening & Skill Quality
 
-- [ ] **Phase 55: Hook & Script Bug Fixes** - Fix timeout-check T2-1 test, quality-gate doc/hook conflict, sentinel TOCTOU; release ordering fix (REL-01) pre-completed
-- [ ] **Phase 56: Skill Bug Fixes & Quality** - Fix silver-add OAuth scope regex, silver-remove sed portability, session log discovery pattern, silver-rem INDEX.md mutations
-- [ ] **Phase 57: CI Hardening** - Add workflow parity diff step and jq config assertions to GitHub Actions CI
-- [ ] **Phase 58: silver-scan Quality** - Add local-tracker cross-reference to silver-scan Step 4; add two-pass counter explanation to summary block
+- [x] **Phase 55: Hook & Script Bug Fixes** - Fix timeout-check T2-1 test, quality-gate doc/hook conflict, sentinel TOCTOU; release ordering fix (REL-01) pre-completed (completed 2026-04-25)
+- [x] **Phase 56: Skill Bug Fixes & Quality** - Fix silver-add OAuth scope regex, silver-remove sed portability, session log discovery pattern, silver-rem INDEX.md mutations (completed 2026-04-25)
+- [x] **Phase 57: CI Hardening** - Add workflow parity diff step and jq config assertions to GitHub Actions CI (completed 2026-04-25)
+- [x] **Phase 58: silver-scan Quality** - Add local-tracker cross-reference to silver-scan Step 4; add two-pass counter explanation to summary block (completed 2026-04-25)
 
 ## Phase Details
 
