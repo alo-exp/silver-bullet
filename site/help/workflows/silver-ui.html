@@ -109,6 +109,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><a href="#design-contract">Design contract</a></li>
         <li><a href="#ui-visual-audit">UI visual audit</a></li>
         <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
+        <li><a href="#step-16">Step 16: Milestone completion</a></li>
         <li><a href="#example">Example invocation</a></li>
         <li class="sidebar-section">See also</li>
         <li><a href="./index.html">All workflows</a></li>
@@ -241,7 +242,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h3>Steps 14–15 — Finishing branch and ship</h3>
       <p>Invoke <code>silver:finishing-branch</code> → optionally <code>gsd-pr-branch</code> → <code>gsd-ship</code>. Phase-level merge.</p>
 
-      <h3>Step 16 — Milestone completion (last phase only)</h3>
+      <h3 id="step-16">Step 16 — Milestone completion (last phase only)</h3>
       <p>Ask: <em>"Is this the last phase of the current milestone?"</em> If yes, run the full milestone lifecycle: <code>gsd-audit-uat</code> → <code>gsd-audit-milestone</code> → [gap-closure loop, max 2 iterations: <code>gsd-plan-milestone-gaps</code> → <code>silver:feature</code> for gap phases] → <code>gsd-complete-milestone</code>. If no — done.</p>
 
       <div class="divider"></div>
