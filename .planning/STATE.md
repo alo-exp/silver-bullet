@@ -29,7 +29,7 @@ Last activity: 2026-04-26
 See: .planning/PROJECT.md (updated 2026-04-25)
 
 **Core value:** Single enforced workflow -- no artifact ships without structured quality validation
-**Current focus:** Phase 60 complete (TST-01–02); next: plan and execute Phase 61 (SKL-01–04)
+**Current focus:** Phase 61 complete (SKL-01–04); next: plan and execute Phase 62 (DOC-01–03)
 
 ## Current Position
 
