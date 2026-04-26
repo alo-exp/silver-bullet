@@ -158,7 +158,10 @@ Lessons files do not pre-populate category headings — headings are added on fi
 **Size cap (existing files only):** If the target file has ≥300 lines, redirect TARGET to the next-suffix file (e.g., `YYYY-MM-b.md`). If that suffix file is new (does not exist), create it with the appropriate header template for the type (see Step 5 header above). Then proceed to Step 6 using the updated TARGET.
 
 ```bash
-LINE_COUNT=$(wc -l < "$TARGET")
+if [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; then
+  TARGET="${TARGET%.md}-b.md"
+  IS_NEW_FILE=false; [ ! -f "$TARGET" ] && IS_NEW_FILE=true
+fi
 ```
 
 Display: "Monthly file at 300+ lines — appending to ${MONTH}-b.md instead."
