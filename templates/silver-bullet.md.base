@@ -107,6 +107,8 @@ detected by hooks. Small edits (<100 chars) and non-logic files (.md,
 **Subagent commits**: Every git commit MUST use HEREDOC format and end with:
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
+> **Stop hook false-positive audit**: For a full catalogue of known bail-out scenarios, reproduction steps, and dispositions, see [`docs/internal/stop-hook-audit.md`](docs/internal/stop-hook-audit.md).
+
 ---
 
 ## 2. Active Workflow

@@ -367,6 +367,22 @@ printf 'feature/test\n' > "$TMPBRANCH_FILE"
 assert_passes "stale cross-branch state (branch file mismatch) -> skip enforcement" "$out"
 teardown
 
+# Test 15: S-06 regression — detached HEAD + clean tree -> no block
+# git rev-parse --abbrev-ref HEAD returns "HEAD" (not empty) in detached HEAD
+# state. "HEAD" passes the safety validation regex, so current_branch="HEAD"
+# (non-empty). The elif branch in HOOK-14 fires and exits 0.
+# Phase 63 audit: this test locks in the confirmed-correct exit-0 behaviour.
+echo "--- Test 15: Detached HEAD + clean tree -> no block ---"
+setup
+git -C "$TMPDIR_TEST" checkout --detach HEAD 2>/dev/null
+# Update branch file to match git's output for detached HEAD ("HEAD")
+# so branch-scope validation passes and we exercise HOOK-14 directly.
+printf 'HEAD\n' > "$TMPBRANCH_FILE"
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook)
+assert_passes "detached HEAD + clean tree + no origin -> exit 0 (HOOK-14 elif branch)" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

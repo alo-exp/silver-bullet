@@ -183,9 +183,13 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       # Fail-open by design: clean tree + no remote target = read-only.
       exit 0
     fi
-    # Otherwise (cmp_ref empty AND branch empty/detached AND upstream not
-    # broken): detached-HEAD state. Fall through to enforcement — we can't
-    # prove "nothing to deploy" without either an anchor or a branch name.
+    # cmp_ref is empty, upstream is not broken, AND current_branch is empty.
+    # NOTE: standard detached HEAD returns "HEAD" from git rev-parse --abbrev-ref
+    # which is non-empty, so the elif branch above exits 0 for that case.
+    # current_branch is empty only when the git command fails outright or the
+    # returned ref name fails the safety validation regex (unusual). Without
+    # any trusted anchor or valid branch name we cannot prove "nothing to deploy"
+    # → fall through to enforcement.
   fi
 fi
 
