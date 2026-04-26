@@ -29,6 +29,9 @@ Shell execution is limited to:
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
+- `curl` (POST Google Chat notification webhook — only when `SB_GCHAT_WEBHOOK` is set)
+- Shell commands listed in `.silver-bullet.json` `verify_commands[]` (Step 0 readiness
+  check — user-controlled config, not untrusted input)
 
 Do not execute other shell commands.
 
@@ -233,7 +236,7 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    release_url=$(gh release create <version> --title "<version>" --notes "<release-notes-markdown>" --json url -q '.url')
    ```
    Use `/opt/homebrew/bin/gh` if available, fall back to bare `gh`.
-   `$release_url` is used in step 5 for the Google Chat notification.
+   `$release_url` is used in the notification sub-step below (sub-item 5 of this step).
 
 4. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."

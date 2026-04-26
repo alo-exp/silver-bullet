@@ -18,6 +18,12 @@ SESSION_LOG_DIR=""
 
 cleanup_all() {
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST" 2>/dev/null || true
+  # Clean up shared SB_TEST_DIR state written during tests so a SIGKILL between
+  # Test 8 (mode=autonomous) and Test 9 (mode=interactive reset) cannot leave
+  # stale state that affects the user's next real Claude Code session.
+  rm -f "${SB_TEST_DIR}/mode" "${SB_TEST_DIR}/session-start-time" \
+        "${SB_TEST_DIR}/timeout" "${SB_TEST_DIR}/sentinel-pid" \
+        "${SB_TEST_DIR}/sentinel-lock-"* 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
