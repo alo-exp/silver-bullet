@@ -24,6 +24,8 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git tag -s` (create signed tag)
+- `git add CHANGELOG.md README.md` (stage release doc updates — Step 5c)
+- `git commit` (commit CHANGELOG + badge updates — Step 5c)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)

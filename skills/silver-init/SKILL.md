@@ -544,7 +544,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-1 Build the section inventory.** Parse the existing CLAUDE.md into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether Silver Bullet's template CLAUDE.md (from `templates/CLAUDE.md.base`) contains a corresponding section with the same heading.
 
   **3.1c-2 Categorize each section:**
-  - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision.
+  - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision. If the content is identical, preserve as-is (no prompt needed).
   - **User-owned** (heading exists only in the existing CLAUDE.md, not in template): preserve unconditionally — no user prompt needed.
   - **New from template** (heading exists only in the template, not in existing CLAUDE.md): add automatically — no conflict.
 
