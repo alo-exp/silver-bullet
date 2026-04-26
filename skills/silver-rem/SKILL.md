@@ -212,6 +212,7 @@ Execute ONLY when IS_NEW_FILE=true AND `$TARGET` does NOT end in `-b.md` or late
 If `docs/knowledge/INDEX.md` does not exist, create it before the awk mutations:
 ```bash
 if [[ ! -f docs/knowledge/INDEX.md ]]; then
+  mkdir -p docs/knowledge/
   printf '# Knowledge Index\n\n| Month | File | Notes |\n|-------|------|-------|\n\nLatest knowledge: `(none)`\nLatest lessons: `(none)`\n' \
     > docs/knowledge/INDEX.md
 fi
