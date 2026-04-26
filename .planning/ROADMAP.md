@@ -107,7 +107,7 @@
 - [x] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04) (completed 2026-04-26)
 - [ ] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03)
 - [x] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
-- [ ] **Phase 64: Verification & Init Improvements** - verification-before-completion design, permissions re-prompting root cause, CLAUDE.md conflict resolution in /silver:init, FLOW parallelism design note (VFY-01, BUG-06, INIT-01, FLOW-01)
+- [x] **Phase 64: Verification & Init Improvements** - verification-before-completion design, permissions re-prompting root cause, CLAUDE.md conflict resolution in /silver:init, FLOW parallelism design note (VFY-01, BUG-06, INIT-01, FLOW-01)
 
 ## Phase Details
 
@@ -530,9 +530,9 @@ Plans:
   4. FLOW-01 design note added to `silver-bullet.md` or a `docs/internal/` file describing FLOW layer parallelism in the `/silver` composer
 **Plans:** 3 plans
 Plans:
-- [ ] 064-01-PLAN.md -- VFY-01 + FLOW-01: design docs for enforcement boundaries and FLOW parallelism
-- [ ] 064-02-PLAN.md -- BUG-06: permissions re-prompting root cause investigation and documentation
-- [ ] 064-03-PLAN.md -- INIT-01: silver:init CLAUDE.md conflict resolution with no-silent-override
+- [x] 064-01-PLAN.md -- VFY-01 + FLOW-01: design docs for enforcement boundaries and FLOW parallelism (complete 2026-04-26)
+- [x] 064-02-PLAN.md -- BUG-06: permissions re-prompting root cause investigation and documentation (complete 2026-04-26)
+- [x] 064-03-PLAN.md -- INIT-01: silver:init CLAUDE.md conflict resolution with no-silent-override (complete 2026-04-26)
 
 
 ## Progress
@@ -578,3 +578,4 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 61. Skill Quality & Rename | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
+| 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
