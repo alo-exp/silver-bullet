@@ -81,6 +81,7 @@ teardown() {
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   unset SILVER_BULLET_BRANCH_FILE
+  unset SILVER_BULLET_STATE_FILE
 }
 
 run_hook() {

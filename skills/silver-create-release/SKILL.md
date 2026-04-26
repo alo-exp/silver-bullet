@@ -256,19 +256,23 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    never in `.silver-bullet.json` or any other tracked file. The legacy
    `notifications.google_chat_webhook` config field is no longer read.
 
-   If `$webhook` is non-empty, POST the release notification. Build the JSON
-   payload with `jq` to prevent injection from crafted version strings or
-   release notes:
+   If `$webhook` is non-empty, POST the release notification. First derive `$summary`
+   from the release notes body — take the first non-empty `##` heading from
+   `$RELEASE_NOTES_BODY` and append the bullet count for that section
+   (e.g., `"2 features, 1 fix"`). Then build the JSON payload with `jq` to prevent
+   injection from crafted version strings or release notes:
    ```
-   jq -n --arg v "$version" --arg t "$summary" --arg url "$release_url" \
+   summary=$(printf '%s' "$RELEASE_NOTES_BODY" | grep -m1 '^## ' | sed 's/^## //')
+   jq -n --arg v "$VERSION" --arg t "$summary" --arg url "$release_url" \
      '{text: "🚀 *\($v)* released\n\($t)\n\($url)"}' \
      | curl -s -X POST "$webhook" \
          -H "Content-Type: application/json" \
          --data-binary @-
    ```
 
-   - `$version` — the version tag (e.g. `v0.20.2`)
-   - `$summary` — the first non-empty section heading + item count from the release notes (e.g. `2 features, 1 fix`)
+   - `$VERSION` — the version tag (e.g. `v0.20.2`)
+   - `$summary` — derived above: first `##` heading from the release notes body
+   - `$release_url` — the GitHub release URL returned by `gh release create`
    - `$release_url` — the GitHub release URL returned by `gh release create`
 
    If `$SB_GCHAT_WEBHOOK` is unset or empty, skip silently — notification is optional.
