@@ -539,7 +539,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` (substitute `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` from `.silver-bullet.json`). Safe — Silver Bullet owns this file.
 3. Strip any SB-owned sections from `CLAUDE.md` (pre-v0.7.0 migration) and the old-style reference line that does not mention `silver-bullet.md`.
 4. Ensure `CLAUDE.md` has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing.
-5. Run conflict detection (see 3.1c in the reference).
+5. Run conflict detection using `references/scaffold-steps.md` → "Update mode conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
 5a. Re-register/refresh SB hooks (step 3.7.5 in the reference).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
@@ -578,7 +578,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-4 Apply decisions in order:**
   - Keep: leave the existing section unchanged.
   - Replace: substitute the existing section content with the template version.
-  - Merge: display both versions side-by-side; ask the user to provide the merged text; write their input.
+  - Merge: display both versions in full. Ask the user via AskUserQuestion: "Paste or describe your merged version for the **{section-heading}** section" with options "A. Use existing (same as Keep)  B. Use template (same as Replace)  C. I'll paste the merged text below". If C is selected, read the user's next free-form message as the merged content and write it as the section body.
 
   **3.1c-5 Append user-owned sections** (identified in step 3.1c-2) at the end of the resolved CLAUDE.md, after all SB-owned sections. These sections are never removed.
 
