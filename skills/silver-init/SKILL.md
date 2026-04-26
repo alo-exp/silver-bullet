@@ -142,6 +142,8 @@ If B: STOP.
 Use the Glob tool to search for Engineering plugin skills in these paths:
 - `~/.claude/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
 - `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
+- `~/.claude/plugins/cache/engineering/skills/`
+- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
 
 Expand `~` to the user's home directory.
 
@@ -209,22 +211,7 @@ If no file found, use AskUserQuestion:
 If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
 If B: continue without stopping.
 
-### 1.8 Anthropic Engineering plugin
-
-Use the Glob tool to search for Engineering plugin skills in these paths:
-- `~/.claude/plugins/cache/engineering/skills/`
-- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
-
-If no directory found, use AskUserQuestion:
-- Question: "❌ **Anthropic Engineering plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed it — continue"
-  - "B. Stop for now"
-
-If A: re-run the Glob check. If still not found, STOP with: `❌ Engineering plugin still not found. Please install it and re-run /silver:init.`
-If B: STOP.
-
-### 1.9 Anthropic Product Management plugin
+### 1.8 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`

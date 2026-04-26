@@ -207,6 +207,11 @@ echo "--- Test 5: Main branch - finishing-a-development-branch not required ---"
 setup
 # Switch to main branch
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
+# Sync the branch file so stop-check.sh sees the same branch as the git repo.
+# Without this, the branch-scope mismatch guard exits 0 before the on-main
+# filter is reached — test passes but for the wrong reason (HOOK-14 guard
+# fires instead of the on-main finishing-a-development-branch exemption).
+printf 'main\n' > "$TMPBRANCH_FILE"
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
