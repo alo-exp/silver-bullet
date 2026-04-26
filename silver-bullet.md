@@ -123,6 +123,10 @@ invoked, STOP and notify the user immediately. Do NOT silently skip.
 
 > **Anti-Skip:** You are violating this rule if you start a non-trivial task without a Read call to the active workflow file. The compliance-status hook will show your progress — if it shows 0 steps, you have not read the workflow.
 
+> **Design documents**: For architectural notes on future workflow enhancements, see:
+> - [`docs/internal/vfy-01-enforcement-design.md`](docs/internal/vfy-01-enforcement-design.md) — intermediate verification enforcement boundary design (VFY-01)
+> - [`docs/internal/flow-01-parallelism-design.md`](docs/internal/flow-01-parallelism-design.md) — FLOW layer parallelism design for the /silver composer (FLOW-01)
+
 ### Hand-Holding at Transitions
 
 At each workflow transition, proactively narrate to the user:
