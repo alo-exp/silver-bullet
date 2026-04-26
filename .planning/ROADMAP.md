@@ -106,7 +106,7 @@
 - [x] **Phase 60: Test Coverage** - sentinel-lock-uuid assertion in Test 8, quote-literal exemption edge-case tests (TST-01–02) (completed 2026-04-25)
 - [x] **Phase 61: Skill Quality & Rename** - trim silver-add/silver-rem SKILL.md under 300L, paths→flows rename throughout, §9/§10 numbering fix (SKL-01–04) (completed 2026-04-26)
 - [ ] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03)
-- [ ] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
+- [x] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
 - [ ] **Phase 64: Verification & Init Improvements** - verification-before-completion design, permissions re-prompting root cause, CLAUDE.md conflict resolution in /silver:init, FLOW parallelism design note (VFY-01, BUG-06, INIT-01, FLOW-01)
 
 ## Phase Details
@@ -516,7 +516,7 @@ Plans:
   3. silver-bullet.md §1 Automated Enforcement section contains a reference link to `docs/internal/stop-hook-audit.md`
 **Plans:** 1 plan
 Plans:
-- [ ] 063-01-PLAN.md -- HK-01: enumerate false-positive scenarios, fix confirmed ones, document deferred, link from §1
+- [x] 063-01-PLAN.md -- HK-01: enumerate false-positive scenarios, fix confirmed ones, document deferred, link from §1
 
 
 ## Progress
@@ -561,4 +561,4 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 60. Test Coverage | v0.27.0 | 1/1 | Complete    | 2026-04-25 |
 | 61. Skill Quality & Rename | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
-| 63. Stop Hook Audit | v0.27.0 | 0/1 | In Progress | — |
+| 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
