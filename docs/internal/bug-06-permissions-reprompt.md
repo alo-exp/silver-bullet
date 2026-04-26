@@ -86,8 +86,19 @@ All SB hooks were reviewed for output patterns that could interact with the Clau
 ### 6. `uat-gate.sh` (PreToolUse/Skill event)
 
 - **Hook event:** `PreToolUse/Skill`
-- **Output format:** Investigated by reading hook source. This hook also fires on PreToolUse/Skill.
-- **Permission relevance:** Needs the same assessment as `forbidden-skill-check.sh` — if it also uses `permissionDecision:"deny"`, it is a candidate too.
+- **Output format:**
+  ```json
+  {
+    "hookSpecificOutput": {
+      "hookEventName": "PreToolUse",
+      "permissionDecision": "deny",
+      "permissionDecisionReason": "..."
+    }
+  }
+  ```
+  Confirmed in source: `hooks/uat-gate.sh` line 26, `emit_block()` function.
+- **Permission relevance:** ⚠️ **Candidate** — Same `permissionDecision:"deny"` format as `forbidden-skill-check.sh`. `uat-gate.sh` only fires when `gsd-complete-milestone` is invoked and UAT.md is missing/failing, so it is a less frequent trigger than `completion-audit.sh` or `forbidden-skill-check.sh`. However, it is subject to the same platform-level interaction with Bypass Permissions.
+- **Verdict:** ⚠️ **Candidate** — gates exclusively on `gsd-complete-milestone`; lower exposure than `completion-audit.sh`, same root cause mechanism.
 
 ---
 

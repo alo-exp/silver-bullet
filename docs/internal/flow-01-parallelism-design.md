@@ -58,8 +58,8 @@ For FLOW layer parallelism to be safe, a dependency model defines which FLOWs ca
 | QUALITY GATES | DISCUSS | Nothing (validates DISCUSS output; sequential by design) |
 | PLAN | QUALITY GATES | Nothing (writes execution plans; exclusive write access) |
 | EXECUTE | PLAN | Nothing (writes to codebase; exclusive write access) |
-| VERIFY | EXECUTE | **REVIEW** (both read-only after EXECUTE completes) |
-| REVIEW | EXECUTE | **VERIFY** (both read-only after EXECUTE completes) |
+| VERIFY | EXECUTE | **REVIEW** (independent writers — produce different output files with no shared write conflict) |
+| REVIEW | EXECUTE | **VERIFY** (independent writers — produce different output files with no shared write conflict) |
 | FINALIZE | VERIFY + REVIEW | Nothing (aggregates both results; requires both to complete) |
 | SHIP | FINALIZE | Nothing (external action; gates on FINALIZE output) |
 
