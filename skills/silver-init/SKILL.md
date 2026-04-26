@@ -550,8 +550,41 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 Execute these steps in order. Full detail for each step is in `references/scaffold-steps.md`.
 
 - **3.1a Write `silver-bullet.md`** from template with `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` substitutions.
-- **3.1b Handle `CLAUDE.md`**: if absent, write from template (`{{PROJECT_NAME}}`, `{{TECH_STACK}}`, `{{GIT_REPO}}`); if present, strip SB-owned sections and add the reference line.
-- **3.1c Conflict detection** (only when existing `CLAUDE.md`): scan for model-routing / execution / review-loop / workflow / session-mode overrides; ask per-hit via AskUserQuestion (Remove / Keep / Skip-all).
+- **3.1b Handle `CLAUDE.md`**: if absent, write from template (`{{PROJECT_NAME}}`, `{{TECH_STACK}}`, `{{GIT_REPO}}`). If present, do NOT overwrite silently — proceed to step 3.1c for comprehensive conflict resolution.
+
+- **3.1c Conflict resolution** (only when existing `CLAUDE.md` is present — no silent override guarantee):
+
+  **3.1c-1 Build the section inventory.** Parse the existing CLAUDE.md into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether Silver Bullet's template CLAUDE.md (from `templates/CLAUDE.md.base`) contains a corresponding section with the same heading.
+
+  **3.1c-2 Categorize each section:**
+  - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision.
+  - **User-owned** (heading exists only in the existing CLAUDE.md, not in template): preserve unconditionally — no user prompt needed.
+  - **New from template** (heading exists only in the template, not in existing CLAUDE.md): add automatically — no conflict.
+
+  **3.1c-3 For each SB-owned section that differs**, use AskUserQuestion with three options:
+
+  > Section: **{section-heading}**
+  >
+  > Existing content (first 200 chars): {existing_excerpt}
+  > Template content (first 200 chars): {template_excerpt}
+  >
+  > What would you like to do with this section?
+  > A. Keep — preserve your existing version unchanged
+  > B. Replace — overwrite with the Silver Bullet template version
+  > C. Merge — show both versions and let you edit the result
+
+  Wait for the user's response before processing the next conflicting section.
+
+  **3.1c-4 Apply decisions in order:**
+  - Keep: leave the existing section unchanged.
+  - Replace: substitute the existing section content with the template version.
+  - Merge: display both versions side-by-side; ask the user to provide the merged text; write their input.
+
+  **3.1c-5 Append user-owned sections** (identified in step 3.1c-2) at the end of the resolved CLAUDE.md, after all SB-owned sections. These sections are never removed.
+
+  **3.1c-6 Ensure the reference line** `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` is present at the top of the final CLAUDE.md. If absent, prepend it. Do not duplicate it if already present.
+
+  **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no CLAUDE.md section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
 - **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows`.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write `CLAUDE.md`** (only when 3.1b took the template path) with placeholder substitutions.
