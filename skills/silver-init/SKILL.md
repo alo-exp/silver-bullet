@@ -527,8 +527,8 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 3. Strip any SB-owned sections from `CLAUDE.md` (pre-v0.7.0 migration) and the old-style reference line that does not mention `silver-bullet.md`.
 4. Ensure `CLAUDE.md` has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing.
 5. Run conflict detection using `references/scaffold-steps.md` → "Update mode conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
-5a. Re-register/refresh SB hooks (step 3.7.5 in the reference).
-6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
+6. Re-register/refresh SB hooks (step 3.7.5 in the reference).
+7. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 **Template refresh** (only on explicit user request): list files, require "yes", back up workflow files to `*.backup`, overwrite `silver-bullet.md`, carry forward `.silver-bullet.json` customizations. See reference for the full flow.
 

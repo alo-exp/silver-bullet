@@ -31,11 +31,11 @@
 
 - [ ] **DOC-01**: `docs/` or homepage contains a clearly labeled SB-only installation variant showing what works without GSD and what is disabled — GitHub #74
 - [ ] **DOC-02**: A comparison document (in `docs/` or help site) exists that maps Silver Bullet features to their GSD equivalents, clarifies integration points, and explains what SB covers that GSD does not (and vice versa) — GitHub #73
-- [x] **DOC-03**: Full audit of website (`docs/site/`), README.md, and help center pages: version numbers current, feature descriptions accurate, installation instructions match marketplace install, no stale v0.20.x era references — GitHub #70
+- [ ] **DOC-03**: Full audit of website (`docs/site/`), README.md, and help center pages: version numbers current, feature descriptions accurate, installation instructions match marketplace install, no stale v0.20.x era references — GitHub #70
 
 ### Stop Hook Audit (Phase 63)
 
-- [ ] **HK-01**: A written audit (`docs/internal/stop-hook-audit.md` or equivalent) enumerates all known Stop hook false-positive scenarios with reproduction steps; each confirmed false-positive is either fixed in code or documented with a rationale for deferral; the audit is linked from silver-bullet.md §5 (enforcement reference) — GitHub #71
+- [ ] **HK-01**: A written audit (`docs/internal/stop-hook-audit.md` or equivalent) enumerates all known Stop hook false-positive scenarios with reproduction steps; each confirmed false-positive is either fixed in code or documented with a rationale for deferral; the audit is linked from silver-bullet.md §1 (enforcement reference) — GitHub #71
 
 ### Verification & Init Improvements (Phase 64)
 
