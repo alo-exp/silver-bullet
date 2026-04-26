@@ -519,6 +519,22 @@ Plans:
 - [x] 063-01-PLAN.md -- HK-01: enumerate false-positive scenarios, fix confirmed ones, document deferred, link from §1
 
 
+### Phase 64: Verification & Init Improvements
+**Goal**: Four design/investigation/improvement tasks completed: VFY-01 enforcement boundary design doc, BUG-06 permissions re-prompting root cause identified and documented, INIT-01 silver:init CLAUDE.md conflict detection updated with no-silent-override guarantee, FLOW-01 FLOW parallelism design note added.
+**Depends on**: Phase 63
+**Requirements**: VFY-01, BUG-06, INIT-01, FLOW-01
+**Success Criteria** (what must be TRUE):
+  1. `docs/internal/vfy-01-enforcement-design.md` exists specifying where to hook intermediate verification, what triggers the check, and what blocks completion
+  2. BUG-06 root cause documented (in a doc file and/or GitHub issue #64 updated); fix applied if within SB control
+  3. `skills/silver-init/SKILL.md` updated so step 3.1b/3.1c offers users an explicit choice when CLAUDE.md sections conflict — no section silently removed or overwritten without user confirmation
+  4. FLOW-01 design note added to `silver-bullet.md` or a `docs/internal/` file describing FLOW layer parallelism in the `/silver` composer
+**Plans:** 3 plans
+Plans:
+- [ ] 064-01-PLAN.md -- VFY-01 + FLOW-01: design docs for enforcement boundaries and FLOW parallelism
+- [ ] 064-02-PLAN.md -- BUG-06: permissions re-prompting root cause investigation and documentation
+- [ ] 064-03-PLAN.md -- INIT-01: silver:init CLAUDE.md conflict resolution with no-silent-override
+
+
 ## Progress
 
 **Execution Order:**
