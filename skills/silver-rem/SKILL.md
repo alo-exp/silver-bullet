@@ -209,6 +209,14 @@ fi
 
 Execute ONLY when IS_NEW_FILE=true AND `$TARGET` does NOT end in `-b.md` or later overflow suffix. Skip if IS_NEW_FILE=false or if this is an overflow file — only the first file created for a given month triggers INDEX.md changes.
 
+If `docs/knowledge/INDEX.md` does not exist, create it before the awk mutations:
+```bash
+if [[ ! -f docs/knowledge/INDEX.md ]]; then
+  printf '# Knowledge Index\n\n| Month | File | Notes |\n|-------|------|-------|\n\nLatest knowledge: `(none)`\nLatest lessons: `(none)`\n' \
+    > docs/knowledge/INDEX.md
+fi
+```
+
 **When INSIGHT_TYPE=knowledge:** Perform TWO mutations — insert a new table row for the month, and update the `Latest knowledge:` pointer line:
 
 ```bash
