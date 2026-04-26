@@ -228,11 +228,12 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    git remote get-url origin 2>/dev/null | grep -q github.com
    ```
 
-3. **If GitHub repo:** Create a GitHub Release:
+3. **If GitHub repo:** Create a GitHub Release and capture the URL:
    ```
-   gh release create <version> --title "<version>" --notes "<release-notes-markdown>"
+   release_url=$(gh release create <version> --title "<version>" --notes "<release-notes-markdown>" --json url -q '.url')
    ```
    Use `/opt/homebrew/bin/gh` if available, fall back to bare `gh`.
+   `$release_url` is used in step 5 for the Google Chat notification.
 
 4. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
