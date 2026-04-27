@@ -52,17 +52,19 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ Skill quality: session log discovery standardized (find), silver-rem INDEX.md mutations explicit, silver-scan local-tracker cross-reference (Step 4-iv), silver-scan two-pass counter documentation — v0.26.0
 - ✓ Security hardening: content injection guards (allowlist regex + jq encoding) in spec-session-record.sh, uat-gate.sh, roadmap-freshness.sh — SENTINEL v2.3 CLEAR — v0.26.0
 - ✓ Release ordering fix: silver-create-release runs after gsd-complete-milestone (tag placed last, eliminates mandatory post-release patch) — v0.26.0
+- ✓ Complete Forge port: 106 SB+Superpowers+knowledge-work skills bulk-copied to forge/skills/ — v0.28.0
+- ✓ 10 hook-equivalent Forge custom agents (forge-pre-commit-audit, forge-pre-pr-audit, forge-task-complete-check, forge-roadmap-freshness, forge-spec-floor-check, forge-uat-gate, forge-pr-traceability, forge-ci-status-check, forge-forbidden-skill-check, forge-session-init) — v0.28.0
+- ✓ 31 GSD subagents ported as Forge custom agents with proper context isolation — v0.28.0
+- ✓ forge-sb-install.sh rewritten as copy-based idempotent installer (skills + agents) — v0.28.0
+- ✓ AGENTS.md.template + AGENTS.project.template + PARITY.md + PARITY-REPORT.md as glue layer — v0.28.0
+- ✓ forge/scripts/smoke-test.sh structural validator (21+ assertions, 21/21 + 23/23 PASS) — v0.28.0
+- ✓ Forge runtime invocation verified: hook-agents return correct BLOCK/ALLOW outputs — v0.28.0
 
 ### Active
 
-- [ ] Complete Forge port: 27 missing SB skills in Forge format (FORGE-01–FORGE-27)
-- [ ] Port remaining Superpowers skills to Forge (~7 skills) (FORGE-28–FORGE-34)
-- [ ] Port Anthropic knowledge-work-plugins to Forge (~33 skills) (FORGE-35–FORGE-67)
-- [ ] Update forge-sb-install.sh for all ~67 skills (FORGE-68)
-- [ ] Update AGENTS.md templates for full routing coverage (FORGE-69)
-- [ ] End-to-end Forge test app validation (FORGE-70)
+(none — v0.28.0 shipped; ready for next milestone planning)
 
-### Deferred (from v0.27.0 Active)
+### Deferred
 
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
@@ -75,18 +77,13 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
+## Current Milestone: (none — v0.28.0 shipped 2026-04-27)
+
+## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
 **Goal:** Bring the Forge coding agent port (forge/ dir) to 100% parity with the Silver Bullet Claude Desktop experience — all SB skills, all dependency plugins (Superpowers, Anthropic knowledge-work-plugins), updated installer, end-to-end verified against a test app.
 
-**Target features:**
-- SB skill gap closure: port 27 missing SB skills to Forge format (artifact-review-*, devops-*, review-*, silver-add, silver-blast-radius, silver-create-release, silver-fast, silver-forensics, silver-ingest, silver-init, silver-migrate, silver-quality-gates, silver-release, silver-rem, silver-remove, silver-review-stats, silver-scan, silver-spec, silver-update, silver-validate)
-- Superpowers gap closure: port ~7 remaining Superpowers skills (dispatching-parallel-agents, executing-plans, subagent-driven-development, systematic-debugging, using-git-worktrees, verification-before-completion, finishing-a-development-branch)
-- Anthropic knowledge-work-plugins: port all ~33 skills from anthropics/knowledge-work-plugins (engineering×10, design×7, product-management×8, marketing×8)
-- Installer update: rewrite forge-sb-install.sh to install all ~67 skills
-- AGENTS.md update: expand global + project templates for full routing coverage
-- End-to-end test: create Forge test app copy, run full development workflow scenarios to verify 100% SB parity
-- Release: update README/docs, tag v0.28.0
+**Shipped:** 5 phases (65-69), 39 requirements satisfied. 106 skills + 41 custom agents in `forge/`. Forge runtime confirmed loading skills + agents; hook-agent invocation tests returned correct BLOCK/ALLOW outputs. Release: https://github.com/alo-exp/silver-bullet/releases/tag/v0.28.0
 
 ## Completed Milestone: v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit (shipped TBD)
 
@@ -156,4 +153,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 — v0.28.0 milestone started; Forge port parity milestone*
+*Last updated: 2026-04-27 — v0.28.0 SHIPPED; Complete Forge Port milestone closed*
