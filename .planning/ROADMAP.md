@@ -15,7 +15,8 @@
 - :white_check_mark: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (shipped 2026-04-24)
 - :white_check_mark: **v0.26.0 Bug Fixes, CI Hardening & Skill Quality** - Phases 55-58 (shipped 2026-04-25)
 - :white_check_mark: **v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit** - Phases 59-64 (shipped)
-- **v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies** - Phases 65-69 (in progress)
+- :white_check_mark: **v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies** - Phases 65-69 (shipped 2026-04-27)
+- **v0.29.0 Multi-Agent Phase Coordination** - Phases 70-75 (in progress)
 
 ## Phases
 
@@ -117,6 +118,15 @@
 - [x] **Phase 67: Subagent → Custom Agent Conversion** - Port ~30 GSD subagents as Forge custom agents (per forgecode.dev/docs/creating-agents/) with `tool_supported: true`, restricted `tools[]`, context isolation; update parent skills to invoke them as tools
 - [x] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh to install ~108 skills + ~40 custom agents; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation)
 - [x] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md (structural complete; runtime tests recipe in PARITY-REPORT.md awaits user)
+
+### v0.29.0 Multi-Agent Phase Coordination
+
+- [ ] **Phase 70: Phase-Lock Schema + Shared Helper** - Define `.planning/.phase-locks.json` schema (gitignored, flock-atomic) and shared bash helper at `.planning/scripts/phase-lock.sh` with claim/heartbeat/release/peek operations; identity tags (claude/forge/codex/opencode) extensible via config; stale-lock TTL (default 30 min)
+- [ ] **Phase 71: Claude-SB Lock Hooks** - New `phase-lock-claim.sh` (PreToolUse), `phase-lock-heartbeat.sh` (PostToolUse, throttled), `phase-lock-release.sh` (Stop/SubagentStop); register in hooks.json; completion-audit and stop-check honor lock owner check (informational)
+- [ ] **Phase 72: Forge-SB Lock Awareness** - Update `forge-session-init` to peek+warn at start; new `forge-claim-phase`/`forge-heartbeat-phase`/`forge-release-phase` agents; parent skills invoke claim/release at phase boundaries; honor `SB_PHASE_LOCK_INHERITED` env var
+- [ ] **Phase 73: /forge-delegate Skill (delegation exception)** - Both Claude-SB and Forge-SB sides; package phase context into JSON envelope; spawn sibling runtime as subprocess with `SB_PHASE_LOCK_INHERITED=true` so child does not double-claim; structured FILES_CHANGED/ASSUMPTIONS/REQ-IDS result integrated into parent phase
+- [ ] **Phase 74: Multi-Agent Tests + Docs** - Coexistence smoke test (race + stale-lock + delegation envelope); update `forge/PARITY.md`, `silver-bullet.md` + base, `forge/AGENTS.md.template`, new `docs/multi-agent-coordination.md` user guide; refresh `forge/PARITY-REPORT.md`
+- [ ] **Phase 75: Release v0.29.0** - CHANGELOG, README badge, version fields bumped; signed tag pushed; `gh release create` with structured notes; CI green; Google Chat notification fired if webhook set
 
 ## Phase Details
 
@@ -611,10 +621,78 @@ Plans:
 **Plans**: TBD
 
 
+### Phase 70: Phase-Lock Schema + Shared Helper
+**Goal**: A shared, atomic, runtime-agnostic phase-ownership mechanism exists at the repo level so any SB-bearing coding agent can claim/release/peek phase ownership identically
+**Depends on**: Phase 69 (v0.28.0 complete; foundation for multi-agent coordination)
+**Requirements**: LOCK-01, LOCK-02, LOCK-03, LOCK-04, LOCK-05
+**Success Criteria** (what must be TRUE):
+  1. `.planning/.phase-locks.json` schema is documented (in `docs/multi-agent-coordination.md` or inline header in the helper); file is gitignored
+  2. `.planning/scripts/phase-lock.sh` exists with `claim`, `heartbeat`, `release`, `peek` ops; every mutating op acquires `flock` on the lock file for the entire read-modify-write cycle
+  3. Identity tags `claude`, `forge`, `codex`, `opencode` accepted by default; extensible via `multi_agent.identity_tags[]` in `templates/silver-bullet.config.json.default`
+  4. Stale-lock TTL (default 1800 s) is respected by `peek` (returns expired metadata) and `claim` (steals expired locks with stderr warning naming the prior owner)
+  5. `tests/scripts/test-phase-lock.sh` covers ≥7 cases (claim-when-free, claim-conflict, heartbeat-extends-ttl, release-by-non-owner-fails, stale-lock-steal, peek-empty-on-free-phase, parallel-claim-only-one-wins) and passes
+**Plans**: TBD
+
+### Phase 71: Claude-SB Lock Hooks
+**Goal**: Claude-SB integrates with the shared lock helper via three new hooks so any phase-touching tool call automatically participates in multi-agent coordination
+**Depends on**: Phase 70 (helper must exist before hooks call it)
+**Requirements**: HOOK-01, HOOK-02, HOOK-03, HOOK-04
+**Success Criteria** (what must be TRUE):
+  1. `hooks/phase-lock-claim.sh` blocks Edit/Write under `.planning/phases/<NNN>/` when another runtime owns the phase, with a clear stderr message identifying the current owner
+  2. `hooks/phase-lock-heartbeat.sh` is throttled to once per 5 min per phase via mtime check on `~/.claude/.silver-bullet/heartbeat-<NNN>`
+  3. `hooks/phase-lock-release.sh` releases every phase claimed during the session/agent lifetime via the session-scoped manifest
+  4. `hooks/hooks.json` registers all three; `completion-audit.sh` and `stop-check.sh` emit informational warnings (not blocking) when lock owner ≠ self
+**Plans**: TBD
+
+### Phase 72: Forge-SB Lock Awareness
+**Goal**: Forge-SB integrates with the same lock helper through Forge's custom-agent mechanism, mirroring Claude-SB's behavior at phase boundaries
+**Depends on**: Phase 70
+**Requirements**: AGENT-01, AGENT-02, AGENT-03, AGENT-04
+**Success Criteria** (what must be TRUE):
+  1. `forge/agents/forge-session-init.md` peeks all active locks at session start and emits a non-blocking warning if other-runtime locks are present
+  2. New `forge-claim-phase`, `forge-heartbeat-phase`, `forge-release-phase` agents (each `tool_supported: true`, `tools[]: [shell]`, `temperature: 0.1`) wrap the corresponding `phase-lock.sh` ops with `runtime=forge`
+  3. Forge parent skills (silver-feature/bugfix/ui/devops/release/spec/fast under `forge/skills/`) invoke claim at phase entry, release at phase exit; long phases periodically heartbeat
+  4. All three claim/heartbeat/release agents short-circuit when `SB_PHASE_LOCK_INHERITED=true` is set in env (delegation mode — child does not double-claim)
+**Plans**: TBD
+
+### Phase 73: /forge-delegate Skill (delegation exception)
+**Goal**: A parent runtime can engage a sibling runtime as a subagent under its existing phase lock, with structured envelope and result contracts on both sides
+**Depends on**: Phase 71, Phase 72 (both runtimes must honor `SB_PHASE_LOCK_INHERITED` before delegation is safe)
+**Requirements**: DELEG-01, DELEG-02, DELEG-03, DELEG-04
+**Success Criteria** (what must be TRUE):
+  1. `skills/forge-delegate/SKILL.md` (Claude-SB side) packages phase context (phase #, dir, PLAN.md path, REQ-IDs, read hints) into JSON envelope and spawns `forge -p <envelope>` with `SB_PHASE_LOCK_INHERITED=true` set in subprocess env
+  2. `forge/skills/forge-delegate/SKILL.md` (Forge side) is a mirror with the same envelope format and same env-var contract for delegating to Claude or another Forge instance
+  3. Subagent output follows the contract: top-level markdown sections `## FILES_CHANGED`, `## ASSUMPTIONS`, `## REQ-IDS`; parent skill parses these and appends to the active phase's SUMMARY.md draft
+  4. Delegation timeout (default 1200 s, configurable via `multi_agent.delegation_timeout_seconds`) terminates the subagent, leaves parent lock intact, and surfaces partial output to the user
+**Plans**: TBD
+
+### Phase 74: Multi-Agent Tests + Docs
+**Goal**: Multi-agent coordination is verifiable via tests and discoverable via documentation across every user-facing surface
+**Depends on**: Phase 71, Phase 72, Phase 73
+**Requirements**: TEST-01, TEST-02, TEST-03, DOC-01, DOC-02, DOC-03, DOC-04, DOC-05
+**Success Criteria** (what must be TRUE):
+  1. `tests/integration/test-multi-agent-coexistence.sh` simulates a two-agent race (claude claims, forge peeks-and-blocks, claude releases, forge claims) and passes
+  2. Stale-lock recovery test asserts that an expired lock can be stolen by a second runtime with the correct stderr warning
+  3. Delegation envelope round-trip test confirms `SB_PHASE_LOCK_INHERITED=true` prevents double-claim and that result integration writes back to parent SUMMARY.md draft
+  4. `forge/PARITY.md` gains "Phase ownership model" section; `silver-bullet.md` + `templates/silver-bullet.md.base` gain §11 "Multi-agent coordination"; `forge/AGENTS.md.template` gains "Multi-Agent Coordination" section
+  5. New `docs/multi-agent-coordination.md` user-facing guide includes lock state diagram, examples, and `/forge-delegate` workflow; `forge/PARITY-REPORT.md` updated with v0.29.0 outcomes
+**Plans**: TBD
+
+### Phase 75: Release v0.29.0
+**Goal**: v0.29.0 is published with signed tag, release notes, green CI, and version fields bumped across all surfaces
+**Depends on**: Phase 74 (release blocked on green test suite + complete docs)
+**Requirements**: REL-01, REL-02, REL-03
+**Success Criteria** (what must be TRUE):
+  1. `CHANGELOG.md`, `README.md` version badge, `package.json`, `.silver-bullet.json`, `templates/silver-bullet.config.json.default` all show 0.29.0
+  2. Signed tag `v0.29.0` pushed; `gh release create` invoked with structured notes generated from git history since v0.28.0
+  3. CI is green on the release commit; release URL captured in STATE.md/PROJECT.md; Google Chat webhook notification fired (if `SB_GCHAT_WEBHOOK` set)
+**Plans**: TBD
+
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62 -> 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62 -> 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69 -> 70 -> 71 -> 72 -> 73 -> 74 -> 75
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -660,3 +738,9 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 67. Subagent → Custom Agent Conversion | v0.28.0 | direct exec | Complete | 2026-04-27 |
 | 68. Installer + AGENTS.md Glue Layer | v0.28.0 | direct exec | Complete | 2026-04-27 |
 | 69. End-to-End Forge Verification | v0.28.0 | direct exec | Structurally complete; runtime tests pending user (see PARITY-REPORT.md) | 2026-04-27 |
+| 70. Phase-Lock Schema + Shared Helper | v0.29.0 | 0/0 | Pending | — |
+| 71. Claude-SB Lock Hooks | v0.29.0 | 0/0 | Pending | — |
+| 72. Forge-SB Lock Awareness | v0.29.0 | 0/0 | Pending | — |
+| 73. /forge-delegate Skill | v0.29.0 | 0/0 | Pending | — |
+| 74. Multi-Agent Tests + Docs | v0.29.0 | 0/0 | Pending | — |
+| 75. Release v0.29.0 | v0.29.0 | 0/0 | Pending | — |

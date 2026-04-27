@@ -62,7 +62,12 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-(none — v0.28.0 shipped; ready for next milestone planning)
+- [ ] **LOCK-01..05** — Phase-lock schema + shared `phase-lock.sh` helper (claim/heartbeat/release/peek; flock-atomic; stale-lock TTL) — Phase 70
+- [ ] **HOOK-01..04** — Claude-SB integration via 3 new hooks (claim, heartbeat, release) — Phase 71
+- [ ] **AGENT-01..04** — Forge-SB integration via session-init peek + claim/heartbeat/release custom agents; honor `SB_PHASE_LOCK_INHERITED` — Phase 72
+- [ ] **DELEG-01..04** — `/forge-delegate` skill (both sides) packages phase context, spawns sibling runtime under parent lock — Phase 73
+- [ ] **TEST-01..03**, **DOC-01..05** — Coexistence/stale-lock/delegation tests + docs across PARITY, silver-bullet.md, AGENTS.md, top-level user guide — Phase 74
+- [ ] **REL-01..03** — Bump versions, signed tag, gh release, CI green — Phase 75
 
 ### Deferred
 
@@ -77,7 +82,13 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: (none — v0.28.0 shipped 2026-04-27)
+## Current Milestone: v0.29.0 Multi-Agent Phase Coordination
+
+**Goal:** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) can cooperatively work on the same project folder against the same SB state and docs context, but each Phase is owned by exactly one agent at a time. Exception: `/forge-delegate` engages a sibling runtime as a subagent under the parent's existing lock.
+
+**Foundation:** `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum supersedes original Option A with phase-ownership model)
+
+**Phases:** 70-75 (24 requirements). Defined 2026-04-28.
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -153,4 +164,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 — v0.28.0 SHIPPED; Complete Forge Port milestone closed*
+*Last updated: 2026-04-28 — v0.29.0 milestone opened; Multi-Agent Phase Coordination scope defined (Phases 70-75)*

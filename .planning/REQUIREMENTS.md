@@ -1,110 +1,97 @@
-# Requirements: Silver Bullet v0.28.0
+# Requirements: Silver Bullet v0.29.0
 
-**Milestone:** v0.28.0 — Complete Forge Port — Silver Bullet + All Dependencies
-**Defined:** 2026-04-27
-**Core Value:** Forge coding agent users get 100% of Silver Bullet's structured workflow outcomes — same end results as Claude Desktop SB, achieved via skills alone (Forge has no hooks or subagents).
+**Milestone:** v0.29.0 — Multi-Agent Phase Coordination
+**Defined:** 2026-04-28
+**Foundation:** `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum supersedes original Option A with phase-ownership model)
+**Core Value:** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) can cooperatively work on the same project folder against the same SB state and docs context, but each Phase is owned by exactly one agent at a time. Exception: `/forge-delegate` engages a sibling runtime as a subagent under the parent's existing lock.
 
 ---
 
 ## Strategic Approach
 
-Forge has **no hook system**, but **does support custom agents** (per `forgecode.dev/docs/creating-agents/`). Custom agents live in `.forge/agents/` (project) or `~/forge/agents/` (global) as markdown files with YAML frontmatter (`id` required; `description` + `tool_supported: true` enable agent-as-tool invocation). The Forge SKILL.md format is **identical to Claude Code** — skills copy directly with no conversion.
+The phase-ownership model trades fine-grained per-skill cooperation (original RESEARCH.md Option A) for a much simpler invariant: **one phase = one owning agent runtime at any moment**. A shared `.planning/.phase-locks.json` file (gitignored, flock-atomic) records which runtime currently owns which phase, with heartbeat-based liveness and TTL-based stale recovery.
 
-The port therefore has three concrete buckets:
+Three concrete buckets:
 
-1. **Skills (~108)** — Bulk copy of SB + Superpowers + Anthropic knowledge-work skills. No format conversion needed.
-2. **Hooks → Custom Agents (~10)** — SB's 18 hooks fire automatically. In Forge, each blocking hook becomes a **custom agent** (e.g., `forge-pre-commit-audit`) that the main agent invokes as a tool at the right moment, driven by AGENTS.md guidance.
-3. **Subagents → Custom Agents (~30)** — SB/GSD's specialized subagents become **Forge custom agents** (e.g., `gsd-roadmapper`, `gsd-planner`) with proper context isolation, tool restrictions, and `tool_supported: true`. Parent skills reference them by id; the main agent invokes them as tools.
+1. **Lock infrastructure (Phase 70)** — A bash helper at `.planning/scripts/phase-lock.sh` exposes 4 atomic operations (claim, heartbeat, release, peek) over `.planning/.phase-locks.json`, used identically by every runtime.
+2. **Per-runtime integration (Phases 71–72)** — Claude-SB integrates via hooks (`PreToolUse` claim, `PostToolUse` heartbeat, `Stop`/`SubagentStop` release). Forge-SB integrates via custom agents the main agent invokes at phase boundaries — same shared helper, different glue.
+3. **Delegation exception (Phase 73)** — `/forge-delegate` (and reverse) packages phase context into an envelope, spawns the sibling runtime with `SB_PHASE_LOCK_INHERITED=true` so the child does not double-claim the lock, then integrates the structured result back into the parent's phase.
 
-The AGENTS.md template (Forge's CLAUDE.md equivalent) is the central enforcement layer — it tells the main agent *when* to invoke each hook-agent and *which* GSD agent to delegate to, replacing the automatic firing of hooks and Task-spawning of subagents in Claude Code.
+Phases 74–75 wrap up: multi-agent tests, parity/AGENTS.md/docs updates, and the v0.29.0 release.
 
 ---
 
 ## v1 Requirements
 
-### Phase 65 — Skill Foundation Copy (~108 skills)
+### Phase 70 — Phase-Lock Schema + Shared Helper
 
-- [ ] **COPY-SB-01**: All 61 Silver Bullet skills exist in `forge/skills/<name>/SKILL.md` with original Claude Code SKILL.md format (`name`/`description` frontmatter), replacing the 34 wrong-format files currently there
-- [ ] **COPY-SB-02**: Skills with explicit Claude Code-only references (silver-update, silver-init, silver-migrate) have their content adapted for Forge runtime (no `/plugin install`, no Claude Code plugin paths)
-- [ ] **COPY-SP-01**: All 14 Superpowers skills exist in `forge/skills/` (brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, using-superpowers, verification-before-completion, writing-plans, writing-skills) — copied from `~/.claude/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/`
-- [ ] **COPY-KW-01**: All 10 Anthropic engineering/* skills exist in `forge/skills/` — fetched from `https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering/skills`
-- [ ] **COPY-KW-02**: All 7 Anthropic design/* skills exist in `forge/skills/` — fetched from same repo
-- [ ] **COPY-KW-03**: All 8 Anthropic product-management/* skills exist in `forge/skills/` — fetched from same repo
-- [ ] **COPY-KW-04**: All 8 Anthropic marketing/* skills exist in `forge/skills/` — fetched from same repo
-- [ ] **COPY-01**: All 27 missing SB skills (artifact-review-*, devops-*, review-*, silver-add, silver-blast-radius, silver-create-release, silver-fast, silver-forensics, silver-ingest, silver-init, silver-migrate, silver-quality-gates, silver-release, silver-rem, silver-remove, silver-review-stats, silver-scan, silver-spec, silver-update, silver-validate) are present after the bulk copy
+- [ ] **LOCK-01**: `.planning/.phase-locks.json` schema defined and documented — JSON object keyed by phase number (`"070"`, `"071"`, …) → `{ owner_id, agent_runtime, claimed_at, last_heartbeat_at, host, pid, intent }`. File is gitignored and created on first claim.
+- [ ] **LOCK-02**: `.planning/scripts/phase-lock.sh` exists and supports 4 ops with atomic flock-based mutation: `claim <phase> <runtime> <intent>`, `heartbeat <phase> <runtime>`, `release <phase> <runtime>`, `peek <phase>` (returns owner JSON or empty if free). Each op holds the file lock for the entire read-modify-write cycle.
+- [ ] **LOCK-03**: Identity tags `claude`, `forge`, `codex`, `opencode` are recognized; the list is extensible via `templates/silver-bullet.config.json.default` `multi_agent.identity_tags[]` (default value seeded with the four above).
+- [ ] **LOCK-04**: Stale-lock TTL (default 30 minutes without heartbeat = expired) is configurable via `multi_agent.stale_lock_ttl_seconds` (default 1800). `peek` returns the lock as expired when stale; `claim` may steal an expired lock and emits a warning to stderr identifying the prior owner.
+- [ ] **LOCK-05**: Helper has unit tests (`tests/scripts/test-phase-lock.sh`) covering: claim-when-free, claim-when-held (fails), heartbeat-extends-ttl, release-by-non-owner (fails), stale-lock-steal, peek-returns-empty-for-free-phase, atomicity under simulated concurrent writes (10 parallel claim attempts → exactly one succeeds).
 
-### Phase 66 — Hook → Custom Agent Conversion (~10 agents)
+### Phase 71 — Claude-SB Lock Hooks
 
-Each hook gate becomes a Forge custom agent in `forge/agents/<id>/AGENT.md` (or single .md file). Agents have `tool_supported: true`, restricted `tools[]`, and a focused system prompt. The main agent invokes them as tools before the gated action.
+- [ ] **HOOK-01**: `hooks/phase-lock-claim.sh` (PreToolUse on Edit/Write whose target path resolves under `.planning/phases/<NNN>/`) calls `phase-lock.sh claim <NNN> claude "<intent>"`; on conflict, blocks the tool call with a clear message identifying the current owner and how to wait/override.
+- [ ] **HOOK-02**: `hooks/phase-lock-heartbeat.sh` (PostToolUse on Edit/Write/Bash) calls `phase-lock.sh heartbeat <NNN> claude`, throttled to once per 5 minutes per phase via a state file under `~/.claude/.silver-bullet/heartbeat-<NNN>` (touch-and-mtime check, no spawn if recent).
+- [ ] **HOOK-03**: `hooks/phase-lock-release.sh` (Stop and SubagentStop) calls `phase-lock.sh release` for every phase the current session/agent had claimed during its lifetime, identified via a session-scoped manifest at `~/.claude/.silver-bullet/claimed-phases-<session>.txt`.
+- [ ] **HOOK-04**: `hooks/hooks.json` registers the three new hooks in the correct event slots; `completion-audit.sh` and `stop-check.sh` read the lock owner for the current phase and treat a missing lock or non-self lock as a non-blocking warning (informational — they do not fail the gate, since lock ownership and skill-completion gates are orthogonal concerns).
 
-- [ ] **HOOK-01**: `forge-pre-commit-audit` agent — invoked as tool before any `git commit`; replicates `completion-audit.sh` intermediate-commit logic (verifies `required_planning` skills completed, returns BLOCK/ALLOW)
-- [ ] **HOOK-02**: `forge-pre-pr-audit` agent — invoked before `gh pr create` / `gh release create` / `deploy`; replicates `completion-audit.sh` final-delivery logic (verifies full `required_deploy` skill list)
-- [ ] **HOOK-03**: `forge-task-complete-check` agent — invoked before declaring "done" / closing a task; replicates `stop-check.sh`
-- [ ] **HOOK-04**: `forge-roadmap-freshness` agent — invoked before commit when phase SUMMARY.md is staged; replicates `roadmap-freshness.sh`
-- [ ] **HOOK-05**: `forge-spec-floor-check` agent — invoked before any production build; replicates `spec-floor-check.sh` (SPEC.md required)
-- [ ] **HOOK-06**: `forge-uat-gate` agent — invoked before PR for UAT-eligible phases; replicates `uat-gate.sh`
-- [ ] **HOOK-07**: `forge-pr-traceability` agent — invoked when creating PR; replicates `pr-traceability.sh`
-- [ ] **HOOK-08**: `forge-ci-status-check` agent — invoked after push, before next commit; replicates `ci-status-check.sh`
-- [ ] **HOOK-09**: `forge-forbidden-skill-check` agent — verifies skill is not deprecated before invocation
-- [ ] **HOOK-10**: `forge-session-init` agent — invoked at session start; replicates `session-start` + `session-log-init.sh` + `spec-session-record.sh`
+### Phase 72 — Forge-SB Lock Awareness
 
-### Phase 67 — Subagent → Custom Agent Conversion (~30 agents)
+- [ ] **AGENT-01**: `forge/agents/forge-session-init.md` updated to peek every active phase lock at session start and warn (not block) when other-runtime locks are detected, with a hint to run `/phase-status` for details.
+- [ ] **AGENT-02**: New `forge/agents/forge-claim-phase.md`, `forge/agents/forge-heartbeat-phase.md`, `forge/agents/forge-release-phase.md` — each is a small custom agent with `tool_supported: true`, restricted `tools[]: [shell]`, and a system prompt that runs the corresponding `.planning/scripts/phase-lock.sh` op with `runtime=forge`.
+- [ ] **AGENT-03**: Forge parent skills `silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-release`, `silver-spec`, `silver-fast` (Forge copies under `forge/skills/`) are updated to invoke `forge-claim-phase` at phase entry and `forge-release-phase` at phase exit; long-running phases periodically invoke `forge-heartbeat-phase`.
+- [ ] **AGENT-04**: Forge claim/heartbeat/release agents honor `SB_PHASE_LOCK_INHERITED=true` env var — when set, they no-op and return ALLOW so a delegated subagent does not acquire its own lock under the parent's existing lock.
 
-Each GSD subagent becomes a Forge custom agent in `forge/agents/<id>/AGENT.md` (or single .md file). Frontmatter includes `id`, `title`, `description` (mandatory for tool invocation), `tools[]` (restricted to what the subagent needs), `tool_supported: true`, `model`, `temperature`, `max_tokens`, optional `user_prompt` Handlebars template. Body contains the original subagent prompt.
+### Phase 73 — `/forge-delegate` Skill (delegation exception)
 
-- [ ] **SUB-01**: GSD planning-stage agents (`gsd-roadmapper`, `gsd-planner`, `gsd-plan-checker`, `gsd-phase-researcher`, `gsd-pattern-mapper`, `gsd-project-researcher`, `gsd-research-synthesizer`) exist as Forge custom agents
-- [ ] **SUB-02**: GSD execution-stage agents (`gsd-executor`, `gsd-verifier`, `gsd-integration-checker`, `gsd-nyquist-auditor`) exist as Forge custom agents
-- [ ] **SUB-03**: GSD review-stage agents (`gsd-code-reviewer`, `gsd-code-fixer`, `gsd-security-auditor`, `gsd-doc-writer`, `gsd-doc-verifier`) exist as Forge custom agents
-- [ ] **SUB-04**: GSD specialized agents (`gsd-debugger`, `gsd-codebase-mapper`, `gsd-intel-updater`, `gsd-pr-creator`, `gsd-session-report-creator`, `gsd-user-profiler`) exist as Forge custom agents
-- [ ] **SUB-05**: GSD AI-integration agents (`gsd-eval-auditor`, `gsd-eval-planner`, `gsd-domain-researcher`, `gsd-ai-researcher`, `gsd-framework-selector`) exist as Forge custom agents
-- [ ] **SUB-06**: GSD UI agents (`gsd-ui-auditor`, `gsd-ui-checker`, `gsd-ui-researcher`) exist as Forge custom agents
-- [ ] **SUB-07**: All parent skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, gsd-plan-phase, gsd-execute-phase, etc.) updated so `Task(subagent_type="X")` calls become "invoke the `X` agent as a tool" — referencing the Forge custom agent by id
+- [ ] **DELEG-01**: New `skills/forge-delegate/SKILL.md` (Claude-SB side) — packages current phase context (phase number, phase dir path, PLAN.md path, REQ-IDs to address, read-first hints) into a JSON envelope; spawns `forge -p <envelope>` as a subprocess with `SB_PHASE_LOCK_INHERITED=true` in env; waits for return; integrates result into the parent phase artifacts.
+- [ ] **DELEG-02**: New `forge/skills/forge-delegate/SKILL.md` (Forge side) — mirror of DELEG-01 for the case Forge delegates back to Claude or to another Forge instance; same envelope format, same `SB_PHASE_LOCK_INHERITED=true` semantics.
+- [ ] **DELEG-03**: Delegated subagent's structured output follows Forge's standard contract: top-level markdown with `## FILES_CHANGED` (file list), `## ASSUMPTIONS` (decisions made), `## REQ-IDS` (requirements addressed) sections. Parent skill parses these and appends them to the active phase's `SUMMARY.md` working draft.
+- [ ] **DELEG-04**: Delegation timeout (default 20 min, configurable via `multi_agent.delegation_timeout_seconds`) terminates the subagent, releases any temporary state, leaves the parent's lock intact, and prompts the user with the partial output for manual continuation.
 
-### Phase 68 — Installer + AGENTS.md Glue Layer
+### Phase 74 — Multi-Agent Tests + Docs
 
-- [ ] **INST-01**: `forge-sb-install.sh` rewritten as copy-based installer; copies `forge/skills/` → `~/forge/skills/` (~108 skills) AND `forge/agents/` → `~/forge/agents/` (~40 custom agents = 10 hook + 30 subagent), with project-level `.forge/skills/` and `.forge/agents/` mirrors
-- [ ] **INST-02**: Installer fetches Anthropic knowledge-work-plugin skills from GitHub at install time (or vendors a snapshot in `forge/skills/`)
-- [ ] **INST-03**: Global `AGENTS.md` template rewritten as Forge-adapted silver-bullet.md — includes workflow routing, mandatory hook-agent invocations at gating moments (before commit, PR, build, task-complete), subagent-as-tool delegation guidance, and enforcement prose
-- [ ] **INST-04**: Project `AGENTS.project.template` updated with project-specific skill/agent references and SB workflow conventions
-- [ ] **INST-05**: Installer runs cleanly via `bash forge-sb-install.sh` (local) and `curl -sL ... | bash` (remote); installs both skills AND agents
-- [ ] **INST-06**: README + docs site documents the Forge installation path with parity matrix (SB hook → Forge agent, SB subagent → Forge agent, SB skill → Forge skill)
+- [ ] **TEST-01**: Coexistence smoke test (`tests/integration/test-multi-agent-coexistence.sh`) — simulates two-agent race for the same phase: agent A (claude) claims, agent B (forge) peeks and is told to wait; A releases; B claims successfully. Asserts JSON-state correctness and proper stderr messaging at each step.
+- [ ] **TEST-02**: Stale-lock recovery test — agent A claims, mocks heartbeat to be older than TTL, agent B peeks (sees stale), agent B claims (steals), warning emitted; assertions on lock file state and stderr.
+- [ ] **TEST-03**: Delegation envelope round-trip test — parent claims phase, invokes `/forge-delegate` with a fake-but-real envelope, child runtime runs with `SB_PHASE_LOCK_INHERITED=true` (verified no double-claim), child returns structured result, parent integrates it.
+- [ ] **DOC-01**: `forge/PARITY.md` gains a "Phase ownership model" section explaining the lock invariant, identity tags, stale-lock TTL, and the `/forge-delegate` exception.
+- [ ] **DOC-02**: `silver-bullet.md` and `templates/silver-bullet.md.base` gain a "Multi-agent coordination" §11 — when other-runtime locks are detected at session start, when to claim/release, when to delegate.
+- [ ] **DOC-03**: `forge/AGENTS.md.template` gains a "Multi-Agent Coordination" section with the same content adapted for Forge's main-agent instructions (peek-on-init, claim-at-phase-entry, release-at-phase-exit, delegate-exception).
+- [ ] **DOC-04**: Top-level `docs/multi-agent-coordination.md` user-facing guide — diagrams of the lock state machine, examples of two agents collaborating on different phases of the same milestone, and the `/forge-delegate` workflow.
+- [ ] **DOC-05**: `forge/PARITY-REPORT.md` updated with a v0.29.0 section: lock helper present, lock hooks/agents installed, multi-agent tests green, delegation skill verified.
 
-### Phase 69 — End-to-End Forge Verification
+### Phase 75 — Release v0.29.0
 
-- [ ] **VERIF-01**: A Forge test app copy is created (cloned from existing SB test app) with `forge-sb-install.sh` applied — AGENTS.md + all ~108 skills + all ~40 custom agents present in correct directories
-- [ ] **VERIF-02**: Feature workflow (silver-feature path) runs end-to-end in Forge — discuss, plan, execute, verify, secure, ship — produces same artifacts (CONTEXT.md, RESEARCH.md, PLAN.md, VERIFICATION.md, SECURITY.md, SUMMARY.md) as SB on Claude Desktop
-- [ ] **VERIF-03**: Bug fix workflow (silver-bugfix path) runs end-to-end in Forge with same artifacts as SB
-- [ ] **VERIF-04**: DevOps workflow (silver-devops path) runs end-to-end in Forge with same artifacts as SB
-- [ ] **VERIF-05**: Release workflow (silver-release path) runs end-to-end in Forge with same artifacts as SB
-- [ ] **VERIF-06**: Hook-equivalent agents (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) demonstrably block at correct workflow points when conditions fail and allow when conditions pass — same blocking/allow outcomes as SB hooks
-- [ ] **VERIF-07**: Subagent-as-tool delegation (gsd-planner, gsd-verifier, etc.) produces equivalent artifact quality and structure to spawned subagents in SB
-- [ ] **VERIF-08**: A `forge/PARITY-REPORT.md` documents end-to-end test outcomes, any unavoidable behavioural gaps with mitigations, and confirms feature parity for the 5 production workflow scenarios
+- [ ] **REL-01**: `CHANGELOG.md` and `README.md` version badge bumped to v0.29.0; `package.json`, `.silver-bullet.json`, `templates/silver-bullet.config.json.default` `version` fields bumped.
+- [ ] **REL-02**: Tag `v0.29.0` created (signed) and pushed; `gh release create` invoked with structured release notes (Features, Fixes, Security, Other) generated by `silver-create-release`.
+- [ ] **REL-03**: CI is green on the release commit; release URL captured in `STATE.md`/`PROJECT.md`; Google Chat notification fired if `SB_GCHAT_WEBHOOK` is set.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Bash hook scripts in `hooks/` directory | Forge has no hook system; replaced by Forge custom agents the main agent invokes as tools |
-| Claude Code `Task(subagent_type=…)` syntax | Replaced by Forge custom agents (per `forgecode.dev/docs/creating-agents/`) — same delegation semantics |
-| `/silver:init` Claude Code-specific plugin checks | Replaced by Forge-native install path that manages skills directly |
-| Automatic SessionStart hook firing | Replaced by `forge-session-init` skill that AGENTS.md instructs the agent to invoke at session start |
-| Forge-specific MCP tooling beyond what SB needs | SB's existing MCP integration is preserved; no Forge-only MCP additions |
-| Marketing skills auto-routing in dev workflow | Marketing skills are available but not part of dev workflow paths |
-| anthropic-skills:* admin/utility skills (schedule, xlsx, pdf, etc.) | Out of scope — not part of SB's core development workflow |
-| Parity for all 11 enforcement layers (only blocking-layer parity) | Informational layers (compliance-status, prompt-reminder) are best-effort in Forge; not blocked on parity |
+| General-purpose Claude-SB hook robustness (artifact-evidence fallback for completion-audit / stop-check) | Defer to v0.30.0+ — tracked separately; orthogonal to multi-agent coordination |
+| Per-skill cooperation between runtimes (original RESEARCH.md Option A) | Superseded by phase-ownership model; revisit only if phase-grain proves too coarse in practice |
+| Real-time inter-runtime messaging (push notifications when phase locks change) | File-based polling via `peek` is sufficient for current scale; revisit if multi-agent latency complaints emerge |
+| Cross-machine lock coordination (locks visible across hosts) | `.phase-locks.json` lives in the repo working tree; multi-machine collaboration uses git-level coordination, not in scope here |
+| Lock TTL auto-tuning based on phase complexity | Single configurable TTL is sufficient; per-phase tuning is YAGNI |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COPY-SB-01, COPY-SB-02, COPY-SP-01, COPY-KW-01, COPY-KW-02, COPY-KW-03, COPY-KW-04, COPY-01 | Phase 65 | Pending |
-| HOOK-01 through HOOK-10 | Phase 66 | Pending |
-| SUB-01 through SUB-07 | Phase 67 | Pending |
-| INST-01 through INST-06 | Phase 68 | Pending |
-| VERIF-01 through VERIF-08 | Phase 69 | Pending |
+| LOCK-01 through LOCK-05 | Phase 70 | Pending |
+| HOOK-01 through HOOK-04 | Phase 71 | Pending |
+| AGENT-01 through AGENT-04 | Phase 72 | Pending |
+| DELEG-01 through DELEG-04 | Phase 73 | Pending |
+| TEST-01 through TEST-03, DOC-01 through DOC-05 | Phase 74 | Pending |
+| REL-01 through REL-03 | Phase 75 | Pending |
 
-**Coverage:** 39 v1 requirements, all mapped to phases.
+**Coverage:** 24 v1 requirements, all mapped to phases.
 
 ---
-*Requirements defined: 2026-04-27*
-*Last updated: 2026-04-27 — restructured after Forge docs research; approach changed from skill-format-conversion to skill-copy + hook/subagent-to-skill conversion*
+*Requirements defined: 2026-04-28*
+*Foundation: `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum)*

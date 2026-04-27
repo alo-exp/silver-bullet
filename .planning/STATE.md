@@ -1,69 +1,67 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.28.0
-milestone_name: Complete Forge Port — Silver Bullet + All Dependencies
+milestone: v0.29.0
+milestone_name: Multi-Agent Phase Coordination
 current_plan: none
-status: shipped
+status: planned
 stopped_at: ""
-last_updated: "2026-04-27T22:55:00.000Z"
-last_activity: 2026-04-27
+last_updated: "2026-04-28T00:00:00.000Z"
+last_activity: 2026-04-28
 progress:
-  total_phases: 5
-  completed_phases: 5
+  total_phases: 6
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.28.0 (SHIPPED 2026-04-27)
-**Active phase:** (none — milestone closed)
+**Current version:** v0.28.0 (shipped 2026-04-27); v0.29.0 in planning
+**Active phase:** (none — milestone scoped, awaiting `/gsd-plan-phase 70`)
 **Current plan:** (none)
 
-Last activity: 2026-04-27
+Last activity: 2026-04-28
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-27)
+See: .planning/PROJECT.md (updated 2026-04-28)
 
-**Core value:** Forge users get 100% of Silver Bullet's structured workflow outcomes via skills + Forge custom agents
-**Current focus:** v0.28.0 SHIPPED — ready for next milestone
+**Core value:** Any number of SB-bearing coding agents can cooperatively work on the same project folder, with phase-grain ownership locks preventing collisions and `/forge-delegate` enabling subagent-style cross-runtime delegation.
+**Current focus:** v0.29.0 — Multi-Agent Phase Coordination (Phases 70-75)
 
 ## Current Position
 
-Phase: (none — Phases 65-69 complete; v0.28.0 shipped)
+Phase: (none — next is Phase 70)
 Plan: (none)
-Status: v0.28.0 released (https://github.com/alo-exp/silver-bullet/releases/tag/v0.28.0); CI green on release commit; tag signed
-Last activity: 2026-04-27 — v0.28.0 shipped
+Status: Milestone scoped; REQUIREMENTS.md and ROADMAP.md updated; ready for `/gsd-plan-phase 70`
+Last activity: 2026-04-28 — v0.29.0 milestone opened
 
-Progress: [██████████] 100% (5/5 phases shipped)
+Progress: [          ] 0% (0/6 phases shipped)
 
 ## Accumulated Context
 
 ### Decisions
 
-- v0.28.0 approach: Forge SKILL.md format = Claude Code SKILL.md format (just copy)
-- Forge has NO hooks → 10 hook-equivalent custom agents at forge/agents/
-- Forge HAS custom agents → 31 GSD subagents ported as Forge custom agents
-- Custom agents per `forgecode.dev/docs/creating-agents/`: id required, description + tool_supported:true for tool invocation, restricted tools[]
-- Tool mapping (Claude Code → Forge): Read/Glob/Grep → read/search; Write/Edit → write/patch; Bash → shell; WebFetch/WebSearch → fetch; mcp__* → "mcp_*"
-- AGENTS.md is the central enforcement layer in Forge (replaces hook auto-firing) — must be read at session start
-- Installer copies forge/skills/ → ~/forge/skills/ AND forge/agents/ → ~/forge/agents/ (and .forge/ project mirrors)
-- Knowledge-work plugins fetched from anthropics/knowledge-work-plugins at install time (or with --no-knowledge-work for offline)
-- Test app at ~/Documents/Projects/food-forge-sb proven working with real Forge CLI v2.12.9
-- Forge runtime tests: 114 skills + 46 agents loaded; forge-spec-floor-check returned BLOCK; forge-pre-commit-audit returned ALLOW (trivial session) — semantics correct
+- v0.29.0 model: phase-ownership locks (one phase = one runtime at a time), not per-skill cooperation — supersedes original RESEARCH.md Option A (see addendum)
+- Lock file: `.planning/.phase-locks.json` (gitignored, flock-atomic), schema documented in helper header + user guide
+- Shared helper: `.planning/scripts/phase-lock.sh` with 4 ops (claim/heartbeat/release/peek)
+- Identity tags: `claude`, `forge`, `codex`, `opencode` (extensible via `multi_agent.identity_tags[]` config)
+- Stale-lock TTL: default 1800 s (30 min), configurable via `multi_agent.stale_lock_ttl_seconds`
+- Delegation contract: `SB_PHASE_LOCK_INHERITED=true` env var prevents child runtime from double-claiming under parent's existing lock
+- Delegation result format: top-level markdown sections `## FILES_CHANGED`, `## ASSUMPTIONS`, `## REQ-IDS` (matches Forge's standard output contract)
+- Lock-owner check in `completion-audit.sh` / `stop-check.sh` is informational only (warning, not block) — orthogonal to skill-completion gating
 
 ### Pending Todos
 
-(none for v0.28.0)
+(none — Phase 70 not yet planned)
 
 ### Blockers/Concerns
 
-(none — v0.28.0 shipped; CI green on release commit; tag signed and published)
+(none — research complete, scope locked)
 
 ## Session Continuity
 
-Last session: 2026-04-27
-Stopped at: v0.28.0 fully released. https://github.com/alo-exp/silver-bullet/releases/tag/v0.28.0 is live; CHANGELOG, README badge, and version files all bumped to 0.28.0; ready for next milestone.
+Last session: 2026-04-28
+Stopped at: v0.29.0 milestone opened. REQUIREMENTS.md, ROADMAP.md, PROJECT.md, STATE.md updated. Ready for `/gsd-plan-phase 70`.
