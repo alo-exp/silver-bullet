@@ -100,17 +100,50 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PORT-SB-01–09 | Phase 65 | Pending |
-| PORT-SB-10–15 | Phase 65 | Pending |
-| PORT-SB-16–19 | Phase 65 | Pending |
-| PORT-SB-20–22 | Phase 66 | Pending |
-| PORT-SP-01–07 | Phase 66 | Pending |
+| PORT-SB-01 | Phase 65 | Pending |
+| PORT-SB-02 | Phase 65 | Pending |
+| PORT-SB-03 | Phase 65 | Pending |
+| PORT-SB-04 | Phase 65 | Pending |
+| PORT-SB-05 | Phase 65 | Pending |
+| PORT-SB-06 | Phase 65 | Pending |
+| PORT-SB-07 | Phase 65 | Pending |
+| PORT-SB-08 | Phase 65 | Pending |
+| PORT-SB-09 | Phase 65 | Pending |
+| PORT-SB-10 | Phase 65 | Pending |
+| PORT-SB-11 | Phase 65 | Pending |
+| PORT-SB-12 | Phase 65 | Pending |
+| PORT-SB-13 | Phase 65 | Pending |
+| PORT-SB-14 | Phase 65 | Pending |
+| PORT-SB-15 | Phase 65 | Pending |
+| PORT-SB-16 | Phase 65 | Pending |
+| PORT-SB-17 | Phase 65 | Pending |
+| PORT-SB-18 | Phase 65 | Pending |
+| PORT-SB-19 | Phase 65 | Pending |
+| PORT-SB-20 | Phase 66 | Pending |
+| PORT-SB-21 | Phase 66 | Pending |
+| PORT-SB-22 | Phase 66 | Pending |
+| PORT-SP-01 | Phase 66 | Pending |
+| PORT-SP-02 | Phase 66 | Pending |
+| PORT-SP-03 | Phase 66 | Pending |
+| PORT-SP-04 | Phase 66 | Pending |
+| PORT-SP-05 | Phase 66 | Pending |
+| PORT-SP-06 | Phase 66 | Pending |
+| PORT-SP-07 | Phase 66 | Pending |
 | PORT-KW-01 | Phase 67 | Pending |
 | PORT-KW-02 | Phase 67 | Pending |
 | PORT-KW-03 | Phase 67 | Pending |
 | PORT-KW-04 | Phase 67 | Pending |
-| INST-01–04 | Phase 68 | Pending |
-| VERIF-01–07 | Phase 69 | Pending |
+| INST-01 | Phase 68 | Pending |
+| INST-02 | Phase 68 | Pending |
+| INST-03 | Phase 68 | Pending |
+| INST-04 | Phase 68 | Pending |
+| VERIF-01 | Phase 69 | Pending |
+| VERIF-02 | Phase 69 | Pending |
+| VERIF-03 | Phase 69 | Pending |
+| VERIF-04 | Phase 69 | Pending |
+| VERIF-05 | Phase 69 | Pending |
+| VERIF-06 | Phase 69 | Pending |
+| VERIF-07 | Phase 69 | Pending |
 
 **Coverage:**
 - v1 requirements: 40 total
@@ -119,4 +152,4 @@
 
 ---
 *Requirements defined: 2026-04-27*
-*Last updated: 2026-04-27 after initial definition*
+*Last updated: 2026-04-27 — traceability expanded to individual requirement rows after roadmap creation*
