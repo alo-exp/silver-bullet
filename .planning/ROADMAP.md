@@ -113,9 +113,9 @@
 ### v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
 
 - [ ] **Phase 65: Skill Foundation Copy** - Replace 34 wrong-format forge/skills/ files with correctly-formatted SB skills; bulk-copy all 61 SB + 14 Superpowers + 33 Anthropic knowledge-work skills (~108 skills total)
-- [ ] **Phase 66: Hook → Skill Conversion** - Create ~10 skill equivalents for SB's 18 hook gates (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) since Forge has no hook system
-- [ ] **Phase 67: Subagent → Skill Conversion** - Create ~30 procedure skills containing GSD subagent prompts; update parent skills to apply them inline (Forge has no subagent system)
-- [ ] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh for all ~148 skills; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-equivalent + subagent-equivalent invocation since hooks/subagents are absent)
+- [ ] **Phase 66: Hook → Custom Agent Conversion** - Create ~10 Forge custom agents in `forge/agents/` for SB's hook gates (forge-pre-commit-audit, forge-task-complete-check, etc.) — invoked as tools by main agent at gating moments since Forge has no hooks
+- [ ] **Phase 67: Subagent → Custom Agent Conversion** - Port ~30 GSD subagents as Forge custom agents (per forgecode.dev/docs/creating-agents/) with `tool_supported: true`, restricted `tools[]`, context isolation; update parent skills to invoke them as tools
+- [ ] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh to install ~108 skills + ~40 custom agents; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation)
 - [ ] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md
 
 ## Phase Details
@@ -553,55 +553,60 @@ Plans:
   2. forge/skills/ contains all 61 Silver Bullet skills, all 14 Superpowers skills (sourced from ~/.claude/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/), and all ~33 Anthropic knowledge-work skills (fetched from anthropics/knowledge-work-plugins GitHub repo)
   3. Skills with explicit Claude Code-only references (silver-update plugin install, silver-init plugin setup, silver-migrate plugin paths) have content adapted for Forge runtime
   4. Every ported skill has identical SKILL.md format to the Claude Code source (Forge docs confirm: "format is identical — no conversion needed")
-**Plans**: TBD
+**Plans:** 4/4 plans
+Plans:
+- [ ] 065-01-PLAN.md — Wipe forge/skills/ and bulk-copy all 61 SB skills verbatim
+- [ ] 065-02-PLAN.md — Adapt silver-update, silver-init, silver-migrate for Forge runtime
+- [ ] 065-03-PLAN.md — Copy 14 Superpowers skills from local cache
+- [ ] 065-04-PLAN.md — Fetch and copy 33 Anthropic knowledge-work skills with namespace prefix
 
-### Phase 66: Hook → Skill Conversion
-**Goal**: SB's 18 hook gates are recreated as ~10 Forge skills the agent invokes at the appropriate workflow points, since Forge has no hook system
-**Depends on**: Phase 65 (foundation skills must exist before hook-equivalents can reference them)
+### Phase 66: Hook → Custom Agent Conversion
+**Goal**: SB's 18 hook gates are recreated as ~10 Forge custom agents (`forge/agents/<id>.md`) the main agent invokes as tools at gating moments, since Forge has no hook system
+**Depends on**: Phase 65 (foundation skills must exist; hook-agents reference them)
 **Requirements**: HOOK-01, HOOK-02, HOOK-03, HOOK-04, HOOK-05, HOOK-06, HOOK-07, HOOK-08, HOOK-09, HOOK-10
 **Success Criteria** (what must be TRUE):
-  1. forge/skills/ contains forge-pre-commit-audit, forge-pre-pr-audit, forge-task-complete-check, forge-roadmap-freshness, forge-spec-floor-check, forge-uat-gate, forge-pr-traceability, forge-ci-status-check, forge-forbidden-skill-check, forge-session-init — each replicating the gating logic of the corresponding SB hook
-  2. Each hook-equivalent skill specifies the exact pre-conditions to verify, the verification commands or checks to run, and the blocking action if conditions fail (so the agent reproduces the hook's gate behavior manually)
-  3. The skills are written so Forge's AI auto-applies them when the relevant action (commit, PR, build, task-complete) is about to occur — based on AGENTS.md guidance produced in Phase 68
-  4. Each hook-equivalent skill cross-references the original hook script in `hooks/` for traceability and future maintenance
+  1. `forge/agents/` contains custom agent files for: forge-pre-commit-audit, forge-pre-pr-audit, forge-task-complete-check, forge-roadmap-freshness, forge-spec-floor-check, forge-uat-gate, forge-pr-traceability, forge-ci-status-check, forge-forbidden-skill-check, forge-session-init
+  2. Each custom agent has YAML frontmatter with `id`, `title`, `description` (mandatory for tool invocation), restricted `tools[]` (typically read + search + shell for verification), `tool_supported: true`, low `temperature` (≤0.2 for deterministic gating), and optional `max_tokens`/`max_turns`
+  3. Each agent's body is a focused system prompt that replicates the corresponding SB hook's gating logic — listing pre-conditions, verification commands, and BLOCK/ALLOW return semantics
+  4. Each hook-agent file cross-references its source `hooks/<name>.sh` for traceability
 **Plans**: TBD
 
-### Phase 67: Subagent → Skill Conversion
-**Goal**: All ~30 GSD subagent prompts are recreated as Forge procedure skills the main agent applies inline, since Forge has no subagent system; parent skills are updated to reference them
-**Depends on**: Phase 65 (parent skills must exist before they can be edited to reference procedure skills)
+### Phase 67: Subagent → Custom Agent Conversion
+**Goal**: All ~30 GSD subagents are recreated as Forge custom agents in `forge/agents/`, with proper context isolation and tool restrictions; parent skills are updated to invoke them as tools
+**Depends on**: Phase 65 (parent skills must exist for editing)
 **Requirements**: SUB-01, SUB-02, SUB-03, SUB-04, SUB-05, SUB-06, SUB-07
 **Success Criteria** (what must be TRUE):
-  1. forge/skills/ contains *-procedure SKILL.md files for all GSD planning subagents (gsd-roadmapper-procedure, gsd-planner-procedure, gsd-plan-checker-procedure, gsd-phase-researcher-procedure, gsd-pattern-mapper-procedure, gsd-project-researcher-procedure, gsd-research-synthesizer-procedure)
-  2. forge/skills/ contains *-procedure SKILL.md files for execution-stage subagents (gsd-executor-procedure, gsd-verifier-procedure, gsd-integration-checker-procedure, gsd-nyquist-auditor-procedure)
-  3. forge/skills/ contains *-procedure SKILL.md files for review-stage subagents (gsd-code-reviewer-procedure, gsd-code-fixer-procedure, gsd-security-auditor-procedure, gsd-doc-writer-procedure, gsd-doc-verifier-procedure)
-  4. forge/skills/ contains *-procedure SKILL.md files for specialized, AI-integration, and UI subagents (gsd-debugger-procedure, gsd-codebase-mapper-procedure, gsd-intel-updater-procedure, gsd-pr-creator-procedure, gsd-session-report-creator-procedure, gsd-user-profiler-procedure, gsd-eval-auditor-procedure, gsd-eval-planner-procedure, gsd-domain-researcher-procedure, gsd-ai-researcher-procedure, gsd-framework-selector-procedure, gsd-ui-auditor-procedure, gsd-ui-checker-procedure, gsd-ui-researcher-procedure)
-  5. All parent workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, gsd-plan-phase, gsd-execute-phase, etc.) are updated so subagent-spawn references read "apply the X-procedure skill" instead of "spawn X agent via Task tool"
-  6. Each procedure skill contains the full prompt content the corresponding subagent receives in Claude Code, adapted so the main Forge agent can run it inline
+  1. `forge/agents/` contains custom agent files for all GSD planning subagents (gsd-roadmapper, gsd-planner, gsd-plan-checker, gsd-phase-researcher, gsd-pattern-mapper, gsd-project-researcher, gsd-research-synthesizer)
+  2. `forge/agents/` contains custom agent files for execution-stage subagents (gsd-executor, gsd-verifier, gsd-integration-checker, gsd-nyquist-auditor)
+  3. `forge/agents/` contains custom agent files for review-stage subagents (gsd-code-reviewer, gsd-code-fixer, gsd-security-auditor, gsd-doc-writer, gsd-doc-verifier)
+  4. `forge/agents/` contains custom agent files for specialized, AI-integration, and UI subagents (gsd-debugger, gsd-codebase-mapper, gsd-intel-updater, gsd-pr-creator, gsd-session-report-creator, gsd-user-profiler, gsd-eval-auditor, gsd-eval-planner, gsd-domain-researcher, gsd-ai-researcher, gsd-framework-selector, gsd-ui-auditor, gsd-ui-checker, gsd-ui-researcher)
+  5. Each custom agent has correct YAML frontmatter (id, title, description, tools[] restricted to subagent's needs, tool_supported: true, model/temperature appropriate to role) with the body being the original Claude Code subagent prompt content
+  6. All parent workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, gsd-plan-phase, gsd-execute-phase, etc.) are updated so `Task(subagent_type="X")` references become "invoke the `X` agent as a tool" — referencing the Forge custom agent by id
 **Plans**: TBD
 
 ### Phase 68: Installer + AGENTS.md Glue Layer
-**Goal**: forge-sb-install.sh deploys all ~148 skills, and the AGENTS.md template drives hook-equivalent + subagent-procedure invocation as the central enforcement layer
-**Depends on**: Phase 65, Phase 66, Phase 67 (all skill content must exist before installer copies it)
+**Goal**: forge-sb-install.sh deploys all ~108 skills and ~40 custom agents; AGENTS.md template drives hook-agent gating + subagent-as-tool delegation as the central enforcement layer
+**Depends on**: Phase 65, Phase 66, Phase 67 (all skills + agents must exist before installer copies them)
 **Requirements**: INST-01, INST-02, INST-03, INST-04, INST-05, INST-06
 **Success Criteria** (what must be TRUE):
-  1. forge-sb-install.sh is rewritten as a copy-only installer (no per-skill adaptation logic) that installs all ~148 skills (foundation copies + hook-equivalents + subagent-procedures) to ~/forge/skills/ and .forge/skills/
-  2. The installer either fetches Anthropic knowledge-work-plugin skills from GitHub at install time or vendors them in the silver-bullet repo so installation is self-contained
-  3. The global AGENTS.md template is rewritten as a Forge-adapted silver-bullet.md — it includes workflow routing tables, mandatory pre-commit/pre-PR/task-complete skill invocations (replacing automatic hook firing), subagent-procedure invocation guidance (replacing automatic subagent dispatch), and enforcement prose
-  4. AGENTS.project.template (project-level) is updated with project-specific skill references and SB workflow conventions
-  5. README.md and the docs site document the Forge installation path with a parity matrix mapping each SB capability (hooks, subagents, skills, workflows) to its Forge skill equivalent
-  6. Both `bash forge-sb-install.sh` (local) and `curl -sL ... | bash` (remote one-liner) install paths complete cleanly and produce identical skill sets
+  1. forge-sb-install.sh installs `forge/skills/` → `~/forge/skills/` AND `forge/agents/` → `~/forge/agents/` (and `.forge/` mirrors for project-level), totalling ~148 files (~108 skills + ~40 agents)
+  2. Installer fetches Anthropic knowledge-work-plugin skills from GitHub at install time or vendors them in the repo
+  3. Global AGENTS.md template is a Forge-adapted silver-bullet.md — workflow routing tables, mandatory hook-agent invocations at gating moments (before commit, PR, build, task-complete), subagent-as-tool delegation guidance, enforcement prose
+  4. AGENTS.project.template (project-level) is updated with project-specific skill/agent references and SB workflow conventions
+  5. Both `bash forge-sb-install.sh` (local) and `curl -sL ... | bash` (remote one-liner) install paths complete cleanly and produce identical skill+agent sets
+  6. README + docs site documents the Forge installation path with a parity matrix (SB hook → Forge agent, SB subagent → Forge agent, SB skill → Forge skill)
 **Plans**: TBD
 
 ### Phase 69: End-to-End Forge Verification
-**Goal**: End-to-end Forge testing confirms that the ported skill set produces the same workflow outcomes as Silver Bullet on Claude Desktop across all major development paths
+**Goal**: End-to-end Forge testing confirms the ported skill+agent set produces the same workflow outcomes as SB on Claude Desktop across all major development paths
 **Depends on**: Phase 68 (installer must be complete before verification can set up the test app)
 **Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04, VERIF-05, VERIF-06, VERIF-07, VERIF-08
 **Success Criteria** (what must be TRUE):
-  1. A Forge test app is created (cloned from the existing SB test app) with forge-sb-install.sh applied — AGENTS.md is present and all ~148 skills are installed in the correct locations
-  2. A complete feature development workflow (silver-feature path: brainstorm, spec, quality gates, plan, implement, review, verify, secure, ship) runs to completion in Forge and produces the same artifact set (CONTEXT.md, RESEARCH.md, PLAN.md, VERIFICATION.md, SECURITY.md, SUMMARY.md) as SB on Claude Desktop
+  1. A Forge test app is created (cloned from the existing SB test app) with forge-sb-install.sh applied — AGENTS.md is present, all ~108 skills + ~40 custom agents are installed in correct locations
+  2. A complete feature workflow (silver-feature path: brainstorm, spec, quality gates, plan, implement, review, verify, secure, ship) runs to completion in Forge and produces the same artifact set as SB on Claude Desktop
   3. Bug fix, DevOps, and release workflows each run to completion in Forge with the same artifact outputs as SB
-  4. The hook-equivalent skills (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) demonstrably fire at the correct workflow points and produce the same blocking/passing outcomes as the SB hooks
-  5. The subagent-procedure skills (gsd-planner-procedure, gsd-verifier-procedure, etc.) produce equivalent artifact quality and structure to the spawned subagents in SB
+  4. The hook-agents (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) demonstrably block at correct workflow points when conditions fail and allow when conditions pass — same outcomes as SB hooks
+  5. The subagent-as-tool delegations (gsd-planner, gsd-verifier, etc.) produce equivalent artifact quality and structure to the spawned subagents in SB
   6. A parity report at forge/PARITY-REPORT.md documents each workflow tested, the outcomes, any unavoidable behavioural gaps with mitigations, and confirms feature parity for the 5 production workflow scenarios
 **Plans**: TBD
 
@@ -651,7 +656,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
 | 65. Skill Foundation Copy | v0.28.0 | 0/TBD | Not started | - |
-| 66. Hook → Skill Conversion | v0.28.0 | 0/TBD | Not started | - |
-| 67. Subagent → Skill Conversion | v0.28.0 | 0/TBD | Not started | - |
+| 66. Hook → Custom Agent Conversion | v0.28.0 | 0/TBD | Not started | - |
+| 67. Subagent → Custom Agent Conversion | v0.28.0 | 0/TBD | Not started | - |
 | 68. Installer + AGENTS.md Glue Layer | v0.28.0 | 0/TBD | Not started | - |
 | 69. End-to-End Forge Verification | v0.28.0 | 0/TBD | Not started | - |
