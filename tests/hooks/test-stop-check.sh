@@ -182,14 +182,14 @@ teardown
 echo "--- Test 3: Missing skills + dirty tree -> block with skill names ---"
 setup
 # Only put one skill, leaving others missing
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 # Dirty the working tree so HOOK-14 does not short-circuit enforcement
 # (this test validates completion gate behaviour for an actual dev session).
 printf 'work-in-progress\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_blocks "missing skills -> decision:block" "$out"
-assert_contains "block output contains 'code-review'" "$out" "code-review"
+assert_contains "block output contains 'silver-quality-gates'" "$out" "silver-quality-gates"
 teardown
 
 # Test 4: Trivial file present -> exit 0, no block
@@ -264,7 +264,7 @@ teardown
 # Guardrail: a session with uncommitted changes should still enforce completion.
 echo "--- Test 8: HOOK-14 dirty tree -> still enforces ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 # Introduce an uncommitted change so `git diff --quiet` fails
 printf 'dirty\n' > "$TMPDIR_TEST/dirty.txt"
 git -C "$TMPDIR_TEST" add dirty.txt
@@ -282,7 +282,7 @@ git -C "$TMPDIR_TEST" update-ref refs/remotes/origin/main "$(git -C "$TMPDIR_TES
 printf 'more\n' > "$TMPDIR_TEST/more.txt"
 git -C "$TMPDIR_TEST" add more.txt
 git -C "$TMPDIR_TEST" commit -q -m "work" 2>/dev/null || true
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 out=$(run_hook)
 assert_blocks "clean tree but commits ahead -> still blocks" "$out"
 teardown
@@ -312,7 +312,7 @@ rm -rf "$OUTSIDE_DIR"
 # fall through to enforcement, not silently skip.
 echo "--- Test 11: HOOK-06 stale upstream -> fail-closed -> block ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 # Point branch at a non-existent upstream ref.
 git -C "$TMPDIR_TEST" config branch.feature/test.remote origin
 git -C "$TMPDIR_TEST" config branch.feature/test.merge refs/heads/does-not-exist
@@ -325,7 +325,7 @@ teardown
 # (untracked-files=all). Bug: default porcelain hides them.
 echo "--- Test 12: HOOK-06 gitignored untracked file -> block ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 # Add a gitignore entry and create an untracked file matching it.
 printf 'wip-notes.txt\n' > "$TMPDIR_TEST/.gitignore"
 git -C "$TMPDIR_TEST" add .gitignore
@@ -404,12 +404,120 @@ setup
 # Remove the branch file — guard must NOT exit 0 in this case
 rm -f "$TMPBRANCH_FILE"
 # Partial skills that would normally block
-echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" > "$TMPSTATE"
 # Dirty working tree so HOOK-14 doesn't short-circuit
 printf 'work\n' > "$TMPDIR_TEST/work.txt"
 git -C "$TMPDIR_TEST" add work.txt
 out=$(run_hook)
 assert_blocks "absent branch file + dirty tree + partial skills -> blocks (fail-closed)" "$out"
+teardown
+
+# ── #88: HOOK-14 transient-artifact allowlist ────────────────────────────────
+# `--ignored=traditional` previously over-caught routine session/runtime
+# artifacts, defeating HOOK-14's intent on every release. v0.30.0 filters
+# porcelain output through a transient-path allowlist before deciding
+# `tree_clean`. Defaults: .claude/scheduled_tasks.lock,
+# .claude/settings.local.json, .superpowers/, .planning/workflows/, REVIEW.md.
+
+echo "--- Test #88-A: built-in transient artifacts ignored — HOOK-14 fires ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Add gitignored runtime/session artifacts that previously blocked HOOK-14
+mkdir -p "$TMPDIR_TEST/.claude" "$TMPDIR_TEST/.superpowers/brainstorm" "$TMPDIR_TEST/.planning/workflows"
+cat > "$TMPDIR_TEST/.gitignore" <<'GITIG'
+.claude/
+.superpowers/
+.planning/workflows/
+REVIEW.md
+GITIG
+git -C "$TMPDIR_TEST" add .gitignore
+git -C "$TMPDIR_TEST" commit -q -m "gitignore"
+# Now create the transient artifacts (untracked + ignored)
+touch "$TMPDIR_TEST/.claude/scheduled_tasks.lock"
+echo "{}" > "$TMPDIR_TEST/.claude/settings.local.json"
+touch "$TMPDIR_TEST/.superpowers/brainstorm/notes.md"
+touch "$TMPDIR_TEST/.planning/workflows/20260428T120000Z-abc123-silver-feature.md"
+touch "$TMPDIR_TEST/REVIEW.md"
+out=$(run_hook)
+assert_passes "#88-A: built-in transient artifacts ignored -> HOOK-14 short-circuits" "$out"
+teardown
+
+echo "--- Test #88-B: real untracked file still triggers enforcement ---"
+setup
+echo "code-review" > "$TMPSTATE"
+# A real (non-transient) untracked file must NOT be filtered
+printf 'work\n' > "$TMPDIR_TEST/feature.txt"
+out=$(run_hook)
+assert_blocks "#88-B: non-transient untracked file -> still enforces" "$out"
+teardown
+
+echo "--- Test #88-C: configurable extra patterns honored ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+# Add a custom transient path via .silver-bullet.json
+python3 -c "
+import json
+p='$TMPCFG'
+d=json.load(open(p))
+d.setdefault('hooks',{}).setdefault('stop_check',{})['transient_path_ignore_patterns']=['my\\\\.cache']
+json.dump(d, open(p,'w'), indent=2)
+"
+git -C "$TMPDIR_TEST" add .silver-bullet.json
+git -C "$TMPDIR_TEST" commit -q -m "configure transient patterns"
+touch "$TMPDIR_TEST/my.cache"
+out=$(run_hook)
+assert_passes "#88-C: configured transient pattern ignored" "$out"
+teardown
+
+# ── #85: Stop hook applies planning floor, not full deploy list ──────────────
+# The Stop hook is the conversation-end gate, NOT the delivery gate. Applying
+# the full required_deploy list (deploy-checklist, create-release, etc.) on
+# every conversation end blocks ad-hoc additions that don't warrant a
+# milestone-ship checklist. Stop now requires only required_planning skills;
+# completion-audit.sh continues to enforce required_deploy at actual delivery
+# commands (gh release create / gh pr create / deploy).
+
+echo "--- Test #85-A: planning skill present, deploy-only skills absent -> no block ---"
+setup
+# Only the planning skill — would have blocked under the old flat-list behavior
+# because code-review / testing-strategy / deploy-checklist / create-release etc.
+# were all required.
+echo "silver-quality-gates" > "$TMPSTATE"
+# Dirty tree so HOOK-14 doesn't short-circuit before the skill check
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_passes "#85-A: planning skill present + deploy gaps -> Stop allows" "$out"
+teardown
+
+echo "--- Test #85-B: missing planning skill -> still blocks ---"
+setup
+# State has deploy skills but is missing the planning floor.
+# Confirms the new gate still enforces — it didn't simply weaken to nothing.
+cat > "$TMPSTATE" <<'EOF'
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+EOF
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_blocks "#85-B: missing planning skill -> blocks" "$out"
+assert_contains "#85-B: error names the missing planning skill" "$out" "silver-quality-gates"
+teardown
+
+echo "--- Test #85-C: deploy list NOT enforced by Stop hook ---"
+setup
+# Verify the precise old-behavior that #85 reported: a session with the
+# planning skill but missing deploy-checklist / create-release MUST NOT
+# be blocked by Stop. (completion-audit.sh handles those at delivery.)
+echo "silver-quality-gates" > "$TMPSTATE"
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_passes "#85-C: missing deploy-checklist + create-release does NOT block Stop" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
