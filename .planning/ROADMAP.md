@@ -553,7 +553,12 @@ Plans:
   2. Each ported skill file contains all substantive workflow steps from the source SB SKILL.md, adapted for instruction-based enforcement (no hook references)
   3. A Forge user invoking any trigger phrase from the trigger[] list receives the correct skill instructions and can execute the workflow end-to-end without requiring Claude Desktop or Silver Bullet hooks
   4. All 9 quality gate dimensions and their scoring rubrics are present in the silver-quality-gates Forge skill, and the devops-quality-gates skill covers all 7 IaC dimensions
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 065-01-PLAN.md — Port silver-fast, silver-init, silver-spec, silver-validate, silver-ingest (workflow orchestration)
+- [ ] 065-02-PLAN.md — Port silver-release, silver-migrate, silver-update, silver-scan (release + lifecycle)
+- [ ] 065-03-PLAN.md — Port silver-quality-gates, silver-blast-radius, silver-forensics, silver-review-stats, devops-quality-gates, devops-skill-router (quality + forensics)
+- [ ] 065-04-PLAN.md — Port silver-add, silver-remove, silver-rem, silver-create-release (capture + filing)
 
 ### Phase 66: Artifact Review Skills + Superpowers Port
 **Goal**: All 3 SB artifact review skills and all 7 Superpowers gap skills exist as Forge-format SKILL.md files in forge/skills/, completing the review and agent-workflow capability set
@@ -647,7 +652,7 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
-| 65. SB Core Skills Port | v0.28.0 | 0/TBD | Not started | - |
+| 65. SB Core Skills Port | v0.28.0 | 0/4 | Not started | - |
 | 66. Artifact Review Skills + Superpowers Port | v0.28.0 | 0/TBD | Not started | - |
 | 67. Anthropic Knowledge-Work Skills Port | v0.28.0 | 0/TBD | Not started | - |
 | 68. Installer & AGENTS.md Templates | v0.28.0 | 0/TBD | Not started | - |
