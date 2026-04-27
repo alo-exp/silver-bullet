@@ -20,6 +20,9 @@ site/new/
 .claude/settings.local.json
 .claude/worktrees/
 
+# Session log artifacts (generated per-session by session-log-init.sh hook)
+docs/sessions/
+
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/
 tests/test-app/.planning/
