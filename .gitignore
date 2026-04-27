@@ -32,3 +32,9 @@ tests/test-app/silver-bullet.md
 tests/test-app/CLAUDE.md
 tests/test-app/docs/
 tests/test-app/.github/
+
+# Multi-agent phase coordination — runtime lock state (Phase 70)
+# .phase-locks.json is the live lock state; .lock is the flock(1) sidecar.
+# Both are per-checkout runtime state, never committed.
+.planning/.phase-locks.json
+.planning/.phase-locks.json.lock
