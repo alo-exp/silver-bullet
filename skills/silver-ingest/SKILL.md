@@ -35,7 +35,7 @@ Mode:    {artifact-ingest | cross-repo-fetch — detected in Step 0}
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
 **Non-skippable gates:** `Step 6: Assemble SPEC.md Draft`, `Step 7: Write INGESTION_MANIFEST.md`, `Step 7a: Review INGESTION_MANIFEST.md`. Refuse skip requests for these regardless of §10.
 

@@ -884,6 +884,16 @@ to the user before proceeding to the next stage.
 
 ---
 
+<!--
+  NUMBERING NOTE (closes #59):
+  This live silver-bullet.md uses §10.* for User Workflow Preferences (and §11
+  for Multi-Agent Coordination) because §9 above is the Ālo-internal
+  Pre-Release Quality Gate. The companion `templates/silver-bullet.md.base`
+  shifts these down by one (§9.* / §10) — it does NOT carry §9. Skills
+  reference both: `silver-bullet.md §10b` (live) AND
+  `templates/silver-bullet.md.base §9b` (template). This asymmetry is by design
+  and must stay.
+-->
 ## 10. User Workflow Preferences
 
 This section is written and committed by SB whenever the user expresses a workflow preference.

@@ -35,7 +35,7 @@ Mode:    {greenfield | augment — detected in Step 0}
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
 **Non-skippable gates:** `Step 3: Socratic Elicitation`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
 
