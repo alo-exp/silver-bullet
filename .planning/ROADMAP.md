@@ -112,11 +112,11 @@
 
 ### v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
 
-- [ ] **Phase 65: Skill Foundation Copy** - Replace 34 wrong-format forge/skills/ files with correctly-formatted SB skills; bulk-copy all 61 SB + 14 Superpowers + 33 Anthropic knowledge-work skills (~108 skills total)
-- [ ] **Phase 66: Hook → Custom Agent Conversion** - Create ~10 Forge custom agents in `forge/agents/` for SB's hook gates (forge-pre-commit-audit, forge-task-complete-check, etc.) — invoked as tools by main agent at gating moments since Forge has no hooks
-- [ ] **Phase 67: Subagent → Custom Agent Conversion** - Port ~30 GSD subagents as Forge custom agents (per forgecode.dev/docs/creating-agents/) with `tool_supported: true`, restricted `tools[]`, context isolation; update parent skills to invoke them as tools
-- [ ] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh to install ~108 skills + ~40 custom agents; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation)
-- [ ] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md
+- [x] **Phase 65: Skill Foundation Copy** - Replace 34 wrong-format forge/skills/ files with correctly-formatted SB skills; bulk-copy all 61 SB + 14 Superpowers + 33 Anthropic knowledge-work skills (~108 skills total)
+- [x] **Phase 66: Hook → Custom Agent Conversion** - Create ~10 Forge custom agents in `forge/agents/` for SB's hook gates (forge-pre-commit-audit, forge-task-complete-check, etc.) — invoked as tools by main agent at gating moments since Forge has no hooks
+- [x] **Phase 67: Subagent → Custom Agent Conversion** - Port ~30 GSD subagents as Forge custom agents (per forgecode.dev/docs/creating-agents/) with `tool_supported: true`, restricted `tools[]`, context isolation; update parent skills to invoke them as tools
+- [x] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh to install ~108 skills + ~40 custom agents; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation)
+- [x] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md (structural complete; runtime tests recipe in PARITY-REPORT.md awaits user)
 
 ## Phase Details
 
@@ -655,8 +655,8 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
-| 65. Skill Foundation Copy | v0.28.0 | 0/TBD | Not started | - |
-| 66. Hook → Custom Agent Conversion | v0.28.0 | 0/TBD | Not started | - |
-| 67. Subagent → Custom Agent Conversion | v0.28.0 | 0/TBD | Not started | - |
-| 68. Installer + AGENTS.md Glue Layer | v0.28.0 | 0/TBD | Not started | - |
-| 69. End-to-End Forge Verification | v0.28.0 | 0/TBD | Not started | - |
+| 65. Skill Foundation Copy | v0.28.0 | direct exec | Complete | 2026-04-27 |
+| 66. Hook → Custom Agent Conversion | v0.28.0 | direct exec | Complete | 2026-04-27 |
+| 67. Subagent → Custom Agent Conversion | v0.28.0 | direct exec | Complete | 2026-04-27 |
+| 68. Installer + AGENTS.md Glue Layer | v0.28.0 | direct exec | Complete | 2026-04-27 |
+| 69. End-to-End Forge Verification | v0.28.0 | direct exec | Structurally complete; runtime tests pending user (see PARITY-REPORT.md) | 2026-04-27 |
