@@ -123,6 +123,17 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -235,6 +246,17 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
@@ -248,6 +270,17 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -259,6 +292,17 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
             "async": false,
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       }
