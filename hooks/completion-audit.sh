@@ -12,6 +12,19 @@ if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| complete' "$1" 2>/dev/null || echo 0; }
 fi
 
+# HOOK-04 (informational half): source the phase-path lib for the
+# `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
+# WARN if the phase resolved from $PWD has no active lock or is owned
+# by a non-claude runtime — non-blocking, preserves original $?.
+# shellcheck source=lib/phase-path.sh
+if [[ -f "$_lib_dir/phase-path.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/phase-path.sh"
+  if declare -f _phase_lock_peek_on_exit >/dev/null 2>&1; then
+    trap _phase_lock_peek_on_exit EXIT
+  fi
+fi
+
 # Pre+PostToolUse hook (matcher: Bash)
 # Detects git commit/push/deploy commands and blocks if workflow is incomplete.
 #

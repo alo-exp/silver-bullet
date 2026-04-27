@@ -93,6 +93,20 @@ esac
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
 lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 
+# HOOK-04 (informational half): source phase-path.sh for the
+# `_phase_lock_peek_on_exit` EXIT-trap helper. EXIT and ERR traps coexist
+# in bash — the existing ERR trap (line 40) still fires on errors and
+# itself calls exit 0, which then triggers our EXIT trap (preserving
+# the rc=0 the ERR trap sets). The peek is non-blocking informational.
+# shellcheck source=lib/phase-path.sh
+if [[ -f "$lib_dir/phase-path.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$lib_dir/phase-path.sh"
+  if declare -f _phase_lock_peek_on_exit >/dev/null 2>&1; then
+    trap _phase_lock_peek_on_exit EXIT
+  fi
+fi
+
 # ── Trivial bypass (sourced from shared helper — REF-01) ────────────────────
 # Admin session detection (BUG-05): purely administrative sessions (no Write/Edit
 # tool calls) are detected via the trivial file, which is created at SessionStart
