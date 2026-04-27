@@ -913,3 +913,31 @@ Last updated: (not yet set)
 | Default session mode | autonomous | 2026-04-16 |
 | PR branch | ask | (set at first use) |
 | TDD enforcement | per-plan-type | (default) |
+
+---
+
+## 11. Multi-Agent Coordination (v0.29.0+)
+
+Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
+
+### Runtime contract for the main agent
+
+- **Session start.** When other-runtime locks are detected at session start, the session-init hook (Claude) or `forge-session-init` agent (Forge) emits an informational `OTHER-RUNTIME-LOCK:` line for each non-self lock. Surface these to the user so they know other runtimes are in flight.
+
+- **Phase entry.** Before editing any file under `.planning/phases/<NNN>/`:
+  - Claude-SB: `hooks/phase-lock-claim.sh` (PreToolUse) auto-claims via `phase-lock.sh claim <NNN> claude "<intent>"`. On conflict (helper exit 2), Claude Code blocks the edit and surfaces the owner's identity.
+  - Forge-SB: parent silver-* skill explicitly invokes `forge-claim-phase`. On `BLOCKED:`, the skill stops and asks the user.
+
+- **During work.** Heartbeats refresh `last_heartbeat_at` so the lock doesn't expire under stale-TTL (default 1800s):
+  - Claude-SB: `hooks/phase-lock-heartbeat.sh` (PostToolUse, throttled to once per 5 min per phase).
+  - Forge-SB: parent skill invokes `forge-heartbeat-phase` periodically (every wave / verify pass / >5 min op).
+
+- **Phase exit.** Release the lock so other runtimes can claim:
+  - Claude-SB: `hooks/phase-lock-release.sh` (Stop / SubagentStop) walks the session manifest and releases each entry.
+  - Forge-SB: parent skill invokes `forge-release-phase` after `gsd-ship` for the phase.
+
+### Delegation exception (`/forge-delegate`)
+
+When the runtime holding a lock wants to delegate implementation work to a sibling runtime **underneath** its existing claim, use `/forge-delegate`. The skill packages the phase context into a JSON envelope, spawns the target runtime with `SB_PHASE_LOCK_INHERITED=true` in env, integrates the structured result back into the parent phase's working SUMMARY. The lock stays with the parent throughout.
+
+See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.

@@ -103,3 +103,24 @@ After running `forge-sb-install.sh`:
 2. Run `:agent` in Forge — confirm ~41 custom agents available (10 hook + 31 GSD)
 3. Run a small `silver-feature` task end-to-end and check the produced `.planning/phases/<NNN>/` artifacts match the same workflow on Claude Desktop SB
 4. Compare against Phase 69's `forge/PARITY-REPORT.md` (generated during end-to-end verification)
+
+---
+
+## Phase ownership model (v0.29.0+)
+
+Both runtimes participate in cooperative phase ownership over `.planning/.phase-locks.json`. Each phase is owned by exactly one runtime (`claude` or `forge`) at a time. Identity tags are configurable via `multi_agent.identity_tags[]`.
+
+| Surface | Claude-SB | Forge-SB |
+|---------|-----------|----------|
+| Lock claim | `hooks/phase-lock-claim.sh` (PreToolUse) | `forge/agents/forge-claim-phase.md` (parent skill invokes) |
+| Heartbeat | `hooks/phase-lock-heartbeat.sh` (PostToolUse, 5-min throttle) | `forge/agents/forge-heartbeat-phase.md` (parent skill cadence) |
+| Release | `hooks/phase-lock-release.sh` (Stop, SubagentStop) | `forge/agents/forge-release-phase.md` (parent skill on phase exit) |
+| Session-start peek | `hooks/session-start` step (auto) | `forge-session-init` step 3a |
+| Informational warn (cd'd into phase) | `completion-audit.sh` + `stop-check.sh` EXIT-trap peek | (deferred to v0.30.0+) |
+| Delegation exception | `skills/forge-delegate/SKILL.md` | `forge/skills/forge-delegate/SKILL.md` |
+
+**Stale-lock TTL:** default 1800 s, configurable via `multi_agent.stale_lock_ttl_seconds`. After expiry, another runtime may steal the lock with a WARN to stderr identifying the prior owner.
+
+**Delegation exception (`/forge-delegate`):** when a runtime holding a lock spawns a sibling runtime underneath its claim, the child runs with `SB_PHASE_LOCK_INHERITED=true`. Both Claude-SB hooks and Forge-SB agents short-circuit their claim/heartbeat/release operations to ALLOW under this env var so the child cannot double-claim or release the parent's lock. The parent retains ownership across the entire delegation cycle (success or timeout).
+
+See `docs/multi-agent-coordination.md` for the full state diagram and configuration reference.

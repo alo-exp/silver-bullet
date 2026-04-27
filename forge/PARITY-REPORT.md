@@ -269,3 +269,37 @@ End-to-end workflow runs (silver-feature, silver-bugfix, silver-ui, silver-devop
 **Behavioural parity: ✓ ACHIEVED.** Forge runtime confirmed loading all skills/agents; hook-agent invocation tests #1 and #2 produced the exact specified BLOCK/ALLOW outputs.
 
 **Recommendation: ship v0.28.0.** The Forge port is functionally equivalent to Silver Bullet on Claude Desktop for all primitives that the production workflows compose.
+
+---
+
+## v0.29.0 — Multi-Agent Phase Coordination (2026-04-28)
+
+### Scope
+
+Both Claude-SB and Forge-SB integrate with the new shared `.planning/scripts/phase-lock.sh` helper for cooperative phase ownership. Identity tags `claude` / `forge` / `codex` / `opencode`. Stale-TTL 1800 s default, configurable.
+
+### Forge integration outcomes
+
+| Capability | Status | Evidence |
+|------------|--------|----------|
+| Lock helper present | ✓ | `.planning/scripts/phase-lock.sh` (Phase 70, 37/37 unit tests pass) |
+| Forge claim agent | ✓ | `forge/agents/forge-claim-phase.md` |
+| Forge heartbeat agent | ✓ | `forge/agents/forge-heartbeat-phase.md` |
+| Forge release agent | ✓ | `forge/agents/forge-release-phase.md` |
+| Session-init peek | ✓ | `forge/agents/forge-session-init.md` step 3a |
+| Parent skills updated | ✓ | 6 silver-* skills (silver-fast intentionally skipped) |
+| Delegation skill | ✓ | `forge/skills/forge-delegate/SKILL.md` (target=claude\|codex\|opencode\|forge) |
+| `SB_PHASE_LOCK_INHERITED` honored | ✓ | All three new agents short-circuit to ALLOW; integration test TEST-03 verifies no double-claim |
+
+### Multi-agent integration tests
+
+`tests/integration/test-multi-agent-coexistence.sh` (17 cases, 0 failed):
+- TEST-01: two-agent race for same phase (claude claims, forge waits, claude releases, forge claims).
+- TEST-02: stale-lock recovery (last_heartbeat_at mocked >TTL, peek shows expired:true, claim steals with WARN).
+- TEST-03: delegation envelope semantics (parent claims, child operations under SB_PHASE_LOCK_INHERITED=true don't mutate lock state).
+
+### Behavioural parity: ✓ ACHIEVED.
+
+Forge participates in the phase-ownership protocol with semantically equivalent behavior to Claude-SB. The two surfaces differ only by integration mechanism (Claude uses hooks; Forge uses custom agents called from the parent skill) — the helper contract and lock-state guarantees are identical.
+
+### Recommendation: ship v0.29.0.

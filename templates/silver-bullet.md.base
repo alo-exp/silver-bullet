@@ -801,3 +801,27 @@ Last updated: (not yet set)
 ### 9e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|
+
+---
+
+## 10. Multi-Agent Coordination (v0.29.0+)
+
+Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
+
+### Runtime contract for the main agent
+
+- **Session start.** Surface any informational `OTHER-RUNTIME-LOCK:` lines emitted by session-init to the user so they know other runtimes are in flight.
+
+- **Phase entry.** Before editing any file under `.planning/phases/<NNN>/`:
+  - Claude-SB: `hooks/phase-lock-claim.sh` (PreToolUse) auto-claims. On conflict, Claude Code blocks the edit and surfaces the owner's identity.
+  - Forge-SB: the parent silver-* skill invokes `forge-claim-phase`. On `BLOCKED:`, the skill stops and asks the user.
+
+- **During work.** Heartbeats refresh `last_heartbeat_at` so the lock doesn't expire under stale-TTL (default 1800s).
+
+- **Phase exit.** Release the lock so other runtimes can claim.
+
+### Delegation exception (`/forge-delegate`)
+
+When the runtime holding a lock wants to delegate implementation work to a sibling runtime **underneath** its existing claim, use `/forge-delegate`. The skill packages phase context into a JSON envelope, spawns the target runtime with `SB_PHASE_LOCK_INHERITED=true`, integrates the structured result. The lock stays with the parent throughout.
+
+See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.
