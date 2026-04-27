@@ -124,6 +124,7 @@ case "$helper_rc" in
     printf '🚫 PHASE LOCK CONFLICT — phase %s is locked by %s (owner_id=%s).\n' "$phase" "$owner_runtime" "$owner_id" >&2
     printf 'Attempted intent: %s\n' "$intent" >&2
     [[ -n "$helper_stderr" ]] && printf '%s\n' "$helper_stderr" >&2
+    # shellcheck disable=SC2016  # backticks are literal markdown, not command substitution
     printf 'Hint: run `.planning/scripts/phase-lock.sh peek %s` for details.\n' "$phase" >&2
     exit 2
     ;;
