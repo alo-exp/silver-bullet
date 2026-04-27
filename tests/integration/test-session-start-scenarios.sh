@@ -44,12 +44,12 @@ write_default_config
 
 # TMPBRANCH already contains "feature/test" from integration_setup.
 # Pre-populate env-var-backed state with skills, session markers (gsd-*),
-# AND a quality-gate-stage marker to verify it is preserved on same-branch restart.
+# AND an arbitrary non-gsd non-skill marker to verify it is preserved on same-branch restart.
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 code-review
 gsd-execute-phase
-quality-gate-stage-1
+custom-marker-1
 EOF
 
 out=$(run_session_start)
@@ -74,12 +74,13 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.3: gsd- markers still present\n'
 fi
 
-# quality-gate-stage-* markers must be preserved on same-branch restart so
-# pre-release gate progress is not lost across session reconnects.
-if grep -q "quality-gate-stage-1" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.4: quality-gate-stage marker preserved on same-branch restart\n'
+# Non-gsd markers (anything that does not start with "gsd-") are not touched by
+# session-start's same-branch cleanup, which only removes transient gsd-* phase markers.
+# This verifies the sed '/^gsd-/d' filter is precise and does not over-clean.
+if grep -q "custom-marker-1" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S2.4: non-gsd custom marker preserved on same-branch restart\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.4: quality-gate-stage marker was incorrectly wiped on same-branch restart\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.4: non-gsd custom marker was incorrectly wiped on same-branch restart\n'
 fi
 
 integration_teardown
