@@ -240,3 +240,109 @@ Hand off to: `silver:feature` for v0.29.0 milestone planning, with this RESEARCH
 *Research date: 2026-04-27*
 *Author: SB autonomous research session*
 *Source code references inspected: hooks/completion-audit.sh L135-202, hooks/stop-check.sh L80-200, hooks/record-skill.sh, hooks/lib/trivial-bypass.sh, forge/agents/forge-pre-commit-audit.md, forge/agents/forge-pre-pr-audit.md*
+
+---
+
+# Addendum (post-research user clarification — supersedes Option A)
+
+After the initial RESEARCH.md was written, the user supplied a critical design constraint that reshapes the recommendation. Recording here verbatim:
+
+> Claude-SB and Forge-SB can work together but they will not work on same Phase. A Phase will be always worked on by one of the agents, not both. However, if Claude-SB itself engages Forge using the /forge-delegate skill, then Forge will still work under Forge-SB in that same Phase, but only doing the task delegated by Claude, engaged as a subagent with a provided context. When Forge-SB is engaged by user, it'll first check whether SB files and state already exists. If exists, then it'll ensure that it doesn't work on the same Phase if Claude-SB or any other coding agent's SB is working there. Note that even though I am referring to only Claude-SB, it could even be Codex-SB or OpenCode-SB, too, very soon. The goal is that any number of SBs from any number of coding agents can cooperatively work in a single SB state and docs context but always in different GSD Phases or Milestones.
+
+## Implications
+
+The original Option A (Forge cooperatively writes to `~/.claude/.silver-bullet/state` so its skill applications are visible to Claude-SB hooks) **is no longer the right primitive.** With per-phase ownership:
+
+- Each agent runs its OWN session-state model on its OWN phase. There is no need to merge skill-application logs between agents — they don't share a phase.
+- The shared coordination point is **phase ownership**, not skill state.
+- The skill-state-asymmetry "scenario A" from §3 simply cannot occur: an agent that didn't apply the skills also doesn't own the phase, so its commit-from-the-other-runtime case is a workflow violation, not a parity bug.
+- Generality requirement: the model must extend cleanly to Codex-SB, OpenCode-SB, and any future SB-bearing coding agent — not just Claude and Forge.
+
+## Revised Recommended Architecture
+
+### A. Phase-Ownership Lock File (the primary primitive)
+
+A project-local file `.planning/.phase-locks.json` (gitignored) tracks which agent currently owns each phase:
+
+```json
+{
+  "schema_version": 1,
+  "locks": [
+    {
+      "phase": "065-skill-foundation-copy",
+      "owner": "forge",
+      "owner_session_id": "9ca0c0e9-0e6a-44fb-8a37-919c20f7376d",
+      "host_pid": 73081,
+      "claimed_at": "2026-04-27T22:46:39Z",
+      "heartbeat_at": "2026-04-27T22:55:12Z",
+      "expires_at": "2026-04-27T23:25:12Z"
+    }
+  ]
+}
+```
+
+- `owner` is one of `claude`, `forge`, `codex`, `opencode`, ... (extensible identity)
+- `expires_at = heartbeat_at + 30min` (configurable TTL); a missed heartbeat releases the lock
+- `host_pid` is informational; it lets a user kill a stale-locking process if needed
+
+### B. Lock Protocol
+
+Every SB-bearing coding agent implements the same 4 operations. They are encapsulated in a small shared helper (a bash script for runtime-agnostic invocation, plus per-agent wrappers).
+
+1. **`claim(phase, owner, session_id)`** — atomic check-and-write. Returns `OK` or `BLOCKED:owned-by-X`.
+2. **`heartbeat(phase, owner, session_id)`** — extends `heartbeat_at` and `expires_at`. Called periodically (every ~5 min) during active work.
+3. **`release(phase, owner, session_id)`** — removes the lock entry; called at end-of-session or phase-completion.
+4. **`peek(phase)`** — returns current owner (or null), without claiming. Used for pre-work warnings.
+
+Atomicity: `flock` on the JSON file (cross-platform: `python -c "import fcntl;..."` or POSIX `flock(1)` on Linux/macOS).
+
+### C. Per-Agent Integration Points
+
+| Coding agent | Where lock ops fire |
+|---|---|
+| Claude-SB | New hooks `phase-lock-claim.sh` (PreToolUse on Edit/Write inside `.planning/phases/<NNN>/`), `phase-lock-heartbeat.sh` (PostToolUse), `phase-lock-release.sh` (Stop) |
+| Forge-SB | Update `forge-session-init` to peek + warn; new agents `forge-claim-phase`, `forge-heartbeat-phase`, `forge-release-phase` invoked by parent skills |
+| Codex-SB / OpenCode-SB / future | Same protocol via `.planning/scripts/phase-lock.sh` (the shared helper); each runtime ports the integration glue |
+
+### D. Delegation Exception — `/forge-delegate`
+
+When Claude-SB explicitly delegates a sub-task to Forge:
+
+1. Claude already holds the phase lock (it's working on the phase).
+2. Claude invokes the new `forge-delegate` skill. Body:
+   - Bundle the delegated task description, the current phase context (path to `.planning/phases/<NNN>/` artifacts), and any read-first hints into a JSON envelope.
+   - Spawn `forge -p "<envelope>"` with `--agent forge` (or a specific delegated agent if Claude wants to target one).
+   - Wait for Forge to return; integrate the result (typically file edits Forge applied directly).
+3. Forge runtime (under `/forge-delegate` invocation) does NOT acquire its own lock — it inherits Claude's claim via an environment variable `SB_PHASE_LOCK_INHERITED=true`.
+4. The Forge-side `forge-session-init` agent honors the inherit flag and skips the peek/claim path.
+
+This is the only path where two SB runtimes touch the same phase. By design, only one is the "primary owner" and the other is a "delegated subagent" with no autonomous decision-making about the phase.
+
+### E. Documentation
+
+- `forge/PARITY.md` and `silver-bullet.md` document the phase-ownership model, lock protocol, agent identity tags, and `/forge-delegate` semantics.
+- `forge/AGENTS.md.template` includes a "Multi-Agent Coordination" section explaining how Forge-SB checks for existing locks at session start.
+- A new top-level doc `docs/multi-agent-coordination.md` explains the model for users (so they understand why they might see "another agent owns Phase 67 — pick a different one").
+
+## Revised Phase Breakdown (v0.29.0)
+
+| # | Phase | Goal |
+|---|---|---|
+| 70 | Phase-Lock Schema + Shared Helper | `.planning/.phase-locks.json` schema; shared helper script `.planning/scripts/phase-lock.sh` with claim/heartbeat/release/peek operations; flock atomicity |
+| 71 | Claude-SB Lock Hooks | `phase-lock-claim.sh` (PreToolUse), `-heartbeat.sh` (PostToolUse), `-release.sh` (Stop); register in `hooks.json`; integration with existing completion-audit/stop-check |
+| 72 | Forge-SB Lock Awareness | Update `forge-session-init` to peek + warn; new agents `forge-claim-phase`, `forge-heartbeat-phase`, `forge-release-phase`; parent skills call them |
+| 73 | `/forge-delegate` Skill | New skill in both `skills/` and `forge/skills/`: invoke Forge as a subagent under inherited lock; envelope contract |
+| 74 | Multi-Agent Tests + Docs | Coexistence smoke test (simulated two-agent race); `forge/PARITY.md`, `silver-bullet.md`, AGENTS.md template, new `docs/multi-agent-coordination.md` |
+| 75 | Release v0.29.0 | CHANGELOG, README badge, version bumps; tag v0.29.0; ship |
+
+## Out of Scope (deferred)
+
+- The original Option A (Forge writes to Claude's state file) — superseded.
+- The original Option B (Claude hooks add artifact-evidence fallback) — still valuable as v0.30.0+ general-purpose hardening, but not required for the parity bar.
+- The original Option C (`.planning/.session-state` shared skill log) — superseded by phase locks.
+
+## Identity Strings
+
+For the `owner` field, agents use these canonical lowercase tags:
+`claude`, `forge`, `codex`, `opencode`. Each runtime hard-codes its own identity. New agents added to the protocol must register their tag in `templates/silver-bullet.config.json.default` under a new `multi_agent.identity_tags` array (for forward-compatibility validation).
+
