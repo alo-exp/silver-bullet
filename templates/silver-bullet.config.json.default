@@ -98,5 +98,14 @@
     "chunk_size_bytes": 1024,
     "top_chunks_per_file": 3,
     "debug": false
+  },
+  "multi_agent": {
+    "identity_tags": [
+      "claude",
+      "forge",
+      "codex",
+      "opencode"
+    ],
+    "stale_lock_ttl_seconds": 1800
   }
 }
