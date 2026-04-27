@@ -112,11 +112,11 @@
 
 ### v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
 
-- [ ] **Phase 65: SB Core Skills Port** - Port 19 SB workflow, quality, and capture skills to Forge SKILL.md format
-- [ ] **Phase 66: Artifact Review Skills + Superpowers Port** - Port 3 artifact review skills and 7 Superpowers skills to Forge format
-- [ ] **Phase 67: Anthropic Knowledge-Work Skills Port** - Port all 33 Anthropic knowledge-work-plugins (engineering, design, PM, marketing) to Forge format
-- [ ] **Phase 68: Installer & AGENTS.md Templates** - Rewrite forge-sb-install.sh for all ~67 skills; update global and project AGENTS.md templates
-- [ ] **Phase 69: End-to-End Forge Verification** - Verify 100% SB workflow parity in a Forge test app across all major workflow paths
+- [ ] **Phase 65: Skill Foundation Copy** - Replace 34 wrong-format forge/skills/ files with correctly-formatted SB skills; bulk-copy all 61 SB + 14 Superpowers + 33 Anthropic knowledge-work skills (~108 skills total)
+- [ ] **Phase 66: Hook → Skill Conversion** - Create ~10 skill equivalents for SB's 18 hook gates (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) since Forge has no hook system
+- [ ] **Phase 67: Subagent → Skill Conversion** - Create ~30 procedure skills containing GSD subagent prompts; update parent skills to apply them inline (Forge has no subagent system)
+- [ ] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh for all ~148 skills; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-equivalent + subagent-equivalent invocation since hooks/subagents are absent)
+- [ ] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md
 
 ## Phase Details
 
@@ -544,67 +544,65 @@ Plans:
 - [x] 064-03-PLAN.md -- INIT-01: silver:init CLAUDE.md conflict resolution with no-silent-override (complete 2026-04-26)
 
 
-### Phase 65: SB Core Skills Port
-**Goal**: All 19 SB workflow, quality, and capture skills exist as Forge-format SKILL.md files in forge/skills/, giving Forge users access to the full SB core workflow experience
+### Phase 65: Skill Foundation Copy
+**Goal**: All ~108 source skills (61 SB + 14 Superpowers + 33 Anthropic knowledge-work) exist in forge/skills/ in the standard Claude Code SKILL.md format, replacing the 34 wrong-format files currently there
 **Depends on**: Phase 64 (v0.27.0 complete; first phase of v0.28.0)
-**Requirements**: PORT-SB-01, PORT-SB-02, PORT-SB-03, PORT-SB-04, PORT-SB-05, PORT-SB-06, PORT-SB-07, PORT-SB-08, PORT-SB-09, PORT-SB-10, PORT-SB-11, PORT-SB-12, PORT-SB-13, PORT-SB-14, PORT-SB-15, PORT-SB-16, PORT-SB-17, PORT-SB-18, PORT-SB-19
+**Requirements**: COPY-SB-01, COPY-SB-02, COPY-SP-01, COPY-KW-01, COPY-KW-02, COPY-KW-03, COPY-KW-04, COPY-01
 **Success Criteria** (what must be TRUE):
-  1. forge/skills/ contains SKILL.md files for all 19 skills (silver-fast, silver-init, silver-spec, silver-validate, silver-ingest, silver-release, silver-migrate, silver-update, silver-scan, silver-quality-gates, silver-blast-radius, silver-forensics, silver-review-stats, devops-quality-gates, devops-skill-router, silver-add, silver-remove, silver-rem, silver-create-release), each with valid Forge frontmatter (id, title, description, trigger[])
-  2. Each ported skill file contains all substantive workflow steps from the source SB SKILL.md, adapted for instruction-based enforcement (no hook references)
-  3. A Forge user invoking any trigger phrase from the trigger[] list receives the correct skill instructions and can execute the workflow end-to-end without requiring Claude Desktop or Silver Bullet hooks
-  4. All 9 quality gate dimensions and their scoring rubrics are present in the silver-quality-gates Forge skill, and the devops-quality-gates skill covers all 7 IaC dimensions
-**Plans:** 4 plans
-Plans:
-- [ ] 065-01-PLAN.md — Port silver-fast, silver-init, silver-spec, silver-validate, silver-ingest (workflow orchestration)
-- [ ] 065-02-PLAN.md — Port silver-release, silver-migrate, silver-update, silver-scan (release + lifecycle)
-- [ ] 065-03-PLAN.md — Port silver-quality-gates, silver-blast-radius, silver-forensics, silver-review-stats, devops-quality-gates, devops-skill-router (quality + forensics)
-- [ ] 065-04-PLAN.md — Port silver-add, silver-remove, silver-rem, silver-create-release (capture + filing)
-
-### Phase 66: Artifact Review Skills + Superpowers Port
-**Goal**: All 3 SB artifact review skills and all 7 Superpowers gap skills exist as Forge-format SKILL.md files in forge/skills/, completing the review and agent-workflow capability set
-**Depends on**: Phase 65 (SB core skills must exist first; Superpowers skills complement the core workflow)
-**Requirements**: PORT-SB-20, PORT-SB-21, PORT-SB-22, PORT-SP-01, PORT-SP-02, PORT-SP-03, PORT-SP-04, PORT-SP-05, PORT-SP-06, PORT-SP-07
-**Success Criteria** (what must be TRUE):
-  1. forge/skills/ contains SKILL.md files for artifact-reviewer, artifact-review-assessor, and all 9 review-* specializations (review-spec, review-design, review-requirements, review-roadmap, review-context, review-research, review-ingestion-manifest, review-uat, review-cross-artifact), each with valid Forge frontmatter
-  2. forge/skills/ contains SKILL.md files for all 7 Superpowers skills (systematic-debugging, dispatching-parallel-agents, executing-plans, subagent-driven-development, using-git-worktrees, verification-before-completion, finishing-a-development-branch), each updated to current Superpowers content
-  3. The 2-consecutive-clean-pass enforcement logic is preserved in the artifact-reviewer Forge skill — the skill instructs the Forge agent to run review rounds until two consecutive clean passes are achieved before declaring the artifact complete
-  4. A Forge user can invoke any review-* trigger and receive a structured review focused on the correct artifact type with appropriate acceptance criteria
+  1. The 34 existing forge/skills/ files (using wrong id/title/trigger[] frontmatter) are replaced with correctly-formatted SB skill files (standard name/description frontmatter)
+  2. forge/skills/ contains all 61 Silver Bullet skills, all 14 Superpowers skills (sourced from ~/.claude/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/), and all ~33 Anthropic knowledge-work skills (fetched from anthropics/knowledge-work-plugins GitHub repo)
+  3. Skills with explicit Claude Code-only references (silver-update plugin install, silver-init plugin setup, silver-migrate plugin paths) have content adapted for Forge runtime
+  4. Every ported skill has identical SKILL.md format to the Claude Code source (Forge docs confirm: "format is identical — no conversion needed")
 **Plans**: TBD
 
-### Phase 67: Anthropic Knowledge-Work Skills Port
-**Goal**: All 33 Anthropic knowledge-work-plugins skills (10 engineering, 7 design, 8 product management, 8 marketing) exist as Forge-format SKILL.md files in forge/skills/
-**Depends on**: Phase 65 (SB core skills establish forge/skills/ structure and conventions; knowledge-work skills follow the same format)
-**Requirements**: PORT-KW-01, PORT-KW-02, PORT-KW-03, PORT-KW-04
+### Phase 66: Hook → Skill Conversion
+**Goal**: SB's 18 hook gates are recreated as ~10 Forge skills the agent invokes at the appropriate workflow points, since Forge has no hook system
+**Depends on**: Phase 65 (foundation skills must exist before hook-equivalents can reference them)
+**Requirements**: HOOK-01, HOOK-02, HOOK-03, HOOK-04, HOOK-05, HOOK-06, HOOK-07, HOOK-08, HOOK-09, HOOK-10
 **Success Criteria** (what must be TRUE):
-  1. forge/skills/ contains all 10 engineering/* SKILL.md files (system-design, documentation, deploy-checklist, testing-strategy, architecture, standup, tech-debt, code-review, debug, incident-response) with valid Forge frontmatter and complete workflow steps from the anthropics/knowledge-work-plugins source
-  2. forge/skills/ contains all 7 design/* SKILL.md files (design-critique, research-synthesis, user-research, design-handoff, design-system, ux-copy, accessibility-review) with valid Forge frontmatter
-  3. forge/skills/ contains all 8 product-management/* SKILL.md files (metrics-review, synthesize-research, write-spec, competitive-brief, sprint-planning, product-brainstorming, stakeholder-update, roadmap-update) with valid Forge frontmatter
-  4. forge/skills/ contains all 8 marketing/* SKILL.md files (campaign-plan, competitive-brief, brand-review, performance-report, seo-audit, draft-content, content-creation, email-sequence) with valid Forge frontmatter
-  5. A Forge user can invoke any knowledge-work skill trigger phrase and receive structured, role-specific workflow guidance equivalent to what Claude Desktop users get via the Anthropic plugin
+  1. forge/skills/ contains forge-pre-commit-audit, forge-pre-pr-audit, forge-task-complete-check, forge-roadmap-freshness, forge-spec-floor-check, forge-uat-gate, forge-pr-traceability, forge-ci-status-check, forge-forbidden-skill-check, forge-session-init — each replicating the gating logic of the corresponding SB hook
+  2. Each hook-equivalent skill specifies the exact pre-conditions to verify, the verification commands or checks to run, and the blocking action if conditions fail (so the agent reproduces the hook's gate behavior manually)
+  3. The skills are written so Forge's AI auto-applies them when the relevant action (commit, PR, build, task-complete) is about to occur — based on AGENTS.md guidance produced in Phase 68
+  4. Each hook-equivalent skill cross-references the original hook script in `hooks/` for traceability and future maintenance
 **Plans**: TBD
 
-### Phase 68: Installer & AGENTS.md Templates
-**Goal**: forge-sb-install.sh installs all ~67 skills with a single command, and both AGENTS.md templates accurately route to the full skill set including knowledge-work capabilities
-**Depends on**: Phase 65, Phase 66, Phase 67 (all skills must exist before the installer can reference them)
-**Requirements**: INST-01, INST-02, INST-03, INST-04
+### Phase 67: Subagent → Skill Conversion
+**Goal**: All ~30 GSD subagent prompts are recreated as Forge procedure skills the main agent applies inline, since Forge has no subagent system; parent skills are updated to reference them
+**Depends on**: Phase 65 (parent skills must exist before they can be edited to reference procedure skills)
+**Requirements**: SUB-01, SUB-02, SUB-03, SUB-04, SUB-05, SUB-06, SUB-07
 **Success Criteria** (what must be TRUE):
-  1. Running `bash forge-sb-install.sh` in a local repo copies all ~67 SKILL.md files from forge/skills/ to ~/forge/skills/ and .forge/skills/ without errors, producing a success summary listing the count installed
-  2. Running `curl -sL <install-url> | bash` (remote one-liner) completes successfully and produces the same skill set as the local install path
-  3. The global AGENTS.md template contains trigger-phrase routing entries covering all SB core skills, all Superpowers skills, and all knowledge-work skill groups — a Forge user reading the file can discover any installed skill by category
-  4. AGENTS.project.template references knowledge-work capabilities (engineering, design, PM, marketing) so project-level AGENTS.md files instruct Forge to use them for relevant tasks
+  1. forge/skills/ contains *-procedure SKILL.md files for all GSD planning subagents (gsd-roadmapper-procedure, gsd-planner-procedure, gsd-plan-checker-procedure, gsd-phase-researcher-procedure, gsd-pattern-mapper-procedure, gsd-project-researcher-procedure, gsd-research-synthesizer-procedure)
+  2. forge/skills/ contains *-procedure SKILL.md files for execution-stage subagents (gsd-executor-procedure, gsd-verifier-procedure, gsd-integration-checker-procedure, gsd-nyquist-auditor-procedure)
+  3. forge/skills/ contains *-procedure SKILL.md files for review-stage subagents (gsd-code-reviewer-procedure, gsd-code-fixer-procedure, gsd-security-auditor-procedure, gsd-doc-writer-procedure, gsd-doc-verifier-procedure)
+  4. forge/skills/ contains *-procedure SKILL.md files for specialized, AI-integration, and UI subagents (gsd-debugger-procedure, gsd-codebase-mapper-procedure, gsd-intel-updater-procedure, gsd-pr-creator-procedure, gsd-session-report-creator-procedure, gsd-user-profiler-procedure, gsd-eval-auditor-procedure, gsd-eval-planner-procedure, gsd-domain-researcher-procedure, gsd-ai-researcher-procedure, gsd-framework-selector-procedure, gsd-ui-auditor-procedure, gsd-ui-checker-procedure, gsd-ui-researcher-procedure)
+  5. All parent workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, gsd-plan-phase, gsd-execute-phase, etc.) are updated so subagent-spawn references read "apply the X-procedure skill" instead of "spawn X agent via Task tool"
+  6. Each procedure skill contains the full prompt content the corresponding subagent receives in Claude Code, adapted so the main Forge agent can run it inline
+**Plans**: TBD
+
+### Phase 68: Installer + AGENTS.md Glue Layer
+**Goal**: forge-sb-install.sh deploys all ~148 skills, and the AGENTS.md template drives hook-equivalent + subagent-procedure invocation as the central enforcement layer
+**Depends on**: Phase 65, Phase 66, Phase 67 (all skill content must exist before installer copies it)
+**Requirements**: INST-01, INST-02, INST-03, INST-04, INST-05, INST-06
+**Success Criteria** (what must be TRUE):
+  1. forge-sb-install.sh is rewritten as a copy-only installer (no per-skill adaptation logic) that installs all ~148 skills (foundation copies + hook-equivalents + subagent-procedures) to ~/forge/skills/ and .forge/skills/
+  2. The installer either fetches Anthropic knowledge-work-plugin skills from GitHub at install time or vendors them in the silver-bullet repo so installation is self-contained
+  3. The global AGENTS.md template is rewritten as a Forge-adapted silver-bullet.md — it includes workflow routing tables, mandatory pre-commit/pre-PR/task-complete skill invocations (replacing automatic hook firing), subagent-procedure invocation guidance (replacing automatic subagent dispatch), and enforcement prose
+  4. AGENTS.project.template (project-level) is updated with project-specific skill references and SB workflow conventions
+  5. README.md and the docs site document the Forge installation path with a parity matrix mapping each SB capability (hooks, subagents, skills, workflows) to its Forge skill equivalent
+  6. Both `bash forge-sb-install.sh` (local) and `curl -sL ... | bash` (remote one-liner) install paths complete cleanly and produce identical skill sets
 **Plans**: TBD
 
 ### Phase 69: End-to-End Forge Verification
-**Goal**: End-to-end testing confirms that Forge users on a fresh test app get 100% workflow parity with Silver Bullet on Claude Desktop across all major development paths
+**Goal**: End-to-end Forge testing confirms that the ported skill set produces the same workflow outcomes as Silver Bullet on Claude Desktop across all major development paths
 **Depends on**: Phase 68 (installer must be complete before verification can set up the test app)
-**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04, VERIF-05, VERIF-06, VERIF-07
+**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04, VERIF-05, VERIF-06, VERIF-07, VERIF-08
 **Success Criteria** (what must be TRUE):
-  1. A Forge test app exists with forge-sb-install.sh applied — AGENTS.md is present, all ~67 skills are installed, and the app is in a clean state ready for workflow testing
-  2. A complete feature development workflow (silver → silver-feature path: brainstorm, spec, quality gates, plan, implement, review, verify, ship) runs to completion in the Forge test app without missing steps or broken skill invocations
-  3. A bug fix workflow (silver → silver-bugfix path) and a DevOps workflow (silver → silver-devops path) each run to completion in the Forge test app
-  4. A release workflow (silver → silver-release path) runs to completion, including cross-artifact review, deploy checklist, and milestone completion
-  5. All 9 silver-quality-gates dimensions produce correctly structured QUALITY-GATES.md output when run against the Forge test app codebase
-  6. A parity report at forge/TEST-REPORT.md documents each workflow tested, the outcome, and any deviations from the Claude Desktop SB behavior — confirming or identifying gaps
+  1. A Forge test app is created (cloned from the existing SB test app) with forge-sb-install.sh applied — AGENTS.md is present and all ~148 skills are installed in the correct locations
+  2. A complete feature development workflow (silver-feature path: brainstorm, spec, quality gates, plan, implement, review, verify, secure, ship) runs to completion in Forge and produces the same artifact set (CONTEXT.md, RESEARCH.md, PLAN.md, VERIFICATION.md, SECURITY.md, SUMMARY.md) as SB on Claude Desktop
+  3. Bug fix, DevOps, and release workflows each run to completion in Forge with the same artifact outputs as SB
+  4. The hook-equivalent skills (forge-pre-commit-audit, forge-task-complete-check, forge-roadmap-freshness, etc.) demonstrably fire at the correct workflow points and produce the same blocking/passing outcomes as the SB hooks
+  5. The subagent-procedure skills (gsd-planner-procedure, gsd-verifier-procedure, etc.) produce equivalent artifact quality and structure to the spawned subagents in SB
+  6. A parity report at forge/PARITY-REPORT.md documents each workflow tested, the outcomes, any unavoidable behavioural gaps with mitigations, and confirms feature parity for the 5 production workflow scenarios
 **Plans**: TBD
 
 
@@ -652,8 +650,8 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
-| 65. SB Core Skills Port | v0.28.0 | 0/4 | Not started | - |
-| 66. Artifact Review Skills + Superpowers Port | v0.28.0 | 0/TBD | Not started | - |
-| 67. Anthropic Knowledge-Work Skills Port | v0.28.0 | 0/TBD | Not started | - |
-| 68. Installer & AGENTS.md Templates | v0.28.0 | 0/TBD | Not started | - |
+| 65. Skill Foundation Copy | v0.28.0 | 0/TBD | Not started | - |
+| 66. Hook → Skill Conversion | v0.28.0 | 0/TBD | Not started | - |
+| 67. Subagent → Skill Conversion | v0.28.0 | 0/TBD | Not started | - |
+| 68. Installer + AGENTS.md Glue Layer | v0.28.0 | 0/TBD | Not started | - |
 | 69. End-to-End Forge Verification | v0.28.0 | 0/TBD | Not started | - |
