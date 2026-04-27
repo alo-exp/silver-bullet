@@ -406,6 +406,155 @@ else
 fi
 teardown
 
+# ── WF-PASS2: strict SB_WORKFLOW_ID-matched final-delivery gate ──────────────
+# When `.planning/workflows/<id>.md` files are present AND the command is a
+# final-delivery operation, completion-audit must require:
+#   • SB_WORKFLOW_ID env var set
+#   • value matches an active workflow file
+#   • all Flow Log rows in that file marked complete
+# Intermediate commits (`git commit`, `git push`) are unaffected — strict gate
+# is final-delivery only.
+
+# Helper to create an active workflow file with given flow rows
+_make_workflow() {
+  local id="$1"
+  local rows="$2"
+  mkdir -p "$TMPDIR_TEST/.planning/workflows"
+  cat > "$TMPDIR_TEST/.planning/workflows/$id.md" << WFEOF
+---
+workflow_id: $id
+composer: silver-feature
+status: active
+---
+## Flow Log
+| # | Path/Skill | Status | Started | Completed |
+|---|------------|--------|---------|-----------|
+$rows
+WFEOF
+}
+
+# Full required-deploy state (used to isolate the strict gate from the legacy gate)
+_full_state() {
+  cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+}
+
+echo "--- WF-PASS2-A: gh release create with no SB_WORKFLOW_ID is BLOCKED ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | complete | - | now |"
+unset SB_WORKFLOW_ID
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "WF-PASS2-A: missing SB_WORKFLOW_ID blocks release" "$out"
+assert_contains "WF-PASS2-A: error names env var" "$out" "SB_WORKFLOW_ID"
+teardown
+
+echo "--- WF-PASS2-B: invalid SB_WORKFLOW_ID format is BLOCKED ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | complete | - | now |"
+out=$(SB_WORKFLOW_ID="../../etc/passwd" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "WF-PASS2-B: malformed id blocked" "$out"
+assert_contains "WF-PASS2-B: error mentions invalid format" "$out" "invalid format"
+teardown
+
+echo "--- WF-PASS2-C: incomplete workflow blocks release ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | complete | - | now |
+| 2 | plan | pending | - | - |
+| 3 | execute | pending | - | - |"
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "WF-PASS2-C: incomplete workflow blocks" "$out"
+assert_contains "WF-PASS2-C: error reports 1 of 3" "$out" "1 of 3"
+teardown
+
+echo "--- WF-PASS2-D: fully-complete workflow + full skills passes ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | complete | - | now |
+| 2 | plan | complete | - | now |
+| 3 | execute | complete | - | now |
+| 4 | ship | complete | - | now |"
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "WF-PASS2-D: complete workflow + skills allows release" "$out"
+teardown
+
+echo "--- WF-PASS2-E: nonexistent SB_WORKFLOW_ID blocks ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | complete | - | now |"
+out=$(SB_WORKFLOW_ID="20260101T000000Z-zzzzzz-silver-bugfix" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "WF-PASS2-E: id not matching any file blocks" "$out"
+assert_contains "WF-PASS2-E: error mentions no match" "$out" "No active workflow file matches"
+teardown
+
+echo "--- WF-PASS2-F: intermediate commit unaffected by strict gate ---"
+setup
+# Only planning skill recorded (intermediate-tier requirement)
+echo "silver-quality-gates" > "$TMPSTATE"
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | explore | pending | - | - |"
+unset SB_WORKFLOW_ID
+out=$(run_hook "PreToolUse" "git commit -m test")
+assert_passes "WF-PASS2-F: incomplete workflow does not block git commit" "$out"
+teardown
+
+echo "--- WF-PASS2-G: no workflows dir → falls through to legacy gate ---"
+setup
+_full_state
+# No .planning/workflows/ created
+unset SB_WORKFLOW_ID
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "WF-PASS2-G: absent workflows dir → legacy gate (passes with full skills)" "$out"
+teardown
+
+echo "--- WF-PASS2-H: digit-row inflation guard — non-Flow-Log digit rows ignored ---"
+# S4 regression guard: phase-iteration tables (e.g. | 01 | started | …) must
+# NOT be counted as Flow Log rows. Only "^\| <digits> \|" rows count.
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+cat > "$TMPDIR_TEST/.planning/workflows/$ID.md" << 'WFEOF'
+---
+workflow_id: 20260428T120000Z-abc123-silver-feature
+status: active
+---
+## Flow Log
+| # | Path/Skill | Status | Started | Completed |
+|---|------------|--------|---------|-----------|
+| 1 | explore | complete | - | now |
+| 2 | ship | complete | - | now |
+
+## Phase Iterations (must NOT inflate counts)
+| 01 | started | ... |
+| 02 | finished | ... |
+
+## Autonomous Decisions (must NOT inflate counts)
+| 2026-04-28T12:00 | chose path A | ... |
+WFEOF
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "WF-PASS2-H: extraneous digit rows ignored — release passes" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
