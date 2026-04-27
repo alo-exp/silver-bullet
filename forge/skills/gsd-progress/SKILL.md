@@ -1,4 +1,5 @@
 ---
+name: gsd-progress
 id: gsd-progress
 title: GSD — Progress Report
 description: Show current phase status, remaining tasks, and next actions

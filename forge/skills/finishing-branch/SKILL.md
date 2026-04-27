@@ -1,4 +1,5 @@
 ---
+name: finishing-branch
 id: finishing-branch
 title: Finishing a Development Branch
 description: Merge, PR, or cleanup decisions for completing a branch
