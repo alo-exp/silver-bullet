@@ -228,7 +228,7 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    git push origin <version>
    ```
 
-2. Initialize `release_url` (used in notification sub-item 6 below):
+2. Initialize `release_url` to empty string (populated by sub-item 4 for GitHub repos; referenced by sub-item 6 notification):
    ```bash
    release_url=""
    ```

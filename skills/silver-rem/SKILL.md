@@ -108,6 +108,19 @@ Display: "Target: ${TARGET} (new file: ${IS_NEW_FILE})"
 
 ## Step 5 — Create monthly file with correct header if IS_NEW_FILE=true
 
+**Size cap (existing files only):** If TARGET has ≥300 lines, loop to the next-suffix file (`-b.md`, `-c.md`, …) until a file under the limit is found or a new file is created. The header creation branches below then run on the final TARGET and IS_NEW_FILE value.
+
+```bash
+_dir=$(dirname "$TARGET"); _sfxs=(b c d e f g h i j k l m n o p q r s t u v w x y z); _sfx_i=0
+while [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; do
+  [ "$_sfx_i" -lt "${#_sfxs[@]}" ] || break
+  TARGET="${_dir}/${MONTH}-${_sfxs[$_sfx_i]}.md"; _sfx_i=$((_sfx_i+1))
+  IS_NEW_FILE=false; [ ! -f "$TARGET" ] && IS_NEW_FILE=true
+done
+```
+
+Display: "Monthly file at 300+ lines — redirecting to $(basename "$TARGET") instead."
+
 **If IS_NEW_FILE=true AND INSIGHT_TYPE=knowledge:**
 
 ```bash
@@ -154,18 +167,6 @@ EOF
 ```
 
 Lessons files do not pre-populate category headings — headings are added on first use of each category.
-
-**Size cap (existing files only):** If TARGET has ≥300 lines, loop to the next-suffix file (`-b.md`, `-c.md`, …) until a file under the limit is found or a new file is created (IS_NEW_FILE=true — create it with the Step 5 header before inserting).
-
-```bash
-_dir=$(dirname "$TARGET"); _sfxs=(b c d e f g h i j k l m n o p q r s t u v w x y z); _sfx_i=0
-while [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; do
-  TARGET="${_dir}/${MONTH}-${_sfxs[$_sfx_i]}.md"; _sfx_i=$((_sfx_i+1))
-  IS_NEW_FILE=false; [ ! -f "$TARGET" ] && IS_NEW_FILE=true
-done
-```
-
-Display: "Monthly file at 300+ lines — redirecting to $(basename "$TARGET") instead."
 
 ---
 
