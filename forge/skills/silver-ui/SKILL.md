@@ -32,6 +32,40 @@ UI work: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
 ```
 
+## Multi-Agent Phase Coordination
+
+This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
+
+**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
+
+```
+Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
+```
+
+- On `CLAIMED:` → proceed.
+- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
+- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
+
+**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
+
+```
+Skill(agent="forge-heartbeat-phase", args="<NNN>")
+```
+
+- On `HEARTBEAT-OK:` → continue.
+- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
+
+**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
+
+```
+Skill(agent="forge-release-phase", args="<NNN>")
+```
+
+- On `RELEASED:` → proceed.
+- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
+
+**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
+
 ## Composition Proposal
 
 Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
