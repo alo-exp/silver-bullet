@@ -526,7 +526,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` (substitute `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` from `.silver-bullet.json`). Safe — Silver Bullet owns this file.
 3. Strip any SB-owned sections from `CLAUDE.md` (pre-v0.7.0 migration) and the old-style reference line that does not mention `silver-bullet.md`.
 4. Ensure `CLAUDE.md` has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing.
-5. Run conflict detection using `references/scaffold-steps.md` → "Update mode conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
+5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
 6. Re-register/refresh SB hooks (step 3.7.5 in the reference).
 7. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
@@ -541,7 +541,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 
 - **3.1c Conflict resolution** (only when existing `CLAUDE.md` is present — no silent override guarantee):
 
-  **3.1c-1 Build the section inventory.** Parse the existing CLAUDE.md into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether Silver Bullet's template CLAUDE.md (from `templates/CLAUDE.md.base`) contains a corresponding section with the same heading.
+  **3.1c-1 Build the section inventory.** Use the Read tool to load `${PLUGIN_ROOT}/templates/CLAUDE.md.base` (the Silver Bullet template). Parse both the existing CLAUDE.md and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
 
   **3.1c-2 Categorize each section:**
   - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision. If the content is identical, preserve as-is (no prompt needed).
