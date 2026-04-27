@@ -14,7 +14,8 @@
 - :white_check_mark: **v0.24.0 Stability · Security · Quality** - Phases 44-48 (shipped)
 - :white_check_mark: **v0.25.0 Issue Capture & Retrospective Scan** - Phases 49-54 (shipped 2026-04-24)
 - :white_check_mark: **v0.26.0 Bug Fixes, CI Hardening & Skill Quality** - Phases 55-58 (shipped 2026-04-25)
-- **v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit** - Phases 59-64 (in progress)
+- :white_check_mark: **v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit** - Phases 59-64 (shipped)
+- **v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies** - Phases 65-69 (in progress)
 
 ## Phases
 
@@ -108,6 +109,14 @@
 - [x] **Phase 62: Documentation Refresh** - SB-only install path, GSD vs SB comparison doc, full website/README/help-center audit (DOC-01–03) (completed 2026-04-26)
 - [x] **Phase 63: Stop Hook Audit** - enumerate all false-positive scenarios, fix confirmed ones, document deferred (HK-01)
 - [x] **Phase 64: Verification & Init Improvements** - verification-before-completion design, permissions re-prompting root cause, CLAUDE.md conflict resolution in /silver:init, FLOW parallelism design note (VFY-01, BUG-06, INIT-01, FLOW-01)
+
+### v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
+
+- [ ] **Phase 65: SB Core Skills Port** - Port 19 SB workflow, quality, and capture skills to Forge SKILL.md format
+- [ ] **Phase 66: Artifact Review Skills + Superpowers Port** - Port 3 artifact review skills and 7 Superpowers skills to Forge format
+- [ ] **Phase 67: Anthropic Knowledge-Work Skills Port** - Port all 33 Anthropic knowledge-work-plugins (engineering, design, PM, marketing) to Forge format
+- [ ] **Phase 68: Installer & AGENTS.md Templates** - Rewrite forge-sb-install.sh for all ~67 skills; update global and project AGENTS.md templates
+- [ ] **Phase 69: End-to-End Forge Verification** - Verify 100% SB workflow parity in a Forge test app across all major workflow paths
 
 ## Phase Details
 
@@ -535,10 +544,69 @@ Plans:
 - [x] 064-03-PLAN.md -- INIT-01: silver:init CLAUDE.md conflict resolution with no-silent-override (complete 2026-04-26)
 
 
+### Phase 65: SB Core Skills Port
+**Goal**: All 19 SB workflow, quality, and capture skills exist as Forge-format SKILL.md files in forge/skills/, giving Forge users access to the full SB core workflow experience
+**Depends on**: Phase 64 (v0.27.0 complete; first phase of v0.28.0)
+**Requirements**: PORT-SB-01, PORT-SB-02, PORT-SB-03, PORT-SB-04, PORT-SB-05, PORT-SB-06, PORT-SB-07, PORT-SB-08, PORT-SB-09, PORT-SB-10, PORT-SB-11, PORT-SB-12, PORT-SB-13, PORT-SB-14, PORT-SB-15, PORT-SB-16, PORT-SB-17, PORT-SB-18, PORT-SB-19
+**Success Criteria** (what must be TRUE):
+  1. forge/skills/ contains SKILL.md files for all 19 skills (silver-fast, silver-init, silver-spec, silver-validate, silver-ingest, silver-release, silver-migrate, silver-update, silver-scan, silver-quality-gates, silver-blast-radius, silver-forensics, silver-review-stats, devops-quality-gates, devops-skill-router, silver-add, silver-remove, silver-rem, silver-create-release), each with valid Forge frontmatter (id, title, description, trigger[])
+  2. Each ported skill file contains all substantive workflow steps from the source SB SKILL.md, adapted for instruction-based enforcement (no hook references)
+  3. A Forge user invoking any trigger phrase from the trigger[] list receives the correct skill instructions and can execute the workflow end-to-end without requiring Claude Desktop or Silver Bullet hooks
+  4. All 9 quality gate dimensions and their scoring rubrics are present in the silver-quality-gates Forge skill, and the devops-quality-gates skill covers all 7 IaC dimensions
+**Plans**: TBD
+
+### Phase 66: Artifact Review Skills + Superpowers Port
+**Goal**: All 3 SB artifact review skills and all 7 Superpowers gap skills exist as Forge-format SKILL.md files in forge/skills/, completing the review and agent-workflow capability set
+**Depends on**: Phase 65 (SB core skills must exist first; Superpowers skills complement the core workflow)
+**Requirements**: PORT-SB-20, PORT-SB-21, PORT-SB-22, PORT-SP-01, PORT-SP-02, PORT-SP-03, PORT-SP-04, PORT-SP-05, PORT-SP-06, PORT-SP-07
+**Success Criteria** (what must be TRUE):
+  1. forge/skills/ contains SKILL.md files for artifact-reviewer, artifact-review-assessor, and all 9 review-* specializations (review-spec, review-design, review-requirements, review-roadmap, review-context, review-research, review-ingestion-manifest, review-uat, review-cross-artifact), each with valid Forge frontmatter
+  2. forge/skills/ contains SKILL.md files for all 7 Superpowers skills (systematic-debugging, dispatching-parallel-agents, executing-plans, subagent-driven-development, using-git-worktrees, verification-before-completion, finishing-a-development-branch), each updated to current Superpowers content
+  3. The 2-consecutive-clean-pass enforcement logic is preserved in the artifact-reviewer Forge skill — the skill instructs the Forge agent to run review rounds until two consecutive clean passes are achieved before declaring the artifact complete
+  4. A Forge user can invoke any review-* trigger and receive a structured review focused on the correct artifact type with appropriate acceptance criteria
+**Plans**: TBD
+
+### Phase 67: Anthropic Knowledge-Work Skills Port
+**Goal**: All 33 Anthropic knowledge-work-plugins skills (10 engineering, 7 design, 8 product management, 8 marketing) exist as Forge-format SKILL.md files in forge/skills/
+**Depends on**: Phase 65 (SB core skills establish forge/skills/ structure and conventions; knowledge-work skills follow the same format)
+**Requirements**: PORT-KW-01, PORT-KW-02, PORT-KW-03, PORT-KW-04
+**Success Criteria** (what must be TRUE):
+  1. forge/skills/ contains all 10 engineering/* SKILL.md files (system-design, documentation, deploy-checklist, testing-strategy, architecture, standup, tech-debt, code-review, debug, incident-response) with valid Forge frontmatter and complete workflow steps from the anthropics/knowledge-work-plugins source
+  2. forge/skills/ contains all 7 design/* SKILL.md files (design-critique, research-synthesis, user-research, design-handoff, design-system, ux-copy, accessibility-review) with valid Forge frontmatter
+  3. forge/skills/ contains all 8 product-management/* SKILL.md files (metrics-review, synthesize-research, write-spec, competitive-brief, sprint-planning, product-brainstorming, stakeholder-update, roadmap-update) with valid Forge frontmatter
+  4. forge/skills/ contains all 8 marketing/* SKILL.md files (campaign-plan, competitive-brief, brand-review, performance-report, seo-audit, draft-content, content-creation, email-sequence) with valid Forge frontmatter
+  5. A Forge user can invoke any knowledge-work skill trigger phrase and receive structured, role-specific workflow guidance equivalent to what Claude Desktop users get via the Anthropic plugin
+**Plans**: TBD
+
+### Phase 68: Installer & AGENTS.md Templates
+**Goal**: forge-sb-install.sh installs all ~67 skills with a single command, and both AGENTS.md templates accurately route to the full skill set including knowledge-work capabilities
+**Depends on**: Phase 65, Phase 66, Phase 67 (all skills must exist before the installer can reference them)
+**Requirements**: INST-01, INST-02, INST-03, INST-04
+**Success Criteria** (what must be TRUE):
+  1. Running `bash forge-sb-install.sh` in a local repo copies all ~67 SKILL.md files from forge/skills/ to ~/forge/skills/ and .forge/skills/ without errors, producing a success summary listing the count installed
+  2. Running `curl -sL <install-url> | bash` (remote one-liner) completes successfully and produces the same skill set as the local install path
+  3. The global AGENTS.md template contains trigger-phrase routing entries covering all SB core skills, all Superpowers skills, and all knowledge-work skill groups — a Forge user reading the file can discover any installed skill by category
+  4. AGENTS.project.template references knowledge-work capabilities (engineering, design, PM, marketing) so project-level AGENTS.md files instruct Forge to use them for relevant tasks
+**Plans**: TBD
+
+### Phase 69: End-to-End Forge Verification
+**Goal**: End-to-end testing confirms that Forge users on a fresh test app get 100% workflow parity with Silver Bullet on Claude Desktop across all major development paths
+**Depends on**: Phase 68 (installer must be complete before verification can set up the test app)
+**Requirements**: VERIF-01, VERIF-02, VERIF-03, VERIF-04, VERIF-05, VERIF-06, VERIF-07
+**Success Criteria** (what must be TRUE):
+  1. A Forge test app exists with forge-sb-install.sh applied — AGENTS.md is present, all ~67 skills are installed, and the app is in a clean state ready for workflow testing
+  2. A complete feature development workflow (silver → silver-feature path: brainstorm, spec, quality gates, plan, implement, review, verify, ship) runs to completion in the Forge test app without missing steps or broken skill invocations
+  3. A bug fix workflow (silver → silver-bugfix path) and a DevOps workflow (silver → silver-devops path) each run to completion in the Forge test app
+  4. A release workflow (silver → silver-release path) runs to completion, including cross-artifact review, deploy checklist, and milestone completion
+  5. All 9 silver-quality-gates dimensions produce correctly structured QUALITY-GATES.md output when run against the Forge test app codebase
+  6. A parity report at forge/TEST-REPORT.md documents each workflow tested, the outcome, and any deviations from the Claude Desktop SB behavior — confirming or identifying gaps
+**Plans**: TBD
+
+
 ## Progress
 
 **Execution Order:**
-Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62 -> 63
+Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 42 -> 43 -> 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51 -> 52 -> 53 -> 54 -> 55 -> 56 -> 57 -> 58 -> 59 -> 60 -> 61 -> 62 -> 63 -> 64 -> 65 -> 66 -> 67 -> 68 -> 69
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -579,3 +647,8 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 62. Documentation Refresh | v0.27.0 | 2/2 | Complete    | 2026-04-26 |
 | 63. Stop Hook Audit | v0.27.0 | 1/1 | Complete    | 2026-04-26 |
 | 64. Verification & Init Improvements | v0.27.0 | 3/3 | Complete    | 2026-04-26 |
+| 65. SB Core Skills Port | v0.28.0 | 0/TBD | Not started | - |
+| 66. Artifact Review Skills + Superpowers Port | v0.28.0 | 0/TBD | Not started | - |
+| 67. Anthropic Knowledge-Work Skills Port | v0.28.0 | 0/TBD | Not started | - |
+| 68. Installer & AGENTS.md Templates | v0.28.0 | 0/TBD | Not started | - |
+| 69. End-to-End Forge Verification | v0.28.0 | 0/TBD | Not started | - |
