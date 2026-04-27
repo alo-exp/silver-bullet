@@ -9,7 +9,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # Fallback definitions if sourcing failed (e.g. in test environments or path resolution issues)
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
-  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| complete' "$1" 2>/dev/null || echo 0; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
 fi
 
 # HOOK-04 (informational half): source the phase-path lib for the

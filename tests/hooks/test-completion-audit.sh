@@ -555,6 +555,46 @@ out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-H: extraneous digit rows ignored — release passes" "$out"
 teardown
 
+echo "--- WF-PASS2-I (#86): mixed complete+skipped workflow allows release ---"
+# Issue #86: 'skipped' is a valid terminal state for non-applicable flows
+# (e.g. FLOW 8 UI QUALITY for a CLI-only tool). Previously the count regex
+# matched only 'complete', so skipped rows were treated as incomplete and
+# blocked release indefinitely.
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
+| 2 | orient    | skipped  | - | -   |
+| 3 | explore   | skipped  | - | -   |
+| 4 | plan      | complete | - | now |
+| 5 | execute   | complete | - | now |
+| 6 | ui-quality | skipped | - | -   |
+| 7 | ship      | complete | - | now |"
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "WF-PASS2-I (#86): mixed complete/skipped workflow allows release" "$out"
+teardown
+
+echo "--- WF-PASS2-J (#86): all-skipped workflow is treated as terminal ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | skipped | - | - |
+| 2 | orient    | skipped | - | - |"
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "WF-PASS2-J (#86): all-skipped flows pass terminal-state check" "$out"
+teardown
+
+echo "--- WF-PASS2-K (#86): pending row still blocks (skipped fix didn't loosen) ---"
+setup
+_full_state
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
+| 2 | orient    | skipped  | - | -   |
+| 3 | execute   | pending  | - | -   |"
+out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "WF-PASS2-K (#86): pending row still blocks even with skipped present" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

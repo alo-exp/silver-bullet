@@ -1,5 +1,27 @@
 # Milestones
 
+## v0.30.0 Open-Issue Sweep (In progress: 2026-04-28)
+
+**Type:** Bug-fix + chore milestone (5 phases, 17 issues from open backlog)
+
+**Goal:** Address every open GitHub issue against `alo-exp/silver-bullet` as of 2026-04-28. Bias toward closure: fix where mechanical, file as planted seed where design is required, document where the underlying limitation is in an upstream runtime.
+
+**Issues in scope:**
+
+- **Phase 76 — Hook bug-fix bundle (shipped):** #85, #86, #87, #88
+- **Phase 77 — Release/SDK gating audit:** #48, #50, #71
+- **Phase 78 — silver:init UX & boundary verification:** #64, #69, #72
+- **Phase 79 — Plant seeds for design-only items:** #67, #68, #75
+- **Phase 80 — Documentation sweep:** #59, #70, #73, #74
+
+**Pre-closure:** 6 issues closed as already-implemented in main (#62, #76, #79, #80, #81, #83).
+
+**Artifacts:** `.planning/milestones/v0.30.0-{REQUIREMENTS,ROADMAP}.md`. Composed workflow tracker: `.planning/workflows/20260427T220600Z-02a397-silver-feature.md`.
+
+**Release:** (pending)
+
+---
+
 ## v0.25.0 Issue Capture & Retrospective Scan (Shipped: 2026-04-24)
 
 **Type:** Feature milestone (6 phases, 11 plans, 24 requirements)

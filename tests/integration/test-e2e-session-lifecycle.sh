@@ -39,13 +39,16 @@ echo "--- Scenario 3: State reset clears enforcement ---"
 integration_setup
 write_default_config
 
-# Record some skills
-run_record_skill "silver-quality-gates" >/dev/null
+# Record skills NOT including the planning floor (silver-quality-gates).
+# v0.30.0 #85: Stop now enforces required_planning only — having
+# silver-quality-gates would satisfy it, so the test must record skills
+# that leave the planning floor missing for the block path to fire.
 run_record_skill "code-review" >/dev/null
+run_record_skill "documentation" >/dev/null
 
-# stop-check still blocks (not all skills)
+# stop-check still blocks (planning floor missing)
 out=$(run_stop_check "Stop")
-assert_blocked "S3.1: stop-check blocks with partial skills" "$out"
+assert_blocked "S3.1: stop-check blocks with partial skills (planning floor missing)" "$out"
 
 # Clear state (simulate /compact reset) — seed with unrelated skill so HOOK-04
 # (empty-state fail-open) doesn't suppress enforcement; required skills still missing.

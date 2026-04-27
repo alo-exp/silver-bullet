@@ -131,7 +131,7 @@ not edit the file directly.
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
 **Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
 
@@ -303,7 +303,7 @@ Ask user about PR branch:
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
 If A: invoke `gsd-pr-branch` via the Skill tool.
-If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
+If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 15: Ship Phase
 
