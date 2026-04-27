@@ -27,6 +27,7 @@ Shell execution during this skill is limited to:
 - `grep -oE`, `sort -n`, `tail -1`
 - `mkdir -p docs/issues/`
 - `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1`
+- `mktemp`, `mv` — atomic config rewrite (Step 4d)
 
 Do not execute other shell commands. Note requirements in output for human execution.
 
