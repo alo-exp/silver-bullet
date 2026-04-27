@@ -2,12 +2,42 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# SessionStart hook: inject Superpowers /using-superpowers skill into context.
-# Write-always, idempotent — always injects, doesn't detect prior runs.
-# This script does NOT read stdin.
-
+# SessionStart hook: inject Superpowers /using-superpowers skill into context
+# AND perform branch-scoped state reset.
+#
+# v0.30.0 fix (#87): the hook now reads the SessionStart JSON payload from
+# stdin to extract the `source` field. Claude Code emits SessionStart on
+# four distinct events:
+#   - startup  : process launch, fresh shell
+#   - resume   : continuing a prior session
+#   - clear    : explicit /clear by the user
+#   - compact  : /compact (auto or manual) — context compression, NOT a reset
+# Previously, all four triggered the destructive `gsd-*` strip, wiping
+# mid-session GSD progress markers on every compact. Now only `startup` and
+# `clear` perform state mutations; `resume` and `compact` are treated as
+# benign session-resume events that must not touch state.
+#
 # Security: restrict file creation permissions (user-only)
 umask 0077
+
+# Read stdin (best-effort) to extract `source`. Fail-soft on missing jq or
+# malformed JSON: default to "startup" so behavior matches pre-fix path.
+sb_session_source="startup"
+if command -v jq >/dev/null 2>&1; then
+  # `read -t 0` non-blocking probe so a writer never seeing stdin doesn't hang.
+  _sb_stdin_payload=""
+  if [[ ! -t 0 ]]; then
+    _sb_stdin_payload=$(cat 2>/dev/null || true)
+  fi
+  if [[ -n "$_sb_stdin_payload" ]]; then
+    _sb_src=$(printf '%s' "$_sb_stdin_payload" | jq -r '.source // "startup"' 2>/dev/null || true)
+    case "$_sb_src" in
+      startup|resume|clear|compact) sb_session_source="$_sb_src" ;;
+    esac
+  fi
+fi
+# Allow tests to override via env var.
+sb_session_source="${SILVER_BULLET_SESSION_SOURCE:-$sb_session_source}"
 
 # Source symlink-write guard (SEC-02)
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
@@ -63,26 +93,49 @@ fi
 stored_branch=""
 [[ -f "$branch_file" ]] && stored_branch=$(cat "$branch_file" 2>/dev/null || true)
 
-if [[ -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]]; then
+# v0.30.0 fix (#87 Bug 1+3): only mutate state on `startup` and `clear` events.
+# `resume` and `compact` are benign session-continuation events — wiping gsd-*
+# markers or resetting the state file mid-feature breaks multi-session GSD
+# enforcement. Empty `current_branch` is also treated as no-op (Bug 3): we
+# cannot prove a branch mismatch when the value isn't readable, and wiping on
+# uncertainty causes data loss.
+sb_should_mutate=false
+case "$sb_session_source" in
+  startup|clear) sb_should_mutate=true ;;
+esac
+
+if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]]; then
   # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
   # without wiping state.
   sb_guard_nofollow "$branch_file"
   printf '%s\n' "$current_branch" > "$branch_file"
+  # v0.30.0 fix (#87 Bug 2): verify the write succeeded; fail-soft (warn-only,
+  # do not exit non-zero) so the rest of the hook still runs.
+  if [[ ! -s "$branch_file" ]]; then
+    printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
+  fi
   if [[ -f "$state_file" && ! -L "$state_file" ]]; then
     sed -i.bak '/^gsd-/d' "$state_file"
     rm -f -- "${state_file}.bak"
   fi
-elif [[ -n "$current_branch" && "$current_branch" != "$stored_branch" ]]; then
-  # Branch changed — full state reset for fresh workflow
+elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branch" && "$current_branch" != "$stored_branch" ]]; then
+  # Branch changed — full state reset for fresh workflow.
+  # NOTE: requires BOTH current_branch AND stored_branch to be non-empty.
+  # Empty current_branch (e.g. detached HEAD with rev-parse failure) MUST NOT
+  # trigger a wipe — that was the v0.27.x mid-session state-loss path.
   sb_safe_write "$state_file"
   rm -f -- "$state_file" 2>/dev/null || true
   sb_guard_nofollow "$branch_file"
   printf '%s\n' "$current_branch" > "$branch_file"
-elif [[ -f "$state_file" && ! -L "$state_file" ]]; then
+  if [[ ! -s "$branch_file" ]]; then
+    printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
+  fi
+elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]; then
   # Same branch — reset session-specific gsd-* markers only (transient per-session GSD phase markers).
   sed -i.bak '/^gsd-/d' "$state_file"
   rm -f -- "${state_file}.bak"
 fi
+# `compact` and `resume` fall through with no state mutation.
 
 
 # Clean up trivial-change bypass from previous session
