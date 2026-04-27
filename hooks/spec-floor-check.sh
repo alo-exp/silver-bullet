@@ -55,18 +55,14 @@ fi
 # Exit early if neither pattern matched
 [[ "$is_plan_phase" == false && "$is_fast" == false ]] && exit 0
 
-# ── WORKFLOW.md composition check: downgrade spec floor when PATH 4 excluded ──
-workflow_file="$PWD/.planning/WORKFLOW.md"
-if [[ "$is_plan_phase" == true && -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Check if PATH 4 (SPECIFY) appears in the Flow Log
-  if ! grep -qE '^\| [^|]*\| (SPECIFY|PATH 4)[^|]*\|' "$workflow_file" 2>/dev/null; then
-    # PATH 4 intentionally excluded from composition — downgrade to advisory
-    printf '{"hookSpecificOutput":{"message":"SPEC FLOOR ADVISORY: PATH 4 (SPECIFY) excluded from composition — spec floor downgraded to advisory."}}'
-    exit 0
-  fi
-  # PATH 4 present — continue with existing blocking logic below
-fi
-# If WORKFLOW.md absent: continue with existing blocking logic unchanged (T-26-03)
+# ── Composition opt-out check (Pass 1: deferred) ─────────────────────────────
+# The legacy single-file WORKFLOW.md was retired (see completion-audit.sh
+# for full rationale). v0.29.x replaces it with per-instance
+# `.planning/workflows/<id>.md` files. Until Pass 2 lands, the spec floor
+# always applies as the safe default — the previous downgrade-when-PATH-4-
+# excluded behavior is unavailable until per-workflow composition tracking
+# is rebuilt. Composers that legitimately exclude PATH 4 can still
+# bypass via `--skip-spec` flags on their direct invocations.
 
 SPEC=".planning/SPEC.md"
 FAST_SPEC=".planning/SPEC.fast.md"

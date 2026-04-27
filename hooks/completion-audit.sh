@@ -150,42 +150,25 @@ if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0
 fi
 
-# ── WORKFLOW.md path completion check (primary gate with legacy fallback) ─────
-workflow_file="$PWD/.planning/WORKFLOW.md"
-if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Parse Flow Log: count completed and total paths
-  wf_complete=0
-  wf_total=0
-  wf_parse_ok=false
-  if wf_complete=$(count_complete_flow_rows "$workflow_file") && \
-     wf_total=$(count_flow_log_rows "$workflow_file"); then
-    wf_parse_ok=true
-  fi
-
-  if [[ "$wf_parse_ok" == true && "$wf_total" -gt 0 ]]; then
-    if [[ "$is_intermediate" == true ]]; then
-      # For intermediate commits: any path completed means planning is underway — allow
-      if [[ "$wf_complete" -gt 0 ]]; then
-        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: %s/%s flows complete. Intermediate commit allowed."}}\n' \
-          "$wf_complete" "$wf_total"
-        exit 0
-      fi
-      # No flows complete yet — fall through to legacy check
-    elif [[ "$is_completion" == true ]]; then
-      if [[ "$wf_complete" -eq "$wf_total" ]]; then
-        # All flows complete — final delivery allowed
-        printf '{"hookSpecificOutput":{"message":"✅ WORKFLOW.md: all %s flows complete. Delivery allowed."}}\n' "$wf_total"
-        exit 0
-      else
-        # Not all flows done — block final delivery
-        emit_block "WORKFLOW INCOMPLETE — ${wf_complete}/${wf_total} flows done. Complete all flows before final delivery."
-        exit 0
-      fi
-    fi
-  fi
-  # If parsing failed (malformed WORKFLOW.md), fall through to legacy logic silently
-fi
-# If WORKFLOW.md absent: fall through to existing legacy logic unchanged
+# ── Composed-workflow gate (Pass 1: deferred) ────────────────────────────────
+# The legacy single-file `.planning/WORKFLOW.md` gate was retired because a
+# stale milestone WORKFLOW.md from a prior `silver:*` composition could let
+# every commit/release pass without checking required skills (the file
+# remained on disk after its composition shipped, with all flows marked
+# complete, so completion-audit short-circuited to "delivery allowed").
+#
+# v0.29.x replaces the single file with a per-instance `.planning/workflows/`
+# directory: one file per active composed workflow, deleted on completion.
+# Pass 1 (this hotfix) stops consuming the old file and falls through to the
+# legacy required-skills gate, which is the correct behavior whenever no
+# composed workflow is active. Pass 2 (deferred — tracked as a v0.29.x or
+# v0.30.0 follow-up) will rebuild the gate against `.planning/workflows/<id>.md`
+# files with strict per-workflow ID matching for final delivery.
+#
+# Until Pass 2 lands, even when `.planning/workflows/` contains active workflow
+# files, this hook still falls through to the required-skills gate — that gate
+# is the floor and is sufficient on its own; Pass 2 will only add additional
+# strictness on top of it.
 
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""

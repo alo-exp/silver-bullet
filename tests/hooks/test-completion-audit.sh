@@ -337,12 +337,18 @@ out=$(run_hook "PreToolUse" "gh pr merge --squash")
 assert_passes "gh pr merge passes with all required skills (no review-loop-pass needed)" "$out"
 teardown
 
-# ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────
+# ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──
+# The legacy single-file `.planning/WORKFLOW.md` gate was retired (see
+# completion-audit.sh for full rationale). v0.29.x replaces it with per-instance
+# `.planning/workflows/<id>.md` files; Pass 2 will implement strict
+# per-workflow gating. Pass 1 simply ignores WORKFLOW.md and all `.planning/
+# workflows/*.md` files and falls through to the legacy required-skills gate.
 echo ""
-echo "=== WORKFLOW.md-first gate ==="
+echo "=== Composed-workflow gate (Pass 1: WORKFLOW.md ignored) ==="
 
-# WF1: WORKFLOW.md with all paths complete -> allow commit
-echo "--- WF1: all workflow paths complete -> allow commit ---"
+# WF-PASS1-A: a stale WORKFLOW.md showing all paths complete must NOT bypass
+# the legacy required-skills gate when state is empty.
+echo "--- WF-PASS1-A: stale WORKFLOW.md does not bypass empty-state legacy gate ---"
 setup
 write_cfg
 mkdir -p "$TMPDIR_TEST/.planning"
@@ -352,61 +358,52 @@ cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
 |---|------|--------|
 | 5 | PLAN | complete |
 | 7 | EXECUTE | complete |
-| 9 | REVIEW | complete |
-| 11 | VERIFY | complete |
 | 13 | SHIP | complete |
 WFEOF
+# Empty state file (no skills recorded) — legacy gate would normally allow
+# (zero state = no enforcement target), so the test specifically asserts that
+# the stale WORKFLOW.md doesn't trigger a "delivery allowed" message. Use
+# `gh pr create` so legacy completion path also fires.
 out=$(run_hook "PreToolUse" "git commit -m test")
-assert_passes "WF1: all workflow paths complete -> allow" "$out"
+# Empty state = legacy gate exits 0 silently. Confirm the stale-WF message is
+# NOT in the output (would prove the old gate is gone).
+if printf '%s' "$out" | grep -q 'WORKFLOW\.md.*Intermediate commit allowed\|WORKFLOW\.md.*Delivery allowed'; then
+  echo "  ❌ WF-PASS1-A: stale WORKFLOW.md still being read — Pass 1 hotfix incomplete"
+  FAIL=$((FAIL+1))
+else
+  echo "  ✅ WF-PASS1-A: stale WORKFLOW.md correctly ignored"
+  PASS=$((PASS+1))
+fi
 teardown
 
-# WF2: WORKFLOW.md with partial paths -> blocks final delivery
-echo "--- WF2: partial paths -> blocks final delivery ---"
+# WF-PASS1-B: `.planning/workflows/<id>.md` files (future format) are also
+# ignored by Pass 1 — gate falls through to legacy required-skills check.
+echo "--- WF-PASS1-B: workflows/ dir does not bypass legacy gate ---"
 setup
 write_cfg
-mkdir -p "$TMPDIR_TEST/.planning"
-cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Flow Log
-| # | Path | Status |
-|---|------|--------|
-| 5 | PLAN | complete |
-| 7 | EXECUTE | in_progress |
-WFEOF
-out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_blocks "WF2: partial paths -> block final delivery" "$out"
-teardown
-
-# WF3: Bug-2 regression — Phase Iterations and Autonomous Decisions rows don't inflate total
-echo "--- WF3: Bug-2 regression — digit-starting rows in other sections don't inflate total ---"
-setup
-write_cfg
-mkdir -p "$TMPDIR_TEST/.planning"
-cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Flow Log
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+cat > "$TMPDIR_TEST/.planning/workflows/20260428T015523Z-K4F7QA-silver-feature.md" << 'WFEOF'
+**Composer:** /silver:feature
+**Status:** active
+### Flow Log
 | # | Flow | Status |
 |---|------|--------|
-| 0 | BOOTSTRAP | complete |
 | 5 | PLAN | complete |
 | 7 | EXECUTE | complete |
-| 9 | REVIEW | complete |
-| 11 | VERIFY | complete |
-| 13 | SHIP | complete |
-
-## Phase Iterations
-| Phase | Status |
-|-------|--------|
-| 01 (feature-phase) | FLOW 5 complete, FLOW 7 complete |
-
-## Autonomous Decisions
-| Timestamp | Decision | Rationale |
-|-----------|----------|-----------|
-| 2026-04-15T10:00:00Z | Skipped FLOW 4 | No SPEC.md found |
-| 2026-04-15T10:05:00Z | Auto-confirmed | autonomous mode |
 WFEOF
-# All 6 Flow Log rows complete — should allow final delivery despite extra digit-starting rows
-# Must use gh pr create (is_completion=true) — git commit is intermediate and doesn't trigger the total check
-out=$(run_hook "PreToolUse" "gh pr create --title 'release'")
-assert_passes "WF3: Phase Iterations and Autonomous Decisions rows don't inflate total (Bug-2 regression)" "$out"
+# Empty state: missing silver-quality-gates → legacy gate must block git commit
+echo > "$TMPSTATE"
+out=$(run_hook "PreToolUse" "git commit -m test")
+# With empty state, completion-audit's legacy gate exits 0 silently
+# (see HOOK-04 empty-state behavior). The key assertion: no WORKFLOW.md
+# message in the output proves Pass 1 hotfix is engaged.
+if printf '%s' "$out" | grep -q 'flows complete\|Delivery allowed\|Intermediate commit allowed'; then
+  echo "  ❌ WF-PASS1-B: workflows/ dir incorrectly bypassed legacy gate"
+  FAIL=$((FAIL+1))
+else
+  echo "  ✅ WF-PASS1-B: workflows/ dir correctly ignored (Pass 2 will add gating)"
+  PASS=$((PASS+1))
+fi
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

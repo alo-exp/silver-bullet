@@ -144,21 +144,16 @@ if [[ -n "$resolved_rules" && "$resolved_rules" != "${script_dir}/"* && "$resolv
   core_rules_file=""
 fi
 
-# ── WORKFLOW.md position injection ───────────────────────────────────────────
-workflow_file="$PWD/.planning/WORKFLOW.md"
+# ── Composed-workflow position injection (Pass 1: list active workflows) ─────
+# v0.29.x replaces the legacy single-file WORKFLOW.md with per-instance files
+# in `.planning/workflows/`. List the active workflow IDs (the file basenames).
+# Pass 2 will parse each per-workflow file for richer position info.
+workflows_dir="$PWD/.planning/workflows"
 workflow_position=""
-if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  # Extract Last-flow from Heartbeat section
-  last_path=""
-  last_path=$(grep -A1 '## Heartbeat' "$workflow_file" 2>/dev/null | grep 'Last-flow:' | sed 's/Last-flow:[[:space:]]*//' | tr -d '\r' || true)
-  # Extract next flow from Next Flow section
-  next_path=""
-  next_path=$(grep -A1 '## Next Flow' "$workflow_file" 2>/dev/null | tail -1 | sed 's/^[[:space:]]*//' | tr -d '\r' || true)
-  # Extract mode from Composition section
-  comp_mode=""
-  comp_mode=$(grep '^Mode:' "$workflow_file" 2>/dev/null | head -1 | sed 's/Mode:[[:space:]]*//' | tr -d '\r' || true)
-  if [[ -n "$last_path" ]]; then
-    workflow_position="Composable path: currently at FLOW ${last_path}, next: ${next_path} (${comp_mode} mode)"
+if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
+  active_ids=$(ls -1 "$workflows_dir" 2>/dev/null | grep -E '\.md$' | sed 's/\.md$//' | tr '\n' ',' | sed 's/,$//' || true)
+  if [[ -n "$active_ids" ]]; then
+    workflow_position="Active composed workflows: ${active_ids}"
   fi
 fi
 

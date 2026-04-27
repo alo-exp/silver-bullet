@@ -337,27 +337,12 @@ To reset workflow state intentionally, run in your terminal:
     fi
   fi
 
-  # --- WORKFLOW.md path completion check (primary gate with legacy fallback) ---
-  workflow_file="$PWD/.planning/WORKFLOW.md"
-  if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-    # Parse Flow Log table: count completed and total paths
-    path_complete_count=0
-    path_total_count=0
-    if path_complete_count=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-       path_total_count=$(count_flow_log_rows "$workflow_file"); then
-      if [[ "$path_total_count" -gt 0 && "$path_complete_count" -eq "$path_total_count" ]]; then
-        # All flows done — allow freely
-        printf '{"hookSpecificOutput":{"message":"✅ All flows complete. Proceed freely."}}'
-        exit 0
-      elif [[ "$path_total_count" -gt 0 ]]; then
-        # Partial progress — inform but fall through to legacy gate
-        printf '{"hookSpecificOutput":{"message":"ℹ️ FLOW %s/%s — composable flows enforcement active. Legacy gate still applies." }}' \
-          "$path_complete_count" "$path_total_count"
-      fi
-    fi
-    # If parsing failed (malformed file), fall through to legacy logic silently
-  fi
-  # If WORKFLOW.md absent: fall through to legacy logic unchanged (per D-03)
+  # --- Composed-workflow gate (Pass 1: deferred) ---
+  # See completion-audit.sh for full rationale. The legacy single-file
+  # WORKFLOW.md gate is retired; v0.29.x will use `.planning/workflows/<id>.md`
+  # files. Until Pass 2 ships, fall through to the legacy dev-cycle gate
+  # unconditionally — it is the correct floor whenever no composed workflow
+  # is active, and Pass 2 will only add strictness on top of it.
 
   # --- Read state file and determine stage ---
   completed_skills=""
