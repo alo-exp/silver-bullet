@@ -396,7 +396,7 @@ To reset workflow state intentionally, run in your terminal:
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
   # Derive finalization_skills from config required_deploy; fall back to hardcoded defaults.
-  finalization_skills="testing-strategy tech-debt documentation finishing-a-development-branch deploy-checklist"
+  finalization_skills="testing-strategy tech-debt documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development"
   if [[ -n "$config_file" ]]; then
     cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(. != "code-review" and . != "requesting-code-review" and . != "receiving-code-review" and . != "silver-quality-gates")) | join(" ")' "$config_file" 2>/dev/null || true)
     [[ -n "$cfg_finalization" ]] && finalization_skills="$cfg_finalization"

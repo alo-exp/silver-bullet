@@ -10,22 +10,22 @@
 
 ### Code Review Chores (Phase 59)
 
-- [ ] **CHR-01**: `session-log-init.sh` cleans up orphan `sentinel-lock-<uuid>` files during session startup (files left behind by crashed sessions are removed before a new sentinel is started) — GitHub #78
-- [ ] **CHR-02**: `silver-add` `gh auth status` scope grep uses `-i` flag for case-insensitive matching (`grep -qiE`) so `Token scopes` matches regardless of capitalization — GitHub #79
-- [ ] **CHR-03**: Dead `quality-gate-stage-*` sed cleanup removed from `hooks/session-start` (the stage markers are no longer written, so the sed command is dead code) — GitHub #80
-- [ ] **CHR-04**: `silver-create-release` CHANGELOG entry uses `printf` with an explicit `%s` format (no trailing newline artifact) so the CHANGELOG entry renders correctly on all platforms — GitHub #81
+- [x] **CHR-01**: `session-log-init.sh` cleans up orphan `sentinel-lock-<uuid>` files during session startup (files left behind by crashed sessions are removed before a new sentinel is started) — GitHub #78
+- [x] **CHR-02**: `silver-add` `gh auth status` scope grep uses `-i` flag for case-insensitive matching (`grep -qiE`) so `Token scopes` matches regardless of capitalization — GitHub #79
+- [x] **CHR-03**: Dead `quality-gate-stage-*` sed cleanup removed from `hooks/session-start` (the stage markers are no longer written, so the sed command is dead code) — GitHub #80
+- [x] **CHR-04**: `silver-create-release` CHANGELOG entry uses `printf` with an explicit `%s` format (no trailing newline artifact) so the CHANGELOG entry renders correctly on all platforms — GitHub #81
 
 ### Test Coverage (Phase 60)
 
-- [ ] **TST-01**: `tests/hooks/test-session-log-init.sh` Test 8 asserts that the `sentinel-lock-<uuid>` file is created during the test (currently only checks PID; file creation is unverified) — GitHub #77
-- [ ] **TST-02**: `tests/hooks/test-dev-cycle-check.sh` includes test cases for the quote-literal exemption: (a) a command that is genuinely exempted fires no veto, and (b) a command that abuses the exemption (e.g. redirect target `tee "~/.claude/.silver-bullet/state"`) is still vetoed — GitHub #76
+- [x] **TST-01**: `tests/hooks/test-session-log-init.sh` Test 8 asserts that the `sentinel-lock-<uuid>` file is created during the test (currently only checks PID; file creation is unverified) — GitHub #77
+- [x] **TST-02**: `tests/hooks/test-dev-cycle-check.sh` includes test cases for the quote-literal exemption: (a) a command that is genuinely exempted fires no veto, and (b) a command that abuses the exemption (e.g. redirect target `tee "~/.claude/.silver-bullet/state"`) is still vetoed — GitHub #76
 
 ### Skill Quality & Rename (Phase 61)
 
-- [ ] **SKL-01**: `skills/silver-add/SKILL.md` trimmed to under 300 lines without removing functional content (prose tightened, redundant examples removed) — GitHub #61
-- [ ] **SKL-02**: `skills/silver-rem/SKILL.md` trimmed to under 300 lines without removing functional content (prose tightened, redundant examples removed) — GitHub #62
-- [ ] **SKL-03**: All `## PATH N` headings and inline PATH-N references in `silver-bullet.md`, `templates/silver-bullet.md.base`, and skill files renamed to `## FLOW N` / FLOW-N for consistency with `composable-flows-contracts.md` and the established "flow" terminology; filesystem paths, `$PATH`, and lowercase "path" prose are not renamed — GitHub #83
-- [ ] **SKL-04**: `templates/silver-bullet.md.base` and `silver-bullet.md` §9 subsection headings corrected: `§10a` through `§10e` renamed to `§9a` through `§9e` to match the parent `§9` numbering — GitHub #59
+- [x] **SKL-01**: `skills/silver-add/SKILL.md` trimmed to under 300 lines without removing functional content (prose tightened, redundant examples removed) — GitHub #61
+- [x] **SKL-02**: `skills/silver-rem/SKILL.md` trimmed to under 300 lines without removing functional content (prose tightened, redundant examples removed) — GitHub #62
+- [x] **SKL-03**: All `## PATH N` headings and inline PATH-N references in `silver-bullet.md`, `templates/silver-bullet.md.base`, and skill files renamed to `## FLOW N` / FLOW-N for consistency with `composable-flows-contracts.md` and the established "flow" terminology; filesystem paths, `$PATH`, and lowercase "path" prose are not renamed — GitHub #83
+- [x] **SKL-04**: `templates/silver-bullet.md.base` and `silver-bullet.md` §9 subsection headings corrected: `§10a` through `§10e` renamed to `§9a` through `§9e` to match the parent `§9` numbering — GitHub #59
 
 ### Documentation Refresh (Phase 62)
 
@@ -35,14 +35,14 @@
 
 ### Stop Hook Audit (Phase 63)
 
-- [ ] **HK-01**: A written audit (`docs/internal/stop-hook-audit.md` or equivalent) enumerates all known Stop hook false-positive scenarios with reproduction steps; each confirmed false-positive is either fixed in code or documented with a rationale for deferral; the audit is linked from silver-bullet.md §1 (enforcement reference) — GitHub #71
+- [x] **HK-01**: A written audit (`docs/internal/stop-hook-audit.md` or equivalent) enumerates all known Stop hook false-positive scenarios with reproduction steps; each confirmed false-positive is either fixed in code or documented with a rationale for deferral; the audit is linked from silver-bullet.md §1 (enforcement reference) — GitHub #71
 
 ### Verification & Init Improvements (Phase 64)
 
-- [ ] **VFY-01**: Design document or SKILL.md update specifying how `/verification-before-completion` enforcement at intermediate task boundaries would work (where to hook, what triggers the check, what blocks completion); implementation optional for this milestone — GitHub #72
-- [ ] **BUG-06**: Root cause of Claude Code re-prompting for permissions after Bypass Permissions is set identified and documented; fix applied if the root cause is within Silver Bullet's control; GitHub issue updated with findings if it is a platform issue — GitHub #64
-- [ ] **INIT-01**: `/silver:init` detects when a CLAUDE.md already exists, diffs the conflicting sections, and offers the user a choice of which sections to keep — no silent override — GitHub #69
-- [ ] **FLOW-01**: Design document or SKILL.md note added for PATH/FLOW layer parallelism in the `/silver` composer; implementation deferred — GitHub #75
+- [x] **VFY-01**: Design document or SKILL.md update specifying how `/verification-before-completion` enforcement at intermediate task boundaries would work (where to hook, what triggers the check, what blocks completion); implementation optional for this milestone — GitHub #72
+- [x] **BUG-06**: Root cause of Claude Code re-prompting for permissions after Bypass Permissions is set identified and documented; fix applied if the root cause is within Silver Bullet's control; GitHub issue updated with findings if it is a platform issue — GitHub #64
+- [x] **INIT-01**: `/silver:init` detects when a CLAUDE.md already exists, diffs the conflicting sections, and offers the user a choice of which sections to keep — no silent override — GitHub #69
+- [x] **FLOW-01**: Design document or SKILL.md note added for PATH/FLOW layer parallelism in the `/silver` composer; implementation deferred — GitHub #75
 
 ---
 

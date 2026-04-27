@@ -891,23 +891,23 @@ Initially empty — all workflow defaults apply. Read at every relevant decision
 
 Last updated: (not yet set)
 
-### 9a. Routing Preferences
+### 10a. Routing Preferences
 | Work type | Override route | Since |
 |-----------|---------------|-------|
 
-### 9b. Step Skip Preferences
+### 10b. Step Skip Preferences
 | Workflow | Step skipped | Condition | Since |
 |----------|-------------|-----------|-------|
 
-### 9c. Tool Preferences
+### 10c. Tool Preferences
 | Decision point | Preferred tool | Since |
 |----------------|---------------|-------|
 
-### 9d. MultAI Preferences
+### 10d. MultAI Preferences
 | Trigger | Disposition | Since |
 |---------|-------------|-------|
 
-### 9e. Mode Preferences
+### 10e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|
 | Default session mode | autonomous | 2026-04-16 |
