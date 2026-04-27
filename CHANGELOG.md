@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.28.0] — 2026-04-27
+
+## Headline
+
+**Complete port of Silver Bullet to the Forge coding agent.** Full SB workflow now runs on `forgecode.dev` with 100% structural and behavioural parity to Claude Desktop.
+
+## Features
+
+- `feat(forge,phase-65)`: Bulk-copy 106 skills to `forge/skills/` (61 SB + 14 Superpowers + 33 Anthropic knowledge-work) — all using identical Claude Code SKILL.md format (`6de1d98`)
+- `feat(forge,phase-66)`: Convert 18 SB hooks to 10 Forge custom agents (`forge-pre-commit-audit`, `forge-pre-pr-audit`, `forge-task-complete-check`, `forge-roadmap-freshness`, `forge-spec-floor-check`, `forge-uat-gate`, `forge-pr-traceability`, `forge-ci-status-check`, `forge-forbidden-skill-check`, `forge-session-init`) — invoked as tools by the main agent at gating moments since Forge has no hooks (`bb8a651`)
+- `feat(forge,phase-67)`: Port 31 GSD subagents to Forge custom agents at `forge/agents/` per `forgecode.dev/docs/creating-agents/` — proper context isolation, restricted `tools[]`, `tool_supported: true` (`9f3a351`)
+- `feat(forge,phase-68)`: Rewrite `forge-sb-install.sh` as copy-based, idempotent installer; rewrite `AGENTS.md.template` as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation); add `forge/PARITY.md` capability map (`86c2941`)
+- `feat(forge,phase-69)`: Add `forge/scripts/smoke-test.sh` (21+ structural assertions); add `forge/PARITY-REPORT.md` documenting structural and behavioural parity; install on test app (`05b482b`)
+
+## Documentation
+
+- `docs(forge)`: Add Forge runtime evidence to PARITY-REPORT — Forge CLI v2.12.9 confirmed loading 114 skills + 46 agents; hook-agent invocation tests #1 (`forge-spec-floor-check`) and #2 (`forge-pre-commit-audit`) returned the exact specified BLOCK/ALLOW outputs (`ca0a7ff`)
+- `docs(v0.28.0)`: Pivot Phase 66/67 to Forge custom agents after `forgecode.dev/docs/creating-agents/` research (`cdc53f5`)
+- `docs(v0.28.0)`: Restructure milestone after Forge docs research — skill format identical, hooks→agents, subagents→agents (`9ef3836`)
+- `docs`: Create milestone v0.28.0 roadmap, requirements, kickoff (`5d9c2b0`, `cc20b89`, `bbf8e63`)
+- `docs(065)`: Create + preserve phase plans for historical record (`3a0aa12`, `18ffff3`)
+- `docs(v0.28.0)`: Mark all 5 phases structurally complete (`6726354`)
+
+## Fixes
+
+- `fix`: Restore DOC-03 completion marker in REQUIREMENTS.md (`37033be`)
+
+## Chores (carried over from v0.27.1 finalization)
+
+- `chore`: Bump config_version and version to 0.27.1 (`eeccf87`)
+- `chore(release)`: Update CHANGELOG and README badge for v0.27.1 (`a32009c`)
+
+## Inventory
+
+| Artifact | Count | Path |
+|---|---|---|
+| Skills | 106 | `forge/skills/` |
+| Custom agents | 41 | `forge/agents/` |
+| Installer | 1 | `forge-sb-install.sh` |
+| Templates | 2 | `forge/AGENTS.md.template`, `forge/AGENTS.project.template` |
+| Parity docs | 2 | `forge/PARITY.md`, `forge/PARITY-REPORT.md` |
+| Smoke test | 1 | `forge/scripts/smoke-test.sh` |
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
+```
+
+Or local:
+```bash
+git clone https://github.com/alo-exp/silver-bullet.git
+bash silver-bullet/forge-sb-install.sh
+```
+
+---
+
 ## [0.27.1] — 2026-04-27
 
 ### Bug Fixes
