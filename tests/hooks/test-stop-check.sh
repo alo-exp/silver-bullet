@@ -212,7 +212,7 @@ git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" c
 # Without this, the branch-scope mismatch guard exits 0 before the on-main
 # filter is reached — test passes but for the wrong reason.
 printf 'main\n' > "$TMPBRANCH_FILE"
-# Stage an uncommitted file so HOOK-14's clean-tree exit (line 177 of stop-check.sh,
+# Stage an uncommitted file so HOOK-14's clean-tree exit (line 184 of stop-check.sh,
 # the "no origin anchor + clean tree → read-only session" path) does NOT fire.
 # Without a dirty tree, stop-check.sh exits 0 via HOOK-14 before ever reaching
 # the on_main=true → finishing-a-development-branch filter at line 244.
