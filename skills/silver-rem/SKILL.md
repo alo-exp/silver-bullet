@@ -119,7 +119,7 @@ while [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; do
 done
 ```
 
-Display: "Monthly file at 300+ lines — redirecting to $(basename "$TARGET") instead."
+Display (only when redirect occurred): "Monthly file at 300+ lines — redirecting to $(basename "$TARGET") instead."
 
 **If IS_NEW_FILE=true AND INSIGHT_TYPE=knowledge:**
 

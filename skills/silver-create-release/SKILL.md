@@ -267,6 +267,7 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    injection from crafted version strings or release notes:
    ```
    summary=$(printf '%s' "$RELEASE_NOTES_BODY" | grep -m1 '^## ' | sed 's/^## //')
+   [[ -z "$summary" ]] && summary="Release published"
    jq -n --arg v "$VERSION" --arg t "$summary" --arg url "$release_url" \
      '{text: "🚀 *\($v)* released\n\($t)\n\($url)"}' \
      | curl -s -X POST "$webhook" \
