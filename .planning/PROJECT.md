@@ -55,6 +55,15 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
+- [ ] Complete Forge port: 27 missing SB skills in Forge format (FORGE-01–FORGE-27)
+- [ ] Port remaining Superpowers skills to Forge (~7 skills) (FORGE-28–FORGE-34)
+- [ ] Port Anthropic knowledge-work-plugins to Forge (~33 skills) (FORGE-35–FORGE-67)
+- [ ] Update forge-sb-install.sh for all ~67 skills (FORGE-68)
+- [ ] Update AGENTS.md templates for full routing coverage (FORGE-69)
+- [ ] End-to-end Forge test app validation (FORGE-70)
+
+### Deferred (from v0.27.0 Active)
+
 - [ ] Review round analytics — track review round counts, common finding patterns (ARVW-10)
 - [ ] Configurable review depth (quick/standard/deep) per artifact type via .planning/config.json (ARVW-11)
 
@@ -66,17 +75,24 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit
+## Current Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies
+
+**Goal:** Bring the Forge coding agent port (forge/ dir) to 100% parity with the Silver Bullet Claude Desktop experience — all SB skills, all dependency plugins (Superpowers, Anthropic knowledge-work-plugins), updated installer, end-to-end verified against a test app.
+
+**Target features:**
+- SB skill gap closure: port 27 missing SB skills to Forge format (artifact-review-*, devops-*, review-*, silver-add, silver-blast-radius, silver-create-release, silver-fast, silver-forensics, silver-ingest, silver-init, silver-migrate, silver-quality-gates, silver-release, silver-rem, silver-remove, silver-review-stats, silver-scan, silver-spec, silver-update, silver-validate)
+- Superpowers gap closure: port ~7 remaining Superpowers skills (dispatching-parallel-agents, executing-plans, subagent-driven-development, systematic-debugging, using-git-worktrees, verification-before-completion, finishing-a-development-branch)
+- Anthropic knowledge-work-plugins: port all ~33 skills from anthropics/knowledge-work-plugins (engineering×10, design×7, product-management×8, marketing×8)
+- Installer update: rewrite forge-sb-install.sh to install all ~67 skills
+- AGENTS.md update: expand global + project templates for full routing coverage
+- End-to-end test: create Forge test app copy, run full development workflow scenarios to verify 100% SB parity
+- Release: update README/docs, tag v0.28.0
+
+## Completed Milestone: v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit (shipped TBD)
 
 **Goal:** Close 18 GitHub issues — follow-up chores from v0.26.0 code review, test coverage gaps, skill trimming, paths→flows rename, documentation refresh, and the high-priority Stop hook false-positive audit.
 
-**Target features:**
-- Code review chores: sentinel-lock cleanup, gh auth -i, dead sed removal, CHANGELOG trailing newline (#78–#81)
-- Test coverage: sentinel-lock-uuid assertion, quote-literal exemption edge cases (#76–#77)
-- Skill quality: trim silver-add/silver-rem SKILL.md, paths→flows rename, §9/§10 numbering fix (#59, #61, #62, #83)
-- Docs refresh: SB-only install path, GSD vs SB comparison doc, full content audit (#70, #73, #74)
-- Stop hook audit: enumerate + fix/document all false-positive scenarios (#71)
-- Verification & init: verification-before-completion design, permissions re-prompting investigation, CLAUDE.md conflict resolution, FLOW parallelism design (#64, #69, #72, #75)
+**Shipped:** All 18 requirements satisfied across 6 phases (59-64). (Release pending)
 
 ## Completed Milestone: v0.26.0 Bug Fixes, CI Hardening & Skill Quality (shipped 2026-04-25)
 
@@ -140,4 +156,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-25 — v0.27.0 milestone started; 18 requirements defined across 6 phases (59–64)*
+*Last updated: 2026-04-27 — v0.28.0 milestone started; Forge port parity milestone*
