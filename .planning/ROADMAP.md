@@ -645,7 +645,11 @@ Plans:
   2. `hooks/phase-lock-heartbeat.sh` is throttled to once per 5 min per phase via mtime check on `~/.claude/.silver-bullet/heartbeat-<NNN>`
   3. `hooks/phase-lock-release.sh` releases every phase claimed during the session/agent lifetime via the session-scoped manifest
   4. `hooks/hooks.json` registers all three; `completion-audit.sh` and `stop-check.sh` emit informational warnings (not blocking) when lock owner ≠ self
-**Plans**: TBD
+**Plans**: 4 plans
+  - [ ] 071-01-PLAN.md — hooks/lib/phase-path.sh path-to-phase resolver
+  - [ ] 071-02-PLAN.md — phase-lock-claim/heartbeat/release hooks + hooks.json registration
+  - [ ] 071-03-PLAN.md — informational lock-owner peek in completion-audit.sh and stop-check.sh
+  - [ ] 071-04-PLAN.md — unit tests for the three new hooks
 
 ### Phase 72: Forge-SB Lock Awareness
 **Goal**: Forge-SB integrates with the same lock helper through Forge's custom-agent mechanism, mirroring Claude-SB's behavior at phase boundaries
