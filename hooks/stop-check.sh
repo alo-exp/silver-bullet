@@ -67,7 +67,8 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
-  (.project.active_workflow // "full-dev-cycle")
+  (.project.active_workflow // "full-dev-cycle"),
+  ((.skills.required_planning // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -76,6 +77,7 @@ trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
 required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
+required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -142,7 +144,51 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   # status.showUntrackedFiles, honor all untracked paths (including
   # .gitignored locations — a session may only touch .claude/ which is
   # commonly gitignored and would otherwise be invisible to porcelain).
-  if [[ -z "$(git -C "$PWD" status --porcelain --untracked-files=all --ignored=traditional 2>/dev/null)" ]]; then
+  #
+  # v0.30.0 fix (#88): the --ignored=traditional widening over-catches
+  # routine session/runtime artifacts (`.claude/scheduled_tasks.lock`,
+  # `.claude/settings.local.json`, `.superpowers/**`, `.planning/workflows/**`,
+  # gitignored REVIEW.md), causing the Stop hook to loop indefinitely after
+  # legitimate releases. Filter porcelain output through a transient-path
+  # allowlist before deciding `tree_clean`. Defaults are baked-in; projects
+  # may override via `.silver-bullet.json`:
+  #   { "hooks": { "stop_check": { "transient_path_ignore_patterns": ["..."] } } }
+  porcelain=$(git -C "$PWD" status --porcelain --untracked-files=all --ignored=traditional 2>/dev/null)
+  if [[ -n "$porcelain" ]]; then
+    # Built-in transient-artifact patterns (extended-grep, anchored to
+    # status-line shape `XX path`).
+    sb_transient_re='(\.claude/scheduled_tasks\.lock|\.claude/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)'
+    # Project-configured additional patterns (newline-separated, ERE-escaped
+    # by the user). Resolved via .silver-bullet.json walk-up.
+    sb_cfg_search="$PWD"
+    sb_cfg=""
+    while true; do
+      if [[ -f "$sb_cfg_search/.silver-bullet.json" ]]; then
+        sb_cfg="$sb_cfg_search/.silver-bullet.json"
+        break
+      fi
+      if [[ -d "$sb_cfg_search/.git" ]] || [[ "$sb_cfg_search" == "/" ]]; then break; fi
+      sb_cfg_search=$(dirname "$sb_cfg_search")
+    done
+    if [[ -n "$sb_cfg" ]] && command -v jq >/dev/null 2>&1; then
+      sb_extra=$(jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' "$sb_cfg" 2>/dev/null)
+      if [[ -n "$sb_extra" ]]; then
+        sb_transient_re="(${sb_transient_re#(}"
+        sb_transient_re="${sb_transient_re%)}|${sb_extra})"
+      fi
+    fi
+    # Drop any porcelain line whose path component matches the transient regex.
+    # Porcelain format: "XY path" — path starts at column 4. Use awk to extract
+    # the path so renames (R/C with " -> ") don't confuse the filter.
+    filtered=$(printf '%s\n' "$porcelain" | awk -v re="$sb_transient_re" '
+      {
+        path = substr($0, 4)
+        sub(/^.* -> /, "", path)
+        if (path !~ re) print
+      }
+    ')
+    [[ -z "$filtered" ]] && tree_clean=true
+  else
     tree_clean=true
   fi
 
@@ -259,12 +305,28 @@ if [[ "$on_main" == true ]]; then
   required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
-# When config supplies required_deploy, it is the sole source of truth.
-# When config is absent, fall back to DEFAULT_REQUIRED from required-skills.sh.
-if [[ -n "$required_deploy_cfg" ]]; then
-  all_skills="$required_deploy_cfg"
+# v0.30.0 fix (#85): the Stop hook is the conversation-end gate, NOT the
+# delivery gate. Per CLAUDE.md's two-tier model, the full required_deploy
+# list is enforced by completion-audit.sh on actual delivery commands
+# (gh pr create / gh release create / deploy). Applying it on every Stop
+# event blocks ad-hoc additions that don't warrant a milestone-ship
+# checklist (deploy-checklist for a skill file, create-release per commit,
+# etc.). Stop-tier enforcement now applies the planning floor only —
+# typically just `silver-quality-gates` (and its devops substitute).
+#
+# Order of precedence:
+#   1. .silver-bullet.json `skills.required_planning` (project override)
+#   2. Library-derived planning floor (silver-quality-gates / devops pair)
+#   3. Hardcoded fallback for installs missing the lib
+if [[ "$active_workflow" == "devops-cycle" ]]; then
+  default_planning="silver-blast-radius devops-quality-gates"
 else
-  all_skills="$DEFAULT_REQUIRED"
+  default_planning="silver-quality-gates"
+fi
+if [[ -n "$required_planning_cfg" ]]; then
+  all_skills="$required_planning_cfg"
+else
+  all_skills="$default_planning"
 fi
 
 # Deduplicate
