@@ -182,36 +182,60 @@ assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANAR
 rm -rf "$evil_dir"
 teardown
 
-# ── WORKFLOW.md position tests ───────────────────────────────────────────────
+# ── Composed-workflow position tests (Pass 1: workflows/ dir) ────────────────
 echo ""
-echo "=== WORKFLOW.md position ==="
+echo "=== Composed-workflow position (Pass 1: workflows/ dir) ==="
 
-# WF1: WORKFLOW.md present -> includes composition context
-echo "--- WF1: includes WORKFLOW.md position ---"
+# WF1: per-instance .planning/workflows/<id>.md files -> include active IDs
+echo "--- WF1: lists active composed workflow IDs ---"
+setup
+write_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+touch "$TMPDIR_TEST/.planning/workflows/20260428T015523Z-K4F7QA-silver-feature.md"
+touch "$TMPDIR_TEST/.planning/workflows/20260428T021500Z-B2C8RT-silver-bugfix.md"
+out=$(run_hook)
+assert_contains "WF1: lists active workflow IDs" "$out" "Active composed workflows"
+assert_contains "WF1: includes silver-feature ID" "$out" "20260428T015523Z-K4F7QA-silver-feature"
+assert_contains "WF1: includes silver-bugfix ID" "$out" "20260428T021500Z-B2C8RT-silver-bugfix"
+teardown
+
+# WF2: empty workflows/ dir -> no Active composed workflows line
+echo "--- WF2: empty workflows/ dir omits the position line ---"
+setup
+write_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+out=$(run_hook)
+if printf '%s' "$out" | grep -q 'Active composed workflows'; then
+  echo "  FAIL: WF2: empty dir should not emit position line"
+  FAIL=$((FAIL+1))
+else
+  echo "  PASS: WF2: empty workflows dir correctly omits position line"
+  PASS=$((PASS+1))
+fi
+teardown
+
+# WF3: stale legacy WORKFLOW.md is NOT read (Pass 1 hotfix invariant)
+echo "--- WF3: legacy WORKFLOW.md ignored by Pass 1 ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Composition
-Paths: 0 → 5 → 7 → 11 → 13
-Mode: autonomous
-
 ## Heartbeat
 Last-flow: 7
-
-## Flow Log
-| # | Flow | Status |
-|---|------|--------|
-| 0 | BOOTSTRAP | complete |
-| 5 | PLAN | complete |
-| 7 | EXECUTE | in_progress |
-
 ## Next Flow
 FLOW 11: VERIFY
 WFEOF
 out=$(run_hook)
-assert_contains "WF1: includes WORKFLOW.md context" "$out" "Composable path"
+if printf '%s' "$out" | grep -q 'Composable path'; then
+  echo "  FAIL: WF3: legacy WORKFLOW.md still being read — Pass 1 incomplete"
+  FAIL=$((FAIL+1))
+else
+  echo "  PASS: WF3: legacy WORKFLOW.md ignored (Pass 1 invariant holds)"
+  PASS=$((PASS+1))
+fi
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
