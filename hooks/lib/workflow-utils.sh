@@ -37,8 +37,13 @@ count_flow_log_rows() {
 }
 
 # count_complete_flow_rows <file>
-# Counts Flow Log rows with status "complete".
+# Counts Flow Log rows in a TERMINAL status: "complete" or "skipped".
+# v0.30.0 fix (#86): "skipped" is a valid terminal state — a flow that was
+# intentionally determined not applicable (e.g. FLOW 8 UI QUALITY for a
+# CLI-only tool, FLOW 2 EXPLORE for a greenfield project). Previously the
+# regex only matched "complete", so legitimately-skipped flows counted as
+# incomplete and blocked `gh release create` indefinitely.
 count_complete_flow_rows() {
   local file="$1"
-  _flow_log_section "$file" | grep -cE '^\| [^|]+\| [^|]+\| complete' 2>/dev/null || echo 0
+  _flow_log_section "$file" | grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' 2>/dev/null || echo 0
 }

@@ -884,6 +884,16 @@ to the user before proceeding to the next stage.
 
 ---
 
+<!--
+  NUMBERING NOTE (closes #59):
+  This live silver-bullet.md uses §10.* for User Workflow Preferences (and §11
+  for Multi-Agent Coordination) because §9 above is the Ālo-internal
+  Pre-Release Quality Gate. The companion `templates/silver-bullet.md.base`
+  shifts these down by one (§9.* / §10) — it does NOT carry §9. Skills
+  reference both: `silver-bullet.md §10b` (live) AND
+  `templates/silver-bullet.md.base §9b` (template). This asymmetry is by design
+  and must stay.
+-->
 ## 10. User Workflow Preferences
 
 This section is written and committed by SB whenever the user expresses a workflow preference.
@@ -941,3 +951,33 @@ Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-
 When the runtime holding a lock wants to delegate implementation work to a sibling runtime **underneath** its existing claim, use `/forge-delegate`. The skill packages the phase context into a JSON envelope, spawns the target runtime with `SB_PHASE_LOCK_INHERITED=true` in env, integrates the structured result back into the parent phase's working SUMMARY. The lock stays with the parent throughout.
 
 See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.
+
+---
+
+## 12. Runtime Compatibility (closes #48, #50)
+
+Silver Bullet's enforcement model is built on Claude Code's **PostToolUse / PreToolUse / SessionStart / Stop / SubagentStop** hook protocol. Hooks fire in the **Claude Code CLI** runtime. They do **not** fire today in:
+
+- **Claude Agent SDK** sessions (programmatic runtimes that use the Anthropic SDK directly)
+- **claude.ai/code** web sessions (the hosted web UI)
+- Any other runtime that does not implement the Claude Code hook protocol
+
+### What breaks in those runtimes
+
+- `PostToolUse/Skill` does not fire → `record-skill.sh` is never invoked → state file stays empty
+- `PreToolUse/Bash` does not fire → `completion-audit.sh` does not gate `gh release create` / `gh pr create` / `deploy`
+- `Stop` may or may not fire depending on the runtime; when it does, it sees an empty state file and blocks; when it doesn't, no enforcement
+
+This is the same root cause for the previously open issues #48 and #50. The reported symptom of #50 (a release tag created before review skills ran) is a direct consequence: in agent-mode, the gate logic in `completion-audit.sh` is bypassed because the hook protocol is never invoked.
+
+### Workarounds
+
+1. **Run releases from the Claude Code CLI.** This is the canonical SB-supported runtime. All hooks fire and gates work as intended.
+2. **Manually record skills in agent-mode sessions.** When forced to run inside an Agent SDK / web session, an agent may invoke each required skill and then explicitly write its name to `~/.claude/.silver-bullet/state` via a Bash command. This is brittle and not recommended for releases.
+3. **Detect agent-mode and refuse delivery actions.** A future SB version may add a startup probe that detects the absence of hook-protocol support and warns / blocks `gh release create` from agent-mode sessions outright. Filed as a follow-up; see the seed file for design constraints.
+
+### Detection (advisory)
+
+`silver:init` can probe runtime capability by checking for the presence of the Claude Code hook config (`~/.claude/settings.json`). If absent, it emits an informational warning that enforcement gates will not fire.
+
+If you need to run SB-bearing workflows inside an Agent SDK session today, treat all enforcement output as advisory and run release gates manually from the CLI before publishing.

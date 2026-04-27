@@ -138,7 +138,7 @@ integration_setup
 printf '{
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
   "skills": {
-    "required_planning": ["silver-quality-gates"],
+    "required_planning": ["silver-blast-radius","devops-quality-gates"],
     "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
     "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
   },

@@ -775,6 +775,15 @@ If a third-party skill's behavior needs adjustment, implement the change as:
 
 ---
 
+<!--
+  NUMBERING NOTE (closes #59):
+  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
+  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
+  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
+  intentionally NOT stamped into downstream projects. Skills reference
+  `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
+  (template) explicitly — this asymmetry is by design and must stay.
+-->
 ## 9. User Workflow Preferences
 
 This section is written and committed by SB whenever the user expresses a workflow preference.
@@ -825,3 +834,16 @@ Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-
 When the runtime holding a lock wants to delegate implementation work to a sibling runtime **underneath** its existing claim, use `/forge-delegate`. The skill packages phase context into a JSON envelope, spawns the target runtime with `SB_PHASE_LOCK_INHERITED=true`, integrates the structured result. The lock stays with the parent throughout.
 
 See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.
+
+---
+
+## 11. Runtime Compatibility
+
+Silver Bullet's enforcement is built on the Claude Code hook protocol (PostToolUse / PreToolUse / SessionStart / Stop / SubagentStop). Hooks fire in the **Claude Code CLI**. They do **not** fire today in the Claude Agent SDK or claude.ai/code web sessions — those runtimes do not invoke the hook protocol.
+
+In those runtimes:
+- Skills are not recorded to state (PostToolUse/Skill does not fire)
+- `gh release create` / `gh pr create` / `deploy` are not gated (PreToolUse/Bash does not fire)
+- `Stop` may still fire and see an empty state, blocking the session
+
+**Workaround:** Run release-class actions from the Claude Code CLI, not from Agent-SDK or web sessions. SB enforcement is advisory in those runtimes until the upstream runtime adds hook support.
