@@ -40,6 +40,15 @@ The AGENTS.md file should instruct the main agent to invoke this agent at the ve
    ```
    If the branch differs from the branch recorded in STATE.md (or in `.planning/.session-branch` if present), this is a new branch session — note the change.
 
+3a. **Peek active phase-locks (AGENT-01 awareness — Multi-Agent Coordination):**
+   If `.planning/.phase-locks.json` exists, parse it and emit a warning line for every entry whose `agent_runtime` is not `forge`. This makes the developer aware that another coding-agent runtime (Claude-SB, Codex-SB, OpenCode-SB, etc.) is currently working on a phase — Forge will be blocked from claiming the same phase until that runtime releases.
+   ```bash
+   if [[ -f .planning/.phase-locks.json ]] && command -v jq >/dev/null 2>&1; then
+     jq -r 'to_entries[] | select(.value.agent_runtime != "forge") | "OTHER-RUNTIME-LOCK: phase \(.key) is owned by \(.value.agent_runtime) (\(.value.owner_id), claimed_at \(.value.claimed_at))"' .planning/.phase-locks.json
+   fi
+   ```
+   Surface any output lines verbatim in the session summary (step 7) under a `## Active phase locks (other runtimes)` heading. Do NOT block — this is informational. Hint: the developer can run `.planning/scripts/phase-lock.sh peek <NNN>` for full details.
+
 4. **Determine current phase:** Extract from STATE.md frontmatter or content.
 
 5. **Set up session log:** Create `docs/sessions/YYYY-MM-DD-<branch>-<short-id>.md` if `docs/sessions/` directory exists. Include a header with date, branch, phase, milestone. (Skip if `docs/` doesn't exist.)
