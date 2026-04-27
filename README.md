@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.29.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.29.0)
+[![version](https://img.shields.io/badge/version-v0.29.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.29.1)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 

@@ -136,12 +136,12 @@ case "$mode" in
   *) mode="interactive" ;;
 esac
 
-# --- Composed-workflow status (Pass 1: count active workflow files) ---
-# v0.29.x replaces the legacy single-file WORKFLOW.md with per-instance
-# files in `.planning/workflows/`. For now, just count active workflows.
-# Pass 2 will parse each per-workflow file for FLOW N/M progress.
+# --- Composed-workflow status (Pass 2: per-instance files + flow progress) ---
+# When SB_WORKFLOW_ID matches an active workflow file, surface its Flow Log
+# progress as `FLOW <complete>/<total>`. Otherwise fall back to a count of
+# active workflow files.
 workflows_dir="$PWD/.planning/workflows"
-path_progress="FLOW: N/A (legacy mode)"
+path_progress="FLOW: N/A"
 if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
   active_count=0
   shopt -s nullglob
@@ -149,8 +149,18 @@ if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
     [[ -f "$_wf" ]] && active_count=$((active_count + 1))
   done
   shopt -u nullglob
-  if [[ "$active_count" -gt 0 ]]; then
-    path_progress="WORKFLOWS: ${active_count} active"
+
+  active_id="${SB_WORKFLOW_ID:-}"
+  if [[ -n "$active_id" ]] \
+     && [[ "$active_id" =~ ^[0-9]{8}T[0-9]{6}Z-[a-z0-9]+-[a-z0-9-]+$ ]] \
+     && [[ -f "$workflows_dir/$active_id.md" && ! -L "$workflows_dir/$active_id.md" ]]; then
+    _wf_total=$(count_flow_log_rows "$workflows_dir/$active_id.md")
+    _wf_done=$(count_complete_flow_rows "$workflows_dir/$active_id.md")
+    _wf_total=${_wf_total:-0}
+    _wf_done=${_wf_done:-0}
+    path_progress="FLOW ${_wf_done}/${_wf_total} (id=${active_id})"
+  elif [[ "$active_count" -gt 0 ]]; then
+    path_progress="WORKFLOWS: ${active_count} active (SB_WORKFLOW_ID unset)"
   fi
 fi
 

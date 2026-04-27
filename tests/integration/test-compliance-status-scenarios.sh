@@ -4,7 +4,7 @@
 # Pass 1 contract (v0.29.x): the legacy single-file `.planning/WORKFLOW.md`
 # parsing was retired. compliance-status now reads `.planning/workflows/`
 # directory and reports `WORKFLOWS: N active` when files are present, or
-# `FLOW: N/A (legacy mode)` when absent / empty.
+# `FLOW: N/A` when absent / empty.
 #
 # Pass 2 (deferred) will add per-workflow file parsing for richer FLOW N/M
 # progress per active workflow id. Scenarios in this file are tagged
@@ -12,7 +12,7 @@
 #
 # Covers (Pass 1):
 #   S1 — `WORKFLOWS: N active` shown when `.planning/workflows/<id>.md` files exist
-#   S2 — `FLOW: N/A (legacy mode)` shown when neither WORKFLOW.md nor workflows/ dir
+#   S2 — `FLOW: N/A` shown when neither WORKFLOW.md nor workflows/ dir
 #   S3 — Bug-1 fix: workflow status shown in early-exit path (no state file)
 #   S5 — Symlinked workflows dir ignored (security): falls back to legacy mode
 #   S6 — Empty workflows/ dir → legacy mode fallback
@@ -55,7 +55,7 @@ printf 'silver-quality-gates\n' >> "$TMPSTATE"
 # No .planning/workflows directory at all
 
 out=$(run_compliance_status)
-assert_contains "S2.1: legacy mode shown when no workflows/ dir" "$out" "FLOW: N/A (legacy mode)"
+assert_contains "S2.1: legacy mode shown when no workflows/ dir" "$out" "FLOW: N/A"
 
 integration_teardown
 
@@ -76,8 +76,70 @@ assert_not_contains "S3.2: legacy mode NOT shown when workflows/ has files (earl
 
 integration_teardown
 
-# Pass 2 will re-add: "S4 — digit-row inflation guard" once Flow Log parsing
-# is reintroduced for per-workflow files.
+# ── Scenario 4 (Pass 2): digit-row inflation guard ─────────────────────────
+# Per-instance workflow file with extraneous digit rows in non-Flow-Log
+# tables (Phase Iterations, Autonomous Decisions). The Flow Log progress
+# count must not be inflated by them.
+echo "--- S4: digit rows outside Flow Log section do not inflate counts ---"
+integration_setup
+write_default_config
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+ID="20260428T120000Z-abc123-silver-feature"
+cat > "$TMPDIR_TEST/.planning/workflows/$ID.md" << 'WFEOF'
+---
+workflow_id: 20260428T120000Z-abc123-silver-feature
+status: active
+---
+## Flow Log
+| # | Path/Skill | Status | Started | Completed |
+|---|------------|--------|---------|-----------|
+| 1 | explore | complete | - | now |
+| 2 | ship    | complete | - | now |
+
+## Phase Iterations
+| 01 | started | ... |
+| 02 | finished | ... |
+WFEOF
+out=$(SB_WORKFLOW_ID="$ID" run_compliance_status)
+assert_contains "S4.1: FLOW 2/2 reported (only Flow Log rows)" "$out" "FLOW 2/2"
+assert_not_contains "S4.2: not inflated to 4/4 by Phase Iterations rows" "$out" "FLOW 4/4"
+integration_teardown
+
+# ── Scenario 8 (Pass 2): SB_WORKFLOW_ID-matched flow progress display ──────
+echo "--- S8: SB_WORKFLOW_ID set + matching file → FLOW N/M ---"
+integration_setup
+write_default_config
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+ID="20260428T120000Z-aabbcc-silver-bugfix"
+cat > "$TMPDIR_TEST/.planning/workflows/$ID.md" << 'WFEOF'
+---
+workflow_id: 20260428T120000Z-aabbcc-silver-bugfix
+status: active
+---
+## Flow Log
+| # | Path/Skill | Status | Started | Completed |
+|---|------------|--------|---------|-----------|
+| 1 | diagnose | complete | - | now |
+| 2 | fix      | pending  | - | -   |
+| 3 | verify   | pending  | - | -   |
+WFEOF
+out=$(SB_WORKFLOW_ID="$ID" run_compliance_status)
+assert_contains "S8.1: FLOW 1/3 reported with id" "$out" "FLOW 1/3 (id=$ID)"
+integration_teardown
+
+# ── Scenario 9 (Pass 2): SB_WORKFLOW_ID with bogus value → fallback ────────
+echo "--- S9: SB_WORKFLOW_ID malformed → falls back to count ---"
+integration_setup
+write_default_config
+printf 'silver-quality-gates\n' >> "$TMPSTATE"
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+ID="20260428T120000Z-aabbcc-silver-bugfix"
+touch "$TMPDIR_TEST/.planning/workflows/$ID.md"
+out=$(SB_WORKFLOW_ID="../etc/passwd" run_compliance_status)
+assert_contains "S9.1: malformed id falls back to active count" "$out" "WORKFLOWS: 1 active"
+integration_teardown
 
 # ── Scenario 5 (Pass 1): symlinked workflows/ dir → ignored, legacy mode ───
 echo "--- S5: Symlinked workflows/ dir → ignored (security), legacy mode fallback ---"
@@ -92,7 +154,7 @@ touch "$real_wf_dir/20260428T015523Z-K4F7QA-silver-feature.md"
 ln -s "$real_wf_dir" "$TMPDIR_TEST/.planning/workflows"
 
 out=$(run_compliance_status)
-assert_contains "S5.1: symlinked workflows/ dir ignored → legacy mode" "$out" "FLOW: N/A (legacy mode)"
+assert_contains "S5.1: symlinked workflows/ dir ignored → legacy mode" "$out" "FLOW: N/A"
 
 rm -rf "$real_wf_dir"
 integration_teardown
@@ -107,7 +169,7 @@ mkdir -p "$TMPDIR_TEST/.planning/workflows"
 # No .md files in workflows/ — directory exists but is empty
 
 out=$(run_compliance_status)
-assert_contains "S6.1: empty workflows/ dir → legacy mode" "$out" "FLOW: N/A (legacy mode)"
+assert_contains "S6.1: empty workflows/ dir → legacy mode" "$out" "FLOW: N/A"
 
 integration_teardown
 
