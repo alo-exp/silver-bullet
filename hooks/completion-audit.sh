@@ -258,8 +258,8 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt"
-  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt"
+  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
+  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
 fi
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates

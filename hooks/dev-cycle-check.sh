@@ -396,7 +396,7 @@ To reset workflow state intentionally, run in your terminal:
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
   # Derive finalization_skills from config required_deploy; fall back to hardcoded defaults.
-  finalization_skills="testing-strategy tech-debt documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development"
+  finalization_skills="finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
   if [[ -n "$config_file" ]]; then
     cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(. != "code-review" and . != "requesting-code-review" and . != "receiving-code-review" and . != "silver-quality-gates")) | join(" ")' "$config_file" 2>/dev/null || true)
     [[ -n "$cfg_finalization" ]] && finalization_skills="$cfg_finalization"
@@ -410,7 +410,7 @@ To reset workflow state intentionally, run in your terminal:
   done
 
   if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
-    phase_skip_msg=$(printf '🚫 BLOCKED — Phase skip detected: finalization skills invoked before /code-review.\n\nYou must run /code-review BEFORE finalization steps (testing-strategy, documentation, etc.). This order is mandatory.\n\nRun /code-review now before continuing to edit source code.')
+    phase_skip_msg=$(printf '🚫 BLOCKED — Phase skip detected: finalization skills invoked before /code-review.\n\nYou must run /code-review BEFORE finalization steps (finishing-a-development-branch, silver-create-release, etc.). This order is mandatory.\n\nRun /code-review now before continuing to edit source code.')
     emit_block "$phase_skip_msg"
     exit 0
   fi
@@ -424,7 +424,7 @@ To reset workflow state intentionally, run in your terminal:
 
   if ! has_skill "finishing-a-development-branch"; then
     # Stage C: has code-review, finalization remaining
-    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /testing-strategy, /tech-debt, /documentation, /finishing-a-development-branch, /deploy-checklist when ready."}}'
+    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /finishing-a-development-branch, /silver-create-release, /verification-before-completion, /test-driven-development when ready."}}'
     exit 0
   fi
 
