@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.30.0] — 2026-04-28
+
+## Headline
+
+**Open-Issue Sweep.** Closes every open GitHub issue against `alo-exp/silver-bullet` as of 2026-04-28: 17 in-scope issues plus 6 already-implemented closed at session start. Phase 76 ships four hook-layer bug fixes (#85, #86, #87, #88); Phase 77 documents the Claude Agent SDK / claude.ai/code runtime limitation that is the shared root cause of #48 and #50; Phases 78–79 file 7 design-strategic items as planted seeds; Phase 80 lands documentation including a new GSD vs Silver Bullet comparison and an SB-only install path.
+
+## Bug fixes
+
+- **#86** — `count_complete_flow_rows` now treats `skipped` as terminal alongside `complete`. Workflows with legitimately-skipped flows (e.g. FLOW 8 UI QUALITY for a CLI-only tool) no longer block `gh release create` indefinitely. Fix applied to `hooks/lib/workflow-utils.sh` and three inline fallbacks. 3 regression tests (`WF-PASS2-I/J/K`).
+- **#88** — HOOK-14 filters porcelain output through a transient-path allowlist. Built-in defaults: `.claude/scheduled_tasks.lock`, `.claude/settings.local.json`, `.superpowers/`, `.planning/workflows/`, `REVIEW.md`. Project-configurable via `.silver-bullet.json` `hooks.stop_check.transient_path_ignore_patterns`. Closes the post-release infinite-loop where Stop kept blocking after a successful push because runtime artifacts kept the tree "dirty". 3 regression tests (`#88-A/B/C`).
+- **#85** — Stop hook applies the `required_planning` floor only (typically `silver-quality-gates`, or `silver-blast-radius` + `devops-quality-gates` for devops). The full `required_deploy` list remains enforced by `completion-audit.sh` at delivery commands per the documented two-tier model. Ad-hoc skill-file additions no longer demand `deploy-checklist` / `create-release` / `testing-strategy` / `documentation` / `tech-debt`. 3 regression tests (`#85-A/B/C`).
+- **#87** — SessionStart reads the `source` field from stdin (`startup`/`resume`/`clear`/`compact`). Only `startup` and `clear` mutate state; `resume` and `compact` are benign and no longer wipe `gsd-*` markers mid-feature. Branch-mismatch wipe path now requires BOTH `current_branch` and `stored_branch` non-empty, closing the Bug 3 data-loss path. Branch-file writes are verified post-write. 9 regression tests (`#87-A/B/C/D`).
+
+## Documentation
+
+- `silver-bullet.md §12` + `templates/silver-bullet.md.base §11` (closes #48, #50): new Runtime Compatibility section documenting that hooks fire only in Claude Code CLI, not in Claude Agent SDK or claude.ai/code web sessions.
+- `docs/gsd-vs-silver-bullet.md` (new, closes #73): comprehensive comparison.
+- `README.md` (closes #74): split install into Path A (full) / Path B (SB-only without GSD).
+- `docs/internal/stop-hook-fp-audit-v0.30.md` (new, closes #71): exhaustive enumeration of every block-emitting code path in `stop-check.sh` and `completion-audit.sh`.
+- `silver-bullet.md` + `templates/silver-bullet.md.base` (closes #59): explanatory comments document the §10 vs §9 numbering asymmetry; 9 skill files updated to reference `.base §9X` (was incorrectly `§10X`).
+
+## Planted seeds
+
+Seven items deferred to future milestones via `.planning/seeds/`: SEED-001 (#68 Skill Gap Check), SEED-002 (#67 SDLC roadmap), SEED-003 (#75 path parallelism), SEED-004 (#64 bypass-permissions trace), SEED-005 (#69 CLAUDE.md merge UX), SEED-006 (#70 cross-surface docs audit), SEED-007 (#72 intermediate-boundary verification). Each seed documents trigger conditions for re-surfacing.
+
+## Tests
+
+- 18 new regression tests across the three touched hook test files.
+- 2 integration test alignments for the #85 stop-tier semantics.
+- 19 integration suites + 4 hook unit-test files all green (1217 tests, 0 failed).
+
+## Pre-closure
+
+6 issues closed at session start as already-implemented in main: #62, #76, #79, #80, #81, #83.
+
+## Other
+
+- `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` bumped to 0.30.0 (were stale at 0.26.0).
+- Backlog issue #90 filed for follow-up regex-shape validation on `transient_path_ignore_patterns`.
+- `.planning/milestones/v0.30.0-{REQUIREMENTS,ROADMAP}.md` and `.planning/workflows/<id>.md` document the milestone scope and composed-workflow tracker.
+
+---
+
 ## [0.29.1] — 2026-04-28
 
 ## Headline
