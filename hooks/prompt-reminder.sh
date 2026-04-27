@@ -151,7 +151,14 @@ fi
 workflows_dir="$PWD/.planning/workflows"
 workflow_position=""
 if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
-  active_ids=$(ls -1 "$workflows_dir" 2>/dev/null | grep -E '\.md$' | sed 's/\.md$//' | tr '\n' ',' | sed 's/,$//' || true)
+  active_ids=""
+  shopt -s nullglob
+  for _wf in "$workflows_dir"/*.md; do
+    [[ -f "$_wf" ]] || continue
+    _id=$(basename "$_wf" .md)
+    active_ids="${active_ids:+$active_ids,}${_id}"
+  done
+  shopt -u nullglob
   if [[ -n "$active_ids" ]]; then
     workflow_position="Active composed workflows: ${active_ids}"
   fi
