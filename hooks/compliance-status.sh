@@ -136,20 +136,16 @@ case "$mode" in
   *) mode="interactive" ;;
 esac
 
-# --- WORKFLOW.md path progress (computed before early-exit so it appears in all output paths) ---
-# Bug fix: hoisted above the 'no state file' early-exit so PATH N/M shows even in zero-state sessions.
-workflow_file="$PWD/.planning/WORKFLOW.md"
+# --- Composed-workflow status (Pass 1: count active workflow files) ---
+# v0.29.x replaces the legacy single-file WORKFLOW.md with per-instance
+# files in `.planning/workflows/`. For now, just count active workflows.
+# Pass 2 will parse each per-workflow file for FLOW N/M progress.
+workflows_dir="$PWD/.planning/workflows"
 path_progress="FLOW: N/A (legacy mode)"
-if [[ -f "$workflow_file" && ! -L "$workflow_file" ]]; then
-  wf_complete=0
-  wf_total=0
-  # Bug fix: use '^\ [0-9]+ \|' (digits then space-pipe) to count only Flow Log rows.
-  # Previous pattern '^\| [0-9]' matched Phase Iterations ('| 01 (phase)') and
-  # Autonomous Decisions ('| 2026-...') rows, inflating the total count.
-  if wf_complete=$(grep -cE '^\| [^|]+\| [^|]+\| complete' "$workflow_file" 2>/dev/null) && \
-     wf_total=$(count_flow_log_rows "$workflow_file") && \
-     [[ "$wf_total" -gt 0 ]]; then
-    path_progress="FLOW ${wf_complete}/${wf_total}"
+if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
+  active_count=$(ls -1 "$workflows_dir" 2>/dev/null | grep -cE '\.md$' || echo 0)
+  if [[ "$active_count" -gt 0 ]]; then
+    path_progress="WORKFLOWS: ${active_count} active"
   fi
 fi
 

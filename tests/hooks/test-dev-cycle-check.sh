@@ -439,53 +439,17 @@ out=$(run_hook_edit "PreToolUse" "${SB_SOURCE_HOOKS_DIR}/dev-cycle-check.sh" "ol
 assert_passes "Bug2: Edit to source repo hooks/ not blocked (not under ~/.claude/)" "$out"
 teardown
 
-# ── WORKFLOW.md-first gate tests ─────────────────────────────────────────────
+# ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──
+# v0.29.x retired the legacy single-file `.planning/WORKFLOW.md` gate; see
+# completion-audit.sh for full rationale. Until Pass 2 lands, both
+# WORKFLOW.md and `.planning/workflows/<id>.md` files are ignored, and the
+# dev-cycle gate falls through to the legacy required-skills check.
 echo ""
-echo "=== WORKFLOW.md-first gate ==="
+echo "=== Composed-workflow gate (Pass 1: WORKFLOW.md ignored) ==="
 
-# WF1: WORKFLOW.md with all paths complete -> allow edit
-echo "--- WF1: all workflow paths complete -> allow ---"
-setup
-mkdir -p "$TMPDIR_TEST/.planning"
-cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Flow Log
-| # | Path | Status |
-|---|------|--------|
-| 0 | BOOTSTRAP | complete |
-| 5 | PLAN | complete |
-| 7 | EXECUTE | complete |
-WFEOF
-out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "WF1: all workflow paths complete -> allow" "$out"
-teardown
-
-# WF2: WORKFLOW.md with partial paths -> falls through to legacy gate
-echo "--- WF2: partial workflow paths -> legacy gate ---"
-setup
-mkdir -p "$TMPDIR_TEST/.planning"
-cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Flow Log
-| # | Path | Status |
-|---|------|--------|
-| 0 | BOOTSTRAP | complete |
-| 5 | PLAN | complete |
-| 7 | EXECUTE | in_progress |
-WFEOF
-# No skills in state -> legacy gate should block
-out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "WF2: partial paths + no legacy skills -> block" "$out"
-teardown
-
-# WF3: No WORKFLOW.md -> legacy gate only
-echo "--- WF3: no WORKFLOW.md -> legacy gate ---"
-setup
-# No .planning directory at all
-out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "WF3: no WORKFLOW.md + no skills -> block" "$out"
-teardown
-
-# WF4: WORKFLOW.md with all paths complete -> allow even without legacy skills
-echo "--- WF4: all paths complete overrides missing legacy skills ---"
+# WF-PASS1-A: a stale WORKFLOW.md with all paths complete must NOT bypass
+# the legacy required-skills gate when state has no silver-quality-gates.
+echo "--- WF-PASS1-A: stale WORKFLOW.md does not bypass legacy gate ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning"
 cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
@@ -494,40 +458,36 @@ cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
 |---|------|--------|
 | 5 | PLAN | complete |
 | 7 | EXECUTE | complete |
-| 11 | VERIFY | complete |
 | 13 | SHIP | complete |
 WFEOF
+# Empty state -> legacy gate must block
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "WF4: all workflow paths complete overrides legacy" "$out"
+assert_blocks "WF-PASS1-A: stale WORKFLOW.md doesn't override legacy block" "$out"
 teardown
 
-# WF5: Bug-2 regression — Phase Iterations and Autonomous Decisions rows don't inflate total
-echo "--- WF5: Bug-2 regression — digit-starting rows in other sections don't inflate total ---"
+# WF-PASS1-B: existing-but-empty `.planning/workflows/` dir must also fall
+# through to legacy gate.
+echo "--- WF-PASS1-B: workflows/ dir does not bypass legacy gate ---"
 setup
-mkdir -p "$TMPDIR_TEST/.planning"
-cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
-## Flow Log
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+cat > "$TMPDIR_TEST/.planning/workflows/20260428T015523Z-K4F7QA-silver-feature.md" << 'WFEOF'
+**Composer:** /silver:feature
+**Status:** active
+### Flow Log
 | # | Flow | Status |
 |---|------|--------|
-| 0 | BOOTSTRAP | complete |
 | 5 | PLAN | complete |
 | 7 | EXECUTE | complete |
-| 11 | VERIFY | complete |
-| 13 | SHIP | complete |
-
-## Phase Iterations
-| Phase | Status |
-|-------|--------|
-| 01 (feature-phase) | FLOW 5 complete, FLOW 7 complete |
-
-## Autonomous Decisions
-| Timestamp | Decision | Rationale |
-|-----------|----------|-----------|
-| 2026-04-15T10:00:00Z | Skipped FLOW 4 | No SPEC.md found |
-| 2026-04-15T10:05:00Z | Auto-confirmed | autonomous mode |
 WFEOF
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "WF5: Phase Iterations and Autonomous Decisions rows don't inflate total (Bug-2 regression)" "$out"
+assert_blocks "WF-PASS1-B: workflows/ dir doesn't override legacy block" "$out"
+teardown
+
+# WF-PASS1-C: no .planning at all -> legacy gate fires (sanity baseline)
+echo "--- WF-PASS1-C: no composition state at all -> legacy gate ---"
+setup
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF-PASS1-C: no .planning + no skills -> block" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
