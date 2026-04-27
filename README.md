@@ -66,7 +66,11 @@ Both workflows use GSD as the primary execution engine. Silver Bullet guides you
 
 ## Install
 
-### 1. Install prerequisites
+Silver Bullet supports two install paths. **Path A (recommended)** is the full SB + GSD + Superpowers combo and unlocks every flow skill (`/silver:feature`, `/silver:bugfix`, `/silver:ui`, `/silver:devops`, `/silver:research`, `/silver:release`). **Path B (standalone)** installs only Silver Bullet and Superpowers — useful for projects that don't want GSD's planning artifacts but still want enforcement, knowledge capture, and the trivial-bypass discipline. See [docs/gsd-vs-silver-bullet.md](docs/gsd-vs-silver-bullet.md) for the full comparison.
+
+### Path A — Full (recommended)
+
+#### 1. Install prerequisites
 
 ```
 npx get-shit-done-cc@1.30.0
@@ -81,11 +85,36 @@ brew install jq    # macOS
 apt install jq     # Linux
 ```
 
-### 2. Install Silver Bullet
+#### 2. Install Silver Bullet
 
 ```
 /plugin install alo-exp/silver-bullet
 ```
+
+### Path B — SB Standalone (without GSD)
+
+Pick this if you don't want GSD's `.planning/` artifacts or the multi-phase milestone model — just SB enforcement plus knowledge capture.
+
+```bash
+brew install jq                                      # macOS, or apt install jq
+```
+
+```
+/plugin install obra/superpowers
+/plugin install alo-exp/silver-bullet
+```
+
+What works in Path B:
+- All hooks (commit/release/conversation-end gates, plugin-boundary blocks, trivial bypass)
+- `/silver:init`, `/silver:fast`, `/silver:add`, `/silver:remove`, `/silver:rem`, `/silver:scan`
+- Quality skills: `/silver:quality-gates`, `/silver:blast-radius`, `/silver:devops-quality-gates`
+- Pre-release quality gate stages
+
+Disabled in Path B (require GSD):
+- Flow skills: `/silver:feature`, `/silver:bugfix`, `/silver:ui`, `/silver:devops`, `/silver:research`
+- `/silver:release` (uses GSD MILESTONES.md)
+
+You can upgrade to Path A any time by installing GSD and re-running `/silver:init`; the disabled skills become available without further configuration.
 
 ### 3. (Optional) Install DevOps plugins
 
