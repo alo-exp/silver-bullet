@@ -106,6 +106,7 @@
       "codex",
       "opencode"
     ],
-    "stale_lock_ttl_seconds": 1800
+    "stale_lock_ttl_seconds": 1800,
+    "delegation_timeout_seconds": 1200
   }
 }
