@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.29.0] — 2026-04-28
+
+## Headline
+
+**Multi-Agent Phase Coordination.** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB) can now cooperatively work on the same project folder. Each phase under `.planning/phases/<NNN>/` is owned by exactly one runtime at a time, enforced via a shared atomic lock primitive. Cross-runtime delegation (`/forge-delegate`) is the controlled exception.
+
+## Features
+
+- **Phase-lock primitive** — `.planning/scripts/phase-lock.sh` exposes 4 atomic operations (`claim`, `heartbeat`, `release`, `peek`) over `.planning/.phase-locks.json`. flock-atomic, gitignored, with stale-TTL steal recovery (default 1800s). Identity tags `claude` / `forge` / `codex` / `opencode` configurable via `multi_agent.identity_tags[]`.
+- **Claude-SB integration** — three new hooks (`hooks/phase-lock-claim.sh`, `hooks/phase-lock-heartbeat.sh`, `hooks/phase-lock-release.sh`) wired via `PreToolUse`/`PostToolUse`/`Stop`/`SubagentStop`. Conflict path emits stderr block-message + exit 2 (Claude Code interprets as a hard block). Heartbeat throttled to once per 5 min per phase.
+- **Forge-SB integration** — three new custom agents (`forge-claim-phase`, `forge-heartbeat-phase`, `forge-release-phase`) invoked at phase boundaries by 6 silver-* parent skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec). `forge-session-init` peeks active locks and surfaces non-self locks in the session summary.
+- **Cross-runtime delegation** — `/forge-delegate` (Claude-SB and Forge-SB sides). Spawns a sibling runtime with `SB_PHASE_LOCK_INHERITED=true` so the child does not double-claim under the parent's existing lock. Structured markdown result contract (`## FILES_CHANGED`, `## ASSUMPTIONS`, `## REQ-IDS`) integrated back into the parent phase's working SUMMARY. Default 1200s timeout; on timeout, parent's lock stays intact for manual continuation.
+- **Informational lock-owner peek** — `completion-audit.sh` and `stop-check.sh` register an EXIT-trap helper that emits a stderr WARN when the phase resolved from `$PWD` has no active lock or is owned by a non-`claude` runtime. Non-blocking, preserves original exit code.
+- **User-facing docs** — `docs/multi-agent-coordination.md` with state diagram, two-agent collaboration walkthrough, delegation flow, configuration reference, diagnostics. silver-bullet.md §11, templates/silver-bullet.md.base §10, forge/PARITY.md and forge/AGENTS.md.template all gain Multi-Agent Coordination sections.
+
+## Fixes
+
+- **Enforcement leak from stale `.planning/WORKFLOW.md`** (Pass 1 hotfix in v0.29.0): a previous milestone's `silver:*` composition left a WORKFLOW.md showing all flows complete on disk after the milestone shipped. `completion-audit.sh` and `dev-cycle-check.sh` short-circuited to "delivery allowed" without checking the required-skills floor — letting every commit and the entire next-milestone release pass against any state. The legacy WORKFLOW.md gate is retired across `completion-audit.sh`, `dev-cycle-check.sh`, and `spec-floor-check.sh`. Informational consumers (`prompt-reminder.sh`, `compliance-status.sh`) migrated to read `.planning/workflows/` directory shape (Pass 2 will populate it). Until then, all gates fall through to the legacy required-skills floor, which is the correct behavior whenever no composed workflow is active.
+
+## Tests
+
+- Phase-lock primitive: `tests/scripts/test-phase-lock.sh` (37 cases, 0 failed).
+- Claude-SB hooks: `tests/hooks/test-phase-lock-claim.sh` (19 cases), `test-phase-lock-heartbeat.sh` (10 cases), `test-phase-lock-release.sh` (11 cases).
+- Multi-agent integration: `tests/integration/test-multi-agent-coexistence.sh` (17 cases — TEST-01 two-agent race, TEST-02 stale-TTL steal, TEST-03 SB_PHASE_LOCK_INHERITED no-double-claim).
+- Pass 1 hotfix coverage: `tests/hooks/test-completion-audit.sh` and `test-dev-cycle-check.sh` updated with WF-PASS1-A/B/C scenarios; `tests/integration/test-compliance-status-scenarios.sh` rewritten around the new `WORKFLOWS: N active` display.
+
+## Other
+
+- New config keys under `multi_agent`: `identity_tags[]`, `stale_lock_ttl_seconds`, `delegation_timeout_seconds`.
+- New planning artifacts: `.planning/phases/070-*/070-SUMMARY.md` through `074-*/074-SUMMARY.md`, plus per-plan SUMMARY files inside Phase 71.
+- `forge/PARITY-REPORT.md` updated with v0.29.0 outcomes and "ship v0.29.0" recommendation.
+
+## Deferred to Pass 2
+
+The proper composed-workflow tracker — `scripts/workflows.sh` helper + per-instance `.planning/workflows/<id>.md` files + strict `SB_WORKFLOW_ID`-matched final-delivery gate + composer integration across all silver-* skills — is deferred to v0.29.x or v0.30.0 backlog. Pass 1 (this release) restores correct gate enforcement; Pass 2 adds richer tracking on top.
+
+---
+
 ## [0.28.0] — 2026-04-27
 
 ## Headline
