@@ -38,3 +38,10 @@ tests/test-app/.github/
 # Both are per-checkout runtime state, never committed.
 .planning/.phase-locks.json
 .planning/.phase-locks.json.lock
+
+# Composed-workflow tracker — runtime per-instance workflow files (Pass 2, v0.29.1)
+# Active workflow files at .planning/workflows/<id>.md are local runtime state and
+# never committed. The .archive/ subdir keeps completed workflow files for
+# postmortem reference and is also gitignored.
+.planning/workflows/
+
