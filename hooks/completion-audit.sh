@@ -163,25 +163,86 @@ if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0
 fi
 
-# ── Composed-workflow gate (Pass 1: deferred) ────────────────────────────────
-# The legacy single-file `.planning/WORKFLOW.md` gate was retired because a
-# stale milestone WORKFLOW.md from a prior `silver:*` composition could let
-# every commit/release pass without checking required skills (the file
-# remained on disk after its composition shipped, with all flows marked
-# complete, so completion-audit short-circuited to "delivery allowed").
+# ── Composed-workflow gate (Pass 2 — strict, final delivery only) ────────────
+# When one or more `.planning/workflows/<id>.md` files exist AND the current
+# command is a final-delivery operation (gh release create / gh pr create /
+# deploy / gh pr merge), the active workflow must be fully complete before
+# the delivery is allowed. Strict matching: the workflow id is supplied via
+# the SB_WORKFLOW_ID env var. The composer (e.g. /silver-feature) is expected
+# to export this when the composition starts.
 #
-# v0.29.x replaces the single file with a per-instance `.planning/workflows/`
-# directory: one file per active composed workflow, deleted on completion.
-# Pass 1 (this hotfix) stops consuming the old file and falls through to the
-# legacy required-skills gate, which is the correct behavior whenever no
-# composed workflow is active. Pass 2 (deferred — tracked as a v0.29.x or
-# v0.30.0 follow-up) will rebuild the gate against `.planning/workflows/<id>.md`
-# files with strict per-workflow ID matching for final delivery.
+# Behavior matrix:
+#   • No `.planning/workflows/` dir or no active files → fall through to the
+#     legacy required-skills gate. (Backward compatible: workflows tracker is
+#     opt-in for downstream projects that haven't migrated yet.)
+#   • Final delivery + active workflow(s) present:
+#       – SB_WORKFLOW_ID unset                       → BLOCK
+#       – SB_WORKFLOW_ID does not match a file       → BLOCK
+#       – Matching file has incomplete flows         → BLOCK
+#       – All flows complete                         → fall through to the
+#                                                       required-skills gate
+#                                                       (still must pass)
+#   • Intermediate commits / non-completion commands → not affected; this
+#     block only fires under the `is_completion` branch later in this file.
 #
-# Until Pass 2 lands, even when `.planning/workflows/` contains active workflow
-# files, this hook still falls through to the required-skills gate — that gate
-# is the floor and is sufficient on its own; Pass 2 will only add additional
-# strictness on top of it.
+# The check itself is implemented inside the `is_completion` branch below to
+# keep the data-flow linear; this comment is the design contract.
+
+run_workflow_strict_gate() {
+  local repo_root="$1"
+  local wf_dir="$repo_root/.planning/workflows"
+
+  # No directory or no active files → no-op (caller falls through).
+  [[ -d "$wf_dir" && ! -L "$wf_dir" ]] || return 0
+  shopt -s nullglob
+  local active=()
+  for _wf in "$wf_dir"/*.md; do
+    [[ -f "$_wf" ]] && active+=("$_wf")
+  done
+  shopt -u nullglob
+  [[ ${#active[@]} -eq 0 ]] && return 0
+
+  local id="${SB_WORKFLOW_ID:-}"
+  if [[ -z "$id" ]]; then
+    local active_names=""
+    for _wf in "${active[@]}"; do
+      active_names+="  • $(basename "$_wf" .md)"$'\n'
+    done
+    emit_block "$(printf '🛑 WORKFLOW GATE — SB_WORKFLOW_ID is not set.\n\nActive composed workflow(s):\n%s\nFinal delivery requires SB_WORKFLOW_ID to identify which workflow this delivery completes. Set SB_WORKFLOW_ID to the active workflow id, then retry.' "$active_names")"
+    exit 0
+  fi
+
+  # Validate id format and resolve file (no path traversal).
+  if ! [[ "$id" =~ ^[0-9]{8}T[0-9]{6}Z-[a-z0-9]+-[a-z0-9-]+$ ]]; then
+    emit_block "$(printf '🛑 WORKFLOW GATE — SB_WORKFLOW_ID has invalid format: %s\n\nExpected: <UTCcompact>-<6char>-<composer>' "$id")"
+    exit 0
+  fi
+  local wf_file="$wf_dir/$id.md"
+  if [[ ! -f "$wf_file" || -L "$wf_file" ]]; then
+    emit_block "$(printf '🛑 WORKFLOW GATE — No active workflow file matches SB_WORKFLOW_ID=%s\n\nLook in .planning/workflows/ for the correct id, or restart the composition with /silver:*.' "$id")"
+    exit 0
+  fi
+
+  # Count Flow Log rows: total vs complete. Strict structural anchor "^| N |"
+  # excludes phase-iteration / autonomous-decision tables by requiring numeric
+  # first column only.
+  local total complete
+  total=$(count_flow_log_rows "$wf_file")
+  complete=$(count_complete_flow_rows "$wf_file")
+  total=${total:-0}
+  complete=${complete:-0}
+
+  if [[ "$total" -eq 0 ]]; then
+    emit_block "$(printf '🛑 WORKFLOW GATE — Workflow %s has no Flow Log rows; cannot verify completion.' "$id")"
+    exit 0
+  fi
+  if [[ "$complete" -lt "$total" ]]; then
+    emit_block "$(printf '🛑 WORKFLOW GATE — Workflow %s is incomplete: %d of %d flows complete.\n\nComplete remaining flows via .planning/scripts/workflows.sh complete-flow %s <flow>, then retry.' "$id" "$complete" "$total" "$id")"
+    exit 0
+  fi
+  # All flows complete — fall through to the required-skills gate.
+  return 0
+}
 
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
@@ -244,6 +305,12 @@ if [[ "$is_intermediate" == true ]]; then
 fi
 
 # ── TIER 2: Final delivery check (gh pr create / deploy / release) ────────────
+
+# Pass 2 strict workflow gate — runs before the required-skills check.
+# repo root = directory of the resolved config_file (or $PWD as fallback).
+project_root="$(dirname "$config_file")"
+[[ -z "$project_root" ]] && project_root="$PWD"
+run_workflow_strict_gate "$project_root"
 
 # Build required skills list
 # Source canonical required-skills list (single source of truth — TD-01 fix)

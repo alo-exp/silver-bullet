@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.29.1] — 2026-04-28
+
+## Headline
+
+**Composed-workflow tracker (Pass 2).** Replaces the v0.22 single-file `.planning/WORKFLOW.md` model with per-instance `.planning/workflows/<id>.md` files plus a strict `SB_WORKFLOW_ID`-matched final-delivery gate. This closes the v0.29.0 deferred Pass 2: a stale milestone WORKFLOW.md from a prior `silver:*` composition can no longer silently pass the final-delivery gate, because the gate now requires an explicit, in-flight workflow id and verifies its Flow Log is 100% complete.
+
+## Features
+
+- **`scripts/workflows.sh`** — composed-workflow lifecycle helper with 7 ops: `start`, `heartbeat`, `complete-flow`, `complete`, `list`, `get`, `active`. Per-instance markdown files at `.planning/workflows/<id>.md`. ID scheme `<UTC-compact>-<6char>-<composer>` (e.g. `20260428T120000Z-7a9bcd-silver-feature`). On `complete`, files archive to `.planning/workflows/.archive/` and are removed from the active set, so the strict gate cannot match a stale id.
+- **Strict `SB_WORKFLOW_ID` final-delivery gate** — `completion-audit.sh` now blocks `gh release create` / `gh pr create` / `gh pr merge` / `deploy` when `.planning/workflows/` has active files unless: (a) `SB_WORKFLOW_ID` is set, (b) it matches an active file, (c) the matched file's Flow Log is 100% complete. Backward-compatible: when no `.planning/workflows/` exists, the legacy required-skills gate continues unchanged.
+- **Section-scoped Flow Log counting** — `hooks/lib/workflow-utils.sh` row-counters (`count_flow_log_rows`, `count_complete_flow_rows`) now scope to the `## Flow Log` heading and stop at the next `## ` heading. Closes the digit-row inflation hole (S4 regression guard) where Phase Iterations / Autonomous Decisions tables in the same file would falsely inflate Flow Log counts.
+- **`compliance-status.sh` flow progress** — when `SB_WORKFLOW_ID` matches an active workflow, the status line now surfaces `FLOW <complete>/<total> (id=<id>)` instead of just an active count.
+- **Composer integration** — 6 silver-* skills (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-research`, `silver-release`) replace their legacy "Create WORKFLOW.md" step with workflows.sh-based start/complete-flow/complete instructions. Each skill instructs Claude to capture and export `SB_WORKFLOW_ID`.
+
+## Tests
+
+- 31 new unit tests for `scripts/workflows.sh` (`tests/scripts/test-workflows.sh`) covering id format, file format, complete-flow status flip, archive-on-complete, list/get/active operations, invalid id rejection, symlink-write refusal (SEC-02 pattern), composer slug sanitization, and heartbeat mtime advance.
+- 8 new strict-gate hook tests (WF-PASS2-A..H) in `tests/hooks/test-completion-audit.sh`: missing `SB_WORKFLOW_ID` blocks, malformed id blocks, incomplete workflow blocks with progress, complete workflow + skills passes, mismatched id blocks, intermediate commits unaffected, no-workflows-dir falls through, and the digit-row inflation guard.
+- 4 new integration scenarios in `tests/integration/test-compliance-status-scenarios.sh` (S4, S8, S9, plus reactivated S4 inflation guard) covering FLOW N/M display, malformed-id fallback, and section-scoped counting.
+
+## Other
+
+- `.planning/workflows/` added to `.gitignore`. Active and archived workflow files are local runtime state, never committed.
+
+## Deferred
+
+- Composer integration in remaining skills (`silver-spec`, `silver-fast`) — these don't have a "Create WORKFLOW.md" anchor today; will be added when those flows expand.
+- `prompt-reminder.sh` already lists active workflow IDs in additionalContext (since v0.29.0). Pass 2 keeps that behavior; no changes needed.
+
+---
+
 ## [0.29.0] — 2026-04-28
 
 ## Headline
