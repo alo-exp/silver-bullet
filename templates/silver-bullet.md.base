@@ -775,6 +775,15 @@ If a third-party skill's behavior needs adjustment, implement the change as:
 
 ---
 
+<!--
+  NUMBERING NOTE (closes #59):
+  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
+  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
+  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
+  intentionally NOT stamped into downstream projects. Skills reference
+  `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
+  (template) explicitly — this asymmetry is by design and must stay.
+-->
 ## 9. User Workflow Preferences
 
 This section is written and committed by SB whenever the user expresses a workflow preference.
