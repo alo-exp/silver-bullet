@@ -337,6 +337,69 @@ assert_file_contains "branch file absent -> quality-gate-stage-* preserved (not 
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
+# ── #87 regressions: SessionStart benign-event safety ────────────────────────
+# Bug 1: gsd-* markers must NOT be stripped on `compact` (or `resume`).
+# Bug 3: empty current_branch must NOT trigger destructive branch-mismatch wipe.
+
+# Helper: run hook with explicit session source override
+run_hook_source() {
+  local workdir="$1"
+  local source="$2"
+  ( cd "$workdir" && \
+    SILVER_BULLET_STATE_FILE="$TMPSTATE" \
+    SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+    SILVER_BULLET_SESSION_SOURCE="$source" \
+    bash "$HOOK" 2>/dev/null ) || true
+}
+
+echo "--- Test #87-A: compact source preserves gsd-* markers ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
+printf '%s' "$new_branch" > "$TMPBRANCH"
+run_hook_source "$HOOK_WORKDIR" "compact" >/dev/null
+assert_file_contains "#87-A: compact preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
+assert_file_contains "#87-A: compact preserves gsd-discuss-phase (was stripped pre-fix)" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_contains "#87-A: compact preserves gsd-plan-phase (was stripped pre-fix)" "$TMPSTATE" "gsd-plan-phase"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPSTATE" "$TMPBRANCH"
+
+echo "--- Test #87-B: resume source preserves gsd-* markers ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf 'silver-quality-gates\ngsd-discuss-phase\n' > "$TMPSTATE"
+printf '%s' "$new_branch" > "$TMPBRANCH"
+run_hook_source "$HOOK_WORKDIR" "resume" >/dev/null
+assert_file_contains "#87-B: resume preserves gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPSTATE" "$TMPBRANCH"
+
+echo "--- Test #87-C: clear source still strips gsd-* (legitimate reset path) ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf 'silver-quality-gates\ngsd-discuss-phase\n' > "$TMPSTATE"
+printf '%s' "$new_branch" > "$TMPBRANCH"
+run_hook_source "$HOOK_WORKDIR" "clear" >/dev/null
+assert_file_contains "#87-C: clear preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
+assert_file_not_contains "#87-C: clear strips gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPSTATE" "$TMPBRANCH"
+
+echo "--- Test #87-D: empty current_branch + non-empty stored does NOT wipe state ---"
+# Bug 3: subagent CWD with detached HEAD or git failure could return empty
+# current_branch. Combined with a populated branch file, the old elif
+# (current_branch != stored_branch) fired and wiped the state file.
+# Fix: the new branch-mismatch path requires BOTH values to be non-empty.
+HOOK_WORKDIR=$(mktemp -d)  # NOT a git repo — git rev-parse will fail
+printf 'silver-quality-gates\ncode-review\n' > "$TMPSTATE"
+printf 'main\n' > "$TMPBRANCH"
+run_hook_source "$HOOK_WORKDIR" "startup" >/dev/null
+assert_file_exists "#87-D: empty current_branch preserves state file" "$TMPSTATE"
+assert_file_contains "#87-D: empty current_branch preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
+assert_file_contains "#87-D: empty current_branch preserves code-review" "$TMPSTATE" "code-review"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPSTATE" "$TMPBRANCH"
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
