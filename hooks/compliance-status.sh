@@ -143,7 +143,12 @@ esac
 workflows_dir="$PWD/.planning/workflows"
 path_progress="FLOW: N/A (legacy mode)"
 if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
-  active_count=$(ls -1 "$workflows_dir" 2>/dev/null | grep -cE '\.md$' || echo 0)
+  active_count=0
+  shopt -s nullglob
+  for _wf in "$workflows_dir"/*.md; do
+    [[ -f "$_wf" ]] && active_count=$((active_count + 1))
+  done
+  shopt -u nullglob
   if [[ "$active_count" -gt 0 ]]; then
     path_progress="WORKFLOWS: ${active_count} active"
   fi
