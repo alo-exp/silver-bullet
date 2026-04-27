@@ -155,18 +155,17 @@ EOF
 
 Lessons files do not pre-populate category headings — headings are added on first use of each category.
 
-**Size cap (existing files only):** If the target file has ≥300 lines, redirect TARGET to the next-suffix file (e.g., `YYYY-MM-b.md`). If that suffix file is new (does not exist), create it with the appropriate header template for the type (see Step 5 header above). Then proceed to Step 6 using the updated TARGET.
+**Size cap (existing files only):** If TARGET has ≥300 lines, loop to the next-suffix file (`-b.md`, `-c.md`, …) until a file under the limit is found or a new file is created (IS_NEW_FILE=true — create it with the Step 5 header before inserting).
 
 ```bash
-if [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; then
-  TARGET="${TARGET%.md}-b.md"
+_dir=$(dirname "$TARGET"); _sfxs=(b c d e f g h i j k l m n o p q r s t u v w x y z); _sfx_i=0
+while [ "$IS_NEW_FILE" = false ] && [ "$(wc -l < "$TARGET")" -ge 300 ]; do
+  TARGET="${_dir}/${MONTH}-${_sfxs[$_sfx_i]}.md"; _sfx_i=$((_sfx_i+1))
   IS_NEW_FILE=false; [ ! -f "$TARGET" ] && IS_NEW_FILE=true
-fi
+done
 ```
 
-If the `-b.md` target is itself ≥300 lines, repeat: increment the suffix letter (`-c.md`, `-d.md`, etc.) until a file under the limit is found or a new file is created.
-
-Display: "Monthly file at 300+ lines — appending to ${MONTH}-b.md instead."
+Display: "Monthly file at 300+ lines — redirecting to $(basename "$TARGET") instead."
 
 ---
 
