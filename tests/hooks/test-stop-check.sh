@@ -389,6 +389,24 @@ out=$(run_hook)
 assert_passes "detached HEAD + clean tree + no origin -> exit 0 (HOOK-14 elif branch)" "$out"
 teardown
 
+# Test 16: Absent branch file + non-empty state + dirty tree -> blocks
+# Pins the fail-closed semantics of the branch-scope validation guard:
+# when the branch file does not exist, stored_state_branch is empty,
+# the [[ -n "$stored_state_branch" ]] condition is false, the guard
+# does NOT exit 0, and enforcement proceeds to block (missing skills).
+echo "--- Test 16: Absent branch file + dirty tree -> enforces (fail-closed) ---"
+setup
+# Remove the branch file — guard must NOT exit 0 in this case
+rm -f "$TMPBRANCH_FILE"
+# Partial skills that would normally block
+echo "silver-quality-gates" > "$TMPSTATE"
+# Dirty working tree so HOOK-14 doesn't short-circuit
+printf 'work\n' > "$TMPDIR_TEST/work.txt"
+git -C "$TMPDIR_TEST" add work.txt
+out=$(run_hook)
+assert_blocks "absent branch file + dirty tree + partial skills -> blocks (fail-closed)" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -258,8 +258,7 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
 
    If `$webhook` is non-empty, POST the release notification. First derive `$summary`
    from the release notes body — take the first non-empty `##` heading from
-   `$RELEASE_NOTES_BODY` and append the bullet count for that section
-   (e.g., `"2 features, 1 fix"`). Then build the JSON payload with `jq` to prevent
+   `$RELEASE_NOTES_BODY`. Then build the JSON payload with `jq` to prevent
    injection from crafted version strings or release notes:
    ```
    summary=$(printf '%s' "$RELEASE_NOTES_BODY" | grep -m1 '^## ' | sed 's/^## //')
@@ -272,7 +271,6 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
 
    - `$VERSION` — the version tag (e.g. `v0.20.2`)
    - `$summary` — derived above: first `##` heading from the release notes body
-   - `$release_url` — the GitHub release URL returned by `gh release create`
    - `$release_url` — the GitHub release URL returned by `gh release create`
 
    If `$SB_GCHAT_WEBHOOK` is unset or empty, skip silently — notification is optional.
