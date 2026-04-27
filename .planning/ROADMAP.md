@@ -631,7 +631,10 @@ Plans:
   3. Identity tags `claude`, `forge`, `codex`, `opencode` accepted by default; extensible via `multi_agent.identity_tags[]` in `templates/silver-bullet.config.json.default`
   4. Stale-lock TTL (default 1800 s) is respected by `peek` (returns expired metadata) and `claim` (steals expired locks with stderr warning naming the prior owner)
   5. `tests/scripts/test-phase-lock.sh` covers ≥7 cases (claim-when-free, claim-conflict, heartbeat-extends-ttl, release-by-non-owner-fails, stale-lock-steal, peek-empty-on-free-phase, parallel-claim-only-one-wins) and passes
-**Plans**: TBD
+**Plans**: 3 plans
+  - [ ] 070-01-PLAN.md — Add multi_agent config block + gitignore lock-state files
+  - [ ] 070-02-PLAN.md — Implement phase-lock.sh helper (claim/heartbeat/release/peek, flock-atomic, stale-steal, SB_PHASE_LOCK_INHERITED no-op)
+  - [ ] 070-03-PLAN.md — Test suite covering all LOCK-05 cases + 10-way parallel atomicity + inheritance no-op
 
 ### Phase 71: Claude-SB Lock Hooks
 **Goal**: Claude-SB integrates with the shared lock helper via three new hooks so any phase-touching tool call automatically participates in multi-agent coordination
