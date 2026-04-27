@@ -1,75 +1,105 @@
 ---
-id: requesting-code-review
-title: Requesting Code Review
-description: Frame review scope and criteria before spawning reviewer agents
-trigger:
-  - "requesting code review"
-  - "request review"
-  - "frame review"
-  - "prepare for review"
+name: requesting-code-review
+description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
 ---
 
 # Requesting Code Review
 
-## Purpose
-Before code review begins, establish the scope, criteria, and focus areas to ensure reviewers have clear expectations.
+Dispatch superpowers:code-reviewer subagent to catch issues before they cascade. The reviewer gets precisely crafted context for evaluation — never your session's history. This keeps the reviewer focused on the work product, not your thought process, and preserves your own context for continued work.
 
-## Steps
+**Core principle:** Review early, review often.
 
-### Step 1: Identify Changed Files
-List all files that changed in this branch:
+## When to Request Review
+
+**Mandatory:**
+- After each task in subagent-driven development
+- After completing major feature
+- Before merge to main
+
+**Optional but valuable:**
+- When stuck (fresh perspective)
+- Before refactoring (baseline check)
+- After fixing complex bug
+
+## How to Request
+
+**1. Get git SHAs:**
 ```bash
-git diff --name-only main...HEAD
+BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
+HEAD_SHA=$(git rev-parse HEAD)
 ```
 
-### Step 2: Categorize Changes
-Group files by type:
-- **Core logic**: Business logic, algorithms
-- **API changes**: Endpoints, contracts
-- **Data models**: Schemas, migrations
-- **Tests**: Unit, integration, e2e
-- **Config**: Environment, settings
-- **Dependencies**: Added/updated packages
+**2. Dispatch code-reviewer subagent:**
 
-### Step 3: Define Review Criteria
-Based on change types, specify what reviewers should focus on:
-- Correctness: Do the changes do what they're supposed to?
-- Security: Any new vulnerabilities introduced?
-- Performance: Any slow paths created?
-- Tests: Is coverage adequate?
-- Documentation: Are APIs/docs updated?
+Use Task tool with superpowers:code-reviewer type, fill template at `code-reviewer.md`
 
-### Step 4: Set Review Context
-Note for reviewers:
-- What problem does this solve?
-- Why was this approach chosen?
-- What alternatives were considered?
-- Any known limitations?
+**Placeholders:**
+- `{WHAT_WAS_IMPLEMENTED}` - What you just built
+- `{PLAN_OR_REQUIREMENTS}` - What it should do
+- `{BASE_SHA}` - Starting commit
+- `{HEAD_SHA}` - Ending commit
+- `{DESCRIPTION}` - Brief summary
 
-### Step 5: Document Review Request
-Write the review request:
+**3. Act on feedback:**
+- Fix Critical issues immediately
+- Fix Important issues before proceeding
+- Note Minor issues for later
+- Push back if reviewer is wrong (with reasoning)
+
+## Example
+
 ```
-# Code Review Request
+[Just completed Task 2: Add verification function]
 
-## Branch
-<branch-name>
+You: Let me request code review before proceeding.
 
-## Changes
-<list of changed files grouped by category>
+BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
+HEAD_SHA=$(git rev-parse HEAD)
 
-## Scope
-<what's in scope>
-<what's NOT in scope>
+[Dispatch superpowers:code-reviewer subagent]
+  WHAT_WAS_IMPLEMENTED: Verification and repair functions for conversation index
+  PLAN_OR_REQUIREMENTS: Task 2 from docs/superpowers/plans/deployment-plan.md
+  BASE_SHA: a7981ec
+  HEAD_SHA: 3df7661
+  DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
 
-## Criteria
-<list of specific things to check>
+[Subagent returns]:
+  Strengths: Clean architecture, real tests
+  Issues:
+    Important: Missing progress indicators
+    Minor: Magic number (100) for reporting interval
+  Assessment: Ready to proceed
 
-## Context
-<background information for reviewers>
-
-## Files Requiring Special Attention
-<files with complex logic, security implications, etc.>
+You: [Fix progress indicators]
+[Continue to Task 3]
 ```
 
-## Exit Condition
-Review request documented. Reviewers know what to check and why.
+## Integration with Workflows
+
+**Subagent-Driven Development:**
+- Review after EACH task
+- Catch issues before they compound
+- Fix before moving to next task
+
+**Executing Plans:**
+- Review after each batch (3 tasks)
+- Get feedback, apply, continue
+
+**Ad-Hoc Development:**
+- Review before merge
+- Review when stuck
+
+## Red Flags
+
+**Never:**
+- Skip review because "it's simple"
+- Ignore Critical issues
+- Proceed with unfixed Important issues
+- Argue with valid technical feedback
+
+**If reviewer wrong:**
+- Push back with technical reasoning
+- Show code/tests that prove it works
+- Request clarification
+
+See template at: requesting-code-review/code-reviewer.md

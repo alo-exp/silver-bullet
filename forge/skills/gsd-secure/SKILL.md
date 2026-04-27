@@ -1,4 +1,5 @@
 ---
+name: gsd-secure
 id: gsd-secure
 title: GSD — Security Review
 description: Security audit of changes; enforce defense in depth and OWASP best practices

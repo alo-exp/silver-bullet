@@ -1,4 +1,5 @@
 ---
+name: gsd-ship
 id: gsd-ship
 title: GSD — Ship Phase (Create PR)
 description: Push branch and create PR; refuses to ship without passing verification

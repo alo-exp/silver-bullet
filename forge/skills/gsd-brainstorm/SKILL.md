@@ -1,4 +1,5 @@
 ---
+name: gsd-brainstorm
 id: gsd-brainstorm
 title: GSD — Brainstorm Phase
 description: Explore multiple approaches before committing to a design

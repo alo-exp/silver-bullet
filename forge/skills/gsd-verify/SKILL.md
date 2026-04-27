@@ -1,4 +1,5 @@
 ---
+name: gsd-verify
 id: gsd-verify
 title: GSD — Verify Work
 description: Execute verification steps from PLAN.md and produce VERIFICATION.md

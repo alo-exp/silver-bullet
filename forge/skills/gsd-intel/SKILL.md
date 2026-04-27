@@ -1,4 +1,5 @@
 ---
+name: gsd-intel
 id: gsd-intel
 title: GSD — Codebase Intelligence
 description: Orient in the existing codebase before planning or implementing changes
