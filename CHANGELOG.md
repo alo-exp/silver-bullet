@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.27.0] — 2026-04-27
+
+### Features
+
+- `INIT-01: rewrite silver-init steps 3.1b/3.1c for comprehensive CLAUDE.md conflict resolution` (ce8e860): detects and handles existing CLAUDE.md — prompts overwrite, merge, or abort instead of silently clobbering
+- `stop hook audit: enumerate false-positives, fix S-06 comment, add Test 15` (62d9b5f): documents all HOOK-14 exit paths; Test 15 covers same-branch state-drift edge case
+
+### Bug Fixes
+
+- `fix: remove superpowers v4 skills from required_deploy` (14c4b75): testing-strategy, documentation, deploy-checklist, tech-debt removed — skills no longer exist in superpowers v5.x and could never be recorded
+- `fix(stop-check): skip enforcement when state is from a different branch` (4624e6d): cross-session branch-drift no longer causes spurious blocks when state was recorded on a different branch
+- `fix: restore IS_NEW_FILE guard in silver-rem size-cap code block` (c04e9be): guard removed by SKL-01 trim was still required; restored to prevent size-cap block on new files
+- `fix: restore mktemp/mv to silver-add Allowed Commands` (75a2d72): SKL-01 trim accidentally removed mktemp/mv which Step 4d still requires for atomic config rewrite
+- `fix: correct marketplace source format and enrich plugin metadata` (7aa72a1)
+
+### Tests
+
+- `test: add TST-01 and TST-02 test coverage` (a947bba): session-log-init and stop-check branch-scope tests
+- `fix: update stale S2.4 integration test comment and marker` (7eeb5ca): test now uses custom-marker-1 to accurately reflect CHR-03 sed filter removal
+
+### Documentation
+
+- `docs: create sb-without-gsd.md and sb-vs-gsd.md` (591f643): two new help pages clarifying Silver Bullet standalone use and its relationship with GSD
+- `docs: fix install command and stale version refs in help site` (a5857e4)
+
+### Chores
+
+- `chore(skills): trim silver-add/silver-rem to <300 lines` (24ef1e5): §10a→9a subsection labels corrected
+
+---
+
 ## [0.26.0] — 2026-04-25
 
 ### Bug Fixes
