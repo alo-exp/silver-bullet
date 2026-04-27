@@ -149,3 +149,27 @@ When `silver-quality-gates` flags a deferred item, immediately apply `silver-add
 - Forge auto-loads all skills from `~/forge/skills/`, `~/.agents/skills/`, and `.forge/skills/`. You don't need to "select" a skill — Forge picks based on context.
 - Forge invokes custom agents from `~/forge/agents/` and `.forge/agents/` when their `id` is added to a calling agent's `tools[]` and `tool_supported: true` is set on the target.
 - This file may be edited per-project to add project-specific routing or constraints. The forge-sb-install.sh installer will not overwrite an existing AGENTS.md.
+
+---
+
+## Multi-Agent Coordination (v0.29.0+)
+
+When `.planning/.phase-locks.json` is present, this Forge instance participates in cooperative phase ownership across SB-bearing coding agents. The invariant is **one phase = one runtime at a time**.
+
+### At session start
+
+`forge-session-init` peeks `.planning/.phase-locks.json` and surfaces any non-`forge` locks under "Active phase locks (other runtimes)" in the session summary. Surface this to the user — it tells them which phases are in flight elsewhere.
+
+### Phase boundaries
+
+The silver-* parent skills (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-release`, `silver-spec`) invoke three custom agents at deterministic boundaries:
+
+- **Phase entry:** `forge-claim-phase <NNN>|<intent>` — on `BLOCKED:`, stop and surface to user.
+- **During long-running work:** `forge-heartbeat-phase <NNN>` — every wave / verify pass / >5 min op.
+- **Phase exit:** `forge-release-phase <NNN>` — after `gsd-ship` for the phase.
+
+### Delegation (`/forge-delegate`)
+
+When this Forge instance holds a lock and wants to delegate work to a sibling runtime, invoke `/forge-delegate` (with optional `--target=claude|codex|opencode|forge`). The child runs with `SB_PHASE_LOCK_INHERITED=true` so it does not double-claim. The structured result (`## FILES_CHANGED` / `## ASSUMPTIONS` / `## REQ-IDS`) is parsed back and integrated into the parent phase's working SUMMARY. The lock stays with this Forge instance throughout.
+
+See `docs/multi-agent-coordination.md` for the full diagram.
