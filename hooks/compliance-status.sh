@@ -12,7 +12,7 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
 fi
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
-  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| complete' "$1" 2>/dev/null || echo 0; }
+  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
 fi
 
 # PostToolUse hook (matcher: .*)
