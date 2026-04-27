@@ -118,7 +118,7 @@ context, proceed without — Silver Bullet's own quality gates still apply.
 
 For the highest-priority available skill:
 
-1. Invoke it via the Skill tool. The exact syntax depends on how each plugin
+1. Invoke it. The exact syntax depends on how each plugin
    registers its skills. Try these patterns in order:
    - `/<plugin-namespace>:<skill-name>` (e.g., `/hashicorp:terraform-code-generation`)
    - `/<skill-name>@<plugin-name>` (e.g., `/terraform-code-generation@hashicorp`)

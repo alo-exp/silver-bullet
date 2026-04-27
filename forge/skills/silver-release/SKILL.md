@@ -111,21 +111,21 @@ When the user requests skipping any step:
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
+Invoke `silver:silver-quality-gates`. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
 
 ## Step 1: Cross-Phase UAT
 
-Invoke `gsd-audit-uat` via the Skill tool. Purpose: cross-phase UAT — surface all outstanding gaps before release. This gives a complete picture of the milestone state before deciding whether to ship.
+Invoke `gsd-audit-uat`. Purpose: cross-phase UAT — surface all outstanding gaps before release. This gives a complete picture of the milestone state before deciding whether to ship.
 
 ## Step 2: Milestone Completion Audit
 
-Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone completion vs original intent — are all committed features shipped?
+Invoke `gsd-audit-milestone`. Purpose: compare milestone completion vs original intent — are all committed features shipped?
 
 **After audit:** check for gaps.
 
 ## Step 2a: Security Hard Gate
 
-Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
+Invoke `silver:security`. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
 
 ## FLOW DESIGN HANDOFF — Milestone UI handoff
 
@@ -164,23 +164,23 @@ Wait for user selection. If A: proceed to Step 3a with gaps documented. If B or 
 
 **When iteration count < 2:**
 
-1. Invoke `gsd-plan-milestone-gaps` via the Skill tool. Purpose: plan the gap closure phases.
-2. Invoke `silver:feature` via the Skill tool for each gap phase.
+1. Invoke `gsd-plan-milestone-gaps`. Purpose: plan the gap closure phases.
+2. Invoke `silver:feature` for each gap phase.
 3. After gap phases complete, return to Step 0 (full quality gate sweep again).
 4. Increment iteration count.
 5. Re-run Steps 1–2 to check if gaps are resolved.
 
 ## Step 3a: Verify Existing Documentation
 
-Invoke `gsd-docs-update` via the Skill tool. Purpose: verify all existing docs are accurate against current codebase — correct any outdated content before generating new docs.
+Invoke `gsd-docs-update`. Purpose: verify all existing docs are accurate against current codebase — correct any outdated content before generating new docs.
 
 ## Step 3b: Generate/Update Documentation
 
-After gsd-docs-update completes (accuracy verified), invoke `/documentation` via the Skill tool. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
+After gsd-docs-update completes (accuracy verified), invoke `/documentation`. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
 
 ## Step 4: Milestone Summary
 
-Invoke `gsd-milestone-summary` via the Skill tool. Purpose: generate milestone narrative for release notes.
+Invoke `gsd-milestone-summary`. Purpose: generate milestone narrative for release notes.
 
 ## Step 5: PR Branch (ask user)
 
@@ -190,7 +190,7 @@ Ask using AskUserQuestion:
 >
 > A. Yes — run gsd-pr-branch  B. No — release as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` via the Skill tool.
+If A: invoke `gsd-pr-branch`.
 If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
 
 ## Step 6: Cross-Artifact Consistency Review
@@ -203,11 +203,11 @@ Do NOT proceed to Step 7 (Ship) until cross-artifact review reports clean pass. 
 
 ## Step 6b: Pre-Ship Deployment Checklist
 
-Invoke `/deploy-checklist` via the Skill tool. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
+Invoke `/deploy-checklist`. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
 
 ## Step 7: Ship — Deploy, CI Green
 
-Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push the branch. This MUST succeed before milestone is archived.
+Invoke `gsd-ship`. Purpose: deploy, ensure CI is green, push the branch. This MUST succeed before milestone is archived.
 
 **Enforcement:** Do not proceed to Step 8 until gsd-ship confirms CI green and deploy succeeded.
 
@@ -215,13 +215,13 @@ Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push 
 
 **Only after Step 7 (gsd-ship) confirms success:**
 
-Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, prepare for next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). These commits MUST be on the branch before the release tag is placed.
+Invoke `gsd-complete-milestone`. Purpose: archive milestone, prepare for next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). These commits MUST be on the branch before the release tag is placed.
 
 ## Step 9: Create Release
 
 **Only after Step 8 (`gsd-complete-milestone`) commits are on the branch:**
 
-Invoke `silver:silver-create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
+Invoke `silver:silver-create-release`. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
 
 > **Why last?** Creating the tag before milestone archival causes the archival commits to appear after the tag, requiring an immediate patch release. The tag must be the final commit in the release.
 

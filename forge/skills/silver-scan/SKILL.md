@@ -158,7 +158,7 @@ Use AskUserQuestion tool:
 - Options: ["Y", "n"]
 
 **iii.** If user answers Y:
-- Invoke /silver-add via the Skill tool, passing `ITEM_TITLE` + `ITEM_CONTEXT` as the description. Wait for /silver-add to complete and return `FILED_ID`.
+- Invoke /silver-add, passing `ITEM_TITLE` + `ITEM_CONTEXT` as the description. Wait for /silver-add to complete and return `FILED_ID`.
 - Append `FILED_ID` to `FILED_IDS` list (comma-separated).
 - Increment `ITEMS_FILED`.
 
@@ -213,7 +213,7 @@ Record this insight via /silver-rem? [Y/n]
 - Options: ["Y", "n"]
 
 **iii.** If user answers Y:
-- Invoke /silver-rem via the Skill tool, passing the full insight text. Wait for completion.
+- Invoke /silver-rem, passing the full insight text. Wait for completion.
 - Increment `KL_RECORDED`.
 
 **iv.** If user answers n:

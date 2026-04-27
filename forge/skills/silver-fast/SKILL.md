@@ -64,7 +64,7 @@ Routing to: {gsd-fast|gsd-quick|silver-feature}
 
 **Only reached when Step 0 classifies as Tier 1 (Trivial).**
 
-Invoke `gsd-fast` via the Skill tool. Pass $ARGUMENTS as the change description.
+Invoke `gsd-fast`. Pass $ARGUMENTS as the change description.
 
 After gsd-fast completes, run scope expansion check (Step 4).
 
@@ -109,7 +109,7 @@ Detected signals:
 Flags: {--discuss --research --validate | --full | (none)}
 ```
 
-Invoke `gsd-quick` via the Skill tool with the composed flags and $ARGUMENTS.
+Invoke `gsd-quick` with the composed flags and $ARGUMENTS.
 
 After gsd-quick completes, run scope expansion check (Step 4).
 
@@ -134,7 +134,7 @@ Change exceeds fast-path complexity. Routing to silver-feature.
 Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
 ```
 
-Invoke `silver:feature` via the Skill tool with $ARGUMENTS. Exit silver:fast.
+Invoke `silver:feature` with $ARGUMENTS. Exit silver:fast.
 
 ## Step 4: Scope Expansion Check
 
