@@ -228,22 +228,27 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    git push origin <version>
    ```
 
-2. Detect if this is a GitHub repo:
+2. Initialize `release_url` (used in notification sub-step 5 below):
+   ```bash
+   release_url=""
+   ```
+
+3. Detect if this is a GitHub repo:
    ```
    git remote get-url origin 2>/dev/null | grep -q github.com
    ```
 
-3. **If GitHub repo:** Create a GitHub Release and capture the URL:
+4. **If GitHub repo:** Create a GitHub Release and capture the URL:
    ```
    release_url=$(gh release create <version> --title "<version>" --notes "<release-notes-markdown>" --json url -q '.url')
    ```
    Use `/opt/homebrew/bin/gh` if available, fall back to bare `gh`.
-   `$release_url` is used in the notification sub-step below (sub-item 5 of this step).
+   `$release_url` is used in the notification sub-step below (sub-item 6 of this step).
 
-4. **If not GitHub:** Output the release notes and suggest:
+5. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
 
-5. **Send Google Chat notification** (if webhook env var configured):
+6. **Send Google Chat notification** (if webhook env var configured):
 
    Read the webhook URL from the `SB_GCHAT_WEBHOOK` environment variable:
    ```

@@ -210,9 +210,14 @@ setup
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 # Sync the branch file so stop-check.sh sees the same branch as the git repo.
 # Without this, the branch-scope mismatch guard exits 0 before the on-main
-# filter is reached — test passes but for the wrong reason (HOOK-14 guard
-# fires instead of the on-main finishing-a-development-branch exemption).
+# filter is reached — test passes but for the wrong reason.
 printf 'main\n' > "$TMPBRANCH_FILE"
+# Stage an uncommitted file so HOOK-14's clean-tree exit (line 177 of stop-check.sh,
+# the "no origin anchor + clean tree → read-only session" path) does NOT fire.
+# Without a dirty tree, stop-check.sh exits 0 via HOOK-14 before ever reaching
+# the on_main=true → finishing-a-development-branch filter at line 244.
+printf 'main-work\n' > "$TMPDIR_TEST/main-work.txt"
+git -C "$TMPDIR_TEST" add main-work.txt
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
