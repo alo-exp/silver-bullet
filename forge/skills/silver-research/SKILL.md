@@ -103,7 +103,7 @@ When the user requests skipping any step:
 
 ## Step 1: Clarify Research Question
 
-Invoke `silver:explore` (gsd-explore) via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
+Invoke `silver:explore` (gsd-explore). Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
 
 After silver:explore completes, the research question should be specific enough to select a path.
 
@@ -124,10 +124,10 @@ Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver:exp
 Invoked when: selection is A.
 
 **2a.1 — Landscape research across 9 sections**
-Invoke `multai:landscape-researcher` via the Skill tool. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
+Invoke `multai:landscape-researcher`. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
 
 **2a.2 — Consolidate findings**
-Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
+Invoke `multai:consolidator`. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
 
 **Output:** Write consolidated findings to `.planning/research/<YYYY-MM-DD>-<topic-slug>/landscape-report.md`
 
@@ -138,13 +138,13 @@ Proceed to Step 3.
 Invoked when: selection is B.
 
 **2b.1 — Multi-AI perspectives**
-Invoke `multai:orchestrator` via the Skill tool. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
+Invoke `multai:orchestrator`. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
 
 **2b.2 — Weighted comparison matrix**
-Invoke `multai:comparator` via the Skill tool. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
+Invoke `multai:comparator`. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
 
 **2b.3 — Unified recommendation**
-Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
+Invoke `multai:consolidator`. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
 
 **Output:** Write consolidated report to `.planning/research/<YYYY-MM-DD>-<topic-slug>/comparison-report.md`
 
@@ -155,7 +155,7 @@ Proceed to Step 3.
 Invoked when: selection is C.
 
 **2c.1 — Competitive intelligence research**
-Invoke `multai:solution-researcher` via the Skill tool. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
+Invoke `multai:solution-researcher`. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
 
 **Output:** Write CIR to `.planning/research/<YYYY-MM-DD>-<topic-slug>/competitive-intelligence-report.md`
 
@@ -173,7 +173,7 @@ The artifact file path will be referenced in the handoff to the receiving workfl
 
 ## Step 3: Apply Research to Engineering Design
 
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: apply research findings to engineering design — "what do we actually build and how?" Use the research artifact as primary input context for the brainstorm.
+Invoke `silver:brainstorm` (superpowers:brainstorming). Purpose: apply research findings to engineering design — "what do we actually build and how?" Use the research artifact as primary input context for the brainstorm.
 
 ## Step 4: Hand Off to Implementation Workflow
 
@@ -185,8 +185,8 @@ Ask:
 > B. silver:devops — infrastructure/deployment change based on research findings
 > C. Done — research-only engagement, no implementation needed
 
-If A: invoke `silver:feature` via the Skill tool. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
+If A: invoke `silver:feature`. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
 
-If B: invoke `silver:devops` via the Skill tool. Pass the artifact path as context argument.
+If B: invoke `silver:devops`. Pass the artifact path as context argument.
 
 If C: summarize research artifacts created and their paths. Done.

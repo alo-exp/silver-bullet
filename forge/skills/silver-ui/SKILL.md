@@ -110,22 +110,22 @@ When the user requests skipping any step:
 
 ## Step 0: Orient in Codebase
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool to understand existing UI patterns and component hierarchy.
+Invoke `silver:intel` (gsd-intel) to understand existing UI patterns and component hierarchy.
 
-If brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
+If brownfield project, also invoke `silver:scan` (gsd-scan) for rapid structure assessment.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
 **Only if intent is fuzzy or $ARGUMENTS is empty:**
-Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarification of UI intent.
+Invoke `silver:explore` (gsd-explore) for Socratic clarification of UI intent.
 
 ## Step 1b: Product Brainstorming
 
-Invoke `/product-brainstorming` via the Skill tool. Purpose: user flows, personas, success criteria, and scope for the UI feature.
+Invoke `/product-brainstorming`. Purpose: user flows, personas, success criteria, and scope for the UI feature.
 
 ## Step 1c: Engineering Brainstorm
 
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: UI architecture, component hierarchy, interaction design, spec.
+Invoke `silver:brainstorm` (superpowers:brainstorming). Purpose: UI architecture, component hierarchy, interaction design, spec.
 
 ## Step 1d: MultAI UI Perspectives (conditional)
 
@@ -137,23 +137,23 @@ Ask:
 > A. Yes — run multai:orchestrator for multi-AI UX review
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool.
+If A: invoke `silver:multai` (multai:orchestrator).
 
 ## Step 2: Testing Strategy
 
-Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing-plans.
+Invoke `/testing-strategy`. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing-plans.
 
 ## Step 2.5: Writing Plans
 
-Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
+Invoke `silver:writing-plans` (superpowers:writing-plans). Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
+Invoke `silver:silver-quality-gates`. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
+Invoke `gsd-discuss-phase`. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
@@ -173,25 +173,25 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CON
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase` via the Skill tool. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
+Invoke `gsd-plan-phase`. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
 
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
+If mode is Interactive: invoke `gsd-execute-phase`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous`.
 
 **TDD for component logic:**
-Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
+Invoke `silver:tdd` (superpowers:test-driven-development) for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
 
 ## Step 8: Code Review
 
 Run review sequence in order:
-1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
-3. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix` via the Skill tool.
-3. For architecturally significant UI systems: invoke `gsd-review --all` via the Skill tool (cross-AI adversarial review across all available CLIs).
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `silver:request-review` (superpowers:requesting-code-review).
+2. Invoke `/code-review`. Purpose: establish review criteria before spawning reviewer agents.
+3. Invoke `gsd-code-review`. If issues found: invoke `gsd-code-review-fix`.
+3. For architecturally significant UI systems: invoke `gsd-review --all` (cross-AI adversarial review across all available CLIs).
+4. Invoke `silver:receive-review` (superpowers:receiving-code-review).
 
 ## FLOW UI QUALITY — Post-execution UI audit
 
@@ -212,21 +212,21 @@ Run review sequence in order:
 
 ## Step 10: Frontend Security
 
-Invoke `gsd-secure-phase` via the Skill tool. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `silver:security` as the mandatory security gate.
+Invoke `gsd-secure-phase`. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `silver:security` as the mandatory security gate.
 
 ## Step 11: Verify Work + Test Gap Fill
 
-Invoke `gsd-verify-work` via the Skill tool. Non-skippable.
+Invoke `gsd-verify-work`. Non-skippable.
 
-If coverage gaps remain after verification: invoke `gsd-add-tests` via the Skill tool.
+If coverage gaps remain after verification: invoke `gsd-add-tests`.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist gap filling.
+Invoke `gsd-validate-phase`. Purpose: Nyquist gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt`. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver-add`.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -245,7 +245,7 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
+Invoke `silver:silver-quality-gates`. Full 9-dimension sweep. Non-skippable.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -268,19 +268,19 @@ If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 1
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool.
+Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch).
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` via the Skill tool.
+If A: invoke `gsd-pr-branch`.
 If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
 
 ## Step 15: Ship Phase
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level).
+Invoke `gsd-ship`. Purpose: push branch, create PR, prepare for merge (phase-level).
 
 ## Step 16: Milestone Completion (last phase of milestone only)
 

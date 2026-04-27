@@ -177,29 +177,29 @@ Before proceeding, classify the request:
 | Simple | Clear scope, ≤1 phase | Skip Step 1b, go to Step 1a |
 | Complex | Multi-phase, cross-cutting | Full workflow including Step 1b |
 
-If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
+If trivial: invoke `silver:fast` and exit this workflow.
 
 ## Step 1a: Codebase Intel
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool to orient planning in the codebase.
+Invoke `silver:intel` (gsd-intel) to orient planning in the codebase.
 
-If no intel files exist and this is a brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
+If no intel files exist and this is a brownfield project, also invoke `silver:scan` (gsd-scan) for rapid structure assessment.
 
 ## Step 1b: Fuzzy Scope Clarification (conditional)
 
 **Only if complexity triage found fuzzy intent or $ARGUMENTS is empty:**
 
-Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarification before structured brainstorming.
+Invoke `silver:explore` (gsd-explore) for Socratic clarification before structured brainstorming.
 
 ## Step 1c: Brainstorm
 
 Run both brainstorm tools in sequence:
 
 **1c-i: Product brainstorming**
-Invoke `/product-brainstorming` via the Skill tool. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.
+Invoke `/product-brainstorming`. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.
 
 **1c-ii: Engineering brainstorm**
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
+Invoke `silver:brainstorm` (superpowers:brainstorming). Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
 
 ## Step 1d: MultAI Pre-Spec Review (conditional)
 
@@ -216,21 +216,21 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent.
+If A: invoke `silver:multai` (multai:orchestrator). Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent.
 
 ## Step 2: Testing Strategy
 
-Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tooling, coverage targets — MUST run after spec approval and before writing-plans so test requirements are baked into the implementation plan.
+Invoke `/testing-strategy`. Purpose: define test levels, tooling, coverage targets — MUST run after spec approval and before writing-plans so test requirements are baked into the implementation plan.
 
 ## Step 2.5: Writing Plans
 
-Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
+Invoke `silver:writing-plans` (superpowers:writing-plans). Purpose: convert approved spec + test strategy → structured implementation plan.
 
 ## Step 2.7: Pre-Build Validation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
-Invoke `silver:validate` via the Skill tool.
+Invoke `silver:validate`.
 
 If silver-validate reports any BLOCK findings:
 - STOP. Do not proceed to Step 3.
@@ -243,28 +243,28 @@ WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR 
 
 ## Step 3: Pre-Plan Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
+Invoke `silver:silver-quality-gates`. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
 
 `silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in silver-quality-gates (one of the 9 dimensions — not a separate step).
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` via the Skill tool. Purpose: adaptive questioning → CONTEXT.md with locked decisions for the planner.
+Invoke `gsd-discuss-phase`. Purpose: adaptive questioning → CONTEXT.md with locked decisions for the planner.
 
 ## Step 5: Analyze Dependencies
 
-Invoke `gsd-analyze-dependencies` via the Skill tool. Purpose: map phase dependencies before GSD creates the plan.
+Invoke `gsd-analyze-dependencies`. Purpose: map phase dependencies before GSD creates the plan.
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification loop.
+Invoke `gsd-plan-phase`. Purpose: PLAN.md with verification loop.
 
 ## Step 7: Execute Phase
 
-**If mode is Interactive (default):** invoke `gsd-execute-phase` via the Skill tool.
-**If mode is Autonomous (§10e):** invoke `gsd-autonomous` via the Skill tool.
+**If mode is Interactive (default):** invoke `gsd-execute-phase`.
+**If mode is Autonomous (§10e):** invoke `gsd-autonomous`.
 
-**Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
+**Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
 **During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
 
@@ -279,41 +279,41 @@ Skill(skill="silver-add", args="<description of deferred item>")
 **Only for implementation plans — skip for config/infra/doc plans:**
 Heuristic: if the PLAN.md modifies source files containing business logic or application code, it is an implementation plan. Config-only, docs-only, or infra-only plans skip this step.
 
-Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool. Purpose: TDD red-green-refactor discipline per implementation task.
+Invoke `silver:tdd` (superpowers:test-driven-development). Purpose: TDD red-green-refactor discipline per implementation task.
 
 ## Step 8: Verify Work
 
-Invoke `gsd-verify-work` via the Skill tool. Purpose: UAT, must-haves, artifact checks. Phase is NOT complete until this passes. Non-skippable.
+Invoke `gsd-verify-work`. Purpose: UAT, must-haves, artifact checks. Phase is NOT complete until this passes. Non-skippable.
 
 ## Step 8b: Test Gap Fill (conditional)
 
 **Only if gsd-verify-work surfaces coverage gaps:**
 
-Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT criteria to fill gaps identified by verification — runs after gsd-verify-work so gap targets are known.
+Invoke `gsd-add-tests`. Purpose: generate tests from UAT criteria to fill gaps identified by verification — runs after gsd-verify-work so gap targets are known.
 
 ## Step 9a: Request Code Review
 
-Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
+Invoke `silver:request-review` (superpowers:requesting-code-review). Purpose: frame review scope and focus rigorously before spawning reviewers.
 
 ## Step 9a2: Code Review Criteria
 
-Invoke `/code-review` via the Skill tool. Purpose: establish review criteria and checklist before spawning reviewer agents — ensures reviewers have explicit quality bar to evaluate against.
+Invoke `/code-review`. Purpose: establish review criteria and checklist before spawning reviewer agents — ensures reviewers have explicit quality bar to evaluate against.
 
 ## Step 9b: Run Code Review
 
-Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md.
+Invoke `gsd-code-review`. Purpose: spawn reviewer agents → REVIEW.md.
 
-If issues found in REVIEW.md: invoke `gsd-code-review-fix` via the Skill tool to auto-fix findings atomically before human review.
+If issues found in REVIEW.md: invoke `gsd-code-review-fix` to auto-fix findings atomically before human review.
 
 ## Step 9c: Cross-AI Review (conditional)
 
 **Only for architecturally significant changes or user request:**
 
-Invoke `gsd-review --all` via the Skill tool. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code. The `--all` flag fans out to every available external CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor).
+Invoke `gsd-review --all`. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code. The `--all` flag fans out to every available external CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor).
 
 ## Step 9d: Receive Review
 
-Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
+Invoke `silver:receive-review` (superpowers:receiving-code-review). Purpose: disciplined response to findings — no blind agreement.
 
 ## Step 9e: Backlog capture from review
 
@@ -328,23 +328,23 @@ If all findings were fixed or no advisory items exist, output: "No deferred revi
 
 ## Step 10: Security Review
 
-Invoke `silver:security` via the Skill tool. Non-skippable gate.
+Invoke `silver:security`. Non-skippable gate.
 
 ## Step 11: Secure Phase
 
-Invoke `gsd-secure-phase` via the Skill tool. Purpose: retroactive threat mitigation verification.
+Invoke `gsd-secure-phase`. Purpose: retroactive threat mitigation verification.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap filling.
+Invoke `gsd-validate-phase`. Purpose: Nyquist validation gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt`. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver-add`.
 
 ## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
+Invoke `silver:silver-quality-gates`. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -367,7 +367,7 @@ If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 1
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool. Purpose: merge / PR / cleanup decision.
+Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch). Purpose: merge / PR / cleanup decision.
 
 ## Step 15a: PR Branch (ask user)
 
@@ -377,16 +377,16 @@ Ask user:
 >
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` via the Skill tool.
+If A: invoke `gsd-pr-branch`.
 If C: record preference in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
 
 ## Step 15b: Ship Phase
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
+Invoke `gsd-ship`. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
 
 ## Step 16: Episodic Memory
 
-Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and lessons from this feature.
+Invoke `episodic-memory:remembering-conversations` to record key decisions and lessons from this feature.
 
 ## Step 17: Milestone Completion (last phase of milestone only)
 
@@ -411,7 +411,7 @@ Write `.planning/UAT.md` using the Write tool.
 
 ### Step 17.0a: Review UAT.md
 
-Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` via the Skill tool.
+Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat`.
 
 Do NOT proceed to gsd-audit-uat until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -423,10 +423,10 @@ Do NOT proceed to gsd-audit-uat until cross-artifact review reports clean pass. 
 
 **Why here:** Cross-artifact alignment must be confirmed before milestone audit begins — auditing against misaligned artifacts wastes effort.
 
-1. Invoke `gsd-audit-uat` via the Skill tool
-2. Invoke `gsd-audit-milestone` via the Skill tool
+1. Invoke `gsd-audit-uat`
+2. Invoke `gsd-audit-milestone`
 3. If gaps found (max 2 gap-closure iterations): invoke `gsd-plan-milestone-gaps` → invoke `silver:feature` for gap phases → return to Step 0 of the gap phases. After 2 iterations if gaps remain, surface to user with options.
-4. Invoke `gsd-complete-milestone` via the Skill tool
+4. Invoke `gsd-complete-milestone`
 
 ## Step 18: Post-work backlog capture (mandatory)
 

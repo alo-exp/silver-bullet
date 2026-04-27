@@ -71,7 +71,7 @@ If any URL is provided in A, B, or C, note it internally for artifact injection 
 
 ## Step 2: Invoke product-management:write-spec
 
-Invoke `product-management:write-spec` via the Skill tool. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
+Invoke `product-management:write-spec`. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
 
 If the skill is unavailable (invocation fails or skill not found), proceed without it — the SPEC.md template provides equivalent structure. Do not block on this step.
 
@@ -135,7 +135,7 @@ For each URL provided:
 1. Display the URL and describe what will be extracted.
 2. Attempt extraction:
    - **Google Doc or PPT URL:** attempt text extraction via WebFetch tool. If accessible, show a 3-bullet summary of extracted content. If inaccessible, record the URL in `source-artifacts:` frontmatter for Phase 13 MCP ingestion.
-   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` via the Skill tool for design context. If the skill is unavailable, record URL only.
+   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` for design context. If the skill is unavailable, record URL only.
 3. Ask: "A. Incorporate this content into the spec  B. Skip"
 
 If user selects A: incorporate the relevant content into the appropriate sections during Step 7.
@@ -163,7 +163,7 @@ If no assumptions were surfaced, note this and ask: "Before we write the spec, a
 
 Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
 
-Invoke `design:design-critique` via the Skill tool. If the skill is unavailable, skip with a note: "(design:design-critique not available — design review deferred)"
+Invoke `design:design-critique`. If the skill is unavailable, skip with a note: "(design:design-critique not available — design review deferred)"
 
 ## Step 7: Write .planning/SPEC.md
 
@@ -197,7 +197,7 @@ Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` 
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` via the Skill tool.
+Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec`.
 
 Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -214,7 +214,7 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool.
+Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements`.
 
 Do NOT proceed to Step 9 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -230,7 +230,7 @@ Only if a design artifact or Figma URL was provided:
 
 **Only if Step 9 produced a DESIGN.md.**
 
-Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` via the Skill tool.
+Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design`.
 
 Do NOT proceed to Step 10 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
