@@ -12,7 +12,7 @@ This document maps every Silver Bullet capability on Claude Desktop to its equiv
 | Hook system | `settings.json` hooks fire on events (PreToolUse, PostToolUse, Stop, etc.) | **No hooks.** Hook gates are replaced with custom agents the main agent invokes as tools at the gating moment. |
 | Subagent system | `Task(subagent_type="X")` spawns isolated context | Forge custom agents at `~/forge/agents/<id>.md` with `tool_supported: true` (per `forgecode.dev/docs/creating-agents`) |
 | Skill nesting | `Skill(skill="X")` invokes another skill | Forge **auto-applies skills based on description-context match** to the user's current task. Cross-skill references inside other skill bodies are NOT chain-resolved — they are read as natural-language instruction. For explicit invocation, use a Forge slash command (see Slash Commands row). |
-| Slash commands | `/gsd:new-project`, etc. (plugin commands) | `forge/commands/<name>.md` (per `forgecode.dev/docs/commands/`); invoked with `:` prefix, e.g. `:gsd-new-project`. Filename becomes the command name. As of v0.31.0 there are 47 ported commands (43 GSD + 3 Superpowers + 1 KW PM). |
+| Slash commands | `/gsd:new-project`, etc. (plugin commands) | `forge/commands/<name>.md` (per `forgecode.dev/docs/commands/`); invoked with `:` prefix, e.g. `:gsd-new-project`. Filename becomes the command name. As of v0.31.0 there are 49 ported commands (45 GSD + 3 Superpowers + 1 KW PM). |
 | AskUserQuestion | First-class UI primitive | Plain conversational prompt — same outcome |
 
 ## Hook → Custom Agent Map
@@ -128,8 +128,8 @@ These are gaps that exist by design and require AGENTS.md guidance to mitigate:
 
 After running `forge-sb-install.sh`:
 
-1. Run `:skill` in Forge — confirm ~106 skills loaded
-2. Run `:agent` in Forge — confirm ~41 custom agents available (10 hook + 31 GSD)
+1. Run `:skill` in Forge — confirm ~107 skills + ~49 commands loaded
+2. Run `:agent` in Forge — confirm ~47 custom agents available (13 hook + 33 GSD + 1 Superpowers code-reviewer)
 3. Run a small `silver-feature` task end-to-end and check the produced `.planning/phases/<NNN>/` artifacts match the same workflow on Claude Desktop SB
 4. Compare against Phase 69's `forge/PARITY-REPORT.md` (generated during end-to-end verification)
 

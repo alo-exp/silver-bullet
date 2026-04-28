@@ -9,7 +9,7 @@
 ## Forge slash commands (NEW surface)
 
 - `forge/commands/` directory established. Per `forgecode.dev/docs/commands/`, slash commands belong here and invoke with the `:` prefix.
-- **43 GSD commands ported** from upstream → `forge/commands/gsd-*.md` (new-project, new-milestone, discuss-phase, plan-phase, execute-phase, verify-work, secure-phase, validate-phase, code-review, code-review-fix, add-phase, insert-phase, complete-milestone, audit-milestone, milestone-summary, map-codebase, autonomous, debug, explore, fast, do, quick, resume-work, pause-work, next, forensics, docs-update, pr-branch, ui-phase, ui-review, spec-phase, ai-integration-phase, audit-uat, eval-review, ingest-docs, import, add-backlog, scan, add-tests, add-todo, check-todos, cleanup, update).
+- **45 GSD commands ported** from upstream → `forge/commands/gsd-*.md` (new-project, new-milestone, discuss-phase, plan-phase, execute-phase, analyze-dependencies, plan-milestone-gaps, verify-work, secure-phase, validate-phase, code-review, code-review-fix, add-phase, insert-phase, complete-milestone, audit-milestone, milestone-summary, map-codebase, autonomous, debug, explore, fast, do, quick, resume-work, pause-work, next, forensics, docs-update, pr-branch, ui-phase, ui-review, spec-phase, ai-integration-phase, audit-uat, eval-review, ingest-docs, import, add-backlog, scan, add-tests, add-todo, check-todos, cleanup, update).
 - **3 Superpowers commands ported**: `:brainstorm`, `:execute-plan`, `:write-plan`.
 - **1 KW product-management command ported**: `:pm-brainstorm`.
 - Each ported command uses minimal Forge command frontmatter (`name`, `description`); body preserved verbatim. Claude-Code-only fields stripped.

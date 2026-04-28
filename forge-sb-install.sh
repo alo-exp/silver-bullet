@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Silver Bullet for Forge — Idempotent Installer
-# Installs ~106 skills and ~41 custom agents for use with the Forge coding agent.
+# Installs ~107 skills, ~47 custom agents, ~49 slash commands, and SB templates for use with the Forge coding agent.
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash

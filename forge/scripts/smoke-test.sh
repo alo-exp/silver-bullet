@@ -23,7 +23,7 @@ echo "Forge home: $FORGE_HOME"
 echo ""
 
 # 1. Global skill set
-echo "[1/6] Global skill set ($FORGE_HOME/skills)"
+echo "[1/8] Global skill set ($FORGE_HOME/skills)"
 if [[ -d "$FORGE_HOME/skills" ]]; then
   N=$(find "$FORGE_HOME/skills" -name SKILL.md | wc -l | tr -d ' ')
   if [[ "$N" -ge 100 ]]; then ok "$N skills present (≥100 expected)"; else fail "only $N skills (expected ≥100)"; fi
@@ -32,7 +32,7 @@ else
 fi
 
 # 2. Global agent set
-echo "[2/6] Global agent set ($FORGE_HOME/agents)"
+echo "[2/8] Global agent set ($FORGE_HOME/agents)"
 if [[ -d "$FORGE_HOME/agents" ]]; then
   N=$(find "$FORGE_HOME/agents" -name "*.md" | wc -l | tr -d ' ')
   if [[ "$N" -ge 35 ]]; then ok "$N agents present (≥35 expected)"; else fail "only $N agents (expected ≥35)"; fi
@@ -41,7 +41,7 @@ else
 fi
 
 # 3. Hook-equivalent agents (10 expected)
-echo "[3/6] Hook-equivalent agents (forge-*)"
+echo "[3/8] Hook-equivalent agents (forge-*)"
 HOOK_AGENTS=(
   forge-pre-commit-audit forge-pre-pr-audit forge-task-complete-check
   forge-roadmap-freshness forge-spec-floor-check forge-uat-gate
@@ -76,7 +76,7 @@ if [[ "$N_OK" -ge 33 ]]; then ok "$N_OK/33 GSD agents present"; else fail "only 
 if [[ -f "$FORGE_HOME/agents/code-reviewer.md" ]]; then ok "code-reviewer agent present (Superpowers)"; else fail "code-reviewer agent missing"; fi
 
 # 5. Frontmatter validity (sample check)
-echo "[5/6] Skill+agent frontmatter validity (sampling)"
+echo "[5/8] Skill+agent frontmatter validity (sampling)"
 SAMPLE_SKILLS=(silver-feature silver-bugfix silver-quality-gates engineering-code-review)
 for s in "${SAMPLE_SKILLS[@]}"; do
   f="$FORGE_HOME/skills/$s/SKILL.md"

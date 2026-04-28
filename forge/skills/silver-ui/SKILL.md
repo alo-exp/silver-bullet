@@ -224,7 +224,7 @@ Run review sequence in order:
 1. Invoke `silver:request-review` (superpowers:requesting-code-review).
 2. Invoke `/code-review`. Purpose: establish review criteria before spawning reviewer agents.
 3. Invoke `gsd-code-review`. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant UI systems: invoke `gsd-review --all` (cross-AI adversarial review across all available CLIs).
+3. For architecturally significant UI systems: invoke `gsd-code-review --all` (cross-AI adversarial review across all available CLIs).
 4. Invoke `silver:receive-review` (superpowers:receiving-code-review).
 
 ## FLOW UI QUALITY — Post-execution UI audit

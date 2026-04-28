@@ -16,13 +16,13 @@
 | Design KW skills | 7 | 7 | ✓ |
 | Product-Management KW skills | 8 | 8 | ✓ |
 | Marketing KW skills | 8 | 8 | ✓ |
-| **Total skills** | ~106 | **106** | ✓ |
+| **Total skills** | 107 | **107** | ✓ |
 | Hook-equivalent agents (forge-*) | 13 | 13 | ✓ |
 | GSD subagent-equivalent agents | **33** | **33** | ✓ (was 31 in v0.28.0; +gsd-doc-classifier, +gsd-doc-synthesizer in v0.31.0) |
 | Superpowers agent (code-reviewer) | 1 | 1 | ✓ (NEW in v0.31.0) |
 | **Total agents** | ~47 | **47** | ✓ |
-| **Forge slash commands (NEW v0.31.0)** | ≥47 | **47** | ✓ |
-| → GSD slash commands | 43 | 43 | ✓ |
+| **Forge slash commands (NEW v0.31.0)** | ≥49 | **49** | ✓ |
+| → GSD slash commands | 45 | 45 | ✓ |
 | → Superpowers commands | 3 | 3 | ✓ |
 | → KW PM commands | 1 | 1 | ✓ |
 | **SB templates (NEW v0.31.0)** | 6 base files + 5 subdirs | 6 + 5 | ✓ |
@@ -67,7 +67,7 @@ Forge home: ~/forge
 [3/8] Hook-equivalent agents            ✓ all 10 present
 [4/8] GSD subagent-equivalent agents    ✓ 33/33 + code-reviewer
 [5/8] Skill+agent frontmatter validity  ✓ all sampled OK
-[6/8] Slash commands                    ✓ ≥47 commands; critical commands present
+[6/8] Slash commands                    ✓ ≥49 commands; critical commands present
 [7/8] SB templates                      ✓ all 3 base templates present
 [8/8] AGENTS.md (global)                ✓ present + references Silver Bullet
 

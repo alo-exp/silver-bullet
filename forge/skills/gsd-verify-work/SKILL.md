@@ -1,6 +1,6 @@
 ---
 name: gsd-verify-work
-id: gsd-verify
+id: gsd-verify-work
 title: GSD — Verify Work
 description: Execute verification steps from PLAN.md and produce VERIFICATION.md
 trigger:

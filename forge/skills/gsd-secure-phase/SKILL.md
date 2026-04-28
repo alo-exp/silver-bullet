@@ -1,6 +1,6 @@
 ---
 name: gsd-secure-phase
-id: gsd-secure
+id: gsd-secure-phase
 title: GSD — Security Review
 description: Security audit of changes; enforce defense in depth and OWASP best practices
 trigger:
