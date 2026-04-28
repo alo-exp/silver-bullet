@@ -176,6 +176,61 @@ install_agents_md_to() {
   fetch_to "$source_relpath" "$target"
 }
 
+# Install Forge slash commands (forge/commands/*.md → ${target_dir}/*.md)
+install_commands_to() {
+  local target_dir="$1"
+  log "  installing commands -> ${target_dir}"
+  do_run "mkdir -p \"${target_dir}\""
+  local count=0
+  if [[ "$REMOTE_FETCH" == "true" ]]; then
+    # GitHub API listing
+    local cmds
+    cmds="$(curl -fsSL "https://api.github.com/repos/${REPO}/contents/forge/commands?ref=main" \
+      | python3 -c "
+import sys, json
+items = json.load(sys.stdin)
+for it in items:
+    if it.get('type') == 'file' and it['name'].endswith('.md'):
+        print(it['name'])
+" 2>/dev/null)"
+    for cmd in $cmds; do
+      if fetch_to "forge/commands/${cmd}" "${target_dir}/${cmd}"; then
+        count=$((count + 1))
+      fi
+    done
+  else
+    if [[ -d "${SCRIPT_DIR}/forge/commands" ]]; then
+      for f in "${SCRIPT_DIR}/forge/commands/"*.md; do
+        [[ -f "$f" ]] || continue
+        local name; name="$(basename "$f")"
+        do_run "cp \"$f\" \"${target_dir}/${name}\""
+        count=$((count + 1))
+      done
+    fi
+  fi
+  log "  ${count} commands installed."
+}
+
+# Install Silver Bullet templates (forge/templates/* → ${target_dir})
+install_templates_to() {
+  local target_dir="$1"
+  log "  installing SB templates -> ${target_dir}"
+  do_run "mkdir -p \"${target_dir}\""
+  if [[ "$REMOTE_FETCH" == "true" ]]; then
+    # Remote: fetch known template files via known list (avoid recursive API listing)
+    for f in CHANGELOG-project.md.base CLAUDE.md.base doc-scheme.md.base \
+             silver-bullet.config.json.default silver-bullet.md.base workflow.md.base; do
+      fetch_to "forge/templates/${f}" "${target_dir}/${f}" || true
+    done
+    log "  (remote mode: subdir templates skipped — re-run installer locally for full set)"
+  else
+    if [[ -d "${SCRIPT_DIR}/forge/templates" ]]; then
+      do_run "cp -R \"${SCRIPT_DIR}/forge/templates/\" \"${target_dir}\""
+    fi
+  fi
+  log "  templates installed."
+}
+
 # ---------- Main ----------
 
 echo "Silver Bullet for Forge — Installer"
@@ -190,6 +245,8 @@ if ! $PROJECT_ONLY; then
   install_skills_to "${FORGE_HOME}/skills"
   install_kw_skills_to "${FORGE_HOME}/skills"
   install_agents_to "${FORGE_HOME}/agents"
+  install_commands_to "${FORGE_HOME}/commands"
+  install_templates_to "${FORGE_HOME}/silver-bullet/templates"
   install_agents_md_to "${FORGE_HOME}/AGENTS.md" "forge/AGENTS.md.template"
   echo ""
 fi
@@ -213,8 +270,10 @@ if $DRY_RUN; then
 else
   log "Installation complete."
   if ! $PROJECT_ONLY; then
-    log "  Global skills:  ${FORGE_HOME}/skills/"
-    log "  Global agents:  ${FORGE_HOME}/agents/"
+    log "  Global skills:    ${FORGE_HOME}/skills/"
+    log "  Global agents:    ${FORGE_HOME}/agents/"
+    log "  Global commands:  ${FORGE_HOME}/commands/"
+    log "  SB templates:     ${FORGE_HOME}/silver-bullet/templates/"
     log "  Global AGENTS.md: ${FORGE_HOME}/AGENTS.md"
   fi
   if ! $GLOBAL_ONLY; then

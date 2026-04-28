@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.31.0] — 2026-04-28
+
+## Headline
+
+**Forge Port Completion.** Closes every dependency-port gap identified by the comprehensive Forge port audit (2026-04-28), aligned with `forgecode.dev/docs/`. The v0.28.0 first-round port was missing the entire Forge slash-command surface, several upstream agents/commands, and the Silver Bullet runtime spec + project-bootstrap templates that `silver-init` depends on. v0.31.0 ships all of these.
+
+## Forge slash commands (NEW surface)
+
+- `forge/commands/` directory established. Per `forgecode.dev/docs/commands/`, slash commands belong here and invoke with the `:` prefix.
+- **43 GSD commands ported** from upstream → `forge/commands/gsd-*.md` (new-project, new-milestone, discuss-phase, plan-phase, execute-phase, verify-work, secure-phase, validate-phase, code-review, code-review-fix, add-phase, insert-phase, complete-milestone, audit-milestone, milestone-summary, map-codebase, autonomous, debug, explore, fast, do, quick, resume-work, pause-work, next, forensics, docs-update, pr-branch, ui-phase, ui-review, spec-phase, ai-integration-phase, audit-uat, eval-review, ingest-docs, import, add-backlog, scan, add-tests, add-todo, check-todos, cleanup, update).
+- **3 Superpowers commands ported**: `:brainstorm`, `:execute-plan`, `:write-plan`.
+- **1 KW product-management command ported**: `:pm-brainstorm`.
+- Each ported command uses minimal Forge command frontmatter (`name`, `description`); body preserved verbatim. Claude-Code-only fields stripped.
+
+## Forge agents (closing the gap)
+
+- **`gsd-doc-classifier`** + **`gsd-doc-synthesizer`** ported from upstream GSD (32/33 → 33/33).
+- **`code-reviewer`** ported from `obra/superpowers/agents/code-reviewer.md` with proper Forge frontmatter (`id`, `description`, `tool_supported: true`).
+
+## SB templates port
+
+- All `templates/*` copied to `forge/templates/`: `silver-bullet.md.base`, `workflow.md.base`, `silver-bullet.config.json.default`, `CHANGELOG-project.md.base`, `doc-scheme.md.base`, `CLAUDE.md.base`, plus subdirs (`knowledge/`, `lessons/`, `sessions/`, `specs/`, `workflows/`).
+- `forge-sb-install.sh` now installs templates → `~/forge/silver-bullet/templates/` — closes the broken `silver-init` (forge edition) bootstrap path.
+- `forge/AGENTS.project.template` enriched with adapted `CLAUDE.md.base` override directive.
+
+## Skill name reconciliation
+
+8 short-form GSD skills renamed to upstream long-form names so cross-references resolve correctly: `gsd-discuss-phase`, `gsd-execute-phase`, `gsd-plan-phase`, `gsd-secure-phase`, `gsd-validate-phase`, `gsd-verify-work`, `gsd-code-review`, `gsd-code-review-fix`. SKILL.md `name:` frontmatter updated to match new directory.
+
+## Documentation
+
+- `forge/PARITY.md`: corrects the v0.28.0 "skill bodies replace commands" claim; documents `forge/commands/` as the slash-command surface; adds Slash Command Map and SB Templates Map sections.
+- `forge/PARITY-REPORT.md` regenerated with v0.31.0 inventory + audit-pass status across all categories.
+- `forge/scripts/smoke-test.sh` extended to 8 sections (was 6); validates `forge/commands/` (≥40), critical command presence, `forge/templates/` (3 base templates), and the new `code-reviewer` agent.
+
+## Installer
+
+- `forge-sb-install.sh`: new `install_commands_to()` and `install_templates_to()` helpers. Global install now deploys commands → `~/forge/commands/` and templates → `~/forge/silver-bullet/templates/`.
+
+## Audit alignment with forgecode.dev/docs
+
+- Skills auto-load by description-context match (per `/docs/skills/`); cross-skill references are NOT chain-resolved.
+- Slash commands are a separate Forge primitive (per `/docs/commands/`).
+- Custom agents identified by `id` field, with `description` + `tool_supported: true` for inter-agent calls (per `/docs/creating-agents/`).
+
+## Versions bumped
+
+`package.json`, `.silver-bullet.json`, `templates/silver-bullet.config.json.default`, `forge/templates/silver-bullet.config.json.default`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, README badge — all → `0.31.0`.
+
 ## [0.30.0] — 2026-04-28
 
 ## Headline

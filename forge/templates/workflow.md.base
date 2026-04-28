@@ -1,0 +1,53 @@
+<!-- Template: workflow.md.base
+     Scaffolded to: .planning/WORKFLOW.md
+     Created by: /silver composer (Phase 25)
+     Phase 21 defines the spec only — no runtime creation logic (per D-06)
+
+     Truncation strategy (per D-05):
+     When approaching 100 lines, oldest completed Flow Log entries collapse:
+     | 1-3 | BOOTSTRAP→ORIENT→PLAN | complete | (see phase dirs) | — |
+
+     GSD isolation (per D-07):
+     - GSD never reads WORKFLOW.md
+     - SB never writes STATE.md directly
+     - Bridge: /silver:migrate reads STATE.md to generate WORKFLOW.md
+-->
+
+# Workflow Manifest
+
+> Composition state for the active milestone. Created by /silver composer, updated by supervision loop.
+> **Size cap:** 100 lines. Truncation: FIFO on completed flows — oldest completed entries collapse to summary line.
+> **GSD isolation:** GSD workflows never read this file. SB orchestration never writes STATE.md directly.
+
+## Composition
+Intent: "{user's original request}"
+Composed: {ISO timestamp}
+Composer: /silver
+Mode: {interactive | autonomous}
+
+## Flow Log
+| # | Flow | Status | Artifacts Produced | Exit Condition Met |
+|---|------|--------|-------------------|--------------------|
+
+## Phase Iterations
+| Phase | Flows 5-13 Status |
+|-------|-------------------|
+
+## Dynamic Insertions
+| After | Inserted | Reason |
+|-------|----------|--------|
+
+## Autonomous Decisions
+| Timestamp | Decision | Rationale |
+|-----------|----------|-----------|
+
+## Deferred Improvements
+| Source Flow | Finding | Classification |
+|-------------|---------|----------------|
+
+## Heartbeat
+Last-flow: {flow number}
+Last-beat: {ISO timestamp}
+
+## Next Flow
+{next flow name and step}
