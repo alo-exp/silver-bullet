@@ -4,6 +4,10 @@
 # This file extends the global Silver Bullet AGENTS.md (~/forge/AGENTS.md) with
 # project-specific conventions. Forge merges both files into the system prompt.
 # Project rules take priority over global ones for any direct conflict.
+#
+# > **Always adhere strictly to this file AND the Silver Bullet runtime spec
+# > (`~/forge/silver-bullet/templates/silver-bullet.md.base` — installed by the
+# > Forge SB installer) — they override all defaults.**
 
 ## Project Conventions
 

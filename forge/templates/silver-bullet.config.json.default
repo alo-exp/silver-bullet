@@ -1,0 +1,112 @@
+{
+  "config_version": "0.29.1",
+  "version": "0.29.1",
+  "project": {
+    "name": "{{PROJECT_NAME}}",
+    "src_pattern": "/src/",
+    "src_exclude_pattern": "__tests__|\\.test\\.",
+    "active_workflow": "full-dev-cycle"
+  },
+  "skills": {
+    "required_planning": [
+      "silver-quality-gates"
+    ],
+    "required_deploy": [
+      "silver-quality-gates",
+      "code-review",
+      "requesting-code-review",
+      "receiving-code-review",
+      "finishing-a-development-branch",
+      "silver-create-release",
+      "verification-before-completion",
+      "test-driven-development"
+    ],
+    "required_deploy_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "code-review",
+      "requesting-code-review",
+      "receiving-code-review",
+      "finishing-a-development-branch",
+      "silver-create-release",
+      "verification-before-completion",
+      "test-driven-development"
+    ],
+    "all_tracked": [
+      "silver-quality-gates",
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "devops-skill-router",
+      "design-system",
+      "ux-copy",
+      "architecture",
+      "system-design",
+      "code-review",
+      "requesting-code-review",
+      "receiving-code-review",
+      "finishing-a-development-branch",
+      "silver-create-release",
+      "modularity",
+      "reusability",
+      "scalability",
+      "security",
+      "reliability",
+      "usability",
+      "testability",
+      "extensibility",
+      "silver-forensics",
+      "silver-add",
+      "silver-init",
+      "verification-before-completion",
+      "test-driven-development",
+      "accessibility-review",
+      "incident-response",
+      "gsd-new-project",
+      "gsd-new-milestone",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-debug",
+      "gsd-ui-phase",
+      "gsd-ui-review",
+      "gsd-secure-phase",
+      "silver-remove",
+      "silver-rem",
+      "silver-scan"
+    ],
+    "forbidden": []
+  },
+  "devops_plugins": {
+    "hashicorp": false,
+    "awslabs": false,
+    "pulumi": false,
+    "devops-skills": false,
+    "wshobson": false
+  },
+  "state": {
+    "state_file": "~/.claude/.silver-bullet/state",
+    "trivial_file": "~/.claude/.silver-bullet/trivial"
+  },
+  "issue_tracker": "gsd",
+  "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
+  "semantic_compression": {
+    "enabled": true,
+    "context_budget_kb": 50,
+    "min_file_size_bytes": 3072,
+    "chunk_size_bytes": 1024,
+    "top_chunks_per_file": 3,
+    "debug": false
+  },
+  "multi_agent": {
+    "identity_tags": [
+      "claude",
+      "forge",
+      "codex",
+      "opencode"
+    ],
+    "stale_lock_ttl_seconds": 1800,
+    "delegation_timeout_seconds": 1200
+  }
+}
