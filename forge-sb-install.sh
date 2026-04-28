@@ -89,16 +89,17 @@ list_local() {
   local kind="$1"  # skills or agents
   if [[ "$REMOTE_FETCH" == "true" ]]; then
     # Use git API to list directories
-    curl -fsSL "https://api.github.com/repos/${REPO}/contents/forge/${kind}?ref=main" \
-      | python3 -c "
-import sys, json
+    KIND="${kind}" curl -fsSL "https://api.github.com/repos/${REPO}/contents/forge/${kind}?ref=main" \
+      | KIND="${kind}" python3 -c "
+import sys, json, os
+kind = os.environ.get('KIND', '')
 items = json.load(sys.stdin)
 for it in items:
     if it.get('type') == 'dir' and kind == 'skills':
         print(it['name'])
     elif kind == 'agents' and it.get('type') == 'file' and it['name'].endswith('.md'):
         print(it['name'])
-" kind="${kind}"
+"
   else
     if [[ "$kind" == "skills" ]]; then
       ls -1 "${SCRIPT_DIR}/forge/skills" 2>/dev/null
