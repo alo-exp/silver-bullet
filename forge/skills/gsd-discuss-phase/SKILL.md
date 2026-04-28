@@ -1,6 +1,6 @@
 ---
 name: gsd-discuss-phase
-id: gsd-discuss
+id: gsd-discuss-phase
 title: GSD — Discuss Phase
 description: Adaptive questioning to surface assumptions and lock decisions before planning
 trigger:

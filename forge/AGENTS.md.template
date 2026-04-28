@@ -25,11 +25,11 @@ If the project has no `.planning/` directory, run the `silver-init` skill first 
 
 Silver Bullet's quality enforcement happens through three layers in Forge:
 
-1. **Skills (auto-applied)** — at `~/forge/skills/` and `.forge/skills/`. Forge picks the right skill based on context. ~106 skills loaded — silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, silver-quality-gates, silver-blast-radius, all 9 review-* skills, all Anthropic engineering/design/product-management/marketing skills, Superpowers skills, etc.
+1. **Skills (auto-applied)** — at `~/forge/skills/` and `.forge/skills/`. Forge picks the right skill based on context. ~107 skills + ~49 commands loaded — silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, silver-quality-gates, silver-blast-radius, all 9 review-* skills, all Anthropic engineering/design/product-management/marketing skills, Superpowers skills, etc.
 
 2. **Hook-equivalent agents (you invoke as tools)** — at `~/forge/agents/` and `.forge/agents/`. These replace the automatic firing of SB hooks on Claude Desktop. You **must** invoke them as tools at the gating moments listed below.
 
-3. **GSD subagents (you invoke as tools)** — at `~/forge/agents/`. These replace `Task(subagent_type=…)` from Claude Code with proper Forge custom-agent delegation. ~31 GSD subagents available.
+3. **GSD subagents (you invoke as tools)** — at `~/forge/agents/`. These replace `Task(subagent_type=…)` from Claude Code with proper Forge custom-agent delegation. ~33 GSD subagents available + Superpowers code-reviewer.
 
 ---
 

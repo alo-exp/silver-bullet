@@ -1,6 +1,6 @@
 ---
 name: gsd-execute-phase
-id: gsd-execute
+id: gsd-execute-phase
 title: GSD — Execute Phase
 description: Execute PLAN.md with atomic commits, deviation handling, and TDD discipline
 trigger:
