@@ -1,5 +1,5 @@
 ---
-name: gsd-review
+name: gsd-code-review
 id: gsd-review
 title: GSD — Code Review
 description: Review changed files for bugs, security issues, and code quality; produce REVIEW.md

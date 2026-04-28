@@ -1,5 +1,5 @@
 ---
-name: gsd-review-fix
+name: gsd-code-review-fix
 id: gsd-review-fix
 title: GSD — Fix Code Review Findings
 description: Address code review findings systematically with atomic commits

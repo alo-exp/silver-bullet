@@ -1,5 +1,5 @@
 ---
-name: gsd-validate
+name: gsd-validate-phase
 id: gsd-validate
 title: GSD — Validation Phase
 description: Validate that implementation matches spec and requirements
