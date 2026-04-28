@@ -1,25 +1,25 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.29.0
-milestone_name: Multi-Agent Phase Coordination
+milestone: v0.30.0
+milestone_name: Open-Issue Sweep
 current_plan: none
-status: ready-to-tag
+status: shipped
 stopped_at: ""
-last_updated: "2026-04-28T05:30:00.000Z"
+last_updated: "2026-04-28T08:50:00.000Z"
 last_activity: 2026-04-28
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 17
+  completed_plans: 17
   percent: 100
 ---
 
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.28.0 (shipped 2026-04-27); v0.29.0 ready-to-tag (2026-04-28)
-**Active phase:** (none — all 6 phases shipped)
+**Current version:** v0.30.0 (shipped 2026-04-28). Prior: v0.29.1 (2026-04-27), v0.29.0 (2026-04-27), v0.28.0 (2026-04-27).
+**Active phase:** (none — all v0.30.0 phases shipped)
 **Current plan:** (none)
 
 Last activity: 2026-04-28
@@ -29,15 +29,27 @@ Last activity: 2026-04-28
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Any number of SB-bearing coding agents can cooperatively work on the same project folder, with phase-grain ownership locks preventing collisions and `/forge-delegate` enabling subagent-style cross-runtime delegation.
-**Current focus:** v0.29.0 — Multi-Agent Phase Coordination — feature work complete, awaiting tag + GitHub release.
+**Current focus:** v0.30.0 shipped — Open-Issue Sweep closing 23 issues (17 in-scope + 6 already-implemented). Next milestone TBD.
 
 ## Current Position
 
-Phase: (none — Phase 75 release work complete except for the actual `git tag` + `gh release create` push)
+Phase: (none — v0.30.0 milestone complete)
 Plan: (none)
-Status: All v0.29.0 feature work, tests, and docs landed. Version bumps and CHANGELOG entry committed. Awaiting user-triggered tag/release (run `/silver-create-release v0.29.0` or `gh release create v0.29.0` directly).
+Status: v0.30.0 tagged + GitHub Release published. CI green. Backlog issue #90 (regex-shape validation) carried forward to v0.31.0.
 
-Progress: [██████████] 100% (6/6 phases shipped)
+Progress: [██████████] 100% (5/5 phases shipped)
+
+## v0.30.0 milestone summary
+
+- **Phase 76** — Hook bug-fix bundle: #85, #86, #87, #88 (TDD-disciplined fixes with 18 regression tests)
+- **Phase 77** — Release/SDK gating audit: #48, #50, #71 (Runtime Compatibility doc + FP audit)
+- **Phase 78** — silver:init UX: #64, #69, #72 (3 planted seeds — design decisions deferred)
+- **Phase 79** — Design seeds: #67, #68, #75 (3 planted seeds)
+- **Phase 80** — Documentation: #59, #70, #73, #74 (numbering fix, README split, GSD-vs-SB doc)
+
+Tests: 1189 total (140 hook + 1049 integration), 0 failed.
+Pre-release-quality-gate: 4 stages passed; SENTINEL `Deploy freely`.
+Release: https://github.com/alo-exp/silver-bullet/releases/tag/v0.30.0
 
 ## Accumulated Context
 
