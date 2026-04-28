@@ -1,5 +1,31 @@
 # Milestones
 
+## v0.31.0 Forge Port Completion (Shipped: 2026-04-28)
+
+**Type:** Port-completion milestone (5 phases, 7 requirement categories, ~50 file ports + docs).
+
+**Goal:** Close every dependency-port gap identified by the comprehensive Forge port audit (2026-04-28), aligned with `forgecode.dev/docs/` spec.
+
+**Phases shipped:**
+
+- **Phase 81 — SB Templates & Installer Bootstrap (FORGE-TPL-01..08):** ported `templates/*` → `forge/templates/`; installer wires `~/forge/silver-bullet/templates/`.
+- **Phase 82 — Forge Commands surface + GSD ports (FORGE-CMD-01..02):** created `forge/commands/`; ported 43 GSD slash commands.
+- **Phase 83 — SP/KW commands + missing agents (FORGE-CMD-03..05, FORGE-AGT-01..03):** 3 Superpowers commands, 1 KW PM command, 2 missing GSD subagents (`gsd-doc-classifier`, `gsd-doc-synthesizer`), Superpowers `code-reviewer` agent.
+- **Phase 84 — Skill name reconciliation (FORGE-NAM-01):** 8 short→long-form skill renames.
+- **Phase 85 — Docs, smoke test, version bump, install verification (FORGE-DOC-01..07):** PARITY docs corrected, smoke test extended (6→8 sections), version v0.30.0→v0.31.0 across 8 files.
+
+**Pre-release quality gate (4 stages):** All passed with 2 consecutive clean rounds each. Post-gate fixes: smoke-test section numbering, secondary `version` field bumps, skill body cross-reference rewrite, 2 additional GSD command ports (`gsd-analyze-dependencies`, `gsd-plan-milestone-gaps`), README Path C Forge install section, site/index.html badge.
+
+**Final inventory:** 107 skills + 47 agents + 49 slash commands + 11 template entries; smoke test 31/31 PASS, 0 failures.
+
+**Audit alignment:** Verified against `forgecode.dev/docs/` (skills, custom agents, slash commands). Forge spec confirmed: skills auto-load by description-context match (no chain-resolve); slash commands are separate primitive at `.forge/commands/<name>.md` invoked with `:`; agents identified by `id` field with `tool_supported: true` for inter-agent calls.
+
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.31.0
+
+**Carried forward:** None. Pre-existing shellcheck advisories (SC2294, SC2010) on untouched code paths noted for future cleanup.
+
+---
+
 ## v0.30.0 Open-Issue Sweep (Shipped: 2026-04-28)
 
 **Type:** Bug-fix + chore milestone (5 phases, 17 issues from open backlog)
