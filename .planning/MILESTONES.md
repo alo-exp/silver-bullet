@@ -1,6 +1,6 @@
 # Milestones
 
-## v0.30.0 Open-Issue Sweep (In progress: 2026-04-28)
+## v0.30.0 Open-Issue Sweep (Shipped: 2026-04-28)
 
 **Type:** Bug-fix + chore milestone (5 phases, 17 issues from open backlog)
 
@@ -18,7 +18,13 @@
 
 **Artifacts:** `.planning/milestones/v0.30.0-{REQUIREMENTS,ROADMAP}.md`. Composed workflow tracker: `.planning/workflows/20260427T220600Z-02a397-silver-feature.md`.
 
-**Release:** (pending)
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.30.0
+
+**Tests:** 1189 total (140 hook unit + 1049 integration), 0 failed. CI green.
+
+**Pre-release quality gate:** 4 stages passed. SENTINEL deployment recommendation: Deploy freely.
+
+**Carried forward:** issue #90 (LOW — regex-shape validation for `transient_path_ignore_patterns`) → v0.31.0 backlog.
 
 ---
 
