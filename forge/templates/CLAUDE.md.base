@@ -1,0 +1,17 @@
+# {{PROJECT_NAME}} — Claude Code Instructions
+
+> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**
+
+---
+
+## Project Overview
+
+- **Stack**: {{TECH_STACK}}
+- **Git repo**: {{GIT_REPO}}
+
+---
+
+## Project-Specific Rules
+
+<!-- Add project-specific Claude instructions here. -->
+<!-- Silver Bullet enforcement lives in silver-bullet.md (do not duplicate here). -->

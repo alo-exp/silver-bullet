@@ -52,14 +52,15 @@ for a in "${HOOK_AGENTS[@]}"; do
   if [[ -f "$FORGE_HOME/agents/$a.md" ]]; then ok "$a present"; else fail "$a MISSING"; fi
 done
 
-# 4. GSD subagent-equivalent agents (31 expected)
-echo "[4/6] GSD subagent-equivalent agents (gsd-*)"
+# 4. GSD subagent-equivalent agents (33 expected post-v0.31.0)
+echo "[4/8] GSD subagent-equivalent agents (gsd-*)"
 GSD_AGENTS=(
   gsd-roadmapper gsd-planner gsd-plan-checker gsd-phase-researcher
   gsd-pattern-mapper gsd-project-researcher gsd-research-synthesizer
   gsd-executor gsd-verifier gsd-integration-checker gsd-nyquist-auditor
   gsd-code-reviewer gsd-code-fixer gsd-security-auditor
-  gsd-doc-writer gsd-doc-verifier gsd-debugger gsd-codebase-mapper
+  gsd-doc-writer gsd-doc-verifier gsd-doc-classifier gsd-doc-synthesizer
+  gsd-debugger gsd-codebase-mapper
   gsd-intel-updater gsd-user-profiler gsd-eval-auditor gsd-eval-planner
   gsd-domain-researcher gsd-ai-researcher gsd-framework-selector
   gsd-ui-auditor gsd-ui-checker gsd-ui-researcher
@@ -69,7 +70,10 @@ N_OK=0
 for a in "${GSD_AGENTS[@]}"; do
   if [[ -f "$FORGE_HOME/agents/$a.md" ]]; then N_OK=$((N_OK+1)); fi
 done
-if [[ "$N_OK" -ge 31 ]]; then ok "$N_OK/31 GSD agents present"; else fail "only $N_OK/31 GSD agents present"; fi
+if [[ "$N_OK" -ge 33 ]]; then ok "$N_OK/33 GSD agents present"; else fail "only $N_OK/33 GSD agents present"; fi
+
+# Superpowers code-reviewer agent (new in v0.31.0)
+if [[ -f "$FORGE_HOME/agents/code-reviewer.md" ]]; then ok "code-reviewer agent present (Superpowers)"; else fail "code-reviewer agent missing"; fi
 
 # 5. Frontmatter validity (sample check)
 echo "[5/6] Skill+agent frontmatter validity (sampling)"
@@ -92,8 +96,31 @@ for a in "${SAMPLE_AGENTS[@]}"; do
   fi
 done
 
-# 6. AGENTS.md present (must mention Silver Bullet OR a separate SB AGENTS.md must exist)
-echo "[6/6] AGENTS.md (global)"
+# 6. Forge slash commands (new in v0.31.0)
+echo "[6/8] Slash commands ($FORGE_HOME/commands)"
+if [[ -d "$FORGE_HOME/commands" ]]; then
+  N=$(find "$FORGE_HOME/commands" -name "*.md" | wc -l | tr -d ' ')
+  if [[ "$N" -ge 40 ]]; then ok "$N commands present (≥40 expected)"; else fail "only $N commands (expected ≥40)"; fi
+  # Spot-check critical workflow commands
+  for c in gsd-new-project gsd-new-milestone gsd-execute-phase gsd-complete-milestone brainstorm; do
+    if [[ -f "$FORGE_HOME/commands/${c}.md" ]]; then ok "command :${c} present"; else fail "command :${c} MISSING"; fi
+  done
+else
+  fail "$FORGE_HOME/commands directory does not exist"
+fi
+
+# 7. SB templates (new in v0.31.0)
+echo "[7/8] SB templates ($FORGE_HOME/silver-bullet/templates)"
+if [[ -d "$FORGE_HOME/silver-bullet/templates" ]]; then
+  for t in silver-bullet.md.base workflow.md.base silver-bullet.config.json.default; do
+    if [[ -f "$FORGE_HOME/silver-bullet/templates/$t" ]]; then ok "template $t present"; else fail "template $t MISSING"; fi
+  done
+else
+  fail "$FORGE_HOME/silver-bullet/templates directory does not exist"
+fi
+
+# 8. AGENTS.md present (must mention Silver Bullet OR a separate SB AGENTS.md must exist)
+echo "[8/8] AGENTS.md (global)"
 if [[ -f "$FORGE_HOME/AGENTS.md" ]]; then
   if grep -q "Silver Bullet" "$FORGE_HOME/AGENTS.md"; then
     ok "global AGENTS.md present and references Silver Bullet"

@@ -1,0 +1,17 @@
+# Project Knowledge Index
+
+Quick-reference pointer to current project docs. Updated when docs are added/removed.
+
+| Doc | Path | Purpose |
+|-----|------|---------|
+| Architecture | `docs/ARCHITECTURE.md` | Components, layers, design principles |
+| Testing | `docs/TESTING.md` | Test pyramid, coverage goals |
+| CI/CD | `docs/CICD.md` | Pipeline stages (if CI exists) |
+| Task Log | `docs/CHANGELOG.md` | Rolling task log (50 entries max) |
+| Session Logs | `docs/sessions/` | Per-session work logs (30 max) |
+| Design Specs | `docs/specs/` | Point-in-time design specs |
+| Active Workflow | `docs/workflows/full-dev-cycle.md` | Dev cycle steps |
+| Git Repo | {{GIT_REPO}} | — |
+
+Latest knowledge: `docs/knowledge/` (current month's file)
+Latest lessons: `docs/lessons/` (current month's file)

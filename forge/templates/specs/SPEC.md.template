@@ -1,0 +1,52 @@
+---
+spec-version: 1
+status: Draft
+jira-id: ""
+figma-url: ""
+source-artifacts: []
+created: YYYY-MM-DD
+last-updated: YYYY-MM-DD
+---
+
+# [Feature Name] — Spec
+
+## Overview
+
+[2-3 sentence problem statement. Who has the problem. What the problem is.]
+
+## User Stories
+
+- As a [persona], I want to [action] so that [outcome].
+
+## UX Flows
+
+[Step-by-step user journey for the primary use case.]
+
+1. User [action]
+2. System [response]
+3. ...
+
+## Acceptance Criteria
+
+- [ ] [Measurable, testable criterion]
+- [ ] [Criterion with explicit pass/fail threshold]
+
+## Assumptions
+
+<!-- Every unresolvable ambiguity during elicitation produces an entry here. -->
+
+- [ASSUMPTION: {what is assumed} | Status: {Resolved / Follow-up-required} | Owner: {name or TBD}]
+
+## Open Questions
+
+<!-- Questions that must be answered before implementation begins. -->
+
+- [ ] [Question] — Owner: {name or TBD}
+
+## Out of Scope
+
+- [Explicit exclusion]
+
+## Implementations
+
+<!-- Populated automatically by pr-traceability.sh hook post-merge. -->
