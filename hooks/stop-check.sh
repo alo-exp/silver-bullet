@@ -77,7 +77,6 @@ state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
-required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
 
@@ -131,11 +130,6 @@ current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
   current_branch=""
 fi
-on_main=false
-if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
-  on_main=true
-fi
-
 # ── HOOK-14: Skip enforcement for read-only/conversational sessions ───────────
 # Clean tree + no local-only commits ahead of origin → nothing to deploy → skip.
 # Untracked files (including .gitignored ones) count as dirty — active work.
