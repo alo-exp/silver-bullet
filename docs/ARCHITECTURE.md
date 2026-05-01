@@ -30,10 +30,10 @@ under `~/.claude/.silver-bullet/`.
 | `record-skill.sh` | PostToolUse (Skill tool) | Appends normalized skill name to state file |
 | `dev-cycle-check.sh` | PreToolUse (Edit/Write/Bash) | 4-stage gate: blocks source edits if planning incomplete |
 | `compliance-status.sh` | PostToolUse (all tools) | Emits live progress score per tool call |
-| `completion-audit.sh` | PostToolUse (Bash) | Blocks `git commit/push/deploy/gh release` if `required_deploy` skills are missing |
+| `completion-audit.sh` | PostToolUse (Bash) | Two-tier: blocks `git commit/push` if `required_planning` skills missing; blocks `gh pr create/deploy/gh release` if full `required_deploy` list missing |
 | `planning-file-guard.sh` | PreToolUse (Edit/Write/MultiEdit) | Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); requires the owning GSD skill instead |
 | `ci-status-check.sh` | PostToolUse (Bash) | Warns on commit/push if CI is failing |
-| `stop-check.sh` | Stop / SubagentStop | Requires required_deploy skills before session ends; skipped when `trivial` file exists |
+| `stop-check.sh` | Stop / SubagentStop | Requires `required_planning` skills (planning floor) before session ends; skipped when `trivial` file exists. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands |
 | *(hooks.json entry)* | SessionStart | Creates `~/.claude/.silver-bullet/trivial` — marks every new session trivial by default |
 | *(hooks.json entry)* | PostToolUse (Write\|Edit\|MultiEdit) | Removes `~/.claude/.silver-bullet/trivial` — clears trivial flag when files are modified |
 
@@ -45,7 +45,7 @@ non-code-producing sessions. The file lives at `~/.claude/.silver-bullet/trivial
 **Lifecycle:**
 1. **Session start** — `SessionStart` hook creates the file unconditionally. Every session begins as "trivial" (no dev work assumed).
 2. **First file edit** — `PostToolUse` on Write/Edit/MultiEdit removes the file. The session is now marked as a dev session; enforcement activates.
-3. **Session end** — `stop-check.sh` checks: if the file exists, skips the skill checklist (non-dev session). If absent, enforces required skills.
+3. **Session end** — `stop-check.sh` checks: if the file exists, skips the skill checklist (non-dev session). If absent, enforces `required_planning` skills.
 
 **Which hooks check the trivial file:**
 - `stop-check.sh` — skips skill checklist
