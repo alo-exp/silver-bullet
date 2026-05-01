@@ -173,9 +173,12 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     if [[ -n "$sb_cfg" ]] && command -v jq >/dev/null 2>&1; then
       sb_extra=$(jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' "$sb_cfg" 2>/dev/null)
       if [[ -n "$sb_extra" ]]; then
-        # Validate: reject overly-broad patterns that match empty string (e.g. .*) — #90
-        if printf 'x' | grep -qE "$sb_extra" 2>/dev/null; then
-          printf '{"hookSpecificOutput":{"message":"⚠️ stop-check: transient_path_ignore_patterns is too broad (matches any single char) — ignoring. Fix your .silver-bullet.json."}}'
+        # Validate: reject overly-broad patterns that match a single printable char.
+        # Sentinel is ASCII SOH (\001) — never present in a real file path, so
+        # legitimate path-fragment patterns (e.g. REVIEW\.md, \.superpowers/) won't
+        # match it, but catch-all patterns (.*, ., [^x]+, etc.) will — #90
+        if printf '\001' | grep -qE "$sb_extra" 2>/dev/null; then
+          printf '{"hookSpecificOutput":{"message":"⚠️ stop-check: transient_path_ignore_patterns is too broad (matches non-path control char) — ignoring. Fix your .silver-bullet.json."}}'
         else
           sb_transient_re="${sb_transient_re%)}|${sb_extra})"
         fi
