@@ -77,12 +77,24 @@ echo "=== planning-file-guard.sh tests ==="
 
 echo "--- Group 1: Protected files are blocked ---"
 
-for protected_file in ROADMAP.md STATE.md REQUIREMENTS.md PROJECT.md RELEASE.md UAT.md; do
+for protected_file in ROADMAP.md STATE.md PROJECT.md RELEASE.md; do
   setup
   out=$(run_hook_edit "${TMPDIR_TEST}/.planning/${protected_file}")
   assert_blocks "blocks Edit on .planning/${protected_file}" "$out"
   out=$(run_hook_write "${TMPDIR_TEST}/.planning/${protected_file}")
   assert_blocks "blocks Write on .planning/${protected_file}" "$out"
+  teardown
+done
+
+echo "--- Group 1b: Silver Bullet skill-managed files are NOT blocked ---"
+
+# REQUIREMENTS.md (silver-spec) and UAT.md (silver-feature) use Write tool — must not be blocked
+for sb_managed_file in REQUIREMENTS.md UAT.md; do
+  setup
+  out=$(run_hook_edit "${TMPDIR_TEST}/.planning/${sb_managed_file}")
+  assert_passes "does not block SB skill-managed .planning/${sb_managed_file}" "$out"
+  out=$(run_hook_write "${TMPDIR_TEST}/.planning/${sb_managed_file}")
+  assert_passes "does not block SB skill-managed Write on .planning/${sb_managed_file}" "$out"
   teardown
 done
 

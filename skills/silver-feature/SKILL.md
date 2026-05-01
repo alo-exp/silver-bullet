@@ -159,8 +159,12 @@ FOR each phase in remaining_phases:
     - FLOW 10 (REVIEW) after FLOW 7
     - FLOW 12 (SECURE) after FLOW 11
   TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
-    Use Edit tool to change:  - [ ] **Phase {N}: ...
-    To:                       - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
+    GSD's FLOW 13 (SHIP) handles this as part of phase completion.
+    Do NOT use the Edit tool directly — planning-file-guard.sh will block it.
+    If FLOW 13 did not tick the checkbox, use the override bypass:
+      touch ~/.claude/.silver-bullet/planning-edit-override
+      # Edit .planning/ROADMAP.md: change - [ ] **Phase {N}: ... to - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
+      rm ~/.claude/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
   AFTER phase complete: advance to next phase

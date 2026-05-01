@@ -1,18 +1,19 @@
 # Enforcement Architecture
 
-Silver Bullet enforces workflow compliance through 7 independent layers. No single layer can be bypassed in isolation — they compose to provide defense-in-depth.
+Silver Bullet enforces workflow compliance through 8 independent layers. No single layer can be bypassed in isolation — they compose to provide defense-in-depth.
 
-## The 7 Layers
+## The 8 Layers
 
 | # | Layer | Mechanism | Fires On | What It Prevents |
 |---|-------|-----------|----------|-----------------|
 | 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Every Skill tool call | Skills invoked but not tracked |
 | 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, Bash | Code changes before planning is complete. Uses WORKFLOW.md Path Log as primary gate with legacy fallback. |
-| 3 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. WORKFLOW.md-first with legacy fallback. |
-| 4 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
-| 5 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
-| 6 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
-| 7 | **Model Routing** | `ensure-model-routing.sh` — DISABLED (backlog 999.19; use GSD-native `model_overrides`) | — | — |
+| 3 | **Planning File Guard** | `planning-file-guard.sh` (PreToolUse) | Edit, Write, MultiEdit | Direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of owning GSD skill |
+| 4 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. WORKFLOW.md-first with legacy fallback. |
+| 5 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
+| 6 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
+| 7 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
+| 8 | **Model Routing** | `ensure-model-routing.sh` — DISABLED (backlog 999.19; use GSD-native `model_overrides`) | — | — |
 
 ## Dev Cycle Gate (4-Stage)
 
@@ -67,7 +68,7 @@ Each stage requires explicit `/superpowers:verification-before-completion` invoc
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `SILVER_BULLET_STATE_FILE` | `~/.claude/silver-bullet-state.json` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
+| `SILVER_BULLET_STATE_FILE` | `~/.claude/.silver-bullet/state` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
 
 ## Bypass Detection
 
