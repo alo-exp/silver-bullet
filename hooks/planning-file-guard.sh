@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse hook (matcher: Edit|Write)
+# PreToolUse hook (matcher: Edit|Write|MultiEdit)
 # Blocks direct edits to GSD-managed planning artifacts (.planning/ROADMAP.md etc.)
 # that must only be modified through the appropriate GSD skill.
 #
@@ -62,14 +62,16 @@ done
 
 # ── Bypass: env var override ──────────────────────────────────────────────────
 if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
-  printf '{"hookSpecificOutput":{"message":"⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to %s. Prefer the owning GSD skill."}}\n' "$basename_path"
+  _msg="⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning GSD skill."
+  printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
   exit 0
 fi
 
 # ── Bypass: file-based override (consistent with ci-red-override pattern) ─────
 _override="${HOME}/.claude/.silver-bullet/planning-edit-override"
 if [[ -f "$_override" && ! -L "$_override" ]]; then
-  printf '{"hookSpecificOutput":{"message":"⚠️  planning-file-guard: override active — allowing direct edit to %s. Remove %s when done."}}\n' "$basename_path" "$_override"
+  _msg="⚠️  planning-file-guard: override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
+  printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
   exit 0
 fi
 
@@ -78,6 +80,11 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 _trivial_file="${HOME}/.claude/.silver-bullet/trivial"
 _cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
 [[ -n "$_cfg_trivial" ]] && _trivial_file="${_cfg_trivial/#\~/$HOME}"
+# Security: validate trivial path stays within ~/.claude/ (mirrors stop-check.sh SB-002)
+case "$_trivial_file" in
+  "$HOME"/.claude/*) ;;
+  *) _trivial_file="${HOME}/.claude/.silver-bullet/trivial" ;;
+esac
 if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/trivial-bypass.sh"

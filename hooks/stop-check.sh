@@ -174,10 +174,9 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       sb_extra=$(jq -r '.hooks.stop_check.transient_path_ignore_patterns // [] | join("|")' "$sb_cfg" 2>/dev/null)
       if [[ -n "$sb_extra" ]]; then
         # Validate: reject overly-broad patterns that match empty string (e.g. .*) — #90
-        if printf '\n' | grep -qE "$sb_extra" 2>/dev/null; then
-          printf '{"hookSpecificOutput":{"message":"⚠️ stop-check: transient_path_ignore_patterns is too broad (matches empty path) — ignoring. Fix your .silver-bullet.json."}}'
+        if printf 'x' | grep -qE "$sb_extra" 2>/dev/null; then
+          printf '{"hookSpecificOutput":{"message":"⚠️ stop-check: transient_path_ignore_patterns is too broad (matches any single char) — ignoring. Fix your .silver-bullet.json."}}'
         else
-          sb_transient_re="(${sb_transient_re#(}"
           sb_transient_re="${sb_transient_re%)}|${sb_extra})"
         fi
       fi

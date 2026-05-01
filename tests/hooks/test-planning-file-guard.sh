@@ -9,7 +9,8 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 TRIVIAL_FILE="${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
-OVERRIDE_FILE="${SB_TEST_DIR}/planning-edit-override-test-${TEST_RUN_ID}"
+# Use the real hook path so the EXIT trap crash-safely cleans it up (CR-02)
+OVERRIDE_FILE="${SB_TEST_DIR}/planning-edit-override"
 
 cleanup_all() {
   rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" 2>/dev/null || true
@@ -117,13 +118,12 @@ out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
 assert_passes "trivial bypass allows protected file edit" "$out"
 teardown
 
-# File-based override
+# File-based override — uses $OVERRIDE_FILE so EXIT trap covers crash-safe cleanup
 setup
-# Use the standard override path the hook checks
-touch "${SB_TEST_DIR}/planning-edit-override"
+touch "$OVERRIDE_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
 assert_passes "planning-edit-override file allows protected file edit" "$out"
-rm -f "${SB_TEST_DIR}/planning-edit-override"
+rm -f "$OVERRIDE_FILE"
 teardown
 
 # No .silver-bullet.json → not a SB project → skip
@@ -147,6 +147,32 @@ else
   echo "  ❌ ROADMAP block message missing skill hint: $out"
   FAIL=$((FAIL + 1))
 fi
+teardown
+
+echo "--- Group 5: MultiEdit tool is also blocked (IN-02) ---"
+
+run_hook_multiedit() {
+  local file_path="$1"
+  local input
+  input=$(printf '{"tool_name":"MultiEdit","tool_input":{"file_path":"%s","edits":[]}}' "$file_path")
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+setup
+out=$(run_hook_multiedit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_blocks "blocks MultiEdit on .planning/ROADMAP.md" "$out"
+teardown
+
+echo "--- Group 6: Path traversal bypass is blocked (IN-03) ---"
+
+setup
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/sub/../ROADMAP.md")
+assert_blocks "path traversal .planning/sub/../ROADMAP.md is blocked" "$out"
+teardown
+
+setup
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/x/../STATE.md")
+assert_blocks "path traversal .planning/x/../STATE.md is blocked" "$out"
 teardown
 
 echo ""
