@@ -751,3 +751,14 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 | 73. /forge-delegate Skill | v0.29.0 | 0/0 | Pending | — |
 | 74. Multi-Agent Tests + Docs | v0.29.0 | 0/0 | Pending | — |
 | 75. Release v0.29.0 | v0.29.0 | 0/0 | Pending | — |
+
+## Backlog
+
+### Phase 999.1: planning-file-guard.sh pure-bash path normalization fallback (BACKLOG)
+
+**Goal:** Add a pure-bash `..`-segment normalization loop as a secondary fallback in `hooks/planning-file-guard.sh` for environments where `python3` is absent. Currently the hook falls back to the raw (un-normalized) path when `python3` is unavailable, leaving the traversal-bypass protection ineffective in those environments.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
