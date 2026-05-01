@@ -191,6 +191,62 @@ else
 fi
 teardown
 
+# ── Issue #95: CI-fix bypass tests (git commit message convention) ────────────
+echo "--- Group 8: CI-fix bypass — commit message convention (issue #95) ---"
+
+setup_git() {
+  TMPDIR_TEST=$(mktemp -d)
+  cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
+{
+  "project": {},
+  "state": { "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
+}
+EOF
+  ( cd "$TMPDIR_TEST" && git init -q && git config user.email "test@test" && git config user.name "Test" )
+}
+
+run_hook_git() {
+  local cmd="$1"
+  local gh_output="$2"
+  local commit_msg="${3:-}"
+  if [[ -n "$commit_msg" ]]; then
+    ( cd "$TMPDIR_TEST" && touch dummy.txt && git add dummy.txt && git commit -q -m "$commit_msg" ) 2>/dev/null || true
+  fi
+  local input
+  input=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd")
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | GH_STATUS_OVERRIDE="$gh_output" bash "$HOOK" 2>/dev/null )
+}
+
+# Option B: fix(ci): prefix allows push when CI is red
+setup_git
+out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "fix(ci): fix broken matrix test")
+assert_passes "#95 Option B: fix(ci): prefix allows git push when CI red" "$out"
+teardown
+
+# Option B: ci: prefix allows push when CI is red
+setup_git
+out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "ci: bump node version to 22")
+assert_passes "#95 Option B: ci: prefix allows git push when CI red" "$out"
+teardown
+
+# Option B: [ci-fix] in message allows push when CI is red
+setup_git
+out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "fix tests [ci-fix]")
+assert_passes "#95 Option B: [ci-fix] tag allows git push when CI red" "$out"
+teardown
+
+# Guard: unrelated commit message still blocked when CI is red
+setup_git
+out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "fix: some unrelated bug")
+assert_contains "#95 guard: non-ci-fix commit message still blocked when CI red" "$out" "CI"
+teardown
+
+# CI-fix bypass only applies to git push (not other commands)
+setup_git
+out=$(run_hook_git "gh release create v1.0" '{"status":"completed","conclusion":"failure"}' "fix(ci): something")
+assert_contains "#95 guard: ci-fix bypass does not apply to gh release create" "$out" "CI"
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
