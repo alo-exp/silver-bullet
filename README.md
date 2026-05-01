@@ -8,7 +8,7 @@
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 11 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
+Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
 ## How It Works
 
@@ -266,7 +266,7 @@ When a session produces wrong output, stalls, or is abandoned, `/forensics` guid
 
 ---
 
-## Eleven Enforcement Layers
+## Twelve Enforcement Layers
 
 The plugin doesn't rely on Claude reading instructions. It enforces compliance through hooks that fire automatically:
 
@@ -275,14 +275,15 @@ The plugin doesn't rely on Claude reading instructions. It enforces compliance t
 | **1. Skill tracker** | `record-skill.sh` fires on every Skill tool invocation. Records completed skills to state file. |
 | **2. Stage enforcer** | `dev-cycle-check.sh` fires on every Edit/Write/Bash. HARD STOP if quality gates incomplete and you're touching source code. |
 | **3. Compliance status** | `compliance-status.sh` fires on every tool use. Shows progress score so Claude always knows where it stands. |
-| **4. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
-| **5. CI gate** | `ci-status-check.sh` checks CI status on git operations. `git push`, `gh pr create`, and `gh release create` are **blocked** when CI is failing — broken builds cannot reach the remote. `git commit` emits a **warning** only (never blocked — committing a CI fix must always succeed). |
-| **6. Stop hook** | `stop-check.sh` fires when Claude declares a task complete. Blocks if required skills are missing — survives compaction. |
-| **7. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before Claude processes any message. |
-| **8. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
-| **9. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
-| **10. ROADMAP freshness gate** | `roadmap-freshness.sh` fires on every `git commit`. Blocks if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked — prevents milestone state from diverging from execution reality. |
-| **11. Redundant instructions + anti-rationalization** | CLAUDE.md + workflow file both enforce the same rules. Explicit rules against skipping, combining, or implicitly covering steps. |
+| **4. Planning file guard** | `planning-file-guard.sh` fires on every Edit/Write/MultiEdit. Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning GSD skill instead. |
+| **5. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
+| **6. CI gate** | `ci-status-check.sh` checks CI status on git operations. `git push`, `gh pr create`, and `gh release create` are **blocked** when CI is failing — broken builds cannot reach the remote. `git commit` emits a **warning** only (never blocked — committing a CI fix must always succeed). |
+| **7. Stop hook** | `stop-check.sh` fires when Claude declares a task complete. Blocks if required skills are missing — survives compaction. |
+| **8. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before Claude processes any message. |
+| **9. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
+| **10. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
+| **11. ROADMAP freshness gate** | `roadmap-freshness.sh` fires on every `git commit`. Blocks if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked — prevents milestone state from diverging from execution reality. |
+| **12. Redundant instructions + anti-rationalization** | CLAUDE.md + workflow file both enforce the same rules. Explicit rules against skipping, combining, or implicitly covering steps. |
 
 ## Customization
 

@@ -165,6 +165,10 @@ FOR each phase in remaining_phases:
       touch ~/.claude/.silver-bullet/planning-edit-override
       # Edit .planning/ROADMAP.md: change - [ ] **Phase {N}: ... to - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
       rm ~/.claude/.silver-bullet/planning-edit-override
+    After removing the override, verify it is gone:
+      ls -la ~/.claude/.silver-bullet/planning-edit-override   # should: No such file
+    If the session was interrupted before the rm, clean up manually:
+      rm -f ~/.claude/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
   AFTER phase complete: advance to next phase

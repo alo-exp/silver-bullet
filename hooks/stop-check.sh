@@ -4,7 +4,9 @@ trap 'exit 0' ERR
 
 # Stop hook (event: Stop)
 # Fires when Claude outputs a final response (declaring task complete).
-# Blocks if required_deploy skills are missing from the state file.
+# Blocks if required_planning skills (planning floor) are missing from the state file.
+# The full required_deploy list is enforced by completion-audit.sh at delivery
+# commands (gh pr create / gh release create / deploy).
 #
 # Exit format: {"decision":"block","reason":"..."} to block completion.
 # Silent exit 0 to allow completion.
@@ -287,29 +289,6 @@ fi
 if [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
   exit 0
-fi
-
-# ── Build required skills list (Tier 2: full required_deploy list) ────────────
-# Source canonical required-skills list (single source of truth — TD-01 fix)
-# shellcheck source=lib/required-skills.sh
-if [[ -f "$lib_dir/required-skills.sh" ]]; then
-  # shellcheck disable=SC1090
-  source "$lib_dir/required-skills.sh"
-else
-  # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
-  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
-fi
-
-# DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
-if [[ "$active_workflow" == "devops-cycle" ]]; then
-  DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
-fi
-
-# When on main/master branch, finishing-a-development-branch is not applicable
-if [[ "$on_main" == true ]]; then
-  DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
-  required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
 # v0.30.0 fix (#85): the Stop hook is the conversation-end gate, NOT the

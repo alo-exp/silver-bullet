@@ -1,8 +1,8 @@
 # Enforcement Architecture
 
-Silver Bullet enforces workflow compliance through 8 independent layers. No single layer can be bypassed in isolation — they compose to provide defense-in-depth.
+Silver Bullet enforces workflow compliance through 12 independent layers. No single layer can be bypassed in isolation — they compose to provide defense-in-depth.
 
-## The 8 Layers
+## The 12 Layers
 
 | # | Layer | Mechanism | Fires On | What It Prevents |
 |---|-------|-----------|----------|-----------------|
@@ -13,7 +13,11 @@ Silver Bullet enforces workflow compliance through 8 independent layers. No sing
 | 5 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
 | 6 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
 | 7 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
-| 8 | **Model Routing** | `ensure-model-routing.sh` — DISABLED (backlog 999.19; use GSD-native `model_overrides`) | — | — |
+| 8 | **Stop Hook** | `stop-check.sh` (Stop/SubagentStop) | Task-complete declaration | Declaring done before required planning skills are in state |
+| 9 | **Prompt Reminder** | `prompt-reminder.sh` (UserPromptSubmit) | Every user message | Missing skills silently skipped — re-injects required skill list |
+| 10 | **Forbidden Skill Gate** | `forbidden-skill-check.sh` (PreToolUse/Skill) | Every Skill invocation | Deprecated/forbidden skills (`executing-plans`, `subagent-driven-development`) |
+| 11 | **ROADMAP Freshness Gate** | `roadmap-freshness.sh` (PreToolUse/Bash) | git commit | Committing SUMMARY.md without ticking the corresponding ROADMAP.md checkbox |
+| 12 | **Redundant Instructions** | `CLAUDE.md` + `silver-bullet.md` workflow file | Every session | Same rules enforced across multiple surfaces for defense-in-depth |
 
 ## Dev Cycle Gate (4-Stage)
 
@@ -47,7 +51,10 @@ Detection: hooks check for `.planning/WORKFLOW.md` existence. Present = composab
 | `all_tracked` | Discovery — hooks record invocation | Observability only |
 | `required_deploy` | Hard gate — must be in state before shipping | `completion-audit.sh` blocks commit/push |
 
-Current `required_deploy`: `test-driven-development`, `tech-debt`, `verification-before-completion`
+Current `required_deploy` (canonical source: `templates/silver-bullet.config.json.default`):
+`silver-quality-gates`, `code-review`, `requesting-code-review`, `receiving-code-review`,
+`finishing-a-development-branch`, `silver-create-release`, `verification-before-completion`,
+`test-driven-development`
 
 Conditional skills (NOT in `required_deploy`): `accessibility-review` (UI only), `incident-response` (DevOps only)
 
