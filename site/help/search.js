@@ -98,7 +98,7 @@ var IDX = [
     text:'A skill is a markdown file with instructions for Claude. Stored in ~/.claude/skills/ or ~/.claude/plugins/cache/. Invoked via Skill tool with /skill-name. Hooks track actual invocations — implicit coverage does not count. Skill discovery scans at task start.' },
   { page:'Core Concepts', url:'/help/concepts/', anchor:'hooks',
     title:'Hooks — automated enforcement system',
-    text:'Hooks are shell scripts Claude Code runs after every tool use PostToolUse. 4 enforcement hooks: skill tracker compliance status stage enforcer completion audit. 4 support hooks: semantic compression session log init CI status check timeout check. Plus session start hook. Cannot be overridden by Claude reasoning.' },
+    text:'Hooks are shell scripts Claude Code runs on tool events (SessionStart PreToolUse PostToolUse Stop UserPromptSubmit SubagentStop). 22 hooks total. Enforcement hooks: dev-cycle-check completion-audit planning-file-guard stop-check forbidden-skill uat-gate ci-status-check roadmap-freshness spec-floor-check phase-lock. Support hooks: record-skill compliance-status prompt-reminder session-log-init semantic-compress pr-traceability timeout-check spec-session-record session-start. Cannot be overridden by Claude reasoning.' },
   { page:'Core Concepts', url:'/help/concepts/', anchor:'trivial-changes',
     title:'Trivial change bypass',
     text:'Mark a change trivial to bypass enforcement: touch ~/.claude/.silver-bullet/trivial. Use only for typos copy fixes config tweaks. Not a shortcut for skipping review.' },
