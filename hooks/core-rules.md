@@ -13,18 +13,20 @@ You MUST NOT:
 
 ## Enforcement Model (Section 1)
 
-Ten enforcement layers are active. Hooks are invocation-based — the hooks track Skill tool calls, not your judgment:
+Twelve enforcement layers are active. Hooks are invocation-based — the hooks track Skill tool calls, not your judgment:
 
 1. **Skill tracker** (PostToolUse/Skill) — records every skill invocation to state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
 3. **Compliance status** (PostToolUse/all) — shows workflow progress on every tool use
-4. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
-5. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
-6. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
-7. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if required_deploy skills are missing
-8. **UserPromptSubmit reminder** (UserPromptSubmit) — re-injects missing skills before every message
-9. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
-10. **Redundant instructions** (CLAUDE.md + workflow file) — same rules enforced across multiple surfaces
+4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning GSD skill instead
+5. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
+6. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
+7. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
+8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if required_deploy skills are missing
+9. **UserPromptSubmit reminder** (UserPromptSubmit) — re-injects missing skills before every message
+10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
+11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked
+12. **Redundant instructions** (CLAUDE.md + workflow file) — same rules enforced across multiple surfaces
 
 ## Active Workflow (Section 2)
 

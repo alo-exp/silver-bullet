@@ -336,7 +336,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Ten independent enforcement layers — Silver Bullet hooks covering every hook type (PreToolUse, PostToolUse, Stop, UserPromptSubmit, SubagentStop), GSD runtime hooks, plus redundant instructions that reinforce the same rules across multiple files:</p>
+      <p>Twelve independent enforcement layers — Silver Bullet hooks covering every hook type (PreToolUse, PostToolUse, Stop, UserPromptSubmit, SubagentStop), GSD runtime hooks, plus redundant instructions that reinforce the same rules across multiple files:</p>
 
       <div class="layer-list">
         <div class="layer-card">
@@ -363,47 +363,61 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="layer-card">
           <div class="layer-num">4</div>
           <div>
+            <h4>PreToolUse — Planning File Guard</h4>
+            <p>Blocks direct edits to GSD-managed planning artifacts (<code>ROADMAP.md</code>, <code>STATE.md</code>, <code>PROJECT.md</code>, <code>RELEASE.md</code>, milestone audit files) via Edit, Write, or MultiEdit. Forces the owning GSD skill to be used instead. Bypass available via override file for one-off doc fixes.</p>
+          </div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-num">5</div>
+          <div>
             <h4>Pre+PostToolUse — Completion Audit</h4>
             <p>Intercepts <code>git commit</code>, <code>git push</code>, and deploy commands. Uses a two-tier check: <strong>commits and pushes</strong> only require quality gates to have run; <strong>PR creation, deploys, and releases</strong> require the full required skill list. Blocks with a specific list of what's incomplete. Registers as PreToolUse so blocking is unbypassable — even in bypass-permissions mode.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">5</div>
+          <div class="layer-num">6</div>
           <div>
             <h4>PreToolUse — CI Gate</h4>
             <p>Intercepts <code>git push</code> commands and checks the most recent CI run for the branch. Broken builds cannot be pushed — CI must be green first.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">6</div>
+          <div class="layer-num">7</div>
           <div>
             <h4>Stop / SubagentStop — Completion Gate</h4>
             <p>Fires when Claude declares a task complete. Blocks if required skills are still missing. Re-injected on every message so it survives compaction and cannot be lost mid-session.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">7</div>
+          <div class="layer-num">8</div>
           <div>
             <h4>UserPromptSubmit — Prompt Reminder</h4>
             <p>Before every user message is processed, re-injects the list of missing required skills and the core enforcement rules. Ensures Claude cannot "forget" the workflow even after context compaction.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">8</div>
+          <div class="layer-num">9</div>
           <div>
             <h4>PreToolUse — Forbidden Skill Gate</h4>
             <p>Blocks deprecated or project-forbidden skills before they execute. Configurable via <code>skills.forbidden</code> in <code>.silver-bullet.json</code>.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">9</div>
+          <div class="layer-num">10</div>
           <div>
             <h4>GSD Workflow Guard</h4>
             <p>GSD&rsquo;s own hook detects file edits made outside a <code>/gsd:*</code> command and warns immediately. Independent of Silver Bullet&rsquo;s hooks.</p>
           </div>
         </div>
         <div class="layer-card">
-          <div class="layer-num">10</div>
+          <div class="layer-num">11</div>
+          <div>
+            <h4>PreToolUse — ROADMAP Freshness Gate</h4>
+            <p>Intercepts <code>git commit</code> when a phase <code>SUMMARY.md</code> is staged but the corresponding <code>ROADMAP.md</code> checkbox is not ticked. Prevents milestone state from diverging from execution reality — phases cannot be declared done without updating the roadmap.</p>
+          </div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-num">12</div>
           <div>
             <h4>Redundant Instructions + Anti-Rationalization</h4>
             <p>The workflow is described in both the workflow file and <code>CLAUDE.md</code>. Explicit rules prohibit Claude from deciding a step is &ldquo;not applicable&rdquo; without user approval, or claiming it &ldquo;already covered&rdquo; a skill without actually invoking it.</p>
