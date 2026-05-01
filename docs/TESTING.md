@@ -86,7 +86,7 @@ These tests exercise the interactive migration step in `skills/silver-init/SKILL
 
 ## Forge-Silver Bullet Skill Test Harness
 
-The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 61 installed skills against realistic todo app development scenarios.
+The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 62 installed skills against realistic todo app development scenarios.
 
 ### Test Classification
 
