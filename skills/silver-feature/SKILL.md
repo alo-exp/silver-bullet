@@ -99,6 +99,9 @@ this to verify the active workflow is fully complete before final delivery.
 # user-facing FLOW / PATH names so they match what compliance-status surfaces).
 SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+# Safety: the user's original request ($ARGUMENTS) must be shell-escaped before
+# substitution into this command. Use printf '%q' or equivalent when constructing
+# the invocation. Never interpolate $ARGUMENTS via direct string concatenation.
 SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:feature "the user's original request" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 echo "Workflow tracker started: $SB_WORKFLOW_ID"
@@ -168,6 +171,9 @@ FOR each phase in remaining_phases:
     After removing the override, verify it is gone:
       ls -la ~/.claude/.silver-bullet/planning-edit-override   # should: No such file
     If the session was interrupted before the rm, clean up manually:
+      rm -f ~/.claude/.silver-bullet/planning-edit-override
+    Session-start cleanup: if a new session starts and ~/.claude/.silver-bullet/planning-edit-override
+    exists from a prior interrupted session, remove it before proceeding:
       rm -f ~/.claude/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
