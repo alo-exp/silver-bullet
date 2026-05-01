@@ -89,9 +89,10 @@ The three pillars:
 
 - **SessionStart** → `session-start` (branch-scoped state reset, context injection), `spec-session-record.sh`
 - **PreToolUse/Bash** → `phase-archive.sh`, `completion-audit.sh`, `roadmap-freshness.sh`, `dev-cycle-check.sh`, `ci-status-check.sh`, `spec-floor-check.sh`
+- **PreToolUse/Edit|Write|MultiEdit** → `planning-file-guard.sh` (blocks direct edits to GSD-managed planning artifacts)
 - **PreToolUse/Skill** → `forbidden-skill-check.sh`, `uat-gate.sh`
 - **PostToolUse/Skill** → `semantic-compress.sh`, `record-skill.sh` (writes to state file)
-- **PostToolUse/Write|Edit** → trivial-file removal (marks session as non-trivial)
+- **PostToolUse/Write|Edit|MultiEdit** → trivial-file removal (marks session as non-trivial)
 - **PostToolUse/Bash** → `completion-audit.sh`, `pr-traceability.sh`, `session-log-init.sh`, `ci-status-check.sh`, `timeout-check.sh`
 - **PostToolUse/\*** → `compliance-status.sh` (async, informational)
 - **Stop / SubagentStop** → `stop-check.sh` (blocks task-complete if required skills missing)

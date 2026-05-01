@@ -31,6 +31,7 @@ under `~/.claude/.silver-bullet/`.
 | `dev-cycle-check.sh` | PreToolUse (Edit/Write/Bash) | 4-stage gate: blocks source edits if planning incomplete |
 | `compliance-status.sh` | PostToolUse (all tools) | Emits live progress score per tool call |
 | `completion-audit.sh` | PostToolUse (Bash) | Blocks `git commit/push/deploy/gh release` if `required_deploy` skills are missing |
+| `planning-file-guard.sh` | PreToolUse (Edit/Write/MultiEdit) | Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); requires the owning GSD skill instead |
 | `ci-status-check.sh` | PostToolUse (Bash) | Warns on commit/push if CI is failing |
 | `stop-check.sh` | Stop / SubagentStop | Requires required_deploy skills before session ends; skipped when `trivial` file exists |
 | *(hooks.json entry)* | SessionStart | Creates `~/.claude/.silver-bullet/trivial` — marks every new session trivial by default |

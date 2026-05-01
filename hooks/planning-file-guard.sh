@@ -6,9 +6,11 @@ trap 'exit 0' ERR
 # Blocks direct edits to GSD-managed planning artifacts (.planning/ROADMAP.md etc.)
 # that must only be modified through the appropriate GSD skill.
 #
-# Protected files:
-#   .planning/ROADMAP.md, STATE.md, REQUIREMENTS.md, PROJECT.md,
-#   RELEASE.md, UAT.md, v*-MILESTONE-*.md
+# Protected files (GSD-managed — updated by GSD CLI tools, not by Claude's Write/Edit):
+#   .planning/ROADMAP.md, STATE.md, PROJECT.md, RELEASE.md, v*-MILESTONE-*.md
+#
+# NOT protected (Silver Bullet skill-managed — owning skills use Write/Edit tool):
+#   .planning/REQUIREMENTS.md (silver-spec), .planning/UAT.md (silver-feature)
 #
 # Bypass: create ~/.claude/.silver-bullet/planning-edit-override (file, not symlink)
 # or set env var SB_ALLOW_PLANNING_EDITS=1 before starting Claude Code.
@@ -20,7 +22,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
 
-# Extract file path from tool input (Edit and Write both use file_path)
+# Extract file path from tool input (Edit, Write, and MultiEdit all use file_path)
 file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
 [[ -z "$file_path" ]] && exit 0
 
@@ -32,10 +34,12 @@ dir_basename=$(basename "$(dirname "$_norm_path")")
 
 basename_path=$(basename "$_norm_path")
 
-# Check if the file is in the protected set
+# Check if the file is in the protected set (GSD-managed only)
+# REQUIREMENTS.md and UAT.md are intentionally excluded — they are managed by
+# Silver Bullet skills (silver-spec and silver-feature) using the Write tool.
 protected=false
 case "$basename_path" in
-  ROADMAP.md|STATE.md|REQUIREMENTS.md|PROJECT.md|RELEASE.md|UAT.md)
+  ROADMAP.md|STATE.md|PROJECT.md|RELEASE.md)
     protected=true
     ;;
   v*-MILESTONE-*.md)
@@ -100,17 +104,11 @@ case "$basename_path" in
   STATE.md)
     skill_hint="Use /gsd-execute-phase, /gsd-complete-milestone, /gsd-pause-work, or /gsd-resume-work instead."
     ;;
-  REQUIREMENTS.md)
-    skill_hint="Use /gsd-roadmapper instead."
-    ;;
   PROJECT.md)
     skill_hint="Use /gsd-new-project instead."
     ;;
   RELEASE.md)
     skill_hint="Use /silver-release or /create-release instead."
-    ;;
-  UAT.md)
-    skill_hint="Use /gsd-audit-uat instead."
     ;;
   v*-MILESTONE-*.md)
     skill_hint="Use /gsd-audit-milestone instead."
