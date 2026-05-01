@@ -771,3 +771,12 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.3: stop-check.sh size refactor — extract transient-filter and branch-scope logic into lib helpers (BACKLOG)
+
+**Goal:** `hooks/stop-check.sh` is 374 lines, exceeding the modularity soft limit of 300 lines for source code. The transient-path filtering block (~40 lines) and branch-scope validation block (~30 lines) are candidates for extraction into `hooks/lib/` helpers, which would bring the main hook file under 300 lines and improve testability of those sub-components.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
