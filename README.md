@@ -278,7 +278,7 @@ The plugin doesn't rely on Claude reading instructions. It enforces compliance t
 | **4. Planning file guard** | `planning-file-guard.sh` fires on every Edit/Write/MultiEdit. Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning GSD skill instead. |
 | **5. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
 | **6. CI gate** | `ci-status-check.sh` checks CI status on git operations. `git push`, `gh pr create`, and `gh release create` are **blocked** when CI is failing — broken builds cannot reach the remote. `git commit` emits a **warning** only (never blocked — committing a CI fix must always succeed). |
-| **7. Stop hook** | `stop-check.sh` fires when Claude declares a task complete. Blocks if required skills are missing — survives compaction. |
+| **7. Stop hook** | `stop-check.sh` fires when Claude declares a task complete. Blocks if `required_planning` skills (planning floor) are missing — survives compaction. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands. |
 | **8. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before Claude processes any message. |
 | **9. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
 | **10. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
@@ -291,7 +291,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.26.0",
+  "version": "0.31.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -303,28 +303,27 @@ Edit `.silver-bullet.json` in your project root:
     "required_deploy": [
       "silver-quality-gates",
       "code-review", "requesting-code-review", "receiving-code-review",
-      "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist",
+      "finishing-a-development-branch",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development", "tech-debt"
+      "test-driven-development"
     ],
     "all_tracked": [
       "silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy",
       "architecture", "system-design",
       "code-review", "requesting-code-review", "receiving-code-review",
-      "testing-strategy", "documentation",
-      "finishing-a-development-branch", "deploy-checklist",
+      "finishing-a-development-branch",
       "silver-create-release",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
-      "silver-forensics", "silver-init",
+      "silver-forensics", "silver-add", "silver-init",
       "verification-before-completion",
-      "test-driven-development", "tech-debt", "accessibility-review", "incident-response",
+      "test-driven-development", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
       "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-debug",
-      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase"
+      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase",
+      "silver-remove", "silver-rem", "silver-scan"
     ]
   },
   "devops_plugins": {
@@ -349,8 +348,8 @@ Edit `.silver-bullet.json` in your project root:
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `silver-quality-gates` |
-| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | silver-quality-gates, code-review, requesting-code-review, receiving-code-review, testing-strategy, documentation, finishing-a-development-branch, deploy-checklist, silver-create-release, verification-before-completion, test-driven-development, tech-debt |
-| `all_tracked` | All skills that get recorded | 42 skills (see above) |
+| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | silver-quality-gates, code-review, requesting-code-review, receiving-code-review, finishing-a-development-branch, silver-create-release, verification-before-completion, test-driven-development |
+| `all_tracked` | All skills that get recorded | 42 skills (canonical source: `templates/silver-bullet.config.json.default`) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
 > **Two-tier enforcement**: `git commit` and `git push` only require `required_planning` skills (default: `silver-quality-gates`). The full `required_deploy` list is only checked at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked.
