@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-01 — fix-github-open-items
+**What**: Patch release fixing hook enforcement gaps (#90 session-start ordering, #93 branch-write trailing newline, #95 tamper-guard regex), ShellCheck dead-variable warnings in stop-check.sh, stale skill/hook counts across docs and site, and SENTINEL security patches to silver-feature/SKILL.md (FINDING-1.1 shell-escaping advisory, FINDING-5.1 TOCTOU cleanup note).
+**Commits**: 875bffc, cb06033, 1ec93b6 + prior phase 044 commits
+**Skills run**: silver-quality-gates, engineering:code-review, security, anthropic-skills:audit-security-of-skill
+**Virtual cost**: ~$0.60 (Sonnet, high complexity — 4-stage pre-release gate + silver-release)
+**KNOWLEDGE.md**: no changes
+
 ## 2026-04-24 — forge-sb-skill-test-harness
 **What**: Created comprehensive test harness for all 60+ forge-sb skills using todo app as realistic development scenario
 **Commits**: —
