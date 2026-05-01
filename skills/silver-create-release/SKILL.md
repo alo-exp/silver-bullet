@@ -240,9 +240,17 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
 
 4. **If GitHub repo:** Create a GitHub Release and capture the URL:
    ```
-   release_url=$(gh release create <version> --title "<version>" --notes "<release-notes-markdown>" --json url -q '.url')
+   _notes_tmp=$(mktemp)
+   printf '%s' "$RELEASE_NOTES_BODY" > "$_notes_tmp"
+   release_url=$(gh release create "$VERSION" \
+     --title "$VERSION" \
+     --notes-file "$_notes_tmp" \
+     --json url -q '.url')
+   rm -f -- "$_notes_tmp"
    ```
    Use `/opt/homebrew/bin/gh` if available, fall back to bare `gh`.
+   Using `--notes-file` instead of `--notes "..."` prevents shell command-substitution
+   from backtick-wrapped content in the release notes body (security: WR-04).
    `$release_url` is used in the notification sub-step below (sub-item 6 of this step).
 
 5. **If not GitHub:** Output the release notes and suggest:
@@ -261,10 +269,23 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
    never in `.silver-bullet.json` or any other tracked file. The legacy
    `notifications.google_chat_webhook` config field is no longer read.
 
-   If `$webhook` is non-empty, POST the release notification. First derive `$summary`
-   from the release notes body — take the first non-empty `##` heading from
-   `$RELEASE_NOTES_BODY`. Then build the JSON payload with `jq` to prevent
-   injection from crafted version strings or release notes:
+   If `$webhook` is non-empty, validate the webhook domain before POSTing (security:
+   reject non-allowlisted destinations to prevent exfiltration if the env var is
+   manipulated):
+   ```bash
+   case "$webhook" in
+     https://chat.googleapis.com/*) ;;   # allowlisted
+     *)
+       printf 'WARNING: SB_GCHAT_WEBHOOK domain not in allowlist — skipping notification.\n'
+       webhook=""
+       ;;
+   esac
+   ```
+
+   If `$webhook` is still non-empty after domain validation, POST the release
+   notification. First derive `$summary` from the release notes body — take the
+   first non-empty `##` heading from `$RELEASE_NOTES_BODY`. Then build the JSON
+   payload with `jq` to prevent injection from crafted version strings or release notes:
    ```
    summary=$(printf '%s' "$RELEASE_NOTES_BODY" | grep -m1 '^## ' | sed 's/^## //')
    [[ -z "$summary" ]] && summary="Release published"

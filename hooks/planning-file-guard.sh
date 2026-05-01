@@ -64,6 +64,15 @@ while true; do
 done
 [[ -z "$config_file" ]] && exit 0
 
+# ── Verify the file being edited is under THIS project's root (WR-05) ─────────
+# Prevents enforcement firing on a different project's .planning/ when Claude is
+# running in a multi-repo or worktree setup where absolute paths are passed.
+_project_root=$(dirname "$config_file")
+case "$_norm_path" in
+  "$_project_root"/*) ;;   # file is inside this project — enforce
+  *) exit 0 ;;             # file is outside this project — skip
+esac
+
 # ── Bypass: env var override ──────────────────────────────────────────────────
 if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
   _msg="⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning GSD skill."

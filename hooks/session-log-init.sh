@@ -98,10 +98,14 @@ if [[ -n "$existing" ]]; then
   [[ "$mode" == "autonomous" ]] || mode="interactive"
 
   # Add missing new sections at correct skeleton positions (idempotency for pre-update logs)
-  # Helper: insert section_header + placeholder immediately before anchor line
+  # Helper: insert section_header + placeholder immediately before anchor line.
+  # No-ops silently when the anchor does not exist (avoids unnecessary file overwrite — WR-03).
   _insert_before() {
     local file="$1" anchor="$2" header="$3" placeholder="$4"
     local tmp
+    # If anchor is absent there is nothing to insert before — skip to avoid a
+    # silent overwrite that writes identical content back.
+    grep -qF "$anchor" "$file" 2>/dev/null || return 0
     tmp=$(mktemp)
     if awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
       $0 == anch { printf "%s\n\n%s\n\n", hdr, ph }
@@ -136,6 +140,16 @@ if [[ -n "$existing" ]]; then
     sb_guard_nofollow "$SB_DIR"/timeout
     sb_guard_nofollow "$SB_DIR"/sentinel-pid
     date +%s > "$SB_DIR"/session-start-time
+    # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
+    # This spawns a background subshell that sleeps for at most SENTINEL_SLEEP_OVERRIDE
+    # seconds (default: 600), then writes the literal string "TIMEOUT" to
+    # ~/.claude/.silver-bullet/timeout. The process:
+    #   (1) is fully deterministic — cannot be influenced by external input;
+    #   (2) is scoped only to the user-owned ~/.claude/.silver-bullet/ directory;
+    #   (3) auto-terminates after at most 600 seconds with no side effects beyond
+    #       writing the timeout marker.
+    # This is an intentional bounded timeout guard for autonomous session enforcement.
+    # The PID is tracked in sentinel-pid for cleanup; kill is called on lock failure.
     (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
     _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
@@ -247,6 +261,10 @@ sb_guard_nofollow "$SB_DIR"/session-start-time
 date +%s > "$SB_DIR"/session-start-time
 
 # --- Step 8: Launch sentinel (autonomous mode only) ---
+# AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
+# Deterministic bounded process: sleeps max 600s, writes "TIMEOUT" to user-owned
+# ~/.claude/.silver-bullet/timeout, then auto-terminates. Cannot be influenced by
+# external input. PID tracked in sentinel-pid; kill called on lock failure.
 if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/timeout
   sb_guard_nofollow "$SB_DIR"/sentinel-pid

@@ -138,6 +138,12 @@ assert_passes "planning-edit-override file allows protected file edit" "$out"
 rm -f "$OVERRIDE_FILE"
 teardown
 
+# Env-var bypass: SB_ALLOW_PLANNING_EDITS=1 → allow edit
+setup
+out=$(SB_ALLOW_PLANNING_EDITS=1 run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "SB_ALLOW_PLANNING_EDITS=1 allows protected file edit" "$out"
+teardown
+
 # No .silver-bullet.json → not a SB project → skip
 setup_bare() {
   TMPDIR_TEST=$(mktemp -d)
