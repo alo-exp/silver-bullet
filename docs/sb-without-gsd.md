@@ -38,7 +38,7 @@ or standalone skills described below.
 
 ### Enforcement Hooks (all active)
 
-All 18 hook scripts fire on their configured Claude Code events regardless of whether GSD is
+All 22 hook scripts fire on their configured Claude Code events regardless of whether GSD is
 installed. These are the Silver Bullet enforcement layer.
 
 | Hook | Event | What it enforces |

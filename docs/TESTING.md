@@ -108,7 +108,7 @@ The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 
 | Planning & Documentation | 4 | 100% |
 | DevOps & Routing | 2 | 100% |
 
-**Total: 61 skills tested**
+**Total: 62 skills tested**
 
 ### Running the Harness
 
