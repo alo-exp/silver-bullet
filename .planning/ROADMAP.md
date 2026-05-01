@@ -762,3 +762,12 @@ Phases 30 -> 31 -> 32 -> 33 -> 34 -> 35 -> 36 -> 37 -> 38 -> 39 -> 40 -> 41 -> 4
 
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 999.2: planning-file-guard.sh STATE.md skill hint — verify gsd-pause-work and gsd-resume-work exist in GSD (BACKLOG)
+
+**Goal:** The STATE.md block message in `hooks/planning-file-guard.sh` references `/gsd-pause-work` and `/gsd-resume-work` as skill hints. These skills have not been verified to exist in the currently installed GSD plugin. If absent, the hint is misleading. Verify existence and update the hint to only reference confirmed skills (IN-01 from 044-02-REVIEW).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
