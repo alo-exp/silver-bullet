@@ -125,6 +125,23 @@ case "$status" in
 esac
 
 if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
+  # ── CI-fix bypass (issue #95): allow pushes that ARE the fix ─────────────
+  # Option B: commit message starts with fix(ci): / ci: or contains [ci-fix]
+  # Option A: diff touches .github/workflows/, tests/, or package.json
+  if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
+    _top_msg=$(git log -1 --format="%s" 2>/dev/null || true)
+    if printf '%s' "$_top_msg" | grep -qiE '^(fix\(ci\)|ci):|\[ci-fix\]'; then
+      printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but commit matches ci-fix convention — allowing push."}}'
+      exit 0
+    fi
+    if git rev-parse "@{u}" >/dev/null 2>&1; then
+      _changed=$(git diff "@{u}..HEAD" --name-only 2>/dev/null || true)
+      if [[ -n "$_changed" ]] && printf '%s' "$_changed" | grep -qE '^\.github/workflows/|^tests/|^package\.json$'; then
+        printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but push touches CI/test files — allowing push (suspected CI fix)."}}'
+        exit 0
+      fi
+    fi
+  fi
   msg="🛑 CI FAILURE DETECTED — conclusion=${conclusion}.
 
 STOP all other work immediately. Do NOT proceed to any other step.
@@ -132,9 +149,10 @@ Invoke /gsd:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed
 
-If you need to push a CI fix: create the override file in your terminal (not in Claude):
-  touch ~/.claude/.silver-bullet/ci-red-override
-This lets you push your fix while CI is red. Remove it once CI is green."
+If you need to push a CI fix, one of the following auto-bypasses the block:
+  • Prefix your commit message with 'fix(ci):' or 'ci:' (or add [ci-fix])
+  • Ensure your diff touches .github/workflows/, tests/, or package.json
+  • Or create the override file: touch ~/.claude/.silver-bullet/ci-red-override"
 
   # PostToolUse/git commit: warn only — the commit already happened; emitting
   # decision:block here confuses the model about whether the commit succeeded and
