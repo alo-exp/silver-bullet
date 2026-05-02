@@ -977,6 +977,28 @@ This is the same root cause for the previously open issues #48 and #50. The repo
 2. **Manually record skills in agent-mode sessions.** When forced to run inside an Agent SDK / web session, an agent may invoke each required skill and then explicitly write its name to `~/.claude/.silver-bullet/state` via a Bash command. This is brittle and not recommended for releases.
 3. **Detect agent-mode and refuse delivery actions.** A future SB version may add a startup probe that detects the absence of hook-protocol support and warns / blocks `gh release create` from agent-mode sessions outright. Filed as a follow-up; see the seed file for design constraints.
 
+### Enabling hooks in SDK sessions
+
+The Claude Agent SDK does implement the same hook events SB relies on — `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, and others — they are first-class on `HookEvent` in `query()` options. The reason they "do not fire today" in the bullet above is that the SDK does not load `~/.claude/settings.json` unless asked, and does not register programmatic hooks unless passed. Two paths re-enable enforcement inside an SDK session:
+
+1. **Load the user-scoped `~/.claude/settings.json` block** (where `silver:init` writes SB's hook config) by passing `settingSources: ['user']` on `query()` options. An SDK session then picks up the same hook config as the CLI.
+2. **Pass hooks programmatically** on `query()` options:
+
+   ```ts
+   query({
+     prompt: '...',
+     options: {
+       hooks: {
+         PreToolUse: [{ hooks: [async (input) => ({ continue: true })] }],
+       },
+     },
+   })
+   ```
+
+Either path makes SB's enforcement gates fire inside an SDK session. The CLI is still the canonical SB runtime; this is a clarification, not a substitute path.
+
+Reference: `@anthropic-ai/claude-agent-sdk` CHANGELOG documents `settingSources` (initial introduction at v0.1.x) and ongoing fixes for SDK-mode hook delivery (PreToolUse with `permissionDecision: 'ask'`, PermissionRequest, Stop, stream-mode failures). The `claude.ai/code` web UI is a separate runtime and is not addressed here.
+
 ### Detection (advisory)
 
 `silver:init` can probe runtime capability by checking for the presence of the Claude Code hook config (`~/.claude/settings.json`). If absent, it emits an informational warning that enforcement gates will not fire.
