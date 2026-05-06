@@ -12,6 +12,15 @@ if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
 fi
 
+# shellcheck source=lib/skill-discovery.sh
+if [[ -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/skill-discovery.sh"
+fi
+if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
+  sb_skill_is_installed() { return 0; }
+fi
+
 # Pre+PostToolUse hook (matcher: Edit|Write|Bash)
 # Enforces four-stage workflow gate — blocks source edits if planning skills incomplete.
 
@@ -257,9 +266,13 @@ To reset workflow state intentionally, run in your terminal:
   esac
 
   # --- Mid-session branch mismatch warning (F-09) ---
-  branch_file="${SB_STATE_DIR}/branch"
-  if [[ -f "$branch_file" && ! -L "$branch_file" ]]; then
-    stored_branch=$(cat "$branch_file" 2>/dev/null || true)
+  sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
+  case "$sb_branch_file" in
+    "$HOME"/.claude/*) ;;
+    *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
+  esac
+  if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
+    stored_branch=$(cat "$sb_branch_file" 2>/dev/null || true)
     current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
     if [[ -n "$stored_branch" && -n "$current_branch" && "$stored_branch" != "$current_branch" ]]; then
       jq -n --arg s "$stored_branch" --arg c "$current_branch" \
@@ -357,12 +370,21 @@ To reset workflow state intentionally, run in your terminal:
 
   # --- Check required planning skills ---
   missing_skills=""
+  unavailable_skills=""
   for skill in $required_planning; do
     if ! has_skill "$skill"; then
-      if [[ -n "$missing_skills" ]]; then
-        missing_skills="$missing_skills $skill"
+      if sb_skill_is_installed "$skill"; then
+        if [[ -n "$missing_skills" ]]; then
+          missing_skills="$missing_skills $skill"
+        else
+          missing_skills="$skill"
+        fi
       else
-        missing_skills="$skill"
+        if [[ -n "$unavailable_skills" ]]; then
+          unavailable_skills="$unavailable_skills $skill"
+        else
+          unavailable_skills="$skill"
+        fi
       fi
     fi
   done
@@ -375,7 +397,24 @@ To reset workflow state intentionally, run in your terminal:
       missing_display="${missing_display}❌ ${ms}\\n"
     done
     stage_a_msg=$(printf '🚫 HARD STOP — Planning incomplete. Missing skills:\n%s\nRun the missing planning skills before editing source code.' "$missing_display")
+    if [[ -n "$unavailable_skills" ]]; then
+      unavailable_display=""
+      for us in $unavailable_skills; do
+        unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)\n"
+      done
+      stage_a_msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$stage_a_msg" "$unavailable_display")
+    fi
     emit_block "$stage_a_msg"
+    exit 0
+  fi
+
+  if [[ -n "$unavailable_skills" ]]; then
+    unavailable_display=""
+    for us in $unavailable_skills; do
+      unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)\n"
+    done
+    stage_a_msg=$(printf '⚠️ Planning skills not installed anywhere invocable, so they were not enforced:\n%s\nProceeding with source edits.' "$unavailable_display")
+    jq -n --arg m "$stage_a_msg" '{"hookSpecificOutput":{"message":$m}}'
     exit 0
   fi
 

@@ -12,6 +12,15 @@ if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
 fi
 
+# shellcheck source=lib/skill-discovery.sh
+if [[ -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/skill-discovery.sh"
+fi
+if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
+  sb_skill_is_installed() { return 0; }
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -283,9 +292,14 @@ if [[ "$is_intermediate" == true ]]; then
   planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
 
   missing_planning=""
+  ignored_planning=""
   for skill in $planning_skills; do
     if ! has_skill "$skill"; then
-      missing_planning="${missing_planning:+$missing_planning }$skill"
+      if sb_skill_is_installed "$skill"; then
+        missing_planning="${missing_planning:+$missing_planning }$skill"
+      else
+        ignored_planning="${ignored_planning:+$ignored_planning }$skill"
+      fi
     fi
   done
 
@@ -295,12 +309,28 @@ if [[ "$is_intermediate" == true ]]; then
       missing_lines="${missing_lines}  ❌ /${skill}\n"
     done
     msg=$(printf '🚫 COMMIT BLOCKED — Planning incomplete.\n\nYou must complete these planning steps before any commits:\n%s\nRun the missing planning skills first, then commit.' "$missing_lines")
+    if [[ -n "$ignored_planning" ]]; then
+      ignored_lines=""
+      for skill in $ignored_planning; do
+        ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      done
+      msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$msg" "$ignored_lines")
+    fi
     emit_block "$msg"
     exit 0
   fi
 
   # Planning is done — intermediate commits are allowed
-  printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Intermediate commit allowed."}}'
+  if [[ -n "$ignored_planning" ]]; then
+    ignored_lines=""
+    for skill in $ignored_planning; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '✅ Planning verified. Intermediate commit allowed.\n\nIgnored required skills:\n%s' "$ignored_lines")
+    jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
+  else
+    printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Intermediate commit allowed."}}'
+  fi
   exit 0
 fi
 
@@ -362,9 +392,14 @@ done
 
 # ── Check required skills ─────────────────────────────────────────────────────
 missing=""
+ignored=""
 for skill in $required_skills; do
   if ! has_skill "$skill"; then
-    missing="${missing:+$missing }$skill"
+    if sb_skill_is_installed "$skill"; then
+      missing="${missing:+$missing }$skill"
+    else
+      ignored="${ignored:+$ignored }$skill"
+    fi
   fi
 done
 
@@ -413,14 +448,44 @@ if [[ -n "$missing" ]]; then
   ordering_note=""
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
   msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines" "$ordering_note")
+  if [[ -n "$ignored" ]]; then
+    ignored_lines=""
+    for skill in $ignored; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$msg" "$ignored_lines")
+  fi
   emit_block "$msg"
   exit 0
 elif [[ -n "$ordering_issues" ]]; then
   msg=$(printf '⚠️  ORDERING WARNING — All skills recorded but Code Review Triad ran out of order:\n%s\nConsider re-running the triad in the correct sequence before merging.' "$ordering_issues")
+  if [[ -n "$ignored" ]]; then
+    ignored_lines=""
+    for skill in $ignored; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
+  fi
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
 elif [[ -n "$artifact_warnings" ]]; then
   msg=$(printf '⚠️  ARTIFACT WARNING — Skills recorded but expected output files are missing. This may indicate vacuous skill invocation (calling a skill without doing the work):\n\n%s\nProceed only if these artifacts exist under a different path. Enforcement is invocation-based, not outcome-based.' "$artifact_warnings")
+  if [[ -n "$ignored" ]]; then
+    ignored_lines=""
+    for skill in $ignored; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
+  fi
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
 else
-  printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
+  if [[ -n "$ignored" ]]; then
+    ignored_lines=""
+    for skill in $ignored; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '✅ Workflow compliance verified. Proceed.\n\nIgnored required skills:\n%s' "$ignored_lines")
+    jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
+  else
+    printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
+  fi
 fi

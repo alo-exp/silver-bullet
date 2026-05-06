@@ -96,6 +96,15 @@ esac
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
 lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 
+# shellcheck source=lib/skill-discovery.sh
+if [[ -f "$lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "$lib_dir/skill-discovery.sh"
+fi
+if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
+  sb_skill_is_installed() { return 0; }
+fi
+
 # HOOK-04 (informational half): source phase-path.sh for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. EXIT and ERR traps coexist
 # in bash — the existing ERR trap (line 40) still fires on errors and
@@ -136,20 +145,15 @@ fi
 # Fail-closed on rev-list/ref-resolution failure (HOOK-06 / #17).
 if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   tree_clean=false
-  # --untracked-files=all + --ignored=traditional: ignore user-local
-  # status.showUntrackedFiles, honor all untracked paths (including
-  # .gitignored locations — a session may only touch .claude/ which is
-  # commonly gitignored and would otherwise be invisible to porcelain).
+  # `--untracked-files=all` makes porcelain deterministic across user-local
+  # git config. Ignored files stay hidden so read-only sessions with only
+  # gitignored runtime artifacts can short-circuit cleanly.
   #
-  # v0.30.0 fix (#88): the --ignored=traditional widening over-catches
-  # routine session/runtime artifacts (`.claude/scheduled_tasks.lock`,
-  # `.claude/settings.local.json`, `.superpowers/**`, `.planning/workflows/**`,
-  # gitignored REVIEW.md), causing the Stop hook to loop indefinitely after
-  # legitimate releases. Filter porcelain output through a transient-path
-  # allowlist before deciding `tree_clean`. Defaults are baked-in; projects
-  # may override via `.silver-bullet.json`:
+  # Filter porcelain output through a transient-path allowlist before deciding
+  # `tree_clean`. Defaults are baked-in; projects may override via
+  # `.silver-bullet.json`:
   #   { "hooks": { "stop_check": { "transient_path_ignore_patterns": ["..."] } } }
-  porcelain=$(git -C "$PWD" status --porcelain --untracked-files=all --ignored=traditional 2>/dev/null)
+  porcelain=$(git -C "$PWD" status --porcelain --untracked-files=all 2>/dev/null)
   if [[ -n "$porcelain" ]]; then
     # Built-in transient-artifact patterns (extended-grep, anchored to
     # status-line shape `XX path`).
@@ -326,9 +330,14 @@ done
 
 # ── Check required skills ─────────────────────────────────────────────────────
 missing=""
+uninstalled=""
 for skill in $required_skills; do
   if ! printf '%s\n' "$state_contents" | grep -qx "$skill" 2>/dev/null; then
-    missing="${missing:+$missing }$skill"
+    if sb_skill_is_installed "$skill"; then
+      missing="${missing:+$missing }$skill"
+    else
+      uninstalled="${uninstalled:+$uninstalled }$skill"
+    fi
   fi
 done
 
@@ -339,8 +348,23 @@ if [[ -n "$missing" ]]; then
     missing_lines="${missing_lines}  - ${skill}\n"
   done
   reason=$(printf 'Cannot complete -- missing required skills:\n%s\nRun these skills before declaring task complete.' "$missing_lines")
+  if [[ -n "$uninstalled" ]]; then
+    unavailable_lines=""
+    for skill in $uninstalled; do
+      unavailable_lines="${unavailable_lines}  - ${skill}\n"
+    done
+    reason=$(printf '%s\n\nThese required skills are not installed anywhere invocable and were ignored:\n%s\nInstall them if you want them enforced.' "$reason" "$unavailable_lines")
+  fi
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   printf '{"decision":"block","reason":%s}' "$json_reason"
+elif [[ -n "$uninstalled" ]]; then
+  unavailable_lines=""
+  for skill in $uninstalled; do
+    unavailable_lines="${unavailable_lines}  - ${skill}\n"
+  done
+  reason=$(printf '⚠️  Some required skills are not installed anywhere invocable and were ignored:\n%s\nInstall them if you want them enforced.' "$unavailable_lines")
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"hookSpecificOutput":{"message":%s}}' "$json_reason"
 fi
 
 exit 0

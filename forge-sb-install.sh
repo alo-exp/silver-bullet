@@ -21,6 +21,7 @@ PROJECT_ONLY=false
 GLOBAL_ONLY=false
 SKIP_KW=false
 FORGE_HOME="${FORGE_HOME:-$HOME/forge}"
+GSD_BIN_DIR="${GSD_BIN_DIR:-$HOME/.claude/get-shit-done/bin}"
 
 # Detect run mode (curl | bash vs local script)
 _bs="${BASH_SOURCE[0]:-}"
@@ -231,6 +232,18 @@ install_templates_to() {
   log "  templates installed."
 }
 
+install_gsd_sdk_shim_to() {
+  local target_dir="$1"
+  log "  installing gsd-sdk shim -> ${target_dir}"
+  do_run "mkdir -p \"${target_dir}\""
+  if [[ "$REMOTE_FETCH" == "true" ]]; then
+    do_run "curl -fsSL \"${RAW_BASE}/scripts/gsd-sdk.cjs\" -o \"${target_dir}/gsd-sdk\""
+  else
+    do_run "cp \"${SCRIPT_DIR}/scripts/gsd-sdk.cjs\" \"${target_dir}/gsd-sdk\""
+  fi
+  do_run "chmod +x \"${target_dir}/gsd-sdk\""
+}
+
 # ---------- Main ----------
 
 echo "Silver Bullet for Forge — Installer"
@@ -247,6 +260,7 @@ if ! $PROJECT_ONLY; then
   install_agents_to "${FORGE_HOME}/agents"
   install_commands_to "${FORGE_HOME}/commands"
   install_templates_to "${FORGE_HOME}/silver-bullet/templates"
+  install_gsd_sdk_shim_to "${GSD_BIN_DIR}"
   install_agents_md_to "${FORGE_HOME}/AGENTS.md" "forge/AGENTS.md.template"
   echo ""
 fi
