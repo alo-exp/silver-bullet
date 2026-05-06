@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.32.0] — 2026-05-07
+
+## Codex packaging and release refresh
+
+**What:** Ships the Codex-facing SB package as SB-only, registers the shared Codex marketplace for third-party wrappers, and keeps Claude packaging intact.
+
+## Features
+
+- `scripts/install-codex.sh` now registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources, and purges legacy SB skill copies from `~/.agents/skills`.
+- `scripts/sync-codex-package.sh` now keeps the Codex bundle scoped to SB-owned surfaces only, with project-instance artifacts and third-party wrappers excluded from the package snapshot.
+- Live E2E coverage now runs against both Claude and Codex with a shared harness and runtime adapters.
+
+## Fixes
+
+- GSD bootstrap no longer uses `eval`; the installer now invokes the parsed command directly.
+- Codex live tests now isolate the blocked-edit guard only where needed so docs workflows remain open.
+
+## Documentation
+
+- README, site, templates, and Forge parity docs now reflect the `v0.32.0` release surfaces.
+- SB Codex and Claude packaging descriptions now match the new split between SB-owned assets and dependency installs from official sources.
+
 ## [0.31.1] — 2026-05-06
 
 ## Patch
