@@ -20,7 +20,6 @@
     "ci-cd"
   ],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Silver Bullet",
     "shortDescription": "Enforced GSD workflows for Codex and Claude",
