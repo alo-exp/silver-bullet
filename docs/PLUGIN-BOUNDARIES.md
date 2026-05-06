@@ -49,3 +49,11 @@ SB adds enforcement to the GSD+Superpowers+Engineering+Design stack. It never re
 ## Scalability
 
 **Fixed** — updated when plugin responsibilities shift (rare). Matrix format prevents unbounded growth.
+
+## Codex Marketplace Packaging
+
+For the Codex packaging pattern used with Alo Labs plugins, see
+[docs/internal/codex-marketplace-packaging-guide.md](docs/internal/codex-marketplace-packaging-guide.md).
+SB's own Codex package stays SB-only; upstream dependency plugins are installed from
+their official source repos, and the marketplace hosts only thin Codex packaging when
+an upstream project does not publish its own Codex artifact.

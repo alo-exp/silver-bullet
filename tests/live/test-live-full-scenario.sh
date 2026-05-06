@@ -2,6 +2,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/helpers.sh"
+export SB_LIVE_CODEX_GUARD=1
 
 echo "=== Live Full Scenario Tests ==="
 

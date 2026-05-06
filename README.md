@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.31.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.31.1)
+[![version](https://img.shields.io/badge/version-v0.32.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.0)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -8,7 +8,7 @@
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
+Silver Bullet is a Claude Code and Codex plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
 ## How It Works
 
@@ -66,18 +66,11 @@ Both workflows use GSD as the primary execution engine. Silver Bullet guides you
 
 ## Install
 
-Silver Bullet supports two install paths. **Path A (recommended)** is the full SB + GSD + Superpowers combo and unlocks every flow skill (`/silver:feature`, `/silver:bugfix`, `/silver:ui`, `/silver:devops`, `/silver:research`, `/silver:release`). **Path B (standalone)** installs only Silver Bullet and Superpowers — useful for projects that don't want GSD's planning artifacts but still want enforcement, knowledge capture, and the trivial-bypass discipline. See [docs/gsd-vs-silver-bullet.md](docs/gsd-vs-silver-bullet.md) for the full comparison.
+Silver Bullet keeps its own Codex package SB-only. Dependencies come from their official sources:
 
-### Path A — Full (recommended)
-
-#### 1. Install prerequisites
-
-```
-npx get-shit-done-cc@1.30.0
-/plugin install obra/superpowers
-/plugin install anthropics/knowledge-work-plugins/tree/main/engineering
-/plugin install anthropics/knowledge-work-plugins/tree/main/design
-```
+- GSD: `npx get-shit-done-cc@latest`
+- Superpowers: `/plugin install obra/superpowers` in Claude Code, or `codex plugin marketplace add https://github.com/obra/superpowers-marketplace.git` in Codex
+- Anthropic knowledge-work plugins: install the upstream Claude plugin in Claude Code, or let the shared `alo-labs/codex-plugins` marketplace fetch the thin Codex wrappers for Codex at install time
 
 Install `jq` if you don't have it:
 ```bash
@@ -85,38 +78,7 @@ brew install jq    # macOS
 apt install jq     # Linux
 ```
 
-#### 2. Install Silver Bullet
-
-```
-/plugin install alo-exp/silver-bullet
-```
-
-### Path B — SB Standalone (without GSD)
-
-Pick this if you don't want GSD's `.planning/` artifacts or the multi-phase milestone model — just SB enforcement plus knowledge capture.
-
-```bash
-brew install jq                                      # macOS, or apt install jq
-```
-
-```
-/plugin install obra/superpowers
-/plugin install alo-exp/silver-bullet
-```
-
-What works in Path B:
-- All hooks (commit/release/conversation-end gates, plugin-boundary blocks, trivial bypass)
-- `/silver:init`, `/silver:fast`, `/silver:add`, `/silver:remove`, `/silver:rem`, `/silver:scan`
-- Quality skills: `/silver:quality-gates`, `/silver:blast-radius`, `/silver:devops-quality-gates`
-- Pre-release quality gate stages
-
-Disabled in Path B (require GSD):
-- Flow skills: `/silver:feature`, `/silver:bugfix`, `/silver:ui`, `/silver:devops`, `/silver:research`
-- `/silver:release` (uses GSD MILESTONES.md)
-
-You can upgrade to Path A any time by installing GSD and re-running `/silver:init`; the disabled skills become available without further configuration.
-
-### Path C — Forge runtime (forgecode.dev)
+### Forge runtime (forgecode.dev)
 
 Silver Bullet ships a complete port for the [Forge](https://forgecode.dev) coding agent. One-command idempotent install:
 
@@ -128,7 +90,17 @@ This installs ~107 skills, ~47 custom agents (10 hook-equivalent + 33 GSD subage
 
 After install, run `silver-init` inside any project to scaffold `.planning/` and start a workflow. See [`forge/PARITY.md`](forge/PARITY.md) for the Claude-Code ↔ Forge capability map.
 
-### 3. (Optional) Install DevOps plugins
+### Codex local dev install
+
+If you are using this repo checkout directly in Codex, register the shared marketplace and refresh the package snapshot:
+
+```bash
+./scripts/install-codex.sh --purge-legacy-skills
+```
+
+This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
+
+### Optional DevOps plugins
 
 If you'll use the `devops-cycle` workflow, these optional plugins provide context-aware
 enrichment. Silver Bullet's skill orchestrator automatically selects the best plugin for
@@ -154,7 +126,7 @@ During `/silver:init` setup, Silver Bullet detects which of these are installed
 and stores the results in `.silver-bullet.json`. The `devops-cycle` workflow then uses
 the `/devops-skill-router` to invoke the best available skill at each trigger point.
 
-### 4. Initialize your project
+### Initialize your project
 
 Open your project in Claude Code and run:
 
@@ -291,7 +263,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.31.1",
+  "version": "0.32.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",

@@ -6,11 +6,27 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
 MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
 TEST_RUN_ID="$$"
+LIVE_RUNTIME="${SB_LIVE_RUNTIME:-claude}"
+
+RUNTIME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/runtimes" && pwd)"
+case "$LIVE_RUNTIME" in
+  claude)
+    # shellcheck source=tests/live/runtimes/claude.sh
+    source "$RUNTIME_DIR/claude.sh"
+    ;;
+  codex)
+    # shellcheck source=tests/live/runtimes/codex.sh
+    source "$RUNTIME_DIR/codex.sh"
+    ;;
+  *)
+    printf 'ERROR: unsupported live runtime: %s\n' "$LIVE_RUNTIME" >&2
+    exit 2
+    ;;
+esac
 
 # The REAL state path that hooks always write to (Claude does not pass
 # SILVER_BULLET_STATE_FILE env var to hook subprocesses, so hooks always use
@@ -26,6 +42,7 @@ TMPSTATE=""
 TMPTRIVIAL=""
 
 live_setup() {
+  runtime_preflight
   WORK_DIR=$(mktemp -d)
   # TMPSTATE points to REAL_STATE so assert_state_* helpers work correctly
   TMPSTATE="$REAL_STATE"
@@ -76,6 +93,21 @@ EOJSON
   # Commit the config
   git -C "$WORK_DIR" add -A
   git -C "$WORK_DIR" commit -q -m "setup"
+
+  if [[ "$LIVE_RUNTIME" == "codex" && "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
+    cat > "$WORK_DIR/AGENTS.override.md" <<'EOF'
+# Silver Bullet Live Test Override
+
+This workspace is governed by Silver Bullet. Before any direct file edit, inspect
+`.silver-bullet.json` and the current state file.
+
+If the planning state does not yet include the required planning skill(s), refuse
+the edit and say that planning is incomplete or blocked.
+
+If the planning state shows the required planning skill(s) have been recorded for
+the scenario, proceed with the requested edit normally.
+EOF
+  fi
 }
 
 live_teardown() {
@@ -99,14 +131,7 @@ live_teardown() {
 # Use this for enforcement tests (S1, S2, S3, S4) where blocking behavior must be observed.
 invoke_claude() {
   local prompt="$1"
-  local output
-  output=$(cd "$WORK_DIR" && "$CLAUDE_BIN" -p "$prompt" \
-    --plugin-dir "$SB_ROOT" \
-    --output-format text \
-    --model claude-haiku-4-5-20251001 \
-    --max-budget-usd "$MAX_BUDGET" \
-    --verbose 2>&1) || true
-  printf '%s' "$output"
+  runtime_invoke default "$prompt"
 }
 
 # invoke_claude_permissive: bypasses file-read permission prompts.
@@ -115,15 +140,7 @@ invoke_claude() {
 # for enforcement tests.
 invoke_claude_permissive() {
   local prompt="$1"
-  local output
-  output=$(cd "$WORK_DIR" && "$CLAUDE_BIN" -p "$prompt" \
-    --plugin-dir "$SB_ROOT" \
-    --output-format text \
-    --model claude-haiku-4-5-20251001 \
-    --max-budget-usd "$MAX_BUDGET" \
-    --dangerously-skip-permissions \
-    --verbose 2>&1) || true
-  printf '%s' "$output"
+  runtime_invoke permissive "$prompt"
 }
 
 assert_response_contains() {
