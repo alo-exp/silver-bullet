@@ -192,6 +192,30 @@ assert_blocks "missing skills -> decision:block" "$out"
 assert_contains "block output contains 'silver-quality-gates'" "$out" "silver-quality-gates"
 teardown
 
+# Test 3b: Uninstalled required skill -> warning only, no block
+echo "--- Test 3b: Uninstalled required skill warns and allows ---"
+setup
+cat > "$TMPCFG" << EOF
+{
+  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
+  "skills": {
+    "required_planning": ["not-a-real-skill"],
+    "required_deploy": ["not-a-real-skill"],
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+  },
+  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
+}
+EOF
+# Keep the state non-empty so the hook reaches the required-skill check.
+echo "code-review" > "$TMPSTATE"
+# Dirty the tree so HOOK-14 does not short-circuit enforcement.
+printf 'work-in-progress\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+out=$(run_hook)
+assert_passes "uninstalled required skill -> no block" "$out"
+assert_contains "warning output mentions uninstalled skill" "$out" "not installed anywhere invocable"
+teardown
+
 # Test 4: Trivial file present -> exit 0, no block
 echo "--- Test 4: Trivial bypass ---"
 setup
@@ -320,10 +344,10 @@ out=$(run_hook)
 assert_blocks "stale/unresolvable upstream + missing skills -> blocks (fail-closed)" "$out"
 teardown
 
-# Test 12: HOOK-06 — gitignored untracked file + missing skills -> block
-# `.gitignore`d untracked files must be treated as dirty work
-# (untracked-files=all). Bug: default porcelain hides them.
-echo "--- Test 12: HOOK-06 gitignored untracked file -> block ---"
+# Test 12: HOOK-06 — gitignored untracked file no longer blocks
+# Ignored runtime artifacts should not trip the completion gate; the hook
+# now lets read-only/runtime-only sessions proceed.
+echo "--- Test 12: HOOK-06 gitignored untracked file -> allow ---"
 setup
 echo "code-review" > "$TMPSTATE"
 # Add a gitignore entry and create an untracked file matching it.
@@ -332,7 +356,7 @@ git -C "$TMPDIR_TEST" add .gitignore
 git -C "$TMPDIR_TEST" commit -q -m "add gitignore"
 printf 'session work\n' > "$TMPDIR_TEST/wip-notes.txt"
 out=$(run_hook)
-assert_blocks "gitignored untracked file + missing skills -> blocks" "$out"
+assert_passes "gitignored untracked file + missing skills -> allows" "$out"
 teardown
 
 # Test 13: HOOK-06 — local main does NOT become a fallback anchor.

@@ -21,9 +21,11 @@ trap cleanup_all EXIT
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
+  TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
   rm -f "$TMPSTATE"
+  rm -f "$TMPBRANCH_FILE"
   mkdir -p "$(dirname "$TMPFILE")"
   touch "$TMPFILE"
   cat > "$TMPCFG" << EOF
@@ -38,11 +40,15 @@ setup() {
 }
 EOF
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  printf 'feature/test\n' > "$TMPBRANCH_FILE"
+  export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH_FILE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$TMPBRANCH_FILE"
+  unset SILVER_BULLET_BRANCH_FILE
 }
 
 run_hook_edit() {
@@ -136,6 +142,26 @@ teardown
 setup
 out=$(run_hook_write "PreToolUse" "$TMPFILE")
 assert_blocks "Stage A: Write to src blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 2b: Stage A — missing skill that is not installed anywhere invocable warns and allows
+setup
+cat > "$TMPCFG" << 'EOF'
+{
+  "project": {
+    "src_pattern": "/src/",
+    "src_exclude_pattern": "__tests__|\\.test\\.",
+    "active_workflow": "full-dev-cycle"
+  },
+  "skills": { "required_planning": ["not-a-real-skill"] },
+  "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
+}
+EOF
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+rm -f "${TMPCFG}.bak"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "Stage A: uninstalled planning skill warns and allows source edit" "$out"
+assert_contains "Stage A warning mentions uninstalled skill" "$out" "not installed anywhere invocable"
 teardown
 
 # Test 3: Stage A — non-src file passes even without planning
@@ -247,11 +273,15 @@ cat > "$TMPCFG" << 'EOF'
     "src_exclude_pattern": "__tests__|\\.test\\.",
     "active_workflow": "devops-cycle"
   },
-  "skills": { "required_planning": [] },
+  "skills": {
+    "required_planning": ["silver-blast-radius","devops-quality-gates"],
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+  },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 # Only silver-quality-gates in state (wrong for devops)
 echo "silver-quality-gates" > "$TMPSTATE"
@@ -268,11 +298,15 @@ cat > "$TMPCFG" << 'EOF'
     "src_exclude_pattern": "__tests__|\\.test\\.",
     "active_workflow": "devops-cycle"
   },
-  "skills": { "required_planning": [] },
+  "skills": {
+    "required_planning": ["silver-blast-radius","devops-quality-gates"],
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+  },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${TMPDIR_TEST}/trivial|g" "$TMPCFG"
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 echo "silver-blast-radius" > "$TMPSTATE"
 echo "devops-quality-gates" >> "$TMPSTATE"

@@ -135,6 +135,26 @@ out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "git commit allowed with silver-quality-gates done" "$out"
 teardown
 
+# Test 3b: git commit warns + allows when required planning skill is not installed anywhere invocable
+setup
+cat > "$TMPCFG" << 'EOF'
+{
+  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
+  "skills": {
+    "required_planning": ["not-a-real-skill"],
+    "required_deploy": ["not-a-real-skill"],
+    "all_tracked": ["silver-quality-gates","code-review"]
+  },
+  "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
+}
+EOF
+sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+rm -f "${TMPCFG}.bak"
+out=$(run_hook "PreToolUse" "git commit -m 'test'")
+assert_passes "git commit allowed when required planning skill is uninstalled" "$out"
+assert_contains "warning mentions uninstalled planning skill" "$out" "not installed anywhere invocable"
+teardown
+
 # Test 4: git push blocked without planning
 setup
 out=$(run_hook "PreToolUse" "git push origin feature/test")
