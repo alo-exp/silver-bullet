@@ -16,7 +16,7 @@
 - :white_check_mark: **v0.26.0 Bug Fixes, CI Hardening & Skill Quality** - Phases 55-58 (shipped 2026-04-25)
 - :white_check_mark: **v0.27.0 Chores, Docs, CI Hardening & Stop Hook Audit** - Phases 59-64 (shipped)
 - :white_check_mark: **v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies** - Phases 65-69 (shipped 2026-04-27)
-- **v0.29.0 Multi-Agent Phase Coordination** - Phases 70-75 (in progress)
+- **v0.29.0 Multi-Agent Phase Coordination** - Phases 70-75 (planned)
 
 ## Phases
 
@@ -119,7 +119,7 @@
 - [x] **Phase 68: Installer + AGENTS.md Glue Layer** - Rewrite forge-sb-install.sh to install ~108 skills + ~40 custom agents; rewrite AGENTS.md template as Forge-adapted silver-bullet.md (drives hook-agent gating + subagent-as-tool delegation)
 - [x] **Phase 69: End-to-End Forge Verification** - Install on Forge test app and verify feature/bugfix/devops/release workflows produce same artifacts as SB on Claude Desktop; document PARITY-REPORT.md (structural complete; runtime tests recipe in PARITY-REPORT.md awaits user)
 
-### v0.29.0 Multi-Agent Phase Coordination
+### Planned v0.29.0 Multi-Agent Phase Coordination
 
 - [ ] **Phase 70: Phase-Lock Schema + Shared Helper** - Define `.planning/.phase-locks.json` schema (gitignored, flock-atomic) and shared bash helper at `.planning/scripts/phase-lock.sh` with claim/heartbeat/release/peek operations; identity tags (claude/forge/codex/opencode) extensible via config; stale-lock TTL (default 30 min)
 - [ ] **Phase 71: Claude-SB Lock Hooks** - New `phase-lock-claim.sh` (PreToolUse), `phase-lock-heartbeat.sh` (PostToolUse, throttled), `phase-lock-release.sh` (Stop/SubagentStop); register in hooks.json; completion-audit and stop-check honor lock owner check (informational)

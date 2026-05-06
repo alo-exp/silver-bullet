@@ -61,7 +61,7 @@ There are **two** state files involved when you run a GSD-driven SB-enforced wor
 1. **`.planning/STATE.md`** — written by GSD. Project-scoped, persistent, committed to the repo. Tracks current phase, plan progress, milestone status. Survives `/clear`, `/compact`, and machine restarts.
 2. **`~/.claude/.silver-bullet/state`** — written by SB hooks. User-scoped (lives outside the repo), branch-scoped, ephemeral. Tracks which skills have been invoked in the current session for enforcement-gate purposes. Reset on branch change, on `/clear`, and on `startup` events. Never commits to a repo.
 
-These two files do not duplicate each other. GSD's STATE.md says "Phase 76 in progress, Plan 76.3 next." SB's state says "the user invoked `silver-quality-gates` and `code-review` in this session." Both pieces of information are needed; neither replaces the other.
+These two files do not duplicate each other. GSD's STATE.md tracks project phase progress, while SB's state records which required skills the user has invoked in the current session. Both pieces of information are needed; neither replaces the other.
 
 ## What Works Without Each Component
 

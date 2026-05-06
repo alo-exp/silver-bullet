@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.31.1] — 2026-05-06
+
+## Patch
+
+**Docs/state sync.** Aligns the shipped repo state with the `v0.31.1` tag, refreshes current-version surfaces, and leaves the inventory unchanged.
+
 ## [0.31.0] — 2026-04-28
 
 ## Headline

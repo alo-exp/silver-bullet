@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.31.0
-milestone_name: Forge Port Completion
+milestone: v0.31.1
+milestone_name: Docs and State Sync
 current_plan: none
 status: shipped
 stopped_at: ""
-last_updated: "2026-04-28T09:42:19.000Z"
-last_activity: 2026-04-28
+last_updated: "2026-05-06T00:00:00.000Z"
+last_activity: 2026-05-06
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,27 +18,32 @@ progress:
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.31.0 (shipped 2026-04-28). Prior: v0.30.0 (2026-04-28).
-**Active milestone:** (none — v0.31.0 shipped)
+**Current version:** v0.31.1 (shipped 2026-05-06). Prior: v0.31.0 (2026-04-28).
+**Active milestone:** (none — v0.31.1 shipped)
 **Active phase:** (none)
 **Current plan:** (none)
 
-Last activity: 2026-04-28
+Last activity: 2026-05-06
 
 ## Project Reference
 
 See: .planning/PROJECT.md
-See: .planning/MILESTONES.md (v0.31.0 entry)
+See: .planning/MILESTONES.md (v0.31.1 entry)
 
 ## Current Position
 
-Phase: (none — v0.31.0 milestone complete)
+Phase: (none — v0.31.1 milestone complete)
 Plan: (none)
-Status: v0.31.0 tagged + GitHub Release published. CI green on main. Pre-release quality gate (4 stages) passed with 2 consecutive clean rounds each.
+Status: v0.31.1 tagged + GitHub Release published. CI green on main. Patch release only; inventory unchanged.
 
 Progress: [██████████] 100% (5/5 phases shipped)
 
-## v0.31.0 milestone summary
+## v0.31.1 release sync
+
+- Live docs, templates, and state metadata aligned to the `v0.31.1` tag.
+- Inventory unchanged: 107 skills + 47 agents + 49 slash commands + 11 template entries.
+
+## Previous milestone summary (v0.31.0)
 
 - **Phase 81** — SB Templates: ported `templates/*` → `forge/templates/`; installer wires `~/forge/silver-bullet/templates/`
 - **Phase 82** — Forge Commands surface: 43 GSD slash commands ported
@@ -68,5 +73,5 @@ Plus pre-release gate fixes: 2 additional GSD command ports, secondary version f
 
 ## Session Continuity
 
-Last session: 2026-04-28
-Stopped at: v0.31.0 shipped. Tag pushed, GitHub Release published, CI green, MILESTONES.md updated, milestone closed.
+Last session: 2026-05-06
+Stopped at: v0.31.1 shipped. Tag pushed, GitHub Release published, CI green, MILESTONES.md updated, milestone closed.
