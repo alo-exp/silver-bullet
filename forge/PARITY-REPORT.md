@@ -4,6 +4,7 @@
 **Milestone:** v0.31.0 — Forge Port Completion
 **Source repo state:** post-Phase-85 (milestone v0.31.0)
 **Forge version targeted:** any version that follows `forgecode.dev/docs` spec (skills, custom agents, slash commands)
+**Current repo version:** v0.31.1 (patch release; inventory unchanged from this report)
 
 ---
 

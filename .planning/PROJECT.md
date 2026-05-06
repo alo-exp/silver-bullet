@@ -82,13 +82,15 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.29.0 Multi-Agent Phase Coordination
+## Planned Milestone: v0.29.0 Multi-Agent Phase Coordination
 
 **Goal:** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) can cooperatively work on the same project folder against the same SB state and docs context, but each Phase is owned by exactly one agent at a time. Exception: `/forge-delegate` engages a sibling runtime as a subagent under the parent's existing lock.
 
 **Foundation:** `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum supersedes original Option A with phase-ownership model)
 
 **Phases:** 70-75 (24 requirements). Defined 2026-04-28.
+
+**Status:** planned future work; the shipped repo version is v0.31.1 and there is no active milestone.
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -116,12 +118,12 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ## Context
 
-- Stack: Bash (18 hook scripts, lib helpers), Markdown (61 skills), JSON (config, hooks manifest), HTML (help site)
+- Stack: Bash (18 hook scripts, lib helpers), Markdown (62 skills), JSON (config, hooks manifest), HTML (help site)
 - Repository: https://github.com/alo-exp/silver-bullet.git
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.26.0
+- Current version: v0.31.1
 
 ## Constraints
 
@@ -164,4 +166,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 — v0.29.0 milestone opened; Multi-Agent Phase Coordination scope defined (Phases 70-75)*
+*Last updated: 2026-05-06 — v0.31.1 shipped; v0.29.0 Multi-Agent Phase Coordination remains planned*

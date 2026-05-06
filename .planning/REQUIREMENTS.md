@@ -1,6 +1,7 @@
 # Requirements: Silver Bullet v0.29.0
 
 **Milestone:** v0.29.0 — Multi-Agent Phase Coordination
+**Status:** planned (current shipped repo version is v0.31.1)
 **Defined:** 2026-04-28
 **Foundation:** `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum supersedes original Option A with phase-ownership model)
 **Core Value:** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) can cooperatively work on the same project folder against the same SB state and docs context, but each Phase is owned by exactly one agent at a time. Exception: `/forge-delegate` engages a sibling runtime as a subagent under the parent's existing lock.

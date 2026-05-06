@@ -16,7 +16,7 @@
         "repo": "alo-exp/silver-bullet"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
-      "version": "0.31.0",
+      "version": "0.31.1",
       "author": {
         "name": "Alo Labs",
         "email": "info@alolabs.dev"

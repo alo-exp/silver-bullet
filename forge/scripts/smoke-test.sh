@@ -52,7 +52,7 @@ for a in "${HOOK_AGENTS[@]}"; do
   if [[ -f "$FORGE_HOME/agents/$a.md" ]]; then ok "$a present"; else fail "$a MISSING"; fi
 done
 
-# 4. GSD subagent-equivalent agents (33 expected post-v0.31.0)
+# 4. GSD subagent-equivalent agents (33 expected)
 echo "[4/8] GSD subagent-equivalent agents (gsd-*)"
 GSD_AGENTS=(
   gsd-roadmapper gsd-planner gsd-plan-checker gsd-phase-researcher
@@ -72,7 +72,7 @@ for a in "${GSD_AGENTS[@]}"; do
 done
 if [[ "$N_OK" -ge 33 ]]; then ok "$N_OK/33 GSD agents present"; else fail "only $N_OK/33 GSD agents present"; fi
 
-# Superpowers code-reviewer agent (new in v0.31.0)
+# Superpowers code-reviewer agent (included in the parity set)
 if [[ -f "$FORGE_HOME/agents/code-reviewer.md" ]]; then ok "code-reviewer agent present (Superpowers)"; else fail "code-reviewer agent missing"; fi
 
 # 5. Frontmatter validity (sample check)
@@ -96,7 +96,7 @@ for a in "${SAMPLE_AGENTS[@]}"; do
   fi
 done
 
-# 6. Forge slash commands (new in v0.31.0)
+# 6. Forge slash commands (current parity surface)
 echo "[6/8] Slash commands ($FORGE_HOME/commands)"
 if [[ -d "$FORGE_HOME/commands" ]]; then
   N=$(find "$FORGE_HOME/commands" -name "*.md" | wc -l | tr -d ' ')
@@ -109,7 +109,7 @@ else
   fail "$FORGE_HOME/commands directory does not exist"
 fi
 
-# 7. SB templates (new in v0.31.0)
+# 7. SB templates (current parity surface)
 echo "[7/8] SB templates ($FORGE_HOME/silver-bullet/templates)"
 if [[ -d "$FORGE_HOME/silver-bullet/templates" ]]; then
   for t in silver-bullet.md.base workflow.md.base silver-bullet.config.json.default; do

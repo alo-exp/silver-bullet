@@ -900,7 +900,7 @@ to the user before proceeding to the next stage.
 This section is written and committed by SB whenever the user expresses a workflow preference.
 Initially empty — all workflow defaults apply. Read at every relevant decision point.
 
-Last updated: (not yet set)
+Last updated: 2026-05-06
 
 ### 10a. Routing Preferences
 | Work type | Override route | Since |

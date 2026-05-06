@@ -1,5 +1,19 @@
 # Milestones
 
+## v0.31.1 Docs & State Sync (Shipped: 2026-05-06)
+
+**Type:** Patch release (docs/state refresh, no inventory changes).
+
+**Goal:** Align live docs, planning state, version fields, and parity notes with the `v0.31.1` tag.
+
+**Shipped:** Version fields, README badge/snippet, site badge, config templates, `silver-bullet.md`, `STATE.md`, `PROJECT.md`, `ROADMAP.md`, `REQUIREMENTS.md`, and parity notes updated; inventory unchanged.
+
+**Final inventory:** 107 skills + 47 agents + 49 slash commands + 11 template entries.
+
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.31.1
+
+**Carried forward:** None.
+
 ## v0.31.0 Forge Port Completion (Shipped: 2026-04-28)
 
 **Type:** Port-completion milestone (5 phases, 7 requirement categories, ~50 file ports + docs).
