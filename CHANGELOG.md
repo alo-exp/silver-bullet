@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.2] — 2026-05-07
+
+## Patch
+
+**CI hardening and release safety.** Fixes the Codex installer path resolution on mixed-case config locations, makes the GSD SDK shim and workflow tests portable, and keeps the lifecycle-gap integration gate deterministic in CI.
+
+## Fixes
+
+- `scripts/install-codex.sh` now resolves `~/.Codex/config.toml` and `~/.codex/config.toml` safely and creates the config directory before writing.
+- `tests/scripts/test-gsd-sdk-shim.sh` now supplies a local `gsd-tools.cjs` fixture so the shim test does not depend on ambient installs.
+- `tests/scripts/test-workflows.sh` now uses a cross-platform mtime helper for the heartbeat assertion.
+- `tests/integration/test-e2e-lifecycle-gaps.sh` now provides a local invocable `verification-before-completion` fixture so the post-review gate is deterministic in CI.
+
 ## [0.32.1] — 2026-05-07
 
 ## Live Release Hardening
