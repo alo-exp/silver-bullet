@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   announce:
@@ -50,6 +51,12 @@ jobs:
             echo "$body"
             echo "__EOF__"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Verify release commit CI is settled
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+        run: ./scripts/verify-release-announcement-ci.sh "$RELEASE_TAG"
 
       - name: Post to Google Chat
         env:
