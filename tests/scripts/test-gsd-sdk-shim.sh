@@ -50,7 +50,68 @@ GSD_TOOLS_PATH="${GSD_TOOLS_PATH:-$HOME/.claude/get-shit-done/bin/gsd-tools.cjs}
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-export GSD_TOOLS_PATH
+STUB_TOOLS="${TMP}/gsd-tools.cjs"
+cat > "$STUB_TOOLS" <<'EOF'
+#!/usr/bin/env node
+const fs = require('fs');
+
+const rawArgv = process.argv.slice(2);
+const argv = [];
+for (let i = 0; i < rawArgv.length; i += 1) {
+  const arg = rawArgv[i];
+  if (arg === '--cwd' || arg === '--ws' || arg === '--pick' || arg === '--default') {
+    i += 1;
+    continue;
+  }
+  if (arg.startsWith('--cwd=') || arg.startsWith('--ws=') || arg.startsWith('--pick=') || arg.startsWith('--default=')) {
+    continue;
+  }
+  if (arg === '--raw') {
+    continue;
+  }
+  argv.push(arg);
+}
+
+const command = argv[0];
+
+if (command === 'config-get') {
+  const key = argv[1] || '';
+  if (key === 'workflow._auto_chain_active' || key === 'workflow.auto_advance') {
+    process.stdout.write('false');
+    process.exit(0);
+  }
+  if (key === 'workflow.context_coverage_gate') {
+    process.stdout.write('true');
+    process.exit(0);
+  }
+  process.stdout.write('null');
+  process.exit(0);
+}
+
+if (command === 'frontmatter' && argv[1] === 'get') {
+  const file = argv[2];
+  const fieldFlag = argv.indexOf('--field');
+  const field = fieldFlag >= 0 ? argv[fieldFlag + 1] : '';
+  const text = fs.readFileSync(file, 'utf8');
+  const match = text.match(/---\n([\s\S]*?)\n---/);
+  const frontmatter = {};
+  if (match) {
+    for (const line of match[1].split(/\r?\n/)) {
+      const pair = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+      if (pair) frontmatter[pair[1]] = pair[2];
+    }
+  }
+  const value = field ? { [field]: frontmatter[field] } : frontmatter;
+  process.stdout.write(JSON.stringify(value));
+  process.exit(0);
+}
+
+process.stderr.write(`unsupported command: ${argv.join(' ')}\n`);
+process.exit(1);
+EOF
+chmod +x "$STUB_TOOLS"
+
+export GSD_TOOLS_PATH="$STUB_TOOLS"
 export GSD_SDK_INSTALL_DIR="${TMP}/bin"
 
 "$INSTALLER" >/dev/null

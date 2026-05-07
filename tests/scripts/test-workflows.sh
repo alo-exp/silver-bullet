@@ -42,6 +42,11 @@ setup_repo() {
   cd "$TMP/repo" && git init -q
 }
 
+get_mtime() {
+  local path="$1"
+  stat -c '%Y' "$path" 2>/dev/null || stat -f '%m' "$path" 2>/dev/null
+}
+
 # T1: start emits a valid workflow id and creates the file
 setup_repo
 ID=$("$SCRIPT" start silver-feature "build auth" "explore,plan,execute,ship")
@@ -119,10 +124,10 @@ assert_contains "T7 multiple active rejected" "multiple active workflows" "$err2
 setup_repo
 ID=$("$SCRIPT" start silver-feature)
 file="$TMP/repo/.planning/workflows/$ID.md"
-old_mtime=$(stat -f '%m' "$file" 2>/dev/null || stat -c '%Y' "$file")
+old_mtime=$(get_mtime "$file")
 sleep 1
 "$SCRIPT" heartbeat "$ID"
-new_mtime=$(stat -f '%m' "$file" 2>/dev/null || stat -c '%Y' "$file")
+new_mtime=$(get_mtime "$file")
 if [[ "$new_mtime" -gt "$old_mtime" ]]; then
   echo "PASS: T8 heartbeat advanced mtime"; (( PASS++ )) || true
 else
