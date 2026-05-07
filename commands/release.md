@@ -1,4 +1,5 @@
 ---
+name: silver:release
 description: Prepare a Silver Bullet milestone release
 argument-hint: <version or release description>
 ---

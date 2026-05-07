@@ -1,4 +1,5 @@
 ---
+name: silver:fast
 description: Handle a trivial task with no workflow overhead
 argument-hint: <small task>
 ---

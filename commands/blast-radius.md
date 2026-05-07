@@ -1,4 +1,5 @@
 ---
+name: silver:blast-radius
 description: Assess the blast radius of a change
 argument-hint: <change description>
 ---

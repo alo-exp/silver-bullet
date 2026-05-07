@@ -1,4 +1,5 @@
 ---
+name: silver:ingest
 description: Ingest an external artifact into Silver Bullet
 argument-hint: <source or artifact>
 ---

@@ -1,4 +1,5 @@
 ---
+name: silver:devops
 description: Run infrastructure or DevOps work through Silver Bullet
 argument-hint: <infra or ops task>
 ---

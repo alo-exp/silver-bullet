@@ -96,10 +96,16 @@ SCRIPT="$REPO_ROOT/scripts/install-codex.sh"
 HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
 LOG_DIR="$TMP/log"
-mkdir -p "$HOME_DIR/.Codex" "$HOME_DIR/.agents/skills/silver-feature" "$HOME_DIR/.agents/skills/unrelated-skill" "$BIN_DIR" "$LOG_DIR"
+mkdir -p "$HOME_DIR/.Codex" "$HOME_DIR/.agents/skills/silver-feature" "$HOME_DIR/.agents/skills/using-silver-bullet" "$HOME_DIR/.agents/skills/unrelated-skill" "$BIN_DIR" "$LOG_DIR"
 cat > "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md" <<'EOF'
 ---
 name: unrelated-skill
+---
+EOF
+
+cat > "$HOME_DIR/.agents/skills/using-silver-bullet/SKILL.md" <<'EOF'
+---
+name: using-silver-bullet
 ---
 EOF
 
@@ -141,6 +147,7 @@ assert_contains "codex registered shared marketplace" "codex plugin marketplace 
 assert_contains "codex upgraded shared marketplace" "codex plugin marketplace upgrade alo-labs-codex" "$LOG_DIR/codex.log"
 assert_contains "codex registered superpowers marketplace" "codex plugin marketplace add https://github.com/obra/superpowers-marketplace.git" "$LOG_DIR/codex.log"
 assert_file_absent "legacy SB skill removed" "$HOME_DIR/.agents/skills/silver-feature"
+assert_file_absent "legacy using-silver-bullet skill removed" "$HOME_DIR/.agents/skills/using-silver-bullet"
 assert_file_exists "unrelated skill preserved" "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md"
 assert_contains "SB hooks plugin enabled" '[plugins."silver-bullet@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 if grep -qF '[plugins."silver@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"; then
@@ -152,6 +159,10 @@ else
 fi
 assert_file_exists "SB init command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/init.md"
 assert_file_exists "SB command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/feature.md"
+assert_file_exists "SB router command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/silver.md"
+assert_contains "SB init command uses silver prefix" "name: silver:init" "$REPO_ROOT/plugins/silver-bullet/commands/init.md"
+assert_contains "SB feature command uses silver prefix" "name: silver:feature" "$REPO_ROOT/plugins/silver-bullet/commands/feature.md"
+assert_contains "SB router command uses silver name" "name: silver" "$REPO_ROOT/plugins/silver-bullet/commands/silver.md"
 assert_contains "Anthropic PM plugin enabled" '[plugins."product-management@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Anthropic engineering plugin enabled" '[plugins."engineering@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"

@@ -1,4 +1,5 @@
 ---
+name: silver:remove
 description: Remove or retire a Silver Bullet work item
 argument-hint: <item id or description>
 ---

@@ -1,4 +1,5 @@
 ---
+name: silver:rem
 description: Capture a Silver Bullet knowledge or lesson item
 argument-hint: <lesson or insight>
 ---

@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.32.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.2)
+[![version](https://img.shields.io/badge/version-v0.32.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.3)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -98,7 +98,7 @@ If you are using this repo checkout directly in Codex, register the shared marke
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
-This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The `/silver:*` command surface ships inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
+This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The `/silver` router and `/silver:*` command surface ship inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
 
 ### Optional DevOps plugins
 
@@ -263,7 +263,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.32.2",
+  "version": "0.32.3",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
