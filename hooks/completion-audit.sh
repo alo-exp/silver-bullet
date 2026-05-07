@@ -21,6 +21,15 @@ if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
   sb_skill_is_installed() { return 0; }
 fi
 
+# shellcheck source=lib/github-run-list.sh
+if [[ -f "$_lib_dir/github-run-list.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/github-run-list.sh"
+fi
+if ! declare -f sb_github_run_list_json >/dev/null 2>&1; then
+  sb_github_run_list_json() { return 1; }
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -388,6 +397,60 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
 
   if [[ "$quality_gate_ready" != true ]]; then
     emit_block "$(printf '🛑 RELEASE BLOCKED — The pre-release quality sequence has not been completed in this session.\n\nBefore /silver-release, complete the 4-stage quality gate in docs/internal/pre-release-quality-gate.md, record quality-gate-stage-1 through quality-gate-stage-4 in ~/.claude/.sidekick/quality-gate-state, rerun bash tests/run-all-tests.sh, record full-test-suite-rerun in the same file, then retry.' )"
+    exit 0
+  fi
+
+  release_commit_sha=$(git -C "$project_root" rev-parse HEAD 2>/dev/null || true)
+  if [[ -z "$release_commit_sha" ]]; then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — Unable to determine the current HEAD commit for this release session.\n\nRe-run the release flow from a valid git checkout after CI finishes.' )"
+    exit 0
+  fi
+
+  release_runs_json=""
+  if ! release_runs_json=$(sb_github_run_list_json "$release_commit_sha"); then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — Unable to verify GitHub Actions status for commit %s.\n\nInstall the gh CLI or rerun the release after CI has finished and GitHub Actions status can be verified.' "$release_commit_sha")"
+    exit 0
+  fi
+
+  if ! printf '%s' "$release_runs_json" | jq empty >/dev/null 2>&1; then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — GitHub Actions status payload for commit %s is invalid.\n\nWait for CI to finish and retry the release.' "$release_commit_sha")"
+    exit 0
+  fi
+
+  release_total_runs=$(printf '%s' "$release_runs_json" | jq -r --arg commit_sha "$release_commit_sha" '[.[] | select((.headSha // "") == $commit_sha)] | length')
+  if [[ "${release_total_runs:-0}" -eq 0 ]]; then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — No GitHub Actions runs were found for commit %s yet.\n\nWait for CI to start and finish successfully before creating the release.' "$release_commit_sha")"
+    exit 0
+  fi
+
+  blocked_runs=$(printf '%s' "$release_runs_json" | jq -r --arg commit_sha "$release_commit_sha" '
+    [ .[]
+      | select((.headSha // "") == $commit_sha)
+    ]
+    | sort_by(.workflowName // .name // "unknown")
+    | group_by(.workflowName // .name // "unknown")
+    | map(max_by(.createdAt // ""))
+    | map(select(
+        ((.status // "") != "completed")
+        or (((.conclusion // "") as $conclusion | (["success", "skipped", "neutral"] | index($conclusion)) == null))
+      ))
+    | .[]
+    | [(.workflowName // .name // "unknown"), (.status // ""), (.conclusion // ""), (.createdAt // "")]
+    | @tsv
+  ')
+
+  if [[ -n "$blocked_runs" ]]; then
+    blocked_lines=""
+    while IFS=$'\t' read -r wf status conclusion created_at; do
+      [[ -z "$wf" ]] && continue
+      line=$(printf '  • %s — status=%s conclusion=%s created=%s' "$wf" "$status" "$conclusion" "$created_at")
+      if [[ -n "$blocked_lines" ]]; then
+        blocked_lines+=$'\n'"$line"
+      else
+        blocked_lines="$line"
+      fi
+    done <<< "$blocked_runs"
+    emit_block "$(printf '🛑 RELEASE BLOCKED — GitHub Actions for commit %s are still running or not green yet.\n\nWait until the latest run for each workflow on this commit is completed successfully before releasing.\n\nCurrent non-green run(s):\n%s\n\nThis release gate is intentionally conservative so we never cut a release in the middle of CI.' "$release_commit_sha" "$blocked_lines")"
     exit 0
   fi
 fi

@@ -91,6 +91,7 @@ assert_allowed "S3.1: PR create allowed with all skills" "$out"
 write_release_live_matrix_marker
 write_e2e_live_matrix_marker
 write_quality_gate_state_marker
+write_release_ci_runs_marker
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
 assert_allowed "S3.2: release allowed with all skills" "$out"
 

@@ -22,6 +22,7 @@ cleanup_all() {
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$QUALITY_GATE_FILE"
+  unset GH_RUN_LIST_OVERRIDE
 }
 trap cleanup_all EXIT
 
@@ -71,6 +72,11 @@ setup() {
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
+  export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+    {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
+    {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
+    {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
+  ]')
   mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
   rm -f "$QUALITY_GATE_FILE"
 }
@@ -427,6 +433,48 @@ export SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
 assert_passes "release passes with codex-only live markers when explicitly allowed" "$out"
+teardown
+
+# Test 13d: gh release create blocked when the latest CI run is still in progress
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+  {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
+  {workflowName:"CI", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:05Z"},
+  {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
+  {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
+]')
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocks while the latest CI run is still in progress" "$out"
+assert_contains "in-progress CI block mentions still running" "$out" "still running"
+unset GH_RUN_LIST_OVERRIDE
 teardown
 
 # Test 14: finishing-a-development-branch NOT required when on main

@@ -43,6 +43,7 @@ integration_teardown() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  unset GH_RUN_LIST_OVERRIDE
 }
 
 write_default_config() {
@@ -190,6 +191,14 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+}
+
+write_release_ci_runs_marker() {
+  export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+    {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
+    {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
+    {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
+  ]')
 }
 
 # --- Hook runners ---
