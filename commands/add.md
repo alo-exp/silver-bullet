@@ -1,4 +1,5 @@
 ---
+name: silver:add
 description: File a work item with Silver Bullet
 argument-hint: <issue or backlog item>
 ---

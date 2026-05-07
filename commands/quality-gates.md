@@ -1,4 +1,5 @@
 ---
+name: silver:quality-gates
 description: Run Silver Bullet quality gates
 argument-hint: <scope or path>
 ---

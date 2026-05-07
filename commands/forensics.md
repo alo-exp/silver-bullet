@@ -1,4 +1,5 @@
 ---
+name: silver:forensics
 description: Investigate a failed or abandoned Silver Bullet session
 argument-hint: <session or failure description>
 ---

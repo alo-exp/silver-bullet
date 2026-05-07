@@ -1,4 +1,5 @@
 ---
+name: silver:feature
 description: Build a feature with Silver Bullet
 argument-hint: <feature description>
 ---

@@ -1,4 +1,5 @@
 ---
+name: silver:create-release
 description: Generate release notes and create a release
 argument-hint: <version or release description>
 ---

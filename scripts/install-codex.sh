@@ -278,6 +278,11 @@ if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
       fi
     done < <(find "${REPO_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d -print0)
   fi
+
+  if [[ -e "${LEGACY_SKILLS_HOME}/using-silver-bullet" ]]; then
+    rm -rf -- "${LEGACY_SKILLS_HOME:?}/using-silver-bullet"
+    printf 'Removed legacy skill: using-silver-bullet\n'
+  fi
 fi
 
 printf 'Codex marketplace registered from %s\n' "${REPO_ROOT}"

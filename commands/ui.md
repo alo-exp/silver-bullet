@@ -1,4 +1,5 @@
 ---
+name: silver:ui
 description: Run a UI or design task through Silver Bullet
 argument-hint: <UI or design request>
 ---

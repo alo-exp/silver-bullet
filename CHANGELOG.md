@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.32.3] — 2026-05-07
+
+## Patch
+
+**Silver command surface consolidation.** Silver Bullet now ships one Codex plugin named `silver-bullet` with `/silver` and `/silver:*` commands in the same bundle. The legacy `using-silver-bullet` alias is removed, and the shared marketplace no longer exposes a separate Silver Bullet Commands plugin.
+
+## Fixes
+
+- `commands/*.md` now carry `silver:` labels so the picker shows the Silver Bullet surface inside the main plugin.
+- `commands/silver.md` adds the `/silver` router inside the same SB bundle.
+- `scripts/install-codex.sh` purges the old `using-silver-bullet` alias during `--purge-legacy-skills`.
+- The shared Codex marketplace no longer exposes a separate `plugins/silver` package.
+
+---
+
 ## [0.32.2] — 2026-05-07
 
 ## Patch

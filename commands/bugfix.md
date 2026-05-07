@@ -1,4 +1,5 @@
 ---
+name: silver:bugfix
 description: Fix a bug with Silver Bullet discipline
 argument-hint: <bug description>
 ---

@@ -1,4 +1,5 @@
 ---
+name: silver:validate
 description: Validate a spec or plan with Silver Bullet
 argument-hint: <spec or plan>
 ---

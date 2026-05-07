@@ -1,4 +1,5 @@
 ---
+name: silver:research
 description: Research a technical decision with Silver Bullet
 argument-hint: <question or topic>
 ---

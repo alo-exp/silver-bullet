@@ -1,4 +1,5 @@
 ---
+name: silver:scan
 description: Scan a Silver Bullet session for deferred work
 argument-hint: <session or path>
 ---
