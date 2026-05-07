@@ -69,6 +69,18 @@ for skill in silver-quality-gates code-review requesting-code-review receiving-c
   run_record_skill "$skill" >/dev/null
 done
 
+# Provide a local invocable copy of the verifier skill so completion-audit
+# treats it as installed in CI even though the repo does not vendor that skill.
+installed_skill_root="${TMPDIR_TEST}/installed-skills"
+mkdir -p "${installed_skill_root}/verification-before-completion"
+cat > "${installed_skill_root}/verification-before-completion/SKILL.md" <<'EOF'
+---
+name: verification-before-completion
+description: CI fixture for completion-audit integration tests.
+---
+EOF
+export SILVER_BULLET_SKILL_ROOTS="${installed_skill_root}"
+
 # Should be blocked — verification-before-completion missing
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: test'")
 assert_blocked "S3.1: completion-audit blocks when verification-before-completion missing" "$out"
@@ -80,6 +92,7 @@ run_record_skill "verification-before-completion" >/dev/null
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: test'")
 assert_allowed "S3.2: completion-audit allows after all required skills recorded" "$out"
 
+unset SILVER_BULLET_SKILL_ROOTS
 integration_teardown
 
 # ── S4: Model routing integration (hook DISABLED 2026-04-16) ─────────────────
