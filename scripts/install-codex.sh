@@ -11,6 +11,17 @@ CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-lab
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
 SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
 
+resolve_codex_config_file() {
+  local config_file
+  for config_file in "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml"; do
+    if [[ -f "$config_file" ]]; then
+      printf '%s\n' "$config_file"
+      return 0
+    fi
+  done
+  printf '%s\n' "${HOME}/.Codex/config.toml"
+}
+
 usage() {
   cat <<'USAGE'
 Usage: scripts/install-codex.sh [--purge-legacy-skills]
@@ -26,16 +37,20 @@ USAGE
 
 remove_marketplace_if_present() {
   local marketplace_name="$1"
+  local config_file
+  config_file="$(resolve_codex_config_file)"
 
-  if grep -Fq "[marketplaces.${marketplace_name}]" "${HOME}/.Codex/config.toml" 2>/dev/null; then
+  if grep -Fq "[marketplaces.${marketplace_name}]" "$config_file" 2>/dev/null; then
     "${CODEX_BIN}" plugin marketplace remove "${marketplace_name}"
   fi
 }
 
 ensure_marketplace_registered() {
   local source_spec="$1"
+  local config_file
+  config_file="$(resolve_codex_config_file)"
 
-  if grep -Fq "source = \"${source_spec}\"" "${HOME}/.Codex/config.toml" 2>/dev/null; then
+  if grep -Fq "source = \"${source_spec}\"" "$config_file" 2>/dev/null; then
     printf 'Codex marketplace already registered from %s\n' "${source_spec}"
     return 0
   fi
@@ -51,7 +66,8 @@ refresh_marketplace() {
 
 ensure_plugin_enabled() {
   local plugin_spec="$1"
-  local config_file="${HOME}/.codex/config.toml"
+  local config_file
+  config_file="$(resolve_codex_config_file)"
   local header="[plugins.\"${plugin_spec}\"]"
 
   python3 - "$config_file" "$header" <<'PY'
@@ -60,7 +76,8 @@ import sys
 
 config_path = pathlib.Path(sys.argv[1])
 header = sys.argv[2]
-text = config_path.read_text()
+config_path.parent.mkdir(parents=True, exist_ok=True)
+text = config_path.read_text() if config_path.exists() else ''
 lines = text.splitlines()
 output = []
 i = 0
@@ -107,7 +124,8 @@ PY
 
 ensure_feature_enabled() {
   local feature_name="$1"
-  local config_file="${HOME}/.codex/config.toml"
+  local config_file
+  config_file="$(resolve_codex_config_file)"
   local header="[features]"
 
   python3 - "$config_file" "$header" "$feature_name" <<'PY'
@@ -117,7 +135,8 @@ import sys
 config_path = pathlib.Path(sys.argv[1])
 header = sys.argv[2]
 feature_name = sys.argv[3]
-text = config_path.read_text()
+config_path.parent.mkdir(parents=True, exist_ok=True)
+text = config_path.read_text() if config_path.exists() else ''
 lines = text.splitlines()
 output = []
 i = 0
@@ -165,10 +184,12 @@ PY
 
 remove_plugin_enabled() {
   local plugin_spec="$1"
+  local config_file
 
-  for config_file in "${HOME}/.codex/config.toml" "${HOME}/.Codex/config.toml"; do
-    [[ -f "$config_file" ]] || continue
-    python3 - "$config_file" "$plugin_spec" <<'PY'
+  config_file="$(resolve_codex_config_file)"
+  [[ -f "$config_file" ]] || return 0
+
+  python3 - "$config_file" "$plugin_spec" <<'PY'
 import pathlib
 import sys
 
@@ -198,7 +219,6 @@ if removed:
         new_text += '\n'
     config_path.write_text(new_text)
 PY
-  done
 }
 
 while [[ $# -gt 0 ]]; do
