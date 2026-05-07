@@ -58,6 +58,7 @@ run_suite() {
 run_suite "Hook Unit Tests" "$SCRIPT_DIR/hooks"
 run_suite "Script Unit Tests" "$SCRIPT_DIR/scripts"
 run_suite "Integration Scenario Tests" "$SCRIPT_DIR/integration"
+run_suite "E2E Live Harness Tests" "$SCRIPT_DIR/e2e-live"
 
 # Run coverage matrix
 printf '\n========================================\n'

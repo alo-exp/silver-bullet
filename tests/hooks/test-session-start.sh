@@ -20,12 +20,18 @@ TEST_RUN_ID="$$"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
 TMPTRIVIAL="${SB_TEST_DIR}/trivial"   # trivial still uses default path (config-driven tests below)
+RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state-${TEST_RUN_ID}"
 export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
+export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
 
 cleanup_all() {
   rm -f "$TMPSTATE" "$TMPBRANCH" 2>/dev/null || true
   rm -f "${TMPTRIVIAL}" 2>/dev/null || true
+  rm -f "$RELEASE_LIVE_MATRIX_FILE" "$E2E_LIVE_MATRIX_FILE" 2>/dev/null || true
+  rm -f "$QUALITY_GATE_FILE" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
@@ -195,20 +201,23 @@ assert_file_not_contains "same branch -> gsd-plan-phase stripped" "$TMPSTATE" "g
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-# Test 5: Same branch -> quality-gate-stage-* markers preserved
-# These record completed pre-release gate stages and must survive session restarts
-# on the same branch so gate progress is not lost on context window resets.
-echo "--- Test 5: Same branch -> quality-gate-stage-* markers preserved ---"
+# Test 5: Same branch -> pre-release quality gate file cleared on session start
+echo "--- Test 5: Same branch -> pre-release quality gate file cleared on session start ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\nquality-gate-stage-1\nquality-gate-stage-2\n' > "$TMPSTATE"
+mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
-assert_file_contains "same branch -> quality-gate-stage-1 preserved" "$TMPSTATE" "quality-gate-stage-1"
-assert_file_contains "same branch -> quality-gate-stage-2 preserved" "$TMPSTATE" "quality-gate-stage-2"
-assert_file_not_contains "same branch -> gsd-discuss-phase still stripped" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_missing "same branch -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
-rm -f "$TMPSTATE" "$TMPBRANCH"
+rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"
 
 # ── Trivial file cleanup tests ────────────────────────────────────────────────
 
@@ -218,8 +227,12 @@ HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 touch "$TMPTRIVIAL"
+touch "$RELEASE_LIVE_MATRIX_FILE"
+touch "$E2E_LIVE_MATRIX_FILE"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "trivial file deleted on session start" "$TMPTRIVIAL"
+assert_file_missing "release live matrix marker cleared on session start" "$RELEASE_LIVE_MATRIX_FILE"
+assert_file_missing "e2e live matrix marker cleared on session start" "$E2E_LIVE_MATRIX_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH"
 
@@ -236,6 +249,13 @@ if command -v jq >/dev/null 2>&1 && [[ -n "$out" ]]; then
   if printf '%s' "$out" | jq -e '.hookSpecificOutput' >/dev/null 2>&1; then
     echo "  PASS: output is valid JSON with hookSpecificOutput key"
     PASS=$((PASS + 1))
+    if printf '%s' "$out" | jq -e '.hookSpecificOutput.hookEventName == "SessionStart"' >/dev/null 2>&1; then
+      echo "  PASS: output includes SessionStart hookEventName"
+      PASS=$((PASS + 1))
+    else
+      echo "  FAIL: output missing SessionStart hookEventName: $out"
+      FAIL=$((FAIL + 1))
+    fi
   else
     echo "  FAIL: output is not valid JSON or missing hookSpecificOutput: $out"
     FAIL=$((FAIL + 1))
@@ -313,7 +333,15 @@ echo "--- Test 10: Branch file absent -> branch file created; state preserved --
 rm -f "$TMPBRANCH" 2>/dev/null || true   # ensure branch file is absent
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\nquality-gate-stage-1\ncode-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ngsd-discuss-phase\ncode-review\n' > "$TMPSTATE"
+mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
 run_hook "$HOOK_WORKDIR" >/dev/null
 # Branch file should now exist and contain the current branch
 assert_file_exists "branch file absent -> branch file created" "$TMPBRANCH"
@@ -330,12 +358,11 @@ fi
 # State file must NOT have been wiped — skill recordings should survive
 assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
 assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Both branch-file-absent and same-branch paths strip gsd-* markers only (CHR-03:
-# removed /^quality-gate-stage-/d — no enforcement hook checks these markers).
+# Both branch-file-absent and same-branch paths strip gsd-* markers only.
 assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_contains "branch file absent -> quality-gate-stage-* preserved (not stripped)" "$TMPSTATE" "quality-gate-stage-1"
+assert_file_missing "branch file absent -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
-rm -f "$TMPSTATE" "$TMPBRANCH"
+rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"
 
 # ── #87 regressions: SessionStart benign-event safety ────────────────────────
 # Bug 1: gsd-* markers must NOT be stripped on `compact` (or `resume`).

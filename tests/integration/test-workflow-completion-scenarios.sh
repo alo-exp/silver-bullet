@@ -88,6 +88,9 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_allowed "S3.1: PR create allowed with all skills" "$out"
 
 # Step 2: Release allowed with all skills
+write_release_live_matrix_marker
+write_e2e_live_matrix_marker
+write_quality_gate_state_marker
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
 assert_allowed "S3.2: release allowed with all skills" "$out"
 
@@ -103,6 +106,18 @@ write_all_skills
 # Remove finishing-a-development-branch from state
 grep -v '^finishing-a-development-branch$' "$TMPSTATE" > "${TMPSTATE}.tmp" && mv "${TMPSTATE}.tmp" "$TMPSTATE"
 
+# Seed discovery with a temporary invocable finishing skill so the hook
+# enforces the missing-state case on feature branches, but still exempts it
+# on main/master when the branch filter drops the requirement.
+INSTALLED_SKILL_ROOT="${TMPDIR_TEST}/installed-skills"
+mkdir -p "$INSTALLED_SKILL_ROOT/skills/finishing-a-development-branch"
+cat > "$INSTALLED_SKILL_ROOT/skills/finishing-a-development-branch/SKILL.md" <<'EOF'
+---
+name: finishing-a-development-branch
+---
+EOF
+export SILVER_BULLET_SKILL_ROOTS="$INSTALLED_SKILL_ROOT"
+
 # On feature branch: blocked (finishing-a-development-branch missing)
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S4.1: PR blocked on feature branch without finishing" "$out"
@@ -113,6 +128,8 @@ git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" c
 # On main: allowed (finishing-a-development-branch not required on main)
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'hotfix'")
 assert_allowed "S4.2: PR allowed on main without finishing" "$out"
+
+unset SILVER_BULLET_SKILL_ROOTS
 
 integration_teardown
 

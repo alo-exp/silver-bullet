@@ -86,6 +86,16 @@ jobs:
           done
           exit $fail
 
+      - name: Run script unit tests
+        run: |
+          sudo apt-get install -y jq git
+          fail=0
+          for f in tests/scripts/test-*.sh; do
+            name="$(basename "$f")"
+            bash "$f" || { echo "FAILED: $name"; fail=1; }
+          done
+          exit $fail
+
       - name: Run integration tests
         run: |
           fail=0
@@ -96,6 +106,10 @@ jobs:
             bash "$f" || { echo "FAILED: $name"; fail=1; }
           done
           exit $fail
+
+      - name: Run e2e-live harness sanity checks
+        run: |
+          bash tests/e2e-live/test-e2e-live-suite.sh
 
       - name: Assert deploy-gate-snippet hardcoded list matches template required_deploy
         run: |

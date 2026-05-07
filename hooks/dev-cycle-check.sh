@@ -78,11 +78,15 @@ See CLAUDE.md §8 for details."
     emit_block "$msg"
     exit 0
   elif [[ -n "$command_str" ]]; then
-    # F-07: Block Bash commands that write to the plugin cache (bypass via shell instead of Edit/Write)
-    if printf '%s' "$command_str" | grep -qE "$plugin_cache" && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bperl\b|\binstall\b)'; then
-      emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
-      exit 0
+    # F-07: Block Bash commands that write into the plugin cache.
+    # Read-only access to upstream templates is allowed so Silver Bullet can
+    # copy them into the project workspace during initialization.
+    if printf '%s' "$command_str" | grep -qE "$plugin_cache"; then
+      plugin_write_pattern='([[:space:]](>>|>)[[:space:]]*"?'"$plugin_cache"'|\b(cp|mv|rm|chmod|install|tee)\b.*"?'"$plugin_cache"'|\b(sed|perl)\b.*-i.*"?'"$plugin_cache"')'
+      if printf '%s' "$command_str" | grep -qE "$plugin_write_pattern"; then
+        emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
+        exit 0
+      fi
     fi
   fi
 

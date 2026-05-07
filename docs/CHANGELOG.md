@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-07 — codex-docs-coverage
+**What**: Brought the project docs up to date with the current Codex packaging split, shared marketplace boundary, dual-runtime live matrix, and the May knowledge/lessons files.
+**Commits**: —
+**Skills run**: gsd:docs-update
+**Virtual cost**: ~$0.12 (low complexity — docs sweep + verification)
+**KNOWLEDGE.md**: updated (Codex packaging boundary, runtime matrix, project-instance artifact split)
+
 ## 2026-05-01 — fix-github-open-items
 **What**: Patch release fixing hook enforcement gaps (#90 session-start ordering, #93 branch-write trailing newline, #95 tamper-guard regex), ShellCheck dead-variable warnings in stop-check.sh, stale skill/hook counts across docs and site, and SENTINEL security patches to silver-feature/SKILL.md (FINDING-1.1 shell-escaping advisory, FINDING-5.1 TOCTOU cleanup note).
 **Commits**: 875bffc, cb06033, 1ec93b6 + prior phase 044 commits

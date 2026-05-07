@@ -21,6 +21,9 @@ npm start       # Server at http://localhost:3456
 
 Silver Bullet is applied to this project via `/silver:init`, then drives the full-dev-cycle workflow to build a feature ("add due dates to todos"). The smoke test validates that every required skill is invoked, every enforcement hook fires correctly, and the feature actually works.
 
+The shared live harness in `tests/live/` reuses this fixture for both Claude and Codex
+runtime passes.
+
 See `../e2e-smoke-test.md` for the full protocol.
 
 ## API

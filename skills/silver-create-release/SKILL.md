@@ -206,7 +206,22 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
 
 ---
 
-## Step 6 — Create Tag and Publish
+## Step 6 — Run Shared Live Matrix
+
+Before creating the release tag, run the shared live matrix so the current
+session earns the release-live-matrix marker used by `completion-audit.sh`:
+
+```bash
+bash tests/live/run-live-tests.sh
+```
+
+The matrix must complete successfully for both Claude and Codex in the current
+session. If either runtime fails, stop here and fix the underlying issue before
+continuing.
+
+---
+
+## Step 7 — Create Tag and Publish
 
 1. Check whether a signing key is configured, then create and push the tag:
    ```bash

@@ -106,6 +106,7 @@ Some overview.
 EOF
 out=$(run_hook)
 assert_passes "SPEC.md with version and jira-id passes" "$out"
+assert_contains "output includes SessionStart hookEventName" "$out" '"hookEventName":"SessionStart"'
 assert_contains "output contains version" "$out" "v1.2.0"
 assert_contains "output contains JIRA ID" "$out" "PROJ-42"
 assert_session_contains "spec-session has spec-version" "spec-version=1.2.0"

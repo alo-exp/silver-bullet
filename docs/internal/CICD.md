@@ -16,6 +16,7 @@
 | Lint shell scripts | `shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh` | ShellCheck errors |
 | Run hook unit tests | All `tests/hooks/test-*.sh` pass | Any test failure |
 | Run integration tests | All `tests/integration/test-*.sh` pass | Any test failure |
+| Run e2e-live harness sanity checks | `tests/e2e-live/test-e2e-live-suite.sh` passes | Missing or broken e2e-live harness |
 | Assert deploy-gate-snippet REQUIRED_DEPLOY matches template | Hardcoded list in `deploy-gate-snippet.sh` matches `templates/silver-bullet.config.json.default` | List drift |
 | Run skill-reference integrity check | `test-skill-refs.sh` — every skill reference in hooks resolves | Missing skill |
 | Assert required_deploy ⊆ all_tracked | Every skill in `required_deploy` appears in `all_tracked` | Set violation |
@@ -23,7 +24,8 @@
 
 ## Release Process
 
-Releases use `gh release create` after the `§9 pre-release quality gate` stages 1–4 pass.
+Releases use `gh release create` after the `§9 pre-release quality gate` stages 1–4 pass
+and after both live suites have completed successfully in the current session.
 The `/create-release` skill orchestrates:
 1. Pre-release quality gate (4-stage internal gate: JSON validate, hook test, template parity, changelog entry)
 2. `package.json` version bump
@@ -50,6 +52,9 @@ done
 
 # Lint shell
 shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
+
+# E2E live harness sanity
+bash tests/e2e-live/test-e2e-live-suite.sh
 
 # Template parity
 diff docs/workflows/full-dev-cycle.md templates/workflows/full-dev-cycle.md

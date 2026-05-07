@@ -119,19 +119,55 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 
 ---
 
+## Mandatory Full Test Suite Rerun
+
+After all four stages pass in the current session, rerun the full test suite
+before release finalization:
+
+1. Run `bash tests/run-all-tests.sh`
+2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.sidekick/quality-gate-state`
+3. Do not invoke `/silver-release` until the rerun marker is present
+
+`hooks/completion-audit.sh` blocks release creation until the sidekick file
+contains the four stage markers plus `full-test-suite-rerun`.
+
+---
+
 ## Enforcement
 
 Each stage is enforced via the mandatory `/superpowers:verification-before-completion`
 skill invocation. When invoked, it is recorded in the state file
 (`~/.claude/.silver-bullet/state`); `hooks/completion-audit.sh` tracks required skill
-invocations to gate `gh release create`.
+invocations to gate `gh release create`. The stage completion markers and the
+full-suite rerun marker live in `~/.claude/.sidekick/quality-gate-state`.
 
-**Session reset:** The `session-start` hook clears the state at the beginning of every
-session. Each release cycle must earn its own gate pass in the current session.
+**Session reset:** The `session-start` hook clears the sidekick quality-gate file at
+the beginning of every session. Each release cycle must earn its own gate pass in
+the current session.
 
 > **Anti-Skip:** You are violating this rule if you release without running all 4 stages
-> in the CURRENT session. Each stage requires explicit `/superpowers:verification-before-completion`
-> invocation — running verification commands manually is NOT a substitute.
+> in the CURRENT session and rerunning the full test suite afterward. Each stage requires
+> explicit `/superpowers:verification-before-completion` invocation — running verification
+> commands manually is NOT a substitute.
+
+## Live Matrix Release Gate
+
+Before `gh release create` or `/silver-create-release`, both live suites must
+run successfully in the current session:
+
+1. Run `tests/live/run-live-tests.sh`
+2. Run `tests/e2e-live/run-e2e-live-tests.sh`
+3. Confirm both Claude and Codex pass in each suite
+4. Let each runner create its session-scoped marker
+
+`hooks/completion-audit.sh` blocks release creation until both markers exist.
+
+If Claude usage is exhausted for the release session and the user explicitly
+approves skipping further Claude live testing, run both live suites with
+`SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, then set
+`SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1` before `/silver-release`. In that case the
+two runners write `matrix=codex-only` markers and the completion audit accepts
+them for that release session only.
 
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface

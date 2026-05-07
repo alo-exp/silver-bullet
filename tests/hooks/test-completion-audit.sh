@@ -13,8 +13,16 @@ FAIL=0
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state-${TEST_RUN_ID}"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"; }
+cleanup_all() {
+  rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$RELEASE_LIVE_MATRIX_FILE"
+  rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$QUALITY_GATE_FILE"
+}
 trap cleanup_all EXIT
 
 write_cfg() {
@@ -32,6 +40,16 @@ write_cfg() {
 EOF
 }
 
+write_quality_gate_state() {
+  cat > "$QUALITY_GATE_FILE" << 'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+}
+
 setup() {
   # Initialize git directly in TMPDIR_TEST so the hook finds .silver-bullet.json
   # before hitting the .git boundary (both are in the same directory).
@@ -40,6 +58,8 @@ setup() {
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPGIT="$TMPDIR_TEST"   # git repo IS the project dir
   rm -f "$TMPSTATE"
+  rm -f "$RELEASE_LIVE_MATRIX_FILE"
+  rm -f "$E2E_LIVE_MATRIX_FILE"
   git -C "$TMPGIT" init -q
   git -C "$TMPGIT" config user.email "test@test.com"
   git -C "$TMPGIT" config user.name "Test"
@@ -50,12 +70,17 @@ setup() {
   git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
+  mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
+  rm -f "$QUALITY_GATE_FILE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$RELEASE_LIVE_MATRIX_FILE"
+  rm -f "$E2E_LIVE_MATRIX_FILE"
 }
 
 run_hook() {
@@ -212,10 +237,10 @@ code-review
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without full workflow skills" "$out"
-assert_contains "release block message mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
+assert_contains "release block message mentions live matrix" "$out" "live matrix"
 teardown
 
-# Test 10: gh release create passes with all required workflow skills (no §9 stages needed)
+# Test 10: gh release create blocked until live matrix runs
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -231,11 +256,180 @@ verification-before-completion
 test-driven-development
 tech-debt
 EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+rm -f "$RELEASE_LIVE_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "release passes with all required workflow skills" "$out"
+assert_blocks "release blocked without shared live matrix marker" "$out"
+assert_contains "release block mentions live matrix gate" "$out" "live matrix has not been completed for this release session"
+assert_contains "release block mentions run-live-tests" "$out" "tests/live/run-live-tests.sh"
 teardown
 
-# Test 11: finishing-a-development-branch NOT required when on main
+# Test 11: gh release create blocked until todo-app e2e-live matrix runs
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+rm -f "$E2E_LIVE_MATRIX_FILE"
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocked without todo-app e2e-live marker" "$out"
+assert_contains "release block mentions todo-app e2e-live suite" "$out" "e2e-live"
+assert_contains "release block mentions run-e2e-live-tests" "$out" "tests/e2e-live/run-e2e-live-tests.sh"
+teardown
+
+# Test 12: gh release create blocked until pre-release gate markers and full-suite rerun are recorded
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+rm -f "$QUALITY_GATE_FILE"
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocked without pre-release gate markers" "$out"
+assert_contains "release block mentions pre-release quality sequence" "$out" "pre-release quality sequence"
+assert_contains "release block mentions run-all-tests" "$out" "tests/run-all-tests.sh"
+teardown
+
+# Test 13: gh release create passes with all required workflow skills, both live markers, and gate markers
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "release passes with all required workflow skills, live markers, and gate markers" "$out"
+teardown
+
+# Test 13b: codex-only live markers are blocked unless explicitly allowed
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocks with codex-only live markers unless explicitly allowed" "$out"
+assert_contains "codex-only block mentions explicit allowance" "$out" "SB_ALLOW_CODEX_ONLY_LIVE_RELEASE"
+teardown
+
+# Test 13c: gh release create passes with codex-only live markers when explicitly allowed
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+export SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
+assert_passes "release passes with codex-only live markers when explicitly allowed" "$out"
+teardown
+
+# Test 14: finishing-a-development-branch NOT required when on main
 echo "--- Group 3: Main branch handling ---"
 setup
 # Put all required skills EXCEPT finishing-a-development-branch
@@ -252,13 +446,15 @@ verification-before-completion
 test-driven-development
 tech-debt
 EOF
+mkdir -p "$SB_TEST_DIR"
+touch "$RELEASE_LIVE_MATRIX_FILE"
 # Ensure we're on main
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 out=$(run_hook "PreToolUse" "gh pr create --title 'hotfix'")
 assert_passes "gh pr create passes on main without finishing-a-development-branch" "$out"
 teardown
 
-# Test 12: Code review triad ordering detected (requesting before code)
+# Test 15: Code review triad ordering detected (requesting before code)
 echo "--- Group 4: Ordering enforcement ---"
 setup
 # Put skills with requesting-code-review BEFORE code-review in the state file
@@ -280,7 +476,7 @@ out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_contains "ordering issue detected for wrong sequence" "$out" "wrong order"
 teardown
 
-# Test 13: Correct triad order passes cleanly
+# Test 16: Correct triad order passes cleanly
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -308,7 +504,7 @@ else
 fi
 teardown
 
-# Test 14: DevOps workflow uses silver-blast-radius for intermediate check
+# Test 17: DevOps workflow uses silver-blast-radius for intermediate check
 echo "--- Group 5: DevOps workflow ---"
 setup
 write_cfg "devops-cycle"
@@ -317,7 +513,7 @@ out=$(run_hook "PreToolUse" "git commit -m 'infra'")
 assert_blocks "devops: git commit blocked without silver-blast-radius/devops-quality-gates" "$out"
 teardown
 
-# Test 15: Trivial file bypass
+# Test 18: Trivial file bypass
 echo "--- Group 6: Bypass mechanisms ---"
 setup
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
@@ -325,7 +521,7 @@ out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "trivial file bypasses completion check" "$out"
 teardown
 
-# Test 16: gh pr merge blocked when skills missing (Tier 2 delivery gate)
+# Test 19: gh pr merge blocked when skills missing (Tier 2 delivery gate)
 echo "--- Group 7: gh pr merge delivery gate ---"
 setup
 # Only planning done
@@ -335,7 +531,7 @@ assert_blocks "gh pr merge blocked with only silver-quality-gates" "$out"
 assert_contains "gh pr merge block mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
 teardown
 
-# Test 17: gh pr merge passes when all required skills present (review-loop-pass markers
+# Test 20: gh pr merge passes when all required skills present (review-loop-pass markers
 # are NOT required — removed from required_deploy in v0.23.6 — but must not cause
 # spurious failures if present in state (e.g. from a pre-upgrade session).
 setup
@@ -512,6 +708,13 @@ _make_workflow "$ID" "| 1 | explore | complete | - | now |
 | 2 | plan | complete | - | now |
 | 3 | execute | complete | - | now |
 | 4 | ship | complete | - | now |"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_quality_gate_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-D: complete workflow + skills allows release" "$out"
 teardown
@@ -541,6 +744,13 @@ echo "--- WF-PASS2-G: no workflows dir → falls through to legacy gate ---"
 setup
 _full_state
 # No .planning/workflows/ created
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_quality_gate_state
 unset SB_WORKFLOW_ID
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-G: absent workflows dir → legacy gate (passes with full skills)" "$out"
@@ -571,6 +781,13 @@ status: active
 ## Autonomous Decisions (must NOT inflate counts)
 | 2026-04-28T12:00 | chose path A | ... |
 WFEOF
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_quality_gate_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-H: extraneous digit rows ignored — release passes" "$out"
 teardown
@@ -590,6 +807,13 @@ _make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
 | 5 | execute   | complete | - | now |
 | 6 | ui-quality | skipped | - | -   |
 | 7 | ship      | complete | - | now |"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_quality_gate_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-I (#86): mixed complete/skipped workflow allows release" "$out"
 teardown
@@ -600,6 +824,13 @@ _full_state
 ID="20260428T120000Z-abc123-silver-feature"
 _make_workflow "$ID" "| 1 | bootstrap | skipped | - | - |
 | 2 | orient    | skipped | - | - |"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_quality_gate_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-J (#86): all-skipped flows pass terminal-state check" "$out"
 teardown

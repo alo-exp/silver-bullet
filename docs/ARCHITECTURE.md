@@ -5,11 +5,18 @@ Detailed phase-level designs live in `docs/specs/YYYY-MM-DD-<topic>-design.md`.
 
 ## System Overview
 
-Silver Bullet is a Claude Code plugin (`.claude-plugin/`) composed of shell hook scripts,
-skill markdown files, JSON configuration, and workflow documentation. It wraps the GSD,
-Superpowers, Engineering, and Design plugins with an enforcement layer that prevents Claude
-from skipping required workflow steps. No server, no database — all state lives in flat files
-under `~/.claude/.silver-bullet/`.
+Silver Bullet ships two first-class plugin surfaces: a Claude Code plugin (`.claude-plugin/`)
+and a Codex bundle (`plugins/silver-bullet/`). Both are composed of shell hook scripts, slash-command
+markdown files, skill markdown files, JSON configuration, and workflow documentation. SB wraps the
+GSD, Superpowers, Engineering, and Design plugins with an enforcement layer that prevents the
+runtime from skipping required workflow steps.
+
+Claude packaging remains the canonical host-integrated surface. The Codex bundle is SB-only and
+is synchronized from the repo root. Third-party plugins that do not publish Codex artifacts are
+represented by thin wrappers in the shared `alo-labs/codex-plugins` marketplace, which fetches
+upstream content at install time instead of vendoring it here.
+
+No server, no database — all state lives in flat files under `~/.claude/.silver-bullet/`.
 
 ## Core Components
 
@@ -18,7 +25,12 @@ under `~/.claude/.silver-bullet/`.
 | Hook scripts | `hooks/*.sh` | PostToolUse/PreToolUse enforcement — fire on every tool call |
 | Skill files | `skills/*/SKILL.md` | Declarative workflow instructions loaded via the Skill tool |
 | Workflow docs | `docs/workflows/` | Full per-session step-by-step procedures (active copies) |
+| Commands | `commands/` | `/silver:*` slash-command wrappers shipped inside the SB Codex bundle |
 | Templates | `templates/` | Bootstrap files copied during `/silver:init` setup |
+| Codex bundle | `plugins/silver-bullet/` | Curated SB-only Codex package snapshot, refreshed from the repo root |
+| Codex installer | `scripts/install-codex.sh` | Registers the shared Codex marketplace and bootstraps official dependencies |
+| Shared Codex marketplace | `https://github.com/alo-labs/codex-plugins` | Thin wrappers for third-party plugins that lack native Codex packaging |
+| Live runtime matrix | `tests/live/` | Shared Claude/Codex E2E harness with runtime adapters |
 | Config | `.silver-bullet.json` | Project-level list of tracked/required skills |
 | State file | `~/.claude/.silver-bullet/state` | Flat file recording invoked skills in this session |
 | Trivial flag | `~/.claude/.silver-bullet/trivial` | Touch-file that suspends enforcement for trivial changes |
@@ -74,6 +86,17 @@ The hooks validate that the trivial file is a regular file (`-f`) and not a syml
    writes to it or reads from it can be independently audited.
 6. **Template parity.** `templates/workflows/` must remain byte-identical to `docs/workflows/`
    so new projects get the same enforcement rules as the current project.
+7. **Packaging boundaries.** SB-owned plugin bundles never vendor dependency plugins or project
+   instance artifacts. The Codex bundle stays SB-only; dependency plugins are installed from
+   their official sources, and non-native Codex support lives in the shared marketplace.
+
+### Packaging Boundaries
+
+- `/.planning/`, `/.claude/`, and `/.forge/` are project-instance artifacts, not plugin content.
+- `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
+- `plugins/silver-bullet/` is a curated Codex snapshot, not a mirror of the whole repository.
+- `commands/` ships inside the SB bundle so Codex sees one Silver Bullet plugin, not a split command plugin.
+- Third-party Codex wrappers belong in the shared marketplace and fetch upstream content at install time.
 
 ## Technology Choices
 
@@ -84,3 +107,4 @@ The hooks validate that the trivial file is a regular file (`-f`) and not a syml
 | Skill format | Markdown | Loaded natively by Claude Code's Skill tool |
 | State format | Line-delimited text | `grep -q` lookups; append-only; trivially auditable |
 | CI | GitHub Actions | Target audience is GitHub repos; `gh` CLI integrates release workflow |
+| Codex packaging | Thin wrapper + install-time fetch | Keeps SB bundle SB-only while supporting third-party plugins that lack native Codex packaging |

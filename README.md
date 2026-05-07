@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.32.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.0)
+[![version](https://img.shields.io/badge/version-v0.32.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.1)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -98,7 +98,7 @@ If you are using this repo checkout directly in Codex, register the shared marke
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
-This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
+This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The `/silver:*` command surface ships inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
 
 ### Optional DevOps plugins
 
@@ -263,7 +263,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.32.0",
+  "version": "0.32.1",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -325,6 +325,11 @@ Edit `.silver-bullet.json` in your project root:
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
 > **Two-tier enforcement**: `git commit` and `git push` only require `required_planning` skills (default: `silver-quality-gates`). The full `required_deploy` list is only checked at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked.
+
+> **Release matrix gate**: before `/silver-create-release` or `gh release create`,
+> run `tests/live/run-live-tests.sh` and `tests/e2e-live/run-e2e-live-tests.sh`
+> successfully in the current session so both the hook/runtime matrix and the
+> todo-app E2E path are proven and both release markers are set.
 
 ## Trivial-Session Bypass
 

@@ -69,13 +69,19 @@ Before any release, 4 stages must pass in the current session:
 | 3 | Public-Facing Content Refresh | All user surfaces current |
 | 4 | Security Audit (SENTINEL) | Two consecutive clean passes |
 
-Each stage requires explicit `/superpowers:verification-before-completion` invocation. Stage markers are cleared on session start — no stale markers.
+Each stage requires explicit `/superpowers:verification-before-completion` invocation. The sidekick quality-gate file is cleared on session start — no stale markers.
+The shared Claude/Codex live matrix (`tests/live/run-live-tests.sh`) and the
+todo-app live E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) are additional
+mandatory release prerequisites. Both must succeed in the current session
+before `gh release create` is allowed. The stage markers and the mandatory
+post-gate full-suite rerun marker live in `~/.claude/.sidekick/quality-gate-state`.
 
 ## Environment Variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `SILVER_BULLET_STATE_FILE` | `~/.claude/.silver-bullet/state` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
+| `SILVER_BULLET_QUALITY_GATE_STATE_FILE` | `~/.claude/.sidekick/quality-gate-state` | Override the release-quality-gate marker file used by `completion-audit.sh` and `session-start`. Intended for testing — lets test suites point hooks at a temp file instead of the real sidekick file. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
 
 ## Bypass Detection
 
