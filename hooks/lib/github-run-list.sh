@@ -3,6 +3,8 @@
 # Silver Bullet — GitHub Actions run-list helper.
 #
 # Sources:
+#   - GH_RUN_LIST_OVERRIDE_CMD (tests / deterministic fixtures that need
+#     changing output across repeated polls)
 #   - GH_RUN_LIST_OVERRIDE (tests / deterministic fixtures)
 #   - gh run list --commit <sha> (real release gate)
 #
@@ -11,6 +13,11 @@
 
 sb_github_run_list_json() {
   local commit_sha="${1:-}"
+
+  if [[ -n "${GH_RUN_LIST_OVERRIDE_CMD:-}" ]]; then
+    bash -lc "$GH_RUN_LIST_OVERRIDE_CMD"
+    return 0
+  fi
 
   if [[ -n "${GH_RUN_LIST_OVERRIDE:-}" ]]; then
     printf '%s' "$GH_RUN_LIST_OVERRIDE"

@@ -2,7 +2,8 @@ name: Announce Release
 
 # Posts a Google Chat card when a GitHub release is published.
 # Webhook URL is stored in GCHAT_RELEASE_WEBHOOK — never commit the URL.
-# Can also be triggered manually via workflow_dispatch.
+# If the release commit CI is still settling, the workflow waits until it is
+# fully green or the timeout is reached.
 
 on:
   release:
@@ -20,8 +21,11 @@ permissions:
 jobs:
   announce:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ANNOUNCE_CI_TIMEOUT_SECONDS: 1800
+      ANNOUNCE_CI_POLL_INTERVAL_SECONDS: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +56,7 @@ jobs:
             echo "__EOF__"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Verify release commit CI is settled
+      - name: Wait for release commit CI to settle
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.meta.outputs.tag }}
