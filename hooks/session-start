@@ -52,6 +52,7 @@ fi
 # Ensure user-scoped state directory exists
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
+SIDEKICK_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
 
 # ── Branch-scoped state reset ─────────────────────────────────────────────────
 # Skill recordings are scoped to a git branch. When the branch changes between
@@ -63,6 +64,7 @@ mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 # work across multiple sessions is preserved).
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
+quality_gate_state_file="${SIDEKICK_GATE_FILE}"
 
 # Env var override — allows tests to redirect state writes to a temp file
 # without touching the live session state (same pattern as completion-audit.sh)
@@ -80,6 +82,13 @@ branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
 case "$branch_file" in
   "$HOME"/.claude/*) ;;
   *) branch_file="${SB_STATE_DIR}/branch" ;;
+esac
+
+# Env var override for the pre-release gate file.
+quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
+case "$quality_gate_state_file" in
+  "$HOME"/.claude/*) ;;
+  *) quality_gate_state_file="${SIDEKICK_GATE_FILE}" ;;
 esac
 
 # Detect current git branch (safe: validates characters, falls back to empty)
@@ -161,10 +170,15 @@ case "$trivial_file" in
 esac
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
 rm -f -- "$trivial_file" 2>/dev/null
+rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null
+rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null
+if [[ "$sb_should_mutate" == true ]]; then
+  rm -f -- "$quality_gate_state_file" 2>/dev/null
+fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled
 if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"❌ Silver Bullet DISABLED — jq is required for all enforcement hooks. Install: brew install jq (macOS) / apt install jq (Linux). Without jq, quality gates, completion audit, and CI checks are inactive."}}'
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"❌ Silver Bullet DISABLED — jq is required for all enforcement hooks. Install: brew install jq (macOS) / apt install jq (Linux). Without jq, quality gates, completion audit, and CI checks are inactive."}}'
   exit 0
 fi
 
@@ -230,4 +244,4 @@ fi
 
 # Escape for JSON and output
 content=$(printf '%s' "$combined" | jq -Rs .)
-printf '{"hookSpecificOutput":{"additionalContext":%s}}' "$content"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"

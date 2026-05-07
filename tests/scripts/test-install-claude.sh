@@ -68,6 +68,47 @@ HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install data-engineering@claude-plugins-of
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install frontend-design@claude-plugins-official >/dev/null
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install product-tracking-skills@claude-plugins-official >/dev/null
 
+OLD_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.27.1"
+mkdir -p "$(dirname "$OLD_SB_CACHE_DIR")"
+cat > "$HOME_DIR/.claude/settings.json" <<EOF
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${OLD_SB_CACHE_DIR}/hooks/session-start\"",
+            "timeout": 15,
+            "async": false
+          },
+          {
+            "type": "command",
+            "command": "\"${OLD_SB_CACHE_DIR}/hooks/spec-session-record.sh\"",
+            "timeout": 10,
+            "async": false
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${OLD_SB_CACHE_DIR}/hooks/semantic-compress.sh\"",
+            "timeout": 30,
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+
 HOME="$HOME_DIR" bash "$SCRIPT" --purge-legacy-plugins >/dev/null
 
 if grep -qF 'git@github.com:' "$HOME_DIR/.gitconfig" && grep -qF 'ssh://git@github.com/' "$HOME_DIR/.gitconfig"; then
@@ -85,6 +126,24 @@ else
   echo "FAIL: knowledge-work marketplace added — missing knowledge-work-plugins entry"
   (( FAIL++ )) || true
 fi
+
+CURRENT_SB_CACHE_DIR="$(find "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$CURRENT_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json"; then
+  echo "PASS: Silver Bullet hook paths refreshed in Claude settings"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Silver Bullet hook paths refreshed in Claude settings"
+  (( FAIL++ )) || true
+fi
+
+if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF '"hookEventName":"SessionStart"' "$CURRENT_SB_CACHE_DIR/hooks/spec-session-record.sh"; then
+  echo "PASS: Silver Bullet session-start hook emits hookEventName"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Silver Bullet session-start hook emits hookEventName"
+  (( FAIL++ )) || true
+fi
+
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin list --json | jq -e '
   any(.[]; .id == "silver-bullet@alo-labs" and .scope == "user")
   and any(.[]; .id == "superpowers@superpowers-marketplace" and .scope == "user")

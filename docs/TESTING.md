@@ -8,8 +8,9 @@
   / Manual smoke tests  \   /silver:init setup on a fresh project
 ```
 
-Silver Bullet's test surface is primarily shell hooks and JSON configuration — no application
-server, no database, no frontend. The bulk of coverage is fast static and unit tests.
+Silver Bullet's test surface is primarily shell hooks, JSON configuration, and packaging
+glue — no application server, no database, no frontend. The bulk of coverage is fast static
+and unit tests, plus a shared live matrix that exercises the real Claude and Codex CLIs.
 
 ## Test Classification
 
@@ -20,6 +21,9 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
 | **Static — doc content grep** | Assert REQUIRED markers and skill names in workflow files | CI step | <1s |
 | **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
+| **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
+| **Live AI matrix** | Shared scenario suite across Claude and Codex runtime adapters | `tests/live/run-live-tests.sh` | 5-15 min per runtime |
+| **Live todo-app E2E** | Real Claude/Codex development episodes against `tests/test-app/` | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -31,6 +35,9 @@ server, no database, no frontend. The bulk of coverage is fast static and unit t
 | `compliance-status.sh` | Key progress calculation paths | Covered via integration patterns |
 | `completion-audit.sh` | block vs. pass for each required skill group | Partial |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
+| SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
+| Live Claude/Codex matrix | shared scenarios, runtime adapters, sequential runtime execution | 100% (`tests/live/run-live-tests.sh`) |
+| Live todo-app E2E | realistic feature / bugfix / release episodes on `tests/test-app/` | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 
@@ -73,16 +80,38 @@ Create `tests/hooks/test-dev-cycle-check.sh` with 7 cases:
 6. Stage D: all required skills present → silent pass
 7. Trivial file present → never blocks regardless of state
 
-## Live AI Tests (separate suite)
+## Live AI Matrix (separate suite)
 
-Not part of CI — run manually at ~$0.10–$0.60/run via `tests/live/run-live-tests.sh`.
+Not part of CI — run manually at roughly $0.10–$0.60 per full Claude+Codex matrix run via
+`tests/live/run-live-tests.sh`.
 
 | Test file | What it covers |
 |-----------|---------------|
-| `tests/live/test-silver-init-migration.sh` | Phase 3.5.5 doc-scheme migration: no-docs skip, unrecognized files skip, architecture doc detection, skip option (no files touched), migration approved (backup + rename), KNOWLEDGE.md split |
+| `tests/live/test-live-enforcement.sh` | S1-S4 enforcement scenarios (blocking, planning gate, forbidden skills, stop-check) |
+| `tests/live/test-live-skill-recording.sh` | S5-S6 skill recording and compliance-status output |
+| `tests/live/test-live-full-scenario.sh` | S7-S8 session initialization and abbreviated SDLC lifecycle |
 | `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
+| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, KNOWLEDGE.md split |
 
-These tests exercise the interactive migration step in `skills/silver-init/SKILL.md` (Phase 3.5.5). The migration is non-destructive by design — originals are backed up as `.pre-sb-backup` before any rename or split.
+The suite invokes the real `claude` CLI or `codex` CLI with runtime adapters in
+`tests/live/runtimes/`. By default `tests/live/run-live-tests.sh` runs both runtimes
+sequentially; set `SB_LIVE_RUNTIMES=claude` or `SB_LIVE_RUNTIMES=codex` to narrow the
+matrix. Sequential execution matters because both runtimes touch the same Silver Bullet
+state path under `~/.claude/.silver-bullet/`.
+
+The live todo-app E2E suite is separate. It uses the todo-app fixture in
+`tests/test-app/`, writes its own `e2e-live-matrix` marker, and is intended to
+prove the higher-level product workflow on real runtime sessions.
+When Claude quota is exhausted and the user explicitly approves skipping further
+Claude live testing for a release, the live runners may be narrowed to Codex
+only via `SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, and the
+release gate may be satisfied with `matrix=codex-only` markers after setting
+`SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1`.
+
+The separate `tests/live/test-silver-init-migration.sh` scenario exercises the interactive
+migration step in `skills/silver-init/SKILL.md` (Phase 3.5.5). The migration is
+non-destructive by design — originals are backed up as `.pre-sb-backup` before any rename
+or split.
 
 ## Forge-Silver Bullet Skill Test Harness
 

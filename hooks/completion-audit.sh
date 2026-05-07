@@ -132,6 +132,7 @@ SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
+quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state"
 required_planning_cfg=""
 required_deploy_cfg=""
 active_workflow="full-dev-cycle"
@@ -156,6 +157,8 @@ active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
+# Env var override for pre-release quality gate file
+quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
 
 # Security: validate paths stay within ~/.claude/ (SB-002/SB-003)
 case "$state_file" in
@@ -165,6 +168,10 @@ esac
 case "$trivial_file" in
   "$HOME"/.claude/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
+esac
+case "$quality_gate_state_file" in
+  "$HOME"/.claude/*) ;;
+  *) quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state" ;;
 esac
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
@@ -341,6 +348,49 @@ fi
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
 run_workflow_strict_gate "$project_root"
+
+release_live_matrix_file="${HOME}/.claude/.silver-bullet/release-live-matrix"
+e2e_live_matrix_file="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
+if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+  release_matrix_value=""
+  e2e_matrix_value=""
+  if [[ -f "$release_live_matrix_file" && ! -L "$release_live_matrix_file" ]]; then
+    release_matrix_value=$(grep -E '^matrix=' "$release_live_matrix_file" 2>/dev/null || true)
+  fi
+  if [[ -f "$e2e_live_matrix_file" && ! -L "$e2e_live_matrix_file" ]]; then
+    e2e_matrix_value=$(grep -E '^matrix=' "$e2e_live_matrix_file" 2>/dev/null || true)
+  fi
+
+  if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' ]]; then
+    :
+  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' ]]; then
+    :
+  else
+    emit_block "$(printf '🛑 RELEASE BLOCKED — The live matrix has not been completed for this release session.\n\nRun tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+    exit 0
+  fi
+
+  quality_gate_ready=false
+  if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
+    quality_gate_ready=true
+    for marker in \
+      quality-gate-stage-1 \
+      quality-gate-stage-2 \
+      quality-gate-stage-3 \
+      quality-gate-stage-4 \
+      full-test-suite-rerun; do
+      if ! grep -qx "$marker" "$quality_gate_state_file" 2>/dev/null; then
+        quality_gate_ready=false
+        break
+      fi
+    done
+  fi
+
+  if [[ "$quality_gate_ready" != true ]]; then
+    emit_block "$(printf '🛑 RELEASE BLOCKED — The pre-release quality sequence has not been completed in this session.\n\nBefore /silver-release, complete the 4-stage quality gate in docs/internal/pre-release-quality-gate.md, record quality-gate-stage-1 through quality-gate-stage-4 in ~/.claude/.sidekick/quality-gate-state, rerun bash tests/run-all-tests.sh, record full-test-suite-rerun in the same file, then retry.' )"
+    exit 0
+  fi
+fi
 
 # Build required skills list
 # Source canonical required-skills list (single source of truth — TD-01 fix)

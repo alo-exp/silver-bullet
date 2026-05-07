@@ -43,6 +43,164 @@ ensure_marketplace_registered() {
   "${CODEX_BIN}" plugin marketplace add "${source_spec}"
 }
 
+refresh_marketplace() {
+  local marketplace_name="$1"
+
+  "${CODEX_BIN}" plugin marketplace upgrade "${marketplace_name}"
+}
+
+ensure_plugin_enabled() {
+  local plugin_spec="$1"
+  local config_file="${HOME}/.codex/config.toml"
+  local header="[plugins.\"${plugin_spec}\"]"
+
+  python3 - "$config_file" "$header" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+header = sys.argv[2]
+text = config_path.read_text()
+lines = text.splitlines()
+output = []
+i = 0
+found = False
+
+while i < len(lines):
+    line = lines[i]
+    if line.strip() == header:
+        found = True
+        output.append(line)
+        i += 1
+
+        section_lines = []
+        enabled_seen = False
+        while i < len(lines) and not lines[i].startswith('['):
+            section_line = lines[i]
+            if section_line.strip().startswith('enabled ='):
+                section_lines.append('enabled = true')
+                enabled_seen = True
+            else:
+                section_lines.append(section_line)
+            i += 1
+
+        if not enabled_seen:
+          output.append('enabled = true')
+        output.extend(section_lines)
+        continue
+
+    output.append(line)
+    i += 1
+
+if found:
+    new_text = '\n'.join(output)
+    if text.endswith('\n'):
+        new_text += '\n'
+    config_path.write_text(new_text)
+else:
+    if text and not text.endswith('\n'):
+        text += '\n'
+    text += f'\n{header}\nenabled = true\n'
+    config_path.write_text(text)
+PY
+}
+
+ensure_feature_enabled() {
+  local feature_name="$1"
+  local config_file="${HOME}/.codex/config.toml"
+  local header="[features]"
+
+  python3 - "$config_file" "$header" "$feature_name" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+header = sys.argv[2]
+feature_name = sys.argv[3]
+text = config_path.read_text()
+lines = text.splitlines()
+output = []
+i = 0
+found = False
+
+while i < len(lines):
+    line = lines[i]
+    if line.strip() == header:
+        found = True
+        output.append(line)
+        i += 1
+
+        section_lines = []
+        feature_seen = False
+        while i < len(lines) and not lines[i].startswith('['):
+            section_line = lines[i]
+            stripped = section_line.strip()
+            if stripped.startswith(f'{feature_name} ='):
+                section_lines.append(f'{feature_name} = true')
+                feature_seen = True
+            else:
+                section_lines.append(section_line)
+            i += 1
+
+        if not feature_seen:
+            output.append(f'{feature_name} = true')
+        output.extend(section_lines)
+        continue
+
+    output.append(line)
+    i += 1
+
+if found:
+    new_text = '\n'.join(output)
+    if text.endswith('\n'):
+        new_text += '\n'
+    config_path.write_text(new_text)
+else:
+    if text and not text.endswith('\n'):
+        text += '\n'
+    text += f'\n{header}\n{feature_name} = true\n'
+    config_path.write_text(text)
+PY
+}
+
+remove_plugin_enabled() {
+  local plugin_spec="$1"
+
+  for config_file in "${HOME}/.codex/config.toml" "${HOME}/.Codex/config.toml"; do
+    [[ -f "$config_file" ]] || continue
+    python3 - "$config_file" "$plugin_spec" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+plugin_spec = sys.argv[2]
+text = config_path.read_text()
+lines = text.splitlines()
+output = []
+i = 0
+removed = False
+header = f'[plugins."{plugin_spec}"]'
+
+while i < len(lines):
+    line = lines[i]
+    if line.strip() == header:
+      removed = True
+      i += 1
+      while i < len(lines) and not lines[i].startswith('['):
+        i += 1
+      continue
+    output.append(line)
+    i += 1
+
+if removed:
+    new_text = '\n'.join(output)
+    if text.endswith('\n'):
+        new_text += '\n'
+    config_path.write_text(new_text)
+PY
+  done
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --purge-legacy-skills) PURGE_LEGACY_SKILLS=1; shift ;;
@@ -64,6 +222,13 @@ fi
 
 remove_marketplace_if_present "${CODEX_MARKETPLACE_LEGACY_NAME}"
 ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
+refresh_marketplace "alo-labs-codex"
+ensure_feature_enabled "plugin_hooks"
+remove_plugin_enabled "silver@alo-labs-codex"
+ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+ensure_plugin_enabled "product-management@alo-labs-codex"
+ensure_plugin_enabled "engineering@alo-labs-codex"
+ensure_plugin_enabled "design@alo-labs-codex"
 
 ensure_marketplace_registered "${SUPERPOWERS_MARKETPLACE_SOURCE}"
 

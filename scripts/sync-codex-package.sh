@@ -41,6 +41,7 @@ PACKAGE_ENTRIES=(
   SECURITY.md
   SENTINEL-audit-silver-bullet-v0.15.1.md
   SENTINEL-audit-silver-init.md
+  commands
   .silver-bullet.json
   docs
   hooks

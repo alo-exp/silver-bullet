@@ -2,11 +2,25 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIMES=()
+RELEASE_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/release-live-matrix"
+full_matrix_requested=false
 if [[ -n "${SB_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
   RUNTIMES=(${SB_LIVE_RUNTIMES})
 else
   RUNTIMES=(claude codex)
+fi
+
+if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
+  has_claude=false
+  has_codex=false
+  for runtime in "${RUNTIMES[@]}"; do
+    [[ "$runtime" == "claude" ]] && has_claude=true
+    [[ "$runtime" == "codex" ]] && has_codex=true
+  done
+  if [[ "$has_claude" == true && "$has_codex" == true ]]; then
+    full_matrix_requested=true
+  fi
 fi
 
 echo "========================================"
@@ -16,6 +30,8 @@ echo ""
 echo "WARNING: These tests invoke real Claude or Codex CLIs."
 echo "Estimated cost: \$0.10-\$0.60 per full run."
 echo ""
+
+rm -f "$RELEASE_LIVE_MATRIX_FILE"
 
 TOTAL_FAIL=0
 
@@ -69,6 +85,22 @@ if [[ $TOTAL_FAIL -gt 0 ]]; then
   echo "  OVERALL: $TOTAL_FAIL suite(s) FAILED"
   exit 1
 else
+  marker=""
+  if [[ "$full_matrix_requested" == true ]]; then
+    marker="full-claude-codex"
+  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "codex" ]]; then
+    marker="codex-only"
+  fi
+
+  if [[ -n "$marker" ]]; then
+    mkdir -p "$(dirname "$RELEASE_LIVE_MATRIX_FILE")"
+    cat > "$RELEASE_LIVE_MATRIX_FILE" <<EOF
+matrix=${marker}
+EOF
+  else
+    rm -f "$RELEASE_LIVE_MATRIX_FILE"
+    echo "  NOTE: Release marker not written because the full Claude/Codex matrix was not run."
+  fi
   echo "  OVERALL: ALL SUITES PASSED"
   exit 0
 fi

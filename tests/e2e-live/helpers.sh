@@ -8,6 +8,9 @@
 
 set -euo pipefail
 
+PATH="/Users/shafqat/.local/bin:/opt/homebrew/bin:/Applications/Codex.app/Contents/Resources:${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}"
+export PATH
+
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
 FIXTURE_DIR="${SB_ROOT}/tests/test-app"
@@ -23,10 +26,13 @@ WORK_DIR=""
 APP_SERVER_PID=""
 APP_SERVER_LOG=""
 CLAUDE_PROMPT_COUNT=0
+CLAUDE_INTERACTIVE_INVOKE="${SB_ROOT}/scripts/claude-interactive-invoke.expect"
 STATE_FILE="${SB_TEST_DIR}/state"
 TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
+SESSION_INIT_FILE="${SB_TEST_DIR}/session-init"
 STATE_BACKUP="${SB_TEST_DIR}/state.e2e-live-backup-$$"
 TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.e2e-live-backup-$$"
+SESSION_INIT_BACKUP="${SB_TEST_DIR}/session-init.e2e-live-backup-$$"
 
 PASS=0
 FAIL=0
@@ -73,6 +79,12 @@ backup_session_state() {
   else
     rm -f "$TRIVIAL_BACKUP"
   fi
+
+  if [[ -f "$SESSION_INIT_FILE" ]]; then
+    cp "$SESSION_INIT_FILE" "$SESSION_INIT_BACKUP"
+  else
+    rm -f "$SESSION_INIT_BACKUP"
+  fi
 }
 
 restore_session_state() {
@@ -87,6 +99,12 @@ restore_session_state() {
   else
     rm -f "$TRIVIAL_FILE"
   fi
+
+  if [[ -f "$SESSION_INIT_BACKUP" ]]; then
+    mv "$SESSION_INIT_BACKUP" "$SESSION_INIT_FILE"
+  else
+    rm -f "$SESSION_INIT_FILE"
+  fi
 }
 
 prepare_workspace() {
@@ -96,6 +114,15 @@ prepare_workspace() {
   APP_SERVER_LOG="${WORK_DIR}/server.log"
 
   cp -R "${FIXTURE_DIR}/." "${WORK_DIR}/"
+
+  mkdir -p "${WORK_DIR}/.claude"
+  cat > "${WORK_DIR}/.claude/settings.local.json" <<'EOF'
+{
+  "permissions": {
+    "defaultMode": "auto"
+  }
+}
+EOF
 
   if [[ "$mode" == "clean-sb" ]]; then
     rm -rf \
@@ -138,6 +165,8 @@ prepare_workspace() {
   else
     rm -f "$TRIVIAL_BACKUP"
   fi
+
+  rm -f "$SESSION_INIT_FILE"
 
   runtime_preflight
 
@@ -200,12 +229,58 @@ stop_app_server() {
 
 run_prompt() {
   local prompt="$1"
-  runtime_invoke permissive "$prompt"
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    claude_interactive_invoke permissive "$prompt"
+  else
+    runtime_invoke permissive "$prompt"
+  fi
 }
 
 run_prompt_strict() {
   local prompt="$1"
-  runtime_invoke default "$prompt"
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    claude_interactive_invoke default "$prompt"
+  else
+    runtime_invoke default "$prompt"
+  fi
+}
+
+claude_interactive_invoke() {
+  local mode="$1"
+  local prompt="$2"
+  local prompt_file
+  local permission_mode
+  local continue_flag
+  local output
+
+  prompt_file="$(mktemp "${WORK_DIR}/claude-prompt.XXXXXX")"
+  printf '%s' "$prompt" > "$prompt_file"
+
+  permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
+  if [[ "$mode" == "permissive" ]]; then
+    permission_mode="bypassPermissions"
+  fi
+
+  continue_flag=0
+  if [[ "${CLAUDE_PROMPT_COUNT:-0}" -gt 0 ]]; then
+    continue_flag=1
+  fi
+
+  output=$(
+    cd "$WORK_DIR" && \
+      CLAUDE_WORK_DIR="$WORK_DIR" \
+      CLAUDE_PROMPT_FILE="$prompt_file" \
+      CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
+      CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
+      CLAUDE_PERMISSION_MODE="$permission_mode" \
+      CLAUDE_CONTINUE="$continue_flag" \
+      expect "$CLAUDE_INTERACTIVE_INVOKE"
+  ) || true
+
+  rm -f "$prompt_file"
+  printf '%s' "$output"
+
+  CLAUDE_PROMPT_COUNT=$((CLAUDE_PROMPT_COUNT + 1))
 }
 
 claude_plugin_installed() {
@@ -293,6 +368,76 @@ assert_file_exists() {
     echo "FAIL: $label (missing: $path)"
     FAIL=$((FAIL + 1))
   fi
+}
+
+wait_for_file_exists() {
+  local label="$1"
+  local path="$2"
+  local timeout_seconds="${3:-120}"
+  local interval_seconds="${4:-2}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if [[ -e "$path" ]]; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    sleep "$interval_seconds"
+  done
+
+  echo "FAIL: $label (missing after ${timeout_seconds}s: $path)"
+  FAIL=$((FAIL + 1))
+  return 1
+}
+
+wait_for_file_contains() {
+  local label="$1"
+  local path="$2"
+  local needle="$3"
+  local timeout_seconds="${4:-120}"
+  local interval_seconds="${5:-2}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if grep -qE "$needle" "$path" 2>/dev/null; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    sleep "$interval_seconds"
+  done
+
+  echo "FAIL: $label"
+  echo "  expected pattern: $needle"
+  echo "  in file: $path"
+  FAIL=$((FAIL + 1))
+  return 1
+}
+
+wait_for_state_contains() {
+  local label="$1"
+  local needle="$2"
+  local timeout_seconds="${3:-120}"
+  local interval_seconds="${4:-2}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if grep -qx "$needle" "$STATE_FILE" 2>/dev/null; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    sleep "$interval_seconds"
+  done
+
+  echo "FAIL: $label"
+  echo "  expected state entry: $needle"
+  if [[ -f "$STATE_FILE" ]]; then
+    echo "  state: $(tr '\n' ' ' < "$STATE_FILE")"
+  fi
+  FAIL=$((FAIL + 1))
+  return 1
 }
 
 assert_file_contains() {

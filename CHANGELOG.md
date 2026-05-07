@@ -1,6 +1,27 @@
 # Changelog
 
-## [0.32.0] — 2026-05-07
+## [0.32.1] — 2026-05-07
+
+## Live Release Hardening
+
+**What:** Hardens the release path with the Claude/Codex live matrix, the todo-app live suite, and the mandatory pre-release quality-gate rerun.
+
+## Features
+
+- `tests/live/run-live-tests.sh` now runs the shared Claude/Codex live matrix as a release gate.
+- `tests/e2e-live/run-e2e-live-tests.sh` adds the realistic todo-app live suite so SB is proven against an actual app workflow.
+- `hooks/completion-audit.sh` now requires the sidekick quality-gate markers plus the full-test-suite rerun marker before `gh release create`.
+
+## Fixes
+
+- `scripts/install-claude.sh` refreshes the cached SB hooks deterministically and uses the stable interactive runner path.
+- `hooks/session-start` now clears the sidekick quality-gate state along with the normal SB session markers.
+- The completion-audit and session-start tests were updated to match the new mandatory release sequence.
+
+## Documentation
+
+- Release, testing, and internal quality-gate docs now describe the new two-stage live proof and the mandatory rerun before release.
+- The SB workflow docs and templates now distinguish the main SB state file from the sidekick quality-gate file.
 
 ## Codex packaging and release refresh
 

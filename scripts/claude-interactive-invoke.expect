@@ -7,14 +7,31 @@ proc env_or_default {name default} {
   return $default
 }
 
+proc type_slow {text delay_ms} {
+  set length [string length $text]
+  for {set i 0} {$i < $length} {incr i} {
+    send -- [string index $text $i]
+    if {$delay_ms > 0} {
+      after $delay_ms
+    }
+  }
+}
+
 set timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_TIMEOUT 900])}]
 set cli [env_or_default CLAUDE_BIN "/Users/shafqat/.local/bin/claude"]
 set work_dir [env_or_default CLAUDE_WORK_DIR ""]
 set prompt_file [env_or_default CLAUDE_PROMPT_FILE ""]
-set model [env_or_default CLAUDE_MODEL "claude-haiku-4-5-20251001"]
+set model [env_or_default CLAUDE_MODEL "sonnet"]
 set effort [env_or_default CLAUDE_EFFORT "low"]
 set permission_mode [env_or_default CLAUDE_PERMISSION_MODE "bypassPermissions"]
 set continue_flag [env_or_default CLAUDE_CONTINUE "0"]
+set debug_log [env_or_default CLAUDE_INTERACTIVE_LOG_FILE ""]
+set debug_trace [env_or_default CLAUDE_INTERACTIVE_DEBUG "0"]
+set post_prompt_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_DELAY_MS 1000])}]
+set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 20])}]
+set quiet_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_QUIET_TIMEOUT 5])}]
+set type_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TYPE_DELAY_MS 15])}]
+set slash_pause_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_SLASH_PAUSE_MS 250])}]
 
 if {$work_dir eq "" || $prompt_file eq ""} {
   puts stderr "ERROR: CLAUDE_WORK_DIR and CLAUDE_PROMPT_FILE must be set"
@@ -25,7 +42,22 @@ set prompt_handle [open $prompt_file r]
 set prompt [read $prompt_handle]
 close $prompt_handle
 
+set command_name ""
+set prompt_body $prompt
+if {[string length $prompt] > 0 && [string index $prompt 0] eq "/"} {
+  if {[regexp {^/([^[:space:]]+)\s*(.*)$} $prompt -> command_name prompt_body]} {
+    set prompt_body [string trimleft $prompt_body]
+  }
+}
+
 cd $work_dir
+
+if {$debug_log ne ""} {
+  log_file -a $debug_log
+}
+if {$debug_trace eq "1"} {
+  exp_internal 1
+}
 
 set args [list --model $model --effort $effort --permission-mode $permission_mode --verbose]
 if {$continue_flag eq "1"} {
@@ -33,31 +65,115 @@ if {$continue_flag eq "1"} {
 }
 
 log_user 1
-spawn -noecho $cli {*}$args
+set spawn_args [list $cli {*}$args]
+if {$command_name ne ""} {
+  lappend spawn_args "/$command_name"
+  if {[string length $prompt_body] > 0} {
+    lappend spawn_args $prompt_body
+  }
+}
+spawn -noecho {*}$spawn_args
 
+if {$continue_flag eq "0"} {
+  set trust_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_DELAY_MS 2000])}]
+  after $trust_delay_ms
+  send -- "\r"
+} else {
+  after 200
+}
+
+after $post_prompt_delay_ms
+set timeout $ready_timeout
 expect {
-  -re {❯[^\n]*} {
-    # Ready for the user prompt.
+  -re {(?s)bypass.*permissions.*on} {
+    # Main prompt is live and ready for input.
+  }
+  -re {Try "how does .* work\?"} {
+    # Claude has rendered the prompt helper text; it is ready for input.
+  }
+  -re {❯} {
+    # Prompt marker is live and ready for input.
   }
   timeout {
-    puts stderr "ERROR: timed out waiting for Claude to become ready"
+    puts stderr "ERROR: timed out waiting for Claude prompt to become ready"
     exit 1
   }
   eof {
-    puts stderr "ERROR: Claude exited before it was ready"
+    puts stderr "ERROR: Claude exited before the prompt became ready"
     exit 1
   }
 }
 
-send -- "$prompt\r"
+set timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_TIMEOUT 900])}]
 
+set saw_prompt 0
+set final_marker_seen 0
+set require_final_marker 0
+if {$command_name eq "silver-init"} {
+  set require_final_marker 1
+}
 expect {
-  -re {❯[^\n]*} {
-    # The session has returned to a prompt, so the response is complete.
+  -re {Silver Bullet initialized\. Start any task and the active workflow will be enforced automatically\.} {
+    set final_marker_seen 1
+    exp_continue
+  }
+  -re {Silver Bullet updated\. silver-bullet\.md refreshed\. All skills active\.} {
+    set final_marker_seen 1
+    exp_continue
+  }
+  -re {No \.planning/ directory found\. How would you like to initialize this project\?} {
+    # The todo-app fixture is brownfield, so we should map the existing codebase
+    # first before scaffolding the Silver Bullet project state.
+    send -- "b\r"
+    exp_continue
+  }
+  -re {Do these detected values look right\?} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {MultAI plugin is not installed} {
+    send -- "b\r"
+    exp_continue
+  }
+  -re {Silver Bullet works best with auto-approve permissions\. Choose a permission mode:} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {Which project management system should Silver Bullet use when filing issues and backlog items\?} {
+    send -- "b\r"
+    exp_continue
+  }
+  -re {Approve composition\? \[Y/n\]} {
+    send -- "y\r"
+    exp_continue
+  }
+  -re {What best describes this failure\?} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {❯} {
+    if {$require_final_marker == 1 && $final_marker_seen == 0} {
+      exp_continue
+    }
+    set saw_prompt 1
+    set timeout $quiet_timeout
+    exp_continue
   }
   timeout {
-    puts stderr "ERROR: timed out waiting for Claude response"
-    exit 1
+    if {$require_final_marker == 1} {
+      if {$final_marker_seen} {
+        # The session has returned to a prompt and gone quiet after the
+        # init completion marker, so the response is complete.
+      } else {
+        puts stderr "ERROR: timed out waiting for Silver Bullet init to complete"
+        exit 1
+      }
+    } elseif {$saw_prompt} {
+      # The session has returned to a prompt and gone quiet, so the response is complete.
+    } else {
+      puts stderr "ERROR: timed out waiting for Claude response"
+      exit 1
+    }
   }
   eof {
     # Some sessions exit cleanly after the response. Accept that.

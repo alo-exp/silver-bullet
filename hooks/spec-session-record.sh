@@ -21,7 +21,7 @@ fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
 
@@ -61,6 +61,6 @@ printf 'spec-version=%s\njira-id=%s\n' "${spec_version:-}" "${jira_id:-}" > "$sp
 version_display="${spec_version:-unknown}"
 jira_display="${jira_id:-n/a}"
 _msg="Spec session: SPEC.md v${version_display}, JIRA: ${jira_display}"
-printf '{"hookSpecificOutput":{"message":%s}}' "$(printf '%s' "$_msg" | jq -Rs '.')"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":%s}}' "$(printf '%s' "$_msg" | jq -Rs '.')"
 
 exit 0

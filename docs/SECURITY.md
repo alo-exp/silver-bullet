@@ -17,7 +17,7 @@ Silver Bullet has passed 5 SENTINEL audit cycles across v0.7.0, v0.8.0, and v0.1
 | Hook bypass via direct file edit | `dev-cycle-check.sh` blocks Edit/Write/Bash if planning phase incomplete | Pre-tool gate |
 | Trivial-mode abuse | Trivial flag requires explicit user confirmation; auto-cleared on session start | UX gate |
 | Cross-plugin conflict | SB never modifies third-party plugin files; additive enforcement only | Design principle |
-| Stale quality gate markers | Session-start hook clears all `quality-gate-stage-*` markers | Session lifecycle |
+| Stale quality gate markers | Session-start hook clears `~/.claude/.sidekick/quality-gate-state` | Session lifecycle |
 
 ### Hardening History
 

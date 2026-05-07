@@ -8,6 +8,9 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 PASS=0
 FAIL=0
+RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
 
 # --- Setup/Teardown ---
 integration_setup() {
@@ -32,11 +35,14 @@ integration_setup() {
   TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   printf 'feature/test' > "$TMPBRANCH"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
+  rm -f "$E2E_LIVE_MATRIX_FILE"
 }
 
 integration_teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  rm -f "$RELEASE_LIVE_MATRIX_FILE"
+  rm -f "$E2E_LIVE_MATRIX_FILE"
 }
 
 write_default_config() {
@@ -159,6 +165,31 @@ write_workflow_md_no_path4() {
 
 FLOW 5 PLAN
 WFEOF
+}
+
+write_release_live_matrix_marker() {
+  mkdir -p "$SB_TEST_DIR"
+  cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+}
+
+write_e2e_live_matrix_marker() {
+  mkdir -p "$SB_TEST_DIR"
+  cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+}
+
+write_quality_gate_state_marker() {
+  mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
+  cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
 }
 
 # --- Hook runners ---

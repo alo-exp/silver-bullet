@@ -34,6 +34,8 @@ bash "$SCRIPT" >/dev/null
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
 assert_file_exists "Silver Bullet skill available" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
+assert_file_exists "Silver Bullet init command available" "$PACKAGE_ROOT/commands/init.md"
+assert_file_exists "Silver Bullet commands available" "$PACKAGE_ROOT/commands/feature.md"
 assert_file_exists "Stamped template present" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"

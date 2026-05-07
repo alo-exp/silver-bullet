@@ -401,6 +401,12 @@ out=$(run_hook_bash "PreToolUse" "node ${PLUGIN_CACHE_PATH}/some-plugin/build.js
 assert_blocks "F-07: node with redirect into plugin cache is blocked" "$out"
 teardown
 
+# Test 19b: reading a template from plugin cache while writing elsewhere should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "cat ${PLUGIN_CACHE_PATH}/some-plugin/template.md | sed 's/foo/bar/' > /tmp/template.out")
+assert_passes "F-07: read from plugin cache with workspace redirect is allowed" "$out"
+teardown
+
 # Test 20: python3 execution of plugin binary should be ALLOWED
 setup
 out=$(run_hook_bash "PreToolUse" "python3 ${PLUGIN_CACHE_PATH}/some-plugin/tool.py")

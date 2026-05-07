@@ -154,6 +154,58 @@ purge_plugin_cache() {
   rm -rf "$cache_dir"
 }
 
+sync_silver_bullet_settings_paths() {
+  local settings_file="${HOME}/.claude/settings.json"
+  local plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local current_version_dir=""
+
+  [[ -f "$settings_file" ]] || return 0
+  [[ -d "$plugin_cache_root" ]] || return 0
+
+  current_version_dir="$(find "$plugin_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  [[ -n "$current_version_dir" ]] || return 0
+
+  python3 - "$settings_file" "$plugin_cache_root" "$current_version_dir" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+settings_path = pathlib.Path(sys.argv[1])
+cache_root = sys.argv[2].rstrip("/")
+current_version_dir = sys.argv[3].rstrip("/")
+
+try:
+    data = json.loads(settings_path.read_text())
+except Exception:
+    sys.exit(0)
+
+path_pattern = re.compile(re.escape(cache_root) + r"/[^/\"]+")
+
+def rewrite(value):
+    if isinstance(value, str):
+        return path_pattern.sub(current_version_dir, value)
+    if isinstance(value, list):
+        return [item for item in (rewrite(item) for item in value) if item is not None]
+    if isinstance(value, dict):
+        rewritten = {}
+        for key, item in value.items():
+            new_item = rewrite(item)
+            if new_item is None:
+                continue
+            if key == "hooks" and isinstance(new_item, list):
+                new_item = [hook for hook in new_item if hook is not None]
+                if not new_item:
+                    continue
+            rewritten[key] = new_item
+        return rewritten
+    return value
+
+updated = rewrite(data)
+settings_path.write_text(json.dumps(updated, indent=2) + "\n")
+PY
+}
+
 refresh_plugin_install() {
   local plugin_id="$1"
   local scope
@@ -165,6 +217,41 @@ refresh_plugin_install() {
 
   purge_plugin_cache "$plugin_id"
   "$CLAUDE_BIN" plugin install "$plugin_id" --scope user >/dev/null
+}
+
+ensure_legacy_skill_alias() {
+  local alias_name="$1"
+  local marketplace="$2"
+  local plugin_name="$3"
+  local cache_root="${HOME}/.claude/plugins/cache"
+  local target_root="${cache_root}/${marketplace}/${plugin_name}"
+  local alias_root="${cache_root}/${alias_name}"
+  local version_dir=""
+
+  if [[ ! -d "$target_root" ]]; then
+    return 0
+  fi
+
+  version_dir="$(find "$target_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  if [[ -z "$version_dir" || ! -d "${version_dir}/skills" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$alias_root"
+  ln -sfn "${version_dir}/skills" "${alias_root}/skills"
+}
+
+sync_silver_bullet_hook_cache() {
+  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local current_version_dir=""
+
+  [[ -d "$cache_root" ]] || return 0
+  current_version_dir="$(find "$cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  [[ -n "$current_version_dir" ]] || return 0
+
+  install -d -m 755 "${current_version_dir}/hooks"
+  install -m 755 "${REPO_ROOT}/hooks/session-start" "${current_version_dir}/hooks/session-start"
+  install -m 755 "${REPO_ROOT}/hooks/spec-session-record.sh" "${current_version_dir}/hooks/spec-session-record.sh"
 }
 
 ensure_github_https_rewrite() {
@@ -211,5 +298,12 @@ fi
 for plugin_id in "${TARGET_PLUGINS[@]}"; do
   refresh_plugin_install "$plugin_id"
 done
+
+sync_silver_bullet_hook_cache
+sync_silver_bullet_settings_paths
+
+ensure_legacy_skill_alias "product-management" "knowledge-work-plugins" "product-management"
+ensure_legacy_skill_alias "engineering" "knowledge-work-plugins" "engineering"
+ensure_legacy_skill_alias "design" "knowledge-work-plugins" "design"
 
 printf 'Claude marketplaces registered from %s\n' "$REPO_ROOT"
