@@ -269,6 +269,105 @@ run_workflow_strict_gate() {
   return 0
 }
 
+# Platform-aware stat helper: returns file mtime as epoch seconds
+_mtime_epoch() {
+  local _v
+  if [[ "$(uname)" == "Darwin" ]]; then
+    _v=$(stat -f %m "$1" 2>/dev/null || true)
+  else
+    _v=$(stat --format=%Y "$1" 2>/dev/null || true)
+  fi
+  [[ "$_v" =~ ^[0-9]+$ ]] && printf '%s' "$_v" || printf '0'
+}
+
+# ── Doc-scheme delivery gate (delivery-only) ─────────────────────────────────
+# If docs/doc-scheme.md exists, final delivery commands must prove that this
+# session updated the required "Every task" docs:
+#   - docs/CHANGELOG.md
+#   - docs/knowledge/YYYY-MM*.md (current month; supports split files a/b)
+#   - docs/lessons/YYYY-MM*.md (current month; supports split files a/b)
+#
+# Granularity: delivery-only by design. Intermediate commits are unaffected.
+run_doc_scheme_delivery_gate() {
+  local repo_root="$1"
+  local doc_scheme_file="$repo_root/docs/doc-scheme.md"
+  [[ -f "$doc_scheme_file" && ! -L "$doc_scheme_file" ]] || return 0
+
+  local session_start_file="${SILVER_BULLET_SESSION_START_FILE:-${SB_STATE_DIR}/session-start-time}"
+  session_start_file="${session_start_file/#\~/$HOME}"
+  case "$session_start_file" in
+    "$HOME"/.claude/*) ;;
+    *) session_start_file="${SB_STATE_DIR}/session-start-time" ;;
+  esac
+
+  local session_start=""
+  session_start=$(cat "$session_start_file" 2>/dev/null || true)
+  if ! [[ "$session_start" =~ ^[0-9]+$ ]]; then
+    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` is present, but the session start marker is missing or invalid at `%s`.\n\nStart a fresh SB session so hooks can stamp `session-start-time`, then update docs and retry delivery.' "$session_start_file")"
+    exit 0
+  fi
+
+  local month
+  month=$(date '+%Y-%m')
+
+  local changelog="$repo_root/docs/CHANGELOG.md"
+  local knowledge_dir="$repo_root/docs/knowledge"
+  local lessons_dir="$repo_root/docs/lessons"
+  local knowledge_file=""
+  local lessons_file=""
+  local knowledge_mtime=0
+  local lessons_mtime=0
+
+  shopt -s nullglob
+  for f in "$knowledge_dir/${month}"*.md; do
+    [[ -f "$f" && ! -L "$f" ]] || continue
+    m=$(_mtime_epoch "$f")
+    if (( m > knowledge_mtime )); then
+      knowledge_mtime=$m
+      knowledge_file="$f"
+    fi
+  done
+  for f in "$lessons_dir/${month}"*.md; do
+    [[ -f "$f" && ! -L "$f" ]] || continue
+    m=$(_mtime_epoch "$f")
+    if (( m > lessons_mtime )); then
+      lessons_mtime=$m
+      lessons_file="$f"
+    fi
+  done
+  shopt -u nullglob
+
+  local gate_issues=""
+
+  if [[ ! -f "$changelog" || -L "$changelog" ]]; then
+    gate_issues+="  - Missing: docs/CHANGELOG.md"$'\n'
+  else
+    changelog_mtime=$(_mtime_epoch "$changelog")
+    if (( changelog_mtime < session_start )); then
+      gate_issues+="  - Stale: docs/CHANGELOG.md (not updated this session)"$'\n'
+    fi
+  fi
+
+  if [[ -z "$knowledge_file" ]]; then
+    gate_issues+="  - Missing: docs/knowledge/${month}*.md"$'\n'
+  elif (( knowledge_mtime < session_start )); then
+    gate_issues+="  - Stale: docs/knowledge/${month}*.md (not updated this session)"$'\n'
+  fi
+
+  if [[ -z "$lessons_file" ]]; then
+    gate_issues+="  - Missing: docs/lessons/${month}*.md"$'\n'
+  elif (( lessons_mtime < session_start )); then
+    gate_issues+="  - Stale: docs/lessons/${month}*.md (not updated this session)"$'\n'
+  fi
+
+  if [[ -n "$gate_issues" ]]; then
+    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` requires "Every task" docs updates before delivery.\n\nFix these items:\n%s\nUpdate the required docs, then retry the delivery command.' "$gate_issues")"
+    exit 0
+  fi
+
+  return 0
+}
+
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -357,6 +456,7 @@ fi
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
 run_workflow_strict_gate "$project_root"
+run_doc_scheme_delivery_gate "$project_root"
 
 release_live_matrix_file="${HOME}/.claude/.silver-bullet/release-live-matrix"
 e2e_live_matrix_file="${HOME}/.claude/.silver-bullet/e2e-live-matrix"

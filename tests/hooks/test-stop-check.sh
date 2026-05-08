@@ -13,8 +13,9 @@ FAIL=0
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"; }
+cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}" "${SESSION_START_FILE}"; }
 trap cleanup_all EXIT
 
 write_cfg() {
@@ -73,6 +74,8 @@ setup() {
   TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   printf 'feature/test\n' > "$TMPBRANCH_FILE"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH_FILE"
+  export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
+  date +%s > "$SESSION_START_FILE"
 }
 
 teardown() {
@@ -80,7 +83,9 @@ teardown() {
   rm -f "$TMPSTATE"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  rm -f "${SESSION_START_FILE}"
   unset SILVER_BULLET_BRANCH_FILE
+  unset SILVER_BULLET_SESSION_START_FILE
   unset SILVER_BULLET_STATE_FILE
 }
 
@@ -143,6 +148,33 @@ assert_empty() {
     echo "  FAIL: $label — expected empty output, got: $output"
     FAIL=$((FAIL + 1))
   fi
+}
+
+seed_doc_scheme_marker() {
+  mkdir -p "$TMPDIR_TEST/docs"
+  cat > "$TMPDIR_TEST/docs/doc-scheme.md" << 'EOF'
+# Doc Scheme
+
+## When docs get updated
+
+| Event | What updates |
+|---|---|
+| Every task | CHANGELOG.md, knowledge/YYYY-MM.md, lessons/YYYY-MM.md |
+EOF
+}
+
+seed_doc_scheme_targets_current_month() {
+  local month="$1"
+  mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+  cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+  cat > "$TMPDIR_TEST/docs/knowledge/${month}.md" << EOF
+# Knowledge ${month}
+EOF
+  cat > "$TMPDIR_TEST/docs/lessons/${month}.md" << EOF
+# Lessons ${month}
+EOF
 }
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
@@ -542,6 +574,55 @@ printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_passes "#85-C: missing deploy-checklist + create-release does NOT block Stop" "$out"
+teardown
+
+# ── Doc-scheme per-task gate (option 2) ──────────────────────────────────────
+echo "--- DOC-2A: docs/doc-scheme.md present + missing required docs -> blocks ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+seed_doc_scheme_marker
+out=$(run_hook)
+assert_blocks "DOC-2A: missing CHANGELOG/knowledge/lessons blocks completion" "$out"
+assert_contains "DOC-2A: block mentions DOC-SCHEME GATE" "$out" "DOC-SCHEME GATE"
+teardown
+
+echo "--- DOC-2B: stale docs (pre-session) -> blocks ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+seed_doc_scheme_marker
+current_month=$(date '+%Y-%m')
+seed_doc_scheme_targets_current_month "$current_month"
+sleep 1
+date +%s > "$SESSION_START_FILE"
+out=$(run_hook)
+assert_blocks "DOC-2B: stale docs block completion" "$out"
+assert_contains "DOC-2B: block mentions stale docs" "$out" "Stale:"
+teardown
+
+echo "--- DOC-2C: docs updated this session -> allows completion ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+seed_doc_scheme_marker
+date +%s > "$SESSION_START_FILE"
+current_month=$(date '+%Y-%m')
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+cat > "$TMPDIR_TEST/docs/knowledge/${current_month}-a.md" << EOF
+# Knowledge ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/lessons/${current_month}-b.md" << EOF
+# Lessons ${current_month}
+EOF
+out=$(run_hook)
+assert_passes "DOC-2C: docs current-session updates pass stop gate" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

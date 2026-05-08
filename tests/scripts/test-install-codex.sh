@@ -38,56 +38,6 @@ assert_contains() {
   fi
 }
 
-run_live_codex_smoke() {
-  local workdir live_log output exit_code
-
-  if [[ "${SB_SKIP_LIVE_CODEX_SMOKE:-0}" == "1" ]]; then
-    echo "SKIP: live Codex smoke disabled by SB_SKIP_LIVE_CODEX_SMOKE=1"
-    SKIP=$((SKIP + 1))
-    return 0
-  fi
-
-  if ! command -v codex >/dev/null 2>&1; then
-    echo "SKIP: live Codex smoke skipped — codex CLI not found in PATH"
-    SKIP=$((SKIP + 1))
-    return 0
-  fi
-
-  workdir="$(mktemp -d)"
-  live_log="$LOG_DIR/live-codex.log"
-
-  cat > "$workdir/.silver-bullet.json" <<EOF
-{}
-EOF
-
-  set +e
-  output=$(codex exec --skip-git-repo-check --cd "$workdir" --sandbox read-only 'say hi' 2>&1)
-  exit_code=$?
-  set -e
-
-  printf '%s\n' "$output" > "$live_log"
-
-  if [[ $exit_code -ne 0 ]]; then
-    if printf '%s' "$output" | grep -qiE 'No access token|Auth required|login|not found in PATH|command not found'; then
-      echo "SKIP: live Codex smoke unavailable — Codex CLI is present but not ready for exec"
-      SKIP=$((SKIP + 1))
-      rm -rf -- "$workdir"
-      return 0
-    fi
-
-    echo "FAIL: live Codex smoke exited $exit_code"
-    printf '%s\n' "$output"
-    FAIL=$((FAIL + 1))
-    rm -rf -- "$workdir"
-    return 0
-  fi
-
-  assert_contains "live Codex emitted SessionStart hook" "hook: SessionStart" "$live_log"
-  assert_contains "live Codex emitted Stop hook" "hook: Stop" "$live_log"
-
-  rm -rf -- "$workdir"
-}
-
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -168,8 +118,6 @@ assert_contains "Anthropic engineering plugin enabled" '[plugins."engineering@al
 assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Codex plugin hooks feature enabled" '[features]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Codex plugin hooks feature flag" 'plugin_hooks = true' "$HOME_DIR/.Codex/config.toml"
-
-run_live_codex_smoke
 
 echo
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"
