@@ -92,7 +92,7 @@ Not part of CI — run manually at roughly $0.10–$0.60 per full Claude+Codex m
 | `tests/live/test-live-skill-recording.sh` | S5-S6 skill recording and compliance-status output |
 | `tests/live/test-live-full-scenario.sh` | S7-S8 session initialization and abbreviated SDLC lifecycle |
 | `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
-| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, KNOWLEDGE.md split |
+| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/lessons split |
 
 The suite invokes the real `claude` CLI or `codex` CLI with runtime adapters in
 `tests/live/runtimes/`. By default `tests/live/run-live-tests.sh` runs both runtimes

@@ -48,6 +48,7 @@ Wait for response, then proceed.
 | "trivial", "quick fix", "typo", "one-liner", "config value", ≤3 files | `silver:fast` (gsd-fast) | No planning overhead |
 | "where are we", "what's left", "show progress", "current status" | `gsd-progress` | Status only |
 | "pick up", "resume", "continue where" | `gsd-resume-work` | Session restore |
+| "handoff", "wrap up session", "continue later", "session summary", "resume next session" | `silver:handoff` | Generate project-level continuation prompt |
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
@@ -103,7 +104,8 @@ If input matches two or more destinations with similar confidence, use AskUserQu
 > F. `silver:release` — publish a milestone release
 > G. `silver:fast` — trivial one-liner or config change
 > H. `silver:ingest` — ingest JIRA, Figma, Google Docs, or fetch cross-repo spec
-> I. Something else — describe it
+> I. `silver:handoff` — generate a project-level resume prompt for next session
+> J. Something else — describe it
 >
 > (Enter the letter)
 

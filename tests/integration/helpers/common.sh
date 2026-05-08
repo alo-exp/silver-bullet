@@ -11,6 +11,8 @@ FAIL=0
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
+LEGACY_CI_TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
+LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
 
 # --- Setup/Teardown ---
 integration_setup() {
@@ -36,6 +38,8 @@ integration_setup() {
   printf 'feature/test' > "$TMPBRANCH"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  # Keep integration runs deterministic by removing global legacy CI bypass artifacts.
+  rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
 }
 
 integration_teardown() {
@@ -43,6 +47,7 @@ integration_teardown() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
 }
 

@@ -222,6 +222,7 @@ Skills installed by this plugin that extend the workflow:
 | `/silver-remove` | Remove an issue or backlog item by ID — closes GitHub issues or marks `[REMOVED]` in local docs |
 | `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
 | `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, cross-references git/CHANGELOG/GitHub Issues, files survivors via `/silver-add` and `/silver-rem` |
+| `/silver-handoff` | Session wrap-up helper — generates a reusable project-level handoff prompt for the next session |
 
 ### `/silver-forensics`
 

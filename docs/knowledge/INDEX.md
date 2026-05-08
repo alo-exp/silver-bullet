@@ -14,6 +14,7 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Skill Harness | `tests/forge-test-app/run-forge-sb-tests.sh` | 60+ skill scenario validation |
 | Tech Debt | `docs/tech-debt.md` | Active debt register (max 20 items) |
 | Changelog | `docs/CHANGELOG.md` | Version history |
+| Task Doc Checklist | `docs/task-doc-checklist.json` | Per-task doc update checklist; must cover governed doc inventory enforced by completion hooks |
 | PRD Overview | `docs/PRD-Overview.md` | Product vision, requirement areas |
 | Doc Scheme (SB) | `docs/documentation-scheme.md` | SB's own documentation architecture |
 | Doc Scheme (projects) | `docs/project-documentation-scheme.md` | User-project documentation architecture |

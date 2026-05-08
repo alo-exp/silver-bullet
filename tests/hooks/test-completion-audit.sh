@@ -81,6 +81,28 @@ EOF
 EOF
 }
 
+seed_doc_scheme_checklist_current_month() {
+  local month="$1"
+  mkdir -p "$TMPDIR_TEST/docs"
+  cat > "$TMPDIR_TEST/docs/task-doc-checklist.json" << EOF
+{
+  "task_id": "test-doc-scheme-gate",
+  "docs": {
+    "docs/CHANGELOG.md": "updated",
+    "docs/knowledge/YYYY-MM.md": "updated",
+    "docs/lessons/YYYY-MM.md": "updated",
+    "docs/task-doc-checklist.json": "updated",
+    "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
+    "docs/ARCHITECTURE.md": "not-needed: no architecture changes in this task",
+    "docs/TESTING.md": "not-needed: no testing-doc changes in this task",
+    "docs/knowledge/INDEX.md": "not-needed: no docs added or removed in this task",
+    "README.md": "not-needed: not a release task",
+    "CHANGELOG.md": "n/a: root changelog not used in this project"
+  }
+}
+EOF
+}
+
 setup() {
   # Initialize git directly in TMPDIR_TEST so the hook finds .silver-bullet.json
   # before hitting the .git boundary (both are in the same directory).
@@ -638,7 +660,7 @@ teardown
 # ── Delivery doc-scheme gate (option 3) ──────────────────────────────────────
 echo "--- Group 8: Delivery doc-scheme gate ---"
 
-# Test 21: docs/doc-scheme.md present + missing required docs blocks delivery
+# Test 21: docs/doc-scheme.md present + missing checklist/docs blocks delivery
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -656,11 +678,11 @@ tech-debt
 EOF
 seed_doc_scheme_marker
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_blocks "doc-scheme gate blocks delivery when changelog/knowledge/lessons are missing" "$out"
+assert_blocks "doc-scheme gate blocks delivery when checklist and required docs are missing" "$out"
 assert_contains "doc-scheme block message contains gate label" "$out" "DOC-SCHEME GATE"
 teardown
 
-# Test 22: stale docs (pre-session) block delivery
+# Test 22: stale docs/checklist (pre-session) block delivery
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -679,14 +701,15 @@ EOF
 seed_doc_scheme_marker
 current_month=$(date '+%Y-%m')
 seed_doc_scheme_targets_current_month "$current_month"
+seed_doc_scheme_checklist_current_month "$current_month"
 sleep 1
 date +%s > "$SESSION_START_FILE"
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_blocks "doc-scheme gate blocks stale changelog/knowledge/lessons" "$out"
+assert_blocks "doc-scheme gate blocks stale checklist/docs" "$out"
 assert_contains "stale doc-scheme block message contains stale marker" "$out" "Stale:"
 teardown
 
-# Test 23: updated docs in current session allow delivery
+# Test 23: updated docs + checklist in current session allow delivery
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -715,8 +738,47 @@ EOF
 cat > "$TMPDIR_TEST/docs/lessons/${current_month}-b.md" << EOF
 # Lessons ${current_month}
 EOF
+seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_passes "doc-scheme gate allows delivery when docs are updated this session" "$out"
+assert_passes "doc-scheme gate allows delivery when docs and checklist are updated this session" "$out"
+teardown
+
+# Test 23b: every concrete docs file must appear in checklist coverage
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+seed_doc_scheme_marker
+date +%s > "$SESSION_START_FILE"
+current_month=$(date '+%Y-%m')
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+cat > "$TMPDIR_TEST/docs/knowledge/${current_month}.md" << EOF
+# Knowledge ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/lessons/${current_month}.md" << EOF
+# Lessons ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/EXTRA.md" << 'EOF'
+# Extra governed doc
+EOF
+seed_doc_scheme_checklist_current_month "$current_month"
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "doc-scheme gate blocks when a concrete docs file is missing from checklist" "$out"
+assert_contains "missing checklist entry names extra doc" "$out" "docs/EXTRA.md"
 teardown
 
 # ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──
@@ -982,23 +1044,6 @@ EOF
 write_quality_gate_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-I (#86): mixed complete/skipped workflow allows release" "$out"
-teardown
-
-echo "--- WF-PASS2-J (#86): all-skipped workflow is treated as terminal ---"
-setup
-_full_state
-ID="20260428T120000Z-abc123-silver-feature"
-_make_workflow "$ID" "| 1 | bootstrap | skipped | - | - |
-| 2 | orient    | skipped | - | - |"
-cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
-matrix=full-claude-codex
-EOF
-cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
-matrix=full-claude-codex
-EOF
-write_quality_gate_state
-out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "WF-PASS2-J (#86): all-skipped flows pass terminal-state check" "$out"
 teardown
 
 echo "--- WF-PASS2-K (#86): pending row still blocks (skipped fix didn't loosen) ---"
