@@ -16,13 +16,16 @@ TEST_RUN_ID="$$"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state-${TEST_RUN_ID}"
+SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 
 cleanup_all() {
   rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$QUALITY_GATE_FILE"
+  rm -f "$SESSION_START_FILE"
   unset GH_RUN_LIST_OVERRIDE
+  unset SILVER_BULLET_SESSION_START_FILE
 }
 trap cleanup_all EXIT
 
@@ -51,6 +54,33 @@ full-test-suite-rerun
 EOF
 }
 
+seed_doc_scheme_marker() {
+  mkdir -p "$TMPDIR_TEST/docs"
+  cat > "$TMPDIR_TEST/docs/doc-scheme.md" << 'EOF'
+# Doc Scheme
+
+## When docs get updated
+
+| Event | What updates |
+|---|---|
+| Every task | CHANGELOG.md, knowledge/YYYY-MM.md, lessons/YYYY-MM.md |
+EOF
+}
+
+seed_doc_scheme_targets_current_month() {
+  local month="$1"
+  mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+  cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+  cat > "$TMPDIR_TEST/docs/knowledge/${month}.md" << EOF
+# Knowledge ${month}
+EOF
+  cat > "$TMPDIR_TEST/docs/lessons/${month}.md" << EOF
+# Lessons ${month}
+EOF
+}
+
 setup() {
   # Initialize git directly in TMPDIR_TEST so the hook finds .silver-bullet.json
   # before hitting the .git boundary (both are in the same directory).
@@ -72,6 +102,8 @@ setup() {
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
+  export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
+  date +%s > "$SESSION_START_FILE"
   export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
@@ -87,6 +119,8 @@ teardown() {
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$SESSION_START_FILE"
+  unset SILVER_BULLET_SESSION_START_FILE
 }
 
 run_hook() {
@@ -599,6 +633,90 @@ tech-debt
 EOF
 out=$(run_hook "PreToolUse" "gh pr merge --squash")
 assert_passes "gh pr merge passes with all required skills (no review-loop-pass needed)" "$out"
+teardown
+
+# ── Delivery doc-scheme gate (option 3) ──────────────────────────────────────
+echo "--- Group 8: Delivery doc-scheme gate ---"
+
+# Test 21: docs/doc-scheme.md present + missing required docs blocks delivery
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+seed_doc_scheme_marker
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "doc-scheme gate blocks delivery when changelog/knowledge/lessons are missing" "$out"
+assert_contains "doc-scheme block message contains gate label" "$out" "DOC-SCHEME GATE"
+teardown
+
+# Test 22: stale docs (pre-session) block delivery
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+seed_doc_scheme_marker
+current_month=$(date '+%Y-%m')
+seed_doc_scheme_targets_current_month "$current_month"
+sleep 1
+date +%s > "$SESSION_START_FILE"
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "doc-scheme gate blocks stale changelog/knowledge/lessons" "$out"
+assert_contains "stale doc-scheme block message contains stale marker" "$out" "Stale:"
+teardown
+
+# Test 23: updated docs in current session allow delivery
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+EOF
+seed_doc_scheme_marker
+date +%s > "$SESSION_START_FILE"
+current_month=$(date '+%Y-%m')
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+cat > "$TMPDIR_TEST/docs/knowledge/${current_month}-a.md" << EOF
+# Knowledge ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/lessons/${current_month}-b.md" << EOF
+# Lessons ${current_month}
+EOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_passes "doc-scheme gate allows delivery when docs are updated this session" "$out"
 teardown
 
 # ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──
