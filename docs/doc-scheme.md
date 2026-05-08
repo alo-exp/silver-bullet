@@ -16,6 +16,57 @@ Your project documentation lives in three layers:
 
 ---
 
+## Audience Model
+
+Write docs so the intended reader is obvious.
+
+| Audience | Primary questions | Start here |
+|----------|-------------------|------------|
+| **New contributor** | What is this project? How do I run it safely? | `README.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md` |
+| **Active implementer** | What changed? Where are the gotchas? | `docs/CHANGELOG.md`, `docs/knowledge/YYYY-MM.md` |
+| **Reviewer / release operator** | Is this ready to ship? What is the risk? | `docs/TESTING.md`, `docs/CICD.md`, `docs/DEPLOYMENT.md` |
+| **Maintainer** | What is durable policy vs temporary plan? | `docs/doc-scheme.md`, `docs/knowledge/`, `docs/ADR/` |
+| **External stakeholder** | What shipped and why? | `README.md`, `docs/CHANGELOG.md` |
+| **Plugin author** *(Claude-Codex plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
+| **Runtime operator** *(Claude/Codex/Kay, plugin-dev only)* | What is shared vs runtime-specific? | `docs/RUNTIME-COMPATIBILITY.md` |
+
+---
+
+## Documentation Taxonomy (Purpose-First)
+
+Each page should have one **primary** purpose.
+
+| Type | Primary question | Typical style | Typical locations |
+|------|------------------|---------------|-------------------|
+| **Tutorial** | "Teach me from zero" | Sequential, example-driven | `README.md`, onboarding docs |
+| **How-to** | "Help me do one task now" | Step-by-step procedure | `docs/DEPLOYMENT.md`, runbooks |
+| **Reference** | "What is the exact behavior?" | Exhaustive and factual | `docs/API.md`, command/options tables |
+| **Explanation** | "Why is it designed this way?" | Conceptual, tradeoffs | `docs/ARCHITECTURE.md`, ADRs |
+
+Rules:
+1. Choose one primary type per document.
+2. Link to supporting docs instead of mixing all types into one page.
+3. If a doc tries to do all four, split it.
+
+---
+
+## Question-First Navigation Map
+
+Use this map when adding or reorganizing docs.
+
+| If you want to... | Start here |
+|-------------------|------------|
+| Install and run the project | `README.md` |
+| Understand architecture and boundaries | `docs/ARCHITECTURE.md` |
+| Run tests or debug regressions | `docs/TESTING.md`, `docs/knowledge/YYYY-MM.md` |
+| Understand what changed in a task | `docs/CHANGELOG.md` |
+| Find historical decisions and rationale | `docs/ADR/`, `docs/knowledge/YYYY-MM.md` |
+| Ship/release safely | `docs/CICD.md`, `docs/DEPLOYMENT.md`, release checklist docs |
+| Extend plugin behavior *(plugin-dev only)* | `docs/specs/`, plugin extension docs |
+| Check runtime parity *(plugin-dev only)* | `docs/RUNTIME-COMPATIBILITY.md` |
+
+---
+
 ## `docs/` — Your Project Documentation
 
 ### Core files (scaffolded by `/silver:init`)
@@ -50,7 +101,11 @@ Both use monthly files (`YYYY-MM.md`). Each month's file is append-only during t
 | `DEPLOYMENT.md` | First deployment |
 | `SECURITY.md` | After security audit |
 | `CONTRIBUTING.md` | Multi-contributor project |
-| `ADR/` | Significant architecture decisions |
+| `GLOSSARY.md` | Terminology starts drifting across docs |
+| `NAVIGATION.md` | Docs grow large enough that question-first routing needs a dedicated page |
+| `DOC-OWNERSHIP.md` | Team needs explicit doc owners and review cadence tracking |
+| `RUNTIME-COMPATIBILITY.md` | **Claude-Codex plugin-dev projects only**; runtime parity must be explicit |
+| `ADR/` | Significant architecture, packaging, compatibility, or deprecation decisions |
 
 ---
 
@@ -65,7 +120,8 @@ Managed by GSD. You rarely edit these directly — they're created and consumed 
 | `STATE.md` | `gsd-new-project` | Current progress, decisions, quick tasks |
 | `REQUIREMENTS.md` | `gsd-new-milestone` | Scoped requirements with acceptance criteria |
 | Phase dirs (`phases/`) | Planning skills | Per-phase context, research, plans, reviews |
-| `WORKFLOW.md` | `/silver` composer | Composition state — path log, dynamic insertions, next path |
+| `workflows/*.md` | `/silver` composer | Composition state per workflow instance |
+| `WORKFLOW.md` (legacy) | Older `/silver` flows | Legacy single-file composition log |
 | `VALIDATION.md` | `silver-validate` | Pre-build validation results |
 | `UI-SPEC.md` | `gsd-ui-phase` | UI specification — layout, components, interactions |
 | `UI-REVIEW.md` | `gsd-ui-review` | UI review findings — 6-pillar assessment |
@@ -96,16 +152,72 @@ Every document has a growth limit:
 | **Architecture changes** | `ARCHITECTURE.md` (rewritten) |
 | **Test infrastructure changes** | `TESTING.md` |
 | **Docs added or removed** | `knowledge/INDEX.md` |
+| **Governance review** (monthly for active repos; quarterly otherwise) | `doc-scheme.md`, `knowledge/INDEX.md`, ownership/cadence notes |
 | **Milestone completion** | Planning artifacts archived; tables trimmed |
 | **Release** | `README.md`, root `CHANGELOG.md` |
 
 ---
 
+## Governance
+
+### Ownership and review cadence
+
+| Doc class | Default owner | Review cadence |
+|-----------|---------------|----------------|
+| `README.md`, `ARCHITECTURE.md`, `TESTING.md` | Current maintainer or phase owner | At every release |
+| `CHANGELOG.md` | Task owner | Every task |
+| `knowledge/YYYY-MM.md`, `lessons/YYYY-MM.md` | Task owner | Every task + month-end cleanup |
+| `CICD.md`, `DEPLOYMENT.md`, `SECURITY.md` | Release/operator owner | Every release touching ops |
+| `RUNTIME-COMPATIBILITY.md` *(plugin-dev only)* | Runtime owner | Every runtime-impacting change |
+
+### Staleness and contradiction policy
+
+1. If code and docs disagree, update docs before merge (or block delivery intentionally with an ADR).
+2. Mark deprecated docs with a clear header and replacement link.
+3. If a recurring decision appears in monthly knowledge more than once, promote it to `docs/ADR/`.
+4. Resolve contradictory docs by precedence: ADR > architecture/reference docs > monthly knowledge > lessons.
+
+---
+
+## Verification Policy
+
+Layout checks are not enough; verify content quality too.
+
+| Check | Minimum bar |
+|-------|-------------|
+| **Link integrity** | No broken internal links in modified docs |
+| **Example/snippet drift** | Command examples in changed docs must run or be explicitly marked illustrative |
+| **Doc/code parity** | Changed behavior in code has matching doc updates in the same task |
+| **Runtime parity** *(plugin-dev only)* | Runtime-specific behavior tracked in `RUNTIME-COMPATIBILITY.md` |
+| **Generated docs sanity** *(if docs site exists)* | Regenerated output matches source docs and nav |
+
+---
+
+## Glossary & Canonical Terms
+
+Use terms consistently.
+
+| Term | Canonical meaning |
+|------|-------------------|
+| **Planning artifact** | Temporary work-in-progress document under `.planning/` |
+| **Project doc** | Durable document under `docs/` |
+| **Knowledge** | Project-specific intelligence not derivable from code alone |
+| **Lesson** | Portable guidance that generalizes beyond this repo |
+| **Task** | One unit of completed implementation or change work |
+| **Milestone** | Group of tasks delivered and archived together |
+| **ADR** | Architecture Decision Record for durable technical decisions |
+| **Skill** | Reusable workflow capability invoked during development |
+| **Runtime compatibility** *(plugin-dev only)* | Matrix of shared vs runtime-specific behavior (Claude/Codex/Kay) |
+
+If terms drift or multiply, create/update `docs/GLOSSARY.md` and link it from `knowledge/INDEX.md`.
+
+---
+
 ## Non-redundancy rules
 
-1. `docs/` files summarize — `.planning/` artifacts are the source of truth during development
-2. `knowledge/` captures intelligence not derivable from code or git history
-3. `lessons/` captures portable learnings — never duplicates project-specific knowledge
-4. `ARCHITECTURE.md` is high-level design — detailed phase designs stay in `.planning/phases/`
-5. `CHANGELOG.md` is the task log — git log is the commit log (different granularity)
-6. `WORKFLOW.md` is the composition execution log — `silver-bullet.md` §2h describes the architecture, `WORKFLOW.md` tracks the instance
+1. `docs/` files summarize — `.planning/` artifacts are the source of truth during development.
+2. `knowledge/` captures intelligence not derivable from code or git history.
+3. `lessons/` captures portable learnings — never duplicates project-specific knowledge.
+4. `ARCHITECTURE.md` is high-level design — detailed phase designs stay in `.planning/phases/`.
+5. `CHANGELOG.md` is the task log — git log is the commit log (different granularity).
+6. Compose docs by linking; avoid cloning the same content across multiple pages.
