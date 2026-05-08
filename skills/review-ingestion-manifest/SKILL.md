@@ -76,7 +76,7 @@ Every manifest row with status `failed` or `skipped` MUST include a non-empty `r
 
 ### QC-6: Resumability — Sufficient State for Re-Run
 
-The manifest MUST include enough state information for silver-ingest to resume from the last successful artifact. Required fields are:
+The manifest MUST include enough state information for silver:ingest to resume from the last successful artifact. Required fields are:
 - Artifact IDs or identifiers (unique per artifact, not just display names)
 - Timestamps or run ID for the ingestion session
 

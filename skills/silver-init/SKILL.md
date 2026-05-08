@@ -496,7 +496,7 @@ Record the answer as `issue_tracker` in `.silver-bullet.json`:
 - Option A → `"issue_tracker": "github"`
 - Option B → `"issue_tracker": "gsd"`
 
-This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver-feature`, `silver-bugfix`, `silver-devops`, `silver-ui`) read this field and route issue creation accordingly:
+This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver:feature`, `silver:bugfix`, `silver:devops`, `silver:ui`) read this field and route issue creation accordingly:
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
 - `gsd` → add to `.planning/ROADMAP.md` backlog section as today
 

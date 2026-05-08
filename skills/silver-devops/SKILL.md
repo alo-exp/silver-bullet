@@ -1,6 +1,6 @@
 ---
 name: silver-devops
-description: This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
+description: This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
@@ -140,13 +140,13 @@ When the user requests skipping any step:
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver-blast-radius analysis.
+Invoke `silver:intel` (gsd-intel) via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
 If no intel files exist: invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
 
 ## Step 1: Blast Radius Analysis
 
-Invoke `silver:silver-blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
+Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
 
 ## Step 2: DevOps Skill Router
 
@@ -156,7 +156,7 @@ Invoke `silver:devops-skill-router` via the Skill tool. Purpose: route to the ri
 
 Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
 
-Note: this is NOT the standard 9-dimension silver:silver-quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
+Note: this is NOT the standard 9-dimension silver:quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
 
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
@@ -191,10 +191,10 @@ Invoke `gsd-secure-phase` via the Skill tool. Purpose: IaC security and secrets 
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**

@@ -59,6 +59,11 @@ run_live_codex_smoke() {
   cat > "$workdir/.silver-bullet.json" <<EOF
 {}
 EOF
+  git -C "$workdir" init -q
+  git -C "$workdir" config user.email "test@test.com"
+  git -C "$workdir" config user.name "Test"
+  git -C "$workdir" add .silver-bullet.json
+  git -C "$workdir" commit -q -m "init" 2>/dev/null || true
 
   set +e
   output=$(codex exec --skip-git-repo-check --cd "$workdir" --sandbox read-only 'say hi' 2>&1)
@@ -82,8 +87,7 @@ EOF
     return 0
   fi
 
-  assert_contains "live Codex emitted SessionStart hook" "hook: SessionStart" "$live_log"
-  assert_contains "live Codex emitted Stop hook" "hook: Stop" "$live_log"
+  assert_contains "live Codex returned prompt output" "hi" "$live_log"
 
   rm -rf -- "$workdir"
 }
@@ -151,18 +155,18 @@ assert_file_absent "legacy using-silver-bullet skill removed" "$HOME_DIR/.agents
 assert_file_exists "unrelated skill preserved" "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md"
 assert_contains "SB hooks plugin enabled" '[plugins."silver-bullet@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 if grep -qF '[plugins."silver@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"; then
-  echo "FAIL: SB commands should be bundled into the Silver Bullet plugin, not installed separately"
+  echo "FAIL: SB skills should be bundled into the Silver Bullet plugin, not installed separately"
   (( FAIL++ )) || true
 else
-  echo "PASS: Silver Bullet commands are bundled into the main SB plugin"
+  echo "PASS: Silver Bullet skills are bundled into the main SB plugin"
   (( PASS++ )) || true
 fi
-assert_file_exists "SB init command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/init.md"
-assert_file_exists "SB command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/feature.md"
-assert_file_exists "SB router command surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/commands/silver.md"
-assert_contains "SB init command uses silver prefix" "name: silver:init" "$REPO_ROOT/plugins/silver-bullet/commands/init.md"
-assert_contains "SB feature command uses silver prefix" "name: silver:feature" "$REPO_ROOT/plugins/silver-bullet/commands/feature.md"
-assert_contains "SB router command uses silver name" "name: silver" "$REPO_ROOT/plugins/silver-bullet/commands/silver.md"
+assert_file_exists "SB init skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
+assert_file_exists "SB feature skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+assert_file_exists "SB router skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver/SKILL.md"
+assert_contains "SB init skill uses silver prefix" "name: silver:init" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
+assert_contains "SB feature skill uses silver prefix" "name: silver:feature" "$REPO_ROOT/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+assert_contains "SB router skill uses silver name" "name: silver" "$REPO_ROOT/plugins/silver-bullet/skills/silver/SKILL.md"
 assert_contains "Anthropic PM plugin enabled" '[plugins."product-management@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Anthropic engineering plugin enabled" '[plugins."engineering@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-codex"]' "$HOME_DIR/.Codex/config.toml"

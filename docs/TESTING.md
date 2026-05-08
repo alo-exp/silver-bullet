@@ -23,7 +23,7 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite across Claude and Codex runtime adapters | `tests/live/run-live-tests.sh` | 5-15 min per runtime |
-| **Live todo-app E2E** | Real Claude/Codex development episodes against `tests/test-app/` | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
+| **Live todo-app E2E** | Install UX plus real Claude/Codex development episodes against `tests/test-app/` | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -31,13 +31,13 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | Component | Target | Current |
 |-----------|--------|---------|
 | `record-skill.sh` | 100% of skip/record paths | Covered by compliance-status tests (indirect) |
-| `dev-cycle-check.sh` | 100% of Stage A/B/C/D + trivial bypass | **0%** — no test file (tech debt) |
+| `dev-cycle-check.sh` | 100% of Stage A/B/C/D + trivial bypass | **Covered** by `tests/hooks/test-dev-cycle-check.sh` |
 | `compliance-status.sh` | Key progress calculation paths | Covered via integration patterns |
 | `completion-audit.sh` | block vs. pass for each required skill group | Partial |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
 | Live Claude/Codex matrix | shared scenarios, runtime adapters, sequential runtime execution | 100% (`tests/live/run-live-tests.sh`) |
-| Live todo-app E2E | realistic feature / bugfix / release episodes on `tests/test-app/` | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
+| Live todo-app E2E | install-first + realistic feature / bugfix / release episodes on `tests/test-app/` | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 
@@ -70,15 +70,16 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
     diff docs/workflows/devops-cycle.md templates/workflows/devops-cycle.md
 ```
 
-### Priority 3: `dev-cycle-check.sh` unit tests (score 24)
-Create `tests/hooks/test-dev-cycle-check.sh` with 7 cases:
-1. Stage A blocks if `quality-gates` absent from state
-2. Phase-skip detection: finalization skill present but no `code-review` → BLOCKED
-3. Stage B: planning done, no `code-review` → BLOCKED
-4. Stage C: `code-review` present, finalization hint includes `/tech-debt`
-5. Stage C: `tech-debt` out-of-order (before `code-review`) → phase-skip BLOCKED
-6. Stage D: all required skills present → silent pass
-7. Trivial file present → never blocks regardless of state
+### Priority 3: `dev-cycle-check.sh` unit tests (score 24) ✅ Done
+`tests/hooks/test-dev-cycle-check.sh` covers the full gate matrix:
+1. Stage A blocks if `quality-gates` is absent from state
+2. Stage A warns and allows when the required skill is unavailable anywhere invocable
+3. Stage A and Stage B both block source edits when planning is incomplete
+4. Phase-skip detection blocks finalization skills before `/code-review`
+5. Stage C allows edits once `code-review` is done and finalization remains
+6. Stage D allows edits once all required skills are present
+7. Trivial file bypass never blocks, regardless of state
+8. State tamper, plugin boundary, and devops-cycle regressions are covered in the same suite
 
 ## Live AI Matrix (separate suite)
 
@@ -100,8 +101,12 @@ matrix. Sequential execution matters because both runtimes touch the same Silver
 state path under `~/.claude/.silver-bullet/`.
 
 The live todo-app E2E suite is separate. It uses the todo-app fixture in
-`tests/test-app/`, writes its own `e2e-live-matrix` marker, and is intended to
-prove the higher-level product workflow on real runtime sessions.
+`tests/test-app/`, writes its own `e2e-live-matrix` marker, begins with a
+plugin-installation UX scenario, and is intended to prove the higher-level
+product workflow on real runtime sessions. The install-UX scenario also
+verifies the installed command surface (`silver:init`, `silver:feature`, and
+the `silver` router) in the runtime cache, which is the closest reliable proxy
+we currently have for picker exposure in the Codex/Claude hosts.
 When Claude quota is exhausted and the user explicitly approves skipping further
 Claude live testing for a release, the live runners may be narrowed to Codex
 only via `SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, and the

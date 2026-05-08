@@ -4,6 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
+SCENARIOS=(
+  "${SCENARIO_DIR}/test-e2e-live-install-ux.sh"
+  "${SCENARIO_DIR}/test-e2e-live-init-and-feature.sh"
+  "${SCENARIO_DIR}/test-e2e-live-regression-repair.sh"
+  "${SCENARIO_DIR}/test-e2e-live-release-prep.sh"
+)
 RUNTIMES=()
 full_matrix_requested=false
 
@@ -27,7 +33,7 @@ if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
 fi
 
 if [[ "${1:-}" == "--list" ]]; then
-  find "$SCENARIO_DIR" -maxdepth 1 -type f -name 'test-*.sh' | sort
+  printf '%s\n' "${SCENARIOS[@]}"
   exit 0
 fi
 
@@ -84,7 +90,7 @@ for runtime in "${RUNTIMES[@]}"; do
     fi
   fi
 
-  for scenario in "$SCENARIO_DIR"/test-*.sh; do
+  for scenario in "${SCENARIOS[@]}"; do
     [[ -f "$scenario" ]] || continue
     run_scenario "$runtime" "$scenario"
   done

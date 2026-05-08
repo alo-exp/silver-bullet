@@ -1,6 +1,6 @@
 ---
 name: silver-release
-description: This skill should be used for SB-orchestrated milestone release: silver-quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone
+description: This skill should be used for SB-orchestrated milestone release: silver:quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone
 argument-hint: "<version or release description, e.g. v1.2.0>"
 version: 0.1.0
 ---
@@ -134,11 +134,11 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 2a), `silver:silver-quality-gates` pre-release (Step 0), the mandatory full test suite rerun (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
+**Non-skippable gates:** `silver:security` (Step 2a), `silver:quality-gates` pre-release (Step 0), the mandatory full test suite rerun (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
 
 ## Step 1: Cross-Phase UAT
 
@@ -254,13 +254,13 @@ Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, 
 
 **Only after Step 8 (`gsd-complete-milestone`) commits are on the branch:**
 
-Invoke `silver:silver-create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
+Invoke `silver:create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
 
 > **Why last?** Creating the tag before milestone archival causes the archival commits to appear after the tag, requiring an immediate patch release. The tag must be the final commit in the release.
 
 ## Step 9b: Post-Release Items Summary
 
-**Trigger:** Execute this step only after Step 9 (`silver-create-release`) has completed and the release tag is published.
+**Trigger:** Execute this step only after Step 9 (`silver:create-release`) has completed and the release tag is published.
 
 Generate a consolidated summary of all items filed and knowledge/lessons recorded during this milestone.
 
@@ -311,13 +311,13 @@ Output:
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
-No items were recorded during this milestone via /silver-add or /silver-rem.
+No items were recorded during this milestone via /silver:add or /silver:rem.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 If `items_filed` is non-empty, separate items by prefix:
-- Lines starting with `- SB-` or `- #` → filed via /silver-add (issues/backlog)
-- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver-rem
+- Lines starting with `- SB-` or `- #` → filed via /silver:add (issues/backlog)
+- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver:rem
 
 Output a formatted summary:
 ```
@@ -327,10 +327,10 @@ Output a formatted summary:
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
-Issues & Backlog filed via /silver-add:
+Issues & Backlog filed via /silver:add:
 {list of SB-/# lines, or "(none)"}
 
-Knowledge & Lessons recorded via /silver-rem:
+Knowledge & Lessons recorded via /silver:rem:
 {list of [knowledge]/[lessons] lines, or "(none)"}
 
 Total: {N} issues/backlog items, {M} knowledge/lessons entries

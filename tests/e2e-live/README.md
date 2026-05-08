@@ -2,7 +2,8 @@
 
 This suite runs the real Claude and Codex CLIs against an isolated copy of
 `tests/test-app/` and drives realistic development episodes against the todo
-app fixture.
+app fixture. It now starts with an install-UX scenario so the end-user plugin
+installation flow is exercised before feature work begins.
 
 It is intentionally separate from `tests/live/run-live-tests.sh`:
 
@@ -19,6 +20,7 @@ Current scenarios:
 
 | Scenario | Purpose |
 |----------|---------|
+| `test-e2e-live-install-ux.sh` | Fresh plugin install UX, install-state verification, and initial scaffold |
 | `test-e2e-live-init-and-feature.sh` | Fresh SB init plus a feature build that adds a clear-completed action |
 | `test-e2e-live-regression-repair.sh` | Injected regression repair through the bugfix workflow |
 | `test-e2e-live-release-prep.sh` | Release prep, changelog creation, and local tag creation |

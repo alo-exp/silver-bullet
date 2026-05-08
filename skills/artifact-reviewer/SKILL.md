@@ -86,7 +86,7 @@ Every review round emits a structured metric to `.planning/review-analytics.json
 
 When the analytics file exceeds 1000 lines, it is archived to `.planning/archive/review-analytics-{date}.jsonl` and a fresh file is started.
 
-Run `silver-review-stats` to produce summary reports from the analytics data.
+Run `silver:review-stats` to produce summary reports from the analytics data.
 
 ## Loading Rules
 

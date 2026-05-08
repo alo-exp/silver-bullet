@@ -429,7 +429,7 @@ Include ALL artifacts from this run, including:
 - Artifacts that failed (`status: failed`) with the error reason
 - Artifacts skipped from a prior run's manifest (`status: skipped`, Error: "resuming from prior run")
 
-On subsequent runs, silver-ingest reads this manifest in Step 0 and skips any `status: success` entries. `status: failed` entries are retried.
+On subsequent runs, silver:ingest reads this manifest in Step 0 and skips any `status: success` entries. `status: failed` entries are retried.
 
 ### Step 7a: Review INGESTION_MANIFEST.md
 
