@@ -4,6 +4,7 @@ name: Announce Release
 # Webhook URL is stored in GCHAT_RELEASE_WEBHOOK — never commit the URL.
 # If the release commit CI is still settling, the workflow waits until it is
 # fully green or the timeout is reached.
+# Announcements always reply into the Silver Bullet Updates thread.
 
 on:
   release:
@@ -65,6 +66,7 @@ jobs:
       - name: Post to Google Chat
         env:
           WEBHOOK: ${{ secrets.GCHAT_RELEASE_WEBHOOK }}
+          THREAD_KEY: silver-bullet-updates
           TAG:   ${{ steps.meta.outputs.tag }}
           TITLE: ${{ steps.meta.outputs.title }}
           URL:   ${{ steps.meta.outputs.url }}
@@ -75,14 +77,20 @@ jobs:
             exit 1
           fi
 
+          separator="?"
+          [[ "$WEBHOOK" == *"?"* ]] && separator="&"
+          webhook_url="${WEBHOOK}${separator}messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD"
+
           # Build Card v2 payload via jq to guarantee valid JSON escaping.
           payload=$(jq -n \
-            --arg title "🚀 Silver Bullet $TAG released" \
+            --arg title "Silver Bullet Updates" \
             --arg subtitle "$TITLE" \
             --arg body "$BODY" \
             --arg url "$URL" \
             --arg logo "https://sb.alolabs.dev/logo.png" \
+            --arg thread_key "$THREAD_KEY" \
             '{
+              text: $title,
               cardsV2: [{
                 cardId: "sb-release",
                 card: {
@@ -106,14 +114,15 @@ jobs:
                     ]
                   }]
                 }
-              }]
+              }],
+              thread: { threadKey: $thread_key }
             }')
 
           http_code=$(curl -sS -o /tmp/gchat.out -w "%{http_code}" \
             -H "Content-Type: application/json; charset=UTF-8" \
             -X POST \
             -d "$payload" \
-            "$WEBHOOK")
+            "$webhook_url")
 
           if [[ "$http_code" != "200" ]]; then
             echo "::error::Google Chat webhook returned HTTP $http_code"
