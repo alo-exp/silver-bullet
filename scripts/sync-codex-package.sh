@@ -16,7 +16,7 @@ if [[ ! -f "$DEST_DIR/.codex-plugin/plugin.json" ]]; then
   exit 1
 fi
 
-log "Refreshing symlinked package surface in ${DEST_DIR}"
+log "Refreshing generated package surface in ${DEST_DIR}"
 
 shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
@@ -30,7 +30,10 @@ shopt -u dotglob nullglob
 # Codex gets the plugin-facing SB surface here. Project-instance artifacts
 # like planning, Claude packaging, Forge packaging, and repo governance live
 # outside this bundle. Third-party Codex wrappers are maintained in the shared
-# marketplace repo, not in this SB package snapshot.
+# marketplace repo, not in this SB package snapshot. The packaged skills tree is
+# generated locally from the canonical repo skills and then frontmatter-rewritten
+# so the Codex picker sees the `silver:` namespace while the source repo keeps
+# hyphenated skills as the authoring source of truth.
 PACKAGE_ENTRIES=(
   AGENTS.md
   CHANGELOG.md
@@ -45,7 +48,6 @@ PACKAGE_ENTRIES=(
   .silver-bullet.json
   docs
   hooks
-  skills
   templates
 )
 
@@ -54,11 +56,43 @@ for entry in "${PACKAGE_ENTRIES[@]}"; do
     printf 'ERROR: package source missing: %s\n' "${entry}" >&2
     exit 1
   fi
-  if [[ "$entry" == "skills" ]]; then
-    ln -sfn "../../../../codex-plugins/skills" "${DEST_DIR}/${entry}"
-  else
-    ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
-  fi
+  ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
 done
+
+PACKAGE_SKILLS_DIR="${DEST_DIR}/.generated-skills"
+rm -rf -- "$PACKAGE_SKILLS_DIR"
+mkdir -p -- "$PACKAGE_SKILLS_DIR"
+
+python3 - "$REPO_ROOT/skills" "$PACKAGE_SKILLS_DIR" <<'PY'
+import pathlib
+import re
+import shutil
+import sys
+
+source_root = pathlib.Path(sys.argv[1])
+dest_root = pathlib.Path(sys.argv[2])
+
+name_re = re.compile(r'^(name:\s*)(silver-)([A-Za-z0-9_-]+)\s*$', re.MULTILINE)
+
+def rewrite_skill(text: str) -> str:
+    def repl(match: re.Match[str]) -> str:
+        return f"{match.group(1)}silver:{match.group(3)}"
+
+    return name_re.sub(repl, text, count=1)
+
+for item in sorted(source_root.iterdir(), key=lambda p: p.name):
+    dest = dest_root / item.name
+    if item.is_dir():
+        shutil.copytree(item, dest, dirs_exist_ok=True)
+        for skill_md in dest.rglob("SKILL.md"):
+            text = skill_md.read_text()
+            updated = rewrite_skill(text)
+            if updated != text:
+                skill_md.write_text(updated)
+    elif item.is_file():
+        shutil.copy2(item, dest)
+PY
+
+ln -sfn ".generated-skills" "${DEST_DIR}/skills"
 
 log "Codex package synchronized"
