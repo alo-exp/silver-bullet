@@ -840,11 +840,13 @@ See `docs/multi-agent-coordination.md` for the full diagram and configuration re
 
 ## 11. Runtime Compatibility
 
-Silver Bullet's enforcement is built on the Claude Code hook protocol (PostToolUse / PreToolUse / SessionStart / Stop / SubagentStop). Hooks fire in the **Claude Code CLI**. They do **not** fire today in the Claude Agent SDK or claude.ai/code web sessions — those runtimes do not invoke the hook protocol.
+Silver Bullet's enforcement is built on the Claude Code hook protocol (PostToolUse / PreToolUse / SessionStart / Stop / SubagentStop). Hooks fire by default in the **Claude Code CLI**. They do **not** fire by default in the Claude Agent SDK or claude.ai/code web sessions.
 
-In those runtimes:
+In those runtimes by default:
 - Skills are not recorded to state (PostToolUse/Skill does not fire)
 - `gh release create` / `gh pr create` / `deploy` are not gated (PreToolUse/Bash does not fire)
 - `Stop` may still fire and see an empty state, blocking the session
 
-**Workaround:** Run release-class actions from the Claude Code CLI, not from Agent-SDK or web sessions. SB enforcement is advisory in those runtimes until the upstream runtime adds hook support.
+**Enabling hooks in an Agent SDK session.** The SDK does implement these hook events; they are first-class on `HookEvent` in `query()` options. To turn them on, either pass `settingSources: ['user']` to load the same `~/.claude/settings.json` block the CLI uses, or pass `hooks` programmatically on `query()` options. The CLI remains the canonical SB runtime; this is a clarification, not a substitute path. The `claude.ai/code` web UI is a separate runtime and is not addressed here.
+
+**Workaround for unenabled SDK / web sessions:** Run release-class actions from the Claude Code CLI. SB enforcement is advisory in those runtimes until hooks are explicitly enabled.
