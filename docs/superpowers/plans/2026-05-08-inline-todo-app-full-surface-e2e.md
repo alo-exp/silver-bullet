@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a live todo-app journey that exercises the full SB-owned surface inline, records explicit coverage, files real end-user friction with `silver:add` and a `todo-app` tag, and makes release gating depend on that proof.
+**Goal:** Replace the current multi-scenario todo-app live E2E suite with one inline full-surface journey that exercises the SB-owned surface, records explicit coverage, files real end-user friction with `silver:add` and a `todo-app` tag, and makes release gating depend on that proof.
 
-**Architecture:** Keep the existing live runtime matrix as the low-level runtime contract. Add a new higher-order todo-app journey that drives a scripted turn sequence through the terminal TUI/runner layer, so the session can be automated turn-by-turn without pretending the desktop chat pane is scriptable. For Codex, that means adding a small terminal driver alongside the existing Claude `expect` wrapper. The journey writes a coverage ledger, files issues immediately when frustration appears, and emits a release marker that the completion audit hook can enforce.
+**Architecture:** Keep the existing live runtime matrix as the low-level runtime contract. Replace the current multi-scenario todo-app E2E suite with a single higher-order inline journey that drives a scripted turn sequence through the terminal TUI/runner layer, so the session can be automated turn-by-turn without pretending the desktop chat pane is scriptable. For Codex, that means adding a small terminal driver alongside the existing Claude `expect` wrapper. The journey writes a coverage ledger, files issues immediately when frustration appears, and emits a release marker that the completion audit hook can enforce.
 
 **Tech Stack:** Bash, jq, gh CLI, existing Silver Bullet skills, existing live test harness, terminal TUI/PTY automation via `expect` where needed.
 
@@ -127,23 +127,28 @@ git add tests/e2e-live/helpers.sh tests/e2e-live/lib/coverage-ledger.sh tests/e2
 git commit -m "test(e2e-live): add coverage ledger helpers"
 ```
 
-### Task 2: Add the inline full-surface todo-app journey
+### Task 2: Replace the live todo-app suite with one inline full-surface journey
 
 **Files:**
 - Create: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
 - Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/run-e2e-live-tests.sh`
 - Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh`
 - Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/README.md`
+- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-install-ux.sh`
+- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-init-and-feature.sh`
+- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-regression-repair.sh`
+- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-release-prep.sh`
 
 - [ ] **Step 1: Write the failing test**
 
-Add a harness assertion that the new scenario exists and is ordered after install UX. The sanity test should fail until the new scenario file is present and the runner lists it in the explicit logical sequence.
+Add a harness assertion that the new scenario exists and is the only live todo-app scenario. The sanity test should fail until the new scenario file is present and the runner lists exactly one item.
 
 Use an exact check like:
 
 ```bash
-scenario_list=("$("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)")
-[[ "${scenario_list[1]}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" ]]
+mapfile -t scenario_list < <("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)
+[[ "${#scenario_list[@]}" -eq 1 ]]
+[[ "${scenario_list[0]}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" ]]
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -154,7 +159,7 @@ Run:
 bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
 ```
 
-Expected: fail because the scenario does not exist yet and the runner still does not know about the explicit journey order.
+Expected: fail because the scenario does not exist yet and the runner still knows about the old multi-scenario suite.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -190,12 +195,7 @@ or browser state shows friction, and it should call `silver:add` for any real
 user-facing dissatisfaction. The resulting issue should be created in the SB repo
 and labeled `todo-app`.
 
-Update `run-e2e-live-tests.sh` so it runs in logical order, not filename order:
-
-1. install UX
-2. full-surface journey
-3. regression repair
-4. release prep
+Update `run-e2e-live-tests.sh` so it runs exactly one scenario: the full-surface journey.
 
 Keep the existing full Claude/Codex matrix marker, and add a new inline-journey
 marker when the full-surface journey completes.
@@ -208,13 +208,14 @@ Run:
 bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
 ```
 
-Expected: PASS, with the new full-surface scenario listed and the ordered suite
-still starting with install UX.
+Expected: PASS, with the single full-surface scenario listed and no old scenario
+files still wired into the suite.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh tests/e2e-live/run-e2e-live-tests.sh tests/e2e-live/test-e2e-live-suite.sh tests/e2e-live/README.md
+git rm tests/e2e-live/scenarios/test-e2e-live-install-ux.sh tests/e2e-live/scenarios/test-e2e-live-init-and-feature.sh tests/e2e-live/scenarios/test-e2e-live-regression-repair.sh tests/e2e-live/scenarios/test-e2e-live-release-prep.sh
 git commit -m "test(e2e-live): add inline full-surface todo-app journey"
 ```
 
