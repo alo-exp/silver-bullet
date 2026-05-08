@@ -32,6 +32,7 @@ tests/test-app/silver-bullet.md
 tests/test-app/CLAUDE.md
 tests/test-app/docs/
 tests/test-app/.github/
+plugins/silver-bullet/.generated-skills/
 
 # Multi-agent phase coordination — runtime lock state (Phase 70)
 # .phase-locks.json is the live lock state; .lock is the flock(1) sidecar.
@@ -44,4 +45,3 @@ tests/test-app/.github/
 # never committed. The .archive/ subdir keeps completed workflow files for
 # postmortem reference and is also gitignored.
 .planning/workflows/
-
