@@ -53,16 +53,16 @@ The assessor is not an artifact — it produces a classified list, not a documen
 
 | Artifact | Contract defined by |
 |---|---|
-| SPEC.md | silver-spec SKILL.md step 7 template |
-| REQUIREMENTS.md | REQ-XX format rules in silver-spec SKILL.md step 8 |
+| SPEC.md | silver:spec SKILL.md step 7 template |
+| REQUIREMENTS.md | REQ-XX format rules in silver:spec SKILL.md step 8 |
 | CONTEXT.md | Locked decisions format in gsd-discuss-phase workflow |
 | PLAN.md | Wave structure + task format in gsd-plan-phase workflow |
 | RESEARCH.md | Evidence + confidence format in gsd-phase-researcher agent |
-| DESIGN.md | SB design template in silver-spec SKILL.md step 9 |
+| DESIGN.md | SB design template in silver:spec SKILL.md step 9 |
 | UI-SPEC.md | Design contract format in gsd-ui-phase workflow |
 | REVIEW.md | Code quality finding format in gsd-code-reviewer agent |
 | UAT.md | Criterion + Result + Evidence format in gsd-verify-work workflow |
-| INGESTION_MANIFEST.md | Source artifact listing in silver-ingest SKILL.md step 7 |
+| INGESTION_MANIFEST.md | Source artifact listing in silver:ingest SKILL.md step 7 |
 | SECURITY.md | Threat model format in gsd-secure-phase workflow |
 
 ## Triage Steps

@@ -54,7 +54,11 @@ for entry in "${PACKAGE_ENTRIES[@]}"; do
     printf 'ERROR: package source missing: %s\n' "${entry}" >&2
     exit 1
   fi
-  ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
+  if [[ "$entry" == "skills" ]]; then
+    ln -sfn "../../../../codex-plugins/skills" "${DEST_DIR}/${entry}"
+  else
+    ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
+  fi
 done
 
 log "Codex package synchronized"

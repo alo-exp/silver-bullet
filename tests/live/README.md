@@ -74,8 +74,10 @@ approves skipping further Claude live testing, run the matrix with
 `matrix=codex-only` markers for that session only.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
-matching `e2e-live-matrix` marker. Both markers must be present before a
-release can proceed.
+matching `e2e-live-matrix` marker. That suite now begins with an install-UX
+scenario so the user-facing plugin installation flow is exercised before the
+todo-app development episodes. Both markers must be present before a release
+can proceed.
 
 The migration scenario is a separate on-demand test for `skills/silver-init/SKILL.md`
 (Phase 3.5.5) and is not part of the default `run-live-tests.sh` matrix.

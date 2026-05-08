@@ -38,9 +38,24 @@ echo "=== e2e-live suite sanity checks ==="
 assert_exists "suite runner exists" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
+assert_exists "install UX scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-install-ux.sh"
 assert_exists "init/feature scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-init-and-feature.sh"
 assert_exists "regression repair scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-regression-repair.sh"
 assert_exists "release prep scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-release-prep.sh"
+
+scenario_list=()
+while IFS= read -r scenario; do
+  [[ -n "$scenario" ]] || continue
+  scenario_list+=("$scenario")
+done < <("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)
+if [[ "${scenario_list[0]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-install-ux.sh" ]]; then
+  echo "PASS: install UX scenario is first in the live suite"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: install UX scenario is first in the live suite"
+  echo "  first listed scenario: ${scenario_list[0]:-<none>}"
+  FAIL=$((FAIL + 1))
+fi
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

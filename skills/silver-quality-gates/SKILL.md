@@ -6,7 +6,7 @@ version: 0.1.0
 
 > **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.
 
-# /silver-quality-gates — Consolidated Quality Review
+# /silver:quality-gates — Consolidated Quality Review
 
 Applies all 9 Silver Bullet quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
 

@@ -328,6 +328,86 @@ bootstrap_claude_dependencies() {
   "$CLAUDE_INSTALL_SCRIPT" --purge-legacy-plugins >/dev/null
 }
 
+codex_config_file() {
+  local config_file
+  for config_file in "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml"; do
+    if [[ -f "$config_file" ]]; then
+      printf '%s\n' "$config_file"
+      return 0
+    fi
+  done
+  printf '%s\n' "${HOME}/.Codex/config.toml"
+}
+
+codex_marketplace_root() {
+  local marketplace_root
+  for marketplace_root in \
+    "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex" \
+    "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"; do
+    if [[ -d "$marketplace_root" ]]; then
+      printf '%s\n' "$marketplace_root"
+      return 0
+    fi
+  done
+  printf '%s\n' "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex"
+}
+
+refresh_runtime_installation() {
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    bootstrap_claude_dependencies
+  else
+    (cd "$SB_ROOT" && ./scripts/install-codex.sh --purge-legacy-skills >/dev/null)
+  fi
+}
+
+verify_runtime_installation() {
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    assert_command_succeeds "Claude Silver Bullet plugin installed" claude_plugin_installed_in_scope "silver-bullet@alo-labs" "user"
+    assert_command_succeeds "Claude Superpowers plugin installed" claude_plugin_installed_in_scope "superpowers@superpowers-marketplace" "user"
+    assert_command_succeeds "Claude engineering plugin installed" claude_plugin_installed_in_scope "engineering@knowledge-work-plugins" "user"
+    assert_command_succeeds "Claude design plugin installed" claude_plugin_installed_in_scope "design@knowledge-work-plugins" "user"
+    assert_command_succeeds "Claude product-management plugin installed" claude_plugin_installed_in_scope "product-management@knowledge-work-plugins" "user"
+    if claude_plugin_installed "using-silver-bullet"; then
+      echo "FAIL: legacy using-silver-bullet alias should not be installed"
+      FAIL=$((FAIL + 1))
+    else
+      echo "PASS: legacy using-silver-bullet alias is absent"
+      PASS=$((PASS + 1))
+    fi
+    local claude_cache_root latest_claude_cache
+    claude_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+    latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+    if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
+      assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver-init/SKILL.md"
+      assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver-feature/SKILL.md"
+      assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
+      assert_file_contains "Claude Silver Bullet init skill uses silver prefix" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init'
+      assert_file_contains "Claude Silver Bullet feature skill uses silver prefix" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature'
+      assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
+    else
+      echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"
+      FAIL=$((FAIL + 1))
+    fi
+  else
+    local config_file
+    local marketplace_root
+    config_file="$(codex_config_file)"
+    marketplace_root="$(codex_marketplace_root)"
+
+    assert_file_contains "Codex plugin hooks feature enabled" "$config_file" 'plugin_hooks = true'
+    assert_file_contains "Codex Silver Bullet plugin enabled" "$config_file" '\[plugins\."silver-bullet@alo-labs-codex"\]'
+    assert_not_contains "Codex split silver plugin absent" "$(cat "$config_file" 2>/dev/null)" 'silver@alo-labs-codex'
+    assert_file_exists "Codex Silver Bullet package synced" "$marketplace_root/plugins/silver-bullet/.codex-plugin/plugin.json"
+    assert_file_exists "Codex Silver Bullet init skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md"
+    assert_file_exists "Codex Silver Bullet feature skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+    assert_file_exists "Codex Silver Bullet router skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md"
+    assert_file_exists "Codex Silver Bullet template synced" "$marketplace_root/plugins/silver-bullet/templates/silver-bullet.md.base"
+    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md" 'name: silver:init'
+    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md" 'name: silver:feature'
+    assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md" 'name: silver'
+  fi
+}
+
 assert_contains() {
   local label="$1"
   local haystack="$2"

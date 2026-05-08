@@ -126,7 +126,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Triage — Classify Failure Type
 
@@ -142,7 +142,7 @@ Wait for selection, then route to the corresponding path below.
 
 ## Path 1A: Known Symptom, Unknown Fix
 
-Invoked when: triage selects A, OR after Path 1B/1C silver-forensics completes and hands off here.
+Invoked when: triage selects A, OR after Path 1B/1C silver:forensics completes and hands off here.
 
 **1A.1 — Systematic debugging hypothesis**
 Invoke `superpowers:systematic-debugging` via the Skill tool. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
@@ -157,9 +157,9 @@ After gsd-debug completes, proceed to Step 2 (TDD).
 Invoked when: triage selects B.
 
 **1B.1 — Forensic cause reconstruction**
-Invoke `silver:silver-forensics` via the Skill tool. Purpose: SB-owned silver-forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
+Invoke `silver:forensics` via the Skill tool. Purpose: SB-owned silver:forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
 
-After silver:silver-forensics completes and outputs the cause classification:
+After silver:forensics completes and outputs the cause classification:
 → Hand off to Path 1A (start at Step 1A.1 with the reconstructed context).
 
 ## Path 1C: Failed GSD Workflow
@@ -207,14 +207,14 @@ Invoke `silver:security` via the Skill tool. Non-skippable.
 
 ## Step 7a: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -226,7 +226,7 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 7b: Quality Gates
 
-Invoke `silver:silver-quality-gates` via the Skill tool (affected quality dimensions for the changed code). Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool (affected quality dimensions for the changed code). Non-skippable.
 
 ## Step 7c: Doc-Scheme Compliance (conditional)
 

@@ -4,11 +4,11 @@ description: This skill should be used to capture a knowledge or lessons insight
 version: 0.1.0
 ---
 
-# /silver-rem — Capture Knowledge and Lessons Insights
+# /silver:rem — Capture Knowledge and Lessons Insights
 
-Use this skill any time a project-scoped insight or portable lesson is identified and should be preserved. It is called by the coding agent at the finalization step (per doc-scheme.md "Every task" row) and by `/silver-scan` for retroactive capture. It classifies the insight, routes it to the correct monthly file, creates the monthly file with the correct header if this is the first entry for the month, and updates `docs/knowledge/INDEX.md` when a new monthly file is created.
+Use this skill any time a project-scoped insight or portable lesson is identified and should be preserved. It is called by the coding agent at the finalization step (per doc-scheme.md "Every task" row) and by `/silver:scan` for retroactive capture. It classifies the insight, routes it to the correct monthly file, creates the monthly file with the correct header if this is the first entry for the month, and updates `docs/knowledge/INDEX.md` when a new monthly file is created.
 
-**Note on purpose:** This skill does NOT replace `CHANGELOG.md`. `CHANGELOG.md` records *what was done* (tasks, commits, skills used). `silver-rem` records *why it was done* or *what was learned* — the insights worth preserving beyond the session.
+**Note on purpose:** This skill does NOT replace `CHANGELOG.md`. `CHANGELOG.md` records *what was done* (tasks, commits, skills used). `silver:rem` records *why it was done* or *what was learned* — the insights worth preserving beyond the session.
 
 ---
 

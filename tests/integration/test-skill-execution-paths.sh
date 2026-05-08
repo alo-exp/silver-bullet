@@ -45,6 +45,12 @@ EXTERNAL_SKILLS=(
   "/documentation" "/compact"
 )
 
+BUILTIN_WHITELIST=(
+  compact clear help
+  bash scripts/workflows.sh
+  /code-review /tech-debt /deploy-checklist
+)
+
 is_internal_skill() {
   local name="$1"
   [[ -d "$SKILLS_DIR/$name" ]]
@@ -61,7 +67,8 @@ is_external_skill() {
 # Resolve silver: alias to the real skill name (internal or external)
 resolve_silver_alias() {
   local name="$1"
-  case "$name" in
+  local cmd="${name%% *}"
+  case "$cmd" in
     silver:intel)               echo "gsd-intel" ;;
     silver:scan)                echo "gsd-scan" ;;
     silver:explore)             echo "gsd-explore" ;;
@@ -72,7 +79,8 @@ resolve_silver_alias() {
     silver:request-review)      echo "superpowers:requesting-code-review" ;;
     silver:receive-review)      echo "superpowers:receiving-code-review" ;;
     silver:multai)              echo "multai:orchestrator" ;;
-    silver:silver-quality-gates)       echo "silver-quality-gates" ;;
+    silver:quality-gates)       echo "silver-quality-gates" ;;
+    silver:silver-quality-gates) echo "silver-quality-gates" ;;
     silver:security)            echo "security" ;;
     silver:fast)                echo "silver-fast" ;;
     silver:feature)             echo "silver-feature" ;;
@@ -80,20 +88,23 @@ resolve_silver_alias() {
     silver:bugfix)              echo "silver-bugfix" ;;
     silver:research)            echo "silver-research" ;;
     silver:release)             echo "silver-release" ;;
-    silver:silver-forensics)           echo "silver-forensics" ;;
+    silver:forensics)           echo "silver-forensics" ;;
+    silver:silver-forensics)    echo "silver-forensics" ;;
     silver:validate)            echo "silver-validate" ;;
-    silver:silver-blast-radius)        echo "silver-blast-radius" ;;
+    silver:blast-radius)        echo "silver-blast-radius" ;;
+    silver:silver-blast-radius) echo "silver-blast-radius" ;;
     silver:devops-skill-router) echo "devops-skill-router" ;;
     silver:devops-quality-gates) echo "devops-quality-gates" ;;
-    silver:silver-create-release)      echo "silver-create-release" ;;
-    *)                          echo "$name" ;;
+    silver:create-release)      echo "silver-create-release" ;;
+    silver:silver-create-release) echo "silver-create-release" ;;
+    *)                          echo "$cmd" ;;
   esac
 }
 
 # Extract backtick-quoted invoke targets from a SKILL.md
 extract_skill_refs() {
   local file="$1"
-  grep -oE 'invoke `[^`]+`' "$file" | sed 's/invoke `//;s/`//' || true
+  grep -oiE 'invoke `[^`]+`' "$file" | sed -E 's/^[Ii]nvoke `//;s/`//' || true
 }
 
 check_skill_refs_in_file() {
@@ -109,6 +120,8 @@ check_skill_refs_in_file() {
       check "$label: ref '$raw_ref' -> internal skill '$ref'" "pass"
     elif is_external_skill "$ref"; then
       check "$label: ref '$raw_ref' -> external skill '$ref'" "pass"
+    elif [[ " ${BUILTIN_WHITELIST[*]} " == *" $ref "* ]]; then
+      check "$label: ref '$raw_ref' -> built-in command '$ref'" "pass"
     else
       check "$label: ref '$raw_ref' (resolved: '$ref') is a known skill" "fail"
     fi
@@ -151,7 +164,7 @@ check "silver-feature: has non-skippable gates section" \
   "$([[ -n "$nonsk" ]] && echo pass || echo fail)"
 
 check "silver-feature: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'silver-quality-gates' | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-feature: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
@@ -177,7 +190,7 @@ check "silver-bugfix: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-bugfix: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver-quality-gates' | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-bugfix: gsd-verify-work listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
@@ -187,14 +200,14 @@ check "silver-ui: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-ui: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver-quality-gates' | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-ui: gsd-verify-work listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
 
 SREL="$SKILLS_DIR/silver-release/SKILL.md"
 check "silver-release: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SREL" | grep -i 'silver-quality-gates' | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -i 'non-skippable' "$SREL" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-release: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SREL" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
@@ -212,7 +225,7 @@ line_of() {
 
 SF="$SKILLS_DIR/silver-feature/SKILL.md"
 
-qg_line=$(grep -n "silver:silver-quality-gates" "$SF" | head -1 | cut -d: -f1 || echo 0)
+qg_line=$(grep -n "silver:quality-gates" "$SF" | head -1 | cut -d: -f1 || echo 0)
 exec_line=$(grep -n "gsd-execute-phase\|gsd-autonomous" "$SF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-feature: silver-quality-gates step before execute step (line $qg_line < $exec_line)" \
   "$([[ "$qg_line" -gt 0 && "$exec_line" -gt 0 && "$qg_line" -lt "$exec_line" ]] && echo pass || echo fail)"
@@ -252,7 +265,7 @@ check "silver-bugfix: security before ship (line $bf_sec_line < $bf_ship_line)" 
   "$([[ "$bf_sec_line" -gt 0 && "$bf_ship_line" -gt 0 && "$bf_sec_line" -lt "$bf_ship_line" ]] && echo pass || echo fail)"
 
 SREL="$SKILLS_DIR/silver-release/SKILL.md"
-rel_qg_line=$(grep -n "silver:silver-quality-gates" "$SREL" | head -1 | cut -d: -f1 || echo 0)
+rel_qg_line=$(grep -n "silver:quality-gates" "$SREL" | head -1 | cut -d: -f1 || echo 0)
 # Match the actual invoke line for gsd-ship (case-insensitive, not frontmatter description references)
 rel_ship_line=$(grep -in "invoke \`gsd-ship\`" "$SREL" | head -1 | cut -d: -f1 || echo 0)
 check "silver-release: silver-quality-gates before ship (line $rel_qg_line < $rel_ship_line)" \

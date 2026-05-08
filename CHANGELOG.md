@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.4] — 2026-05-08
+
+## Patch
+
+**Codex picker surface restoration.** Silver Bullet now keeps skills as the source of truth while materializing the Codex-facing `silver:` command surface from the packaged skills tree, so `/silver` and `/silver:*` show up in the picker again without a separate Silver Bullet Commands plugin.
+
+## Fixes
+
+- `scripts/sync-codex-package.sh` now points the packaged `skills/` tree at the Codex marketplace skill bundle.
+- `tests/integration/test-skill-execution-paths.sh` now recognizes the `silver:` command aliases and built-in command wrappers used by the Silver Bullet workflows.
+- The Codex install and packaging tests now assert the picker-visible Silver Bullet command surface stays intact.
+
 ## [0.32.3] — 2026-05-07
 
 ## Patch

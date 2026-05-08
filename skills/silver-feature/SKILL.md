@@ -1,6 +1,6 @@
 ---
 name: silver-feature
-description: This skill should be used for full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver-quality-gates → GSD plan/execute/verify → ship
+description: This skill should be used for full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver:quality-gates → GSD plan/execute/verify → ship
 argument-hint: "<feature description>"
 version: 0.1.0
 ---
@@ -211,7 +211,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
-**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
 
 ## Step 0: Complexity Triage
 
@@ -279,20 +279,20 @@ Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Pu
 
 Invoke `silver:validate` via the Skill tool.
 
-If silver-validate reports any BLOCK findings:
+If silver:validate reports any BLOCK findings:
 - STOP. Do not proceed to Step 3.
 - Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
 - Offer: A. Return to /silver:spec  B. Re-run /silver:validate after fixes
 
-Only proceed to Step 3 (silver-quality-gates) when silver-validate reports zero BLOCK findings.
+Only proceed to Step 3 (silver:quality-gates) when silver:validate reports zero BLOCK findings.
 
 WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
 
 ## Step 3: Pre-Plan Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
 
-`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in silver-quality-gates (one of the 9 dimensions — not a separate step).
+`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in silver:quality-gates (one of the 9 dimensions — not a separate step).
 
 ## Step 4: Discuss Phase
 
@@ -315,10 +315,10 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification l
 
 **During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
 
-**Deferred item routing:** File immediately via `/silver-add`:
+**Deferred item routing:** File immediately via `/silver:add`:
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 ## Step 7a: TDD Gate (implementation plans only)
@@ -368,7 +368,7 @@ After receiving review findings, scan REVIEW.md for any low-priority, deferred, 
 
 For each unfixed non-blocking finding:
 ```
-Skill(skill="silver-add", args="<finding description from REVIEW.md>")
+Skill(skill="silver:add", args="<finding description from REVIEW.md>")
 ```
 
 If all findings were fixed or no advisory items exist, output: "No deferred review items to capture."
@@ -387,11 +387,11 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap 
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver:add`.
 
 ## Step 13: Pre-Ship Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -483,9 +483,9 @@ After all work for this feature/phase is complete, perform a final deferred-item
 2. Review any items marked "future", "TODO", "later", or "out of scope" in SUMMARYs, PLANs, or discussion
 3. Review any items explicitly deferred during execution (e.g., "skipping X for now")
 
-**Every deferred item that has not yet been captured must be added now** via `/silver-add`:
+**Every deferred item that has not yet been captured must be added now** via `/silver:add`:
 ```
-Skill(skill="silver-add", args="<deferred item description>")
+Skill(skill="silver:add", args="<deferred item description>")
 ```
 
 If no items were deferred during this session, output: "Post-work sweep: no deferred items to capture."

@@ -1,6 +1,6 @@
 ---
 name: silver-fast
-description: This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver-feature escalation.
+description: This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver:feature escalation.
 argument-hint: "<description of change>"
 version: 0.1.0
 ---
@@ -13,7 +13,7 @@ SB fast-path with 3-tier routing. Classifies work autonomously and routes to the
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes | gsd-fast |
 | **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | gsd-quick (with flags) |
-| **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver-feature |
+| **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
 > **Note:** This workflow does NOT read §10 prefs or create WORKFLOW.md. The fast path skips all preference and composition overhead by design.
 
@@ -57,7 +57,7 @@ Display classification:
 
 ```
 Classification: Tier {N} ({Trivial|Medium|Complex})
-Routing to: {gsd-fast|gsd-quick|silver-feature}
+Routing to: {gsd-fast|gsd-quick|silver:feature}
 ```
 
 ## Step 1: Tier 1 — Execute via gsd-fast
@@ -115,22 +115,22 @@ After gsd-quick completes, run scope expansion check (Step 4).
 
 ### Deferred-Item Capture (Tier 2 only)
 
-After Tier 2 (gsd-quick) execution, any item scoped out during execution MUST be filed via `/silver-add`:
+After Tier 2 (gsd-quick) execution, any item scoped out during execution MUST be filed via `/silver:add`:
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
-**Note:** Tier 1 (trivial changes) → no capture needed. Tier 3 → escalates to `/silver-feature`, which handles its own deferred-item capture.
+**Note:** Tier 1 (trivial changes) → no capture needed. Tier 3 → escalates to `/silver:feature`, which handles its own deferred-item capture.
 
-## Step 3: Tier 3 — Escalate to silver-feature
+## Step 3: Tier 3 — Escalate to silver:feature
 
 **Only reached when Step 0 classifies as Tier 3 (Complex).**
 
 Display:
 
 ```
-Change exceeds fast-path complexity. Routing to silver-feature.
+Change exceeds fast-path complexity. Routing to silver:feature.
 Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
 ```
 
@@ -142,10 +142,10 @@ After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the c
 
 **During Tier 1:** If files modified > 3:
 - If 4-10 files → escalate to Tier 2 (gsd-quick, Step 2)
-- If > 10 files → escalate to Tier 3 (silver-feature, Step 3)
+- If > 10 files → escalate to Tier 3 (silver:feature, Step 3)
 
 **During Tier 2:** If files modified > 10:
-- Escalate to Tier 3 (silver-feature, Step 3)
+- Escalate to Tier 3 (silver:feature, Step 3)
 
 Escalation is **autonomous** — no AskUserQuestion needed. Display escalation banner:
 
@@ -156,8 +156,8 @@ Escalation is **autonomous** — no AskUserQuestion needed. Display escalation b
 
 Reason: Scope expanded from {original tier} to {new tier}
 Files affected: {count}
-Routing to: {gsd-quick|silver-feature}
+Routing to: {gsd-quick|silver:feature}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Then invoke the target workflow. On escalation to silver-feature, pass the updated scope description so /silver can classify appropriately.
+Then invoke the target workflow. On escalation to silver:feature, pass the updated scope description so /silver can classify appropriately.

@@ -133,7 +133,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Orient in Codebase
 
@@ -176,7 +176,7 @@ Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Pu
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
 
 ## Step 4: Discuss Phase
 
@@ -186,7 +186,7 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CON
 
 **Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
 
-**Note:** Always active in silver-ui (UI workflow is inherently UI work — no trigger detection needed).
+**Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
 
 **Steps** (all via Skill tool):
 1. `design:design-system` (Always)
@@ -224,7 +224,7 @@ Run review sequence in order:
 
 **Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
 
-**Note:** Always active in silver-ui (no trigger detection needed).
+**Note:** Always active in silver:ui (no trigger detection needed).
 
 **Steps** (all via Skill tool):
 1. `design:design-critique` (Always)
@@ -253,14 +253,14 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -272,7 +272,7 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:silver-quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 

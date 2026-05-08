@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.32.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.3)
+[![version](https://img.shields.io/badge/version-v0.32.4-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.32.4)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -263,7 +263,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.32.3",
+  "version": "0.32.4",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
