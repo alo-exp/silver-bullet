@@ -33,6 +33,7 @@ SB is an enforcement and orchestration layer that sits on top of GSD. It owns:
 - **Composed-workflow tracking**: per-instance `.planning/workflows/<id>.md` files plus the `SB_WORKFLOW_ID` strict gate that refuses delivery until every flow row is `complete`
 - **Flow skills** (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast`) — orchestrators that sequence GSD commands, Superpowers skills, and quality skills into a single named workflow
 - **Item-capture skills** (`silver:add`, `silver:remove`, `silver:rem`, `silver:scan`) for tracking deferred items, knowledge, and lessons across sessions
+- **Session-handoff skill** (`silver:handoff`) for generating reusable, project-level resume prompts between sessions
 - **Quality skills** (`silver:quality-gates`, `silver:blast-radius`, `silver:devops-quality-gates`)
 - **Pre-release quality gate** (4 stages: code review → TDD → quality gates → final verify)
 
@@ -68,7 +69,7 @@ These two files do not duplicate each other. GSD's STATE.md tracks project phase
 ### SB without GSD
 
 Mostly works. Available skills:
-- `silver:init`, `silver:fast`, `silver:add`, `silver:remove`, `silver:rem`, `silver:scan`
+- `silver:init`, `silver:fast`, `silver:add`, `silver:remove`, `silver:rem`, `silver:scan`, `silver:handoff`
 - All hooks (state file gating, plugin-boundary blocks, trivial bypass, etc.)
 - Pre-release quality gate stages (you provide a phase plan some other way)
 

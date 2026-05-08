@@ -79,6 +79,7 @@ fully without a GSD install.
 | `/silver-remove` | Remove an issue or backlog item by ID |
 | `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
 | `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, files survivors via `/silver-add` and `/silver-rem` |
+| `/silver-handoff` | Generates a reusable project-level handoff prompt for session continuation |
 | `/silver-create-release` | Generates release notes and creates GitHub Release — **partial**: the final step calls `gsd-complete-milestone`; milestone archival is unavailable without GSD, but the release notes and GitHub Release creation work |
 
 ---

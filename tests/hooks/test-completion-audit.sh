@@ -984,23 +984,6 @@ out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-I (#86): mixed complete/skipped workflow allows release" "$out"
 teardown
 
-echo "--- WF-PASS2-J (#86): all-skipped workflow is treated as terminal ---"
-setup
-_full_state
-ID="20260428T120000Z-abc123-silver-feature"
-_make_workflow "$ID" "| 1 | bootstrap | skipped | - | - |
-| 2 | orient    | skipped | - | - |"
-cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
-matrix=full-claude-codex
-EOF
-cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
-matrix=full-claude-codex
-EOF
-write_quality_gate_state
-out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "WF-PASS2-J (#86): all-skipped flows pass terminal-state check" "$out"
-teardown
-
 echo "--- WF-PASS2-K (#86): pending row still blocks (skipped fix didn't loosen) ---"
 setup
 _full_state

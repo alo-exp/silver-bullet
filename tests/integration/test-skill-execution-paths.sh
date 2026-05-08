@@ -337,6 +337,7 @@ ALIAS_NAMES=(
   "silver:devops-skill-router"
   "silver:devops-quality-gates"
   "silver:silver-create-release"
+  "silver:handoff"
 )
 ALIAS_TARGETS=(
   "silver-quality-gates"
@@ -353,6 +354,7 @@ ALIAS_TARGETS=(
   "devops-skill-router"
   "devops-quality-gates"
   "silver-create-release"
+  "silver-handoff"
 )
 
 for i in "${!ALIAS_NAMES[@]}"; do

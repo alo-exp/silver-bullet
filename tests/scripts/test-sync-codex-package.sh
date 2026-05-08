@@ -47,10 +47,12 @@ assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.
 assert_file_exists "Silver Bullet skill router available" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_file_exists "Silver Bullet init skill available" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_file_exists "Silver Bullet feature skill available" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
+assert_file_exists "Silver Bullet handoff skill available" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
 assert_file_exists "Stamped template present" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Silver router skill has silver name" "name: silver" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_contains "Silver init skill uses silver prefix" "name: silver:init" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_contains "Silver feature skill uses silver prefix" "name: silver:feature" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
+assert_contains "Silver handoff skill uses silver prefix" "name: silver:handoff" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"
 
