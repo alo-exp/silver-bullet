@@ -199,6 +199,7 @@ Suggest these commands based on context -- do not wait for the user to ask.
 | Change is truly trivial (typo, config value, 3 files max) | `/gsd:fast` | Inline execution, no subagent overhead |
 | New session on existing project | `/gsd:resume-work` | Restores full context from STATE.md + HANDOFF.json |
 | User wants to stop mid-work | `/gsd:pause-work` | Creates handoff files for clean session resume |
+| User wants to end now and continue later with a reusable project-level prompt | `/silver-handoff` | Generates a concise project-level handoff prompt for the next session |
 | User asks "where are we?" or "what's left?" | `/gsd:progress` | Rich progress report with next actions |
 | User seems unsure what step is next | `/gsd:next` | Auto-advances to the next logical step |
 
