@@ -280,12 +280,128 @@ _mtime_epoch() {
   [[ "$_v" =~ ^[0-9]+$ ]] && printf '%s' "$_v" || printf '0'
 }
 
+# Resolve a checklist doc key to file state for the current repo/month.
+# Inputs:
+#   $1 repo root
+#   $2 month (YYYY-MM)
+#   $3 checklist key
+# Outputs (globals):
+#   DOC_KEY_LABEL, DOC_KEY_EXISTS (0|1), DOC_KEY_MTIME
+resolve_doc_key_state() {
+  local repo_root="$1"
+  local month="$2"
+  local doc_key="$3"
+  local full=""
+  local f=""
+  local m=0
+
+  DOC_KEY_LABEL="$doc_key"
+  DOC_KEY_EXISTS=0
+  DOC_KEY_MTIME=0
+
+  case "$doc_key" in
+    "docs/knowledge/YYYY-MM.md")
+      DOC_KEY_LABEL="docs/knowledge/${month}*.md"
+      shopt -s nullglob
+      for f in "$repo_root/docs/knowledge/${month}"*.md; do
+        [[ -f "$f" && ! -L "$f" ]] || continue
+        m=$(_mtime_epoch "$f")
+        if (( m > DOC_KEY_MTIME )); then
+          DOC_KEY_EXISTS=1
+          DOC_KEY_MTIME=$m
+        fi
+      done
+      shopt -u nullglob
+      ;;
+    "docs/lessons/YYYY-MM.md")
+      DOC_KEY_LABEL="docs/lessons/${month}*.md"
+      shopt -s nullglob
+      for f in "$repo_root/docs/lessons/${month}"*.md; do
+        [[ -f "$f" && ! -L "$f" ]] || continue
+        m=$(_mtime_epoch "$f")
+        if (( m > DOC_KEY_MTIME )); then
+          DOC_KEY_EXISTS=1
+          DOC_KEY_MTIME=$m
+        fi
+      done
+      shopt -u nullglob
+      ;;
+    *)
+      full="$repo_root/$doc_key"
+      if [[ -f "$full" && ! -L "$full" ]]; then
+        DOC_KEY_EXISTS=1
+        DOC_KEY_MTIME=$(_mtime_epoch "$full")
+      fi
+      ;;
+  esac
+}
+
+# Build the governed checklist key set:
+#   - mandatory every-task keys (with monthly wildcards)
+#   - every concrete doc file under docs/ (excluding monthly files represented
+#     by wildcard keys and placeholder .gitkeep files)
+#   - root README.md / CHANGELOG.md when present
+#
+# Output (global array):
+#   DOC_SCHEME_CHECKLIST_KEYS
+build_doc_scheme_checklist_keys() {
+  local repo_root="$1"
+  local rel=""
+  local key=""
+  local deduped=()
+  local seen=$'\n'
+
+  DOC_SCHEME_CHECKLIST_KEYS=(
+    "docs/CHANGELOG.md"
+    "docs/knowledge/YYYY-MM.md"
+    "docs/lessons/YYYY-MM.md"
+  )
+
+  if [[ -d "$repo_root/docs" && ! -L "$repo_root/docs" ]]; then
+    while IFS= read -r rel; do
+      [[ -n "$rel" ]] || continue
+      # Monthly docs are represented by wildcard keys above.
+      if [[ "$rel" =~ ^docs/knowledge/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
+        continue
+      fi
+      if [[ "$rel" =~ ^docs/lessons/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
+        continue
+      fi
+      # Ignore placeholder files that are not real documentation content.
+      if [[ "$rel" == ".gitkeep" || "$rel" == */.gitkeep ]]; then
+        continue
+      fi
+      DOC_SCHEME_CHECKLIST_KEYS+=("$rel")
+    done < <(cd "$repo_root" && find docs -type f -print | LC_ALL=C sort)
+  fi
+
+  if [[ -f "$repo_root/README.md" && ! -L "$repo_root/README.md" ]]; then
+    DOC_SCHEME_CHECKLIST_KEYS+=("README.md")
+  fi
+  if [[ -f "$repo_root/CHANGELOG.md" && ! -L "$repo_root/CHANGELOG.md" ]]; then
+    DOC_SCHEME_CHECKLIST_KEYS+=("CHANGELOG.md")
+  fi
+
+  for key in "${DOC_SCHEME_CHECKLIST_KEYS[@]}"; do
+    [[ -n "$key" ]] || continue
+    if [[ "$seen" == *$'\n'"$key"$'\n'* ]]; then
+      continue
+    fi
+    deduped+=("$key")
+    seen+="$key"$'\n'
+  done
+  DOC_SCHEME_CHECKLIST_KEYS=("${deduped[@]}")
+}
+
 # ── Doc-scheme delivery gate (delivery-only) ─────────────────────────────────
 # If docs/doc-scheme.md exists, final delivery commands must prove that this
-# session updated the required "Every task" docs:
-#   - docs/CHANGELOG.md
-#   - docs/knowledge/YYYY-MM*.md (current month; supports split files a/b)
-#   - docs/lessons/YYYY-MM*.md (current month; supports split files a/b)
+# session updated required docs and completed a per-task checklist:
+#   - checklist file: docs/task-doc-checklist.json (updated this session)
+#   - required-updated entries:
+#       docs/CHANGELOG.md
+#       docs/knowledge/YYYY-MM.md
+#       docs/lessons/YYYY-MM.md
+#   - complete checklist coverage for governed docs.
 #
 # Granularity: delivery-only by design. Intermediate commits are unaffected.
 run_doc_scheme_delivery_gate() {
@@ -309,59 +425,62 @@ run_doc_scheme_delivery_gate() {
 
   local month
   month=$(date '+%Y-%m')
-
-  local changelog="$repo_root/docs/CHANGELOG.md"
-  local knowledge_dir="$repo_root/docs/knowledge"
-  local lessons_dir="$repo_root/docs/lessons"
-  local knowledge_file=""
-  local lessons_file=""
-  local knowledge_mtime=0
-  local lessons_mtime=0
-
-  shopt -s nullglob
-  for f in "$knowledge_dir/${month}"*.md; do
-    [[ -f "$f" && ! -L "$f" ]] || continue
-    m=$(_mtime_epoch "$f")
-    if (( m > knowledge_mtime )); then
-      knowledge_mtime=$m
-      knowledge_file="$f"
-    fi
-  done
-  for f in "$lessons_dir/${month}"*.md; do
-    [[ -f "$f" && ! -L "$f" ]] || continue
-    m=$(_mtime_epoch "$f")
-    if (( m > lessons_mtime )); then
-      lessons_mtime=$m
-      lessons_file="$f"
-    fi
-  done
-  shopt -u nullglob
-
+  local checklist="$repo_root/docs/task-doc-checklist.json"
   local gate_issues=""
+  local checklist_mtime=0
+  local doc_key=""
+  local status=""
+  local checklist_keys=()
+  build_doc_scheme_checklist_keys "$repo_root"
+  checklist_keys=("${DOC_SCHEME_CHECKLIST_KEYS[@]}")
 
-  if [[ ! -f "$changelog" || -L "$changelog" ]]; then
-    gate_issues+="  - Missing: docs/CHANGELOG.md"$'\n'
+  if [[ ! -f "$checklist" || -L "$checklist" ]]; then
+    gate_issues+="  - Missing: docs/task-doc-checklist.json"$'\n'
   else
-    changelog_mtime=$(_mtime_epoch "$changelog")
-    if (( changelog_mtime < session_start )); then
-      gate_issues+="  - Stale: docs/CHANGELOG.md (not updated this session)"$'\n'
+    checklist_mtime=$(_mtime_epoch "$checklist")
+    if (( checklist_mtime < session_start )); then
+      gate_issues+="  - Stale: docs/task-doc-checklist.json (not updated this session)"$'\n'
     fi
-  fi
+    if ! jq -e '.docs | type == "object"' "$checklist" >/dev/null 2>&1; then
+      gate_issues+="  - Invalid: docs/task-doc-checklist.json (.docs object missing)"$'\n'
+    else
+      for doc_key in "${checklist_keys[@]}"; do
+        status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
+        if [[ -z "$status" ]]; then
+          gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'
+          continue
+        fi
 
-  if [[ -z "$knowledge_file" ]]; then
-    gate_issues+="  - Missing: docs/knowledge/${month}*.md"$'\n'
-  elif (( knowledge_mtime < session_start )); then
-    gate_issues+="  - Stale: docs/knowledge/${month}*.md (not updated this session)"$'\n'
-  fi
+        case "$status" in
+          updated|not-needed:*|n/a:*) ;;
+          *)
+            gate_issues+="  - Invalid checklist status: ${doc_key} -> ${status}"$'\n'
+            continue
+            ;;
+        esac
 
-  if [[ -z "$lessons_file" ]]; then
-    gate_issues+="  - Missing: docs/lessons/${month}*.md"$'\n'
-  elif (( lessons_mtime < session_start )); then
-    gate_issues+="  - Stale: docs/lessons/${month}*.md (not updated this session)"$'\n'
+        # Every task docs are mandatory updated, not skippable.
+        if [[ "$doc_key" == "docs/CHANGELOG.md" || "$doc_key" == "docs/knowledge/YYYY-MM.md" || "$doc_key" == "docs/lessons/YYYY-MM.md" ]]; then
+          if [[ "$status" != "updated" ]]; then
+            gate_issues+="  - Required status 'updated': ${doc_key}"$'\n'
+            continue
+          fi
+        fi
+
+        if [[ "$status" == "updated" ]]; then
+          resolve_doc_key_state "$repo_root" "$month" "$doc_key"
+          if (( DOC_KEY_EXISTS == 0 )); then
+            gate_issues+="  - Missing file marked updated: ${DOC_KEY_LABEL}"$'\n'
+          elif (( DOC_KEY_MTIME < session_start )); then
+            gate_issues+="  - Stale file marked updated: ${DOC_KEY_LABEL} (not updated this session)"$'\n'
+          fi
+        fi
+      done
+    fi
   fi
 
   if [[ -n "$gate_issues" ]]; then
-    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` requires "Every task" docs updates before delivery.\n\nFix these items:\n%s\nUpdate the required docs, then retry the delivery command.' "$gate_issues")"
+    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` requires a complete per-task documentation checklist and current-session doc updates before delivery.\n\nChecklist file: `docs/task-doc-checklist.json`\nAllowed checklist statuses: `updated`, `not-needed: <reason>`, `n/a: <reason>`\n\nFix these items:\n%s\nUpdate docs and checklist, then retry the delivery command.' "$gate_issues")"
     exit 0
   fi
 

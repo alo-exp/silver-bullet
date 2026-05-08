@@ -10,12 +10,14 @@ TEST_RUN_ID="$$"
 
 # The hook hardcodes trivial_file to ${HOME}/.claude/.silver-bullet/trivial
 TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
+CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$TRIVIAL_FILE"; }
+cleanup_all() { rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"; }
 trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
+  rm -f "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"
   # Create a minimal .silver-bullet.json so the hook recognises this as a SB project
   cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
 {
@@ -27,7 +29,7 @@ EOF
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
-  rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$TRIVIAL_FILE"
+  rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"
 }
 
 run_hook() {
@@ -196,6 +198,7 @@ echo "--- Group 8: CI-fix bypass — commit message convention (issue #95) ---"
 
 setup_git() {
   TMPDIR_TEST=$(mktemp -d)
+  rm -f "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"
   cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
 {
   "project": {},

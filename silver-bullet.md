@@ -199,6 +199,7 @@ Suggest these commands based on context -- do not wait for the user to ask.
 | Change is truly trivial (typo, config value, 3 files max) | `/gsd:fast` | Inline execution, no subagent overhead |
 | New session on existing project | `/gsd:resume-work` | Restores full context from STATE.md + HANDOFF.json |
 | User wants to stop mid-work | `/gsd:pause-work` | Creates handoff files for clean session resume |
+| User wants to end now and continue later with a reusable project-level prompt | `/silver-handoff` | Generates a concise project-level handoff prompt for the next session |
 | User asks "where are we?" or "what's left?" | `/gsd:progress` | Rich progress report with next actions |
 | User seems unsure what step is next | `/gsd:next` | Auto-advances to the next logical step |
 
@@ -991,6 +992,28 @@ This is the same root cause for the previously open issues #48 and #50. The repo
 1. **Run releases from the Claude Code CLI.** This is the canonical SB-supported runtime. All hooks fire and gates work as intended.
 2. **Manually record skills in agent-mode sessions.** When forced to run inside an Agent SDK / web session, an agent may invoke each required skill and then explicitly write its name to `~/.claude/.silver-bullet/state` via a Bash command. This is brittle and not recommended for releases.
 3. **Detect agent-mode and refuse delivery actions.** A future SB version may add a startup probe that detects the absence of hook-protocol support and warns / blocks `gh release create` from agent-mode sessions outright. Filed as a follow-up; see the seed file for design constraints.
+
+### Enabling hooks in SDK sessions
+
+The Claude Agent SDK does implement the same hook events SB relies on — `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, and others — they are first-class on `HookEvent` in `query()` options. The reason they "do not fire today" in the bullet above is that the SDK does not load `~/.claude/settings.json` unless asked, and does not register programmatic hooks unless passed. Two paths re-enable enforcement inside an SDK session:
+
+1. **Load the user-scoped `~/.claude/settings.json` block** (where `silver:init` writes SB's hook config) by passing `settingSources: ['user']` on `query()` options. An SDK session then picks up the same hook config as the CLI.
+2. **Pass hooks programmatically** on `query()` options:
+
+   ```ts
+   query({
+     prompt: '...',
+     options: {
+       hooks: {
+         PreToolUse: [{ hooks: [async (input) => ({ continue: true })] }],
+       },
+     },
+   })
+   ```
+
+Either path makes SB's enforcement gates fire inside an SDK session. The CLI is still the canonical SB runtime; this is a clarification, not a substitute path.
+
+Reference: `@anthropic-ai/claude-agent-sdk` CHANGELOG documents `settingSources` (initial introduction at v0.1.x) and ongoing fixes for SDK-mode hook delivery (PreToolUse with `permissionDecision: 'ask'`, PermissionRequest, Stop, stream-mode failures). The `claude.ai/code` web UI is a separate runtime and is not addressed here.
 
 ### Detection (advisory)
 
