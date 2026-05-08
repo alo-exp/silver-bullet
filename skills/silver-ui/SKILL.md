@@ -285,11 +285,12 @@ Invoke `silver:quality-gates` via the Skill tool. Full 9-dimension sweep. Non-sk
 Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the phase just completed (newest-first). If missing, write it now: one entry summarising what shipped.
-2. **`docs/ARCHITECTURE.md`** — must NOT say "in progress" for completed phases. If stale, update §Current State to reflect completed state.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if architectural patterns, API gotchas, or key decisions were encountered, append them now.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned, append them now.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append task-specific patterns, gotchas, and key decisions.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned.
+4. Update any additional docs changed by the phase (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must be updated this session and include a status for every governed doc key (all current files under `docs/`, plus `README.md` / root `CHANGELOG.md` when present; monthly files represented by `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md`).
 
-**Gate:** Do NOT proceed to Step 14 until all four checks pass. Missing doc entries are a pre-ship defect — write them before continuing.
+**Gate:** Do NOT proceed to Step 14 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
 If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 14.
 

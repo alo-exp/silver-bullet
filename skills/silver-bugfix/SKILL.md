@@ -239,11 +239,12 @@ Invoke `silver:quality-gates` via the Skill tool (affected quality dimensions fo
 Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for this fix (newest-first). If missing, write it now.
-2. **`docs/ARCHITECTURE.md`** — update §Current State if the fix changed any architectural constraints.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if root-cause patterns or API gotchas were discovered, append them.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned during diagnosis, append them.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append root-cause patterns, gotchas, and decisions found during diagnosis.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned during diagnosis.
+4. Update any additional docs changed by the fix (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must be updated this session and include a status for every governed doc key (all current files under `docs/`, plus `README.md` / root `CHANGELOG.md` when present; monthly files represented by `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md`).
 
-**Gate:** Do NOT proceed to Step 8 until all applicable checks pass.
+**Gate:** Do NOT proceed to Step 8 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
 If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 8.
 

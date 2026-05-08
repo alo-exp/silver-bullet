@@ -223,11 +223,12 @@ Invoke `silver:devops-quality-gates` via the Skill tool again. Purpose: final 7-
 Before deploying, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the infrastructure change (newest-first). If missing, write it now.
-2. **`docs/ARCHITECTURE.md`** — update §Current State if the change altered infrastructure topology, pipeline stages, or deployment targets.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if IaC patterns, provider quirks, or config gotchas were encountered, append them.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable DevOps lessons were learned, append them.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append IaC patterns, provider quirks, and config gotchas encountered.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable DevOps lessons learned.
+4. Update any additional docs changed by the work (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must be updated this session and include a status for every governed doc key (all current files under `docs/`, plus `README.md` / root `CHANGELOG.md` when present; monthly files represented by `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md`).
 
-**Gate:** Do NOT proceed to Step 11 until all applicable checks pass.
+**Gate:** Do NOT proceed to Step 11 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
 If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 11.
 
