@@ -26,6 +26,7 @@ for f in \
   docs/TESTING.md \
   docs/tech-debt.md \
   docs/CHANGELOG.md \
+  docs/task-doc-checklist.json \
   docs/PRD-Overview.md \
   docs/documentation-scheme.md \
   docs/project-documentation-scheme.md \
@@ -60,6 +61,7 @@ for f in \
   templates/knowledge/INDEX.md.base \
   templates/knowledge/YYYY-MM.md.base \
   templates/lessons/YYYY-MM.md.base \
+  templates/task-doc-checklist.json.base \
   templates/doc-scheme.md.base \
   templates/CHANGELOG-project.md.base \
   templates/silver-bullet.md.base \

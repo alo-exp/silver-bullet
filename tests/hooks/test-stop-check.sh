@@ -177,6 +177,28 @@ EOF
 EOF
 }
 
+seed_doc_scheme_checklist_current_month() {
+  local month="$1"
+  mkdir -p "$TMPDIR_TEST/docs"
+  cat > "$TMPDIR_TEST/docs/task-doc-checklist.json" << EOF
+{
+  "task_id": "test-doc-scheme-gate",
+  "docs": {
+    "docs/CHANGELOG.md": "updated",
+    "docs/knowledge/YYYY-MM.md": "updated",
+    "docs/lessons/YYYY-MM.md": "updated",
+    "docs/task-doc-checklist.json": "updated",
+    "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
+    "docs/ARCHITECTURE.md": "not-needed: no architecture changes in this task",
+    "docs/TESTING.md": "not-needed: no testing-doc changes in this task",
+    "docs/knowledge/INDEX.md": "not-needed: no docs added or removed in this task",
+    "README.md": "not-needed: not a release task",
+    "CHANGELOG.md": "n/a: root changelog not used in this project"
+  }
+}
+EOF
+}
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 echo "=== stop-check.sh tests ==="
 
@@ -577,18 +599,18 @@ assert_passes "#85-C: missing deploy-checklist + create-release does NOT block S
 teardown
 
 # ── Doc-scheme per-task gate (option 2) ──────────────────────────────────────
-echo "--- DOC-2A: docs/doc-scheme.md present + missing required docs -> blocks ---"
+echo "--- DOC-2A: docs/doc-scheme.md present + missing checklist/docs -> blocks ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
 out=$(run_hook)
-assert_blocks "DOC-2A: missing CHANGELOG/knowledge/lessons blocks completion" "$out"
+assert_blocks "DOC-2A: missing checklist and required docs block completion" "$out"
 assert_contains "DOC-2A: block mentions DOC-SCHEME GATE" "$out" "DOC-SCHEME GATE"
 teardown
 
-echo "--- DOC-2B: stale docs (pre-session) -> blocks ---"
+echo "--- DOC-2B: stale docs/checklist (pre-session) -> blocks ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
@@ -596,14 +618,15 @@ git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
 current_month=$(date '+%Y-%m')
 seed_doc_scheme_targets_current_month "$current_month"
+seed_doc_scheme_checklist_current_month "$current_month"
 sleep 1
 date +%s > "$SESSION_START_FILE"
 out=$(run_hook)
-assert_blocks "DOC-2B: stale docs block completion" "$out"
+assert_blocks "DOC-2B: stale docs/checklist block completion" "$out"
 assert_contains "DOC-2B: block mentions stale docs" "$out" "Stale:"
 teardown
 
-echo "--- DOC-2C: docs updated this session -> allows completion ---"
+echo "--- DOC-2C: docs + checklist updated this session -> allows completion ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
@@ -621,8 +644,36 @@ EOF
 cat > "$TMPDIR_TEST/docs/lessons/${current_month}-b.md" << EOF
 # Lessons ${current_month}
 EOF
+seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook)
-assert_passes "DOC-2C: docs current-session updates pass stop gate" "$out"
+assert_passes "DOC-2C: docs/checklist current-session updates pass stop gate" "$out"
+teardown
+
+echo "--- DOC-2D: concrete docs file missing from checklist -> blocks ---"
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+seed_doc_scheme_marker
+date +%s > "$SESSION_START_FILE"
+current_month=$(date '+%Y-%m')
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
+# Changelog
+EOF
+cat > "$TMPDIR_TEST/docs/knowledge/${current_month}.md" << EOF
+# Knowledge ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/lessons/${current_month}.md" << EOF
+# Lessons ${current_month}
+EOF
+cat > "$TMPDIR_TEST/docs/EXTRA.md" << 'EOF'
+# Extra governed doc
+EOF
+seed_doc_scheme_checklist_current_month "$current_month"
+out=$(run_hook)
+assert_blocks "DOC-2D: missing concrete doc key blocks completion" "$out"
+assert_contains "DOC-2D: block names missing extra doc" "$out" "docs/EXTRA.md"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

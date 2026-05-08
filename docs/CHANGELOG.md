@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-08 — doc-scheme-checklist-hard-gate
+**What**: Upgraded doc-scheme enforcement from a trio-only check to a hard per-task checklist gate that now requires full governed-doc inventory coverage (all docs files plus root docs when present, with monthly wildcard keys) and validates `updated` entries against current-session file mtimes at both completion and delivery.
+**Commits**: —
+**Skills run**: silver-quality-gates, verification-before-completion
+**Virtual cost**: ~$0.18 (medium complexity — hook logic + gate tests + docs contract updates)
+**KNOWLEDGE.md**: updated (doc gate contract, checklist semantics, stale-artifact test hardening)
+
 ## 2026-05-07 — codex-docs-coverage
 **What**: Brought the project docs up to date with the current Codex packaging split, shared marketplace boundary, dual-runtime live matrix, and the May knowledge/lessons files.
 **Commits**: —

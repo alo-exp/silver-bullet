@@ -77,6 +77,7 @@ Use this map when adding or reorganizing docs.
 | `TESTING.md` | Test pyramid, coverage goals, test classification |
 | `CHANGELOG.md` | Rolling task log — what was done, commits, skills used |
 | `knowledge/INDEX.md` | Gateway index of all project docs |
+| `task-doc-checklist.json` | Per-task checklist status for governed docs (hook-enforced gate) |
 | `doc-scheme.md` | This file — documentation architecture reference |
 
 ### Knowledge & Lessons (created during development)
@@ -155,6 +156,32 @@ Every document has a growth limit:
 | **Governance review** (monthly for active repos; quarterly otherwise) | `doc-scheme.md`, `knowledge/INDEX.md`, ownership/cadence notes |
 | **Milestone completion** | Planning artifacts archived; tables trimmed |
 | **Release** | `README.md`, root `CHANGELOG.md` |
+
+## Enforced Task Checklist
+
+Task completion and delivery are hard-blocked unless `docs/task-doc-checklist.json` is updated in the current session and includes every governed doc key.
+
+Allowed status values per key:
+1. `updated`
+2. `not-needed: <reason>`
+3. `n/a: <reason>`
+
+Mandatory `updated` every task:
+1. `docs/CHANGELOG.md`
+2. `docs/knowledge/YYYY-MM.md`
+3. `docs/lessons/YYYY-MM.md`
+
+Checklist coverage scope (all required in `docs/task-doc-checklist.json`):
+1. Mandatory wildcard keys:
+   `docs/CHANGELOG.md`, `docs/knowledge/YYYY-MM.md`, `docs/lessons/YYYY-MM.md`
+2. Every concrete doc file currently present under `docs/` (recursive),
+   except monthly knowledge/lessons files represented by wildcard keys above.
+3. `README.md` and root `CHANGELOG.md` when those files exist.
+
+This means the checklist must explicitly cover each existing documentation file in the repo, including governance files such as `docs/doc-scheme.md` and `docs/task-doc-checklist.json`.
+
+Rule:
+1. If a key is marked `updated`, the corresponding file must also be modified in the same session.
 
 ---
 

@@ -78,9 +78,10 @@ Arrange tasks in dependency order:
 ## Documentation (if docs/doc-scheme.md exists)
 At finalization, before shipping:
 - docs/CHANGELOG.md — one newest-first entry for this phase
-- docs/ARCHITECTURE.md — update §Current State if architecture changed
 - docs/knowledge/YYYY-MM.md — patterns, gotchas, key decisions
 - docs/lessons/YYYY-MM.md — portable lessons learned
+- any additional changed docs (ARCHITECTURE.md, TESTING.md, runbooks, workflows, etc.) aligned to code behavior
+- docs/task-doc-checklist.json — updated this session with one status per governed doc key (all current docs files plus root README.md/CHANGELOG.md when present; monthly docs use wildcard keys)
 ```
 
 ### Step 5: Review with Quality Gates
