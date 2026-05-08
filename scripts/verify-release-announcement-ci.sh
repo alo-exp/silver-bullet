@@ -24,7 +24,7 @@ if [[ -z "$REPO" ]]; then
   exit 2
 fi
 
-required_workflows=("CI" "Secret Scan" "Deploy to GitHub Pages")
+required_workflows=("CI" "Secret Scan")
 poll_interval_seconds="${ANNOUNCE_CI_POLL_INTERVAL_SECONDS:-30}"
 timeout_seconds="${ANNOUNCE_CI_TIMEOUT_SECONDS:-1800}"
 deadline=$(( $(date +%s) + timeout_seconds ))

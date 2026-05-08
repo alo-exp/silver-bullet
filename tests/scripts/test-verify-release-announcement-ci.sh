@@ -15,6 +15,17 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local desc="$1" needle="$2" haystack="$3"
+  if printf '%s' "$haystack" | grep -qF "$needle"; then
+    echo "FAIL: $desc — unexpectedly found [$needle]"
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
 write_run_list_sequence_script() {
   local script_path="$1"
   cat > "$script_path" <<'EOF'
@@ -43,7 +54,7 @@ fi
 jq -n --arg sha "$commit_sha" --arg status "$status" --arg conclusion "$conclusion" --arg created_at "$created_at" '[
   {workflowName:"CI", status:$status, conclusion:$conclusion, headSha:$sha, createdAt:$created_at},
   {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"},
-  {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:04Z"}
+  {workflowName:"Deploy to GitHub Pages", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:04Z"}
 ]'
 EOF
   chmod +x "$script_path"
@@ -64,7 +75,7 @@ pass_log=$(
   GH_RUN_LIST_OVERRIDE="$(jq -n --arg sha "$commit_sha" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
-    {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"},
+    {workflowName:"Deploy to GitHub Pages", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"},
     {workflowName:"Announce Release", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:04Z"}
   ]')" \
   bash "$SCRIPT" "v1.2.3" 2>&1
@@ -80,7 +91,7 @@ fail_log=$(
   GH_RUN_LIST_OVERRIDE="$(jq -n --arg sha "$commit_sha" '[
     {workflowName:"CI", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:05Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
-    {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
+    {workflowName:"Deploy to GitHub Pages", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
   ]')" \
   bash "$SCRIPT" "v1.2.3" 2>&1
 )
@@ -112,6 +123,7 @@ wait_log=$(
 )
 assert_contains "waits until CI becomes green" "Waiting for release commit" "$wait_log"
 assert_contains "wait succeeds once CI settles" "fully green for announcement" "$wait_log"
+assert_not_contains "pages workflow does not block announcement" "Deploy to GitHub Pages" "$wait_log"
 
 announce_workflow="$(cd "$(dirname "$0")/../.." && pwd)/.github/workflows/announce-release.yml"
 assert_contains "workflow requests actions: read" "actions: read" "$(cat "$announce_workflow")"
