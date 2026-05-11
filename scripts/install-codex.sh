@@ -346,6 +346,7 @@ sync_codex_installed_plugin_registry_paths() {
   local current_path
   local stable_path
   local updates=()
+  updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
 
   for registry_file in \
     "${HOME}/.Codex/plugins/installed_plugins.json" \
@@ -418,7 +419,6 @@ PY
 
     [[ "${#updates[@]}" -gt 0 ]] || continue
 
-    updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
     python3 - "$registry_file" "$updated_at" "${updates[@]}" <<'PY'
 import json
 import pathlib
