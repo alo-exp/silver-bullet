@@ -148,6 +148,13 @@ exec "$@"
 EOF
 chmod +x "$BIN_DIR/npx"
 
+cat > "$BIN_DIR/codex" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+chmod +x "$BIN_DIR/codex"
+
 cat > "$HOME_DIR/.Codex/config.toml" <<EOF
 [marketplaces.silver-bullet-local]
 source = "/tmp/old-silver-bullet"
