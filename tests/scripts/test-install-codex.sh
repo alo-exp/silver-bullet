@@ -205,6 +205,10 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
 }
 EOF
 
+if [[ "$(uname)" != "Darwin" ]]; then
+  cp "$HOME_DIR/.codex/hooks.json" "$HOME_DIR/.Codex/hooks.json"
+fi
+
 FAKE_MARKETPLACE_ROOT="$HOME_DIR/.Codex/.tmp/marketplaces/alo-labs-codex"
 FAKE_SB_PACKAGE_ROOT="$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet"
 FAKE_SB_SKILLS_SOURCE="$FAKE_MARKETPLACE_ROOT/skills"
