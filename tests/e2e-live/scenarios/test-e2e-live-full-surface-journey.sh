@@ -248,7 +248,18 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-perl -0pi -e 's/completed \? 1 : 0;/completed ? 0 : 1;/' "${WORK_DIR}/src/routes/todos.js"
+python3 - "${WORK_DIR}/src/routes/todos.js" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+needle = "router.delete('/completed', (req, res) => {"
+replacement = needle + "\n  throw new Error('injected regression');"
+if needle not in text:
+    raise SystemExit('route marker not found')
+path.write_text(text.replace(needle, replacement, 1))
+PY
 
 if (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-regression.log 2>&1); then
   echo "FAIL: npm test should fail after the injected regression"
@@ -351,6 +362,8 @@ fi
 journey_turn "silver:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'silver:validate' 'Validate the todo-app end state after the feature and bugfix work. Confirm the clear-completed flow, the regression fix, and the current test status.')"
 
 journey_turn "silver:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'silver:quality-gates' 'Run the Silver Bullet quality-gates flow for this inline todo-app journey and prepare the workspace for a release finish.')"
+printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
+  | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
 wait_for_state_contains "silver:quality-gates recorded in workflow state" "silver-quality-gates"
 
 write_quality_gate_state_marker 2>/dev/null || true
@@ -446,6 +459,12 @@ commit_release_prep_changes() {
 discover_release_work_dir() {
   local candidate
   local parent_dir
+  if [[ -n "${RELEASE_WORK_DIR:-}" && -d "$RELEASE_WORK_DIR" ]]; then
+    if git -C "$RELEASE_WORK_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      printf '%s\n' "$RELEASE_WORK_DIR"
+      return 0
+    fi
+  fi
   parent_dir="$(dirname "$WORK_DIR")"
   for candidate in \
     "${parent_dir}/tmp.todo-app-inline-release" \
@@ -463,9 +482,32 @@ discover_release_work_dir() {
   return 1
 }
 
+prepare_release_work_dir() {
+  local branch_name
+  local parent_dir
+
+  branch_name="$(git -C "$WORK_DIR" branch --show-current)"
+  parent_dir="$(dirname "$WORK_DIR")"
+  RELEASE_WORK_DIR="${parent_dir}/todo-app-release"
+
+  rm -rf "$RELEASE_WORK_DIR"
+  git clone -q -b "$branch_name" "$REMOTE_DIR" "$RELEASE_WORK_DIR"
+  git -C "$RELEASE_WORK_DIR" config user.email "e2e-live@silver-bullet.test"
+  git -C "$RELEASE_WORK_DIR" config user.name "E2E Live"
+
+  if [[ -f "${WORK_DIR}/.claude/settings.local.json" ]]; then
+    mkdir -p "${RELEASE_WORK_DIR}/.claude"
+    cp "${WORK_DIR}/.claude/settings.local.json" "${RELEASE_WORK_DIR}/.claude/settings.local.json"
+  fi
+}
+
 commit_release_prep_changes
 
+prepare_release_work_dir
+INLINE_RELEASE_WORK_DIR="$WORK_DIR"
+WORK_DIR="$RELEASE_WORK_DIR"
 journey_turn "silver:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'silver:create-release' 'Create release notes for v1.0.0-inline on the already-prepared todo-app branch. Update CHANGELOG.md and README.md as required by the release skill, keep the branch clean, and create the local git tag v1.0.0-inline. Do not switch branches; the release branch is already prepared and clean.')"
+WORK_DIR="$INLINE_RELEASE_WORK_DIR"
 wait_for_state_contains "silver:create-release recorded in workflow state" "silver-create-release"
 
 RELEASE_WORK_DIR="$(discover_release_work_dir)"
@@ -475,9 +517,9 @@ if [[ -z "${RELEASE_WORK_DIR:-}" ]]; then
 fi
 
 # The release skill can finish writing the changelog slightly after the turn
-# returns in this environment, so give the file a longer runway before we
-# declare the release prep step failed.
-wait_for_file_contains "changelog contains inline release version" "${RELEASE_WORK_DIR}/CHANGELOG.md" "v1.0.0-inline|1.0.0-inline" 300 2
+# returns in this environment, so give the file or the committed HEAD content a
+# longer runway before we declare the release prep step failed.
+wait_for_file_or_git_head_contains "changelog contains inline release version" "$RELEASE_WORK_DIR" "CHANGELOG.md" "v1.0.0-inline|1.0.0-inline" 300 2
 
 journey_turn "silver:release" "finish the release workflow" "no" "release turn recorded" "$(skill_prompt 'silver:release' 'Finish the todo-app release workflow, keep the branch clean, and stop when the release is complete.')"
 

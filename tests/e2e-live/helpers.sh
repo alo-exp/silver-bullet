@@ -30,6 +30,7 @@ export APP_PORT
 
 WORK_DIR=""
 REMOTE_DIR=""
+RELEASE_WORK_DIR=""
 APP_SERVER_PID=""
 APP_SERVER_LOG=""
 BRANCH_FILE=""
@@ -309,6 +310,11 @@ cleanup_workspace() {
     rm -rf "$REMOTE_DIR"
   fi
   REMOTE_DIR=""
+
+  if [[ -n "${RELEASE_WORK_DIR:-}" && -d "$RELEASE_WORK_DIR" && "$RELEASE_WORK_DIR" != "$WORK_DIR" ]]; then
+    rm -rf "$RELEASE_WORK_DIR"
+  fi
+  RELEASE_WORK_DIR=""
 
   rm -rf "${SB_TEST_DIR}"/turn-logs-* 2>/dev/null || true
   rm -f "${SB_TEST_DIR}"/dependency-access-preflight-* 2>/dev/null || true
@@ -628,7 +634,7 @@ verify_runtime_dependency_access() {
     assert_file_contains "Codex Silver Bullet marketplace registered" "$config_file" '\[marketplaces\.alo-labs-codex\]'
     assert_file_contains "Codex GSD marketplace registered" "$config_file" '\[marketplaces\.get-shit-done-marketplace\]'
     assert_file_contains "Codex Superpowers marketplace registered" "$config_file" '\[marketplaces\.superpowers-marketplace\]'
-    assert_file_contains "Codex Silver Bullet plugin enabled" "$config_file" '\[plugins\."silver-bullet@alo-labs-codex(-local)?"\]'
+    assert_command_succeeds "Codex Silver Bullet plugin registered for preflight" codex_plugin_registered_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local"
     assert_file_contains "Codex Superpowers plugin enabled" "$config_file" '\[plugins\."superpowers@superpowers-marketplace"\]'
     assert_file_contains "Codex Sidekick plugin enabled" "$config_file" '\[plugins\."sidekick@alo-labs-codex-local"\]'
     assert_file_contains "Codex GSD plugin enabled" "$config_file" '\[plugins\."gsd@get-shit-done-marketplace"\]'
@@ -773,6 +779,36 @@ wait_for_file_contains() {
   echo "FAIL: $label"
   echo "  expected pattern: $needle"
   echo "  in file: $path"
+  FAIL=$((FAIL + 1))
+  return 1
+}
+
+wait_for_file_or_git_head_contains() {
+  local label="$1"
+  local repo_dir="$2"
+  local path="$3"
+  local needle="$4"
+  local timeout_seconds="${5:-120}"
+  local interval_seconds="${6:-2}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if grep -qE "$needle" "$path" 2>/dev/null; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    if git -C "$repo_dir" show "HEAD:$path" 2>/dev/null | grep -qE "$needle"; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    sleep "$interval_seconds"
+  done
+
+  echo "FAIL: $label"
+  echo "  expected pattern: $needle"
+  echo "  in file or HEAD path: $repo_dir/$path"
   FAIL=$((FAIL + 1))
   return 1
 }

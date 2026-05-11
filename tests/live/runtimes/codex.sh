@@ -234,13 +234,13 @@ runtime_invoke() {
   tmpdir="${TMPDIR:-/tmp}"
   last_message_file="$(mktemp "${tmpdir}/codex-live-last-message-XXXXXX")"
   prompt_file="$(mktemp "${tmpdir}/codex-live-prompt-XXXXXX")"
+  prompt_seed_file="$(mktemp "${tmpdir}/codex-live-prompt-seed-XXXXXX")"
   transcript_file="$(mktemp "${tmpdir}/codex-live-transcript-XXXXXX")"
   transcript_started_at="$(python3 - <<'PY'
 from datetime import datetime, timezone
 print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
 PY
 )"
-  prompt_seed_file="${WORK_DIR}/.silver-bullet.prompt.json"
   codex_prompt="$prompt"
   codex_model="${CODEX_MODEL:-}"
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
