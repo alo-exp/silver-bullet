@@ -10,7 +10,7 @@
 > **IMPORTANT -- .yml/.yaml/.json/.toml files are NOT exempt from enforcement in this workflow.**
 > GitHub Actions, Kubernetes manifests, Helm charts, and CI/CD pipeline definitions
 > are infrastructure code. They MUST follow this workflow regardless of file extension.
-> The trivial-change exemption in CLAUDE.md does NOT apply to declarative infra files.
+> The trivial-change exemption in the host project instruction file does NOT apply to declarative infra files.
 
 ## Invocation Methods
 
@@ -783,7 +783,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 ## ENFORCEMENT RULES
 
-- **GSD steps** are enforced by instruction (this file + CLAUDE.md) and GSD's own hooks.
+- **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
   by PostToolUse hooks that track Skill tool invocations. "I already covered this" is NOT valid.
