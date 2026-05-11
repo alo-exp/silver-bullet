@@ -13,6 +13,7 @@ SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github
 
 resolve_codex_config_file() {
   local config_file
+  mkdir -p "${HOME}/.Codex" "${HOME}/.codex"
   for config_file in "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml"; do
     if [[ -f "$config_file" ]]; then
       printf '%s\n' "$config_file"
