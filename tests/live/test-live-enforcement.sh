@@ -11,11 +11,11 @@ echo "--- S1: HARD STOP on edit-before-planning ---"
 live_setup
 # State is empty — no skills recorded. Prompt Claude to edit a src file.
 target_file="${WORK_DIR}/src/routes/todos.js"
-mtime_before="$(capture_mtime "$target_file")"
+digest_before="$(capture_digest "$target_file")"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S1 test comment'. Do not invoke any skills, just edit the file directly.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
-assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$mtime_before"
+assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$digest_before"
 # The codex runtime may record planning state while rejecting the edit, so the
 # file-level invariants are the release-relevant signal here.
 live_teardown

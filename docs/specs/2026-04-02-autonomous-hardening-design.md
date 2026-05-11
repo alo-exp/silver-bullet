@@ -22,7 +22,7 @@
 
 ### Mechanism
 
-Step 0 (session mode prompt) is extended. After the user chooses "autonomous", Claude asks one follow-up:
+Step 0 (session mode prompt) is extended. After the user chooses "autonomous", the active runtime asks one follow-up:
 
 > Any decision points you want to pre-answer? Common ones:
 > - Model routing — Planning phase: Sonnet or Opus?
@@ -47,19 +47,19 @@ Four distinct keys. Planning and Design are stored separately because they are a
 
 ### Write timing
 
-**Claude** (not the hook) writes the pre-answer values immediately after the user responds at Step 0, before any further workflow steps proceed. The hook creates an empty `## Pre-answers` section in the skeleton; Claude fills it in after the user's reply.
+**The active runtime** (not the hook) writes the pre-answer values immediately after the user responds at Step 0, before any further workflow steps proceed. The hook creates an empty `## Pre-answers` section in the skeleton; the active runtime fills it in after the user's reply.
 
 ### Parsing rule
 
-When Claude needs to apply a pre-answer mid-session: read the session log from `/tmp/.silver-bullet-session-log-path`, extract all lines between `## Pre-answers` and the next `##` heading. Strip the leading `- ` (dash-space) from each line before processing. Each line is then a key-value pair split on the first `:`. Leading and trailing whitespace is trimmed from both key and value. The key is matched case-insensitively against the current decision point label.
+When the active runtime needs to apply a pre-answer mid-session: read the session log from `/tmp/.silver-bullet-session-log-path`, extract all lines between `## Pre-answers` and the next `##` heading. Strip the leading `- ` (dash-space) from each line before processing. Each line is then a key-value pair split on the first `:`. Leading and trailing whitespace is trimmed from both key and value. The key is matched case-insensitively against the current decision point label.
 
 ### Application
 
-Whenever a pre-answered decision point arises, Claude applies the stored answer silently — no pause, no re-prompt. The decision is logged under "Autonomous decisions" with the note `(pre-answered at Step 0)`.
+Whenever a pre-answered decision point arises, the active runtime applies the stored answer silently — no pause, no re-prompt. The decision is logged under "Autonomous decisions" with the note `(pre-answered at Step 0)`.
 
 ### Fallback
 
-If any of the following occur, Claude falls back to workflow defaults (Sonnet for both phases, main, isolated):
+If any of the following occur, the active runtime falls back to workflow defaults (Sonnet for both phases, main, isolated):
 - `/tmp/.silver-bullet-session-log-path` is absent
 - The path pointer exists but the target log file is missing or unreadable
 - The log file is readable but has no `## Pre-answers` section
@@ -174,7 +174,7 @@ The counter resets to 0 on any file write/edit or decision log event. It also re
 
 #### Point 1 — Proactive (before DISCUSS)
 
-After the model routing prompt and before `/gsd:discuss-phase`, Claude:
+After the model routing prompt and before `/gsd:discuss-phase`, the active runtime:
 
 1. Reads `all_tracked` from `.silver-bullet.json`
 2. Scans **both** `~/.claude/skills/` (flat `.md` files) **and** `~/.claude/plugins/cache/` (subdirectory-based: assumed layout `<publisher>/<plugin>/<version>/skills/<skill-name>/SKILL.md` — glob `*/*/*/skills/*/SKILL.md`; observed from `superpowers-marketplace/superpowers/5.0.5/skills/brainstorming/SKILL.md`; falls back gracefully if no matches) for skills not already in `all_tracked` — these are "untracked" skills worth surfacing
@@ -186,11 +186,11 @@ If no matches or both directories absent/empty: logs "Skill discovery: no candid
 
 Appended to session log under **"Skills flagged at discovery"** (inserted between `## Skills invoked` and `## Agent Teams dispatched` in the skeleton). No skill is invoked at this point.
 
-A companion section **"Skill gap check (post-plan)"** is also added to the skeleton, positioned immediately after `## Skills flagged at discovery`. Claude fills it in after Step 5; if no gap is found, Claude writes `(none)`. The hook creates all three new sections (`## Pre-answers`, `## Skills flagged at discovery`, `## Skill gap check (post-plan)`) as empty placeholders. **Note:** none of these sections exist in the current skeleton — all are new additions introduced by this spec's implementation. The hook must check for each section's existence before inserting to remain idempotent on re-runs (a section already present is left unchanged).
+A companion section **"Skill gap check (post-plan)"** is also added to the skeleton, positioned immediately after `## Skills flagged at discovery`. The active runtime fills it in after Step 5; if no gap is found, the active runtime writes `(none)`. The hook creates all three new sections (`## Pre-answers`, `## Skills flagged at discovery`, `## Skill gap check (post-plan)`) as empty placeholders. **Note:** none of these sections exist in the current skeleton — all are new additions introduced by this spec's implementation. The hook must check for each section's existence before inserting to remain idempotent on re-runs (a section already present is left unchanged).
 
 #### Point 2 — Reactive (after plan is written)
 
-After Step 5 (`/gsd:plan-phase`) produces `.planning/{phase}-PLAN.md`, Claude:
+After Step 5 (`/gsd:plan-phase`) produces `.planning/{phase}-PLAN.md`, the active runtime:
 
 1. Reads the plan
 2. Cross-references against **all** installed skills from both sources (`all_tracked` + untracked from the two-directory scan) — the reactive scan considers every installed skill, not just untracked ones, because a tracked skill might still be missing from the plan
@@ -216,7 +216,7 @@ After Step 5 (`/gsd:plan-phase`) produces `.planning/{phase}-PLAN.md`, Claude:
 
 | Component | Type | Feature |
 |-----------|------|---------|
-| `hooks/session-log-init.sh` | Modify | (a) Change async:true → async:false; (b) Restructure: cleanup before dedup guard, mode detection before dedup guard, session-start-time write, sentinel launch with `disown` after log creation; (c) Add `## Pre-answers` (between frontmatter and `## Task`), `## Skills flagged at discovery` (between `## Skills invoked` and `## Agent Teams dispatched`), and `## Skill gap check (post-plan)` (immediately after `## Skills flagged at discovery`) to skeleton — all as empty placeholders filled by Claude |
+| `hooks/session-log-init.sh` | Modify | (a) Change async:true → async:false; (b) Restructure: cleanup before dedup guard, mode detection before dedup guard, session-start-time write, sentinel launch with `disown` after log creation; (c) Add `## Pre-answers` (between frontmatter and `## Task`), `## Skills flagged at discovery` (between `## Skills invoked` and `## Agent Teams dispatched`), and `## Skill gap check (post-plan)` (immediately after `## Skills flagged at discovery`) to skeleton — all as empty placeholders filled by the active runtime |
 | `tests/hooks/test-session-log-init.sh` | Modify | Add: sentinel PID file created in autonomous mode; sentinel NOT launched in interactive mode; prior PID killed and files cleaned on re-init |
 | `hooks/timeout-check.sh` | New hook | stdin consumption; mode gate; flag check; stale-flag rejection via session-start-time; rate-limit (mod 5); warning output |
 | `tests/hooks/test-timeout-check.sh` | New test | Flag present + current + autonomous → warning on call 1; flag present + call 2 → silent (rate limit); flag absent → silent; interactive mode → silent; stale flag → silent |

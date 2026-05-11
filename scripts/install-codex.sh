@@ -327,10 +327,123 @@ sync_codex_cache_package_surface() {
       shopt -s nullglob
       for version_dir in "$package_root"/*; do
         [[ -d "$version_dir" ]] || continue
+        [[ "$(basename "$version_dir")" == "current" ]] && continue
         rsync -a --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
       done
       shopt -u nullglob
     done
+  done
+}
+
+sync_codex_installed_plugin_registry_paths() {
+  local registry_file
+  local updated_at
+  local plugin_id
+  local plugin_name
+  local marketplace
+  local current_path
+  local stable_path
+  local updates=()
+
+  for registry_file in \
+    "${HOME}/.Codex/plugins/installed_plugins.json" \
+    "${HOME}/.codex/plugins/installed_plugins.json"; do
+    [[ -f "$registry_file" ]] || continue
+
+    updates=()
+    while IFS= read -r plugin_id; do
+      [[ -n "$plugin_id" ]] || continue
+      [[ "$plugin_id" == *"@"* ]] || continue
+
+      plugin_name="${plugin_id%@*}"
+      marketplace="${plugin_id#*@}"
+      current_path=""
+      stable_path=""
+
+      for cache_root in \
+        "${HOME}/.Codex/plugins/cache" \
+        "${HOME}/.codex/plugins/cache"; do
+        if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
+          current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+          [[ -n "$current_path" ]] && break
+        fi
+      done
+
+      [[ -n "$current_path" ]] || continue
+      stable_path="$(dirname "$current_path")/current"
+      python3 - "$current_path" "$stable_path" <<'PY'
+import pathlib
+import shutil
+import sys
+
+current_path = pathlib.Path(sys.argv[1])
+stable_path = pathlib.Path(sys.argv[2])
+
+stable_path.parent.mkdir(parents=True, exist_ok=True)
+if stable_path.exists() or stable_path.is_symlink():
+    if stable_path.is_dir() and not stable_path.is_symlink():
+        shutil.rmtree(stable_path)
+    else:
+        stable_path.unlink()
+
+stable_path.symlink_to(current_path.name)
+PY
+      updates+=("${plugin_id}=${stable_path}|${current_path##*/}")
+    done < <(python3 - "$registry_file" <<'PY'
+import json
+import pathlib
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+if not registry_path.is_file():
+    sys.exit(0)
+
+data = json.loads(registry_path.read_text())
+for plugin_id in data.get("plugins", {}):
+    print(plugin_id)
+PY
+    )
+
+    [[ "${#updates[@]}" -gt 0 ]] || continue
+
+    updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+    python3 - "$registry_file" "$updated_at" "${updates[@]}" <<'PY'
+import json
+import pathlib
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+updated_at = sys.argv[2]
+updates = {}
+
+for item in sys.argv[3:]:
+    if "=" not in item:
+        continue
+    plugin_id, new_path = item.split("=", 1)
+    updates[plugin_id] = new_path
+
+data = json.loads(registry_path.read_text())
+changed = False
+
+for plugin_id, entries in data.get("plugins", {}).items():
+    update = updates.get(plugin_id)
+    if update is None:
+        continue
+
+    path_value, version = update.split("|", 1)
+    new_path = pathlib.Path(path_value)
+    if not new_path.is_dir():
+        continue
+
+    for entry in entries:
+        entry["installPath"] = str(new_path)
+        entry["version"] = version
+        entry["lastUpdated"] = updated_at
+        changed = True
+
+if changed:
+    registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
   done
 }
 
@@ -358,6 +471,8 @@ for cache_root in cache_roots:
     if not package_root.exists():
         continue
     for version_dir in sorted((p for p in package_root.iterdir() if p.is_dir()), key=lambda p: p.name):
+        if version_dir.name == "current":
+            continue
         candidate_files.append(version_dir / "hooks/hooks.json")
 
 seen = set()
@@ -618,6 +733,108 @@ for raw_path in sys.argv[1:]:
 PY
 }
 
+seed_silver_bullet_hook_trust_state() {
+  local marketplace_root package_root
+  marketplace_root="$(codex_marketplace_root)"
+  package_root="${marketplace_root}/plugins/silver-bullet"
+
+  [[ -d "${package_root}/hooks" ]] || return 0
+
+  python3 - "$package_root" "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml" <<'PY'
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+package_root = pathlib.Path(sys.argv[1])
+target_paths = [pathlib.Path(p) for p in sys.argv[2:]]
+hooks_src = package_root / "hooks" / "hooks.json"
+
+if not hooks_src.is_file():
+    sys.exit(0)
+
+src_data = json.loads(hooks_src.read_text())
+sb_hooks = src_data.get("hooks", {})
+
+def event_slug(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+def trusted_hash(command: str) -> str:
+    return "sha256:" + hashlib.sha256(command.encode("utf-8")).hexdigest()
+
+entries = []
+for event_name, groups in sb_hooks.items():
+    slug = event_slug(event_name)
+    for group_index, group in enumerate(groups):
+        for hook_index, hook in enumerate(group.get("hooks", [])):
+            key = f"silver-bullet@alo-labs-codex:hooks/hooks.json:{slug}:{group_index}:{hook_index}"
+            entries.append((key, trusted_hash(hook.get("command", ""))))
+
+def render_entries():
+    lines = []
+    for key, digest in entries:
+        lines.append(f'[hooks.state."{key}"]')
+        lines.append(f'trusted_hash = "{digest}"')
+        lines.append("")
+    return lines
+
+for config_path in target_paths:
+    text = config_path.read_text() if config_path.is_file() else ""
+    lines = text.splitlines()
+    output = []
+    changed = False
+    hooks_state_seen = False
+    inserted = False
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+        if line == "[hooks.state]":
+            hooks_state_seen = True
+            output.append(line)
+            i += 1
+            continue
+
+        if hooks_state_seen:
+            if line.startswith('[hooks.state."silver-bullet@'):
+                changed = True
+                i += 1
+                while i < len(lines) and not lines[i].startswith('['):
+                    i += 1
+                continue
+
+            if line.startswith("[") and not line.startswith("[hooks.state."):
+                if not inserted:
+                    output.extend(render_entries())
+                    inserted = True
+                    changed = True
+                hooks_state_seen = False
+                output.append(line)
+                i += 1
+                continue
+
+        output.append(line)
+        i += 1
+
+    if hooks_state_seen and not inserted:
+        output.extend(render_entries())
+        inserted = True
+        changed = True
+
+    if not hooks_state_seen and not inserted:
+        if output and output[-1] != "":
+            output.append("")
+        output.append("[hooks.state]")
+        output.extend(render_entries())
+        changed = True
+
+    if changed:
+        new_text = "\n".join(output).rstrip("\n") + "\n"
+        config_path.write_text(new_text)
+PY
+}
+
 merge_silver_bullet_hooks_into_user_config() {
   local marketplace_root package_root
   marketplace_root="$(codex_marketplace_root)"
@@ -821,6 +1038,7 @@ sync_marketplace_package_snapshot
 materialize_silver_bullet_package
 sync_materialized_package_surface
 sync_codex_cache_package_surface
+sync_codex_installed_plugin_registry_paths
 normalize_codex_hook_async_flags
 ensure_feature_enabled "plugin_hooks"
 remove_plugin_enabled "silver@alo-labs-codex"
@@ -831,6 +1049,7 @@ purge_legacy_silver_bullet_hooks_from_user_config
 
 if find_silver_bullet_project_root >/dev/null 2>&1; then
   ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+  seed_silver_bullet_hook_trust_state
 else
   remove_plugin_enabled "silver-bullet@alo-labs-codex"
   remove_plugin_enabled "silver-bullet@alo-labs-codex-local"

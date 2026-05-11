@@ -48,10 +48,15 @@ disable_codex_guard() {
   rm -f "$WORK_DIR/AGENTS.md" "$WORK_DIR/AGENTS.override.md"
 }
 
+seed_stage_c() {
+  seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+}
+
 # --- S1: Doc scheme scaffold — knowledge and lessons files created from scratch ---
 echo "--- S1: Doc scheme scaffold creates all required files ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 response=$(invoke_claude_permissive "This is a new Node.js project named 'live-test' with git repo 'https://github.com/test/test.git'. Set up the Silver Bullet documentation scheme by creating these files:
 1. docs/knowledge/INDEX.md — a documentation index table listing key docs including Architecture, Testing, CHANGELOG, and the git repo URL. Include a pointer to docs/knowledge/ and docs/lessons/.
 2. docs/knowledge/$current_month.md — the current month knowledge file with frontmatter (project: live-test, period: $current_month, type: knowledge) and sections: Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions.
@@ -68,6 +73,7 @@ live_teardown
 echo "--- S2: Finalization appends to knowledge and lessons ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 seed_doc_scheme
 k_mtime=$(capture_mtime "$WORK_DIR/docs/knowledge/$current_month.md")
 l_mtime=$(capture_mtime "$WORK_DIR/docs/lessons/$current_month.md")
@@ -83,6 +89,7 @@ live_teardown
 echo "--- S3: CHANGELOG.md prepended with new entry ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 seed_doc_scheme
 mkdir -p "$WORK_DIR/docs"
 cat > "$WORK_DIR/docs/CHANGELOG.md" << EOCL
@@ -107,6 +114,7 @@ live_teardown
 echo "--- S4: INDEX.md updated when new doc added ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 seed_doc_scheme
 echo "# Security" > "$WORK_DIR/docs/SECURITY.md"
 git -C "$WORK_DIR" add -A
@@ -120,6 +128,7 @@ live_teardown
 echo "--- S5: Lessons are portable (no project-specific names) ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 seed_doc_scheme
 response=$(invoke_claude_permissive "Add a lesson to docs/lessons/$current_month.md about what we learned from implementing a Git hook-based enforcement system. The lesson should be portable — it must NOT mention any specific project names, tool names, or hook script names. Write it as a general practice lesson about pre-commit hook enforcement patterns.")
 assert_file_contains "S5: lesson content added" "$WORK_DIR/docs/lessons/$current_month.md" "hook|enforcement|pre-commit"
@@ -131,6 +140,7 @@ live_teardown
 echo "--- S6: Monthly boundary — previous month frozen, current month updated ---"
 live_setup
 disable_codex_guard
+seed_stage_c
 seed_doc_scheme
 printf '## Architecture Patterns\n\n%s-15 — Old pattern about something\n' "$previous_month" \
   > "$WORK_DIR/docs/knowledge/$previous_month.md"

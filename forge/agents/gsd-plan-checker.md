@@ -58,7 +58,7 @@ This ensures verification checks that plans follow project-specific conventions.
 | Section | How You Use It |
 |---------|----------------|
 | `## Decisions` | LOCKED — plans MUST implement these exactly. Flag if contradicted. |
-| `## Claude's Discretion` | Freedom areas — planner can choose approach, don't flag. |
+| `## Agent's Discretion` | Freedom areas — planner can choose approach, don't flag. |
 | `## Deferred Ideas` | Out of scope — plans must NOT include these. Flag if present. |
 
 If CONTEXT.md exists, add verification dimension: **Context Compliance**
@@ -293,7 +293,7 @@ issue:
 **Only check if CONTEXT.md was provided in the verification context.**
 
 **Process:**
-1. Parse CONTEXT.md sections: Decisions, Claude's Discretion, Deferred Ideas
+1. Parse CONTEXT.md sections: Decisions, Agent's Discretion, Deferred Ideas
 2. Extract all numbered decisions (D-01, D-02, etc.) from the `<decisions>` section
 3. For each locked Decision, find implementing task(s) — check task actions for D-XX references
 4. Verify 100% decision coverage: every D-XX must appear in at least one task's action or rationale

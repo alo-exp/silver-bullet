@@ -47,7 +47,7 @@ Perform these placeholder replacements:
 
 ### Runtime-aware bootstrap note
 
-Keep user-facing bootstrap language runtime-neutral. In Codex, describe the local instruction surface as a project instruction file and avoid Claude-only model-routing jargon; when the repository actually uses `AGENTS.md`, reconcile that file in place rather than synthesizing a new one.
+Keep user-facing bootstrap language runtime-neutral. In Codex, describe the local instruction surface as a project instruction file and avoid runtime-specific model-routing jargon; when the repository actually uses `AGENTS.md`, reconcile that file in place rather than synthesizing a new one.
 
 ### 3.1b Handle optional project instruction file
 
@@ -181,16 +181,16 @@ fi
 git commit -m "$(cat <<'EOF'
 feat: initialize Silver Bullet enforcement
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: host-appropriate co-author line
 EOF
 )"
 ```
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-### 3.7.5 Register SB hooks in ~/.claude/settings.json
+### 3.7.5 Register SB hooks in the host settings file
 
-Merges the SB hook entries from `hooks/hooks.json` into the user's global `~/.claude/settings.json` so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones).
+Merges the SB hook entries from `hooks/hooks.json` into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host's settings path.
 
 **Resolve the plugin install path:**
 
@@ -220,8 +220,8 @@ If `INSTALL_PATH` is empty, skip this step silently and continue.
 python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
 ```
 
-`scripts/merge-hooks.py` substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in ~/.claude/settings.json. Run `/silver:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+`scripts/merge-hooks.py` substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
+> ⚠️  Could not auto-register hooks in the host settings file. Run `/silver:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
 
 Idempotent — re-running `/silver:init` adds no duplicate entries.
 

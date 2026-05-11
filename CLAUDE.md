@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to the active coding agent when working with code in this repository.
 
 > **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**
 
@@ -8,13 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Silver Bullet is a Claude Code plugin — an agentic process orchestrator that enforces structured AI-native workflows via hooks, skills, and a state machine. It ships as a plugin (installed via `/plugin install`) and activates inside any downstream project.
+Silver Bullet is a host-aware plugin — an agentic process orchestrator that enforces structured AI-native workflows via hooks, skills, and a state machine. It ships as a plugin (installed via `/plugin install`) and activates inside any downstream project.
 
 - **Stack**: Bash (hooks, lib, scripts, tests), Markdown (skills, templates), JSON (config, hooks manifest)
 - **Git repo**: https://github.com/alo-exp/silver-bullet.git
 - **Runtime prerequisite**: `jq` (all hooks fail-open with a visible warning when absent)
 
-> **Development rule**: All code edits go to **source files in this repo** (`hooks/`, `scripts/`, `skills/`, `templates/`, `tests/`, `.github/`, etc.). Never modify the installed plugin cache at `~/.claude/plugins/cache/alo-labs/silver-bullet/*/` — that is a read-only build artifact. Source changes here are what gets released and installed.
+> **Development rule**: All code edits go to **source files in this repo** (`hooks/`, `scripts/`, `skills/`, `templates/`, `tests/`, `.github/`, etc.). Never modify the installed plugin cache at the host's plugin cache path (for example `~/.claude/plugins/cache/alo-labs/silver-bullet/*/` or the equivalent Codex cache path) — that is a read-only build artifact. Source changes here are what gets released and installed.
 
 ---
 
@@ -61,8 +61,8 @@ jq . templates/silver-bullet.config.json.default > /dev/null
 # Prerequisites
 brew install jq
 npx get-shit-done-cc@latest   # GSD
-# In Claude Code: /plugin install obra/superpowers
-# In Claude Code: /silver:init   — activates enforcement in this repo
+# In the host coding agent: /plugin install obra/superpowers
+# In the host coding agent: /silver:init   — activates enforcement in this repo
 ```
 
 ---
@@ -80,12 +80,12 @@ The three pillars:
 | Pillar | Location | Role |
 |--------|----------|------|
 | **Skills** | `skills/<name>/SKILL.md` | Orchestrator instructions loaded by the Skill tool |
-| **Hooks** | `hooks/*.sh` + `hooks/hooks.json` | Runtime enforcement injected into every Claude Code session |
+| **Hooks** | `hooks/*.sh` + `hooks/hooks.json` | Runtime enforcement injected into every host coding session |
 | **Config** | `.silver-bullet.json` (per-project) + `templates/silver-bullet.config.json.default` | Required-skill lists, state file paths, src patterns |
 
 ### Hook Architecture
 
-`hooks/hooks.json` maps Claude Code hook events to shell scripts:
+`hooks/hooks.json` maps host hook events to shell scripts:
 
 - **SessionStart** → `session-start` (branch-scoped state reset, context injection), `spec-session-record.sh`
 - **PreToolUse/Bash** → `phase-archive.sh`, `completion-audit.sh`, `roadmap-freshness.sh`, `dev-cycle-check.sh`, `ci-status-check.sh`, `spec-floor-check.sh`
@@ -152,7 +152,7 @@ These call into GSD (`gsd-*`) and Superpowers (`superpowers:*`) skills — Silve
 
 Tests use a consistent pattern:
 - Each test creates a temp directory with a real `git init`, writes a `.silver-bullet.json` config, and sets `SILVER_BULLET_STATE_FILE` to a path under `~/.claude/` (path validation in hooks rejects anything outside `~/.claude/`)
-- Hook scripts are invoked by piping JSON via stdin (matching the Claude Code hook protocol)
+- Hook scripts are invoked by piping JSON via stdin (matching the host hook protocol)
 - Results are parsed from `Results: N passed, M failed` lines
 
 ---
@@ -160,7 +160,7 @@ Tests use a consistent pattern:
 ## Key Invariants
 
 - **`jq` is required** — all hooks fail-open (warn + exit 0) if `jq` is absent; never fail silently
-- **ERR trap pattern** — every hook has `trap 'exit 0' ERR` so unexpected failures don't block Claude
+- **ERR trap pattern** — every hook has `trap 'exit 0' ERR` so unexpected failures don't block the active runtime
 - **No hardcoded skill literals in hooks** — only `hooks/lib/required-skills.sh` reads the canonical list from `templates/silver-bullet.config.json.default`
 - **Config is authoritative** — when `.silver-bullet.json` has `required_deploy`, it overrides the default; hooks never append extra mandatory skills on top
 - **Plugin boundary** — `dev-cycle-check.sh` hard-blocks any Edit/Write targeting `~/.claude/plugins/cache/**` (§8 enforcement)

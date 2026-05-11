@@ -5,7 +5,7 @@ description: >
 version: 0.1.0
 ---
 
-> **Recommended model:** Sonnet (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Sonnet handles all 9 dimensions accurately.
+> **Recommended model:** Host execution tier (default) — quality gates are structured checklist evaluation, not open-ended reasoning. Use the host default; the session ladder already maps Claude to Sonnet and Codex to GPT-5.3-medium.
 
 # /silver:quality-gates — Consolidated Quality Review
 

@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Automatic Cost Optimization — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet automatically routes each GSD subagent to the right model tier — Opus for design and review, Sonnet for execution and research, Haiku for structured output — without any manual switching.">
+<meta name="description" content="How Silver Bullet automatically routes each GSD subagent to the right model tier for the active host — Claude Sonnet/Opus or Codex GPT-5.2-low through GPT-5.5-xhigh — without any manual switching.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -141,7 +141,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <span>Automatic Cost Optimization</span>
     </div>
     <h1>Automatic Cost Optimization</h1>
-    <p>Silver Bullet automatically routes each AI agent to the right model tier — Opus for judgment-heavy work, Sonnet for execution, Haiku for structured output — with zero manual switching.</p>
+    <p>Silver Bullet automatically routes each AI agent to the right model tier for the active host — Claude Sonnet/Opus or Codex GPT-5.2-low through GPT-5.5-xhigh — with zero manual switching.</p>
   </div>
 </div>
 
@@ -167,7 +167,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="how-it-works">How It Works</h2>
       <p>Every GSD workflow spawns multiple specialized subagents to complete a phase — a planner, one or more executors, a verifier, sometimes a researcher and a code reviewer. Without cost optimization, every agent would use the same model, paying Opus prices for tasks that need nothing more than Haiku.</p>
-      <p>Silver Bullet solves this automatically. When a workflow spawns a subagent, the model routing system looks up that agent type in a profile table and selects the appropriate model tier — before the agent even starts. No prompting, no switching, no configuration required at runtime.</p>
+      <p>Silver Bullet solves this automatically. When a workflow spawns a subagent, the model routing system looks up that agent type in a profile table and selects the appropriate model tier — before the agent even starts. No prompting, no switching, no configuration required at runtime. The tier labels are shared across hosts; the actual model IDs differ by host.</p>
 
       <div class="flow-diagram">
         <div class="flow-label">Request flow</div>
@@ -352,11 +352,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="inline-skills">Inline Skills</h2>
       <p>Not all Silver Bullet capabilities run as GSD subagents. Skills from Anthropic's plugin suite (design, engineering, product-management, marketing), MultAI, Context7, and Superpowers run <em>inline</em> — they execute in the current session context rather than as spawned agents.</p>
-      <p>Inline skills use the <strong>session model</strong> — whatever model your Claude Code session is currently set to. The GSD model routing table does not apply to them.</p>
+      <p>Inline skills use the <strong>session model</strong> — whatever model the current host session is already using. The GSD model routing table does not apply to them.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Default session model is Sonnet.</strong> Silver Bullet sets <code>claude-sonnet-4-6</code> as the session default. Inline skills run on Sonnet automatically. If you need deeper reasoning for a specific design or architecture skill, switch to Opus with <code>/model claude-opus-4-6</code> before invoking it, then switch back.</div>
+        <div class="callout-body"><strong>Default session model is the host execution tier.</strong> Silver Bullet sets <code>claude-sonnet-4-6</code> on Claude and <code>gpt-5.3-medium</code> on Codex as the session default. Inline skills run on that host default automatically. If you need deeper reasoning for a specific design or architecture skill, switch to the host high tier before invoking it, then switch back.</div>
       </div>
 
       <h3>Why inline skills aren't routed automatically</h3>
@@ -429,11 +429,11 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get model_profile
   }
 }</div>
 
-      <p>Overrides take precedence over the profile for that specific agent. Valid values: <code>opus</code>, <code>sonnet</code>, <code>haiku</code>, <code>inherit</code>, or any fully-qualified model ID (e.g. <code>"claude-opus-4-6[1m]"</code> for the 1M context variant).</p>
+      <p>Overrides take precedence over the profile for that specific agent. Valid values: <code>opus</code>, <code>sonnet</code>, <code>haiku</code>, <code>inherit</code>, or any fully-qualified model ID (e.g. <code>"claude-opus-4-6[1m]"</code> on Claude or <code>"GPT-5.5-xhigh"</code> on Codex) for the deepest context variant.</p>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Override sparingly.</strong> The balanced profile was designed to minimize cost without compromising outcome quality. Upgrading low-tier agents to Opus usually adds cost without measurable benefit. The most common legitimate override is bumping <code>gsd-debugger</code> to <code>claude-opus-4-6[1m]</code> for sessions involving very large codebases.</div>
+        <div class="callout-body"><strong>Override sparingly.</strong> The balanced profile was designed to minimize cost without compromising outcome quality. Upgrading low-tier agents to the host high tier usually adds cost without measurable benefit. The most common legitimate override is bumping <code>gsd-debugger</code> to <code>claude-opus-4-6[1m]</code> on Claude or <code>GPT-5.5-xhigh</code> on Codex for sessions involving very large codebases.</div>
       </div>
 
       <div class="page-nav-bottom">

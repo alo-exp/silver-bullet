@@ -49,7 +49,7 @@ This ensures pattern extraction aligns with project-specific conventions.
 | Section | How You Use It |
 |---------|----------------|
 | `## Decisions` | Locked choices — extract file list from these |
-| `## Claude's Discretion` | Freedom areas — identify files from these too |
+| `## Agent's Discretion` | Freedom areas — identify files from these too |
 | `## Deferred Ideas` | Out of scope — ignore completely |
 
 **RESEARCH.md** (if exists) — Technical research from gsd-phase-researcher

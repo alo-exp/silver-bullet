@@ -19,6 +19,8 @@ set transcript_file [env_or_default CODEX_TRANSCRIPT_FILE ""]
 set last_message_file [env_or_default CODEX_LAST_MESSAGE_FILE ""]
 set model [env_or_default CODEX_MODEL ""]
 set reasoning_effort [env_or_default CODEX_REASONING_EFFORT ""]
+set ready_timeout [expr {int([env_or_default CODEX_INTERACTIVE_READY_TIMEOUT 20])}]
+set quiet_timeout [expr {int([env_or_default CODEX_INTERACTIVE_QUIET_TIMEOUT 5])}]
 
 if {$work_dir eq "" || $prompt_file eq ""} {
   puts stderr "ERROR: CODEX_WORK_DIR and CODEX_PROMPT_FILE must be set"
@@ -57,6 +59,8 @@ if {$transcript_file ne ""} {
 }
 
 spawn -noecho $cli {*}$args $prompt
+set saw_completion_marker 0
+set saw_prompt 0
 expect {
   -re {Uninstall the existing npm-managed Code now\? \[y/N\]} {
     send -- "n\r"
@@ -66,12 +70,32 @@ expect {
     send -- "n\r"
     exp_continue
   }
+  -re {\"type\":\"task_lifecycle\",\"phase\":\"quiescent\"} {
+    set saw_completion_marker 1
+    set timeout $quiet_timeout
+    exp_continue
+  }
+  -re {❯} {
+    set saw_prompt 1
+    set timeout $quiet_timeout
+    exp_continue
+  }
+  -re {^> $} {
+    set saw_prompt 1
+    set timeout $quiet_timeout
+    exp_continue
+  }
   eof {
     # Accept clean exit after a single prompt turn.
   }
   timeout {
-    puts stderr "ERROR: timed out waiting for Codex prompt to complete"
-    exit 1
+    if {$saw_completion_marker || $saw_prompt} {
+      # The session has returned to a quiescent prompt and gone quiet, so the
+      # response is complete.
+    } else {
+      puts stderr "ERROR: timed out waiting for Codex prompt to complete"
+      exit 1
+    }
   }
 }
 

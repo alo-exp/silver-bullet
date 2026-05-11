@@ -165,7 +165,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- GSD COMMANDS -->
       <h2 id="gsd-commands">GSD Commands</h2>
-      <p>GSD commands are slash commands that resolve to GSD's installed workflow files. All are invoked via the Skill tool inside Claude Code.</p>
+      <p>GSD commands are slash commands that resolve to GSD's installed workflow files. All are invoked via the Skill tool inside the active host coding agent.</p>
 
       <table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
@@ -618,11 +618,11 @@ footer a:hover{color:var(--accent-light)}
 
 <span class="comment">## Meta</span>
 Date: YYYY-MM-DD
-Model: claude-sonnet-4-6
+Model: host execution tier
 Mode: interactive | autonomous
 
 <span class="comment">## Pre-answers</span>
-- Model routing — Planning: Sonnet
+- Model routing — Planning: host execution tier
 - Worktree: yes
 
 <span class="comment">## Task</span>
@@ -668,7 +668,7 @@ updated (Architecture patterns, Key decisions) | no changes
         <thead><tr><th>File</th><th>Owner</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-10). Managed by plugin — do not edit manually. Updated by <code>/silver:init</code>.</td></tr>
-          <tr><td>CLAUDE.md</td><td>User</td><td>Project-specific Claude instructions. References <code>silver-bullet.md</code> for enforcement rules. User-owned — Silver Bullet only adds a reference line.</td></tr>
+          <tr><td>CLAUDE.md</td><td>User</td><td>Project-specific instructions. <code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex. References <code>silver-bullet.md</code> for enforcement rules. User-owned — Silver Bullet only adds a reference line.</td></tr>
           <tr><td>.silver-bullet.json</td><td>Silver Bullet</td><td>Project-level configuration: project name, source pattern, semantic compression, verify commands, workflow paths.</td></tr>
         </tbody>
       </table>
@@ -762,12 +762,12 @@ updated (Architecture patterns, Key decisions) | no changes
 /testing-strategy → /documentation → /finishing-a-development-branch → /deploy-checklist → /gsd-ship → /create-release</div>
 
       <h3>Model Routing Guidance</h3>
-      <p>Silver Bullet uses <strong>claude-sonnet-4-6</strong> by default. You're asked about Opus at two transition points only:</p>
+      <p>Silver Bullet uses the host execution model by default. Claude defaults to <code>claude-sonnet-4-6</code>; Codex defaults to <code>gpt-5.3-medium</code>. You're asked about the host high tier at two transition points only:</p>
       <ul>
         <li>Before the Planning phase begins (Discuss step) — for deeper reasoning on complex architectures</li>
         <li>Before Design sub-steps (design-system, ux-copy, architecture, system-design) — for richer design output</li>
       </ul>
-      <p>In Autonomous mode, Sonnet is used throughout. Opus is escalated silently only if planning output is measurably incomplete (fewer than 5 lines, contains <code>TBD</code> or <code>[TODO]</code> placeholders, or a file-producing step produces no file).</p>
+      <p>In Autonomous mode, the host execution tier is used throughout. Claude escalates to <code>claude-opus-4-6</code> and Codex escalates to <code>GPT-5.4-high</code> silently only if planning output is measurably incomplete (fewer than 5 lines, contains <code>TBD</code> or <code>[TODO]</code> placeholders, or a file-producing step produces no file).</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

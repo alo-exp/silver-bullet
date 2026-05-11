@@ -2,7 +2,7 @@
 
 **Date:** YYYY-MM-DD
 **Mode:** interactive | autonomous
-**Model:** claude-sonnet-4-6 | claude-opus-4-6
+**Model:** host execution tier | host high tier
 **Virtual cost:** ~$X.XX (estimated, Model, complexity-tier)
 
 ---

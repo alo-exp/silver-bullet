@@ -1,7 +1,7 @@
 # Silver Bullet — GSD-2 Gap Narrowing Design
 
 **Date:** 2026-04-02
-**Scope:** Strategies to narrow GSD-2 vs SB gaps within Claude Code / Claude Desktop's Code tab environment
+**Scope:** Strategies to narrow GSD-2 vs SB gaps within host coding-agent environments
 **Out of scope:** Multi-provider support (#7), async Slack/Discord collaboration (#8)
 **Reference:** `docs/gsd2-vs-sb-gap-analysis.md`
 **Target workflow:** `docs/workflows/full-dev-cycle.md` (the installed 31-step linear workflow). Step references in this document use the numbered steps from that file.
@@ -41,7 +41,7 @@ Points to each mandated doc with a one-line status summary. Never duplicates con
 - Sessions                → docs/sessions/                      | [N sessions]
 ```
 
-**Part 2 — Accumulated Intelligence** (append-only, Claude-authored per task)
+**Part 2 — Accumulated Intelligence** (append-only, runtime-authored per task)
 
 Sections that grow over time with date-stamped entries:
 
@@ -53,8 +53,8 @@ Sections that grow over time with date-stamped entries:
 
 ### Update Mechanism
 
-- **Trigger**: Step 27 (Documentation) — Claude writes a KNOWLEDGE.md update with full task context before committing
-- **Layer**: Skill (deliberate) — Claude synthesises what is worth capturing
+- **Trigger**: Step 27 (Documentation) — the active runtime writes a KNOWLEDGE.md update with full task context before committing
+- **Layer**: Skill (deliberate) — the active runtime synthesises what is worth capturing
 - **Rule**: Additive only. Never delete or edit prior entries. Date-stamp every addition.
 - **Session startup**: Phase −1.2 already loads all `docs/**/*.md` — KNOWLEDGE.md is automatically included
 
@@ -66,7 +66,7 @@ Sections that grow over time with date-stamped entries:
 
 **Tier 1 — `docs/CHANGELOG.md`** (rolling, human-readable)
 
-One entry per completed non-trivial task. Written by Claude at Step 27 (skill layer):
+One entry per completed non-trivial task. Written by the active runtime at Step 27 (skill layer):
 
 ```markdown
 ## 2026-04-02 — [task slug]
@@ -81,13 +81,13 @@ One entry per completed non-trivial task. Written by Claude at Step 27 (skill la
 
 Created for every non-trivial task with two-layer authorship:
 - **Hook layer**: writes file header exactly once per task — triggered on the first tool call after the session mode prompt (Step 0) completes. A deduplication guard checks whether a session file for the current date+task-slug already exists before writing; if it does, the hook skips. Header contains: timestamp, model in use, session mode (interactive/autonomous). **Task slug derivation**: first 5 words of the user's opening task prompt, lowercased, spaces replaced with hyphens, non-alphanumeric characters stripped, truncated to 40 characters (e.g., `add-user-auth-to-api`).
-- **Skill layer** (Claude, Step 27): fills in approach taken, files changed, skills invoked in order, Agent Teams dispatched, autonomous decisions made (if any), outcome, KNOWLEDGE.md additions.
+- **Skill layer** (runtime, Step 27): fills in approach taken, files changed, skills invoked in order, Agent Teams dispatched, autonomous decisions made (if any), outcome, KNOWLEDGE.md additions.
 
 ### Virtual Cost (#3)
 
 SB tracks **virtual cost** as a signal of task weight, not actual subscription spend. Rates based on current Anthropic API pricing.
 
-**Calculation** (Claude estimates at Step 27):
+**Calculation** (the active runtime estimates at Step 27):
 - Model tier × complexity multiplier
 - Complexity: simple (< 5 files, < 300 lines changed) / medium (5–15 files or 300–1000 lines changed, not architectural in scope) / complex (> 15 files, or > 1000 lines changed, or involves new architecture, migration, or cross-system integration)
 - Rates: Sonnet base rate; Opus (claude-opus-4-6) at ~3× multiplier
@@ -111,26 +111,26 @@ Stored in `/tmp/.silver-bullet-mode` for the session lifetime. **Fallback**: if 
 
 ### What changes in autonomous mode
 
-**Phase gates removed**: no approval pauses between workflow phases. Claude proceeds immediately.
+**Phase gates removed**: no approval pauses between workflow phases. The active runtime proceeds immediately.
 
-**Clarifying questions suppressed**: Claude makes best-judgment calls, logs each under "Autonomous decisions" in the session log, and continues.
+**Clarifying questions suppressed**: the active runtime makes best-judgment calls, logs each under "Autonomous decisions" in the session log, and continues.
 
 **Priority order for stall vs. blocker detection**: genuine blocker detection runs first. Anti-stall applies only after a step has been confirmed as a non-blocker.
 
 **Anti-stall rules** (core mechanism, applies to non-blocker stalls only):
 - A stall is defined as the same tool call with identical arguments producing the same result 2+ times consecutively, or 3+ tool calls within a single step that produce no new state change (no new file written, no new decision reached, no new information surfaced)
-- When a stall is detected: Claude makes the best-judgment decision available given current information, moves on, and logs the stall and decision under "Autonomous decisions" in the session log
-- If a required skill cannot be invoked, Claude logs it as a blocker and continues to the next step
-- If a step produces an error, Claude attempts one self-correction, then logs and proceeds — no retry loops
+- When a stall is detected: the active runtime makes the best-judgment decision available given current information, moves on, and logs the stall and decision under "Autonomous decisions" in the session log
+- If a required skill cannot be invoked, the active runtime logs it as a blocker and continues to the next step
+- If a step produces an error, the active runtime attempts one self-correction, then logs and proceeds — no retry loops
 - Phase transitions happen automatically without waiting for user acknowledgment
 
 **Genuine blockers** (missing credentials, ambiguous destructive operation — things that truly cannot be bypassed): take precedence over anti-stall rules. Queued in the session log under "Needs human review", skipped, and surfaced in the completion summary.
 
-**Completion**: Claude outputs a structured summary — phases completed, autonomous decisions made, blockers queued, Agent Teams dispatched, commits made, virtual cost.
+**Completion**: the active runtime outputs a structured summary — phases completed, autonomous decisions made, blockers queued, Agent Teams dispatched, commits made, virtual cost.
 
 ### Constraint
 
-This is not GSD-2's walk-away mode. Claude Code's session must remain open. Autonomous mode reduces interruptions and uses non-blocking execution — it does not survive a closed terminal.
+This is not GSD-2's walk-away mode. The session must remain open. Autonomous mode reduces interruptions and uses non-blocking execution — it does not survive a closed terminal.
 
 ---
 
@@ -158,17 +158,17 @@ Phase 3 of SB init checks for `.github/workflows/`. If absent, SB generates `ci.
 - Runs configured verify commands locally first
 - If local passes, checks remote CI status: `gh run list --limit 1 --json status,conclusion`
 - **Autonomous mode**: polls CI status with `gh run list --limit 1 --json status,conclusion` every 30 seconds, up to a maximum of 20 retries (10 minutes total). If CI does not complete within that window, logs a timeout blocker under "Needs human review" and surfaces it in the completion summary before proceeding.
-- **Interactive mode**: shows CI status, asks user to confirm. If status is `in_progress` when checked, Claude informs the user and waits for the user to confirm whether to re-check or proceed anyway.
+- **Interactive mode**: shows CI status, asks user to confirm. If status is `in_progress` when checked, the active runtime informs the user and waits for the user to confirm whether to re-check or proceed anyway.
 - If CI red: logs failure, triggers `/systematic-debugging` automatically
 
-**Step 30 — CI/CD pipeline**: If `ci.yml` is absent at Step 30, Claude must not invoke any deploy skill, must log a blocker in the session log under "Needs human review", and must surface the missing file to the user before stopping.
+**Step 30 — CI/CD pipeline**: If `ci.yml` is absent at Step 30, the active runtime must not invoke any deploy skill, must log a blocker in the session log under "Needs human review", and must surface the missing file to the user before stopping.
 
 ### Hook backstop
 
 PostToolUse hook fires after every `git commit` or `git push`:
 - Runs `gh run list --limit 1 --json status,conclusion`
-- If previous run failed: prepends warning banner to Claude's next response
-- Does not block — surfaces signal, Claude decides
+- If previous run failed: prepends warning banner to the active runtime's next response
+- Does not block — surfaces signal, the active runtime decides
 - **Race condition note**: the hook result reflects the most recently completed CI run, not necessarily the run triggered by this push (GitHub may not have enqueued the new run within the hook's execution window). The Step 28 polling loop is the authoritative verification gate — the hook is an early-warning signal only.
 
 ---
@@ -179,7 +179,7 @@ PostToolUse hook fires after every `git commit` or `git push`:
 
 Default is always the latest Sonnet (claude-sonnet-4-6). No user friction for standard work.
 
-**Phase-specific Opus prompts** — Claude asks at the start of two phases only:
+**Phase-specific Opus prompts** — the active runtime asks at the start of two phases only:
 
 1. **Planning phase** (before Step 3 — brainstorming):
    > Entering Planning phase. Use Opus for deeper reasoning, or stay on Sonnet?
@@ -187,7 +187,7 @@ Default is always the latest Sonnet (claude-sonnet-4-6). No user friction for st
 2. **Design phase** (before Steps 5–8, if applicable):
    > Entering Design phase. Use Opus, or stay on Sonnet?
 
-If Opus permitted → Claude switches to claude-opus-4-6 automatically for that phase, returns to Sonnet for Execution.
+If Opus permitted → the active runtime switches to claude-opus-4-6 automatically for that phase, returns to Sonnet for Execution.
 
 **Autonomous mode**: stays on Sonnet throughout. Escalates to Opus silently only if a planning step produces a measurably incomplete result — defined as: output is fewer than 5 lines, or contains placeholder text (`TBD`, `[TODO]`, `...`), or a step expected to produce a file produces none. Escalation is logged as an autonomous decision.
 
@@ -199,14 +199,14 @@ Agent Teams (Agent tool with `isolation: "worktree"`) are used wherever steps ar
 All 8 quality dimensions dispatched as a single parallel Agent Team wave:
 - One agent per dimension: modularity, reusability, scalability, security, reliability, usability, testability, extensibility
 - Each agent reads spec + codebase, returns its assessment
-- **Conflict resolution**: if two agents flag the same issue with contradictory findings, the more conservative/restrictive finding takes precedence. Claude authors a synthesis entry in the session log explaining the resolution rationale before proceeding to Step 17.
-- Claude synthesises all results before proceeding to Step 17 (`/writing-plans`)
+- **Conflict resolution**: if two agents flag the same issue with contradictory findings, the more conservative/restrictive finding takes precedence. The active runtime authors a synthesis entry in the session log explaining the resolution rationale before proceeding to Step 17.
+- The active runtime synthesises all results before proceeding to Step 17 (`/writing-plans`)
 
 **Execution — Step 18**
 GSD's wave-based execution (`/gsd:execute-phase`) drives overall execution orchestration. Each GSD wave dispatches Agent Teams for independent implementation units with `isolation: "worktree"` enforced per agent. Merge gate after each wave before the next begins.
 
 **Review — Steps 19 and 21**
-Steps 19 (`/code-review`) and 21 (`/receiving-code-review`) are covered by a parallel Agent Team: security review agent, performance agent, correctness agent. Results consolidated before Claude invokes `/receiving-code-review`. Step 20 (`/requesting-code-review` — external/peer review) is human-facing and runs sequentially after the agent wave resolves; it cannot be parallelised.
+Steps 19 (`/code-review`) and 21 (`/receiving-code-review`) are covered by a parallel Agent Team: security review agent, performance agent, correctness agent. Results consolidated before the active runtime invokes `/receiving-code-review`. Step 20 (`/requesting-code-review` — external/peer review) is human-facing and runs sequentially after the agent wave resolves; it cannot be parallelised.
 
 **Finalization — Steps 26–27**
 Tech debt agent and documentation agents run in parallel where doc sections are independent. Documentation agents writing to `docs/` run in the **main worktree only** (no `isolation: "worktree"`), to avoid divergent doc file states that cannot be automatically merged. Only implementation-touching agents use worktree isolation.

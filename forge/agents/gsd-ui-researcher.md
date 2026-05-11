@@ -73,7 +73,7 @@ This ensures the design contract aligns with project-specific conventions and li
 | Section | How You Use It |
 |---------|----------------|
 | `## Decisions` | Locked choices — use these as design contract defaults |
-| `## Claude's Discretion` | Your freedom areas — research and recommend |
+| `## Agent's Discretion` | Your freedom areas — research and recommend |
 | `## Deferred Ideas` | Out of scope — ignore completely |
 
 **RESEARCH.md** (if exists) — Technical findings from `/gsd-plan-phase`

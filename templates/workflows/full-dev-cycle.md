@@ -30,7 +30,7 @@ Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of c
 
 Silver Bullet orchestrates your entire software development lifecycle by guiding you through
 a structured series of steps. Each step uses a GSD (Get Shit Done) command or a Silver Bullet
-skill that handles the heavy lifting -- you provide direction, Claude executes.
+skill that handles the heavy lifting -- you provide direction, the active runtime executes.
 
 This guide covers the full journey from project setup through release. Every section tells you:
 
@@ -53,12 +53,12 @@ wrap everything up.
 
 > Run once at the very start of the session, before any project work.
 
-**What it does:** Configures whether Claude pauses at decision points or drives autonomously
+**What it does:** Configures whether the active runtime pauses at decision points or drives autonomously
 through the entire workflow.
 
 **Bypass-permissions detection:** If bypass-permissions is detected (all tool calls
 auto-accepted), skip the mode question AND the pre-answers follow-up. Auto-set
-autonomous mode, use all defaults (Sonnet, main, isolated). Log:
+autonomous mode, use all defaults (host execution tier, main, isolated). Log:
 "Step 0 skipped: bypass-permissions detected, autonomous mode with defaults".
 
 Ask:
@@ -74,11 +74,11 @@ echo "interactive" > ~/.claude/.silver-bullet/mode   # or "autonomous"
 **If autonomous was chosen**, ask one follow-up before proceeding:
 
 > Any decision points you want to pre-answer? Common ones:
-> - Model routing -- Planning phase: Sonnet or Opus?
-> - Model routing -- Design phase: Sonnet or Opus?
+> - Model routing -- Planning phase: host execution tier or host top tier?
+> - Model routing -- Design phase: host execution tier or host high tier?
 > - Worktree: use one for this task, or work on main?
 > - Agent Teams: use worktree isolation, or main worktree throughout?
-> Leave blank to use defaults (Sonnet for both phases, main, isolated).
+> Leave blank to use defaults (host execution tier for both phases, main, isolated).
 
 Write answers into the `## Pre-answers` section of the session log immediately. Format each answer as:
 `- Model routing -- Planning: <value>`
@@ -91,7 +91,7 @@ at `~/.claude/.silver-bullet/session-log-path`, stripping the leading `- ` befor
 Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
 
 **Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
-use defaults: Sonnet for both phases, main, isolated.
+use defaults: host execution tier for both phases, main, isolated.
 
 ---
 
@@ -146,16 +146,13 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 
 **What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-**Default:** Sonnet (LOW thinking effort) for all orchestrator work and 22 of 24 GSD agents.
-**Opus reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
+**Default:** host execution tier for all orchestrator work and routine GSD agents.
+**Host high tier reserved for:** design, review, and verification work.
+**Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-**What to expect:** No model choice prompt. Agents auto-select the correct model. Opus agents
-run deeper reasoning transparently; Sonnet agents handle execution, research, review, and
-documentation at high throughput. The orchestrator (this session) always runs on Sonnet.
+**What to expect:** No model choice prompt. Agents auto-select the correct model for the current host. Execution-tier agents handle execution, research, and documentation at high throughput; high-tier agents handle design, review, and verification; top-tier agents handle the deepest reasoning cases. The orchestrator (this session) always runs on the host execution tier.
 
-**Autonomous mode:** Same — no escalation prompt. Silent escalation to Opus only if a
-planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders,
-or a file-producing step that produces no file). Log escalation as an autonomous decision.
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders, or a file-producing step that produces no file). Log escalation as an autonomous decision.
 
 ---
 
@@ -190,10 +187,10 @@ on your vision without guessing.
 
 **Command:** `/gsd:discuss-phase`                                                **REQUIRED** -- DO NOT SKIP
 
-**What to expect:** Claude identifies phase-specific gray areas (concrete decisions like
+**What to expect:** The active runtime identifies phase-specific gray areas (concrete decisions like
 "session handling" or "duplicate detection", not generic categories like "UX") and asks you
-about each one. Your answers become locked decisions. Claude acts as a thinking partner --
-you provide vision, Claude captures decisions for the builder agents downstream. Expect 5-15
+about each one. Your answers become locked decisions. The active runtime acts as a thinking partner --
+you provide vision, the active runtime captures decisions for the builder agents downstream. Expect 5-15
 minutes of focused discussion depending on phase complexity.
 
 Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
@@ -208,13 +205,13 @@ Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
 
 **Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,
 architecture, system-design), ask once before beginning them:
-> Entering Design phase. Use Opus, or stay on Sonnet?
+> Entering Design phase. Use the host high tier, or stay on the host execution tier?
 
-**If it fails:** Re-run `/gsd:discuss-phase` with more specific questions. If Claude
+**If it fails:** Re-run `/gsd:discuss-phase` with more specific questions. If the active runtime
 identifies the wrong gray areas, provide your own list. The discuss step is idempotent --
 re-running overwrites the CONTEXT.md with fresh decisions.
 
-**Autonomous mode:** Use defaults for all gray areas, apply Claude's discretion throughout,
+**Autonomous mode:** Use defaults for all gray areas, apply runtime discretion throughout,
 log all auto-decisions to the session log.
 
 ---
@@ -232,7 +229,7 @@ dimension. Results are synthesized into a single report. Every dimension must pa
 minutes.
 
 **Agent Team dispatch**: Dispatch all 9 quality dimensions as a single parallel Agent Team
-wave -- one agent per dimension, `isolation: "worktree"`. Claude synthesizes results.
+wave -- one agent per dimension, `isolation: "worktree"`. The active runtime synthesizes results.
 Conflict resolution: more conservative/restrictive finding wins; resolution rationale logged
 in session log. **Autonomous mode:** All dispatches use `run_in_background: true`.
 
@@ -312,10 +309,10 @@ requirements, then runs user acceptance testing (UAT) with persistent state trac
 
 **Command:** `/gsd:verify-work`                                                  **REQUIRED** -- DO NOT SKIP
 
-**What to expect:** Claude presents what SHOULD happen for each testable deliverable and
+**What to expect:** The active runtime presents what SHOULD happen for each testable deliverable and
 asks you to confirm reality matches. Tests are presented one at a time. Your responses
 ("yes", descriptions of issues, "skip", "blocked") are recorded in a UAT.md file that
-survives session breaks. Severity is inferred automatically from your descriptions -- Claude
+survives session breaks. Severity is inferred automatically from your descriptions -- the active runtime
 never asks "how severe is this?". If issues are found, parallel debug agents diagnose root
 causes and a planner creates fix plans automatically. Expect 10-30 minutes depending on how
 many deliverables need verification.
@@ -490,7 +487,7 @@ of the project after this milestone's work.
   ```
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
-  Sonnet base rate; Opus is approximately 3x multiplier.
+  Host execution tier is the base rate; host high/top tiers are progressively more expensive.
 - Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
   Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
@@ -548,7 +545,7 @@ Use existing pipeline or set one up before deploying. GitHub repos: use GitHub A
   and re-check CI. Do NOT proceed to `/deploy-checklist` while CI is failing.
   Repeat fix-push-check until CI passes.
 - **Missing ci.yml rule**: if `.github/workflows/ci.yml` is absent at this step,
-  Claude must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
+  The active runtime must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
   surface missing file to user, stop deployment steps.
 - Race condition: the post-commit hook (ci-status-check.sh) reflects the last
   *completed* run, not necessarily this push. This polling loop is the authoritative gate.
@@ -641,7 +638,7 @@ The transition is offered when ANY of the following are true:
 
 ### What Happens
 
-1. Claude offers: "Application shipped. Set up deployment infrastructure? This switches to the DevOps workflow."
+1. The runtime offers: "Application shipped. Set up deployment infrastructure? This switches to the DevOps workflow."
 2. If you accept: `active_workflow` in `.silver-bullet.json` is updated from `full-dev-cycle` to `devops-cycle`
 3. The DevOps workflow (`docs/workflows/devops-cycle.md`) takes over with infrastructure-specific steps including blast radius analysis, environment promotion, and incident response
 
@@ -678,9 +675,9 @@ for it -- they are not tied to a specific step.
 | `/gsd:insert-phase` | Inserts a decimal phase between existing phases (e.g., 3.1 between 3 and 4). | For urgent fixes or discoveries that must happen before the next planned phase. |
 | `/gsd:review` | Cross-AI peer review -- invokes external AI CLIs (Gemini, Codex, CodeRabbit) to independently review plans. | For adversarial review before execution -- different AI models catch different blind spots. |
 | `/gsd:audit-milestone` | Aggregates phase verifications, checks cross-phase integration, and assesses overall requirements coverage. | At end of milestone before completing -- ensures everything works together across phases. |
-| `/gsd:autonomous` | Drives all remaining phases autonomously (discuss, plan, execute per phase). Supports `--from N`, `--to N`, `--only N`, `--interactive`. | When you want Claude to drive multiple phases end-to-end without manual intervention. |
+| `/gsd:autonomous` | Drives all remaining phases autonomously (discuss, plan, execute per phase). Supports `--from N`, `--to N`, `--only N`, `--interactive`. | When you want the active runtime to drive multiple phases end-to-end without manual intervention. |
 | `/gsd:complete-milestone` | Marks milestone complete, creates MILESTONES.md record, archives artifacts, and tags the release in git. | After all phases are verified and shipped -- wraps up the milestone cleanly. |
-| `/gsd:map-codebase` | Orchestrates parallel agents to analyze codebase, producing 7 structured documents in `.planning/codebase/`. | For brownfield projects before `/gsd:new-project` -- gives Claude full codebase understanding. |
+| `/gsd:map-codebase` | Orchestrates parallel agents to analyze codebase, producing 7 structured documents in `.planning/codebase/`. | For brownfield projects before `/gsd:new-project` -- gives the active runtime full codebase understanding. |
 
 ---
 
@@ -698,7 +695,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 ## Enforcement Rules
 
-- **GSD steps** are enforced by instruction (this file + CLAUDE.md) and GSD's own hooks.
+- **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
   that track Skill tool invocations. "I already covered this" is NOT valid.

@@ -142,7 +142,7 @@ it from the active set, so the strict final-delivery gate will not match a stale
 > per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
 > v0.29.1.
 
-After each path completes, the helper updates the Flow Log row in-place — Claude does
+After each path completes, the helper updates the Flow Log row in-place — the helper does
 not edit the file directly.
 
 
@@ -214,7 +214,7 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CON
 3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
 4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
 
-**Iterative:** User can loop steps 1-4. Claude suggests when design contract is solid; user decides exit.
+**Iterative:** User can loop steps 1-4. The helper suggests when design contract is solid; the user decides when to exit.
 
 **Exit Condition:** UI-SPEC.md exists, user accepts design contract.
 

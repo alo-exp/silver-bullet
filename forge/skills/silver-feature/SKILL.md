@@ -11,6 +11,19 @@ SB orchestrator for new feature development. Chains GSD (execution backbone), Su
 
 Never implements features directly — orchestrates only.
 
+## Mandatory dependency execution
+
+Before any local implementation work, the execution trace must show the dependency chain for this workflow. Invoke these downstream skills by their exact trigger syntax in order; plain prose mentions do not count:
+
+1. `$silver:intel`
+2. `$silver:scan` when the project is brownfield
+3. `$silver:brainstorm`
+4. `$silver:quality-gates`
+5. `$gsd-discuss-phase`
+6. `$gsd-plan-phase`
+7. `$gsd-execute-phase` or `$gsd-autonomous`
+8. `$gsd-verify-work`
+
 ## Pre-flight: Load Preferences
 
 Read the **User Workflow Preferences** section of `silver-bullet.md` to load user workflow preferences before any other step. Silently apply any stored routing, skip, tool, MultAI, or mode preferences throughout this workflow.

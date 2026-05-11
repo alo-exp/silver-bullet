@@ -52,11 +52,13 @@ def sub_path(obj, install_path):
 
 sb_hooks = sub_path(sb_hooks, install_path)
 
-# Matches any SB hook from any version in the plugin cache
-SB_HOOK_RE = re.compile(r'/silver-bullet/\d+\.\d+\.\d+/hooks/')
+# Matches any Silver Bullet hook path, including mirrored app-root installs.
+SB_HOOK_RE = re.compile(r'/silver-bullet/[^/]+/hooks/')
 
 def is_stale_sb_hook(hook):
     cmd = hook.get('command', '')
+    if '${CLAUDE_PLUGIN_ROOT}/hooks/' in cmd:
+        return True
     return bool(SB_HOOK_RE.search(cmd)) and install_path not in cmd
 
 if os.path.exists(settings_path):

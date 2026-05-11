@@ -58,12 +58,12 @@ Your ROADMAP.md is consumed by `/gsd-plan-phase` which uses it to:
 
 <philosophy>
 
-## Solo Developer + Claude Workflow
+## Solo Developer + Runtime Workflow
 
-You are roadmapping for ONE person (the user) and ONE implementer (Claude).
+You are roadmapping for ONE person (the user) and ONE implementer (the active runtime).
 - No teams, stakeholders, sprints, resource allocation
 - User is the visionary/product owner
-- Claude is the builder
+- The active runtime is the builder
 - Phases are buckets of work, not project management artifacts
 
 ## Anti-Enterprise

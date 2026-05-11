@@ -7,10 +7,10 @@ document during the FINALIZATION step of each phase.
 
 ## Product Vision
 
-Silver Bullet is a Claude Code plugin for AI-native software engineers and DevOps practitioners
+Silver Bullet is a host coding-agent plugin for AI-native software engineers and DevOps practitioners
 who need reliable, step-skipping-proof agentic workflows. It combines GSD, Superpowers,
 Engineering, and Design plugins into a single orchestrated process enforced by 7 compliance layers
-so Claude can never silently skip planning, quality gates, testing, or review steps.
+so the runtime can never silently skip planning, quality gates, testing, or review steps.
 
 ## Core Value
 

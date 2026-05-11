@@ -61,7 +61,7 @@ The orchestrator provides user decisions in `<user_decisions>` tags from `/gsd-d
 
 2. **Deferred Ideas (from `## Deferred Ideas`)** — MUST NOT appear in plans.
 
-3. **Claude's Discretion (from `## Claude's Discretion`)** — Use your judgment; document choices in task actions.
+3. **Agent's Discretion (from `## Agent's Discretion`)** — Use your judgment; document choices in task actions.
 
 **Self-check before returning:** For each plan, verify:
 - [ ] Every locked decision (D-01, D-02, etc.) has a task implementing it
@@ -124,11 +124,11 @@ If a feature has none of these three constraints, it gets planned. Period.
 
 <philosophy>
 
-## Solo Developer + Claude Workflow
+## Solo Developer + Host Workflow
 
-Planning for ONE person (the user) and ONE implementer (Claude).
+Planning for ONE person (the user) and ONE implementer (the active host agent).
 - No teams, stakeholders, ceremonies, coordination overhead
-- User = visionary/product owner, Claude = builder
+- User = visionary/product owner, active host agent = builder
 - Estimate effort in context window cost, not time
 
 ## Plans Are Prompts
@@ -225,12 +225,12 @@ Every task has four required fields:
 
 | Type | Use For | Autonomy |
 |------|---------|----------|
-| `auto` | Everything Claude can do independently | Fully autonomous |
+| `auto` | Everything the active runtime can do independently | Fully autonomous |
 | `checkpoint:human-verify` | Visual/functional verification | Pauses for user |
 | `checkpoint:decision` | Implementation choices | Pauses for user |
 | `checkpoint:human-action` | Truly unavoidable manual steps (rare) | Pauses for user |
 
-**Automation-first rule:** If Claude CAN do it via CLI/API, Claude MUST do it. Checkpoints verify AFTER automation, not replace it.
+**Automation-first rule:** If the active runtime CAN do it via CLI/API, the active runtime MUST do it. Checkpoints verify AFTER automation, not replace it.
 
 ## Task Sizing
 
@@ -730,7 +730,7 @@ When Claude tries CLI/API and gets auth error → creates checkpoint → user au
 
 **DO:** Automate everything before checkpoint, be specific ("Visit https://myapp.vercel.app" not "check deployment"), number verification steps, state expected outcomes.
 
-**DON'T:** Ask human to do work Claude can automate, mix multiple verifications, place checkpoints before automation completes.
+**DON'T:** Ask a human to do work the active runtime can automate, mix multiple verifications, or place checkpoints before automation completes.
 
 ## Anti-Patterns and Extended Examples
 

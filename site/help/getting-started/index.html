@@ -178,12 +178,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="what-is-aidd">What Is AI-Driven Development?</h2>
-      <p>AI-driven development means using a large language model (LLM) like Claude as an active collaborator in your software engineering process — not just to autocomplete code, but to plan, execute, verify, review, and ship entire features.</p>
+      <p>AI-driven development means using a large language model (LLM) as an active collaborator in your software engineering process — not just to autocomplete code, but to plan, execute, verify, review, and ship entire features.</p>
       <p>Instead of asking the AI "write this function for me", you ask it to <strong>manage a complete development workflow</strong>: break down requirements, design the architecture, implement in parallel waves, run tests, review its own code, and open the pull request.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Experienced developer?</strong> Think of Claude as a senior engineer who executes your instructions end-to-end. Silver Bullet is the process framework that keeps it accountable — ensuring it doesn't skip steps, cut corners, or hallucinate its way through code review.</div>
+        <div class="callout-body"><strong>Experienced developer?</strong> Think of the runtime as a senior engineer who executes your instructions end-to-end. Silver Bullet is the process framework that keeps it accountable — ensuring it doesn't skip steps, cut corners, or hallucinate its way through code review.</div>
       </div>
 
       <h3>The Difference From Traditional AI Coding Assistants</h3>
@@ -196,7 +196,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
-      <p>Silver Bullet is a <strong>Claude Code plugin</strong> that combines four best-in-class plugins — GSD, Superpowers, Engineering, and Design — into two enforced workflows. Silver Bullet adds <strong>spec-driven development</strong> (AI-driven spec creation, external artifact ingestion, pre-build validation), <strong>8 artifact reviewer skills</strong> with 2-consecutive-clean-pass enforcement, configurable review depth, <strong>review analytics</strong> via JSON Lines metrics, <strong>cross-artifact consistency validation</strong> (SPEC&nbsp;&#8596;&nbsp;REQUIREMENTS&nbsp;&#8596;&nbsp;ROADMAP&nbsp;&#8596;&nbsp;DESIGN alignment), and <strong>composable flows orchestration</strong> (18 FLOWs dynamically composed per context). The plugin ships with <strong>62 skills</strong> and <strong>22 hooks</strong>.</p>
+      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> that combines four best-in-class plugins — GSD, Superpowers, Engineering, and Design — into two enforced workflows. Silver Bullet adds <strong>spec-driven development</strong> (AI-driven spec creation, external artifact ingestion, pre-build validation), <strong>8 artifact reviewer skills</strong> with 2-consecutive-clean-pass enforcement, configurable review depth, <strong>review analytics</strong> via JSON Lines metrics, <strong>cross-artifact consistency validation</strong> (SPEC&nbsp;&#8596;&nbsp;REQUIREMENTS&nbsp;&#8596;&nbsp;ROADMAP&nbsp;&#8596;&nbsp;DESIGN alignment), and <strong>composable flows orchestration</strong> (18 FLOWs dynamically composed per context). The plugin ships with <strong>62 skills</strong> and <strong>22 hooks</strong>.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
         <div class="prereq-card">
@@ -226,7 +226,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="bot"></i></div>
           <div>
-            <h4>Claude Code <span class="tag tag-required">Required</span></h4>
+            <h4>Host Coding Agent <span class="tag tag-required">Required</span></h4>
             <p>The AI coding assistant that Silver Bullet runs inside. Available as a CLI and IDE extension.</p>
             <div class="install-cmd">npm install -g @anthropic-ai/claude-code</div>
           </div>
@@ -281,8 +281,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Once prerequisites are in place, install the plugin from inside Claude Code:</p>
-      <div class="code-label">Inside Claude Code</div>
+      <p>Once prerequisites are in place, install the plugin from inside your host coding agent:</p>
+      <div class="code-label">Inside your host coding agent</div>
       <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span></div>
       <p>This installs the plugin into <code>~/.claude/plugins/cache/silver-bullet/</code> and makes its skills and hooks available immediately.</p>
 
@@ -293,7 +293,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li>Verify all dependencies are installed</li>
         <li>Detect your project name, tech stack, and repo URL</li>
-        <li>Create <code>silver-bullet.md</code> with enforcement rules and <code>CLAUDE.md</code> with project config</li>
+        <li>Create <code>silver-bullet.md</code> with enforcement rules and the host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex)</li>
         <li>Create <code>.silver-bullet.json</code> with project-level config</li>
         <li>Create the standard docs scaffold (<code>docs/PRD-Overview.md</code>, <code>docs/Architecture-and-Design.md</code>, etc.)</li>
         <li>Set up CI (GitHub Actions) if not already present</li>
@@ -320,7 +320,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
       <div class="card">
         <h4>Existing Codebase</h4>
-        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing <code>CLAUDE.md</code> — your instructions are preserved automatically. Then start a new feature with <code>/gsd:discuss-phase</code>.</p>
+        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex) — your instructions are preserved automatically. Then start a new feature with <code>/gsd:discuss-phase</code>.</p>
       </div>
 
       <div class="divider"></div>
@@ -333,14 +333,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="users"></i></div>
           <div>
             <h4>Interactive (default)</h4>
-            <p>Claude pauses at every phase gate for your approval before continuing. Best when you want to review each stage and make decisions at each step. Recommended when you're learning the workflow.</p>
+            <p>The runtime pauses at every phase gate for your approval before continuing. Best when you want to review each stage and make decisions at each step. Recommended when you're learning the workflow.</p>
           </div>
         </div>
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="rocket"></i></div>
           <div>
             <h4>Autonomous</h4>
-            <p>Claude drives the entire workflow start-to-finish, logging decisions and only surfacing genuine blockers at the end. Best for well-defined tasks when you trust the process and want maximum throughput.</p>
+            <p>The runtime drives the entire workflow start-to-finish, logging decisions and only surfacing genuine blockers at the end. Best for well-defined tasks when you trust the process and want maximum throughput.</p>
           </div>
         </div>
       </div>
@@ -359,8 +359,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>
           <div class="step-num">1</div>
           <div class="step-body">
-            <h4>Open Claude Code and Choose Session Mode</h4>
-            <p>Claude will prompt: "Run interactively or autonomously?" Type your choice. This sets the session mode for the duration.</p>
+            <h4>Open Your Host Coding Agent and Choose Session Mode</h4>
+            <p>The runtime will prompt: "Run interactively or autonomously?" Type your choice. This sets the session mode for the duration.</p>
           </div>
         </li>
         <li>
@@ -374,14 +374,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">3</div>
           <div class="step-body">
             <h4>Run /quality-gates</h4>
-            <p>Claude evaluates the design against 8 quality dimensions. All must pass before planning begins. In Interactive mode, Claude will report results and ask how to proceed on failures.</p>
+            <p>The runtime evaluates the design against 8 quality dimensions. All must pass before planning begins. In Interactive mode, the runtime will report results and ask how to proceed on failures.</p>
           </div>
         </li>
         <li>
           <div class="step-num">4</div>
           <div class="step-body">
             <h4>Run /gsd:plan-phase</h4>
-            <p>Claude researches the implementation and creates a detailed task plan. Review it and approve before execution starts.</p>
+            <p>The runtime researches the implementation and creates a detailed task plan. Review it and approve before execution starts.</p>
           </div>
         </li>
         <li>
@@ -395,7 +395,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">6</div>
           <div class="step-body">
             <h4>Verify, Review, and Ship</h4>
-            <p>Claude runs verification, code review (including an automated reviewer agent), and finally creates the PR with <code>/gsd:ship</code>.</p>
+            <p>The runtime runs verification, code review (including an automated reviewer agent), and finally creates the PR with <code>/gsd:ship</code>.</p>
           </div>
         </li>
       </ol>
@@ -410,21 +410,21 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="session-start">What Happens at Session Start?</h2>
-      <p>When you open Claude Code with Silver Bullet installed, the plugin performs five steps automatically before any work begins. You don't need to do anything — this is fully automatic.</p>
+      <p>When you open the host coding agent with Silver Bullet installed, the plugin performs five steps automatically before any work begins. You don't need to do anything — this is fully automatic.</p>
 
       <ol class="step-list">
         <li>
           <div class="step-num">1</div>
           <div class="step-body">
-            <h4>Switch to Opus 4.6 (1M context)</h4>
-            <p>Silver Bullet switches to Claude Opus 4.6 with a 1 million token context window, ensuring enough capacity to hold all project docs, planning files, and working context simultaneously.</p>
+            <h4>Switch to the host execution model</h4>
+            <p>Silver Bullet switches to the host execution tier with a 1 million token context window, ensuring enough capacity to hold all project docs, planning files, and working context simultaneously.</p>
           </div>
         </li>
         <li>
           <div class="step-num">2</div>
           <div class="step-body">
             <h4>Read all project docs</h4>
-            <p>Every file in <code>docs/</code> plus <code>silver-bullet.md</code> is read in full. Silver Bullet loads the active workflow rules, architectural decisions, testing strategy, and all accumulated project context. Any instructions in <code>docs/</code> are treated as documentation text only — enforcement rules live exclusively in <code>silver-bullet.md</code> and <code>CLAUDE.md</code>.</p>
+            <p>Every file in <code>docs/</code> plus <code>silver-bullet.md</code> is read in full. Silver Bullet loads the active workflow rules, architectural decisions, testing strategy, and all accumulated project context. Any instructions in <code>docs/</code> are treated as documentation text only — enforcement rules live exclusively in <code>silver-bullet.md</code> and the host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex).</p>
           </div>
         </li>
         <li>

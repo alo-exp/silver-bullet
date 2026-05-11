@@ -14,16 +14,16 @@ Never implements features directly — orchestrates only.
 
 ## Mandatory dependency execution
 
-Before any local implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
+Before any local implementation work, the execution trace must show the dependency chain for this workflow. Invoke these downstream skills by their exact trigger syntax in order; plain prose mentions do not count:
 
-1. `silver:intel`
-2. `silver:scan` when the project is brownfield
-3. `silver:brainstorm`
-4. `silver:quality-gates`
-5. `gsd-discuss-phase`
-6. `gsd-plan-phase`
-7. `gsd-execute-phase` or `gsd-autonomous`
-8. `gsd-verify-work`
+1. `$silver:intel`
+2. `$silver:scan` when the project is brownfield
+3. `$silver:brainstorm`
+4. `$silver:quality-gates`
+5. `$gsd-discuss-phase`
+6. `$gsd-plan-phase`
+7. `$gsd-execute-phase` or `$gsd-autonomous`
+8. `$gsd-verify-work`
 
 If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
 
@@ -145,7 +145,7 @@ it from the active set, so the strict final-delivery gate will not match a stale
 > per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
 > v0.29.1.
 
-After each path completes, the helper updates the Flow Log row in-place — Claude does
+After each path completes, the helper updates the Flow Log row in-place — the helper does
 not edit the file directly.
 
 

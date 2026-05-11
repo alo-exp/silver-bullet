@@ -68,6 +68,7 @@ HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install data-engineering@claude-plugins-of
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install frontend-design@claude-plugins-official >/dev/null
 
 OLD_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.27.1"
+CURRENT_CODEX_SB_CACHE_DIR="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/silver-bullet/current"
 mkdir -p "$(dirname "$OLD_SB_CACHE_DIR")"
 cat > "$HOME_DIR/.claude/settings.json" <<EOF
 {
@@ -86,6 +87,18 @@ cat > "$HOME_DIR/.claude/settings.json" <<EOF
             "type": "command",
             "command": "\"${OLD_SB_CACHE_DIR}/hooks/spec-session-record.sh\"",
             "timeout": 10,
+            "async": false
+          },
+          {
+            "type": "command",
+            "command": "\"${CURRENT_CODEX_SB_CACHE_DIR}/hooks/session-start\"",
+            "timeout": 15,
+            "async": false
+          },
+          {
+            "type": "command",
+            "command": "\"\${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
+            "timeout": 15,
             "async": false
           }
         ]
@@ -135,6 +148,9 @@ else
   echo "FAIL: Silver Bullet hook paths refreshed to stable alias in Claude settings"
   (( FAIL++ )) || true
 fi
+
+assert_not_contains "Codex-root Silver Bullet hook path removed from Claude settings" "$CURRENT_CODEX_SB_CACHE_DIR/hooks/session-start" "$HOME_DIR/.claude/settings.json"
+assert_not_contains "Placeholder Silver Bullet hook path removed from Claude settings" "\${CLAUDE_PLUGIN_ROOT}/hooks/session-start" "$HOME_DIR/.claude/settings.json"
 
 assert_file_exists "Silver Bullet stable alias exposes hook cache" "$STABLE_SB_CACHE_DIR/hooks/session-start"
 

@@ -9,7 +9,7 @@ version: 0.1.0
 
 Every design, plan, and implementation MUST produce small, focused modules where any single change touches the fewest files possible and every touched file fits comfortably in context.
 
-**Why this matters:** When files are large or tightly coupled, Claude must compact context to fit them — risking loss of key details. Modular design prevents this by keeping each unit small enough to reason about completely.
+**Why this matters:** When files are large or tightly coupled, the active runtime must compact context to fit them — risking loss of key details. Modular design prevents this by keeping each unit small enough to reason about completely.
 
 **When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
@@ -59,7 +59,7 @@ If you can't define the interface in <10 lines, the module is too complex — de
 
 When designing a system, apply this test to every module:
 
-> "Can Claude read this file, its tests, and the files it directly depends on — all at once — without exceeding context or needing to compact?"
+> "Can the active runtime read this file, its tests, and the files it directly depends on — all at once — without exceeding context or needing to compact?"
 
 If no: the module is too large or has too many dependencies. Decompose until the answer is yes.
 

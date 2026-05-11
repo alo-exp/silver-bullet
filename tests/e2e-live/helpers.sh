@@ -32,6 +32,7 @@ WORK_DIR=""
 REMOTE_DIR=""
 APP_SERVER_PID=""
 APP_SERVER_LOG=""
+BRANCH_FILE=""
 CLAUDE_PROMPT_COUNT=0
 CLAUDE_INTERACTIVE_INVOKE="${SB_ROOT}/scripts/claude-interactive-invoke.expect"
 STATE_FILE="${SB_TEST_DIR}/state"
@@ -260,6 +261,10 @@ EOF
   git -C "$WORK_DIR" remote add origin "$REMOTE_DIR"
   git -C "$WORK_DIR" push -u origin feature/e2e-live >/dev/null 2>&1 || true
 
+  BRANCH_FILE="${SB_TEST_DIR}/test-branch-e2e-live-$$"
+  printf 'feature/e2e-live\n' > "$BRANCH_FILE"
+  export SILVER_BULLET_BRANCH_FILE="$BRANCH_FILE"
+
   if [[ -f "$STATE_FILE" ]]; then
     cp "$STATE_FILE" "$STATE_BACKUP"
   else
@@ -307,6 +312,10 @@ cleanup_workspace() {
 
   rm -rf "${SB_TEST_DIR}"/turn-logs-* 2>/dev/null || true
   rm -f "${SB_TEST_DIR}"/dependency-access-preflight-* 2>/dev/null || true
+  if [[ -n "${BRANCH_FILE:-}" ]]; then
+    rm -f "$BRANCH_FILE"
+  fi
+  unset SILVER_BULLET_BRANCH_FILE
   restore_session_state
 }
 
@@ -348,8 +357,23 @@ stop_app_server() {
   APP_SERVER_PID=""
 }
 
+seed_workspace_requested_skills() {
+  local prompt="$1"
+  local payload
+
+  [[ -x "${SB_ROOT}/hooks/record-requested-skill.sh" ]] || return 0
+  payload="$(jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}')"
+
+  (
+    cd "$WORK_DIR"
+    SILVER_BULLET_STATE_FILE="$STATE_FILE" \
+      bash "${SB_ROOT}/hooks/record-requested-skill.sh" <<<"$payload" >/dev/null 2>&1 || true
+  )
+}
+
 run_prompt() {
   local prompt="$1"
+  seed_workspace_requested_skills "$prompt"
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     claude_interactive_invoke permissive "$prompt"
   else
@@ -359,6 +383,7 @@ run_prompt() {
 
 run_prompt_strict() {
   local prompt="$1"
+  seed_workspace_requested_skills "$prompt"
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     claude_interactive_invoke default "$prompt"
   else
