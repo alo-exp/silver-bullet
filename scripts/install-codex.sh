@@ -370,24 +370,34 @@ sync_codex_installed_plugin_registry_paths() {
       done
 
       [[ -n "$current_path" ]] || continue
-      stable_path="$(dirname "$current_path")/current"
-      python3 - "$current_path" "$stable_path" <<'PY'
+      python3 - "$current_path" "$marketplace" "$plugin_name" <<'PY'
 import pathlib
 import shutil
 import sys
 
 current_path = pathlib.Path(sys.argv[1])
-stable_path = pathlib.Path(sys.argv[2])
+marketplace = sys.argv[2]
+plugin_name = sys.argv[3]
 
-stable_path.parent.mkdir(parents=True, exist_ok=True)
-if stable_path.exists() or stable_path.is_symlink():
-    if stable_path.is_dir() and not stable_path.is_symlink():
-        shutil.rmtree(stable_path)
-    else:
-        stable_path.unlink()
+alias_roots = [
+    pathlib.Path.home() / ".Codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
+    pathlib.Path.home() / ".codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
+]
 
-stable_path.symlink_to(current_path.name)
+def refresh_alias(alias_path: pathlib.Path, target_path: pathlib.Path) -> None:
+    alias_path.parent.mkdir(parents=True, exist_ok=True)
+    if alias_path.exists() or alias_path.is_symlink():
+        if alias_path.is_dir() and not alias_path.is_symlink():
+            shutil.rmtree(alias_path)
+        else:
+            alias_path.unlink()
+    alias_path.symlink_to(target_path)
+
+target_path = current_path.resolve()
+for alias_path in alias_roots:
+    refresh_alias(alias_path, target_path)
 PY
+      stable_path="${HOME}/.Codex/plugins/cache/${marketplace}/${plugin_name}/current"
       updates+=("${plugin_id}=${stable_path}|${current_path##*/}")
     done < <(python3 - "$registry_file" <<'PY'
 import json
