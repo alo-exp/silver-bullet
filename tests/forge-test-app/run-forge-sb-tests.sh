@@ -1,6 +1,6 @@
 #!/bin/bash
 # Forge-Silver Bullet Skill Test Harness
-# Tests ALL 57 skills in realistic todo app development scenarios
+# Tests ALL 61 scenario checks in realistic todo app development scenarios
 
 set -e
 cd "$(dirname "$0")"
@@ -77,7 +77,7 @@ run_test "silver-spec"        "Write feature specification" "Write spec for new 
 run_test "silver-validate"   "Validate implementation"       "Verify the API works correctly"
 
 # ============================================
-# SILVER EXTENDED SKILLS (13 skills)
+# SILVER EXTENDED SKILLS (11 skills)
 # ============================================
 echo ""
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
@@ -140,7 +140,7 @@ run_test "testability"         "Improve testability"          "Add dependency in
 run_test "usability"           "Improve user experience"       "Better form validation UX"
 
 # ============================================
-# REVIEW & ASSESSMENT SKILLS (13 skills)
+# REVIEW & ASSESSMENT SKILLS (11 skills)
 # ============================================
 echo ""
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
@@ -176,7 +176,7 @@ run_test "writing-plans"       "Write implementation plan"     "Create plan for 
 run_test "writing-plans"       "Document API specification"    "Write OpenAPI spec"
 
 # ============================================
-# DEVOPS & ROUTING SKILLS (4 skills)
+# DEVOPS & ROUTING SKILLS (2 skills)
 # ============================================
 echo ""
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"

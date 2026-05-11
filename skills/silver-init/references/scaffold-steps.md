@@ -12,8 +12,8 @@ If Phase 0 determined this is an update:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. If the project already has a `CLAUDE.md`, strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
-4. If `CLAUDE.md` already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
+3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
+4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to re-register or refresh SB hooks in `~/.claude/settings.json`.
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
@@ -28,7 +28,7 @@ If the user asks to refresh templates:
    > Proceed? (yes / no)
 2. Only proceed on explicit "yes".
 3. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements (SB-owned, no confirmation needed).
-4. Verify `CLAUDE.md` contains the reference line mentioning "silver-bullet.md". If not, add it at top.
+4. Verify the project instruction file contains the reference line mentioning "silver-bullet.md". If not, add it at top.
 5. **Backup before any overwrite of workflow files**: copy the original to `<file>.backup` first.
 6. Read `.silver-bullet.json` to carry forward `project.name`, `project.src_pattern` customizations.
 7. Output: "Templates refreshed. silver-bullet.md updated. Backups created at: [list]". Exit.
@@ -45,27 +45,31 @@ Perform these placeholder replacements:
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{ACTIVE_WORKFLOW}}` → `full-dev-cycle` (default)
 
+### Runtime-aware bootstrap note
+
+Keep user-facing bootstrap language runtime-neutral. In Codex, describe the local instruction surface as a project instruction file and avoid Claude-only model-routing jargon; when the repository actually uses `AGENTS.md`, reconcile that file in place rather than synthesizing a new one.
+
 ### 3.1b Handle optional project instruction file
 
-Check if `CLAUDE.md` exists in the project root (use Bash: `test -f CLAUDE.md`).
+Check if a project instruction file exists in the project root (`CLAUDE.md` or `AGENTS.md`, depending on the runtime).
 
-**If NO existing CLAUDE.md**: do not create a new agent instruction file during Codex initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
+**If NO existing project instruction file**: do not create a new agent instruction file during Codex initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
 
-**If existing CLAUDE.md**: First, strip any existing Silver Bullet sections (migration from pre-v0.7.0). Then add the reference line and run conflict detection.
+**If an existing project instruction file is present**: First, strip any existing Silver Bullet sections (migration from pre-v0.7.0). Then add the reference line and run conflict detection.
 
-**Step 1 — Strip SB-owned sections from CLAUDE.md:**
+**Step 1 — Strip SB-owned sections from the project instruction file:**
 
 Silver Bullet sections are identified by headings matching `## N. <Known SB Title>` where N is 0–9 (including `## 3a.`). Known titles include: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release. These sections start at the heading and end just before the next `## ` heading or end-of-file.
 
 Use the Bash tool to detect SB sections:
 ```bash
-grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|GSD|File Safety|Third-Party|Pre-Release)' CLAUDE.md || echo "NO_SB_SECTIONS"
+grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|GSD|File Safety|Third-Party|Pre-Release)' CLAUDE.md AGENTS.md 2>/dev/null || echo "NO_SB_SECTIONS"
 ```
 
 If `NO_SB_SECTIONS` → skip to Step 2.
 
 If sections found:
-1. Read CLAUDE.md fully
+1. Read the project instruction file fully
 2. Identify each SB section (from `## N.` heading to just before the next `## ` heading or EOF)
 3. Also remove the old-style enforcement reference line if present: `> **Always adhere strictly to this file — it overrides all defaults.**` (note: this is the pre-separation version that does NOT mention silver-bullet.md)
 4. Remove these sections using the Edit tool, preserving all non-SB content (project overview, project-specific rules, user-added sections)
@@ -81,9 +85,9 @@ But ONLY if the file does not already contain the string "silver-bullet.md".
 
 Then run conflict detection (step 3.1c).
 
-### 3.1c Conflict detection (only when existing CLAUDE.md found)
+### 3.1c Conflict detection (only when an existing project instruction file is found)
 
-Scan `CLAUDE.md` for patterns that conflict with `silver-bullet.md` rules. Check for these conflict patterns:
+Scan the project instruction file for patterns that conflict with `silver-bullet.md` rules. Check for these conflict patterns:
 
 1. **Model routing overrides**: regex `(always|default|prefer|use).*(claude-opus|claude-sonnet|opus|sonnet)` on directive-like lines (conflicts with SB Section 5)
 2. **Execution preferences**: regex `(always|never|must).*(subagent-driven|executing-plans)` on directive-like lines (conflicts with SB Section 6)
@@ -92,7 +96,7 @@ Scan `CLAUDE.md` for patterns that conflict with `silver-bullet.md` rules. Check
 5. **Session mode overrides**: regex `(always|default|must).*(interactive|autonomous).*mode` on directive-like lines (conflicts with SB Section 4)
 
 For each match found, present it to the user interactively using AskUserQuestion:
-- Question: "Potential conflict found in CLAUDE.md:\n  Line {N}: {matched text}\n  This may conflict with Silver Bullet's {section name}. Remove this line?"
+- Question: "Potential conflict found in the project instruction file:\n  Line {N}: {matched text}\n  This may conflict with Silver Bullet's {section name}. Remove this line?"
 - Options:
   - "A. Yes, remove this line"
   - "B. No, keep it"
@@ -115,11 +119,11 @@ test -d .github/workflows && ls .github/workflows/*.yml 2>/dev/null | head -1
 
 If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` based on the detected stack from Phase 2. Select the matching template from `references/ci-templates.md` and write it to `.github/workflows/ci.yml`. For unknown stacks, prompt user to specify verify commands and store under `"verify_commands"` in `.silver-bullet.json`.
 
-### 3.3 Write CLAUDE.md (only when an existing CLAUDE.md was found)
+### 3.3 Write the project instruction file (only when an existing one was found)
 
-Applies only when an existing `CLAUDE.md` was found in step 3.1b. If no `CLAUDE.md` was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
+Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
 
-Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write to `CLAUDE.md`:
+Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write back to the existing filename (`CLAUDE.md` or `AGENTS.md`):
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{TECH_STACK}}` → the detected/confirmed tech stack
 - `{{GIT_REPO}}` → the detected/confirmed repo URL
@@ -150,6 +154,7 @@ silver:ensure-docs --bootstrap
 3. Moving switched user docs into `docs/archive/<timestamp>/...` with manifest traceability.
 4. Keeping `docs/doc-scheme.md` and `docs/doc-scheme.json` synchronized.
 5. Seeding `docs/task-doc-checklist.json` against the contract inventory.
+6. Running a semantic freshness audit over the governed docs that remain live.
 
 ### 3.6 Verify contract surface after ensure-docs
 
@@ -166,10 +171,12 @@ silver:ensure-docs --recover-scheme
 ### 3.7 Stage and commit
 
 ```bash
+git add silver-bullet.md .silver-bullet.json docs/
 if test -f CLAUDE.md; then
-  git add silver-bullet.md .silver-bullet.json docs/ CLAUDE.md
-else
-  git add silver-bullet.md .silver-bullet.json docs/
+  git add CLAUDE.md
+fi
+if test -f AGENTS.md; then
+  git add AGENTS.md
 fi
 git commit -m "$(cat <<'EOF'
 feat: initialize Silver Bullet enforcement

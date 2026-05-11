@@ -115,9 +115,10 @@ See CLAUDE.md §8 for details."
         exit 0
       fi
     elif [[ -n "$command_str" ]]; then
-      # Bash write commands targeting hooks directory or hooks.json
+      # Bash write commands targeting hooks directory or hooks.json.
+      # Read-only inspection stays allowed; only write-capable commands are blocked.
       if printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
-         printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bperl\b|\binstall\b)'; then
+         printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
       fi
@@ -135,7 +136,7 @@ See CLAUDE.md §8 for details."
       exit 0
     fi
     if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE "${HOME}/.claude/[^ ]*/hooks/" && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b|\bperl\b|\binstall\b)'; then
+       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi

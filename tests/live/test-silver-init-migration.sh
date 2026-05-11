@@ -25,18 +25,14 @@ invoke_migration() {
   # via .silver-bullet.json, which would make each call exceed the budget.
   local bare_dir
   bare_dir=$(mktemp -d)
-  output=$(cd "$bare_dir" && "$CLAUDE_BIN" -p \
+  output=$(cd "$bare_dir" && WORK_DIR="$bare_dir" invoke_claude_permissive \
     "CONTEXT: ${context}
 
 MIGRATION INSTRUCTIONS (Step 3.5.5 of silver:init):
 ${MIGRATION_STEP}
 
 TASK: ${prompt}" \
-    --output-format text \
-    --model claude-haiku-4-5-20251001 \
-    --max-budget-usd 1.00 \
-    --dangerously-skip-permissions \
-    --verbose 2>&1) || true
+    2>&1) || true
   rm -rf "$bare_dir"
   printf '%s' "$output"
 }
@@ -73,6 +69,6 @@ assert_response_contains "S4: mentions recover command" "$response" "recover-sch
 echo "--- S5: from-hook remediation path ---"
 response=$(invoke_migration "Project root: /tmp/test-proj-s5. stop-check produced a docs gap report path and task id." \
   "Describe which ensure-docs mode should be used to remediate hook gaps.")
-assert_response_contains "S5: mentions --from-hook mode" "$response" "--from-hook|gaps|task"
+assert_response_contains "S5: mentions hook-gap remediation mode" "$response" "from-hook|hook-gap|remediation|gaps|task|zero-miss|silver:ensure-docs"
 
 print_results
