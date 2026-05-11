@@ -79,11 +79,11 @@ sb_skill_is_installed() {
           local escaped_skill
           escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
           if command -v rg >/dev/null 2>&1; then
-            if rg -l -m1 -g 'SKILL.md' "^name:[[:space:]]*$escaped_skill[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+            if rg -l -m1 -g 'SKILL.md' "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
               return 0
             fi
           else
-            if grep -Rls -E "^name:[[:space:]]*$escaped_skill[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+            if grep -Rls -E "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
               return 0
             fi
           fi
