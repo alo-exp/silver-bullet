@@ -124,12 +124,13 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 After all four stages pass in the current session, rerun the full test suite
 before release finalization:
 
-1. Run `bash tests/run-all-tests.sh`
+1. Run `/verify-tests`
 2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.sidekick/quality-gate-state`
-3. Do not invoke `/silver-release` until the rerun marker is present
+3. Do not invoke `/silver-release` until both the rerun marker and the `/verify-tests` freshness marker are present
 
 `hooks/completion-audit.sh` blocks release creation until the sidekick file
-contains the four stage markers plus `full-test-suite-rerun`.
+contains the four stage markers plus `full-test-suite-rerun`, and the
+`/verify-tests` freshness marker is still present.
 
 ---
 

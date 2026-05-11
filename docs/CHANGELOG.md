@@ -16,6 +16,20 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-10 — docs-surface-declutter
+**What**: Collapsed overlapping documentation-scheme pages into compatibility wrappers, marked older verification and flow-parallelism design notes as historical snapshots, and simplified the knowledge index to point at the canonical doc-scheme contract.
+**Commits**: —
+**Skills run**: silver:ensure-docs, silver:init
+**Virtual cost**: ~$0.10 (low complexity — docs cleanup and reference consolidation)
+**KNOWLEDGE.md**: updated (canonical doc-scheme pointers, legacy wrapper guidance)
+
+## 2026-05-08 — silver-ensure-docs-contract-gate
+**What**: Implemented `/silver:ensure-docs`, delegated `/silver:init` docs bootstrap to it, switched hook enforcement to `docs/doc-scheme.json` contract gating at task granularities 2/3, and added brownfield switch archival policy (move to `docs/archive/` with traceability).
+**Commits**: —
+**Skills run**: silver:ensure-docs, silver:init, verification-before-completion
+**Virtual cost**: ~$0.24 (medium complexity — hook refactor + contract + tests + routing/config updates)
+**KNOWLEDGE.md**: updated (contract-driven checklist semantics, hook gap remediation path, archival move policy)
+
 ## 2026-05-08 — doc-scheme-checklist-hard-gate
 **What**: Upgraded doc-scheme enforcement from a trio-only check to a hard per-task checklist gate that now requires full governed-doc inventory coverage (all docs files plus root docs when present, with monthly wildcard keys) and validates `updated` entries against current-session file mtimes at both completion and delivery.
 **Commits**: —

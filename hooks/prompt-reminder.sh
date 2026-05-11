@@ -21,7 +21,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 config_file=""
 search_dir="$PWD"
 while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
     break
   fi
@@ -93,7 +93,7 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
+  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 fi
 
 if [[ -n "$required_deploy_cfg" ]]; then

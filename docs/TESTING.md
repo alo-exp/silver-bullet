@@ -23,7 +23,7 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite across Claude and Codex runtime adapters | `tests/live/run-live-tests.sh` | 5-15 min per runtime |
-| **Live todo-app E2E** | Install UX plus real Claude/Codex development episodes against `tests/test-app/` | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
+| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -31,15 +31,25 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | Component | Target | Current |
 |-----------|--------|---------|
 | `record-skill.sh` | 100% of skip/record paths | Covered by compliance-status tests (indirect) |
-| `dev-cycle-check.sh` | 100% of Stage A/B/C/D + trivial bypass | **Covered** by `tests/hooks/test-dev-cycle-check.sh` |
+| `dev-cycle-check.sh` | 100% of Stage A/B/C/D + legacy trivial-marker compatibility | **Covered** by `tests/hooks/test-dev-cycle-check.sh` |
 | `compliance-status.sh` | Key progress calculation paths | Covered via integration patterns |
 | `completion-audit.sh` | block vs. pass for each required skill group | Partial |
+| `verify-tests.sh` | Configured commands, stack fallback, marker write, failure path | **Covered** by `tests/hooks/test-verify-tests.sh` |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
 | Live Claude/Codex matrix | shared scenarios, runtime adapters, sequential runtime execution | 100% (`tests/live/run-live-tests.sh`) |
-| Live todo-app E2E | install-first + realistic feature / bugfix / release episodes on `tests/test-app/` | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
+| Live todo-app E2E | single inline full-surface journey on the standalone sibling `test-todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
+
+## Silver Bullet Test Execution Gate
+
+Silver Bullet treats test execution as a freshness-gated step, not just a planning note.
+
+- Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
+- The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
+- On success, the skill writes `~/.claude/.silver-bullet/verify-tests-state`
+- `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
 
 ## Phase 2 — New Test Requirements
 
@@ -49,7 +59,7 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 ```yaml
 - name: Validate required_deploy contents
   run: |
-    jq -e '.skills.required_deploy | contains(["test-driven-development","tech-debt"])' \
+    jq -e '.skills.required_deploy | contains(["test-driven-development","tech-debt","verify-tests"])' \
       .silver-bullet.json
     jq -e '.skills.required_deploy | contains(["accessibility-review"]) | not' \
       .silver-bullet.json
@@ -100,23 +110,25 @@ sequentially; set `SB_LIVE_RUNTIMES=claude` or `SB_LIVE_RUNTIMES=codex` to narro
 matrix. Sequential execution matters because both runtimes touch the same Silver Bullet
 state path under `~/.claude/.silver-bullet/`.
 
-The live todo-app E2E suite is separate. It uses the todo-app fixture in
-`tests/test-app/`, writes its own `e2e-live-matrix` marker, begins with a
-plugin-installation UX scenario, and is intended to prove the higher-level
-product workflow on real runtime sessions. The install-UX scenario also
-verifies the installed command surface (`silver:init`, `silver:feature`, and
-the `silver` router) in the runtime cache, which is the closest reliable proxy
-we currently have for picker exposure in the Codex/Claude hosts.
+The live todo-app E2E suite is separate. It uses the standalone sibling
+`test-todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
+inline full-surface journey that proves install UX, feature delivery,
+bugfixing, issue filing, cleanup, and release prep in one real runtime session.
+That journey also verifies the installed command surface (`silver:init`,
+`silver:feature`, and the `silver` router) in the runtime cache, which is the
+closest reliable proxy we currently have for picker exposure in the
+Codex/Claude hosts. The journey additionally writes `inline-e2e-matrix` so the
+release gate can prove the end-user experience actually ran in this session.
 When Claude quota is exhausted and the user explicitly approves skipping further
 Claude live testing for a release, the live runners may be narrowed to Codex
 only via `SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, and the
 release gate may be satisfied with `matrix=codex-only` markers after setting
 `SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1`.
 
-The separate `tests/live/test-silver-init-migration.sh` scenario exercises the interactive
-migration step in `skills/silver-init/SKILL.md` (Phase 3.5.5). The migration is
-non-destructive by design — originals are backed up as `.pre-sb-backup` before any rename
-or split.
+The separate `tests/live/test-silver-init-migration.sh` scenario exercises the
+Step 3.5.5 delegation path where `silver:init` hands docs bootstrap/reconciliation
+to `silver:ensure-docs`. It validates the brownfield preserve-vs-switch behavior,
+archive-move policy, and recovery/remediation command paths.
 
 ## Forge-Silver Bullet Skill Test Harness
 

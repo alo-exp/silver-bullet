@@ -34,8 +34,12 @@ sb_skill_is_installed() {
   else
     search_roots=(
       "$repo_root"
+      # Codex installs dependency skills under ~/.codex/skills/* and caches plugins
+      # (including SB itself) under ~/.codex/plugins/cache/**/skills/*.
+      "$HOME/.codex"
       "$HOME/.claude"
       "$HOME/.agents"
+      "$HOME/.codex/plugins/cache"
       "$HOME/.claude/plugins/cache"
     )
   fi
@@ -46,7 +50,11 @@ sb_skill_is_installed() {
     case "$root" in
       *"/plugins/cache")
         shopt -s nullglob
-        for candidate in "$root"/*/skills/"$skill"/SKILL.md "$root"/*/*/skills/"$skill"/SKILL.md; do
+        for candidate in \
+          "$root"/*/skills/"$skill"/SKILL.md \
+          "$root"/*/*/skills/"$skill"/SKILL.md \
+          "$root"/*/forge/skills/"$skill"/SKILL.md \
+          "$root"/*/*/forge/skills/"$skill"/SKILL.md; do
           if [[ -f "$candidate" ]]; then
             shopt -u nullglob
             return 0
@@ -55,15 +63,58 @@ sb_skill_is_installed() {
         shopt -u nullglob
         ;;
       *)
-        if [[ -f "$root/skills/$skill/SKILL.md" ]]; then
-          return 0
-        fi
-        if [[ -f "$root/$skill/SKILL.md" ]]; then
-          return 0
+        for candidate in \
+          "$root/skills/$skill/SKILL.md" \
+          "$root/forge/skills/$skill/SKILL.md" \
+          "$root/$skill/SKILL.md"; do
+          if [[ -f "$candidate" ]]; then
+            return 0
+          fi
+        done
+
+        local search_dirs=()
+        [[ -d "$root/skills" ]] && search_dirs+=("$root/skills")
+        [[ -d "$root/forge/skills" ]] && search_dirs+=("$root/forge/skills")
+        if [[ ${#search_dirs[@]} -gt 0 ]]; then
+          local escaped_skill
+          escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
+          if command -v rg >/dev/null 2>&1; then
+            if rg -l -m1 -g 'SKILL.md' "^name:[[:space:]]*$escaped_skill[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+              return 0
+            fi
+          else
+            if grep -Rls -E "^name:[[:space:]]*$escaped_skill[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+              return 0
+            fi
+          fi
         fi
         ;;
     esac
   done
 
   return 1
+}
+
+sb_skill_canonical_name() {
+  local skill="${1:-}"
+  [[ -n "$skill" ]] || return 1
+
+  if [[ "$skill" == gsd:* ]]; then
+    printf 'gsd-%s' "${skill#gsd:}"
+    return 0
+  fi
+
+  # Silver Bullet uses `silver:<route>` as a single skill family, and the
+  # compliance state uses hyphenated markers (`silver-init`, `silver-feature`,
+  # etc.). Do not strip the `silver:` prefix.
+  if [[ "$skill" == silver:* ]]; then
+    printf 'silver-%s' "${skill#silver:}"
+    return 0
+  fi
+
+  while [[ "$skill" == *:* ]]; do
+    skill="${skill#*:}"
+  done
+
+  printf '%s' "$skill"
 }

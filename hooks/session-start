@@ -54,6 +54,23 @@ SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 SIDEKICK_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
 
+# SB project boundary: if the current working tree does not have both the
+# project config and the live silver-bullet.md contract, this hook must stay
+# inert. That prevents SB startup state from affecting non-SB projects.
+sb_project_root=""
+search_dir="$PWD"
+while true; do
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+    sb_project_root="$search_dir"
+    break
+  fi
+  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+    break
+  fi
+  search_dir=$(dirname "$search_dir")
+done
+[[ -z "$sb_project_root" ]] && exit 0
+
 # ── Branch-scoped state reset ─────────────────────────────────────────────────
 # Skill recordings are scoped to a git branch. When the branch changes between
 # sessions, the full state is cleared — forcing a fresh workflow for the new branch.
@@ -65,6 +82,7 @@ SIDEKICK_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
 quality_gate_state_file="${SIDEKICK_GATE_FILE}"
+verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 
 # Env var override — allows tests to redirect state writes to a temp file
 # without touching the live session state (same pattern as completion-audit.sh)
@@ -90,6 +108,48 @@ case "$quality_gate_state_file" in
   "$HOME"/.claude/*) ;;
   *) quality_gate_state_file="${SIDEKICK_GATE_FILE}" ;;
 esac
+
+# Env var override for the test execution gate file.
+verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
+case "$verify_tests_state_file" in
+  "$HOME"/.claude/*) ;;
+  *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
+esac
+
+# Fresh init / exec-mode prompt replay.
+#
+# `silver:init` runs before the scaffold files exist, so the project-boundary
+# guard below would exit before any seed markers are recorded. When the runtime
+# provides a seed prompt file, replay it now so fresh projects can still seed
+# `silver-init` into the shared SB state before the boundary check runs.
+if command -v jq >/dev/null 2>&1; then
+  _sb_prompt_seed=""
+  if [[ -n "${SILVER_BULLET_PROMPT_FILE:-}" && -f "${SILVER_BULLET_PROMPT_FILE:-}" ]]; then
+    _sb_prompt_seed="$SILVER_BULLET_PROMPT_FILE"
+  else
+    _sb_search_dir="$PWD"
+    while true; do
+      if [[ -f "$_sb_search_dir/.silver-bullet.prompt.json" ]]; then
+        _sb_prompt_seed="$_sb_search_dir/.silver-bullet.prompt.json"
+        break
+      fi
+      if [[ -d "$_sb_search_dir/.git" ]] || [[ "$_sb_search_dir" == "/" ]]; then
+        break
+      fi
+      _sb_search_dir=$(dirname "$_sb_search_dir")
+    done
+  fi
+
+  if [[ -n "$_sb_prompt_seed" ]]; then
+    _sb_recorder="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-requested-skill.sh"
+    if [[ -x "$_sb_recorder" ]]; then
+      _sb_prompt_json="$(jq -Rs '{hook_event_name:"UserPromptSubmit", prompt:.}' < "$_sb_prompt_seed" 2>/dev/null || true)"
+      if [[ -n "$_sb_prompt_json" ]]; then
+        printf '%s' "$_sb_prompt_json" | "$_sb_recorder" >/dev/null 2>&1 || true
+      fi
+    fi
+  fi
+fi
 
 # Detect current git branch (safe: validates characters, falls back to empty)
 current_branch=""
@@ -174,6 +234,7 @@ rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null
 rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null
 if [[ "$sb_should_mutate" == true ]]; then
   rm -f -- "$quality_gate_state_file" 2>/dev/null
+  rm -f -- "$verify_tests_state_file" 2>/dev/null
 fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled

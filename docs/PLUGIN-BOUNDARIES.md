@@ -43,6 +43,11 @@ command surface that ships inside it, and the shared marketplace glue for third-
 
 SB adds enforcement to the GSD+Superpowers+Engineering+Design stack. It never replaces any plugin's functionality.
 
+If one of those dependency plugins becomes unavailable during a run, SB
+fails closed: stop, notify the user, and offer install-and-retry first.
+Only continue with an explicitly approved degraded path if the workflow
+documents one.
+
 ## Packaging Boundaries
 
 - `/.planning/`, `/.claude/`, and `/.forge/` are project-instance artifacts, not plugin artifacts.

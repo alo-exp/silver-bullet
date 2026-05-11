@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PASS=0
+FAIL=0
+
+assert_file_exists() {
+  local desc="$1" path="$2"
+  if [[ -f "$path" ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing: $path"
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_contains() {
+  local desc="$1" needle="$2" file="$3"
+  if grep -qF "$needle" "$file"; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing [$needle] in $file"
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_not_contains() {
+  local desc="$1" needle="$2" file="$3"
+  if ! grep -qF "$needle" "$file"; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — unexpected [$needle] in $file"
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_symlink() {
+  local desc="$1" path="$2"
+  if [[ -L "$path" ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — not a symlink: $path"
+    (( FAIL++ )) || true
+  fi
+}
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT="$REPO_ROOT/skills/silver-init/scripts/merge-hooks.py"
+HOME_DIR="$TMP/home"
+INSTALL_PATH="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.32.4"
+
+mkdir -p "$HOME_DIR/.claude" "$INSTALL_PATH/hooks"
+rsync -a "$REPO_ROOT/hooks/" "$INSTALL_PATH/hooks/"
+
+cat > "$HOME_DIR/.claude/settings.json" <<EOF
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${HOME_DIR}/.claude/plugins/cache/alo-labs/silver-bullet/0.31.0/hooks/session-start\"",
+            "timeout": 15,
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+
+HOME="$HOME_DIR" python3 "$SCRIPT" "$INSTALL_PATH" >/dev/null
+
+STABLE_ALIAS="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/current"
+
+assert_symlink "stable alias created for versioned SB install" "$STABLE_ALIAS"
+assert_file_exists "stable alias exposes hook surface" "$STABLE_ALIAS/hooks/session-start"
+assert_contains "settings rewritten to stable alias" "$STABLE_ALIAS/hooks/session-start" "$HOME_DIR/.claude/settings.json"
+assert_not_contains "old versioned hook path removed" "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.31.0/hooks/session-start" "$HOME_DIR/.claude/settings.json"
+assert_contains "new session-start hook registered" "$STABLE_ALIAS/hooks/spec-session-record.sh" "$HOME_DIR/.claude/settings.json"
+assert_contains "new prompt hook registered" "$STABLE_ALIAS/hooks/prompt-reminder.sh" "$HOME_DIR/.claude/settings.json"
+
+echo
+echo "Results: $PASS passed, $FAIL failed"
+[[ $FAIL -eq 0 ]]

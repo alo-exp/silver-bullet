@@ -176,6 +176,7 @@ run_record_skill "gsd-ship" >/dev/null
 # Release allowed with all skills
 write_release_live_matrix_marker
 write_e2e_live_matrix_marker
+write_inline_e2e_matrix_marker
 write_quality_gate_state_marker
 write_release_ci_runs_marker
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")

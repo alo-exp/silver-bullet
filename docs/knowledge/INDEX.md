@@ -15,12 +15,14 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Tech Debt | `docs/tech-debt.md` | Active debt register (max 20 items) |
 | Changelog | `docs/CHANGELOG.md` | Version history |
 | Task Doc Checklist | `docs/task-doc-checklist.json` | Per-task doc update checklist; must cover governed doc inventory enforced by completion hooks |
+| Doc Scheme Contract | `docs/doc-scheme.json` | Hook-enforced docs contract (`required_docs`, sections, granularity, mappings, archive moves) |
 | PRD Overview | `docs/PRD-Overview.md` | Product vision, requirement areas |
-| Doc Scheme (SB) | `docs/documentation-scheme.md` | SB's own documentation architecture |
-| Doc Scheme (projects) | `docs/project-documentation-scheme.md` | User-project documentation architecture |
+| Doc Scheme | `docs/doc-scheme.md` | Canonical docs-governance policy and live contract companion |
+| Legacy Scheme Wrappers | `docs/documentation-scheme.md`, `docs/project-documentation-scheme.md` | Compatibility pointers for older links |
 | Active Workflow | `docs/workflows/full-dev-cycle.md` | Dev cycle steps |
 | Specs (archive) | `docs/specs/` | Point-in-time design specs |
 | Session Logs | `docs/sessions/` | Per-session notes |
+| Docs Archive | `docs/archive/` | Preserved brownfield docs moved during switch-to-SB alternatives |
 | Audit Archive | `docs/audits/` | Historical SENTINEL reports |
 | Internal | `docs/internal/` | QA reports, guidelines, superseded docs |
 | Git Repo | https://github.com/alo-exp/silver-bullet.git | — |

@@ -20,6 +20,9 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   rm -f "$TMPSTATE"  # clean slate per test
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   cat > "$TMPCFG" << EOF
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
@@ -99,6 +102,13 @@ echo "--- Group 1: Basic recording ---"
 setup
 run_hook "silver-quality-gates" >/dev/null
 assert_in_state "silver-quality-gates recorded after invocation" "silver-quality-gates"
+teardown
+
+# Test 1b: Bootstrap silver:init is recorded even before project config exists
+setup
+rm -f "$TMPCFG"
+run_hook "silver:init" >/dev/null
+assert_in_state "silver:init recorded without project config present" "silver-init"
 teardown
 
 # Test 2: Untracked skill is NOT recorded
@@ -206,7 +216,11 @@ teardown
 setup
 run_hook "" >/dev/null || true
 # State file should either not exist or be empty
-skill_count=$(wc -l < "$TMPSTATE" 2>/dev/null || echo 0)
+if [[ -f "$TMPSTATE" ]]; then
+  skill_count=$(wc -l < "$TMPSTATE" 2>/dev/null || echo 0)
+else
+  skill_count=0
+fi
 if [[ "$skill_count" -eq 0 ]]; then
   echo "  ✅ empty skill name ignored"
   PASS=$((PASS + 1))

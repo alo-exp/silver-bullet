@@ -39,6 +39,9 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   rm -f "$TMPSTATE"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 }
 

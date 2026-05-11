@@ -37,11 +37,12 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
 ```
 
 `completion-audit.sh` blocks `gh release create` until all `required_deploy` skills,
-all 4 quality gate stage markers, and both live markers are present.
+all 4 quality gate stage markers, and the live matrix markers are present.
 Run `tests/live/run-live-tests.sh` and `tests/e2e-live/run-e2e-live-tests.sh`
 successfully in the current session before creating the release tag. The
-todo-app suite begins with an install-UX scenario so the end-user plugin
-bootstrap path is proven before the feature workflow starts.
+todo-app suite is now one inline full-surface journey and also writes an
+`inline-e2e-matrix` marker so the end-user plugin bootstrap path and the
+follow-on development flow are both proven before release.
 If Claude usage is exhausted for the release session and the user explicitly
 approves skipping further Claude live testing, run both suites with
 `SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, set

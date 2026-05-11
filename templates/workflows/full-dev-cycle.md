@@ -20,7 +20,7 @@
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
 | Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |
-| Gap-filling skills | Skill tool -- `/testing-strategy`, `/documentation`, etc. |
+| Gap-filling skills | Skill tool -- `/testing-strategy`, `/verify-tests`, `/documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -401,9 +401,9 @@ execution with atomic commits and SUMMARY.md. Same quality guarantees as the mai
 
 > Run once after all phases are complete.
 
-**What it does:** Wraps up the milestone by defining test strategy, cataloging tech debt,
-updating all documentation, and preparing the branch for merge. These four skills are always
-required regardless of project type.
+**What it does:** Wraps up the milestone by defining test strategy, refreshing the test
+execution gate, cataloging tech debt, updating all documentation, and preparing the branch
+for merge. These five skills are always required regardless of project type.
 
 ---
 
@@ -419,6 +419,23 @@ layers with concrete coverage targets and tool recommendations tailored to your 
 
 **If it fails:** Re-run with more specific guidance about your testing preferences and
 infrastructure constraints.
+
+---
+
+### Test Execution Gate
+
+**Command:** `/verify-tests`                                                 **REQUIRED** -- DO NOT SKIP
+
+**What it does:** Runs the project's configured verify commands or stack defaults, then writes
+the freshness marker that Silver Bullet's final-delivery hooks require.
+
+**What to expect:** The project's test suite runs from the repository root. If `.silver-bullet.json`
+defines `verify_commands`, those commands run in order; otherwise the skill falls back to stack
+defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
+depending on the repo.
+
+**If it fails:** Fix the failing test command, then rerun `/verify-tests` before attempting
+PR creation or release.
 
 ---
 
@@ -519,8 +536,8 @@ can be shipped. Both steps are required.
 Use existing pipeline or set one up before deploying. GitHub repos: use GitHub Actions.
 
 **CI verification gate:**
-- Run local verify commands first (from `.silver-bullet.json` `verify_commands`,
-  or stack defaults: `npm test` / `pytest` / `cargo test` / `go test ./...`)
+- Run `/verify-tests` first (it uses `.silver-bullet.json` `verify_commands` when present,
+  or stack defaults such as `npm test` / `pytest` / `cargo test` / `go test ./...`)
 - Check CI: `gh run list --limit 1 --json status,conclusion`
 - **Autonomous mode**: poll every 30 seconds, up to 20 retries (10 min max).
   On timeout: log blocker under "Needs human review", surface to user, **STOP
@@ -688,7 +705,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
-- For trivial changes (typos, copy fixes, config tweaks): `touch ~/.claude/.silver-bullet/trivial`
+- For trivial changes (typos, copy fixes, config tweaks): route through `/silver:fast`
 
 ---
 

@@ -70,7 +70,7 @@ These two files do not duplicate each other. GSD's STATE.md tracks project phase
 
 Mostly works. Available skills:
 - `silver:init`, `silver:fast`, `silver:add`, `silver:remove`, `silver:rem`, `silver:scan`, `silver:handoff`
-- All hooks (state file gating, plugin-boundary blocks, trivial bypass, etc.)
+- All hooks (state file gating, plugin-boundary blocks, fast-path routing support, etc.)
 - Pre-release quality gate stages (you provide a phase plan some other way)
 
 Disabled / error-on-invoke:

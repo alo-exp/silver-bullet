@@ -79,6 +79,7 @@ Use this map when adding or reorganizing docs.
 | `knowledge/INDEX.md` | Gateway index of all project docs |
 | `task-doc-checklist.json` | Per-task checklist status for governed docs (hook-enforced gate) |
 | `doc-scheme.md` | This file — documentation architecture reference |
+| `doc-scheme.json` | Machine-enforced contract used by hooks (`required_docs`, sections, granularity, mappings, archive history) |
 
 ### Knowledge & Lessons (created during development)
 
@@ -121,8 +122,8 @@ Managed by GSD. You rarely edit these directly — they're created and consumed 
 | `STATE.md` | `gsd-new-project` | Current progress, decisions, quick tasks |
 | `REQUIREMENTS.md` | `gsd-new-milestone` | Scoped requirements with acceptance criteria |
 | Phase dirs (`phases/`) | Planning skills | Per-phase context, research, plans, reviews |
-| `workflows/*.md` | `/silver` composer | Composition state per workflow instance |
-| `WORKFLOW.md` (legacy) | Older `/silver` flows | Legacy single-file composition log |
+| `workflows/<id>.md` | `/silver` composer | Active composed-workflow state per workflow instance |
+| `WORKFLOW.md` (retired legacy) | Older `/silver` flows | Retired single-file composition log |
 | `VALIDATION.md` | `silver-validate` | Pre-build validation results |
 | `UI-SPEC.md` | `gsd-ui-phase` | UI specification — layout, components, interactions |
 | `UI-REVIEW.md` | `gsd-ui-review` | UI review findings — 6-pillar assessment |
@@ -159,29 +160,35 @@ Every document has a growth limit:
 
 ## Enforced Task Checklist
 
-Task completion and delivery are hard-blocked unless `docs/task-doc-checklist.json` is updated in the current session and includes every governed doc key.
+Runtime source of truth is `docs/doc-scheme.json`; this file (`docs/doc-scheme.md`) is the human policy companion.
 
-Allowed status values per key:
+Hard blocking applies when `task_granularity` is `2` or `3` (configured in `doc-scheme.json`).
+
+`docs/task-doc-checklist.json` must include:
+1. `task_id`
+2. `task_granularity` (numeric)
+3. `docs` object with one status per `required_docs[].key` in `doc-scheme.json`
+4. `sections` coverage for every required section declared in `required_docs[].required_sections`
+
+Allowed status values:
 1. `updated`
 2. `not-needed: <reason>`
 3. `n/a: <reason>`
 
-Mandatory `updated` every task:
-1. `docs/CHANGELOG.md`
-2. `docs/knowledge/YYYY-MM.md`
-3. `docs/lessons/YYYY-MM.md`
-
-Checklist coverage scope (all required in `docs/task-doc-checklist.json`):
-1. Mandatory wildcard keys:
-   `docs/CHANGELOG.md`, `docs/knowledge/YYYY-MM.md`, `docs/lessons/YYYY-MM.md`
-2. Every concrete doc file currently present under `docs/` (recursive),
-   except monthly knowledge/lessons files represented by wildcard keys above.
-3. `README.md` and root `CHANGELOG.md` when those files exist.
-
-This means the checklist must explicitly cover each existing documentation file in the repo, including governance files such as `docs/doc-scheme.md` and `docs/task-doc-checklist.json`.
+Mandatory `updated` keys are read from `doc-scheme.json` (`mandatory_updated_docs` and doc-level `mandatory_updated`).
 
 Rule:
-1. If a key is marked `updated`, the corresponding file must also be modified in the same session.
+1. Any key marked `updated` must correspond to a file modified in the current session.
+2. If the scheme files are missing/invalid, run `/silver:ensure-docs --recover-scheme`.
+3. If hook gaps are emitted, run `/silver:ensure-docs --from-hook --task <id> --gaps <path>`.
+
+## Brownfield Archival Policy
+
+When a brownfield project switches from a pre-existing user doc structure to SB canonical docs:
+1. Prior user artifacts are moved (not copied) to `docs/archive/<timestamp>/...`.
+2. Every move is recorded in the scheme contract (`archive_moves`) and archive manifest.
+3. Canonical SB docs are created/updated with relevant content carried forward.
+4. Preserve-mode mappings are recorded in `preserved_mappings` and enforced by hooks.
 
 ---
 

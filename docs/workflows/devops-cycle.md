@@ -789,7 +789,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.
-- For trivial changes (typos, comment fixes in non-logic files): `touch ~/.claude/.silver-bullet/trivial`.
+- For trivial changes (typos, comment fixes in non-logic files): route through `/silver:fast`.
   This does NOT apply to YAML/JSON files in this workflow.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
 

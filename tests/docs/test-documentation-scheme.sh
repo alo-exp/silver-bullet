@@ -7,6 +7,7 @@ set -euo pipefail
 PASS=0
 FAIL=0
 TOTAL=0
+current_month="$(date +%Y-%m)"
 
 pass() { ((PASS++)); ((TOTAL++)); printf "  ✓ %s\n" "$1"; }
 fail() { ((FAIL++)); ((TOTAL++)); printf "  ✗ %s\n" "$1"; }
@@ -31,9 +32,10 @@ for f in \
   docs/documentation-scheme.md \
   docs/project-documentation-scheme.md \
   docs/doc-scheme.md \
+  docs/doc-scheme.json \
   docs/knowledge/INDEX.md \
-  docs/knowledge/2026-04.md \
-  docs/lessons/2026-04.md; do
+  docs/knowledge/$current_month.md \
+  docs/lessons/$current_month.md; do
   if [[ -f "$f" ]]; then
     pass "$f exists"
   else
@@ -63,6 +65,7 @@ for f in \
   templates/lessons/YYYY-MM.md.base \
   templates/task-doc-checklist.json.base \
   templates/doc-scheme.md.base \
+  templates/doc-scheme.json.base \
   templates/CHANGELOG-project.md.base \
   templates/silver-bullet.md.base \
   templates/silver-bullet.config.json.default; do

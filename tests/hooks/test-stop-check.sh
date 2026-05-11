@@ -57,8 +57,11 @@ setup() {
   git -C "$TMPGIT" init -q
   git -C "$TMPGIT" config user.email "test@test.com"
   git -C "$TMPGIT" config user.name "Test"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   touch "$TMPGIT/.gitkeep"
-  git -C "$TMPGIT" add .gitkeep
+  git -C "$TMPGIT" add .gitkeep silver-bullet.md
   write_cfg
   # Commit config on the default branch BEFORE forking feature/test so that
   # feature/test does not appear as 1-ahead of main. Tests that need a clean
@@ -161,6 +164,35 @@ seed_doc_scheme_marker() {
 |---|---|
 | Every task | CHANGELOG.md, knowledge/YYYY-MM.md, lessons/YYYY-MM.md |
 EOF
+  cat > "$TMPDIR_TEST/docs/doc-scheme.json" << 'EOF'
+{
+  "version": 1,
+  "sync": {
+    "doc_scheme_md_path": "docs/doc-scheme.md",
+    "task_checklist_path": "docs/task-doc-checklist.json"
+  },
+  "enforcement": {
+    "enabled": true,
+    "granularity_levels": [2, 3]
+  },
+  "mandatory_updated_docs": [
+    "docs/CHANGELOG.md",
+    "docs/knowledge/YYYY-MM.md",
+    "docs/lessons/YYYY-MM.md",
+    "docs/task-doc-checklist.json"
+  ],
+  "required_docs": [
+    { "key": "docs/CHANGELOG.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/knowledge/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/lessons/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/task-doc-checklist.json", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/doc-scheme.md", "mandatory_updated": false, "required_sections": [] },
+    { "key": "docs/doc-scheme.json", "mandatory_updated": false, "required_sections": [] }
+  ],
+  "preserved_mappings": [],
+  "archive_moves": []
+}
+EOF
 }
 
 seed_doc_scheme_targets_current_month() {
@@ -183,12 +215,14 @@ seed_doc_scheme_checklist_current_month() {
   cat > "$TMPDIR_TEST/docs/task-doc-checklist.json" << EOF
 {
   "task_id": "test-doc-scheme-gate",
+  "task_granularity": 3,
   "docs": {
     "docs/CHANGELOG.md": "updated",
     "docs/knowledge/YYYY-MM.md": "updated",
     "docs/lessons/YYYY-MM.md": "updated",
     "docs/task-doc-checklist.json": "updated",
     "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
+    "docs/doc-scheme.json": "not-needed: scheme contract unchanged for this task",
     "docs/ARCHITECTURE.md": "not-needed: no architecture changes in this task",
     "docs/TESTING.md": "not-needed: no testing-doc changes in this task",
     "docs/knowledge/INDEX.md": "not-needed: no docs added or removed in this task",
@@ -197,6 +231,24 @@ seed_doc_scheme_checklist_current_month() {
   }
 }
 EOF
+}
+
+add_contract_required_key() {
+  local key="$1"
+  python3 - "$TMPDIR_TEST/docs/doc-scheme.json" "$key" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+key = sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+required = data.setdefault("required_docs", [])
+if not any(item.get("key") == key for item in required):
+    required.append({"key": key, "mandatory_updated": False, "required_sections": []})
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
 }
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
@@ -623,7 +675,7 @@ sleep 1
 date +%s > "$SESSION_START_FILE"
 out=$(run_hook)
 assert_blocks "DOC-2B: stale docs/checklist block completion" "$out"
-assert_contains "DOC-2B: block mentions stale docs" "$out" "Stale:"
+assert_contains "DOC-2B: block mentions stale docs" "$out" "Stale"
 teardown
 
 echo "--- DOC-2C: docs + checklist updated this session -> allows completion ---"
@@ -670,6 +722,7 @@ EOF
 cat > "$TMPDIR_TEST/docs/EXTRA.md" << 'EOF'
 # Extra governed doc
 EOF
+add_contract_required_key "docs/EXTRA.md"
 seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook)
 assert_blocks "DOC-2D: missing concrete doc key blocks completion" "$out"

@@ -1,9 +1,10 @@
 # Silver Bullet Live Todo-App E2E Suite
 
-This suite runs the real Claude and Codex CLIs against an isolated copy of
-`tests/test-app/` and drives realistic development episodes against the todo
-app fixture. It now starts with an install-UX scenario so the end-user plugin
-installation flow is exercised before feature work begins.
+This suite runs the real Claude and Codex CLIs against an isolated copy of the
+standalone sibling `test-todo-app` repo and drives one inline full-surface development journey
+against the todo app fixture. The journey starts with install UX, moves through
+discovery, feature delivery, defect repair, cleanup, and release prep, and
+captures any real dissatisfaction through `silver:add` with `todo-app` tagging.
 
 It is intentionally separate from `tests/live/run-live-tests.sh`:
 
@@ -12,18 +13,25 @@ It is intentionally separate from `tests/live/run-live-tests.sh`:
   the todo app fixture itself
 
 When the full Claude+Codex matrix passes, `run-e2e-live-tests.sh` writes the
-session-scoped `e2e-live-matrix` marker (`matrix=full-claude-codex`). Release
-creation requires that marker in addition to the shared hook/runtime matrix
-marker written by `tests/live/run-live-tests.sh`.
+session-scoped `e2e-live-matrix` marker (`matrix=full-claude-codex`). The
+single inline journey also writes an `inline-e2e-matrix` marker
+(`matrix=inline-full-surface`). Release creation requires both markers in
+addition to the shared hook/runtime matrix marker written by
+`tests/live/run-live-tests.sh`.
 
-Current scenarios:
+Current scenario:
 
 | Scenario | Purpose |
 |----------|---------|
-| `test-e2e-live-install-ux.sh` | Fresh plugin install UX, install-state verification, and initial scaffold |
-| `test-e2e-live-init-and-feature.sh` | Fresh SB init plus a feature build that adds a clear-completed action |
-| `test-e2e-live-regression-repair.sh` | Injected regression repair through the bugfix workflow |
-| `test-e2e-live-release-prep.sh` | Release prep, changelog creation, and local tag creation |
+| `test-e2e-live-full-surface-journey.sh` | Fresh plugin install UX, discovery, feature delivery, bug repair, cleanup, and release prep in one live journey |
 
-Each scenario starts from a fresh workspace copied from `tests/test-app/` and is
+Fast preflight:
+
+| Script | Purpose |
+|--------|---------|
+| `dependency-access-preflight.sh` | Verifies the live runtime can see SB and the required dependency plugins before the expensive scenario run starts |
+
+`run-e2e-live-tests.sh` calls the preflight automatically before each runtime/scenario run, so you can also run the preflight script directly when you just want the cheap plugin-access check.
+
+Each scenario starts from a fresh workspace copied from the standalone sibling `test-todo-app` repo and is
 cleaned up after completion.

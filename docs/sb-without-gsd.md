@@ -38,7 +38,7 @@ or standalone skills described below.
 
 ### Enforcement Hooks (all active)
 
-All 22 hook scripts fire on their configured Claude Code events regardless of whether GSD is
+All 23 hook scripts fire on their configured Claude Code events regardless of whether GSD is
 installed. These are the Silver Bullet enforcement layer.
 
 | Hook | Event | What it enforces |
@@ -51,7 +51,7 @@ installed. These are the Silver Bullet enforcement layer.
 | `completion-audit.sh` | PreToolUse/Bash + PostToolUse/Bash | Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete |
 | `ci-status-check.sh` | PreToolUse/Bash + PostToolUse/Bash | Blocks `git push`, `gh pr create`, and `gh release create` when CI is failing; warns on `git commit` |
 | `stop-check.sh` | Stop / SubagentStop | Blocks task-complete declaration if required skills are missing; survives context compaction |
-| `prompt-reminder.sh` | UserPromptSubmit | Re-injects missing-skill list and core enforcement rules before Claude processes each message |
+| `record-requested-skill.sh` + `prompt-reminder.sh` | UserPromptSubmit | Records requested routes, re-injects missing-skill list and core enforcement rules before Claude processes each message |
 | `forbidden-skill-check.sh` | PreToolUse/Skill | Blocks deprecated or forbidden skills before they execute |
 | `roadmap-freshness.sh` | PreToolUse/Bash | Blocks `git commit` if a phase `SUMMARY.md` is staged but the corresponding ROADMAP.md checkbox is not ticked |
 | `phase-archive.sh` | PreToolUse/Bash | Archives GSD planning artifacts when a git commit includes a phase SUMMARY |
@@ -70,7 +70,8 @@ fully without a GSD install.
 | Skill | Purpose |
 |-------|---------|
 | `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
-| `/silver:init` | Once per project — initializes `CLAUDE.md`, config, CI, and docs scaffold |
+| `/silver:init` | Once per project — initializes `silver-bullet.md`, config, CI, then invokes `/silver:ensure-docs --bootstrap`; reconciles any existing project instruction file in place |
+| `/silver:ensure-docs` | Documentation authority — bootstrap/reconcile docs, remediate hook gaps, recover doc scheme contract |
 | `/silver-quality-gates` | Pre-planning quality check across 9 dimensions (modularity, reusability, scalability, security, reliability, usability, testability, extensibility) |
 | `/devops-quality-gates` | 7 IaC-adapted quality dimensions for infrastructure work (usability excluded) |
 | `/silver-blast-radius` | Maps change scope, dependencies, failure scenarios, and rollback plan for DevOps changes |
@@ -80,6 +81,7 @@ fully without a GSD install.
 | `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
 | `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, files survivors via `/silver-add` and `/silver-rem` |
 | `/silver-handoff` | Generates a reusable project-level handoff prompt for session continuation |
+| `/verify-tests` | Test execution gate — runs configured verify commands or stack defaults and writes the freshness marker required by final delivery hooks |
 | `/silver-create-release` | Generates release notes and creates GitHub Release — **partial**: the final step calls `gsd-complete-milestone`; milestone archival is unavailable without GSD, but the release notes and GitHub Release creation work |
 
 ---

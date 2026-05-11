@@ -96,7 +96,7 @@ The three pillars:
 - **PostToolUse/Bash** → `completion-audit.sh`, `pr-traceability.sh`, `session-log-init.sh`, `ci-status-check.sh`, `timeout-check.sh`
 - **PostToolUse/\*** → `compliance-status.sh` (async, informational)
 - **Stop / SubagentStop** → `stop-check.sh` (blocks task-complete if required skills missing)
-- **UserPromptSubmit** → `prompt-reminder.sh` (re-injects missing skill list)
+- **UserPromptSubmit** → `record-requested-skill.sh`, `prompt-reminder.sh` (records requested routes, re-injects missing skill list)
 
 ### Two-Tier Enforcement Model
 
@@ -144,7 +144,7 @@ These call into GSD (`gsd-*`) and Superpowers (`superpowers:*`) skills — Silve
 - `silver-bullet.md.base` → becomes `silver-bullet.md` in the target project
 - `CLAUDE.md.base` → becomes `CLAUDE.md` in the target project
 - `silver-bullet.config.json.default` → default values for `.silver-bullet.json`
-- `workflow.md.base` → becomes `.planning/WORKFLOW.md`
+- `workflow.md.base` → becomes `.planning/workflows/<id>.md`
 
 **Critical invariant**: changes to enforcement logic (required skill lists, hook behavior) must be reflected in **both** `silver-bullet.md` (this repo's live copy) **and** `templates/silver-bullet.md.base` (the template stamped into new projects). Same for `CLAUDE.md` / `CLAUDE.md.base`.
 

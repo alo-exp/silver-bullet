@@ -248,7 +248,7 @@ footer a:hover{color:var(--accent-light)}
             <td>IaC-adapted quality gates — 7 dimensions (usability excluded). Same base framework as /quality-gates, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention. Dispatches 7 parallel agents.</td>
           </tr>
           <tr>
-            <td>/accessibility-review<span class="badge-small badge-cond">UI only</span><span class="badge-small badge-req">Required</span></td>
+            <td>design:accessibility-review<span class="badge-small badge-cond">UI only</span><span class="badge-small badge-req">Required</span></td>
             <td>Discuss (UI phases)</td>
             <td>WCAG 2.1 AA compliance review. Required for any phase that introduces or modifies user-facing UI. Checks colour contrast, keyboard nav, screen reader compatibility, focus management.</td>
           </tr>
@@ -381,6 +381,11 @@ footer a:hover{color:var(--accent-light)}
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>First step</th></tr></thead>
         <tbody>
+          <tr>
+            <td><a href="../workflows/silver-brainstorm-idea.html">/silver:brainstorm-idea</a></td>
+            <td>I want to build, I have an idea, here's my concept, multi-sentence idea description with no SPEC.md</td>
+            <td>product-brainstorming → silver:brainstorm → gsd-new-milestone → gsd-discuss-phase</td>
+          </tr>
           <tr>
             <td><a href="../workflows/silver-feature.html">/silver:feature</a></td>
             <td>add, build, implement, new feature, enhance, extend</td>
@@ -540,8 +545,8 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
-      <h3 id="workflow-md">WORKFLOW.md</h3>
-      <p><strong>Artifact purpose:</strong> Real-time composition state tracking. <code>WORKFLOW.md</code> is the live record of the current path composition — what has been decided, what paths have run, what has been inserted dynamically, and what comes next.</p>
+      <h3 id="workflow-md">Per-instance workflow tracker</h3>
+      <p><strong>Artifact purpose:</strong> Real-time composition state tracking. The active record lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It captures what has been decided, what paths have run, what has been inserted dynamically, and what comes next. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
       <p><strong>Key fields:</strong></p>
       <ul>
         <li><code>path_log</code> — ordered list of paths completed with timestamps and exit conditions met</li>
@@ -723,7 +728,7 @@ updated (Architecture patterns, Key decisions) | no changes
         <tbody>
           <tr><td>~/.claude/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
           <tr><td>~/.claude/.silver-bullet/session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
-          <tr><td>~/.claude/.silver-bullet/trivial</td><td>Presence signals that the next commit is a trivial change. Bypass workflow enforcement for one commit.</td></tr>
+          <tr><td>~/.claude/.silver-bullet/trivial</td><td>Legacy compatibility marker. Codex agents should route trivial work through <code>/silver:fast</code> instead.</td></tr>
           <tr><td>~/.claude/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
           <tr><td>~/.claude/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
         </tbody>
@@ -747,8 +752,8 @@ updated (Architecture patterns, Key decisions) | no changes
 <span class="comment"># Verify and ship after execution</span>
 /gsd:verify-work → /code-review → /requesting-code-review → /receiving-code-review
 
-<span class="comment"># Mark next commit as trivial (no enforcement)</span>
-touch ~/.claude/.silver-bullet/trivial
+<span class="comment"># Route trivial changes through /silver:fast</span>
+/silver:fast
 
 <span class="comment"># Check CI status</span>
 /opt/homebrew/bin/gh run list --limit 1 --json status,conclusion,name,headBranch

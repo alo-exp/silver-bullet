@@ -30,6 +30,12 @@ if ! declare -f sb_github_run_list_json >/dev/null 2>&1; then
   sb_github_run_list_json() { return 1; }
 fi
 
+# shellcheck source=lib/doc-scheme-gate.sh
+if [[ -f "$_lib_dir/doc-scheme-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/doc-scheme-gate.sh"
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -123,7 +129,7 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  completion-audit.sh
 config_file=""
 search_dir="$PWD"
 while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
     break
   fi
@@ -142,6 +148,7 @@ mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
 quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state"
+verify_tests_state_file="${HOME}/.claude/.silver-bullet/verify-tests-state"
 required_planning_cfg=""
 required_deploy_cfg=""
 active_workflow="full-dev-cycle"
@@ -168,6 +175,8 @@ active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 # Env var override for pre-release quality gate file
 quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
+# Env var override for the test execution gate file
+verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
 # Security: validate paths stay within ~/.claude/ (SB-002/SB-003)
 case "$state_file" in
@@ -181,6 +190,10 @@ esac
 case "$quality_gate_state_file" in
   "$HOME"/.claude/*) ;;
   *) quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state" ;;
+esac
+case "$verify_tests_state_file" in
+  "$HOME"/.claude/*) ;;
+  *) verify_tests_state_file="${HOME}/.claude/.silver-bullet/verify-tests-state" ;;
 esac
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
@@ -406,84 +419,9 @@ build_doc_scheme_checklist_keys() {
 # Granularity: delivery-only by design. Intermediate commits are unaffected.
 run_doc_scheme_delivery_gate() {
   local repo_root="$1"
-  local doc_scheme_file="$repo_root/docs/doc-scheme.md"
-  [[ -f "$doc_scheme_file" && ! -L "$doc_scheme_file" ]] || return 0
-
-  local session_start_file="${SILVER_BULLET_SESSION_START_FILE:-${SB_STATE_DIR}/session-start-time}"
-  session_start_file="${session_start_file/#\~/$HOME}"
-  case "$session_start_file" in
-    "$HOME"/.claude/*) ;;
-    *) session_start_file="${SB_STATE_DIR}/session-start-time" ;;
-  esac
-
-  local session_start=""
-  session_start=$(cat "$session_start_file" 2>/dev/null || true)
-  if ! [[ "$session_start" =~ ^[0-9]+$ ]]; then
-    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` is present, but the session start marker is missing or invalid at `%s`.\n\nStart a fresh SB session so hooks can stamp `session-start-time`, then update docs and retry delivery.' "$session_start_file")"
-    exit 0
+  if declare -f sb_doc_scheme_gate_enforce >/dev/null 2>&1; then
+    sb_doc_scheme_gate_enforce "delivery" "$repo_root" "$SB_STATE_DIR" "emit_block"
   fi
-
-  local month
-  month=$(date '+%Y-%m')
-  local checklist="$repo_root/docs/task-doc-checklist.json"
-  local gate_issues=""
-  local checklist_mtime=0
-  local doc_key=""
-  local status=""
-  local checklist_keys=()
-  build_doc_scheme_checklist_keys "$repo_root"
-  checklist_keys=("${DOC_SCHEME_CHECKLIST_KEYS[@]}")
-
-  if [[ ! -f "$checklist" || -L "$checklist" ]]; then
-    gate_issues+="  - Missing: docs/task-doc-checklist.json"$'\n'
-  else
-    checklist_mtime=$(_mtime_epoch "$checklist")
-    if (( checklist_mtime < session_start )); then
-      gate_issues+="  - Stale: docs/task-doc-checklist.json (not updated this session)"$'\n'
-    fi
-    if ! jq -e '.docs | type == "object"' "$checklist" >/dev/null 2>&1; then
-      gate_issues+="  - Invalid: docs/task-doc-checklist.json (.docs object missing)"$'\n'
-    else
-      for doc_key in "${checklist_keys[@]}"; do
-        status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
-        if [[ -z "$status" ]]; then
-          gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'
-          continue
-        fi
-
-        case "$status" in
-          updated|not-needed:*|n/a:*) ;;
-          *)
-            gate_issues+="  - Invalid checklist status: ${doc_key} -> ${status}"$'\n'
-            continue
-            ;;
-        esac
-
-        # Every task docs are mandatory updated, not skippable.
-        if [[ "$doc_key" == "docs/CHANGELOG.md" || "$doc_key" == "docs/knowledge/YYYY-MM.md" || "$doc_key" == "docs/lessons/YYYY-MM.md" ]]; then
-          if [[ "$status" != "updated" ]]; then
-            gate_issues+="  - Required status 'updated': ${doc_key}"$'\n'
-            continue
-          fi
-        fi
-
-        if [[ "$status" == "updated" ]]; then
-          resolve_doc_key_state "$repo_root" "$month" "$doc_key"
-          if (( DOC_KEY_EXISTS == 0 )); then
-            gate_issues+="  - Missing file marked updated: ${DOC_KEY_LABEL}"$'\n'
-          elif (( DOC_KEY_MTIME < session_start )); then
-            gate_issues+="  - Stale file marked updated: ${DOC_KEY_LABEL} (not updated this session)"$'\n'
-          fi
-        fi
-      done
-    fi
-  fi
-
-  if [[ -n "$gate_issues" ]]; then
-    emit_block "$(printf '🛑 DOC-SCHEME GATE — Delivery blocked.\n\n`docs/doc-scheme.md` requires a complete per-task documentation checklist and current-session doc updates before delivery.\n\nChecklist file: `docs/task-doc-checklist.json`\nAllowed checklist statuses: `updated`, `not-needed: <reason>`, `n/a: <reason>`\n\nFix these items:\n%s\nUpdate docs and checklist, then retry the delivery command.' "$gate_issues")"
-    exit 0
-  fi
-
   return 0
 }
 
@@ -579,22 +517,27 @@ run_doc_scheme_delivery_gate "$project_root"
 
 release_live_matrix_file="${HOME}/.claude/.silver-bullet/release-live-matrix"
 e2e_live_matrix_file="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
+inline_e2e_matrix_file="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
 if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
   release_matrix_value=""
   e2e_matrix_value=""
+  inline_matrix_value=""
   if [[ -f "$release_live_matrix_file" && ! -L "$release_live_matrix_file" ]]; then
     release_matrix_value=$(grep -E '^matrix=' "$release_live_matrix_file" 2>/dev/null || true)
   fi
   if [[ -f "$e2e_live_matrix_file" && ! -L "$e2e_live_matrix_file" ]]; then
     e2e_matrix_value=$(grep -E '^matrix=' "$e2e_live_matrix_file" 2>/dev/null || true)
   fi
+  if [[ -f "$inline_e2e_matrix_file" && ! -L "$inline_e2e_matrix_file" ]]; then
+    inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
+  fi
 
-  if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' ]]; then
+  if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
     :
-  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' ]]; then
+  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
     :
   else
-    emit_block "$(printf '🛑 RELEASE BLOCKED — The live matrix has not been completed for this release session.\n\nRun tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+    emit_block "$(printf '🛑 RELEASE BLOCKED — The live matrix and inline todo-app journey have not both been completed for this release session.\n\nRun tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in ~/.claude/.silver-bullet/inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
     exit 0
   fi
 
@@ -683,8 +626,8 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
-  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
+  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 fi
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
@@ -771,6 +714,20 @@ if has_skill "gsd-verify-work" && [[ ! -f "$project_root/VERIFICATION.md" ]] && 
   artifact_warnings="${artifact_warnings}  ⚠️  /gsd:verify-work was recorded but VERIFICATION.md is absent — was verification actually completed?\n"
 fi
 
+# Fresh test execution marker: if verify-tests is required and has been recorded,
+# the marker must still exist or the run is stale.
+verify_tests_required=false
+for skill in $required_skills; do
+  if [[ "$skill" == "verify-tests" ]]; then
+    verify_tests_required=true
+    break
+  fi
+done
+test_freshness_warning=""
+if [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ ! -f "$verify_tests_state_file" ]]; then
+  test_freshness_warning=$(printf '🛑 TEST GATE STALE — /verify-tests was recorded earlier, but the freshness marker is missing at %s.\n\nSource changes invalidate the marker. Re-run /verify-tests before creating the PR, deploy, or release.' "$verify_tests_state_file")
+fi
+
 # ── Output result ─────────────────────────────────────────────────────────────
 if [[ -n "$missing" ]]; then
   missing_lines=""
@@ -786,6 +743,17 @@ if [[ -n "$missing" ]]; then
       ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$msg" "$ignored_lines")
+  fi
+  emit_block "$msg"
+  exit 0
+elif [[ -n "$test_freshness_warning" ]]; then
+  msg="$test_freshness_warning"
+  if [[ -n "$ignored" ]]; then
+    ignored_lines=""
+    for skill in $ignored; do
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+    done
+    msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
   emit_block "$msg"
   exit 0

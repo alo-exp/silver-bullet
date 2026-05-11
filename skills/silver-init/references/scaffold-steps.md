@@ -12,8 +12,8 @@ If Phase 0 determined this is an update:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. **Strip any SB-owned sections from CLAUDE.md** (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that don't mention silver-bullet.md.
-4. Verify `CLAUDE.md` contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
+3. If the project already has a `CLAUDE.md`, strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
+4. If `CLAUDE.md` already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to re-register or refresh SB hooks in `~/.claude/settings.json`.
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
@@ -45,11 +45,11 @@ Perform these placeholder replacements:
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{ACTIVE_WORKFLOW}}` → `full-dev-cycle` (default)
 
-### 3.1b Handle CLAUDE.md
+### 3.1b Handle optional project instruction file
 
 Check if `CLAUDE.md` exists in the project root (use Bash: `test -f CLAUDE.md`).
 
-**If NO existing CLAUDE.md**: Write from `${PLUGIN_ROOT}/templates/CLAUDE.md.base` with placeholder replacements (`{{PROJECT_NAME}}`, `{{TECH_STACK}}`, `{{GIT_REPO}}`). No user interaction needed.
+**If NO existing CLAUDE.md**: do not create a new agent instruction file during Codex initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
 
 **If existing CLAUDE.md**: First, strip any existing Silver Bullet sections (migration from pre-v0.7.0). Then add the reference line and run conflict detection.
 
@@ -115,9 +115,9 @@ test -d .github/workflows && ls .github/workflows/*.yml 2>/dev/null | head -1
 
 If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` based on the detected stack from Phase 2. Select the matching template from `references/ci-templates.md` and write it to `.github/workflows/ci.yml`. For unknown stacks, prompt user to specify verify commands and store under `"verify_commands"` in `.silver-bullet.json`.
 
-### 3.3 Write CLAUDE.md (only when no existing CLAUDE.md)
+### 3.3 Write CLAUDE.md (only when an existing CLAUDE.md was found)
 
-Applies only when NO existing `CLAUDE.md` was found in step 3.1b. If an existing `CLAUDE.md` was found, it was already handled in 3.1b and 3.1c — skip this step.
+Applies only when an existing `CLAUDE.md` was found in step 3.1b. If no `CLAUDE.md` was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
 
 Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write to `CLAUDE.md`:
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
@@ -135,51 +135,42 @@ Copy both workflow templates to `docs/workflows/`, backing up any existing file 
 1. `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` → `docs/workflows/full-dev-cycle.md` (back up existing to `.backup`)
 2. `${PLUGIN_ROOT}/templates/workflows/devops-cycle.md` → `docs/workflows/devops-cycle.md` (back up existing to `.backup`)
 
-### 3.5.5 Documentation migration (existing projects only)
+### 3.5.5 Documentation bootstrap/reconciliation (all projects)
 
-**Skip this step** if the project has no existing `docs/` directory.
+`silver:init` no longer performs direct docs migration/scaffolding.
 
-If `docs/` exists, scan for documentation that can be migrated. The migration is **100% transparent** — every action requires explicit user approval; originals are preserved as `.pre-sb-backup`.
+Invoke via the Skill tool:
+```text
+silver:ensure-docs --bootstrap
+```
 
-Full migration procedure is in `references/doc-migration.md` — scan commands, mapping table, KNOWLEDGE.md split logic, approval flow, summary output.
+`silver:ensure-docs` is responsible for:
+1. Greenfield skeleton creation.
+2. Brownfield mapping/preservation vs switch decisions.
+3. Moving switched user docs into `docs/archive/<timestamp>/...` with manifest traceability.
+4. Keeping `docs/doc-scheme.md` and `docs/doc-scheme.json` synchronized.
+5. Seeding `docs/task-doc-checklist.json` against the contract inventory.
 
-If no migration candidates found: output `✓ No documentation migration needed` and skip to 3.6.
+### 3.6 Verify contract surface after ensure-docs
 
-**Step C — Present migration plan:** use AskUserQuestion with a numbered list of proposed actions (renames, splits). Options: "A. Proceed step by step", "B. Show details first", "C. Skip".
+After `silver:ensure-docs --bootstrap`, verify these files exist and are not symlinks:
+1. `docs/doc-scheme.md`
+2. `docs/doc-scheme.json`
+3. `docs/task-doc-checklist.json`
 
-**Step D — Execute migration one step at a time:**
-- Renames: `cp original original.pre-sb-backup` → `mv old new` → confirm via AskUserQuestion.
-- KNOWLEDGE.md split: back up, read, partition into project-scoped intelligence (`docs/knowledge/YYYY-MM.md`) and portable lessons (`docs/lessons/YYYY-MM.md`), preview the split via AskUserQuestion, write based on user's choice, ensure `docs/knowledge/INDEX.md` exists.
-- Unrecognized files: leave in place; mention them in summary.
-
-**Step E — Summary:** list Migrated / Backups / Untouched and note that `.pre-sb-backup` files can be deleted after verification.
-
-### 3.6 Create placeholder docs (NON-DESTRUCTIVE)
-
-**CRITICAL: Do NOT overwrite existing files.** For each file below, check `test -f <path>` first. Only create if absent.
-
-Placeholder files (title + TODO body only):
-- `docs/PRD-Overview.md` — Product vision, core value, requirement areas, out of scope.
-- `docs/ARCHITECTURE.md` — System overview, core components, design principles, technology choices.
-- `docs/TESTING.md` — Testing strategy and plan.
-- `docs/CICD.md` — CI/CD pipeline configuration.
-
-Templated files (read base template, substitute placeholders, write only if absent):
-- `docs/knowledge/INDEX.md` ← `${PLUGIN_ROOT}/templates/knowledge/INDEX.md.base` (replace `{{GIT_REPO}}`)
-- `docs/knowledge/YYYY-MM.md` ← `${PLUGIN_ROOT}/templates/knowledge/YYYY-MM.md.base` (replace `{{PROJECT_NAME}}`, `{{YYYY-MM}}` with current year-month)
-- `docs/lessons/YYYY-MM.md` ← `${PLUGIN_ROOT}/templates/lessons/YYYY-MM.md.base` (replace `{{YYYY-MM}}`)
-- `docs/doc-scheme.md` ← `${PLUGIN_ROOT}/templates/doc-scheme.md.base`
-- `docs/CHANGELOG.md` ← `${PLUGIN_ROOT}/templates/CHANGELOG-project.md.base` (task log; distinct from any root-level CHANGELOG.md)
-
-Sessions dir:
-```bash
-mkdir -p docs/sessions && touch docs/sessions/.gitkeep
+If any are missing, stop and rerun:
+```text
+silver:ensure-docs --recover-scheme
 ```
 
 ### 3.7 Stage and commit
 
 ```bash
-git add silver-bullet.md CLAUDE.md .silver-bullet.json docs/
+if test -f CLAUDE.md; then
+  git add silver-bullet.md .silver-bullet.json docs/ CLAUDE.md
+else
+  git add silver-bullet.md .silver-bullet.json docs/
+fi
 git commit -m "$(cat <<'EOF'
 feat: initialize Silver Bullet enforcement
 

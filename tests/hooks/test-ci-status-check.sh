@@ -19,6 +19,9 @@ setup() {
   TMPDIR_TEST=$(mktemp -d)
   rm -f "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"
   # Create a minimal .silver-bullet.json so the hook recognises this as a SB project
+  cat > "${TMPDIR_TEST}/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
 {
   "project": {},
@@ -199,6 +202,9 @@ echo "--- Group 8: CI-fix bypass — commit message convention (issue #95) ---"
 setup_git() {
   TMPDIR_TEST=$(mktemp -d)
   rm -f "$TRIVIAL_FILE" "$CI_OVERRIDE_FILE"
+  cat > "${TMPDIR_TEST}/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
 {
   "project": {},

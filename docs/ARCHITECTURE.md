@@ -33,53 +33,37 @@ No server, no database — all state lives in flat files under `~/.claude/.silve
 | Live runtime matrix | `tests/live/` | Shared Claude/Codex E2E harness with runtime adapters |
 | Config | `.silver-bullet.json` | Project-level list of tracked/required skills |
 | State file | `~/.claude/.silver-bullet/state` | Flat file recording invoked skills in this session |
-| Trivial flag | `~/.claude/.silver-bullet/trivial` | Touch-file that suspends enforcement for trivial changes |
+| Trivial flag | `~/.claude/.silver-bullet/trivial` | Legacy compatibility marker. Codex agents should route trivial work through `/silver:fast` instead of using the touch-file bypass. |
 
 ### Key hooks
 
 | Hook | Trigger | Behavior |
 |------|---------|----------|
 | `record-skill.sh` | PostToolUse (Skill tool) | Appends normalized skill name to state file |
+| `record-requested-skill.sh` | UserPromptSubmit | Records requested SB/GSD route markers before the next turn starts |
 | `dev-cycle-check.sh` | PreToolUse (Edit/Write/Bash) | 4-stage gate: blocks source edits if planning incomplete |
 | `compliance-status.sh` | PostToolUse (all tools) | Emits live progress score per tool call |
 | `completion-audit.sh` | PostToolUse (Bash) | Two-tier: blocks `git commit/push` if `required_planning` skills missing; blocks `gh pr create/deploy/gh release` if full `required_deploy` list missing |
 | `planning-file-guard.sh` | PreToolUse (Edit/Write/MultiEdit) | Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); requires the owning GSD skill instead |
 | `ci-status-check.sh` | PostToolUse (Bash) | Warns on commit/push if CI is failing |
-| `stop-check.sh` | Stop / SubagentStop | Requires `required_planning` skills (planning floor) before session ends; skipped when `trivial` file exists. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands |
-| *(hooks.json entry)* | SessionStart | Creates `~/.claude/.silver-bullet/trivial` — marks every new session trivial by default |
-| *(hooks.json entry)* | PostToolUse (Write\|Edit\|MultiEdit) | Removes `~/.claude/.silver-bullet/trivial` — clears trivial flag when files are modified |
+| `prompt-reminder.sh` | UserPromptSubmit | Re-injects missing skills list before every user message and surfaces current workflow context |
+| `stop-check.sh` | Stop / SubagentStop | Requires `required_planning` skills (planning floor) before session ends. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands |
+| *(hooks.json entry)* | SessionStart | Clears any stale `~/.claude/.silver-bullet/trivial` marker at session start; does not auto-create it |
+| *(hooks.json entry)* | PostToolUse (Write\|Edit\|MultiEdit) | Clears `~/.claude/.silver-bullet/trivial` when files are modified |
 
-### Trivial-Session Bypass
+### Fast Path
 
-The trivial bypass is a touch-file mechanism that allows enforcement hooks to stand down for
-non-code-producing sessions. The file lives at `~/.claude/.silver-bullet/trivial`.
-
-**Lifecycle:**
-1. **Session start** — `SessionStart` hook creates the file unconditionally. Every session begins as "trivial" (no dev work assumed).
-2. **First file edit** — `PostToolUse` on Write/Edit/MultiEdit removes the file. The session is now marked as a dev session; enforcement activates.
-3. **Session end** — `stop-check.sh` checks: if the file exists, skips the skill checklist (non-dev session). If absent, enforces `required_planning` skills.
-
-**Which hooks check the trivial file:**
-- `stop-check.sh` — skips skill checklist
-- `ci-status-check.sh` — skips CI failure block
-- `completion-audit.sh` — skips planning completeness gate
-
-**Manual escape hatch:**
-If the bypass file was removed (because a file was edited) but you need to commit without full workflow compliance (e.g. committing a CI fix), recreate it in your terminal:
-```bash
-touch ~/.claude/.silver-bullet/trivial
-```
-The file will be cleared again on the next file edit, so the bypass is temporary.
-
-**Security:**
-The hooks validate that the trivial file is a regular file (`-f`) and not a symlink (`! -L`) before honoring it, preventing symlink-based bypass attacks.
+Silver Bullet routes trivial changes through `/silver:fast`, which classifies the change
+and dispatches to `gsd-fast` without the full workflow overhead. The legacy touch-file
+marker remains only as a compatibility detail for older sessions, not as the supported
+Codex entry point.
 
 ## Design Principles
 
 1. **Never modify third-party plugins.** All enforcement is additive to the host project.
 2. **12 layers, no single bypass.** Enforcement survives context window resets because hooks
    re-fire on every tool call, not just at session start.
-3. **User instructions always take precedence.** `CLAUDE.md` user rules override SB defaults.
+3. **User instructions always take precedence.** Any existing project instruction file (`CLAUDE.md` / `AGENTS.md`) overrides SB defaults, but SB does not require one to exist.
 4. **Non-destructive file operations.** Hooks are read-only except for the state/mode files they
    own. Setup commands create new files; update mode overwrites only `silver-bullet.md`.
 5. **Flat-file state.** No process, no daemon, no server. State is a text file. Any tool that

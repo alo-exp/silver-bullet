@@ -98,7 +98,7 @@ If you are using this repo checkout directly in Codex, register the shared marke
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
-This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. The `/silver` router and `/silver:*` command surface ship inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
+This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. When the current working directory is an actual Silver Bullet project root (`.silver-bullet.json` + `silver-bullet.md` present), the script also enables the Silver Bullet plugin in Codex; otherwise it leaves SB unactivated and purges stale SB hook-state entries so unrelated projects do not pick up SB hooks. The `/silver` router and `/silver:*` command surface ship inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
 
 ### Optional DevOps plugins
 
@@ -138,7 +138,7 @@ This will:
 - Check that all 4 plugin dependencies are installed
 - Auto-detect your project name, tech stack, and source directory
 - Ask whether this is an application or DevOps/infrastructure project
-- Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and `CLAUDE.md` (project instructions)
+- Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and reconcile any existing `CLAUDE.md` / `AGENTS.md` project instructions if present
 - Create `.silver-bullet.json` with your project config
 - Copy the appropriate workflow file(s) to `docs/workflows/`
 - Scan existing `docs/` and offer to migrate them to the SB documentation scheme (100% transparent — originals preserved as `.pre-sb-backup`, every action requires your approval)
@@ -172,6 +172,7 @@ That's it. Enforcement is now active.
 | # | Step | Source | Required |
 |---|------|--------|----------|
 | 13 | `/testing-strategy` | Engineering | **Yes** |
+| 13b | `/verify-tests` | Silver Bullet | **Yes** |
 | 14 | `/tech-debt` | Engineering | **Yes** |
 | 15 | `/documentation` | Engineering | **Yes** |
 | 16 | `/finishing-a-development-branch` | Superpowers | **Yes** |
@@ -204,7 +205,8 @@ Skills installed by this plugin that extend the workflow:
 | Skill | When to use |
 |-------|-------------|
 | `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
-| `/silver:init` | Once per project — initializes CLAUDE.md, config, CI, and docs scaffold |
+| `/silver:init` | Once per project — initializes silver-bullet.md, config, CI, then reconciles any existing project instruction file and invokes `/silver:ensure-docs --bootstrap` |
+| `/silver:ensure-docs` | Documentation authority — bootstrap/reconcile docs, remediate hook gaps, recover doc scheme contract |
 | `/silver:feature` | Orchestrated workflow for feature development |
 | `/silver:bugfix` | Orchestrated workflow for bug investigation and fixes |
 | `/silver:ui` | Orchestrated workflow for UI/UX work |
@@ -218,6 +220,7 @@ Skills installed by this plugin that extend the workflow:
 | `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
 | `/silver-forensics` | After a completed, failed, or abandoned session — routes to GSD forensics for workflow issues, handles session-level issues directly |
 | `/silver-create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
+| `/verify-tests` | Test execution gate — runs configured verify commands or stack defaults and writes the freshness marker |
 | `/silver-add` | Classify and file an issue or backlog item — routes to GitHub Issues + project board or local `docs/issues/` |
 | `/silver-remove` | Remove an issue or backlog item by ID — closes GitHub issues or marks `[REMOVED]` in local docs |
 | `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
@@ -288,6 +291,7 @@ Edit `.silver-bullet.json` in your project root:
       "code-review", "requesting-code-review", "receiving-code-review",
       "finishing-a-development-branch",
       "silver-create-release",
+      "verify-tests",
       "modularity", "reusability", "scalability", "security",
       "reliability", "usability", "testability", "extensibility",
       "silver-forensics", "silver-add", "silver-init",
@@ -321,8 +325,8 @@ Edit `.silver-bullet.json` in your project root:
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
 | `required_planning` | Skills that must run before code edits | `silver-quality-gates` |
-| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | silver-quality-gates, code-review, requesting-code-review, receiving-code-review, finishing-a-development-branch, silver-create-release, verification-before-completion, test-driven-development |
-| `all_tracked` | All skills that get recorded | 42 skills (canonical source: `templates/silver-bullet.config.json.default`) |
+| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | silver-quality-gates, code-review, requesting-code-review, receiving-code-review, finishing-a-development-branch, silver-create-release, verification-before-completion, test-driven-development, verify-tests |
+| `all_tracked` | All skills that get recorded | 44 skills (canonical source: `templates/silver-bullet.config.json.default`) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
 > **Two-tier enforcement**: `git commit` and `git push` only require `required_planning` skills (default: `silver-quality-gates`). The full `required_deploy` list is only checked at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked.
@@ -332,46 +336,26 @@ Edit `.silver-bullet.json` in your project root:
 > successfully in the current session so both the hook/runtime matrix and the
 > todo-app E2E path are proven and both release markers are set.
 
-## Trivial-Session Bypass
+## Fast Path (`silver:fast`)
 
-Silver Bullet tracks whether a session has done code-producing work via a touch-file: `~/.claude/.silver-bullet/trivial`. When the file exists, enforcement hooks (`stop-check`, `ci-status-check`, `completion-audit`) stand down. When it doesn't exist, they enforce.
+Silver Bullet routes small, non-logic changes through `/silver:fast`. That workflow
+classifies the request and dispatches to `gsd-fast`, so trivial edits still use the
+same routed entry point as every other SB task.
 
-### Automatic lifecycle
+Use `/silver:fast` for:
+- typos
+- copy edits
+- config tweaks
+- other small changes that do not need the full workflow
 
-- **Session start** — the `SessionStart` hook creates `~/.claude/.silver-bullet/trivial` unconditionally. Every new session begins as "trivial" (no enforcement).
-- **First file edit** — the `PostToolUse` hook on Write/Edit/MultiEdit removes the file the moment any file is modified. The session is now marked as a dev session and enforcement activates for the rest of the session.
+The old touch-file bypass is deprecated for Codex agents. The supported way to
+handle a small change is to route through `/silver:fast`.
 
-### Which hooks check the trivial file
-
-| Hook | Effect when trivial file exists |
-|------|---------------------------------|
-| `stop-check.sh` | Skips the skill checklist at session end |
-| `ci-status-check.sh` | Skips the CI failure warning on commit and the push/PR/release block |
-| `completion-audit.sh` | Skips the planning completeness gate |
-
-### Manual escape hatch
-
-If a hook is blocking you and you need to proceed — for example, the planning completeness gate is blocking a documentation-only session — recreate the file in your terminal:
-
-```bash
-touch ~/.claude/.silver-bullet/trivial
-```
-
-This suppresses enforcement for the rest of the session. The file will be cleared again on the next file edit, so the bypass is temporary.
-
-Common scenarios where this helps:
-- **Non-dev session end**: `stop-check` blocks at session end for a documentation-only or read-only session → run `touch` to unblock.
-- **Documentation-only commit**: `completion-audit` blocks a docs-only commit → run `touch` to unblock.
-
-> **CI-red push (use the dedicated override instead):** `git commit` is never blocked by the CI gate — it warns only. If CI is failing and you need to *push* a fix, use the dedicated CI override rather than the trivial bypass:
+> **CI-red push (use the dedicated override instead):** `git commit` is never blocked by the CI gate — it warns only. If CI is failing and you need to *push* a fix, use the dedicated CI override rather than any legacy trivial-marker workflow:
 > ```bash
 > touch ~/.claude/.silver-bullet/ci-red-override
 > ```
 > This bypasses only the CI gate. Remove it once CI is green.
-
-### Trivial changes (copy edits and typo fixes)
-
-For typo fixes, copy edits, and config tweaks that don't warrant the full dev workflow, you can run the escape hatch command above before making your edit. The session will be re-marked as trivial immediately; as soon as you make a file edit, the flag clears and normal enforcement resumes.
 
 **Note**: In `devops-cycle` mode, `.yml`, `.yaml`, `.json`, and `.toml` files are infrastructure code and are NOT auto-exempted from enforcement.
 
@@ -415,7 +399,7 @@ It detects the existing config and asks if you want to refresh templates while p
 
 **Wrong files triggering enforcement** — Edit `src_pattern` in `.silver-bullet.json` to match your project's source directory (e.g., `/app/` or `/lib/`).
 
-**Want to start fresh** — Delete `.silver-bullet.json` and `CLAUDE.md`, then run `/silver:init` again.
+**Want to start fresh** — Delete `.silver-bullet.json` and any optional project instruction file you want to reset (`CLAUDE.md` / `AGENTS.md`), then run `/silver:init` again.
 
 ## Architecture
 
@@ -424,7 +408,7 @@ Enforcement hooks (fire automatically)     Project files (created by /silver:ini
 ──────────────────────────────────────     ───────────────────────────────────────────────
 hooks/record-skill.sh                      .silver-bullet.json (config)
   → records skill invocations              silver-bullet.md (enforcement guide)
-                                           CLAUDE.md (project instructions)
+                                           Optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present)
                                            docs/workflows/full-dev-cycle.md (20 steps)
 hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (24 steps)
   → HARD STOP if planning incomplete

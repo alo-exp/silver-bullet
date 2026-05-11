@@ -20,6 +20,9 @@ trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
+  cat > "${TMPDIR_TEST}/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   cat > "${TMPDIR_TEST}/.silver-bullet.json" << EOF
 {
   "project": {},

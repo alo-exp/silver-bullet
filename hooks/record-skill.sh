@@ -10,12 +10,17 @@ umask 0077
 
 # Source symlink-write guard (SEC-02)
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd 2>/dev/null)" || _repo_dir=""
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   # shellcheck source=lib/nofollow-guard.sh
   source "$_lib_dir/nofollow-guard.sh"
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
   sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck source=lib/skill-discovery.sh
+  source "$_lib_dir/skill-discovery.sh"
 fi
 
 # jq is required for JSON parsing
@@ -27,26 +32,65 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
-# Extract skill name
-skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
-[[ -z "$skill" ]] && exit 0
+# Extract skill name (Claude Skill tool) or infer it from Bash commands that
+# read `.../skills/<skill>/SKILL.md` (Codex CLI/TUI commonly surfaces skills
+# via plain Bash reads rather than a dedicated Skill tool event).
+raw_skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
+tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 
-# GSD commands (gsd:discuss-phase, gsd:plan-phase, etc.) are tracked with gsd- prefix
-# Other namespace prefixes (superpowers:, engineering:, design:, etc.) are stripped.
-# Greedy loop strips ALL namespace prefixes (handles double-namespace: outer:inner:skill-name).
-if printf '%s' "$skill" | grep -qE '^gsd:'; then
-  skill=$(printf '%s' "$skill" | sed 's/^gsd:/gsd-/')
-else
-  while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
-    skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
-  done
+skills_to_record=()
+if [[ -n "$raw_skill" ]]; then
+  skills_to_record+=("$raw_skill")
+elif [[ "$tool_name" == "Bash" && "$cmd" == *"SKILL.md"* ]]; then
+  # Extract any SKILL.md paths embedded in the command string.
+  while IFS= read -r token; do
+    [[ -n "$token" ]] || continue
+    token="${token#\"}"
+    token="${token%\"}"
+    token="${token#\'}"
+    token="${token%\'}"
+    token="${token#,}"
+    token="${token%;}"
+    token="${token#(}"
+    token="${token%)}"
+    [[ "$token" == *"SKILL.md"* ]] || continue
+
+    # Prefer deriving the skill from the directory name so we can record the
+    # canonical hyphenated marker (e.g. silver-init, gsd-discuss-phase).
+    if [[ "$token" =~ /skills/([^/]+)/SKILL\.md$ ]]; then
+      skills_to_record+=("${BASH_REMATCH[1]}")
+    elif [[ "$token" =~ /forge/skills/([^/]+)/SKILL\.md$ ]]; then
+      skills_to_record+=("${BASH_REMATCH[1]}")
+    fi
+  done < <(printf '%s' "$cmd" | grep -oE '[^[:space:]]+SKILL\.md' || true)
 fi
+
+[[ ${#skills_to_record[@]} -gt 0 ]] || exit 0
+
+if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+  :
+fi
+
+debug_record_skill() {
+  [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
+  local dbg_dir="${HOME}/.claude/.silver-bullet"
+  mkdir -p "$dbg_dir" 2>/dev/null || true
+  local dbg_file="${dbg_dir}/record-skill.debug.log"
+  {
+    printf '--- %s ---\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date)"
+    printf 'pwd=%s\n' "$PWD"
+    printf 'raw_skill=%s\n' "$raw_skill"
+    printf 'canonical_skill=%s\n' "$skill"
+    printf 'config_file=%s\n' "${config_file:-}"
+  } >>"$dbg_file" 2>/dev/null || true
+}
 
 # --- Resolve config file by walking up from $PWD ---
 config_file=""
 search_dir="$PWD"
 while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
     break
   fi
@@ -76,8 +120,17 @@ esac
 
 # --- Tracked skills list ---
 # GSD command phases (tracked as gsd-* markers for compliance visibility)
-# These are recorded when /gsd:* commands fire via the Skill tool
-DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release verification-before-completion test-driven-development tech-debt gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
+# Prefer the canonical tracked list from the packaged config template so
+# bootstrap skills like silver:init are still recorded before a project-level
+# .silver-bullet.json exists. Fall back to a small hardcoded list only if the
+# template cannot be read for some reason.
+DEFAULT_TRACKED=""
+if [[ -n "${_repo_dir:-}" && -f "${_repo_dir}/templates/silver-bullet.config.json.default" ]]; then
+  DEFAULT_TRACKED=$(jq -r '(.skills.all_tracked // []) | join(" ")' "${_repo_dir}/templates/silver-bullet.config.json.default" 2>/dev/null || true)
+fi
+if [[ -z "$DEFAULT_TRACKED" ]]; then
+  DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release silver-ensure-docs silver-forensics silver-init silver-add silver-remove silver-rem silver-scan verify-tests verification-before-completion test-driven-development tech-debt accessibility-review incident-response modularity reusability scalability security reliability usability testability extensibility gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
+fi
 
 tracked_list="$DEFAULT_TRACKED"
 if [[ -n "$config_file" ]]; then
@@ -87,27 +140,53 @@ if [[ -n "$config_file" ]]; then
   fi
 fi
 
-# --- Check if skill is tracked ---
-is_tracked=false
-for t in $tracked_list; do
-  if [[ "$t" == "$skill" ]]; then
-    is_tracked=true
-    break
+debug_record_skill
+
+recorded_any=false
+
+for raw in "${skills_to_record[@]}"; do
+  skill="$raw"
+
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    skill="$(sb_skill_canonical_name "$skill")"
+  else
+    # Fallback for older layouts: GSD keeps a gsd- prefix, other namespaces strip.
+    if printf '%s' "$skill" | grep -qE '^gsd:'; then
+      skill=$(printf '%s' "$skill" | sed 's/^gsd:/gsd-/')
+    else
+      while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
+        skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
+      done
+    fi
+  fi
+
+  # --- Check if skill is tracked ---
+  is_tracked=false
+  for t in $tracked_list; do
+    if [[ "$t" == "$skill" ]]; then
+      is_tracked=true
+      break
+    fi
+  done
+
+  if [[ "$is_tracked" == false ]]; then
+    continue
+  fi
+
+  # --- Record skill (no duplicates) ---
+  mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
+  # SEC-02: refuse to write through a symlink at STATE_FILE
+  sb_guard_nofollow "$STATE_FILE"
+  touch -- "$STATE_FILE"
+  if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
+    printf '%s\n' "$skill" >> "$STATE_FILE"
+    recorded_any=true
   fi
 done
 
-if [[ "$is_tracked" == false ]]; then
-  printf '{"hookSpecificOutput":{"message":%s}}' "$(printf 'ℹ️ Skill not tracked by Silver Bullet: %s' "$skill" | jq -Rs '.')"
-  exit 0
+if [[ "$recorded_any" == true ]]; then
+  printf '{"hookSpecificOutput":{"message":"✅ Skill recorded"}}'
+else
+  # No tracked skills inferred from this hook invocation.
+  printf '{"hookSpecificOutput":{"message":"ℹ️ No tracked skills found"}}'
 fi
-
-# --- Record skill (no duplicates) ---
-mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
-# SEC-02: refuse to write through a symlink at STATE_FILE
-sb_guard_nofollow "$STATE_FILE"
-touch -- "$STATE_FILE"
-if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
-  printf '%s\n' "$skill" >> "$STATE_FILE"
-fi
-
-printf '{"hookSpecificOutput":{"message":"✅ Skill recorded: %s"}}' "$skill"

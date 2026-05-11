@@ -15,17 +15,22 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
 QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state-${TEST_RUN_ID}"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
+VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 
 cleanup_all() {
   rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$INLINE_E2E_MATRIX_FILE"
   rm -f "$QUALITY_GATE_FILE"
   rm -f "$SESSION_START_FILE"
+  rm -f "$VERIFY_TESTS_FILE"
   unset GH_RUN_LIST_OVERRIDE
   unset SILVER_BULLET_SESSION_START_FILE
+  unset SILVER_BULLET_VERIFY_TESTS_STATE_FILE
 }
 trap cleanup_all EXIT
 
@@ -36,7 +41,7 @@ write_cfg() {
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","verify-tests"],
     "all_tracked": ["silver-quality-gates","code-review"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
@@ -54,6 +59,16 @@ full-test-suite-rerun
 EOF
 }
 
+write_verify_tests_state() {
+  mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
+  cat > "$VERIFY_TESTS_FILE" << 'EOF'
+verified_at=2026-05-10T00:00:00Z
+repo_root=/tmp/test
+commands:
+  - bash tests/run-all-tests.sh
+EOF
+}
+
 seed_doc_scheme_marker() {
   mkdir -p "$TMPDIR_TEST/docs"
   cat > "$TMPDIR_TEST/docs/doc-scheme.md" << 'EOF'
@@ -64,6 +79,35 @@ seed_doc_scheme_marker() {
 | Event | What updates |
 |---|---|
 | Every task | CHANGELOG.md, knowledge/YYYY-MM.md, lessons/YYYY-MM.md |
+EOF
+  cat > "$TMPDIR_TEST/docs/doc-scheme.json" << 'EOF'
+{
+  "version": 1,
+  "sync": {
+    "doc_scheme_md_path": "docs/doc-scheme.md",
+    "task_checklist_path": "docs/task-doc-checklist.json"
+  },
+  "enforcement": {
+    "enabled": true,
+    "granularity_levels": [2, 3]
+  },
+  "mandatory_updated_docs": [
+    "docs/CHANGELOG.md",
+    "docs/knowledge/YYYY-MM.md",
+    "docs/lessons/YYYY-MM.md",
+    "docs/task-doc-checklist.json"
+  ],
+  "required_docs": [
+    { "key": "docs/CHANGELOG.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/knowledge/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/lessons/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/task-doc-checklist.json", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/doc-scheme.md", "mandatory_updated": false, "required_sections": [] },
+    { "key": "docs/doc-scheme.json", "mandatory_updated": false, "required_sections": [] }
+  ],
+  "preserved_mappings": [],
+  "archive_moves": []
+}
 EOF
 }
 
@@ -87,12 +131,14 @@ seed_doc_scheme_checklist_current_month() {
   cat > "$TMPDIR_TEST/docs/task-doc-checklist.json" << EOF
 {
   "task_id": "test-doc-scheme-gate",
+  "task_granularity": 3,
   "docs": {
     "docs/CHANGELOG.md": "updated",
     "docs/knowledge/YYYY-MM.md": "updated",
     "docs/lessons/YYYY-MM.md": "updated",
     "docs/task-doc-checklist.json": "updated",
     "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
+    "docs/doc-scheme.json": "not-needed: scheme contract unchanged for this task",
     "docs/ARCHITECTURE.md": "not-needed: no architecture changes in this task",
     "docs/TESTING.md": "not-needed: no testing-doc changes in this task",
     "docs/knowledge/INDEX.md": "not-needed: no docs added or removed in this task",
@@ -101,6 +147,24 @@ seed_doc_scheme_checklist_current_month() {
   }
 }
 EOF
+}
+
+add_contract_required_key() {
+  local key="$1"
+  python3 - "$TMPDIR_TEST/docs/doc-scheme.json" "$key" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+key = sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+required = data.setdefault("required_docs", [])
+if not any(item.get("key") == key for item in required):
+    required.append({"key": key, "mandatory_updated": False, "required_sections": []})
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
 }
 
 setup() {
@@ -113,6 +177,9 @@ setup() {
   rm -f "$TMPSTATE"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   git -C "$TMPGIT" init -q
   git -C "$TMPGIT" config user.email "test@test.com"
   git -C "$TMPGIT" config user.name "Test"
@@ -125,6 +192,7 @@ setup() {
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
   export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
+  export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   date +%s > "$SESSION_START_FILE"
   export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
@@ -279,7 +347,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_passes "gh pr create passes with all required skills" "$out"
 teardown
@@ -317,19 +387,21 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+write_verify_tests_state
 rm -f "$RELEASE_LIVE_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without shared live matrix marker" "$out"
-assert_contains "release block mentions live matrix gate" "$out" "live matrix has not been completed for this release session"
+assert_contains "release block mentions live matrix gate" "$out" "live matrix and inline todo-app journey have not both been completed"
 assert_contains "release block mentions run-live-tests" "$out" "tests/live/run-live-tests.sh"
 teardown
 
-# Test 11: gh release create blocked until todo-app e2e-live matrix runs
+# Test 11: gh release create blocked until inline todo-app journey runs
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -344,16 +416,22 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+write_verify_tests_state
 rm -f "$E2E_LIVE_MATRIX_FILE"
+rm -f "$INLINE_E2E_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_blocks "release blocked without todo-app e2e-live marker" "$out"
-assert_contains "release block mentions todo-app e2e-live suite" "$out" "e2e-live"
-assert_contains "release block mentions run-e2e-live-tests" "$out" "tests/e2e-live/run-e2e-live-tests.sh"
+assert_blocks "release blocked without inline todo-app marker" "$out"
+assert_contains "release block mentions inline todo-app journey" "$out" "inline todo-app journey"
+assert_contains "release block mentions inline-e2e-matrix" "$out" "inline-e2e-matrix"
 teardown
 
 # Test 12: gh release create blocked until pre-release gate markers and full-suite rerun are recorded
@@ -371,6 +449,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
@@ -379,11 +458,56 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+write_verify_tests_state
 rm -f "$QUALITY_GATE_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without pre-release gate markers" "$out"
 assert_contains "release block mentions pre-release quality sequence" "$out" "pre-release quality sequence"
 assert_contains "release block mentions run-all-tests" "$out" "tests/run-all-tests.sh"
+teardown
+
+# Test 12b: gh release create blocked when verify-tests is recorded but stale
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+requesting-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+verify-tests
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=full-claude-codex
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+rm -f "$VERIFY_TESTS_FILE"
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocked when verify-tests freshness marker is missing" "$out"
+assert_contains "release block mentions test gate stale" "$out" "TEST GATE STALE"
+assert_contains "release block mentions verify-tests path" "$out" "verify-tests-state"
 teardown
 
 # Test 13: gh release create passes with all required workflow skills, both live markers, and gate markers
@@ -401,6 +525,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
@@ -409,6 +534,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 quality-gate-stage-1
 quality-gate-stage-2
@@ -416,6 +544,7 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "release passes with all required workflow skills, live markers, and gate markers" "$out"
 teardown
@@ -435,6 +564,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
@@ -443,6 +573,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 quality-gate-stage-1
 quality-gate-stage-2
@@ -450,6 +583,7 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocks with codex-only live markers unless explicitly allowed" "$out"
 assert_contains "codex-only block mentions explicit allowance" "$out" "SB_ALLOW_CODEX_ONLY_LIVE_RELEASE"
@@ -470,6 +604,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
@@ -478,6 +613,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=codex-only
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 quality-gate-stage-1
 quality-gate-stage-2
@@ -485,6 +623,7 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+write_verify_tests_state
 export SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
@@ -506,6 +645,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
@@ -514,6 +654,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 quality-gate-stage-1
 quality-gate-stage-2
@@ -521,6 +664,7 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+write_verify_tests_state
 export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
   {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
   {workflowName:"CI", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:05Z"},
@@ -549,9 +693,11 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 mkdir -p "$SB_TEST_DIR"
 touch "$RELEASE_LIVE_MATRIX_FILE"
+write_verify_tests_state
 # Ensure we're on main
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 out=$(run_hook "PreToolUse" "gh pr create --title 'hotfix'")
@@ -575,7 +721,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_contains "ordering issue detected for wrong sequence" "$out" "wrong order"
 teardown
@@ -595,7 +743,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_passes "correct triad order passes without ordering warning" "$out"
 # Should NOT contain "wrong order"
@@ -652,7 +802,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr merge --squash")
 assert_passes "gh pr merge passes with all required skills (no review-loop-pass needed)" "$out"
 teardown
@@ -675,8 +827,10 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 seed_doc_scheme_marker
+write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "doc-scheme gate blocks delivery when checklist and required docs are missing" "$out"
 assert_contains "doc-scheme block message contains gate label" "$out" "DOC-SCHEME GATE"
@@ -697,8 +851,10 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 seed_doc_scheme_marker
+write_verify_tests_state
 current_month=$(date '+%Y-%m')
 seed_doc_scheme_targets_current_month "$current_month"
 seed_doc_scheme_checklist_current_month "$current_month"
@@ -706,7 +862,7 @@ sleep 1
 date +%s > "$SESSION_START_FILE"
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "doc-scheme gate blocks stale checklist/docs" "$out"
-assert_contains "stale doc-scheme block message contains stale marker" "$out" "Stale:"
+assert_contains "stale doc-scheme block message contains stale marker" "$out" "Stale"
 teardown
 
 # Test 23: updated docs + checklist in current session allow delivery
@@ -724,8 +880,10 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 seed_doc_scheme_marker
+write_verify_tests_state
 date +%s > "$SESSION_START_FILE"
 current_month=$(date '+%Y-%m')
 mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
@@ -758,8 +916,10 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 seed_doc_scheme_marker
+write_verify_tests_state
 date +%s > "$SESSION_START_FILE"
 current_month=$(date '+%Y-%m')
 mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
@@ -775,6 +935,7 @@ EOF
 cat > "$TMPDIR_TEST/docs/EXTRA.md" << 'EOF'
 # Extra governed doc
 EOF
+add_contract_required_key "docs/EXTRA.md"
 seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "doc-scheme gate blocks when a concrete docs file is missing from checklist" "$out"
@@ -892,6 +1053,7 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
 }
 
@@ -943,6 +1105,7 @@ cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
 write_quality_gate_state
+write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-D: complete workflow + skills allows release" "$out"
 teardown
@@ -979,6 +1142,7 @@ cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
 write_quality_gate_state
+write_verify_tests_state
 unset SB_WORKFLOW_ID
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-G: absent workflows dir → legacy gate (passes with full skills)" "$out"
@@ -1016,6 +1180,7 @@ cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
 write_quality_gate_state
+write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-H: extraneous digit rows ignored — release passes" "$out"
 teardown
@@ -1042,6 +1207,7 @@ cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
 write_quality_gate_state
+write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "WF-PASS2-I (#86): mixed complete/skipped workflow allows release" "$out"
 teardown
@@ -1050,9 +1216,13 @@ echo "--- WF-PASS2-K (#86): pending row still blocks (skipped fix didn't loosen)
 setup
 _full_state
 ID="20260428T120000Z-abc123-silver-feature"
-_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
+rows=$(cat <<'WFROWS'
+| 1 | bootstrap | complete | - | now |
 | 2 | orient    | skipped  | - | -   |
-| 3 | execute   | pending  | - | -   |"
+| 3 | execute   | pending  | - | -   |
+WFROWS
+)
+_make_workflow "$ID" "$rows"
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "WF-PASS2-K (#86): pending row still blocks even with skipped present" "$out"
 teardown

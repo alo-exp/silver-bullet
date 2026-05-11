@@ -19,7 +19,8 @@
       "finishing-a-development-branch",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development"
+      "test-driven-development",
+      "verify-tests"
     ],
     "required_deploy_devops": [
       "silver-blast-radius",
@@ -30,7 +31,8 @@
       "finishing-a-development-branch",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development"
+      "test-driven-development",
+      "verify-tests"
     ],
     "forbidden": [],
     "all_tracked": [
@@ -47,6 +49,7 @@
       "receiving-code-review",
       "finishing-a-development-branch",
       "silver-create-release",
+      "verify-tests",
       "modularity",
       "reusability",
       "scalability",
@@ -58,6 +61,7 @@
       "silver-forensics",
       "silver-add",
       "silver-init",
+      "silver-ensure-docs",
       "verification-before-completion",
       "test-driven-development",
       "accessibility-review",

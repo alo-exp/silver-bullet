@@ -43,7 +43,7 @@ __sb_rs_load() {
 
 # Fallback used only when default config or jq unavailable. Keep minimal —
 # hooks always enforce at least the planning/quality-gate floor.
-__SB_RS_FALLBACK="silver-quality-gates verification-before-completion"
+__SB_RS_FALLBACK="silver-quality-gates verification-before-completion verify-tests"
 
 __sb_rs_populate() {
   local value

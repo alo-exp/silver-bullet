@@ -75,13 +75,13 @@ Arrange tasks in dependency order:
 ## Timeline Estimate
 <rough estimate>
 
-## Documentation (if docs/doc-scheme.md exists)
+## Documentation (if docs/doc-scheme.md and docs/doc-scheme.json exist)
 At finalization, before shipping:
 - docs/CHANGELOG.md — one newest-first entry for this phase
 - docs/knowledge/YYYY-MM.md — patterns, gotchas, key decisions
 - docs/lessons/YYYY-MM.md — portable lessons learned
 - any additional changed docs (ARCHITECTURE.md, TESTING.md, runbooks, workflows, etc.) aligned to code behavior
-- docs/task-doc-checklist.json — updated this session with one status per governed doc key (all current docs files plus root README.md/CHANGELOG.md when present; monthly docs use wildcard keys)
+- docs/task-doc-checklist.json — includes task_granularity and one status per key in docs/doc-scheme.json required_docs, plus required section entries
 ```
 
 ### Step 5: Review with Quality Gates
