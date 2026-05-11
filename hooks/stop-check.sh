@@ -293,6 +293,7 @@ _mtime_epoch() {
   [[ "$_v" =~ ^[0-9]+$ ]] && printf '%s' "$_v" || printf '0'
 }
 
+# shellcheck disable=SC2034
 # Resolve a checklist doc key to file state for the current repo/month.
 # Inputs:
 #   $1 repo root

@@ -186,14 +186,40 @@ sb_doc_scheme_gate_enforce() {
   if [[ -n "$gate_issues" ]]; then
     sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "docs/task-doc-checklist.json" "docs/doc-scheme.json" "$gate_issues"
     remediation_cmd="/silver:ensure-docs --recover-scheme"
-    "$emit_fn" "$(printf '🛑 DOC-SCHEME GATE — %s blocked.\n\nSilver Bullet requires both `docs/doc-scheme.md` and `docs/doc-scheme.json`, plus a valid session marker, before docs enforcement can proceed.\n\nFix these items:\n%s\nGuided recovery:\n`%s`\n\nLatest gap report:\n`%s`' "$mode_label" "$gate_issues" "$remediation_cmd" "$SB_DOC_SCHEME_GAP_REPORT_PATH")"
+    message=$(cat <<EOF
+🛑 DOC-SCHEME GATE — ${mode_label} blocked.
+
+Silver Bullet requires both \`docs/doc-scheme.md\` and \`docs/doc-scheme.json\`, plus a valid session marker, before docs enforcement can proceed.
+
+Fix these items:
+${gate_issues}Guided recovery:
+\`${remediation_cmd}\`
+
+Latest gap report:
+\`${SB_DOC_SCHEME_GAP_REPORT_PATH}\`
+EOF
+)
+    "$emit_fn" "$message"
     exit 0
   fi
 
   if ! jq empty "$contract_file" >/dev/null 2>&1; then
     gate_issues+="  - Invalid JSON: docs/doc-scheme.json"$'\n'
     sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "docs/task-doc-checklist.json" "docs/doc-scheme.json" "$gate_issues"
-    "$emit_fn" "$(printf '🛑 DOC-SCHEME GATE — %s blocked.\n\n`docs/doc-scheme.json` is malformed.\n\nFix these items:\n%s\nGuided recovery:\n`/silver:ensure-docs --recover-scheme`\n\nLatest gap report:\n`%s`' "$mode_label" "$gate_issues" "$SB_DOC_SCHEME_GAP_REPORT_PATH")"
+    message=$(cat <<EOF
+🛑 DOC-SCHEME GATE — ${mode_label} blocked.
+
+\`docs/doc-scheme.json\` is malformed.
+
+Fix these items:
+${gate_issues}Guided recovery:
+\`/silver:ensure-docs --recover-scheme\`
+
+Latest gap report:
+\`${SB_DOC_SCHEME_GAP_REPORT_PATH}\`
+EOF
+)
+    "$emit_fn" "$message"
     exit 0
   fi
 
@@ -249,14 +275,14 @@ sb_doc_scheme_gate_enforce() {
   month=$(date '+%Y-%m')
 
   if [[ ! -f "$checklist" || -L "$checklist" ]]; then
-    gate_issues+="  - Missing checklist: ${checklist#$repo_root/}"$'\n'
+    gate_issues+="  - Missing checklist: ${checklist#"$repo_root"/}"$'\n'
   else
     checklist_mtime=$(sb_doc_scheme__mtime_epoch "$checklist")
     if (( checklist_mtime < session_start )); then
-      gate_issues+="  - Stale checklist (not updated this session): ${checklist#$repo_root/}"$'\n'
+      gate_issues+="  - Stale checklist (not updated this session): ${checklist#"$repo_root"/}"$'\n'
     fi
     if ! jq -e '.docs | type == "object"' "$checklist" >/dev/null 2>&1; then
-      gate_issues+="  - Invalid checklist: .docs object missing in ${checklist#$repo_root/}"$'\n'
+      gate_issues+="  - Invalid checklist: .docs object missing in ${checklist#"$repo_root"/}"$'\n'
     fi
   fi
 
@@ -334,9 +360,22 @@ sb_doc_scheme_gate_enforce() {
   fi
 
   if [[ -n "$gate_issues" ]]; then
-    sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "${checklist#$repo_root/}" "docs/doc-scheme.json" "$gate_issues"
+    sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "${checklist#"$repo_root"/}" "docs/doc-scheme.json" "$gate_issues"
     remediation_cmd="/silver:ensure-docs --from-hook --task ${task_id:-unknown-task} --gaps ${SB_DOC_SCHEME_GAP_REPORT_PATH}"
-    "$emit_fn" "$(printf '🛑 DOC-SCHEME GATE — %s blocked.\n\n`docs/doc-scheme.json` enforcement requires complete checklist coverage for this task and current-session updates for all mandated docs.\n\nFix these items:\n%s\nRun:\n`%s`\n\nIf scheme files are missing/corrupt, recover first:\n`/silver:ensure-docs --recover-scheme`' "$mode_label" "$gate_issues" "$remediation_cmd")"
+    message=$(cat <<EOF
+🛑 DOC-SCHEME GATE — ${mode_label} blocked.
+
+\`docs/doc-scheme.json\` enforcement requires complete checklist coverage for this task and current-session updates for all mandated docs.
+
+Fix these items:
+${gate_issues}Run:
+\`${remediation_cmd}\`
+
+If scheme files are missing/corrupt, recover first:
+\`/silver:ensure-docs --recover-scheme\`
+EOF
+)
+    "$emit_fn" "$message"
     exit 0
   fi
 
