@@ -1,6 +1,6 @@
 ---
 name: silver-ensure-docs
-description: This skill should be used to bootstrap, reconcile, and enforce complete task-level documentation updates from docs/doc-scheme.md + docs/doc-scheme.json
+description: This skill should be used to bootstrap, reconcile, and semantically audit complete task-level documentation updates from docs/doc-scheme.md + docs/doc-scheme.json
 argument-hint: "[--bootstrap | --reconcile-brownfield | --from-hook --task <id> --gaps <path> | --recover-scheme]"
 version: 0.1.0
 ---
@@ -16,6 +16,7 @@ This skill is the only doc orchestrator for:
 2. brownfield reconciliation (`--reconcile-brownfield`)
 3. hook-gap remediation (`--from-hook --task ... --gaps ...`)
 4. contract recovery (`--recover-scheme`)
+5. semantic freshness audits against the current project state
 
 ## Safety Rules
 
@@ -24,6 +25,15 @@ This skill is the only doc orchestrator for:
 3. When user switches to SB alternatives, move replaced artifacts to `docs/archive/<timestamp>/...` with a manifest record.
 4. Every move must be traceable: source, destination, reason, task id, timestamp.
 5. Keep `docs/doc-scheme.md` and `docs/doc-scheme.json` synchronized.
+
+## Semantic Audit Expectations
+
+`silver:ensure-docs` is not satisfied by structural validation alone. It must:
+- read every governed doc that claims to describe current project state
+- compare those claims to the current codebase, hooks, commands, workflows, and runtime behavior
+- distinguish live/reference docs from archival or historical snapshots
+- flag stale, misleading, or contradictory prose instead of treating it as current
+- keep brownfield checklist scaffolding aligned to the actual governed-doc inventory, not placeholder keys
 
 ## Mode: `--bootstrap`
 
@@ -34,7 +44,7 @@ Use during `/silver:init` for both greenfield and brownfield repos.
 1. Create minimal doc skeletons (non-destructive if files already exist).
 2. Create `docs/doc-scheme.md` and `docs/doc-scheme.json`.
 3. Seed `required_docs` inventory, `mandatory_updated_docs`, and `enforcement.granularity_levels=[2,3]`.
-4. Seed `docs/task-doc-checklist.json` scaffold aligned to contract keys.
+4. Seed `docs/task-doc-checklist.json` scaffold aligned to contract keys using real governed doc keys only.
 
 ### Brownfield
 
@@ -53,6 +63,7 @@ Use during `/silver:init` for both greenfield and brownfield repos.
    - Create/update SB canonical doc
    - Copy relevant content forward into canonical doc
    - Record move in `archive_moves` and archive manifest
+5. Run a semantic freshness audit over the governed docs that remain live.
 
 ## Mode: `--from-hook --task <id> --gaps <path>`
 
@@ -68,6 +79,7 @@ This is the zero-miss remediation path after stop/completion hooks find gaps.
 4. Update all docs that should change based on the completed work and downstream effects.
 5. Ensure checklist coverage includes every required doc and required section.
 6. Re-run gate checks mentally and do not finish until the checklist is fully compliant.
+7. Audit the resulting live docs semantically against the current repo state and mark archival docs explicitly as historical when they are not meant to track current behavior.
 
 Important:
 - Incomplete task context is not a stopping condition.

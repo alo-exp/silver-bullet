@@ -1,5 +1,23 @@
 # Milestones
 
+## v0.32.5 Open Issue Burn-down (Planned: 2026-05-11)
+
+**Type:** Patch release milestone (init/runtime fixes, docs semantic audit, hook ergonomics, backlog reconciliation, release prep).
+
+**Goal:** Close the remaining 22 open issues in the Silver Bullet repo by fixing the init/runtime and docs/hook gaps, reconciling already-shipped backlog items, burning down the todo-app clear-completed duplicate cluster, and then shipping `v0.32.5`.
+
+**Phases planned:** 86-91
+
+**Target issue clusters:**
+
+- Runtime-aware bootstrap and brownfield inference: #144, #145, #146, #147, #148, #150
+- Docs semantic audit and enforcement ergonomics: #149, #151
+- Backlog reconciliation: #98
+- Todo-app clear-completed duplicate cluster: #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
+- Release prep: v0.32.5 versioning, CI, pre-release gate, GitHub Release
+
+**Status:** planned; the current release line is v0.32.4.
+
 ## v0.31.1 Docs & State Sync (Shipped: 2026-05-06)
 
 **Type:** Patch release (docs/state refresh, no inventory changes).

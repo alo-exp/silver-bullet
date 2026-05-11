@@ -2,11 +2,11 @@
 
 ## What This Is
 
-Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Silver Bullet combines GSD, Superpowers, Engineering, and Design plugins into enforced workflows with 11 layers of compliance — guiding users from idea to deployed software without requiring any prior knowledge of the underlying tools.
+Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Silver Bullet combines GSD, Superpowers, Engineering, and Design plugins into enforced workflows with 12 layers of compliance, guiding users from idea to deployed software without requiring any prior knowledge of the underlying tools.
 
 ## Core Value
 
-Single enforced workflow that eliminates the gap between "what AI should do" and "what AI actually does" — 11 compliance layers, zero single-point-of-bypass, complete user hand-holding from start to finish.
+Single enforced workflow that eliminates the gap between "what AI should do" and "what AI actually does" — 12 compliance layers, zero single-point-of-bypass, complete user hand-holding from start to finish.
 
 ## Requirements
 
@@ -62,12 +62,10 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [ ] **LOCK-01..05** — Phase-lock schema + shared `phase-lock.sh` helper (claim/heartbeat/release/peek; flock-atomic; stale-lock TTL) — Phase 70
-- [ ] **HOOK-01..04** — Claude-SB integration via 3 new hooks (claim, heartbeat, release) — Phase 71
-- [ ] **AGENT-01..04** — Forge-SB integration via session-init peek + claim/heartbeat/release custom agents; honor `SB_PHASE_LOCK_INHERITED` — Phase 72
-- [ ] **DELEG-01..04** — `/forge-delegate` skill (both sides) packages phase context, spawns sibling runtime under parent lock — Phase 73
-- [ ] **TEST-01..03**, **DOC-01..05** — Coexistence/stale-lock/delegation tests + docs across PARITY, silver-bullet.md, AGENTS.md, top-level user guide — Phase 74
-- [ ] **REL-01..03** — Bump versions, signed tag, gh release, CI green — Phase 75
+- [ ] **INIT-01..06** — Runtime-aware `silver:init` bootstrap, brownfield source detection, product-management cache detection, checklist reconciliation, and GSD-entrypoint fallback — Issues #144, #145, #146, #147, #148, #150
+- [ ] **DOC-01** — `silver:ensure-docs` performs a full semantic audit of governed docs, not just structural reconciliation — Issue #151
+- [ ] **HOOK-01** — Enforcement hooks allow read-only inspection of hook files while still blocking writes/modifications — Issue #149
+- [ ] **TRACK-01..02** — Reconcile already-implemented backlog items and collapse duplicate todo-app backlog items into the canonical feature/issue set — Issues #98, #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
 
 ### Deferred
 
@@ -82,15 +80,18 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Planned Milestone: v0.29.0 Multi-Agent Phase Coordination
+## Current Milestone: v0.32.5 Open Issue Burn-down
 
-**Goal:** Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) can cooperatively work on the same project folder against the same SB state and docs context, but each Phase is owned by exactly one agent at a time. Exception: `/forge-delegate` engages a sibling runtime as a subagent under the parent's existing lock.
+**Goal:** Reduce the current 22 open GitHub issues to zero by fixing the Silver Bullet init/docs/hooks gaps, reconciling already-implemented backlog items, and closing the todo-app duplicate cluster once the fixture work lands.
 
-**Foundation:** `.planning/research/2026-04-27-forge-claude-coexistence/RESEARCH.md` (+ addendum supersedes original Option A with phase-ownership model)
+**Target features:**
 
-**Phases:** 70-75 (24 requirements). Defined 2026-04-28.
+- Runtime-aware `silver:init` bootstrap for Codex and Claude, with brownfield source-pattern and project-metadata inference that matches the actual repo layout
+- `silver:ensure-docs` semantic auditing that verifies live docs against current code, hooks, workflows, and runtime behavior
+- Enforcement-hook ergonomics that allow read-only inspection while still blocking modification attempts
+- Backlog reconciliation for already-implemented items, plus the todo-app clear-completed cleanup and duplicate collapse path
 
-**Status:** planned future work; the shipped repo version is v0.31.1 and there is no active milestone.
+**Status:** active planning; repo version is v0.32.4 and this milestone targets the next patch release line.
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -123,7 +124,9 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.31.1
+- Current version: v0.32.4
+- Open issues in scope: 22 total, clustered into Silver Bullet init/runtime fixes, docs/hook gaps, and the todo-app clear-completed backlog
+- A sibling `test-todo-app` checkout exists and is used by the live clear-completed scenario
 
 ## Constraints
 
@@ -166,4 +169,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 — v0.31.1 shipped; v0.29.0 Multi-Agent Phase Coordination remains planned*
+*Last updated: 2026-05-11 — v0.32.4 release line in progress; v0.32.5 Open Issue Burn-down started*

@@ -132,7 +132,7 @@ archive-move policy, and recovery/remediation command paths.
 
 ## Forge-Silver Bullet Skill Test Harness
 
-The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates all 62 installed skills against realistic todo app development scenarios.
+The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 61 scenario checks against realistic todo app development scenarios.
 
 ### Test Classification
 
@@ -151,10 +151,10 @@ The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 
 | GSD Workflow | 12 | 100% |
 | Quality & Methodology | 10 | 100% |
 | Review & Assessment | 11 | 100% |
-| Planning & Documentation | 4 | 100% |
+| Planning & Documentation | 5 | 100% |
 | DevOps & Routing | 2 | 100% |
 
-**Total: 62 skills tested**
+**Total: 61 skills tested**
 
 ### Running the Harness
 

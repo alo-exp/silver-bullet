@@ -25,7 +25,7 @@ Defines what each plugin owns. Silver Bullet never duplicates documentation or f
 | Codex package surface | — | — | — | — | **Owns** (SB-only bundle; no dependency vendoring) |
 | Codex slash commands | — | — | — | — | **Owns** (ship inside the SB bundle; not a separate installed plugin) |
 | Third-party Codex wrappers | — | — | — | — | **Owns** (wrapper metadata only; upstream content fetched at install time) |
-| 7-layer enforcement | — | — | — | — | **Owns** |
+| 12-layer enforcement | — | — | — | — | **Owns** |
 | Workflow sequencing | — | — | — | — | **Owns** |
 | Pre-release quality gate | — | — | — | — | **Owns** |
 | Artifact reviewer framework | — | — | — | — | **Owns** |

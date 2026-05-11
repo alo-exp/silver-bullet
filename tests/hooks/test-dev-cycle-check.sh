@@ -536,6 +536,12 @@ out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh ${SB_INSTALLED_HOOKS}/dev-cycl
 assert_blocks "hooks-protect: cp into installed hooks dir is still blocked" "$out"
 teardown
 
+# Test 27b: read-only inspection of installed hooks dir should be ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "sed -n '1,5p' ${SB_INSTALLED_HOOKS}/dev-cycle-check.sh")
+assert_passes "hooks-protect: read-only sed inspection in installed hooks dir is allowed" "$out"
+teardown
+
 # Bug 2 regression: source repo hooks/ (outside ~/.claude/) must NOT be falsely blocked.
 # Before the fix the fallback used /silver-bullet[^/]*/hooks/ which caught both the
 # installed plugin AND the source repo, preventing legitimate hook edits in dev.
