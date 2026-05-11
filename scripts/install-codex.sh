@@ -87,6 +87,7 @@ config_path = pathlib.Path(sys.argv[1])
 source_spec = sys.argv[2]
 marketplace_name = 'superpowers-marketplace' if 'superpowers' in source_spec else 'alo-labs-codex'
 source_type = 'local' if source_spec.startswith('/') else 'git'
+config_path.parent.mkdir(parents=True, exist_ok=True)
 text = config_path.read_text() if config_path.exists() else ''
 lines = text.splitlines()
 output = []
