@@ -72,6 +72,8 @@ esac
 
 skills=()
 
+backtick_regex="\`[^\`]+\`"
+
 # Backtick-quoted route markers commonly used by SB test harness prompts.
 while IFS= read -r tok; do
   [[ -n "$tok" ]] || continue
@@ -80,7 +82,7 @@ while IFS= read -r tok; do
   case "$tok" in
     silver:*|gsd:*) skills+=("$tok") ;;
   esac
-done < <(printf '%s' "$prompt" | grep -oE '`[^`]+`' 2>/dev/null | head -n 50 || true)
+done < <(printf '%s' "$prompt" | grep -oE "$backtick_regex" 2>/dev/null | head -n 50 || true)
 
 # Explicit gsd-* mentions in plain text (no backticks).
 while IFS= read -r tok; do

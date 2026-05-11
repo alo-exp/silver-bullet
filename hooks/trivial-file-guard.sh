@@ -16,7 +16,6 @@ input=$(cat)
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo "PreToolUse")
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)
 file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)
 command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
 [[ -z "$file_path" && -z "$command_str" ]] && exit 0
