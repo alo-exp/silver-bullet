@@ -23,15 +23,18 @@ TMPTRIVIAL="${SB_TEST_DIR}/trivial"   # trivial still uses default path (config-
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state-${TEST_RUN_ID}"
+VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
 export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
+export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
 
 cleanup_all() {
   rm -f "$TMPSTATE" "$TMPBRANCH" 2>/dev/null || true
   rm -f "${TMPTRIVIAL}" 2>/dev/null || true
   rm -f "$RELEASE_LIVE_MATRIX_FILE" "$E2E_LIVE_MATRIX_FILE" 2>/dev/null || true
   rm -f "$QUALITY_GATE_FILE" 2>/dev/null || true
+  rm -f "$VERIFY_TESTS_FILE" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
@@ -45,6 +48,7 @@ run_hook() {
   ( cd "$workdir" && \
     SILVER_BULLET_STATE_FILE="$TMPSTATE" \
     SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+    SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
     bash "$HOOK" 2>/dev/null ) || true
 }
 
@@ -54,6 +58,18 @@ make_git_repo() {
   dir=$(mktemp -d)
   git -C "$dir" init -q
   git -C "$dir" -c user.email="test@test.com" -c user.name="Test" commit -q --allow-empty -m "init" 2>/dev/null
+  cat > "$dir/.silver-bullet.json" <<EOF
+{
+  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
+  "state": {
+    "state_file": "${TMPSTATE}",
+    "trivial_file": "${TMPTRIVIAL}"
+  }
+}
+EOF
+  cat > "$dir/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   printf '%s' "$dir"
 }
 
@@ -133,8 +149,28 @@ assert_file_contains() {
   fi
 }
 
+assert_empty() {
+  local label="$1"
+  local output="$2"
+  if [[ -z "$output" ]]; then
+    echo "  PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $label — expected empty output, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 echo "=== session-start tests ==="
+
+# Test 0: No SB markers -> no-op
+echo "--- Test 0: No SB markers -> no-op ---"
+HOOK_WORKDIR=$(make_git_repo)
+rm -f "$HOOK_WORKDIR/.silver-bullet.json" "$HOOK_WORKDIR/silver-bullet.md"
+out=$(run_hook "$HOOK_WORKDIR")
+assert_empty "no SB markers -> silent exit, no output" "$out"
+rm -rf "$HOOK_WORKDIR"
 
 # ── Branch-scoped state reset tests ──────────────────────────────────────────
 
@@ -219,10 +255,32 @@ assert_file_missing "same branch -> pre-release quality gate file cleared" "$QUA
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"
 
+# Test 6: Trivial file is not auto-created on session start
+echo "--- Test 6: Trivial file is not auto-created on session start ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+rm -f "$TMPTRIVIAL"
+run_hook "$HOOK_WORKDIR" >/dev/null
+assert_file_missing "trivial file stays absent on session start" "$TMPTRIVIAL"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH"
+
+# Test 7: Same branch -> test execution gate file cleared on session start
+echo "--- Test 7: Same branch -> test execution gate file cleared on session start ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+touch "$VERIFY_TESTS_FILE"
+printf '%s' "$new_branch" > "$TMPBRANCH"
+run_hook "$HOOK_WORKDIR" >/dev/null
+assert_file_missing "same branch -> test execution gate file cleared" "$VERIFY_TESTS_FILE"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPSTATE" "$TMPBRANCH" "$VERIFY_TESTS_FILE"
+
 # ── Trivial file cleanup tests ────────────────────────────────────────────────
 
-# Test 6: Trivial file deleted on session start
-echo "--- Test 6: Trivial file deleted on session start ---"
+# Test 8: Trivial file deleted on session start
+echo "--- Test 8: Trivial file deleted on session start ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
@@ -235,6 +293,35 @@ assert_file_missing "release live matrix marker cleared on session start" "$RELE
 assert_file_missing "e2e live matrix marker cleared on session start" "$E2E_LIVE_MATRIX_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH"
+
+# Test 7a: Prompt replay records requested skill markers for exec-mode sessions
+echo "--- Test 7a: Prompt replay records requested skill markers ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
+{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
+EOF
+run_hook "$HOOK_WORKDIR" >/dev/null
+assert_file_contains "prompt replay recorded silver-init" "$TMPSTATE" "silver-init"
+rm -f "$HOOK_WORKDIR/.silver-bullet.prompt.json"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$TMPSTATE"
+
+# Test 7b: Fresh init prompt replay records requested skill markers before scaffold exists
+echo "--- Test 7b: Fresh init prompt replay records requested skill markers ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+rm -f "$HOOK_WORKDIR/.silver-bullet.json" "$HOOK_WORKDIR/silver-bullet.md"
+cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
+{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
+EOF
+run_hook "$HOOK_WORKDIR" >/dev/null
+assert_file_contains "fresh init prompt replay recorded silver-init" "$TMPSTATE" "silver-init"
+rm -f "$HOOK_WORKDIR/.silver-bullet.prompt.json"
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$TMPSTATE"
 
 # ── Output / injection tests ──────────────────────────────────────────────────
 

@@ -230,16 +230,15 @@ No compliance framework integration (SOC 2, GDPR, HIPAA, PCI-DSS). Quality gates
 |---|-----|----------|--------|
 | 1 | Post-deployment observability | Critical | Workflow terminates before system is alive in production |
 | 2 | Security testing (SAST/SCA/secrets) | Critical | Design review ≠ security; automated scanning is table stakes |
-| 3 | Test execution gate | Critical | Strategy document ≠ tests passing |
-| 4 | Requirements / discovery | Critical | Wrong requirements pass all gates perfectly |
-| 5 | Release management | High | PR ≠ release; no versioning, no changelog, no staged rollout |
-| 6 | Incident → fix loop | High | Incidents happen but the system doesn't learn from them |
-| 7 | Performance testing | High | "Designed for scale" ≠ "verified to scale" |
-| 8 | CI/CD scaffolding | High | Cannot wave away the pipeline |
-| 9 | Rollback execution | Medium | Plan ≠ execution under pressure |
-| 10 | API contract design | Medium | Interface-first development is unaddressed |
-| 11 | Tech debt management | Medium | Notes accumulate without prioritization or action |
-| 12 | Compliance / audit trail | Medium | Required for regulated or enterprise contexts |
+| 3 | Requirements / discovery | Critical | Wrong requirements pass all gates perfectly |
+| 4 | Release management | High | PR ≠ release; no versioning, no changelog, no staged rollout |
+| 5 | Incident → fix loop | High | Incidents happen but the system doesn't learn from them |
+| 6 | Performance testing | High | "Designed for scale" ≠ "verified to scale" |
+| 7 | CI/CD scaffolding | High | Cannot wave away the pipeline |
+| 8 | Rollback execution | Medium | Plan ≠ execution under pressure |
+| 9 | API contract design | Medium | Interface-first development is unaddressed |
+| 10 | Tech debt management | Medium | Notes accumulate without prioritization or action |
+| 11 | Compliance / audit trail | Medium | Required for regulated or enterprise contexts |
 
 ---
 
@@ -254,6 +253,35 @@ This analysis focuses on gaps, but it is worth stating what the system gets righ
 - **Plugin orchestration** — The combination of GSD + Superpowers + Engineering + Design + 5 optional DevOps plugins into a single enforced workflow is the right architectural vision
 
 The core loop — **design → build → review → deploy** — is solid. The work is to extend the system to both ends of the lifecycle.
+
+---
+
+## 2026-05-10 Current-State Addendum
+
+The April analysis still describes the broad shape of the problem, but several continuity and traceability gaps are materially better in the current repo:
+
+- `session-log-init.sh`, `pr-traceability.sh`, `semantic-compress.sh`, and `phase-archive.sh` are live and exercised.
+- `/silver-create-release` now covers release-note generation, `CHANGELOG.md` updates, `README.md` badge updates, and GitHub Release publication.
+- `incident-response` is tracked in the default config, but it is still not part of the hard deployment gate.
+- `/verify-tests` now runs the project's configured verify commands or stack defaults, writes the freshness marker, and is wired into the final delivery gate, so the original testing gap is closed.
+
+That shifts today's highest-priority SB gaps toward outcome verification rather than workflow plumbing:
+
+| Rank | Gap | Current status | Why it matters to SB's objective |
+|---|---|---|---|
+| 1 | Security scanner gate | No built-in `security-scan` / scanner integration | SB still relies on design-time review instead of actual vulnerability detection |
+| 2 | Post-deploy verification | No `post-deploy-check` / production health gate | The workflow still ends before SB verifies the shipped system is healthy in the real environment |
+| 3 | Requirements validation | No `requirements-review` / acceptance-criteria gate | SB can still optimize the wrong work if discovery remains conversation-only |
+| 4 | Incident feedback loop | `incident-response` exists, but there is no mandatory PIR / runbook / tech-debt closure path | The system can handle an incident without feeding the lessons back into the process |
+| 5 | Performance verification | No load / soak / benchmark gate | SB can approve work that looks scalable on paper but has not been exercised under load |
+
+Secondary watchlist:
+
+- CI/CD scaffolding for greenfield repos
+- Explicit rollback execution orchestration
+- Compliance / audit artifact mapping for regulated environments
+
+In short: SB's continuity and traceability plumbing is much better than the April snapshot, but the biggest remaining product gap is still the same one that matters most to its objective: converting workflow compliance into outcome validation.
 
 ---
 

@@ -38,22 +38,25 @@ echo "=== e2e-live suite sanity checks ==="
 assert_exists "suite runner exists" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
-assert_exists "install UX scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-install-ux.sh"
-assert_exists "init/feature scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-init-and-feature.sh"
-assert_exists "regression repair scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-regression-repair.sh"
-assert_exists "release prep scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-release-prep.sh"
+assert_exists "dependency-access preflight exists" "${SCRIPT_DIR}/dependency-access-preflight.sh"
+assert_executable "dependency-access preflight is executable" "${SCRIPT_DIR}/dependency-access-preflight.sh"
+assert_exists "full-surface journey exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"
 
 scenario_list=()
 while IFS= read -r scenario; do
   [[ -n "$scenario" ]] || continue
   scenario_list+=("$scenario")
 done < <("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)
-if [[ "${scenario_list[0]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-install-ux.sh" ]]; then
-  echo "PASS: install UX scenario is first in the live suite"
+if [[ "${#scenario_list[@]}" -eq 1 && "${scenario_list[0]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" ]]; then
+  echo "PASS: full-surface journey is the only live suite scenario"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: install UX scenario is first in the live suite"
-  echo "  first listed scenario: ${scenario_list[0]:-<none>}"
+  echo "FAIL: full-surface journey is the only live suite scenario"
+  printf '  listed scenarios:'
+  for scenario in "${scenario_list[@]}"; do
+    printf ' %s' "$(basename "$scenario")"
+  done
+  printf '\n'
   FAIL=$((FAIL + 1))
 fi
 

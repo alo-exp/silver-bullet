@@ -42,7 +42,7 @@ done
 _SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
-REQUIRED_DEPLOY="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
+REQUIRED_DEPLOY="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")

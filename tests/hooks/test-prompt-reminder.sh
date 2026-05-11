@@ -18,6 +18,9 @@ cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}
 trap cleanup_all EXIT
 
 write_cfg() {
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   cat > "$TMPCFG" << EOF
 {
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },

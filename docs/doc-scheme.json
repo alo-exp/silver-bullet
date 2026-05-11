@@ -1,0 +1,424 @@
+{
+  "version": 1,
+  "sync": {
+    "doc_scheme_md_path": "docs/doc-scheme.md",
+    "task_checklist_path": "docs/task-doc-checklist.json"
+  },
+  "enforcement": {
+    "enabled": true,
+    "granularity_levels": [
+      2,
+      3
+    ]
+  },
+  "mandatory_updated_docs": [
+    "docs/CHANGELOG.md",
+    "docs/knowledge/YYYY-MM.md",
+    "docs/lessons/YYYY-MM.md",
+    "docs/task-doc-checklist.json"
+  ],
+  "required_docs": [
+    {
+      "key": "docs/CHANGELOG.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/knowledge/YYYY-MM.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/lessons/YYYY-MM.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/ARCHITECTURE.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/ENFORCEMENT.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/PLUGIN-BOUNDARIES.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/PRD-Overview.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/RELEASE.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/SDLC-MAP.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/SECURITY.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/TESTING.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/TODO.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/archive/manifest.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-forensics-r2.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-forensics-r3.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-forensics.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-silver-bullet-v0.7.0.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-silver-bullet-v0.8.0-pass2.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-silver-bullet-v0.8.0.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/SENTINEL-audit-silver-bullet.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/sentinel-audit-report-pass2.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/audits/sentinel-audit-report.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/composable-flows-contracts.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/doc-scheme.json",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/doc-scheme.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/documentation-scheme.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/enforcement-techniques/claude.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/forge-sb-README.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/gsd-vs-silver-bullet.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/CICD.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/SDLC-Coverage-Roadmap.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/bug-06-permissions-reprompt.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/codex-marketplace-packaging-guide.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/flow-01-parallelism-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/gsd2-vs-sb-gap-analysis.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/help-center-guidelines.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/pre-release-quality-gate.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/sb-vs-gsd-vs-superpowers.xlsx",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/sdlc-gap-analysis.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/site-content-audit.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/site-qa-report.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/stop-hook-audit.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/stop-hook-fp-audit-v0.30.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/update-command-instructions.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/internal/vfy-01-enforcement-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/issues/BACKLOG.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/issues/ISSUES.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/knowledge/INDEX.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/mapping-table.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/multi-agent-coordination.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/project-documentation-scheme.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sb-vs-gsd-vs-superpowers.xlsx",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sb-vs-gsd.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sb-without-gsd.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sessions/2026-04-05-add-skill-enforcement.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sessions/2026-04-20-08-48-48.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/sessions/2026-05-07-codex-docs-coverage.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/silver-forensics/2026-04-16-deferred-items-sweep.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/silver-forensics/2026-04-16-roadmap-checkbox-drift.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-02-autonomous-hardening-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-02-autonomous-hardening-plan.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-02-forensics-skill-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-02-gap-narrowing-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-02-gap-narrowing-plan.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-05-skill-enforcement-expansion-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/specs/2026-04-13-knowledge-lessons-split-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/plans/2026-04-02-forensics-skill.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/plans/2026-04-02-semantic-context-compression.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/plans/2026-04-08-sb-orchestrated-dev-workflows.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/plans/2026-05-07-pre-release-quality-gate-sidekick.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/plans/2026-05-08-inline-todo-app-full-surface-e2e.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/specs/2026-04-02-semantic-context-compression-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/specs/2026-04-08-sb-orchestrated-dev-workflows-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/superpowers/specs/2026-05-08-inline-todo-app-full-surface-e2e-design.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/task-doc-checklist.json",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/tech-debt.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/workflows/devops-cycle.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/workflows/full-dev-cycle.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "README.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "CHANGELOG.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    }
+  ],
+  "preserved_mappings": [],
+  "archive_moves": []
+}

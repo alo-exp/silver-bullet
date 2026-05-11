@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Composable Workflow Orchestration — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet's 18-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via WORKFLOW.md real-time tracking.">
+<meta name="description" content="How Silver Bullet's 18-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <span>Composable Workflow Orchestration</span>
     </div>
     <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> replaces fixed pipelines with dynamic path composition — classifying context, selecting from 18 flows, and supervising execution via <code>WORKFLOW.md</code>.</p>
+    <p>How <code>/silver</code> replaces fixed pipelines with dynamic path composition — classifying context, selecting from 18 flows, and supervising execution via the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
   </div>
 </div>
 
@@ -141,7 +141,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#overview">Overview</a></li>
         <li><a href="#the-18-flows">The 18 Paths</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
-        <li><a href="#workflow-tracking">WORKFLOW.md Tracking</a></li>
+        <li><a href="#workflow-tracking">Workflow Tracker</a></li>
         <li><a href="#supervision-loop">Supervision Loop</a></li>
         <li><a href="#see-also">See Also</a></li>
       </ul>
@@ -298,10 +298,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="workflow-tracking">WORKFLOW.md Tracking</h2>
-      <p><code>WORKFLOW.md</code> is the real-time state tracking artifact for an active composition. It is created when a composition begins and updated after every path completes.</p>
+      <h2 id="workflow-tracking">Per-instance Workflow Tracker</h2>
+      <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every path completes.</p>
 
-      <h3>What WORKFLOW.md Contains</h3>
+      <h3>What the workflow tracker contains</h3>
       <ul>
         <li><strong>Active path</strong> — which path is currently executing</li>
         <li><strong>Completed paths</strong> — log of paths that have exited successfully, with timestamps</li>
@@ -310,8 +310,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
       </ul>
 
-      <h3>Why WORKFLOW.md Matters</h3>
-      <p>WORKFLOW.md gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, WORKFLOW.md allows the next session to resume from the correct point in the chain without re-running completed paths. It also provides an audit trail for post-hoc review.</p>
+      <h3>Why the workflow tracker matters</h3>
+      <p>The per-instance tracker gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, <code>.planning/workflows/&lt;id&gt;.md</code> allows the next session to resume from the correct point in the chain without re-running completed paths. It also provides an audit trail for post-hoc review. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
 
       <div class="divider"></div>
 
@@ -338,7 +338,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a path chain</li>
         <li><a href="verification.html">Verification Before Completion</a> — FLOW 11 VERIFY and dual-mode quality gates in detail</li>
         <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how FLOW 9 REVIEW triages findings via the assessor</li>
-        <li><a href="documentation.html">Documentation Scheme</a> — FLOW 16 DOCUMENT and WORKFLOW.md as project artifacts</li>
+        <li><a href="documentation.html">Documentation Scheme</a> — FLOW 16 DOCUMENT and the per-instance workflow tracker as project artifacts</li>
       </ul>
 
       <div class="page-nav-bottom">

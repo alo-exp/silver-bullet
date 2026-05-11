@@ -21,7 +21,7 @@ Priority score = (Impact + Risk) × (6 − Effort)  where Impact/Risk/Effort are
 |----------|------|-------|-----------------|
 | 1 | Add `jq` CI assertions for `required_deploy` and `all_tracked` | (3+4)×(6−1)=35 | Next CI improvement pass |
 | 2 | Add `diff` CI step for `docs/` vs `templates/` parity | (3+3)×(6−1)=30 | Next CI improvement pass |
-| 3 | Create `tests/hooks/test-dev-cycle-check.sh` covering all 4 stages + trivial bypass | (4+4)×(6−3)=24 | Phase 3 or dedicated test hardening sprint |
+| 3 | Create `tests/hooks/test-dev-cycle-check.sh` covering all 4 stages + legacy trivial-marker guard | (4+4)×(6−3)=24 | Phase 3 or dedicated test hardening sprint |
 | 4 | Derive `finalization_skills` from `.silver-bullet.json` at hook runtime instead of hardcoding | (3+3)×(6−3)=18 | When next skill is added to `required_deploy` |
 
 Items 1 and 2 can be done alongside feature work in under an hour total. Item 3 requires ~2 hours to write comprehensive bash test cases. Item 4 requires a small refactor of `dev-cycle-check.sh` startup to read and parse the JSON config.

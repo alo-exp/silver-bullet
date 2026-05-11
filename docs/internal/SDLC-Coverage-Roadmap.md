@@ -16,7 +16,7 @@ Silver Bullet covers phases 3–8 of the SDLC strongly, with partial coverage of
 | 3. Development | ✅ Full GSD execution engine |
 | 4. Code Review | ✅ Three-skill triad with ordering enforcement |
 | 5. Security | ⚠️ Design checklist only — no scanner integration |
-| 6. Testing | ⚠️ Strategy document only — no test execution gate |
+| 6. Testing | ✅ Strategy + `/verify-tests` execution gate |
 | 7. Quality Gates | ✅ 8 dimensions, hard-stop enforcement |
 | 8. Release & Deployment | ✅ PR + deploy checklist + release skill |
 | 9. Post-Deployment Monitoring | ❌ Absent |
@@ -30,11 +30,11 @@ Silver Bullet covers phases 3–8 of the SDLC strongly, with partial coverage of
 
 **Target:** Close GAP 3 — the most impactful gap because it currently allows full workflow completion with zero passing tests.
 
-**What to build:**
-- A `/verify-tests` skill (or extend `/gsd:verify-work`) that runs `npm test` / `pytest` / `go test` / `cargo test` and confirms they pass before allowing the PR create step
-- Add `verify-tests` to `required_deploy` in the default config
-- Hook enforcement: `completion-audit.sh` checks for `verify-tests` in state before allowing `gh pr create`
-- Config: `testing.test_command` in `.silver-bullet.json` for project-specific test commands
+**What was built:**
+- A `/verify-tests` skill that runs the project's configured `verify_commands` from `.silver-bullet.json`, otherwise falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
+- `verify-tests` is now part of `required_deploy` in the default config
+- Hook enforcement: `completion-audit.sh` blocks final delivery when `/verify-tests` has been recorded but the freshness marker is missing
+- `session-start` clears the freshness marker at session start, and `dev-cycle-check.sh` invalidates it on real source changes
 
 **Success criterion:** A PR cannot be created unless the test suite was run AND passed within the current session.
 

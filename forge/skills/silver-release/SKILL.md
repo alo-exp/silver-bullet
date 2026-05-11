@@ -141,7 +141,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 2a), `silver:silver-quality-gates` pre-release (Step 0), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
+**Non-skippable gates:** `silver:security` (Step 2a), `silver:quality-gates` pre-release (Step 0), the mandatory full test suite rerun via `/verify-tests` (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
@@ -238,6 +238,10 @@ Do NOT proceed to Step 7 (Ship) until cross-artifact review reports clean pass. 
 ## Step 6b: Pre-Ship Deployment Checklist
 
 Invoke `/deploy-checklist`. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
+
+## Step 6c: Mandatory Full Test Suite Rerun
+
+Invoke `/verify-tests`. Purpose: rerun the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.sidekick/quality-gate-state`. Non-skippable.
 
 ## Step 7: Ship — Deploy, CI Green
 

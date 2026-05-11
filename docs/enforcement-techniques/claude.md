@@ -503,18 +503,18 @@ from one branch do not carry over to another.
 
 | Attribute | Value |
 |-----------|-------|
-| Path | `~/.claude/.silver-bullet/trivial` (configurable) |
-| Format | Regular file, presence = bypass active |
+| Path | `~/.claude/.silver-bullet/trivial` (configurable, legacy compatibility marker) |
+| Format | Regular file; retained only for backward compatibility |
 
-**What it does:** When this file exists (and is not a symlink), all enforcement hooks
-exit 0 immediately without checking the state file. Intended for quick fixes, hotfixes,
-or work the developer has manually verified does not require the full workflow.
+**What it does:** In older sessions, the legacy trivial marker could short-circuit some
+enforcement hooks. Current Codex guidance is to route small changes through
+`/silver:fast` instead of arming this marker.
 
 **Security:** Only a regular file triggers bypass — symlinks are rejected to prevent
 attacks where an attacker creates a symlink from the trivial path to an existing file.
 
-**Usage:** Create with `touch ~/.claude/.silver-bullet/trivial`; remove with
-`rm ~/.claude/.silver-bullet/trivial`.
+**Usage:** Prefer `/silver:fast`. The marker remains only so older sessions and
+historical references continue to read cleanly.
 
 ---
 

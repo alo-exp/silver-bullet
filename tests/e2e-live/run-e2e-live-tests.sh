@@ -3,12 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
+DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
+INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
 SCENARIOS=(
-  "${SCENARIO_DIR}/test-e2e-live-install-ux.sh"
-  "${SCENARIO_DIR}/test-e2e-live-init-and-feature.sh"
-  "${SCENARIO_DIR}/test-e2e-live-regression-repair.sh"
-  "${SCENARIO_DIR}/test-e2e-live-release-prep.sh"
+  "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
 )
 RUNTIMES=()
 full_matrix_requested=false
@@ -46,6 +45,7 @@ echo "Estimated cost: higher than the hook matrix; keep runtimes narrow when ite
 echo ""
 
 rm -f "$E2E_LIVE_MATRIX_FILE"
+rm -f "$INLINE_E2E_MATRIX_FILE"
 
 TOTAL_FAIL=0
 TOTAL_PASS=0
@@ -61,6 +61,20 @@ run_scenario() {
   else
     echo "SCENARIO FAILED: [$runtime] $(basename "$scenario")"
     TOTAL_FAIL=$((TOTAL_FAIL + 1))
+  fi
+}
+
+run_dependency_preflight() {
+  local runtime="$1"
+  local marker_file
+
+  marker_file="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-dependency-preflight-${runtime}.XXXXXX")"
+  export E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE="$marker_file"
+
+  if ! SB_E2E_LIVE_RUNTIME="$runtime" bash "$DEPENDENCY_PREFLIGHT_SCRIPT"; then
+    rm -f "$marker_file"
+    unset E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE
+    return 1
   fi
 }
 
@@ -90,10 +104,20 @@ for runtime in "${RUNTIMES[@]}"; do
     fi
   fi
 
+  if ! run_dependency_preflight "$runtime"; then
+    echo "ERROR: dependency-access preflight failed for runtime: $runtime"
+    exit 1
+  fi
+
   for scenario in "${SCENARIOS[@]}"; do
     [[ -f "$scenario" ]] || continue
     run_scenario "$runtime" "$scenario"
   done
+
+  if [[ -n "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}" ]]; then
+    rm -f "$E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE"
+    unset E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE
+  fi
 done
 
 echo ""

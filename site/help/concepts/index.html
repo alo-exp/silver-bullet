@@ -242,9 +242,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3 id="trivial-changes">Trivial Changes</h3>
-      <p>Not every edit needs a full workflow. For small, non-logic changes (typos, copy fixes, config tweaks), you can bypass workflow enforcement with:</p>
-      <div class="code-block"><span class="cmd">touch ~/.claude/.silver-bullet/trivial</span></div>
-      <p>This tells the hooks to skip enforcement for the next commit. Use it sparingly — it exists for genuine trivial changes, not as a shortcut for skipping review.</p>
+      <p>Not every edit needs a full workflow. For small, non-logic changes (typos, copy fixes, config tweaks), use <code>/silver:fast</code> so SB can classify the scope and route to <code>gsd-fast</code> without the full workflow overhead.</p>
 
       <div class="divider"></div>
 
@@ -649,12 +647,12 @@ docs/
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of 18 named paths. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with <code>WORKFLOW.md</code> providing real-time tracking of every active composition.</p>
+      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of 18 named paths. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
           <h4><a href="composable-workflow.html" style="color:var(--accent-light);text-decoration:none">Composable Workflow Orchestration →</a></h4>
-          <p>The full 18-flow catalog, how composition works, WORKFLOW.md real-time tracking, and the per-path supervision loop.</p>
+          <p>The full 18-flow catalog, how composition works, the active per-instance tracker, and the per-path supervision loop.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="users"></i></div>

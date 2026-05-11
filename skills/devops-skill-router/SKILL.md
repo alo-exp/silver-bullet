@@ -45,8 +45,11 @@ being worked on. Multiple contexts can apply simultaneously.
 ## Step 3: Route to the best available skill
 
 Use the routing table below. For each context, try skills in priority order.
-Skip any skill whose plugin is not installed. If no plugin is available for a
-context, proceed without — Silver Bullet's own quality gates still apply.
+If a candidate skill's plugin is not installed or the skill cannot be invoked,
+STOP and notify the user instead of proceeding silently. If no plugin is
+available for a context, offer the user: A. Install the plugin and retry
+first, B. Continue with an explicitly approved Silver Bullet degraded path,
+C. Switch to a different workflow or stop.
 
 ### Routing Table
 
@@ -54,7 +57,7 @@ context, proceed without — Silver Bullet's own quality gates still apply.
 
 | Context | Trigger | Priority 1 | Priority 2 | Priority 3 |
 |---------|---------|-----------|-----------|-----------|
-| **Terraform HCL authoring** | `.tf` files, HCL code, Terraform plans | hashicorp: `terraform-code-generation` | devops-skills: `iac-terraform` | (none — proceed without) |
+| **Terraform HCL authoring** | `.tf` files, HCL code, Terraform plans | hashicorp: `terraform-code-generation` | devops-skills: `iac-terraform` | (none — stop and ask) |
 | **Terraform module design** | Creating reusable modules, module registry | hashicorp: `terraform-module-generation` | devops-skills: `iac-terraform` | (none) |
 | **Terraform provider dev** | Writing custom TF providers | hashicorp: `terraform-provider-development` | (none) | |
 | **Terragrunt** | `terragrunt.hcl`, multi-env Terraform | devops-skills: `iac-terraform` | (none) | |
@@ -125,9 +128,10 @@ For the highest-priority available skill:
    - `/<skill-name>` (e.g., `/terraform-code-generation`)
    Use whichever pattern works for the installed plugin version.
 2. Feed the skill's output into the current workflow phase as additional context.
-3. If the skill invocation fails (not found, error), silently fall through to the
-   next priority. If all priorities fail, proceed without — log a note:
-   "No DevOps plugin available for [context]. Proceeding with Silver Bullet defaults."
+3. If the skill invocation fails (not found, error), STOP and notify the user.
+   Do not silently fall through to the next priority. If all priorities fail,
+   tell the user that the DevOps plugin is unavailable and ask them to choose
+   an option before continuing.
 
 **Important**: Routed skills are enrichments, not gates. A failed or missing plugin
 skill NEVER blocks the workflow. Only Silver Bullet's own quality gates and GSD

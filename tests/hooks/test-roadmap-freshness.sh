@@ -16,6 +16,9 @@ setup() {
   git -C "$TMPDIR_TEST" init -q
   git -C "$TMPDIR_TEST" config user.email "test@test.com"
   git -C "$TMPDIR_TEST" config user.name "Test"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   # Initial commit so HEAD exists
   touch "$TMPDIR_TEST/.gitkeep"
   git -C "$TMPDIR_TEST" add .gitkeep

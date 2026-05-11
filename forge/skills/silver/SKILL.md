@@ -54,6 +54,7 @@ Wait for response, then proceed.
 | "IaC quality", "devops quality", "terraform quality" | `silver:devops-quality-gates` | Ad-hoc DevOps quality |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:silver-forensics` | Post-mortem investigation |
 | "release notes", "github release", "cut release", "tag release" | `silver:silver-create-release` | Release artifact creation |
+| "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `silver:verify-tests` | Runs the project's test execution gate and writes the freshness marker |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC tool routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | Ingest external artifacts (JIRA, Figma, Google Docs) into SPEC.md + DESIGN.md, or fetch cross-repo spec |
 

@@ -5,6 +5,8 @@
 **Requirement:** FLOW-01
 **GitHub issue:** https://github.com/alo-exp/silver-bullet/issues/75
 
+> Historical design snapshot. This document captures the earlier WORKFLOW.md flow-log parallelism proposal and is retained for reference only. The current active workflow model is `.planning/workflows/<id>.md`.
+
 ---
 
 ## Current State

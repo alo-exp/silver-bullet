@@ -53,7 +53,7 @@ bash tests/live/test-live-full-scenario.sh
 | test-live-skill-recording.sh | S5-S6 | Skill recording to state file, compliance-status output |
 | test-live-full-scenario.sh | S7-S8 | Session initialization, abbreviated SDLC lifecycle |
 | test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/lessons updates, filename conventions |
-| test-silver-init-migration.sh | Migration | Non-destructive doc-scheme migration, backup + rename, KNOWLEDGE.md split |
+| test-silver-init-migration.sh | Init docs bootstrap | `silver:init` Step 3.5.5 delegation to `silver:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
 
 ## Isolation
 
@@ -74,13 +74,14 @@ approves skipping further Claude live testing, run the matrix with
 `matrix=codex-only` markers for that session only.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
-matching `e2e-live-matrix` marker. That suite now begins with an install-UX
-scenario so the user-facing plugin installation flow is exercised before the
-todo-app development episodes. Both markers must be present before a release
-can proceed.
+matching `e2e-live-matrix` marker. That suite now runs one inline full-surface
+journey against the standalone sibling `test-todo-app` repo and also writes an `inline-e2e-matrix` marker so the release gate can
+prove the end-user experience actually ran in this session. Both markers must
+be present before a release can proceed.
 
-The migration scenario is a separate on-demand test for `skills/silver-init/SKILL.md`
-(Phase 3.5.5) and is not part of the default `run-live-tests.sh` matrix.
+The init-docs bootstrap scenario is a separate on-demand test for
+`skills/silver-init/SKILL.md` (Phase 3.5.5) and is not part of the default
+`run-live-tests.sh` matrix.
 
 ## Not Included in Unit/Integration Suites
 

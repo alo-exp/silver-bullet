@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Shared helpers for the live todo-app E2E suite.
 #
-# The suite runs Claude and Codex against an isolated copy of tests/test-app,
-# then resets the workspace after each scenario. The real SB state files under
-# ~/.claude/.silver-bullet are backed up and restored around each scenario so
-# the suite can run repeatedly without cross-talk.
+# The suite runs Claude and Codex against an isolated copy of the standalone
+# sibling test-todo-app repo, then resets the workspace after each scenario.
+# The real SB state files under ~/.claude/.silver-bullet are backed up and
+# restored around each scenario so the suite can run repeatedly without
+# cross-talk.
 
 set -euo pipefail
 
@@ -13,16 +14,22 @@ export PATH
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
-FIXTURE_DIR="${SB_ROOT}/tests/test-app"
+DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
+FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
 RUNTIME_DIR="${SB_ROOT}/tests/live/runtimes"
+LIB_DIR="${E2E_ROOT}/lib"
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
+INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
 MAX_BUDGET="${SB_E2E_LIVE_BUDGET_USD:-10.00}"
 APP_PORT="${SB_E2E_LIVE_PORT:-3456}"
+export APP_PORT
 
 WORK_DIR=""
+REMOTE_DIR=""
 APP_SERVER_PID=""
 APP_SERVER_LOG=""
 CLAUDE_PROMPT_COUNT=0
@@ -36,6 +43,11 @@ SESSION_INIT_BACKUP="${SB_TEST_DIR}/session-init.e2e-live-backup-$$"
 
 PASS=0
 FAIL=0
+
+if [[ ! -d "$FIXTURE_DIR" ]]; then
+  printf 'ERROR: todo-app fixture repo not found at %s\n' "$FIXTURE_DIR" >&2
+  exit 1
+fi
 
 CLAUDE_LEGACY_PLUGINS=(
   "data-engineering@claude-plugins-official"
@@ -65,6 +77,15 @@ case "$E2E_RUNTIME" in
     exit 2
     ;;
 esac
+
+if [[ -f "${LIB_DIR}/coverage-ledger.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "${LIB_DIR}/coverage-ledger.sh"
+fi
+if [[ -f "${LIB_DIR}/turn-driver.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "${LIB_DIR}/turn-driver.sh"
+fi
 
 backup_session_state() {
   mkdir -p "$SB_TEST_DIR"
@@ -107,13 +128,97 @@ restore_session_state() {
   fi
 }
 
+write_inline_e2e_matrix_marker() {
+  mkdir -p "$SB_TEST_DIR"
+  cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+}
+
+write_e2e_live_matrix_marker() {
+  mkdir -p "$SB_TEST_DIR"
+  local marker="full-claude-codex"
+  if [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" ]]; then
+    marker="codex-only"
+  fi
+  cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
+matrix=${marker}
+EOF
+}
+
+dependency_access_preflight_file() {
+  printf '%s\n' "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}"
+}
+
+dependency_access_preflight_ready() {
+  local marker_file
+  marker_file="$(dependency_access_preflight_file)"
+  [[ -n "$marker_file" && -f "$marker_file" ]]
+}
+
+write_dependency_access_preflight_marker() {
+  local marker_file
+  marker_file="$(dependency_access_preflight_file)"
+  [[ -n "$marker_file" ]] || return 0
+  mkdir -p "$(dirname "$marker_file")"
+  cat > "$marker_file" <<EOF
+runtime=${E2E_RUNTIME}
+checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+}
+
+clear_inline_e2e_matrix_marker() {
+  rm -f "$INLINE_E2E_MATRIX_FILE"
+}
+
+port_is_available() {
+  local port="$1"
+  python3 - "$port" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    sock.bind(("127.0.0.1", port))
+except OSError:
+    sys.exit(1)
+finally:
+    sock.close()
+sys.exit(0)
+PY
+}
+
+pick_free_port() {
+  python3 - <<'PY'
+import socket
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(("127.0.0.1", 0))
+print(sock.getsockname()[1])
+sock.close()
+PY
+}
+
+write_quality_gate_state_marker() {
+  local gate_file="${HOME}/.claude/.sidekick/quality-gate-state"
+  mkdir -p "$(dirname "$gate_file")"
+  cat > "$gate_file" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+}
+
 prepare_workspace() {
   local mode="${1:-baseline}"
 
   WORK_DIR="$(mktemp -d)"
   APP_SERVER_LOG="${WORK_DIR}/server.log"
 
-  cp -R "${FIXTURE_DIR}/." "${WORK_DIR}/"
+  rsync -a --exclude '.git' "${FIXTURE_DIR}/" "${WORK_DIR}/"
 
   mkdir -p "${WORK_DIR}/.claude"
   cat > "${WORK_DIR}/.claude/settings.local.json" <<'EOF'
@@ -130,6 +235,8 @@ EOF
       "${WORK_DIR}/.silver-bullet.json" \
       "${WORK_DIR}/silver-bullet.md" \
       "${WORK_DIR}/CLAUDE.md" \
+      "${WORK_DIR}/AGENTS.md" \
+      "${WORK_DIR}/AGENTS.override.md" \
       "${WORK_DIR}/docs/workflows" \
       "${WORK_DIR}/docs/sessions" \
       "${WORK_DIR}/docs/silver-forensics" \
@@ -148,8 +255,9 @@ EOF
   git -C "$WORK_DIR" commit -q -m "initial: todo app baseline" 2>/dev/null || true
   git -C "$WORK_DIR" checkout -q -b feature/e2e-live 2>/dev/null || true
 
-  git -C "$WORK_DIR" init -q --bare "${WORK_DIR}/.remote.git"
-  git -C "$WORK_DIR" remote add origin "${WORK_DIR}/.remote.git"
+  REMOTE_DIR="$(mktemp -d "${WORK_DIR%/*}/remote.XXXXXX")"
+  git -C "$WORK_DIR" init -q --bare "$REMOTE_DIR"
+  git -C "$WORK_DIR" remote add origin "$REMOTE_DIR"
   git -C "$WORK_DIR" push -u origin feature/e2e-live >/dev/null 2>&1 || true
 
   if [[ -f "$STATE_FILE" ]]; then
@@ -192,6 +300,13 @@ cleanup_workspace() {
   fi
   WORK_DIR=""
 
+  if [[ -n "${REMOTE_DIR:-}" && -d "$REMOTE_DIR" ]]; then
+    rm -rf "$REMOTE_DIR"
+  fi
+  REMOTE_DIR=""
+
+  rm -rf "${SB_TEST_DIR}"/turn-logs-* 2>/dev/null || true
+  rm -f "${SB_TEST_DIR}"/dependency-access-preflight-* 2>/dev/null || true
   restore_session_state
 }
 
@@ -199,6 +314,12 @@ trap cleanup_workspace EXIT
 
 start_app_server() {
   local ready=0
+  local requested_port="$APP_PORT"
+  if ! port_is_available "$requested_port"; then
+    APP_PORT="$(pick_free_port)"
+    export APP_PORT
+    echo "INFO: requested app port ${requested_port} was busy; using ${APP_PORT}" >&2
+  fi
   (cd "$WORK_DIR" && PORT="$APP_PORT" node src/server.js >"$APP_SERVER_LOG" 2>&1 & echo $! > "${WORK_DIR}/server.pid")
   APP_SERVER_PID="$(cat "${WORK_DIR}/server.pid")"
 
@@ -352,6 +473,86 @@ codex_marketplace_root() {
   printf '%s\n' "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex"
 }
 
+codex_installed_plugins_file() {
+  local registry_file
+  for registry_file in \
+    "${HOME}/.Codex/plugins/installed_plugins.json" \
+    "${HOME}/.codex/plugins/installed_plugins.json"; do
+    if [[ -f "$registry_file" ]]; then
+      printf '%s\n' "$registry_file"
+      return 0
+    fi
+  done
+  printf '%s\n' "${HOME}/.Codex/plugins/installed_plugins.json"
+}
+
+codex_plugin_registered() {
+  local plugin_id="$1"
+  local registry_file
+
+  registry_file="$(codex_installed_plugins_file)"
+  [[ -f "$registry_file" ]] || return 1
+
+  jq -e --arg id "$plugin_id" '.plugins | has($id)' "$registry_file" >/dev/null 2>&1
+}
+
+codex_plugin_registered_any() {
+  local plugin_id
+  for plugin_id in "$@"; do
+    if codex_plugin_registered "$plugin_id"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+codex_plugin_install_path() {
+  local plugin_id="$1"
+  local registry_file
+
+  registry_file="$(codex_installed_plugins_file)"
+  [[ -f "$registry_file" ]] || return 1
+
+  jq -r --arg id "$plugin_id" '.plugins[$id][0].installPath // empty' "$registry_file" 2>/dev/null
+}
+
+codex_plugin_surface_exists_any() {
+  local registry_file
+  local plugin_id
+  local install_path
+  local surface
+  local plugin_ids=()
+  local surfaces=()
+
+  registry_file="$(codex_installed_plugins_file)"
+  [[ -f "$registry_file" ]] || return 1
+
+  while [[ $# -gt 0 && "$1" != "--" ]]; do
+    plugin_ids+=("$1")
+    shift
+  done
+  [[ "${1:-}" == "--" ]] || return 1
+  shift
+  surfaces=("$@")
+
+  for plugin_id in "${plugin_ids[@]}"; do
+    if ! codex_plugin_registered "$plugin_id"; then
+      continue
+    fi
+
+    install_path="$(codex_plugin_install_path "$plugin_id")"
+    [[ -n "$install_path" && -d "$install_path" ]] || continue
+
+    for surface in "${surfaces[@]}"; do
+      if [[ -e "$install_path/$surface" ]]; then
+        return 0
+      fi
+    done
+  done
+
+  return 1
+}
+
 refresh_runtime_installation() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     bootstrap_claude_dependencies
@@ -360,7 +561,7 @@ refresh_runtime_installation() {
   fi
 }
 
-verify_runtime_installation() {
+verify_runtime_dependency_access() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     assert_command_succeeds "Claude Silver Bullet plugin installed" claude_plugin_installed_in_scope "silver-bullet@alo-labs" "user"
     assert_command_succeeds "Claude Superpowers plugin installed" claude_plugin_installed_in_scope "superpowers@superpowers-marketplace" "user"
@@ -379,9 +580,11 @@ verify_runtime_installation() {
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
       assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver-init/SKILL.md"
+      assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md"
       assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver-feature/SKILL.md"
       assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
       assert_file_contains "Claude Silver Bullet init skill uses silver prefix" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init'
+      assert_file_contains "Claude Silver Bullet ensure-docs skill uses silver prefix" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs'
       assert_file_contains "Claude Silver Bullet feature skill uses silver prefix" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature'
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
@@ -391,21 +594,63 @@ verify_runtime_installation() {
   else
     local config_file
     local marketplace_root
+    local installed_plugins_file
     config_file="$(codex_config_file)"
     marketplace_root="$(codex_marketplace_root)"
+    installed_plugins_file="$(codex_installed_plugins_file)"
 
     assert_file_contains "Codex plugin hooks feature enabled" "$config_file" 'plugin_hooks = true'
-    assert_file_contains "Codex Silver Bullet plugin enabled" "$config_file" '\[plugins\."silver-bullet@alo-labs-codex"\]'
+    assert_file_contains "Codex Silver Bullet marketplace registered" "$config_file" '\[marketplaces\.alo-labs-codex\]'
+    assert_file_contains "Codex GSD marketplace registered" "$config_file" '\[marketplaces\.get-shit-done-marketplace\]'
+    assert_file_contains "Codex Superpowers marketplace registered" "$config_file" '\[marketplaces\.superpowers-marketplace\]'
+    assert_file_contains "Codex Silver Bullet plugin enabled" "$config_file" '\[plugins\."silver-bullet@alo-labs-codex(-local)?"\]'
+    assert_file_contains "Codex Superpowers plugin enabled" "$config_file" '\[plugins\."superpowers@superpowers-marketplace"\]'
+    assert_file_contains "Codex Sidekick plugin enabled" "$config_file" '\[plugins\."sidekick@alo-labs-codex-local"\]'
+    assert_file_contains "Codex GSD plugin enabled" "$config_file" '\[plugins\."gsd@get-shit-done-marketplace"\]'
+    assert_file_contains "Codex engineering plugin enabled" "$config_file" '\[plugins\."engineering@alo-labs-codex(-local)?"\]'
+    assert_file_contains "Codex design plugin enabled" "$config_file" '\[plugins\."design@alo-labs-codex(-local)?"\]'
+    assert_file_contains "Codex product-management plugin enabled" "$config_file" '\[plugins\."product-management@alo-labs-codex(-local)?"\]'
     assert_not_contains "Codex split silver plugin absent" "$(cat "$config_file" 2>/dev/null)" 'silver@alo-labs-codex'
     assert_file_exists "Codex Silver Bullet package synced" "$marketplace_root/plugins/silver-bullet/.codex-plugin/plugin.json"
     assert_file_exists "Codex Silver Bullet init skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md"
+    assert_file_exists "Codex Silver Bullet ensure-docs skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md"
     assert_file_exists "Codex Silver Bullet feature skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md"
     assert_file_exists "Codex Silver Bullet router skill synced" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md"
+    assert_file_exists "Codex Silver Bullet workflow-chain guard synced" "$marketplace_root/plugins/silver-bullet/hooks/workflow-chain-guard.sh"
     assert_file_exists "Codex Silver Bullet template synced" "$marketplace_root/plugins/silver-bullet/templates/silver-bullet.md.base"
+    assert_command_succeeds "Codex installed plugin registry exists" test -f "$installed_plugins_file"
+    assert_command_succeeds "Codex Silver Bullet plugin registered" codex_plugin_registered_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local"
+    assert_command_succeeds "Codex Silver Bullet install path exposes package manifest" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex Silver Bullet install path exposes workflow-chain guard" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local" -- "hooks/workflow-chain-guard.sh"
+    assert_command_succeeds "Codex Superpowers plugin registered" codex_plugin_registered_any "superpowers@superpowers-marketplace"
+    assert_command_succeeds "Codex Superpowers install path exposes verification skill" codex_plugin_surface_exists_any "superpowers@superpowers-marketplace" -- "skills/verification-before-completion/SKILL.md" "skills/brainstorming/SKILL.md"
+    assert_command_succeeds "Codex Sidekick plugin registered" codex_plugin_registered_any "sidekick@alo-labs-codex-local"
+    assert_command_succeeds "Codex Sidekick install path exposes delegate skill" codex_plugin_surface_exists_any "sidekick@alo-labs-codex-local" -- "skills/codex-delegate/SKILL.md" "skills/forge-delegate/SKILL.md"
+    assert_command_succeeds "Codex GSD plugin registered" codex_plugin_registered_any "gsd@get-shit-done-marketplace"
+    assert_command_succeeds "Codex GSD install path exposes package manifest" codex_plugin_surface_exists_any "gsd@get-shit-done-marketplace" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex engineering plugin registered" codex_plugin_registered_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local"
+    assert_command_succeeds "Codex engineering install path exposes package manifest" codex_plugin_surface_exists_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex design plugin registered" codex_plugin_registered_any "design@alo-labs-codex" "design@alo-labs-codex-local"
+    assert_command_succeeds "Codex design install path exposes package manifest" codex_plugin_surface_exists_any "design@alo-labs-codex" "design@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex product-management plugin registered" codex_plugin_registered_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local"
+    assert_command_succeeds "Codex product-management install path exposes package manifest" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
     assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md" 'name: silver:init'
+    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs'
     assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md" 'name: silver:feature'
     assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md" 'name: silver'
   fi
+}
+
+ensure_runtime_dependency_access_preflight() {
+  if dependency_access_preflight_ready; then
+    return 0
+  fi
+  verify_runtime_dependency_access
+  write_dependency_access_preflight_marker
+}
+
+verify_runtime_installation() {
+  ensure_runtime_dependency_access_preflight
 }
 
 assert_contains() {
@@ -447,6 +692,18 @@ assert_file_exists() {
   else
     echo "FAIL: $label (missing: $path)"
     FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_file_absent() {
+  local label="$1"
+  local path="$2"
+  if [[ -e "$path" ]]; then
+    echo "FAIL: $label (unexpectedly present: $path)"
+    FAIL=$((FAIL + 1))
+  else
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
   fi
 }
 

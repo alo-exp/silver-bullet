@@ -6,6 +6,7 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
 MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
@@ -64,14 +65,17 @@ live_setup() {
   git -C "$WORK_DIR" init -q
   git -C "$WORK_DIR" config user.email "live-test@silver-bullet.test"
   git -C "$WORK_DIR" config user.name "Live Test"
+  cat > "$WORK_DIR/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   touch "$WORK_DIR/.gitkeep"
   git -C "$WORK_DIR" add .gitkeep
   git -C "$WORK_DIR" commit -q -m "init"
   git -C "$WORK_DIR" checkout -q -b feature/live-test
 
-  # Copy test-app src into workspace
-  if [[ -d "${SB_ROOT}/tests/test-app/src" ]]; then
-    cp -r "${SB_ROOT}/tests/test-app/src" "${WORK_DIR}/src"
+  # Copy todo-app src into workspace from the sibling fixture repo when available.
+  if [[ -d "${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}/src" ]]; then
+    cp -r "${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}/src" "${WORK_DIR}/src"
   else
     mkdir -p "${WORK_DIR}/src"
     echo "// placeholder" > "${WORK_DIR}/src/index.js"
@@ -84,7 +88,7 @@ live_setup() {
   "skills": {
     "required_planning": ["silver-quality-gates"],
     "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "all_tracked": ["silver-quality-gates","silver-init","silver-ingest","silver-scan","silver-research","silver-blast-radius","silver-spec","silver-add","silver-feature","silver-ui","silver-fast","silver-forensics","silver-bugfix","silver-validate","silver-create-release","silver-release","silver-update","silver-remove","silver-rem","silver-ensure-docs","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","verification-before-completion","test-driven-development","tech-debt","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ui-phase","gsd-ui-review"]
   },
   "state": {"state_file":"${REAL_STATE}","trivial_file":"${REAL_TRIVIAL}"}
 }
@@ -95,6 +99,18 @@ EOJSON
   git -C "$WORK_DIR" commit -q -m "setup"
 
   if [[ "$LIVE_RUNTIME" == "codex" && "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
+    cat > "$WORK_DIR/AGENTS.md" <<'EOF'
+# Silver Bullet Live Test Override
+
+This workspace is governed by Silver Bullet. Before any direct file edit, inspect
+`.silver-bullet.json` and the current state file.
+
+If the planning state does not yet include the required planning skill(s), refuse
+the edit and say that planning is incomplete or blocked.
+
+If the planning state shows the required planning skill(s) have been recorded for
+the scenario, proceed with the requested edit normally.
+EOF
     cat > "$WORK_DIR/AGENTS.override.md" <<'EOF'
 # Silver Bullet Live Test Override
 
@@ -255,6 +271,19 @@ assert_file_modified() {
   else
     FAIL=$((FAIL + 1))
     printf 'FAIL: %s\n  (file mtime not updated: before=%s after=%s)\n' "$label" "$mtime_before" "$mtime_after"
+  fi
+}
+
+assert_file_not_modified() {
+  local label="$1" filepath="$2" mtime_before="$3"
+  local mtime_after
+  mtime_after=$(capture_mtime "$filepath")
+  if [[ "$mtime_after" -le "$mtime_before" ]]; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  (file mtime changed unexpectedly: before=%s after=%s)\n' "$label" "$mtime_before" "$mtime_after"
   fi
 }
 

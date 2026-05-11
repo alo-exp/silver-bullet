@@ -1,6 +1,7 @@
 ---
 name: silver-spec
-description: This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
+description: >
+  This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
 argument-hint: "<feature name or description>"
 version: 0.1.0
 ---
@@ -73,7 +74,10 @@ If any URL is provided in A, B, or C, note it internally for artifact injection 
 
 Invoke `product-management:write-spec` via the Skill tool. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
 
-If the skill is unavailable (invocation fails or skill not found), proceed without it — the SPEC.md template provides equivalent structure. Do not block on this step.
+If the skill is unavailable (invocation fails or skill not found), STOP and
+notify the user instead of proceeding without it. Offer: A. Install the plugin
+and retry  B. Continue only with an explicitly approved degraded path
+  C. Stop / choose a different workflow.
 
 ## Step 3: Socratic Elicitation Dialogue
 
@@ -135,7 +139,7 @@ For each URL provided:
 1. Display the URL and describe what will be extracted.
 2. Attempt extraction:
    - **Google Doc or PPT URL:** attempt text extraction via WebFetch tool. If accessible, show a 3-bullet summary of extracted content. If inaccessible, record the URL in `source-artifacts:` frontmatter for Phase 13 MCP ingestion.
-   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` via the Skill tool for design context. If the skill is unavailable, record URL only.
+   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` via the Skill tool for design context. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without design context if the user explicitly approves the degraded path.
 3. Ask: "A. Incorporate this content into the spec  B. Skip"
 
 If user selects A: incorporate the relevant content into the appropriate sections during Step 7.
@@ -163,7 +167,9 @@ If no assumptions were surfaced, note this and ask: "Before we write the spec, a
 
 Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
 
-Invoke `design:design-critique` via the Skill tool. If the skill is unavailable, skip with a note: "(design:design-critique not available — design review deferred)"
+Invoke `design:design-critique` via the Skill tool. If the skill is unavailable,
+STOP and notify the user. Offer install-and-retry first; only continue without
+design critique if the user explicitly approves the degraded path.
 
 ## Step 7: Write .planning/SPEC.md
 

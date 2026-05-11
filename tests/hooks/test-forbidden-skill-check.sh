@@ -21,6 +21,9 @@ setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPGIT="$TMPDIR_TEST"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   git -C "$TMPGIT" init -q
   git -C "$TMPGIT" config user.email "test@test.com"
   git -C "$TMPGIT" config user.name "Test"

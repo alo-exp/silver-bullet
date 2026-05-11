@@ -21,7 +21,7 @@ if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
   sb_skill_is_installed() { return 0; }
 fi
 
-# Pre+PostToolUse hook (matcher: Edit|Write|Bash)
+# Pre+PostToolUse hook (matcher: Edit|Write|MultiEdit|Bash)
 # Enforces four-stage workflow gate — blocks source edits if planning skills incomplete.
 
 # Security: restrict file creation permissions (user-only)
@@ -53,6 +53,18 @@ main() {
     fi
   }
 
+  resolve_repo_root() {
+    local d="$PWD"
+    while [[ "$d" != "/" && -n "$d" ]]; do
+      if [[ -d "$d/.planning" || -d "$d/.git" ]]; then
+        printf '%s' "$d"
+        return 0
+      fi
+      d=$(dirname "$d")
+    done
+    return 1
+  }
+
   # --- Determine file path or command based on tool type ---
   file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_response.filePath // ""')
   command_str=""
@@ -62,6 +74,7 @@ main() {
     command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
     [[ -z "$command_str" ]] && exit 0
   fi
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
   plugin_cache="${HOME}/.claude/plugins/cache"
@@ -197,7 +210,7 @@ To reset workflow state intentionally, run in your terminal:
     search_dir="$PWD"
   fi
   while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
       config_file="$search_dir/.silver-bullet.json"
       break
     fi
@@ -215,6 +228,7 @@ To reset workflow state intentionally, run in your terminal:
   SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
   state_file="${SB_STATE_DIR}/state"
   trivial_file="${SB_STATE_DIR}/trivial"
+  verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 
   if [[ -n "$config_file" ]]; then
     src_pattern=$(jq -r '.project.src_pattern // "/src/"' "$config_file")
@@ -244,6 +258,27 @@ To reset workflow state intentionally, run in your terminal:
     [[ -n "$cfg_trivial" ]] && trivial_file="${cfg_trivial/#\~/$HOME}"
   fi
 
+  # Codex shell edits often use relative workspace paths (e.g. `src/routes/x.js`)
+  # while the configured source gate is usually expressed as `/src/`.
+  # Keep a relaxed fallback so Bash-based file writes still count as source edits.
+  matches_src_scope() {
+    local candidate="$1"
+    local pattern="$2"
+    if printf '%s' "$candidate" | grep -qE "$pattern"; then
+      return 0
+    fi
+
+    local relaxed_pattern
+    relaxed_pattern=$(printf '%s' "$pattern" | sed -E 's#(^|\|)/#\1#g; s#/$##')
+    if [[ -n "$relaxed_pattern" && "$relaxed_pattern" != "$pattern" ]]; then
+      if printf '%s' "$candidate" | grep -qE "(^|[[:space:][:punct:]])(${relaxed_pattern})(/|[[:space:][:punct:]]|$)"; then
+        return 0
+      fi
+    fi
+
+    return 1
+  }
+
   # Set default required_planning based on workflow if not overridden by config
   # DevOps workflow: silver-blast-radius and devops-quality-gates replace silver-quality-gates
   if [[ -z "$required_planning" ]]; then
@@ -256,11 +291,16 @@ To reset workflow state intentionally, run in your terminal:
 
   # Env var overrides
   state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
+  verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
   # Security: validate state file path stays within ~/.claude/ (SB-002/SB-003)
   case "$state_file" in
     "$HOME"/.claude/*) ;;
     *) state_file="${SB_STATE_DIR}/state" ;;
+  esac
+  case "$verify_tests_state_file" in
+    "$HOME"/.claude/*) ;;
+    *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
   esac
 
   # Security: validate trivial file path stays within ~/.claude/ (SB-002/SB-003)
@@ -297,7 +337,7 @@ To reset workflow state intentionally, run in your terminal:
   # --- Check if file/command matches src_pattern ---
   if [[ -n "$file_path" ]]; then
     # Edit/Write tool — check file path
-    if ! printf '%s' "$file_path" | grep -qE "$src_pattern"; then
+    if ! matches_src_scope "$file_path" "$src_pattern"; then
       exit 0
     fi
     # Check exclude pattern (test files)
@@ -306,7 +346,7 @@ To reset workflow state intentionally, run in your terminal:
     fi
   else
     # Bash tool — check if command string contains src_pattern
-    if ! printf '%s' "$command_str" | grep -qE "$src_pattern"; then
+    if ! matches_src_scope "$command_str" "$src_pattern"; then
       exit 0
     fi
     # Check exclude pattern for Bash commands too
@@ -318,6 +358,26 @@ To reset workflow state intentionally, run in your terminal:
   # --- Check trivial file override ---
   if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
     exit 0
+  fi
+
+  # --- Invalidate fresh test execution when the source actually changed ---
+  # PostToolUse on Edit/Write/MultiEdit means the edit has already landed and
+  # the release gate must be refreshed before final delivery.
+  if [[ "$hook_event" == "PostToolUse" ]]; then
+    invalidate_verify_tests=false
+    if [[ -n "$file_path" ]]; then
+      case "$tool_name" in
+        Edit|Write|MultiEdit)
+          invalidate_verify_tests=true
+          ;;
+      esac
+    elif [[ -n "$command_str" ]] && \
+         printf '%s' "$command_str" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
+      invalidate_verify_tests=true
+    fi
+    if [[ "$invalidate_verify_tests" == true ]]; then
+      rm -f -- "$verify_tests_state_file" 2>/dev/null || true
+    fi
   fi
 
   # --- Auto-detect trivial changes (per-edit, no persistent bypass) ---
@@ -342,7 +402,6 @@ To reset workflow state intentionally, run in your terminal:
 
     # Small Edit tool changes (combined old+new < 100 chars) are trivial (typo fixes)
     # Threshold reduced from 300 to 100 to prevent bypassing enforcement via incremental changes
-    tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
     if [[ "$tool_name" == "Edit" ]]; then
       old_str_len=$(printf '%s' "$input" | jq -r '.tool_input.old_string // "" | length')
       new_str_len=$(printf '%s' "$input" | jq -r '.tool_input.new_string // "" | length')
@@ -354,12 +413,50 @@ To reset workflow state intentionally, run in your terminal:
     fi
   fi
 
-  # --- Composed-workflow gate (Pass 1: deferred) ---
-  # See completion-audit.sh for full rationale. The legacy single-file
-  # WORKFLOW.md gate is retired; v0.29.x will use `.planning/workflows/<id>.md`
-  # files. Until Pass 2 ships, fall through to the legacy dev-cycle gate
-  # unconditionally — it is the correct floor whenever no composed workflow
-  # is active, and Pass 2 will only add strictness on top of it.
+  # --- Composed-workflow admission control (Pass 2) ---
+  # When a composed workflow is active in `.planning/workflows/<id>.md`, the
+  # current session must present a matching SB_WORKFLOW_ID before any
+  # non-trivial source edit can reach the legacy planning gate. This is the
+  # admission check that prevents direct edits from bypassing /silver-routed
+  # workflows. Legacy skill markers remain the fallback when no composed
+  # workflow is active at all.
+  if [[ "$hook_event" == "PreToolUse" ]]; then
+    repo_root=$(resolve_repo_root 2>/dev/null || true)
+    if [[ -n "$repo_root" ]]; then
+      wf_dir="$repo_root/.planning/workflows"
+      if [[ -d "$wf_dir" && ! -L "$wf_dir" ]]; then
+        shopt -s nullglob
+        active_workflows=()
+        for _wf in "$wf_dir"/*.md; do
+          [[ -f "$_wf" && ! -L "$_wf" ]] && active_workflows+=("$_wf")
+        done
+        shopt -u nullglob
+
+        if [[ ${#active_workflows[@]} -gt 0 ]]; then
+          active_id="${SB_WORKFLOW_ID:-}"
+          if [[ -z "$active_id" ]]; then
+            active_names=""
+            for _wf in "${active_workflows[@]}"; do
+              active_names+="  • $(basename "$_wf" .md)"$'\n'
+            done
+            emit_block "$(printf '🛑 WORKFLOW ADMISSION — active composed workflow(s) exist, but SB_WORKFLOW_ID is unset.\n\nActive composed workflow(s):\n%s\nUse /silver to resume the matching composed workflow before making source edits.' "$active_names")"
+            exit 0
+          fi
+
+          if ! [[ "$active_id" =~ ^[0-9]{8}T[0-9]{6}Z-[a-z0-9]+-[a-z0-9-]+$ ]]; then
+            emit_block "$(printf '🛑 WORKFLOW ADMISSION — SB_WORKFLOW_ID has invalid format: %s\n\nExpected: <UTCcompact>-<6char>-<composer>' "$active_id")"
+            exit 0
+          fi
+
+          active_file="$wf_dir/$active_id.md"
+          if [[ ! -f "$active_file" || -L "$active_file" ]]; then
+            emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /silver to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
+            exit 0
+          fi
+        fi
+      fi
+    fi
+  fi
 
   # --- Read state file and determine stage ---
   completed_skills=""

@@ -31,8 +31,31 @@ fi
 # jq is required — silent exit if missing (session-start already warned visibly)
 command -v jq >/dev/null 2>&1 || exit 0
 
-# Consume stdin (required by hook protocol)
-cat >/dev/null
+debug_hook_events() {
+  [[ "${SILVER_BULLET_DEBUG_HOOK_EVENTS:-0}" == "1" ]] || return 0
+  local payload="$1"
+  local dbg_dir="${HOME}/.claude/.silver-bullet"
+  mkdir -p "$dbg_dir" 2>/dev/null || true
+  local dbg_file="${dbg_dir}/hook-events.debug.log"
+  local hook_event tool_name
+  hook_event=$(printf '%s' "$payload" | jq -r '.hook_event_name // .hookEventName // ""' 2>/dev/null || true)
+  tool_name=$(printf '%s' "$payload" | jq -r '.tool_name // ""' 2>/dev/null || true)
+  {
+    printf '--- %s ---\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date)"
+    printf 'pwd=%s\n' "$PWD"
+    printf 'hook_event=%s\n' "$hook_event"
+    printf 'tool_name=%s\n' "$tool_name"
+  } >>"$dbg_file" 2>/dev/null || true
+}
+
+# Consume stdin (required by hook protocol). Keep the fast path fast: only
+# parse and log when explicitly enabled.
+if [[ "${SILVER_BULLET_DEBUG_HOOK_EVENTS:-0}" == "1" ]]; then
+  _sb_payload="$(cat 2>/dev/null || true)"
+  debug_hook_events "$_sb_payload"
+else
+  cat >/dev/null
+fi
 
 # --- Resolve config file with caching ---
 # Compute PWD hash for cache key (avoid word-splitting by branching explicitly)
@@ -72,7 +95,7 @@ fi
 if [[ -z "$config_file" ]]; then
   search_dir="$PWD"
   while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
       config_file="$search_dir/.silver-bullet.json"
       break
     fi

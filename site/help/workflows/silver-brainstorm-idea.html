@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../../favicon.png">
+<link rel="shortcut icon" href="../../../favicon.ico">
+<title>/silver:brainstorm-idea — Idea-to-Milestone Workflow — Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet idea-stage orchestration workflow — product brainstorming, engineering brainstorming, milestone creation, and phase-1 decision lock when no SPEC.md exists.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none;letter-spacing:-.02em}
+.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb .sep{color:var(--text-dim)}
+.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}.breadcrumb-nav a:hover{color:var(--accent-light)}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-sidebar{position:sticky;top:88px;height:fit-content}
+.sidebar-nav{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px}
+.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none;transition:all .15s}
+.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
+.sidebar-nav li a.active{background:var(--slate-a10b);color:var(--accent-light);font-weight:600}
+.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}
+@media(max-width:768px){.doc-sidebar{display:none}}
+.doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;font-weight:700;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-warn{background:var(--red-warn-a07);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+.footer-links{display:flex;gap:24px}
+@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px">
+      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Brainstorm Idea</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
+        <span id="icon-sun" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+        <span id="icon-moon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:brainstorm-idea</span></div>
+    <h1>/silver:brainstorm-idea</h1>
+    <p>Idea-stage orchestration workflow — turns raw concepts into a milestone-ready starting point by pairing PM brainstorming, engineering brainstorming, and GSD milestone capture. Use when there is no <code>SPEC.md</code> yet.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On this page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#composition">Composition</a></li>
+        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#spec-handoff">Spec handoff</a></li>
+        <li><a href="#example">Example invocation</a></li>
+        <li class="sidebar-section">See also</li>
+        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:brainstorm-idea</code> is Silver Bullet's entry point for concept-stage work that is not ready to become a formal <code>SPEC.md</code>. It orchestrates the early thinking needed to turn a raw idea into a milestone seed, but it never writes implementation directly.</p>
+      <p>Invoked directly as <code>/silver:brainstorm-idea</code>, or automatically by <code>/silver</code> when intent classification detects concept-intake signals and no <code>SPEC.md</code> exists. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the broader orchestration model.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to use</h2>
+      <p>Entry trigger signals for <code>/silver:brainstorm-idea</code>:</p>
+      <ul>
+        <li>"I want to build" / "I have an idea" / "here's my concept"</li>
+        <li>"what if we" / "thinking of" / other multi-sentence concept descriptions</li>
+        <li>No <code>SPEC.md</code> exists yet, or the user explicitly wants idea-to-milestone intake before formal spec creation</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>Not a spec workflow:</strong> if the request is already formalized in <code>SPEC.md</code>, route to <code>/silver:spec</code> instead. <code>/silver:brainstorm-idea</code> exists for the raw concept stage.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="composition">Composition</h2>
+      <p><code>/silver:brainstorm-idea</code> composes the early discovery chain rather than a full implementation pipeline. Typical path: <strong>FLOW 0 (BOOTSTRAP)</strong> → <strong>FLOW 1 (ORIENT)</strong> → <strong>FLOW 3 (IDEATE)</strong>. The workflow then creates a milestone anchor and hands open questions to discussion so the concept can be stabilized.</p>
+      <p>The design intent is to keep idea intake light, but not shallow: PM brainstorming captures the problem and value, engineering brainstorming turns that into a technical shape, and milestone creation makes the next phase concrete.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Workflow steps</h2>
+
+      <h3>Pre-flight</h3>
+      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+
+      <h3>Step 1 — Product brainstorming</h3>
+      <p>Invoke <code>/product-brainstorming</code>. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.</p>
+
+      <h3>Step 2 — Engineering brainstorming</h3>
+      <p>Invoke <code>silver:brainstorm</code>. Purpose: translate the raw concept into an engineering shape — architecture direction, constraints, and implementation implications.</p>
+
+      <h3>Step 3 — Milestone scaffold</h3>
+      <p>Invoke <code>gsd-new-milestone</code>. Purpose: create the milestone anchor and project artifacts that will carry the concept forward.</p>
+
+      <h3>Step 4 — Decision lock</h3>
+      <p>Invoke <code>gsd-discuss-phase</code>. Purpose: resolve open questions, capture the Phase 1 context, and lock the first decisions before any deeper planning begins.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="spec-handoff">Spec handoff</h2>
+      <div class="callout callout-warn">
+        <div class="callout-icon">⚠</div>
+        <div class="callout-body">
+          <strong>Switch to <code>/silver:spec</code> once the concept hardens.</strong> If the user already has formal requirements, acceptance criteria, or a structured <code>SPEC.md</code>, idea intake is the wrong tool. Use <code>/silver:spec</code> for formal spec elicitation and then continue with the spec-driven workflow.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example invocation</h2>
+      <div class="code-block">/silver:brainstorm-idea I want to build a guided todo-app onboarding flow</div>
+      <p>Silver Bullet routes to idea intake. Product brainstorming clarifies the problem and value. Engineering brainstorming turns it into a milestone seed. GSD milestone creation and discussion lock the first decisions. The workflow then hands off into the next phase of structured planning.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="when-not-to-use">When NOT to use</h2>
+      <p>Do not use <code>silver:brainstorm-idea</code> for:</p>
+      <ul>
+        <li>Already-specified work with an existing <code>SPEC.md</code></li>
+        <li>Implementation, debugging, or bug-fix work</li>
+        <li>Infrastructure, release, or trivial-change tasks</li>
+        <li>Anything that should route to <code>/silver:feature</code>, <code>/silver:bugfix</code>, <code>/silver:devops</code>, <code>/silver:research</code>, <code>/silver:release</code>, or <code>/silver:fast</code> instead</li>
+      </ul>
+      <p>If in doubt, use <code>/silver</code> instead — it will route the request to the correct workflow automatically.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-fast.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:fast</span>
+        </a>
+        <a href="./silver-feature.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:feature</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="container-wide">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
+      <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../../">Help Home</a>
+        <a href="../../../">Home</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
+        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  document.getElementById('icon-sun').style.display=dark?'none':'';
+  document.getElementById('icon-moon').style.display=dark?'':'none';
+  localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
+}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='light'?false:true)})();
+lucide.createIcons();
+const links=document.querySelectorAll('.sidebar-nav a');
+window.addEventListener('scroll',()=>{let curr='';document.querySelectorAll('[id]').forEach(h=>{if(window.scrollY>=h.offsetTop-120)curr=h.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+curr)})},{passive:true});
+</script>
+</body>
+</html>

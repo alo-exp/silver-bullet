@@ -6,6 +6,7 @@
 set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/dev-cycle-check.sh"
+WORKFLOWS_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/workflows.sh"
 PASS=0
 FAIL=0
 
@@ -14,8 +15,9 @@ FAIL=0
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"; }
+cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$VERIFY_TESTS_FILE"; }
 trap cleanup_all EXIT
 
 setup() {
@@ -26,6 +28,10 @@ setup() {
   TMPFILE="${TMPDIR_TEST}/src/app.js"
   rm -f "$TMPSTATE"
   rm -f "$TMPBRANCH_FILE"
+  rm -f "$VERIFY_TESTS_FILE"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
   mkdir -p "$(dirname "$TMPFILE")"
   touch "$TMPFILE"
   cat > "$TMPCFG" << EOF
@@ -37,9 +43,10 @@ setup() {
   },
   "skills": { "required_planning": ["silver-quality-gates"] },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
-}
+  }
 EOF
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   printf 'feature/test\n' > "$TMPBRANCH_FILE"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH_FILE"
 }
@@ -48,7 +55,16 @@ teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$TMPBRANCH_FILE"
+  rm -f "$VERIFY_TESTS_FILE"
   unset SILVER_BULLET_BRANCH_FILE
+}
+
+create_active_workflow() {
+  local composer="${1:-silver-feature}"
+  local intent="${2:-admission-control-test}"
+  local flows="${3:-bootstrap,execute,ship}"
+  mkdir -p "$TMPDIR_TEST/.planning"
+  ( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "$composer" "$intent" "$flows" )
 }
 
 run_hook_edit() {
@@ -72,6 +88,15 @@ run_hook_write() {
   local input
   input=$(jq -n --arg e "$event" --arg f "$filepath" \
     '{hook_event_name: $e, tool_name: "Write", tool_input: {file_path: $f}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_multiedit() {
+  local event="$1"
+  local filepath="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg f "$filepath" \
+    '{hook_event_name: $e, tool_name: "MultiEdit", tool_input: {file_path: $f}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
@@ -123,6 +148,30 @@ assert_contains() {
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — expected '$needle' in: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_file_exists() {
+  local label="$1"
+  local path="$2"
+  if [[ -f "$path" ]]; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected file to exist: $path"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_file_missing() {
+  local label="$1"
+  local path="$2"
+  if [[ ! -f "$path" ]]; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected file to be absent: $path"
     FAIL=$((FAIL + 1))
   fi
 }
@@ -179,6 +228,28 @@ out=$(run_hook_edit "PreToolUse" "$TEST_FILE" "old content" "new content")
 assert_passes "test file passes without planning (excluded by src_exclude_pattern)" "$out"
 teardown
 
+# Test 4a: Stage A — relative Bash write to src/ is blocked without planning
+setup
+out=$(run_hook_bash "PreToolUse" "cat > src/app.js <<'EOF'
+console.log('hello')
+EOF")
+assert_blocks "relative Bash write to src/ blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4b: PostToolUse write invalidates verify-tests freshness marker
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+echo "code-review" >> "$TMPSTATE"
+mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
+printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
+out=$(run_hook_write "PreToolUse" "$TMPFILE")
+assert_passes "PreToolUse write leaves verify-tests marker intact" "$out"
+assert_file_exists "PreToolUse write keeps verify-tests marker" "$VERIFY_TESTS_FILE"
+out=$(run_hook_write "PostToolUse" "$TMPFILE")
+assert_passes "PostToolUse write still passes with planning complete" "$out"
+assert_file_missing "PostToolUse write invalidates verify-tests freshness" "$VERIFY_TESTS_FILE"
+teardown
+
 # Test 5: Stage B — planning done but no code-review → BLOCK
 echo "--- Group 2: Stage B (planning done, no code-review) ---"
 setup
@@ -205,6 +276,10 @@ echo "code-review" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "Stage C: src edit allowed after code-review (finalization remaining)" "$out"
 assert_contains "Stage C hint mentions finalization" "$out" "Finalization remaining"
+out=$(run_hook_bash "PreToolUse" "cat > src/app.js <<'EOF'
+console.log('hello')
+EOF")
+assert_passes "Stage C: relative Bash write allowed after code-review" "$out"
 teardown
 
 # Test 8: Stage D — all phases complete → ALLOW
@@ -528,6 +603,51 @@ echo "--- WF-PASS1-C: no composition state at all -> legacy gate ---"
 setup
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_blocks "WF-PASS1-C: no .planning + no skills -> block" "$out"
+teardown
+
+# ── Composed-workflow gate (Pass 2: active workflows require SB_WORKFLOW_ID) ──
+echo ""
+echo "=== Composed-workflow gate (Pass 2: SB_WORKFLOW_ID admission control) ==="
+
+# WF-PASS2-A: active composed workflow with no SB_WORKFLOW_ID is blocked
+echo "--- WF-PASS2-A: active workflow without SB_WORKFLOW_ID is blocked ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF-PASS2-A: active workflow requires SB_WORKFLOW_ID" "$out"
+assert_contains "WF-PASS2-A: block mentions SB_WORKFLOW_ID" "$out" "SB_WORKFLOW_ID"
+teardown
+
+# WF-PASS2-B: mismatched SB_WORKFLOW_ID is blocked
+echo "--- WF-PASS2-B: mismatched SB_WORKFLOW_ID is blocked ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(SB_WORKFLOW_ID="20260510T000000Z-abc123-silver-feature" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF-PASS2-B: mismatched SB_WORKFLOW_ID blocks source edit" "$out"
+assert_contains "WF-PASS2-B: block mentions no active workflow match" "$out" "no active workflow file matches"
+teardown
+
+# WF-PASS2-C: active workflow admission applies to MultiEdit too
+echo "--- WF-PASS2-C: active workflow admission applies to MultiEdit too ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_multiedit "PreToolUse" "$TMPFILE")
+assert_blocks "WF-PASS2-C: MultiEdit is gated the same as Edit/Write" "$out"
+assert_contains "WF-PASS2-C: MultiEdit block mentions SB_WORKFLOW_ID" "$out" "SB_WORKFLOW_ID"
+teardown
+
+# WF-PASS2-D: matching SB_WORKFLOW_ID allows the edit to reach the legacy gate
+echo "--- WF-PASS2-D: matching SB_WORKFLOW_ID reaches legacy gate ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+code-review
+finishing-a-development-branch
+EOF
+out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF-PASS2-D: matching SB_WORKFLOW_ID allows source edit" "$out"
+assert_contains "WF-PASS2-D: output references workflow completion" "$out" "All workflow phases complete"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

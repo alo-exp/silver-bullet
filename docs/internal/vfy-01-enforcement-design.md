@@ -5,6 +5,8 @@
 **Requirement:** VFY-01
 **GitHub issue:** https://github.com/alo-exp/silver-bullet/issues/72
 
+> Historical design snapshot. This document captures an earlier WORKFLOW.md-based enforcement proposal and is retained for forensic reference only. The live composed-workflow model now uses `.planning/workflows/<id>.md` plus `docs/ENFORCEMENT.md`.
+
 ---
 
 ## Problem Statement

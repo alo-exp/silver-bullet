@@ -1,6 +1,7 @@
 ---
 name: silver-feature
-description: This skill should be used for full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver:quality-gates → GSD plan/execute/verify → ship
+description: >
+  This skill should be used for full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver:quality-gates → GSD plan/execute/verify → ship
 argument-hint: "<feature description>"
 version: 0.1.0
 ---
@@ -10,6 +11,23 @@ version: 0.1.0
 SB orchestrator for new feature development. Chains GSD (execution backbone), Superpowers (craft discipline), MultAI (multi-AI intelligence), and SB quality gates in the sequence defined in silver-bullet.md §2h.
 
 Never implements features directly — orchestrates only.
+
+## Mandatory dependency execution
+
+Before any local implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
+
+1. `silver:intel`
+2. `silver:scan` when the project is brownfield
+3. `silver:brainstorm`
+4. `silver:quality-gates`
+5. `gsd-discuss-phase`
+6. `gsd-plan-phase`
+7. `gsd-execute-phase` or `gsd-autonomous`
+8. `gsd-verify-work`
+
+If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
+
+The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
 
 ## Pre-flight: Load Preferences
 
@@ -243,7 +261,7 @@ Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarificat
 Run both brainstorm tools in sequence:
 
 **1c-i: Product brainstorming**
-Invoke `/product-brainstorming` via the Skill tool. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.
+Invoke `/product-brainstorming` via the Skill tool. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without it if the user explicitly approves a degraded path.
 
 **1c-ii: Engineering brainstorm**
 Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
@@ -263,7 +281,7 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent.
+If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
 
 ## Step 2: Testing Strategy
 
@@ -398,7 +416,7 @@ Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension swee
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
 ```
 
 Before raising the PR, verify documentation is up to date per the scheme:
@@ -407,11 +425,11 @@ Before raising the PR, verify documentation is up to date per the scheme:
 2. **`docs/knowledge/YYYY-MM.md`** (current month) — append task-specific patterns, gotchas, and key decisions.
 3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned.
 4. Update any additional docs changed by the phase (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
-5. **`docs/task-doc-checklist.json`** — must be updated this session and include a status for every governed doc key (all current files under `docs/`, plus `README.md` / root `CHANGELOG.md` when present; monthly files represented by `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md`).
+5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 
 **Gate:** Do NOT proceed to Step 14 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 14.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 14.
 
 ## Step 14: Finishing Branch
 

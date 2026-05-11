@@ -45,7 +45,7 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  stop-check.sh: unex
 config_file=""
 search_dir="$PWD"
 while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
     break
   fi
@@ -103,6 +103,12 @@ if [[ -f "$lib_dir/skill-discovery.sh" ]]; then
 fi
 if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
   sb_skill_is_installed() { return 0; }
+fi
+
+# shellcheck source=lib/doc-scheme-gate.sh
+if [[ -f "$lib_dir/doc-scheme-gate.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "$lib_dir/doc-scheme-gate.sh"
 fi
 
 # HOOK-04 (informational half): source phase-path.sh for the
@@ -410,84 +416,9 @@ build_doc_scheme_checklist_keys() {
 #   - complete checklist coverage for governed docs.
 run_doc_scheme_task_gate() {
   local repo_root="$1"
-  local doc_scheme_file="$repo_root/docs/doc-scheme.md"
-  [[ -f "$doc_scheme_file" && ! -L "$doc_scheme_file" ]] || return 0
-
-  local session_start_file="${SILVER_BULLET_SESSION_START_FILE:-${SB_STATE_DIR}/session-start-time}"
-  session_start_file="${session_start_file/#\~/$HOME}"
-  case "$session_start_file" in
-    "$HOME"/.claude/*) ;;
-    *) session_start_file="${SB_STATE_DIR}/session-start-time" ;;
-  esac
-
-  local session_start=""
-  session_start=$(cat "$session_start_file" 2>/dev/null || true)
-  if ! [[ "$session_start" =~ ^[0-9]+$ ]]; then
-    emit_stop_block "$(printf '🛑 DOC-SCHEME GATE — Task completion blocked.\n\n`docs/doc-scheme.md` is present, but the session start marker is missing or invalid at `%s`.\n\nStart a fresh SB session so hooks can stamp `session-start-time`, then update docs and retry completion.' "$session_start_file")"
-    exit 0
+  if declare -f sb_doc_scheme_gate_enforce >/dev/null 2>&1; then
+    sb_doc_scheme_gate_enforce "task" "$repo_root" "$SB_STATE_DIR" "emit_stop_block"
   fi
-
-  local month
-  month=$(date '+%Y-%m')
-  local checklist="$repo_root/docs/task-doc-checklist.json"
-  local gate_issues=""
-  local checklist_mtime=0
-  local doc_key=""
-  local status=""
-  local checklist_keys=()
-  build_doc_scheme_checklist_keys "$repo_root"
-  checklist_keys=("${DOC_SCHEME_CHECKLIST_KEYS[@]}")
-
-  if [[ ! -f "$checklist" || -L "$checklist" ]]; then
-    gate_issues+="  - Missing: docs/task-doc-checklist.json"$'\n'
-  else
-    checklist_mtime=$(_mtime_epoch "$checklist")
-    if (( checklist_mtime < session_start )); then
-      gate_issues+="  - Stale: docs/task-doc-checklist.json (not updated this session)"$'\n'
-    fi
-    if ! jq -e '.docs | type == "object"' "$checklist" >/dev/null 2>&1; then
-      gate_issues+="  - Invalid: docs/task-doc-checklist.json (.docs object missing)"$'\n'
-    else
-      for doc_key in "${checklist_keys[@]}"; do
-        status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
-        if [[ -z "$status" ]]; then
-          gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'
-          continue
-        fi
-
-        case "$status" in
-          updated|not-needed:*|n/a:*) ;;
-          *)
-            gate_issues+="  - Invalid checklist status: ${doc_key} -> ${status}"$'\n'
-            continue
-            ;;
-        esac
-
-        # Every task docs are mandatory updated, not skippable.
-        if [[ "$doc_key" == "docs/CHANGELOG.md" || "$doc_key" == "docs/knowledge/YYYY-MM.md" || "$doc_key" == "docs/lessons/YYYY-MM.md" ]]; then
-          if [[ "$status" != "updated" ]]; then
-            gate_issues+="  - Required status 'updated': ${doc_key}"$'\n'
-            continue
-          fi
-        fi
-
-        if [[ "$status" == "updated" ]]; then
-          resolve_doc_key_state "$repo_root" "$month" "$doc_key"
-          if (( DOC_KEY_EXISTS == 0 )); then
-            gate_issues+="  - Missing file marked updated: ${DOC_KEY_LABEL}"$'\n'
-          elif (( DOC_KEY_MTIME < session_start )); then
-            gate_issues+="  - Stale file marked updated: ${DOC_KEY_LABEL} (not updated this session)"$'\n'
-          fi
-        fi
-      done
-    fi
-  fi
-
-  if [[ -n "$gate_issues" ]]; then
-    emit_stop_block "$(printf '🛑 DOC-SCHEME GATE — Task completion blocked.\n\n`docs/doc-scheme.md` requires a complete per-task documentation checklist and current-session doc updates before completion.\n\nChecklist file: `docs/task-doc-checklist.json`\nAllowed checklist statuses: `updated`, `not-needed: <reason>`, `n/a: <reason>`\n\nFix these items:\n%s\nUpdate docs and checklist, then retry completion.' "$gate_issues")"
-    exit 0
-  fi
-
   return 0
 }
 

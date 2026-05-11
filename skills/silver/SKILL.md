@@ -41,6 +41,7 @@ Wait for response, then proceed.
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
+| "I want to build", "I have an idea", "here's my concept", multi-sentence idea description with no SPEC.md | `silver:brainstorm-idea` | Idea-to-milestone orchestration |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | AI-guided spec elicitation |
 | "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:research` | Tech decisions, architecture choices |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only — see disambiguation below |
@@ -50,11 +51,13 @@ Wait for response, then proceed.
 | "pick up", "resume", "continue where" | `gsd-resume-work` | Session restore |
 | "handoff", "wrap up session", "continue later", "session summary", "resume next session" | `silver:handoff` | Generate project-level continuation prompt |
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup |
+| "doc scheme", "ensure docs", "docs checklist", "docs gate failed", "from-hook docs gap", "reconcile docs", "recover doc scheme" | `silver:ensure-docs` | Doc governance authority (`doc-scheme.md` + `doc-scheme.json`) |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
 | "IaC quality", "devops quality", "terraform quality" | `silver:devops-quality-gates` | Ad-hoc DevOps quality |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Post-mortem investigation |
 | "release notes", "github release", "cut release", "tag release" | `silver:create-release` | Release artifact creation |
+| "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `silver:verify-tests` | Runs the project's test execution gate and writes the freshness marker |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC tool routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | Ingest external artifacts (JIRA, Figma, Google Docs) into SPEC.md + DESIGN.md, or fetch cross-repo spec |
 

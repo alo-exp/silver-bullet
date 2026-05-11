@@ -23,7 +23,7 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 6. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
 7. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
 8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if required_deploy skills are missing
-9. **UserPromptSubmit reminder** (UserPromptSubmit) — re-injects missing skills before every message
+9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB/GSD routes and re-injects missing skills before every message
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked
 12. **Redundant instructions** (CLAUDE.md + workflow file) — same rules enforced across multiple surfaces

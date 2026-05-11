@@ -43,7 +43,7 @@ project_root="${PROJECT_ROOT_OVERRIDE:-}"
 if [[ -z "$project_root" ]]; then
   search_dir="$PWD"
   while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
       project_root="$search_dir"
       break
     fi

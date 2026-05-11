@@ -50,7 +50,7 @@ FORBIDDEN_HARDCODED="executing-plans subagent-driven-development"
 config_file=""
 search_dir="$PWD"
 while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
     break
   fi

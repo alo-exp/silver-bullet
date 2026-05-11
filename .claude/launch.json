@@ -11,7 +11,7 @@
       "name": "Test App (Express)",
       "runtimeExecutable": "node",
       "runtimeArgs": ["src/server.js"],
-      "cwd": "tests/test-app",
+      "cwd": "/Users/shafqat/projects/test-todo-app",
       "port": 3456
     }
   ]

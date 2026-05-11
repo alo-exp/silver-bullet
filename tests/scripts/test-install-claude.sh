@@ -127,19 +127,33 @@ else
 fi
 
 CURRENT_SB_CACHE_DIR="$(find "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$CURRENT_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json"; then
-  echo "PASS: Silver Bullet hook paths refreshed in Claude settings"
+STABLE_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/current"
+if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$STABLE_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json"; then
+  echo "PASS: Silver Bullet hook paths refreshed to stable alias in Claude settings"
   (( PASS++ )) || true
 else
-  echo "FAIL: Silver Bullet hook paths refreshed in Claude settings"
+  echo "FAIL: Silver Bullet hook paths refreshed to stable alias in Claude settings"
   (( FAIL++ )) || true
 fi
+
+assert_file_exists "Silver Bullet stable alias exposes hook cache" "$STABLE_SB_CACHE_DIR/hooks/session-start"
 
 if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF '"hookEventName":"SessionStart"' "$CURRENT_SB_CACHE_DIR/hooks/spec-session-record.sh"; then
   echo "PASS: Silver Bullet session-start hook emits hookEventName"
   (( PASS++ )) || true
 else
   echo "FAIL: Silver Bullet session-start hook emits hookEventName"
+  (( FAIL++ )) || true
+fi
+
+if [[ -n "$CURRENT_SB_CACHE_DIR" ]] \
+  && grep -qF 'name: silver:init' "$CURRENT_SB_CACHE_DIR/skills/silver-init/SKILL.md" \
+  && grep -qF 'name: silver:feature' "$CURRENT_SB_CACHE_DIR/skills/silver-feature/SKILL.md" \
+  && grep -qF 'name: silver' "$CURRENT_SB_CACHE_DIR/skills/silver/SKILL.md"; then
+  echo "PASS: Silver Bullet skill names rewritten for Claude picker"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Silver Bullet skill names rewritten for Claude picker"
   (( FAIL++ )) || true
 fi
 

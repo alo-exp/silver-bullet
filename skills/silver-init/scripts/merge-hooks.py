@@ -4,11 +4,37 @@ Idempotently merge Silver Bullet hooks from hooks.json into ~/.claude/settings.j
 Purges stale SB hook entries from previous installs before registering new ones.
 Usage: python3 merge_hooks.py <sb_install_path>
 """
-import json, os, re, sys
+import json, os, pathlib, re, shutil, sys
 
 install_path = sys.argv[1]
 hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
 settings_path = os.path.expanduser('~/.claude/settings.json')
+
+
+def stable_install_path(raw_install_path):
+    """Normalize versioned plugin cache paths to a stable alias."""
+
+    match = re.match(r'^(.*?/silver-bullet)/(\d+\.\d+\.\d+)$', raw_install_path)
+    if not match:
+        return raw_install_path
+
+    versioned_path = pathlib.Path(raw_install_path)
+    alias_path = pathlib.Path(match.group(1)) / 'current'
+
+    try:
+        alias_path.parent.mkdir(parents=True, exist_ok=True)
+        if alias_path.exists() or alias_path.is_symlink():
+            if alias_path.is_dir() and not alias_path.is_symlink():
+                shutil.rmtree(alias_path)
+            else:
+                alias_path.unlink()
+        alias_path.symlink_to(versioned_path)
+        return str(alias_path)
+    except OSError:
+        return raw_install_path
+
+
+install_path = stable_install_path(install_path)
 
 with open(hooks_src) as f:
     src = json.load(f)

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# E2E test: All 37 tracked skills from .silver-bullet.json are correctly recorded
+# E2E test: all tracked skills from .silver-bullet.json are correctly recorded
 set -euo pipefail
 
 source "$(dirname "$0")/helpers/common.sh"
 
-echo "=== E2E: Skill Coverage (all 37 tracked skills) ==="
+echo "=== E2E: Skill Coverage (all tracked skills) ==="
 
-# All 37 tracked skills from .silver-bullet.json all_tracked
+# Tracked skills from .silver-bullet.json all_tracked
 ALL_37_SKILLS=(
   "silver-quality-gates" "silver-blast-radius" "devops-quality-gates" "devops-skill-router"
   "design-system" "ux-copy"
@@ -17,7 +17,7 @@ ALL_37_SKILLS=(
   "silver-create-release"
   "modularity" "reusability" "scalability" "security"
   "reliability" "usability" "testability" "extensibility"
-  "silver-forensics" "silver-init"
+  "silver-forensics" "silver-init" "silver-ensure-docs"
   "verification-before-completion"
   "test-driven-development" "tech-debt" "accessibility-review" "incident-response"
   "gsd-new-project" "gsd-new-milestone" "gsd-discuss-phase" "gsd-plan-phase"
@@ -25,7 +25,7 @@ ALL_37_SKILLS=(
   "gsd-ui-phase" "gsd-ui-review" "gsd-secure-phase"
 )
 
-# Scenario 1: All 37 tracked skills recorded successfully
+# Scenario 1: All tracked skills recorded successfully
 echo "--- Scenario 1: All tracked skills recorded ---"
 integration_setup
 write_full_config
@@ -36,7 +36,7 @@ done
 
 # Count lines in state file (each skill = 1 line, no duplicates)
 recorded_count=$(wc -l < "$TMPSTATE" | tr -d ' ')
-# We have 42 items in ALL_37_SKILLS (the array includes extra skills beyond 37)
+# Keep this array in sync with .silver-bullet.json all_tracked.
 # Verify all tracked skills are present
 all_present=true
 for skill in "${ALL_37_SKILLS[@]}"; do
@@ -50,11 +50,11 @@ if [[ "$all_present" == true ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S1.1: all tracked skills recorded in state file\n'
 fi
 
-# Verify count matches expected (all_tracked has 42 skills in full config)
-if [[ "$recorded_count" -ge 37 ]]; then
-  PASS=$((PASS + 1)); printf 'PASS: S1.2: state file has %d skills (>= 37)\n' "$recorded_count"
+# Verify count stays at or above the historical floor.
+if [[ "$recorded_count" -ge 38 ]]; then
+  PASS=$((PASS + 1)); printf 'PASS: S1.2: state file has %d skills (>= 38)\n' "$recorded_count"
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S1.2: state file has %d skills (expected >= 37)\n' "$recorded_count"
+  FAIL=$((FAIL + 1)); printf 'FAIL: S1.2: state file has %d skills (expected >= 38)\n' "$recorded_count"
 fi
 
 integration_teardown

@@ -10,10 +10,12 @@ echo "=== Live Enforcement Tests ==="
 echo "--- S1: HARD STOP on edit-before-planning ---"
 live_setup
 # State is empty — no skills recorded. Prompt Claude to edit a src file.
+target_file="${WORK_DIR}/src/routes/todos.js"
+mtime_before="$(capture_mtime "$target_file")"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S1 test comment'. Do not invoke any skills, just edit the file directly.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
-assert_response_contains "S1: response mentions planning/HARD STOP/blocked/permission" "$response" "planning|HARD STOP|BLOCKED|silver-quality-gates|Planning incomplete|permission|write|granted"
+assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$mtime_before"
 assert_state_not_contains "S1: no edits recorded in state (edit was blocked)" "silver-quality-gates"
 live_teardown
 

@@ -17,17 +17,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "umask 0077 && mkdir -p ~/.claude/.silver-bullet && { [ -L ~/.claude/.silver-bullet/trivial ] && rm -f -- ~/.claude/.silver-bullet/trivial; touch -- ~/.claude/.silver-bullet/trivial; }",
-            "async": false,
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-session-record.sh\"",
             "async": false,
             "timeout": 10
@@ -36,6 +25,17 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/debug-dump.sh\"",
+            "async": false,
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -59,11 +59,55 @@
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/instruction-file-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Skill",
         "hooks": [
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dependency-skill-check.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -103,7 +147,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash",
         "hooks": [
           {
             "type": "command",
@@ -171,7 +215,7 @@
         ]
       },
       {
-        "matcher": "Skill",
+        "matcher": "Skill|Bash",
         "hooks": [
           {
             "type": "command",
@@ -182,7 +226,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash",
         "hooks": [
           {
             "type": "command",
@@ -198,7 +242,7 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/compliance-status.sh\"",
-            "async": true,
+            "async": false,
             "timeout": 15
           }
         ]
@@ -322,6 +366,12 @@
       {
         "matcher": ".*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-requested-skill.sh\"",
+            "async": false,
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-reminder.sh\"",

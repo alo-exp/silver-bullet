@@ -1,5 +1,6 @@
 {
   "task_id": "replace-with-task-slug",
+  "task_granularity": 2,
   "updated_at": "replace-with-utc-iso8601",
   "_notes": [
     "Populate one docs entry for every governed document file currently present under docs/ (recursive).",
@@ -12,6 +13,7 @@
     "docs/lessons/YYYY-MM.md": "updated",
     "docs/task-doc-checklist.json": "updated",
     "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
+    "docs/doc-scheme.json": "not-needed: scheme contract unchanged for this task",
     "docs/knowledge/INDEX.md": "not-needed: no docs index changes in this task",
     "docs/ARCHITECTURE.md": "not-needed: no architecture changes in this task",
     "docs/TESTING.md": "not-needed: no testing-doc changes in this task",

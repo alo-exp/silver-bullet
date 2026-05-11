@@ -10,6 +10,7 @@ PASS=0
 FAIL=0
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
 QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
 LEGACY_CI_TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
 LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
@@ -31,6 +32,10 @@ integration_setup() {
   # Create src dir
   mkdir -p "$TMPDIR_TEST/src"
   touch "$TMPDIR_TEST/src/app.js"
+
+  # SB project marker files
+  printf '%s\n' '# Silver Bullet' > "$TMPDIR_TEST/silver-bullet.md"
+
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   # Mock branch file so session-start sees "feature/test" without touching
   # the live ~/.claude/.silver-bullet/branch file.
@@ -38,6 +43,7 @@ integration_setup() {
   printf 'feature/test' > "$TMPBRANCH"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$INLINE_E2E_MATRIX_FILE"
   # Keep integration runs deterministic by removing global legacy CI bypass artifacts.
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
 }
@@ -47,6 +53,7 @@ integration_teardown() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$INLINE_E2E_MATRIX_FILE"
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
 }
@@ -59,7 +66,7 @@ write_default_config() {
   "skills": {
     "required_planning": ["silver-quality-gates"],
     "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","verification-before-completion","test-driven-development","tech-debt"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -77,6 +84,7 @@ documentation
 finishing-a-development-branch
 deploy-checklist
 silver-create-release
+silver-ensure-docs
 verification-before-completion
 test-driven-development
 tech-debt
@@ -184,6 +192,13 @@ write_e2e_live_matrix_marker() {
   mkdir -p "$SB_TEST_DIR"
   cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
+EOF
+}
+
+write_inline_e2e_matrix_marker() {
+  mkdir -p "$SB_TEST_DIR"
+  cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
 EOF
 }
 
@@ -382,7 +397,7 @@ write_full_config() {
   "skills": {
     "required_planning": ["silver-quality-gates"],
     "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
+    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
