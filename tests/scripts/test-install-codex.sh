@@ -120,7 +120,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/install-codex.sh"
 HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
-mkdir -p "$HOME_DIR/.Codex" "$HOME_DIR/.agents/skills/silver-feature" "$HOME_DIR/.agents/skills/using-silver-bullet" "$HOME_DIR/.agents/skills/unrelated-skill" "$BIN_DIR"
+mkdir -p "$HOME_DIR/.Codex" "$HOME_DIR/.codex" "$HOME_DIR/.agents/skills/silver-feature" "$HOME_DIR/.agents/skills/using-silver-bullet" "$HOME_DIR/.agents/skills/unrelated-skill" "$BIN_DIR"
 cat > "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md" <<'EOF'
 ---
 name: unrelated-skill
