@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.33.0] — 2026-05-12
+
+## Features
+
+- `host-aware model routing and release hardening` (`a05c969`)
+- `hard-block doc-scheme via full doc checklist coverage` (`54e32de`)
+- `add silver handoff skill and retire deprecated tests` (`1b68ade`)
+
+## Bug Fixes
+
+- `stabilize codex release harness` (`917d857`)
+- `align workflow docs with templates` (`9ba2b33`)
+- `keep codex registry mirrors byte-identical` (`6077eec`)
+- `create both codex config roots before writes` (`6debf4c`)
+- `create codex config dirs before marketplace writes` (`e404985`)
+- `seed codex cache aliases in both root variants` (`800ed5e`)
+- `align v0.32.5 burn-down fixes` (`0134364`)
+- `pin announcement to Silver Bullet Updates thread` (`e9a2662`)
+- `stop waiting for pages in announcement` (`db535e1`)
+
+## Tests
+
+- `relax codex live enforcement state check` (`643d9b8`)
+- `cover debug-dump hook` (`6093f9a`)
+
+## Documentation
+
+- `collapse live todo-app suite into one journey` (`c13001b`)
+- `outline inline todo-app full-surface e2e` (`663dde2`)
+- `add inline todo-app full-surface e2e design` (`cade841`)
+- `clarify Agent SDK supports hooks via settingSources or programmatic API` (`5ce3bf2`)
+
+## Other
+
+- `Align skill coverage test with hook output` (`4093179`)
+- `Seed Codex hooks mirror in install test` (`87e0f80`)
+- `Make Codex install test portable on CI` (`b9c139a`)
+- `Fix Codex install test setup for case-sensitive filesystems` (`b578ea8`)
+- `Fix session-start prompt replay ordering` (`e53a484`)
+- `Fix CI shellcheck warnings in hooks` (`2f67338`)
+- `Fix shellcheck issue in skill discovery` (`0fd1636`)
+- `Fix CI mode checks and remove transcript archives` (`9e7dc54`)
+- `Checkpoint current Silver Bullet changes` (`74ae26f`)
+- `enforce doc-scheme gates and strengthen documentation contract` (`6fbf1a8`)
+
+---
+
 ## [0.32.4] — 2026-05-08
 
 ## Patch
