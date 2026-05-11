@@ -83,7 +83,7 @@ integration_setup
 write_full_config
 
 out=$(run_record_skill "nonexistent-skill")
-assert_contains "S3.1: output says not tracked" "$out" "not tracked"
+assert_contains "S3.1: output says no tracked skills found" "$out" "No tracked skills found"
 
 if ! grep -q "nonexistent-skill" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S3.2: nonexistent-skill not in state file\n'
