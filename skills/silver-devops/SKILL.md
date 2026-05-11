@@ -126,7 +126,7 @@ it from the active set, so the strict final-delivery gate will not match a stale
 > per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
 > v0.29.1.
 
-After each path completes, the helper updates the Flow Log row in-place — Claude does
+After each path completes, the helper updates the Flow Log row in-place — the helper does
 not edit the file directly.
 
 

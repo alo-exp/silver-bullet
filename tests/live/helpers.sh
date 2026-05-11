@@ -44,6 +44,9 @@ TMPTRIVIAL=""
 
 live_setup() {
   runtime_preflight
+  # Reset per-scenario Claude session state so fresh workspaces do not
+  # accidentally inherit `--continue` from a previous live setup.
+  CLAUDE_PROMPT_COUNT=0
   WORK_DIR=$(mktemp -d)
   # TMPSTATE points to REAL_STATE so assert_state_* helpers work correctly
   TMPSTATE="$REAL_STATE"
@@ -110,6 +113,8 @@ the edit and say that planning is incomplete or blocked.
 
 If the planning state shows the required planning skill(s) have been recorded for
 the scenario, proceed with the requested edit normally.
+
+Do not guess about the state. Do not edit first and check later.
 EOF
     cat > "$WORK_DIR/AGENTS.override.md" <<'EOF'
 # Silver Bullet Live Test Override
@@ -122,6 +127,8 @@ the edit and say that planning is incomplete or blocked.
 
 If the planning state shows the required planning skill(s) have been recorded for
 the scenario, proceed with the requested edit normally.
+
+Do not guess about the state. Do not edit first and check later.
 EOF
   fi
 }
@@ -237,6 +244,10 @@ capture_mtime() {
   stat -f "%m" "$1" 2>/dev/null || stat --format="%Y" "$1" 2>/dev/null || echo "0"
 }
 
+capture_digest() {
+  shasum -a 256 "$1" 2>/dev/null | awk '{print $1}' || sha256sum "$1" 2>/dev/null | awk '{print $1}' || echo ""
+}
+
 assert_file_contains() {
   local label="$1" filepath="$2" needle="$3"
   if grep -qiE "$needle" "$filepath" 2>/dev/null; then
@@ -275,15 +286,15 @@ assert_file_modified() {
 }
 
 assert_file_not_modified() {
-  local label="$1" filepath="$2" mtime_before="$3"
-  local mtime_after
-  mtime_after=$(capture_mtime "$filepath")
-  if [[ "$mtime_after" -le "$mtime_before" ]]; then
+  local label="$1" filepath="$2" digest_before="$3"
+  local digest_after
+  digest_after=$(capture_digest "$filepath")
+  if [[ -n "$digest_before" ]] && [[ "$digest_after" == "$digest_before" ]]; then
     PASS=$((PASS + 1))
     printf 'PASS: %s\n' "$label"
   else
     FAIL=$((FAIL + 1))
-    printf 'FAIL: %s\n  (file mtime changed unexpectedly: before=%s after=%s)\n' "$label" "$mtime_before" "$mtime_after"
+    printf 'FAIL: %s\n  (file contents changed unexpectedly)\n' "$label"
   fi
 }
 

@@ -204,7 +204,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#64748b,#475569)">0</div>
         <div>
           <div class="step-meta"><span class="step-title">Session Mode Selection</span></div>
-          <p class="step-desc">Claude asks: "Run interactively or autonomously?" Your answer is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session.</p>
+          <p class="step-desc">The host runtime asks: "Run interactively or autonomously?" Your answer is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session.</p>
           <div class="step-output">→ Writes: ~/.claude/.silver-bullet/mode</div>
         </div>
       </div>
@@ -247,7 +247,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0891b2)">3</div>
         <div>
           <div class="step-meta"><span class="step-title" id="discuss">/gsd:discuss-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Captures implementation decisions, gray areas, and preferences for this specific phase before any planning begins. Claude asks targeted questions about this phase — not the whole project.</p>
+          <p class="step-desc">Captures implementation decisions, gray areas, and preferences for this specific phase before any planning begins. The host runtime asks targeted questions about this phase — not the whole project.</p>
           <div class="step-output">→ Produces: .planning/{phase}-CONTEXT.md</div>
         </div>
       </div>
@@ -259,7 +259,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>New service or major component:</strong> <code>/system-design</code></li>
         <li><strong>UI work:</strong> <code>/design-system</code> + <code>/ux-copy</code> + <code>/accessibility-review</code> (WCAG 2.1 AA — <strong>required when UI work is present</strong>)</li>
       </ul>
-      <p>If any design sub-steps apply, Claude asks once before beginning them: "Entering Design phase. Use Opus, or stay on Sonnet?"</p>
+      <p>If any design sub-steps apply, the host runtime asks once before beginning them: "Entering Design phase. Use the host high tier, or stay on the host execution tier?"</p>
 
       <!-- QUALITY GATES -->
       <div class="phase-header phase-gates" id="quality-gates">Phase: Quality Gates</div>

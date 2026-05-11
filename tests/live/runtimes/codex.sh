@@ -190,6 +190,31 @@ PY
   return 1
 }
 
+codex_live_guard_context() {
+  local state_file="${HOME}/.claude/.silver-bullet/state"
+  local state_contents=""
+
+  if [[ -f "$state_file" ]]; then
+    state_contents="$(cat "$state_file")"
+  fi
+  if [[ -z "$state_contents" ]]; then
+    state_contents="(empty)"
+  fi
+
+  cat <<EOF
+Silver Bullet live Codex guard:
+- Read the current Silver Bullet state before any direct file edit.
+- If the state does not contain silver-quality-gates, refuse the edit and say
+  that planning is incomplete or blocked.
+- If silver-quality-gates is present, proceed with only the requested edit.
+
+Current state file path: ${state_file}
+Current state file contents:
+${state_contents}
+
+EOF
+}
+
 runtime_invoke() {
   local mode="$1"
   local prompt="$2"
@@ -202,6 +227,8 @@ runtime_invoke() {
   local transcript_started_at
   local transcript_file
   local transcript_path
+  local codex_prompt
+  local codex_model
 
   cli="$(runtime_cli_path)"
   tmpdir="${TMPDIR:-/tmp}"
@@ -214,7 +241,15 @@ print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00
 PY
 )"
   prompt_seed_file="${WORK_DIR}/.silver-bullet.prompt.json"
-  printf '%s' "$prompt" > "$prompt_file"
+  codex_prompt="$prompt"
+  codex_model="${CODEX_MODEL:-}"
+  if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
+    codex_prompt="$(codex_live_guard_context)$codex_prompt"
+    if [[ -z "$codex_model" ]]; then
+      codex_model="${SB_LIVE_CODEX_MODEL:-gpt-5.4-mini}"
+    fi
+  fi
+  printf '%s' "$codex_prompt" > "$prompt_file"
   jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}' > "$prompt_seed_file"
   if [[ -x "${SB_ROOT}/hooks/record-requested-skill.sh" ]]; then
     printf '%s' "$(cat "$prompt_seed_file")" | bash "${SB_ROOT}/hooks/record-requested-skill.sh" >/dev/null 2>&1 || true
@@ -222,6 +257,7 @@ PY
 
   output=$(
     cd "$SB_ROOT" && \
+      CODEX_MODEL="$codex_model" \
       CODEX_BIN="$cli" \
       CODEX_WORK_DIR="$WORK_DIR" \
       CODEX_PROMPT_FILE="$prompt_file" \

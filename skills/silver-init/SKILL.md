@@ -112,7 +112,7 @@ Use the Glob tool to search for:
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
 If no files found, use AskUserQuestion:
-- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
+- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -129,7 +129,7 @@ Use the Glob tool to search for Design plugin skills in these paths:
 Expand `~` to the user's home directory.
 
 If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
-- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
+- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -148,7 +148,7 @@ Use the Glob tool to search for Engineering plugin skills in these paths:
 Expand `~` to the user's home directory.
 
 If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
-- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside Claude Code, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
+- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -177,7 +177,7 @@ If B: STOP.
 ### 1.6 Runtime-aware bootstrap
 
 Keep bootstrap terminology aligned to the current runtime:
-- In Codex, refer to the local agent instruction surface as a project instruction file and avoid Claude-only model-routing jargon.
+- In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - In Claude, `CLAUDE.md` remains the familiar project instruction filename.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
 - If a working local GSD entrypoint exists but the higher-level wrapper is flaky, prefer the local entrypoint and continue bootstrap instead of failing on wrapper import noise.
@@ -211,7 +211,7 @@ Use the Glob tool to search for:
 `~/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
 If no file found, use AskUserQuestion:
-- Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional but recommended — it enables `silver:research` and multi-AI perspectives.\n\nInstall command (inside Claude Code):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
+- Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional but recommended — it enables `silver:research` and multi-AI perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
 - Options:
   - "A. I'll install it now — pause and wait"
   - "B. Skip it and continue without"
@@ -226,7 +226,7 @@ Use the Glob tool to search for:
 and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.Codex/plugins/cache/*/product-management/skills/`
 
 If no directory found in any supported cache root, use AskUserQuestion:
-- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside Claude Code or Codex, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
+- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -487,7 +487,7 @@ Use AskUserQuestion:
 If user selects B (bypassPermissions):
 
 Use AskUserQuestion:
-- Question: "⚠️ Security confirmation: bypassPermissions disables all Claude Code permission guardrails permanently for this project. Is this environment fully isolated (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files)?"
+- Question: "⚠️ Security confirmation: bypassPermissions disables all host runtime permission guardrails permanently for this project. Is this environment fully isolated (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files)?"
 - Options:
   - "A. Yes, environment is fully isolated — proceed with bypassPermissions"
   - "B. No, use auto instead"
@@ -603,8 +603,8 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` via the Skill tool. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
-- **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by Claude). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
-- **3.7.5 Register SB hooks in `~/.claude/settings.json`**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init.
+- **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
+- **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
 - **3.8 Activate plugins**: invoke `superpowers:using-superpowers`. GSD (`/gsd:*`) and Design (`/design:*`) are available as slash commands — no activation needed.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 

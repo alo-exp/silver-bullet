@@ -36,7 +36,7 @@ If the curl fails or returns empty, output:
 ```
 Couldn't check for updates (offline or GitHub unavailable).
 
-To update manually: reinstall via Claude Desktop plugin manager or clone from https://github.com/alo-exp/silver-bullet
+To update manually: reinstall via the active host's plugin manager or package refresh path, or clone from https://github.com/alo-exp/silver-bullet
 ```
 Then exit.
 
@@ -101,9 +101,10 @@ Display:
 
 ────────────────────────────────────────────────────────────
 
-⚠️  **Note:** The update installs the new release via the Claude CLI marketplace.
+⚠️  **Note:** The update installs the new release via the active host's marketplace or package manager.
+On Codex, use the repo's Codex package refresh path instead of the Claude marketplace command.
 Your project files (CLAUDE.md, silver-bullet.md, hooks, config) are never
-touched — only the plugin cache and registry are updated by the marketplace.
+touched — only the active host's plugin cache and registry are updated.
 ```
 
 Use AskUserQuestion:
@@ -116,17 +117,18 @@ If user cancels, exit.
 
 ### Step 5: Install the update
 
-Run the marketplace install command:
+Run the host-appropriate install command:
 
 ```bash
 claude mcp install silver-bullet@alo-labs
+# Codex host: ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
 If the command fails (non-zero exit code), display the error output and exit without proceeding to cleanup:
 
 ```
-Update failed. The marketplace install did not complete successfully.
-Please try again or install manually via the Claude Desktop plugin manager.
+Update failed. The host install did not complete successfully.
+Please try again or install manually via the active host's plugin manager or package refresh path.
 ```
 
 Do not modify the registry or attempt cleanup if the install step fails.
@@ -173,9 +175,9 @@ If either cleanup step fails, log the error but do not abort — the install alr
 ║  Silver Bullet Updated: vX.Y.Z → vA.B.C                   ║
 ╚═══════════════════════════════════════════════════════════╝
 
-Installed via Claude CLI marketplace (silver-bullet@alo-labs).
+Installed via the active host's package manager / marketplace (silver-bullet@alo-labs).
 
-⚠️  Restart Claude Desktop to pick up the new skills and hooks.
+⚠️  Restart the host coding agent to pick up the new skills and hooks.
 
 [View full changelog](https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md)
 ```

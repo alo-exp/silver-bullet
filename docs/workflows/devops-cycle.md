@@ -54,7 +54,7 @@ points) or autonomously (driving start-to-finish with blockers surfaced at the e
 
 **Bypass-permissions detection:** If bypass-permissions is detected (all tool calls
 auto-accepted), skip the mode question AND the pre-answers follow-up. Auto-set
-autonomous mode, use all defaults (Sonnet, main, isolated). Log:
+autonomous mode, use all defaults (host execution tier, main, isolated). Log:
 "Step 0 skipped: bypass-permissions detected, autonomous mode with defaults".
 
 Ask:
@@ -70,10 +70,10 @@ echo "interactive" > ~/.claude/.silver-bullet/mode   # or "autonomous"
 **If autonomous was chosen**, ask one follow-up before proceeding:
 
 > Any decision points you want to pre-answer? Common ones:
-> - Model routing -- Planning phase: Sonnet or Opus?
+> - Model routing -- Planning phase: host execution tier or host top tier?
 > - Worktree: use one for this task, or work on main?
 > - Agent Teams: use worktree isolation, or main worktree throughout?
-> Leave blank to use defaults (Sonnet, main, isolated).
+> Leave blank to use defaults (host execution tier, main, isolated).
 
 Write answers into the `## Pre-answers` section of the session log immediately. Format each answer as:
 `- Model routing -- Planning: <value>`
@@ -85,7 +85,7 @@ at `~/.claude/.silver-bullet/session-log-path`, stripping the leading `- ` befor
 Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
 
 **Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
-use defaults: Sonnet, main, isolated.
+use defaults: host execution tier, main, isolated.
 
 ---
 
@@ -204,12 +204,13 @@ before proceeding.
 
 **What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-**Default:** Sonnet (LOW thinking effort) for all orchestrator work and GSD agents.
-**Opus reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
+**Default:** host execution tier for all orchestrator work and routine GSD agents.
+**Host high tier reserved for:** design, review, and verification work.
+**Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-**What to expect:** No model choice prompt. Agents auto-select the correct model. The orchestrator (this session) always runs on Sonnet.
+**What to expect:** No model choice prompt. Agents auto-select the correct model for the current host. Execution-tier agents handle execution, research, and documentation at high throughput; high-tier agents handle design, review, and verification; top-tier agents handle the deepest reasoning cases. The orchestrator (this session) always runs on the host execution tier.
 
-**Autonomous mode:** Same — no escalation prompt. Silent escalation to Opus only if a planning step produces measurably incomplete output.
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output.
 
 ---
 
@@ -235,7 +236,7 @@ Write results to `## Skills flagged at discovery` in the session log. **Do not i
 
 **What it does:** Captures implementation decisions, gray areas, and user preferences for
 this specific infrastructure phase before any planning begins. This is a thinking-partner
-conversation -- you are the visionary, Claude is the builder capturing decisions so
+conversation -- you are the visionary, the active runtime is the builder capturing decisions so
 downstream agents (researchers, planners) can act without re-asking you.
 
 `/gsd:discuss-phase`                                                                     **REQUIRED** -- DO NOT SKIP
@@ -246,9 +247,9 @@ For DevOps phases, the discussion must include:
 - State backend and locking strategy
 - Naming conventions and tagging strategy
 
-**What to expect:** An interactive conversation where Claude identifies gray areas specific
+**What to expect:** An interactive conversation where the active runtime identifies gray areas specific
 to your infrastructure phase, asks focused questions, and captures your decisions. Each
-decision is recorded as either locked (your explicit choice) or left to Claude's discretion.
+decision is recorded as either locked (your explicit choice) or left to runtime discretion.
 Typical duration: 5-10 minutes.
 
 **Produces:** `.planning/phases/{phase}-CONTEXT.md`
@@ -599,7 +600,7 @@ Minimum required files:
   ```
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
-  Sonnet base rate; Opus ~ 3x multiplier.
+  Host execution tier is the base rate; host high/top tiers are progressively more expensive.
 - Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
   Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,

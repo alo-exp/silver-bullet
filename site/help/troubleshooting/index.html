@@ -147,7 +147,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- HOOK FAILURES -->
       <h2 id="hooks">Hook Failures</h2>
-      <p>Silver Bullet hooks fire automatically on every tool use. When a hook fails, you may see errors in the Claude Code output or unexpected behavior.</p>
+      <p>Silver Bullet hooks fire automatically on every tool use. When a hook fails, you may see errors in the host coding agent output or unexpected behavior.</p>
 
       <div class="issue-card">
         <h4>"jq: command not found"</h4>
@@ -177,12 +177,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- SKILL NOT FOUND -->
       <h2 id="skills">Skill Not Found</h2>
-      <p>When Claude cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
+      <p>When the runtime cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
 
       <div class="issue-card">
         <h4>"Superpowers plugin not found"</h4>
         <p class="ic-cause"><strong>Cause:</strong> The Superpowers plugin is not installed. Silver Bullet requires it for code review and branch management skills.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install obra/superpowers</code> in Claude Code.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install obra/superpowers</code> in your host coding agent.</p>
       </div>
 
       <div class="issue-card">
@@ -286,8 +286,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <div class="issue-card">
-        <h4>CLAUDE.md conflicts with project instructions</h4>
-        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet's <code>CLAUDE.md</code> may override or conflict with your existing project instructions.</p>
+        <h4>Project instruction file conflicts with project instructions</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet's host project instruction file may override or conflict with your existing project instructions.</p>
         <p class="ic-fix"><strong>Fix:</strong> During <code>/silver:init</code> setup, choose <strong>Append</strong> mode for existing projects. This adds Silver Bullet rules below your existing instructions. Both sets of rules will be active.</p>
       </div>
 

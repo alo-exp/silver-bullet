@@ -91,6 +91,141 @@ PY
   fi
 }
 
+assert_silver_bullet_hook_trust_state() {
+  local desc="$1" config_path="$2" hooks_path="$3"
+  if python3 - "$config_path" "$hooks_path" <<'PY' >/dev/null 2>&1
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+hooks_path = pathlib.Path(sys.argv[2])
+
+hooks_data = json.loads(hooks_path.read_text()).get("hooks", {})
+
+def event_slug(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+def parse_state(raw_text: str) -> dict[str, str]:
+    state = {}
+    current_key = None
+    for line in raw_text.splitlines():
+        stripped = line.strip()
+        match = re.match(r'^\[hooks\.state\."(.+)"\]$', stripped)
+        if match:
+            current_key = match.group(1)
+            continue
+        if current_key is not None and stripped.startswith("trusted_hash = "):
+            hash_match = re.match(r'^trusted_hash = "(sha256:[0-9a-f]{64})"$', stripped)
+            if hash_match:
+                state[current_key] = hash_match.group(1)
+            continue
+        if stripped.startswith("[") and not stripped.startswith('[hooks.state.'):
+            current_key = None
+    return state
+
+expected = {}
+for event_name, groups in hooks_data.items():
+    slug = event_slug(event_name)
+    for group_index, group in enumerate(groups):
+        for hook_index, hook in enumerate(group.get("hooks", [])):
+            key = f"silver-bullet@alo-labs-codex:hooks/hooks.json:{slug}:{group_index}:{hook_index}"
+            digest = "sha256:" + hashlib.sha256(hook.get("command", "").encode("utf-8")).hexdigest()
+            expected[key] = digest
+
+actual = {
+    key: digest
+    for key, digest in parse_state(config_path.read_text()).items()
+    if key.startswith("silver-bullet@alo-labs-codex:hooks/hooks.json:")
+}
+
+if len(actual) != len(expected):
+    raise SystemExit(1)
+
+for key, digest in expected.items():
+    if actual.get(key) != digest:
+        raise SystemExit(1)
+PY
+  then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing or mismatched Silver Bullet hook trust state in $config_path"
+    python3 - "$config_path" "$hooks_path" <<'PY'
+import hashlib
+import json
+import pathlib
+import re
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+hooks_path = pathlib.Path(sys.argv[2])
+hooks_data = json.loads(hooks_path.read_text()).get("hooks", {})
+
+def event_slug(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+
+def parse_state(raw_text: str) -> dict[str, str]:
+    state = {}
+    current_key = None
+    for line in raw_text.splitlines():
+        stripped = line.strip()
+        match = re.match(r'^\[hooks\.state\."(.+)"\]$', stripped)
+        if match:
+            current_key = match.group(1)
+            continue
+        if current_key is not None and stripped.startswith("trusted_hash = "):
+            hash_match = re.match(r'^trusted_hash = "(sha256:[0-9a-f]{64})"$', stripped)
+            if hash_match:
+                state[current_key] = hash_match.group(1)
+            continue
+        if stripped.startswith("[") and not stripped.startswith('[hooks.state.'):
+            current_key = None
+    return state
+
+expected = {}
+for event_name, groups in hooks_data.items():
+    slug = event_slug(event_name)
+    for group_index, group in enumerate(groups):
+        for hook_index, hook in enumerate(group.get("hooks", [])):
+            key = f"silver-bullet@alo-labs-codex:hooks/hooks.json:{slug}:{group_index}:{hook_index}"
+            digest = "sha256:" + hashlib.sha256(hook.get("command", "").encode("utf-8")).hexdigest()
+            expected[key] = digest
+
+actual = {
+    key: digest
+    for key, digest in parse_state(config_path.read_text()).items()
+    if key.startswith("silver-bullet@alo-labs-codex:hooks/hooks.json:")
+}
+
+expected_keys = set(expected)
+actual_keys = set(actual)
+missing = sorted(expected_keys - actual_keys)
+extra = sorted(actual_keys - expected_keys)
+bad = sorted(key for key in expected_keys & actual_keys if expected[key] != actual[key])
+
+print(f"  expected={len(expected)} actual={len(actual)} missing={len(missing)} extra={len(extra)} mismatched={len(bad)}")
+if missing:
+    print("  missing keys:")
+    for key in missing[:8]:
+        print(f"    - {key}")
+if extra:
+    print("  extra keys:")
+    for key in extra[:8]:
+        print(f"    - {key}")
+if bad:
+    print("  mismatched keys:")
+    for key in bad[:8]:
+        print(f"    - {key}")
+        print(f"      expected: {expected[key]}")
+        print(f"      actual:   {actual[key]}")
+PY
+    (( FAIL++ )) || true
+  fi
+}
+
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
   if grep -qF "$needle" "$file"; then
@@ -109,6 +244,18 @@ assert_not_contains() {
     (( PASS++ )) || true
   else
     echo "FAIL: $desc — unexpected [$needle] in $file"
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_command_succeeds() {
+  local desc="$1"
+  shift
+  if "$@"; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc"
     (( FAIL++ )) || true
   fi
 }
@@ -213,6 +360,24 @@ FAKE_MARKETPLACE_ROOT="$HOME_DIR/.Codex/.tmp/marketplaces/alo-labs-codex"
 FAKE_SB_PACKAGE_ROOT="$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet"
 FAKE_SB_SKILLS_SOURCE="$FAKE_MARKETPLACE_ROOT/skills"
 FAKE_CACHE_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3"
+FAKE_SB_INSTALL_ROOT="$FAKE_CACHE_ROOT"
+FAKE_SB_INSTALL_ALIAS="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+FAKE_SUPERPOWERS_ROOT="$HOME_DIR/.Codex/plugins/cache/superpowers-marketplace/superpowers/1.0.0"
+FAKE_SUPERPOWERS_ALIAS="$HOME_DIR/.Codex/plugins/cache/superpowers-marketplace/superpowers/current"
+FAKE_GSD_ROOT="$HOME_DIR/.Codex/plugins/cache/get-shit-done-marketplace/gsd/1.41.1"
+FAKE_GSD_ALIAS="$HOME_DIR/.Codex/plugins/cache/get-shit-done-marketplace/gsd/current"
+FAKE_SIDEKICK_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/sidekick/0.5.4"
+FAKE_SIDEKICK_ALIAS="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/sidekick/current"
+FAKE_ENGINEERING_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/engineering/1.2.0"
+FAKE_ENGINEERING_ALIAS="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/engineering/current"
+FAKE_DESIGN_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/design/1.2.0"
+FAKE_DESIGN_ALIAS="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/design/current"
+FAKE_PRODUCT_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/product-management/1.2.0"
+FAKE_PRODUCT_ALIAS="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/product-management/current"
+FAKE_SIDEKICK_STALE_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/sidekick/1.5.4"
+FAKE_ENGINEERING_STALE_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/engineering/1.2.0+codex.1"
+FAKE_DESIGN_STALE_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/design/1.2.0+codex.1"
+FAKE_PRODUCT_STALE_ROOT="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/product-management/1.2.0+codex.1"
 FAKE_HOOKS_FIXTURE="$TMP/hooks-async.json"
 make_async_hooks_fixture "$REPO_ROOT/hooks/hooks.json" "$FAKE_HOOKS_FIXTURE"
 mkdir -p \
@@ -258,6 +423,138 @@ ln -s "$REPO_ROOT/README.md" "$FAKE_MARKETPLACE_ROOT/README.md"
 ln -s "../../hooks" "$FAKE_SB_PACKAGE_ROOT/hooks"
 ln -s "../../skills" "$FAKE_SB_PACKAGE_ROOT/skills"
 
+python3 - "$HOME_DIR" "$FAKE_SB_INSTALL_ROOT" "$FAKE_SUPERPOWERS_ROOT" "$FAKE_GSD_ROOT" "$FAKE_SIDEKICK_ROOT" "$FAKE_ENGINEERING_ROOT" "$FAKE_DESIGN_ROOT" "$FAKE_PRODUCT_ROOT" "$FAKE_SIDEKICK_STALE_ROOT" "$FAKE_ENGINEERING_STALE_ROOT" "$FAKE_DESIGN_STALE_ROOT" "$FAKE_PRODUCT_STALE_ROOT" <<'PY'
+import json
+import pathlib
+import sys
+
+home = pathlib.Path(sys.argv[1])
+sb_install_root = pathlib.Path(sys.argv[2])
+superpowers_root = pathlib.Path(sys.argv[3])
+gsd_root = pathlib.Path(sys.argv[4])
+sidekick_root = pathlib.Path(sys.argv[5])
+engineering_root = pathlib.Path(sys.argv[6])
+design_root = pathlib.Path(sys.argv[7])
+product_root = pathlib.Path(sys.argv[8])
+sidekick_stale_root = pathlib.Path(sys.argv[9])
+engineering_stale_root = pathlib.Path(sys.argv[10])
+design_stale_root = pathlib.Path(sys.argv[11])
+product_stale_root = pathlib.Path(sys.argv[12])
+
+def write_json(path: pathlib.Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+def write_text(path: pathlib.Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+def write_manifest(path: pathlib.Path, name: str, version: str) -> None:
+    write_json(path, {"name": name, "version": version})
+
+for root in [
+    sb_install_root,
+    superpowers_root,
+    gsd_root,
+    sidekick_root,
+    engineering_root,
+    design_root,
+    product_root,
+]:
+    root.mkdir(parents=True, exist_ok=True)
+
+write_manifest(sb_install_root / ".codex-plugin/plugin.json", "silver-bullet", "0.32.3")
+write_manifest(superpowers_root / ".codex-plugin/plugin.json", "superpowers", "1.0.0")
+write_manifest(gsd_root / ".codex-plugin/plugin.json", "gsd", "1.41.1")
+write_manifest(sidekick_root / ".codex-plugin/plugin.json", "sidekick", "0.5.4")
+write_manifest(engineering_root / ".codex-plugin/plugin.json", "engineering", "1.2.0")
+write_manifest(design_root / ".codex-plugin/plugin.json", "design", "1.2.0")
+write_manifest(product_root / ".codex-plugin/plugin.json", "product-management", "1.2.0")
+
+write_text(sidekick_root / "skills/codex-delegate/SKILL.md", "---\nname: codex-delegate\n---\n")
+write_text(sidekick_root / "skills/forge-delegate/SKILL.md", "---\nname: forge-delegate\n---\n")
+write_text(superpowers_root / "skills/verification-before-completion/SKILL.md", "---\nname: verification-before-completion\n---\n")
+
+registry = {
+    "version": 2,
+    "plugins": {
+        "silver-bullet@alo-labs-codex": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(sb_install_root),
+                "version": "0.32.3",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "superpowers@superpowers-marketplace": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(superpowers_root),
+                "version": "1.0.0",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "gsd@get-shit-done-marketplace": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(gsd_root),
+                "version": "1.41.1",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "sidekick@alo-labs-codex-local": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(sidekick_stale_root),
+                "version": "1.5.4",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "engineering@alo-labs-codex-local": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(engineering_stale_root),
+                "version": "1.2.0+codex.1",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "design@alo-labs-codex-local": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(design_stale_root),
+                "version": "1.2.0+codex.1",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+        "product-management@alo-labs-codex-local": [
+            {
+                "scope": "project",
+                "projectPath": str(home),
+                "installPath": str(product_stale_root),
+                "version": "1.2.0+codex.1",
+                "installedAt": "2026-05-10T06:56:32.762233Z",
+                "lastUpdated": "2026-05-10T06:56:32.762233Z",
+            }
+        ],
+    },
+}
+
+for registry_path in [home / ".Codex/plugins/installed_plugins.json", home / ".codex/plugins/installed_plugins.json"]:
+    write_json(registry_path, registry)
+PY
+
 cat > "$FAKE_MARKETPLACE_ROOT/CHANGELOG.md" <<'EOF'
 - Renamed /using-silver-bullet skill to /silver:init
 - Kept other release notes intact
@@ -286,6 +583,13 @@ else
   echo "PASS: Silver Bullet skills are bundled into the main SB plugin"
   (( PASS++ )) || true
 fi
+assert_command_succeeds "Silver Bullet cache alias created" test -L "$FAKE_SB_INSTALL_ALIAS"
+assert_command_succeeds "Superpowers cache alias created" test -L "$FAKE_SUPERPOWERS_ALIAS"
+assert_command_succeeds "GSD cache alias created" test -L "$FAKE_GSD_ALIAS"
+assert_command_succeeds "Sidekick cache alias created" test -L "$FAKE_SIDEKICK_ALIAS"
+assert_command_succeeds "Engineering cache alias created" test -L "$FAKE_ENGINEERING_ALIAS"
+assert_command_succeeds "Design cache alias created" test -L "$FAKE_DESIGN_ALIAS"
+assert_command_succeeds "Product-management cache alias created" test -L "$FAKE_PRODUCT_ALIAS"
 assert_file_exists "Marketplace root hooks config materialized" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_no_async_true "Marketplace root hooks config normalized for Codex package" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_not_symlink "SB hooks directory materialized" "$FAKE_SB_PACKAGE_ROOT/hooks"
@@ -313,7 +617,7 @@ assert_contains "SB hooks config includes requested-skill recorder" 'record-requ
 assert_contains "Current cache hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "SB init skill uses silver prefix" "name: silver:init" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
 assert_contains "SB ensure-docs skill uses silver prefix" "name: silver:ensure-docs" "$REPO_ROOT/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md"
-assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid Claude-only model-routing jargon" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
+assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
 assert_contains "SB init skill checks Codex product-management cache" "~/.codex/plugins/cache/*/product-management/skills/" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
 assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
 assert_contains "SB init skill keeps the working GSD entrypoint fallback" "prefer the local entrypoint and continue bootstrap instead of failing on wrapper import noise" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
@@ -337,6 +641,19 @@ assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-cod
 assert_contains "Codex plugin hooks feature enabled" '[features]' "$HOME_DIR/.Codex/config.toml"
 assert_contains "Codex plugin hooks feature flag" 'plugin_hooks = true' "$HOME_DIR/.Codex/config.toml"
 assert_contains "SB hook state recorded inside SB root" 'silver-bullet@' "$HOME_DIR/.Codex/config.toml"
+assert_silver_bullet_hook_trust_state "Silver Bullet hook trust seeded in Codex config" "$HOME_DIR/.Codex/config.toml" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_silver_bullet_hook_trust_state "Silver Bullet hook trust seeded in codex config mirror" "$HOME_DIR/.codex/config.toml" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_command_succeeds "Codex registry mirrors stay synchronized" cmp -s "$HOME_DIR/.Codex/plugins/installed_plugins.json" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_contains "Silver Bullet registry install path refreshed" "$FAKE_SB_INSTALL_ALIAS" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_not_contains "Silver Bullet versioned install path removed" "$FAKE_SB_INSTALL_ROOT" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
+assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.Codex/plugins/installed_plugins.json"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.Codex/hooks.json"
 assert_contains "Requested-skill recorder merged into Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"

@@ -269,7 +269,7 @@ If no candidates were found at all: show "No unresolved deferred items found. Se
 
 - **`## Needs human review` section is empty or contains `*(none)*`**: Do not generate a candidate from this entry — the section was explicitly cleared by the session author.
 
-- **`## Autonomous decisions` section contains only pre-answered routing entries** (e.g., "Model routing — Planning: Sonnet"): These are procedural pre-answers, not deferrable items. Skip them as candidates.
+- **`## Autonomous decisions` section contains only pre-answered routing entries** (e.g., "Model routing — Planning: Claude host Sonnet / Codex GPT-5.3-medium"): These are procedural pre-answers, not deferrable items. Skip them as candidates.
 
 - **Duplicate across session logs**: Same deferred item text appears in multiple session logs. Record it only once — on first occurrence. The stale check in Step 4 will also suppress it in subsequent files if it was filed after the first session.
 

@@ -4,9 +4,9 @@
 
 **Goal:** Implement the 5 GSD-2 gap-narrowing strategies (cross-session knowledge, observability, autonomy, CI/CD verification, model routing + Agent Teams) in Silver Bullet.
 
-**Architecture:** Hybrid hook + skill approach. Two new PostToolUse hook scripts handle mechanical concerns (session log creation, CI status warnings). Template files (CLAUDE.md.base, workflow, new KNOWLEDGE/CHANGELOG/session-log bases) encode the deliberate behaviours Claude follows. The SB init skill (silver-init SKILL.md) creates the new project files on fresh setup.
+**Architecture:** Hybrid hook + skill approach. Two new PostToolUse hook scripts handle mechanical concerns (session log creation, CI status warnings). Template files (CLAUDE.md.base, workflow, new KNOWLEDGE/CHANGELOG/session-log bases) encode the deliberate behaviours the active runtime follows. The SB init skill (silver-init SKILL.md) creates the new project files on fresh setup.
 
-**Tech Stack:** bash, jq, Claude Code plugin hook system, gh CLI (for CI checks)
+**Tech Stack:** bash, jq, host coding-agent hook system, gh CLI (for CI checks)
 
 **Key file note:** `templates/workflows/full-dev-cycle.md` is the GSD-integrated 19-step template (canonical source). `docs/workflows/full-dev-cycle.md` is a stale 31-step copy written during today's init — it will be replaced by Task 10.
 
@@ -43,7 +43,7 @@
 - Create: `tests/hooks/test-session-log-init.sh`
 - Create: `hooks/session-log-init.sh`
 
-This hook fires when Claude writes the session mode to `/tmp/.silver-bullet-mode`. It creates the session log skeleton (timestamp-named; Step 15 fills in content) and records its path at `/tmp/.silver-bullet-session-log-path`.
+This hook fires when the active runtime writes the session mode to `/tmp/.silver-bullet-mode`. It creates the session log skeleton (timestamp-named; Step 15 fills in content) and records its path at `/tmp/.silver-bullet-session-log-path`.
 
 - [ ] **Step 1.1: Create tests directory and write test driver**
 
@@ -123,7 +123,7 @@ Create `hooks/session-log-init.sh`:
 set -euo pipefail
 
 # PostToolUse hook (matcher: Bash)
-# Fires when Claude writes the session mode to /tmp/.silver-bullet-mode.
+# Fires when the active runtime writes the session mode to /tmp/.silver-bullet-mode.
 # Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
 # /tmp/.silver-bullet-session-log-path so Step 15 (documentation) can fill it in.
 # Note: hook infers mode by checking for "autonomous" in the command string.
@@ -470,7 +470,7 @@ Write `templates/KNOWLEDGE.md.base` with this content:
 # {{PROJECT_NAME}} — Project Knowledge
 
 > Gateway index and accumulated project intelligence.
-> Claude reads this at session startup. Claude updates Part 2 at step 15 (documentation).
+> The active runtime reads this at session startup. The active runtime updates Part 2 at step 15 (documentation).
 > **Never delete or edit prior entries.** All additions are append-only with date stamps.
 
 ---
@@ -815,7 +815,7 @@ After the step 4 (`/quality-gates`) block, add:
    **Agent Team dispatch**: Dispatch all 8 quality dimensions (modularity, reusability,
    scalability, security, reliability, usability, testability, extensibility) as a single
    parallel Agent Team wave — one agent per dimension, `isolation: "worktree"`.
-   Claude synthesises results. Conflict resolution: more conservative/restrictive finding wins;
+      The active runtime synthesises results. Conflict resolution: more conservative/restrictive finding wins;
    resolution rationale logged in session log.
    Autonomous mode: all dispatches use `run_in_background: true`.
 ```
@@ -888,7 +888,7 @@ After the step 17 block, add:
       confirmation to re-check or proceed.
     - If CI red: log failure, invoke `/gsd:debug`.
     - **Missing ci.yml rule**: if `.github/workflows/ci.yml` is absent at this step,
-      Claude must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
+      The active runtime must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
       surface missing file to user, stop deployment steps.
     - Race condition: the post-commit hook (ci-status-check.sh) reflects the last
       *completed* run, not necessarily this push. This polling loop is the authoritative gate.

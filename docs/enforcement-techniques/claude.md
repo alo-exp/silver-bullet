@@ -7,9 +7,9 @@
 
 ## 1. Introduction
 
-Silver Bullet is a Claude Code plugin that enforces a disciplined software development
-lifecycle. It installs a set of Claude Code hooks, a project configuration file, and
-workflow skill definitions that collectively prevent Claude from skipping planning, code
+Silver Bullet is a host coding-agent plugin that enforces a disciplined software development
+lifecycle. It installs a set of host coding-agent hooks, a project configuration file, and
+workflow skill definitions that collectively prevent the runtime from skipping planning, code
 review, testing, documentation, and other mandatory workflow phases before committing,
 creating pull requests, or declaring a task complete.
 
@@ -91,7 +91,7 @@ before reaching Claude's execution.
 │  │  │  │    Blocks commits when CI is failing              │ │  │  │
 │  │  │  │                                                   │ │  │  │
 │  │  │  │  ╔══════════════════════════════════════════════╗ │ │  │  │
-│  │  │  │  ║          Claude executes tool                ║ │ │  │  │
+│  │  │  │  ║       the runtime executes tool             ║ │ │  │  │
 │  │  │  │  ╚══════════════════════════════════════════════╝ │ │  │  │
 │  │  │  │                                                   │ │  │  │
 │  │  │  │  [PostToolUse]                                    │ │  │  │
@@ -170,7 +170,7 @@ skills are recorded in the state file before allowing source file edits.
 
 #### 4.2a Plugin boundary protection
 
-Blocks any Edit/Write/Bash targeting `~/.claude/plugins/cache/`. Claude must never
+Blocks any Edit/Write/Bash targeting `~/.claude/plugins/cache/`. The runtime must never
 modify upstream plugin files.
 
 **Block message:** "THIRD-PARTY PLUGIN BOUNDARY VIOLATION"

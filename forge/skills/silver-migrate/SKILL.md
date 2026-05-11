@@ -56,7 +56,7 @@ For each artifact:
 | `.claude/settings.json` hook registration | Replaced by hook-equivalent custom agents at `~/forge/agents/`; AGENTS.md drives invocation |
 | `.planning/*` | Unchanged — moves over as-is |
 
-### Step 4 — Remove Claude-Only Artifacts
+### Step 4 — Remove Claude-Specific Artifacts
 
 After translating, remove artifacts that have no Forge equivalent:
 

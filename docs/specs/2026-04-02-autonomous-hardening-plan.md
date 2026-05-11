@@ -6,7 +6,7 @@
 
 **Architecture:** Three features across two layers. Hook layer: restructure `session-log-init.sh` (sentinel launch, new skeleton sections) and add `timeout-check.sh` (flag polling). Workflow/instruction layer: extend Step 0 with answer injection Q&A, add skill discovery before DISCUSS and after plan, add cleanup command at completion.
 
-**Tech Stack:** bash, jq, Claude Code plugin hook system (PostToolUse), macOS `/tmp/`
+**Tech Stack:** bash, jq, host coding-agent plugin hook system (PostToolUse), macOS `/tmp/`
 
 ---
 
@@ -167,7 +167,7 @@ Replace `hooks/session-log-init.sh` entirely with:
 set -euo pipefail
 
 # PostToolUse hook (matcher: Bash)
-# Fires when Claude writes the session mode to /tmp/.silver-bullet-mode.
+# Fires when the active runtime writes the session mode to /tmp/.silver-bullet-mode.
 # Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
 # /tmp/.silver-bullet-session-log-path so the documentation step can fill it in.
 # In autonomous mode: also launches a 10-minute background sentinel.
@@ -230,7 +230,7 @@ if [[ -n "$existing" ]]; then
   }
   if ! grep -q "^## Pre-answers$" "$existing" 2>/dev/null; then
     _insert_before "$existing" "## Task" "## Pre-answers" \
-      "(filled at Step 0 by Claude if autonomous mode)"
+      "(filled at Step 0 by the active runtime if autonomous mode)"
   fi
   if ! grep -q "^## Skills flagged at discovery$" "$existing" 2>/dev/null; then
     _insert_before "$existing" "## Agent Teams dispatched" \
@@ -281,7 +281,7 @@ cat > "$log_file" << LOGEOF
 
 ## Pre-answers
 
-(filled at Step 0 by Claude if autonomous mode)
+(filled at Step 0 by the active runtime if autonomous mode)
 
 ## Task
 

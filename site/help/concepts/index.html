@@ -187,7 +187,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="skills">Skills</h2>
-      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for Claude to follow when performing a specific task. When you invoke a skill, Claude reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet ships with <strong>62 skills</strong> in total — including 7 orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), 3 spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), <strong>8 artifact reviewer skills</strong> (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT), and supporting skills for quality gates, enforcement, analytics, and project management.</p>
+      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet ships with <strong>62 skills</strong> in total — including 7 orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), 3 spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), <strong>8 artifact reviewer skills</strong> (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT), and supporting skills for quality gates, enforcement, analytics, and project management.</p>
 
       <h3>How Skills Are Stored</h3>
       <p>Skills live in two locations:</p>
@@ -197,7 +197,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </ul>
 
       <h3>How Skills Are Invoked</h3>
-      <p>Inside Claude Code, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
+      <p>Inside the host coding agent, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
       <div class="code-block"><span class="cmd">/quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
 <span class="cmd">/requesting-code-review</span>  <span class="comment"># dispatches code-reviewer subagent for peer review</span>
@@ -208,7 +208,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Implicit coverage does not count.</strong> The enforcement hooks track actual Skill tool invocations. Saying "I already covered this while writing the code" is not valid — each skill must be explicitly invoked. This is intentional: the hooks can only measure what actually happened, not what Claude claims happened.</div>
+        <div class="callout-body"><strong>Implicit coverage does not count.</strong> The enforcement hooks track actual Skill tool invocations. Saying "I already covered this while writing the code" is not valid — each skill must be explicitly invoked. This is intentional: the hooks can only measure what actually happened, not what the runtime claims happened.</div>
       </div>
 
       <h3>Skill Discovery</h3>
@@ -217,7 +217,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="hooks">Hooks</h2>
-      <p>A <strong>hook</strong> is a shell script that Claude Code runs automatically in response to events — most importantly, after every tool use (<code>PostToolUse</code>). Silver Bullet uses hooks to enforce the workflow without relying on Claude's self-discipline.</p>
+      <p>A <strong>hook</strong> is a shell script that the host coding agent runs automatically in response to events — most importantly, after every tool use (<code>PostToolUse</code>). Silver Bullet uses hooks to enforce the workflow without relying on runtime self-discipline.</p>
 
       <h3>Enforcement Hooks (4)</h3>
       <ul>
@@ -238,7 +238,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Hooks run outside Claude's context.</strong> They're shell scripts executed by Claude Code itself, not by Claude. This means they can't be overridden by Claude's reasoning or instructions — they're a hard system constraint.</div>
+        <div class="callout-body"><strong>Hooks run outside the runtime's context.</strong> They're shell scripts executed by the host coding agent itself, not by the active runtime. This means they can't be overridden by runtime reasoning or instructions — they're a hard system constraint.</div>
       </div>
 
       <h3 id="trivial-changes">Trivial Changes</h3>
@@ -260,7 +260,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </ul>
 
       <h3>GSD Commands</h3>
-      <p>GSD is invoked via slash commands that Claude Code resolves to GSD's installed workflows:</p>
+      <p>GSD is invoked via slash commands that the host coding agent resolves to GSD's installed workflows:</p>
       <div class="code-block"><span class="cmd">/gsd:new-project</span>       <span class="comment"># Initialize project with requirements + roadmap</span>
 <span class="cmd">/gsd:discuss-phase</span>    <span class="comment"># Capture decisions for the current phase</span>
 <span class="cmd">/gsd:plan-phase</span>       <span class="comment"># Research + create task-level plan</span>
@@ -312,7 +312,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="quality-gates">Quality Gates</h2>
-      <p>Quality gates are a mandatory pre-planning step where Claude evaluates the proposed design against 8 quality dimensions. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
+      <p>Quality gates are a mandatory pre-planning step where the active runtime evaluates the proposed design against 8 quality dimensions. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
 
       <div class="dims-grid">
         <div class="dim-card"><div class="dim-icon"><i data-lucide="puzzle"></i></div><div class="dim-name">Modularity</div><div class="dim-desc">Components are independently replaceable</div></div>
@@ -326,7 +326,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3>How Quality Gates Are Evaluated</h3>
-      <p>The <code>/quality-gates</code> skill dispatches 8 parallel agents — one per dimension — each in an isolated worktree. Results are synthesised by Claude. The most conservative finding wins: if one agent flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
+      <p>The <code>/quality-gates</code> skill dispatches 8 parallel agents — one per dimension — each in an isolated worktree. Results are synthesised by the active runtime. The most conservative finding wins: if one agent flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
 
       <h3>DevOps Quality Gates</h3>
       <p>For infrastructure work, <code>/devops-quality-gates</code> applies 7 IaC-adapted dimensions (usability is excluded — it's application-specific) — focusing on idempotency, drift prevention, least-privilege IAM, and infrastructure reliability instead of application concerns.</p>
@@ -348,7 +348,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="layer-num">2</div>
           <div>
             <h4>Pre+PostToolUse — Stage Enforcer</h4>
-            <p>Reads session state and issues a HARD STOP if Claude attempts to advance to the next phase before completing the current one (e.g., starting PLAN before /quality-gates passes).</p>
+            <p>Reads session state and issues a HARD STOP if the runtime attempts to advance to the next phase before completing the current one (e.g., starting PLAN before /quality-gates passes).</p>
           </div>
         </div>
         <div class="layer-card">
@@ -383,14 +383,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="layer-num">7</div>
           <div>
             <h4>Stop / SubagentStop — Completion Gate</h4>
-            <p>Fires when Claude declares a task complete. Blocks if required skills are still missing. Re-injected on every message so it survives compaction and cannot be lost mid-session.</p>
+            <p>Fires when the runtime declares a task complete. Blocks if required skills are still missing. Re-injected on every message so it survives compaction and cannot be lost mid-session.</p>
           </div>
         </div>
         <div class="layer-card">
           <div class="layer-num">8</div>
           <div>
             <h4>UserPromptSubmit — Prompt Reminder</h4>
-            <p>Before every user message is processed, re-injects the list of missing required skills and the core enforcement rules. Ensures Claude cannot "forget" the workflow even after context compaction.</p>
+            <p>Before every user message is processed, re-injects the list of missing required skills and the core enforcement rules. Ensures the runtime cannot "forget" the workflow even after context compaction.</p>
           </div>
         </div>
         <div class="layer-card">
@@ -418,7 +418,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="layer-num">12</div>
           <div>
             <h4>Redundant Instructions + Anti-Rationalization</h4>
-            <p>The workflow is described in both the workflow file and <code>CLAUDE.md</code>. Explicit rules prohibit Claude from deciding a step is &ldquo;not applicable&rdquo; without user approval, or claiming it &ldquo;already covered&rdquo; a skill without actually invoking it.</p>
+            <p>The workflow is described in both the workflow file and the host project instruction file. Explicit rules prohibit the runtime from deciding a step is &ldquo;not applicable&rdquo; without user approval, or claiming it &ldquo;already covered&rdquo; a skill without actually invoking it.</p>
           </div>
         </div>
       </div>
@@ -426,18 +426,18 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="session-modes">Session Modes</h2>
-      <p>Every session begins with a mode selection that controls how much Claude pauses for approval:</p>
+      <p>Every session begins with a mode selection that controls how much the runtime pauses for approval:</p>
 
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="users"></i></div>
           <h4>Interactive (default)</h4>
-          <p>Claude pauses at every phase gate. You review and approve each stage. Best for learning the workflow or working on sensitive/complex tasks where human oversight matters at each step.</p>
+          <p>The runtime pauses at every phase gate. You review and approve each stage. Best for learning the workflow or working on sensitive/complex tasks where human oversight matters at each step.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="rocket"></i></div>
           <h4>Autonomous</h4>
-          <p>Claude drives start-to-finish. Decisions are logged. Genuine blockers are queued and surfaced at the end. Best for well-defined tasks when you want maximum throughput.</p>
+          <p>The runtime drives start-to-finish. Decisions are logged. Genuine blockers are queued and surfaced at the end. Best for well-defined tasks when you want maximum throughput.</p>
         </div>
       </div>
 
@@ -450,12 +450,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Call-count tier:</strong> Warns at 30, 60, and 100+ tool calls since the last skill invocation — escalating in urgency at each threshold.</li>
         <li><strong>Identical-call guard:</strong> The same tool call with identical arguments producing the same result 2+ times consecutively is treated as a stall.</li>
       </ul>
-      <p>On any stall: Claude makes a best-judgment call, moves on, and logs the decision for review.</p>
+      <p>On any stall: the runtime makes a best-judgment call, moves on, and logs the decision for review.</p>
 
       <div class="divider"></div>
 
       <h2 id="agents">Agent Teams</h2>
-      <p>Silver Bullet uses Claude's sub-agent capability to parallelize work. When a phase has independent implementation units (different modules, different quality dimensions), multiple agents run simultaneously in isolated git worktrees.</p>
+      <p>Silver Bullet uses the runtime's sub-agent capability to parallelize work. When a phase has independent implementation units (different modules, different quality dimensions), multiple agents run simultaneously in isolated git worktrees.</p>
 
       <h3>How It Works</h3>
       <ol>
@@ -473,8 +473,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="semantic-context">Semantic Context Compression</h2>
-      <p>Silver Bullet includes an automatic context optimization system that runs as a PostToolUse hook. It scans your source and documentation files, ranks chunks by relevance to the current phase goal using TF-IDF scoring, and injects the most relevant context into Claude's working memory before each tool use.</p>
-      <p>This keeps Claude focused on the right parts of a large codebase without exhausting its context window on irrelevant files. Results are cached between tool uses and invalidated when files change.</p>
+      <p>Silver Bullet includes an automatic context optimization system that runs as a PostToolUse hook. It scans your source and documentation files, ranks chunks by relevance to the current phase goal using TF-IDF scoring, and injects the most relevant context into the active runtime's working memory before each tool use.</p>
+      <p>This keeps the runtime focused on the right parts of a large codebase without exhausting its context window on irrelevant files. Results are cached between tool uses and invalidated when files change.</p>
       <p>Configure it in <code>.silver-bullet.json</code> under <code>"semantic_compression"</code>.</p>
 
       <div class="divider"></div>
@@ -482,7 +482,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="file-structure">Standard File Structure</h2>
       <p>After <code>/silver:init</code> initializes a project, you'll find this structure:</p>
       <div class="code-block"><span class="comment"># Project root</span>
-CLAUDE.md                    <span class="comment"># Active workflow + Silver Bullet rules</span>
+CLAUDE.md / AGENTS.md        <span class="comment"># Active workflow + Silver Bullet rules</span>
 .silver-bullet.json          <span class="comment"># Project config (semantic compression, etc.)</span>
 .github/workflows/ci.yml     <span class="comment"># CI pipeline (auto-generated if absent)</span>
 
@@ -584,7 +584,7 @@ docs/
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="book-open"></i></div>
           <h4>CONTEXT Reviewer</h4>
-          <p>6 QC checks: decisions present, gray areas resolved, decision specificity, no contradictions, deferred ideas separation, Claude&rsquo;s Discretion context.</p>
+          <p>6 QC checks: decisions present, gray areas resolved, decision specificity, no contradictions, deferred ideas separation, runtime discretion context.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="search"></i></div>
@@ -669,7 +669,7 @@ docs/
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="git-branch"></i></div>
           <h4><a href="routing-logic.html" style="color:var(--accent-light);text-decoration:none">Routing Logic →</a></h4>
-          <p>Complexity triage decision tree, full 7-workflow routing table, §2g bare instruction interception, and ship disambiguation.</p>
+          <p>Complexity triage decision tree, full routing table, §2g bare instruction interception, and ship disambiguation.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="filter"></i></div>
@@ -681,17 +681,17 @@ docs/
       <div class="divider"></div>
 
       <h2 id="cost-optimization">Automatic Cost Optimization</h2>
-      <p>Silver Bullet automatically routes each GSD subagent to the right model tier based on what that agent does — Opus for design and review, Sonnet for execution and research, Haiku for structured output. No manual model switching required. The active profile is set in <code>.planning/config.json</code> and applied to all 24 agent types at spawn time.</p>
+      <p>Silver Bullet automatically routes each GSD subagent to the right model tier based on what that agent does. The tier labels are shared across hosts; Claude maps them to Sonnet/Opus/Haiku, while Codex maps them to GPT-5.2-low through GPT-5.5-xhigh. No manual model switching required. The active profile is set in <code>.planning/config.json</code> and applied to all 24 agent types at spawn time.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="cpu"></i></div>
           <h4><a href="cost-optimization.html" style="color:var(--accent-light);text-decoration:none">Automatic Cost Optimization →</a></h4>
-          <p>How model routing works, the full 24-agent tier table, model profiles, per-agent overrides, and project setup.</p>
+          <p>How host-aware model routing works, the full 24-agent tier table, model profiles, per-agent overrides, and project setup.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
           <h4>Three Tiers</h4>
-          <p>Opus where judgment changes the outcome (planning, review, verification). Sonnet for execution and research. Haiku for structured extraction — codebase mapping, profiling, intel files.</p>
+          <p>High tier where judgment changes the outcome (planning, review, verification). Execution tier for execution and research. Structured-output tier for codebase mapping, profiling, and intel files.</p>
         </div>
       </div>
 
@@ -732,12 +732,12 @@ docs/
       <div class="divider"></div>
 
       <h2 id="session-startup">Session Startup</h2>
-      <p>At the start of every new session, Silver Bullet automatically performs five steps: switch to Opus 4.6 (1M context), read all project docs, compact the context, switch back to the original model, and check for updates to Silver Bullet, GSD, plugins, and MultAI. This is the §0 startup sequence.</p>
+      <p>At the start of every new session, Silver Bullet automatically performs five steps: switch to the host execution model, read all project docs, compact the context, switch back to the original model, and check for updates to Silver Bullet, GSD, plugins, and MultAI. This is the §0 startup sequence.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="play-circle"></i></div>
           <h4><a href="session-startup.html" style="color:var(--accent-light);text-decoration:none">Session Startup →</a></h4>
-          <p>The full §0 5-step automatic initialization sequence: model switching, doc loading, context compaction, and version checks for all four components.</p>
+          <p>The full §0 5-step automatic initialization sequence: host model switching, doc loading, context compaction, and version checks for all four components.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="refresh-cw"></i></div>

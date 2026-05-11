@@ -182,6 +182,7 @@ except Exception:
     sys.exit(0)
 
 path_pattern = re.compile(re.escape(cache_root) + r"/[^/\"]+")
+sb_hook_pattern = re.compile(r"/silver-bullet/[^/]+/hooks/")
 
 def rewrite(value):
     if isinstance(value, str):
@@ -195,7 +196,18 @@ def rewrite(value):
             if new_item is None:
                 continue
             if key == "hooks" and isinstance(new_item, list):
-                new_item = [hook for hook in new_item if hook is not None]
+                filtered_hooks = []
+                for hook in new_item:
+                    if hook is None:
+                        continue
+                    if isinstance(hook, dict):
+                        command = hook.get("command", "")
+                        if "${CLAUDE_PLUGIN_ROOT}/hooks/" in command:
+                            continue
+                        if sb_hook_pattern.search(command) and stable_install_path not in command:
+                            continue
+                    filtered_hooks.append(hook)
+                new_item = filtered_hooks
                 if not new_item:
                     continue
             rewritten[key] = new_item

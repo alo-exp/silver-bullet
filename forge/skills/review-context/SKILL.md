@@ -1,6 +1,6 @@
 ---
 name: review-context
-description: This skill should be used for CONTEXT.md artifact reviewer — validates that all discussion points are resolved (locked decision or Claude's Discretion), decisions are specific (not vague), and no contradictions exist between decisions
+description: This skill should be used for CONTEXT.md artifact reviewer — validates that all discussion points are resolved (locked decision or Agent's Discretion), decisions are specific (not vague), and no contradictions exist between decisions
 argument-hint: "<context-path>"
 user-invocable: false
 version: 0.1.0
@@ -44,17 +44,17 @@ Read the artifact at `artifact_path` completely before evaluating any criterion.
 
 The artifact MUST contain a `## Decisions` (or `# Decisions`) section with at least one decision entry. A section that exists but contains only whitespace or placeholder text fails this check.
 
-**If missing or empty:** Emit ISSUE finding `CTX-F01` with suggestion = "Add a `## Decisions` section listing at least one resolved decision or marking items as Claude's Discretion."
+**If missing or empty:** Emit ISSUE finding `CTX-F01` with suggestion = "Add a `## Decisions` section listing at least one resolved decision or marking items as Agent's Discretion."
 
 ### QC-2: Every Gray Area Has a Resolution
 
 Every discussion point, open question, or gray area noted in the CONTEXT.md MUST have a resolution. A resolution is either:
 - A **locked decision** — a specific concrete choice has been made and documented
-- **Claude's Discretion** — explicitly marked as delegated to Claude
+- **Agent's Discretion** — explicitly marked as delegated to the host agent
 
 A gray area is unresolved if it is listed without any resolution or still phrased as a question with no answer below it.
 
-**If any unresolved gray area found:** Emit ISSUE finding `CTX-F02` (increment suffix for each instance) with location = the unresolved item, suggestion = "Resolve this point — either record the concrete decision made or mark it as `Claude's Discretion: [context for Claude to decide]`."
+**If any unresolved gray area found:** Emit ISSUE finding `CTX-F02` (increment suffix for each instance) with location = the unresolved item, suggestion = "Resolve this point — either record the concrete decision made or mark it as `Agent's Discretion: [context for the host agent to decide]`."
 
 ### QC-3: Decision Specificity — No Vague Decisions
 
@@ -81,11 +81,11 @@ If a `## Deferred Ideas` (or equivalent) section is present, no item from that s
 
 **If a deferred idea appears as an active decision:** Emit ISSUE finding `CTX-F30` with location = the duplicated item, suggestion = "Remove this item from `## Decisions` (it is already deferred) or move it out of Deferred Ideas and record the actual resolution."
 
-### QC-6: Claude's Discretion Items Have Sufficient Context
+### QC-6: Agent's Discretion Items Have Sufficient Context
 
-Any item marked as "Claude's Discretion" MUST include enough context for Claude to make a reasonable, informed choice. A bare "Claude's Discretion" label without description or constraints fails this check.
+Any item marked as "Agent's Discretion" MUST include enough context for the host agent to make a reasonable, informed choice. A bare "Agent's Discretion" label without description or constraints fails this check.
 
-**If any Claude's Discretion item lacks context:** Emit ISSUE finding `CTX-F40` with location = the item, suggestion = "Add context to guide Claude's choice, e.g., constraints, preferences, or the options being considered."
+**If any Agent's Discretion item lacks context:** Emit ISSUE finding `CTX-F40` with location = the item, suggestion = "Add context to guide the host agent's choice, e.g., constraints, preferences, or the options being considered."
 
 ## Output Contract
 
