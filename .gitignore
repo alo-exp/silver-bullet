@@ -45,3 +45,6 @@ plugins/silver-bullet/.generated-skills/
 # never committed. The .archive/ subdir keeps completed workflow files for
 # postmortem reference and is also gitignored.
 .planning/workflows/
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
