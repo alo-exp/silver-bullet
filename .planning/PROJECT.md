@@ -80,7 +80,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.32.5 Open Issue Burn-down
+## Current Milestone: v0.33.1 Open Issue Burn-down
 
 **Goal:** Reduce the current 22 open GitHub issues to zero by fixing the Silver Bullet init/docs/hooks gaps, reconciling already-implemented backlog items, and closing the todo-app duplicate cluster once the fixture work lands.
 
@@ -91,7 +91,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Enforcement-hook ergonomics that allow read-only inspection while still blocking modification attempts
 - Backlog reconciliation for already-implemented items, plus the todo-app clear-completed cleanup and duplicate collapse path
 
-**Status:** active planning; repo version is v0.32.4 and this milestone targets the next patch release line.
+**Status:** active planning; repo version is v0.33.0 and this milestone targets the next patch release line.
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -124,7 +124,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.32.4
+- Current version: v0.33.0
 - Open issues in scope: 22 total, clustered into Silver Bullet init/runtime fixes, docs/hook gaps, and the todo-app clear-completed backlog
 - A sibling `test-todo-app` checkout exists and is used by the live clear-completed scenario
 
@@ -169,4 +169,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — v0.32.4 release line in progress; v0.32.5 Open Issue Burn-down started*
+*Last updated: 2026-05-13 — v0.33.0 release line shipped; v0.33.1 Open Issue Burn-down started*

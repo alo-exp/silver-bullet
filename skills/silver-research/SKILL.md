@@ -1,7 +1,7 @@
 ---
 name: silver-research
 description: >
-  This skill should be used for SB-orchestrated research workflow: explore → MultAI (landscape | tech-selection | competitive) → brainstorm → hand off to silver:feature or silver:devops
+  This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver:feature or silver:devops
 argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
@@ -18,9 +18,9 @@ Never does research directly — orchestrates MultAI research tools and then han
 
 Before any local research write-up or handoff, the execution trace must show the dependency chain for this workflow. At minimum:
 
-1. Invoke `silver:explore`
+1. Invoke `silver:clarify`
 2. Run the relevant MultAI research path
-3. Invoke `silver:brainstorm`
+3. Invoke `silver:clarify`
 4. Handoff to `silver:feature` or `silver:devops` only after the research artifact exists
 
 If any required downstream skill or MultAI path cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or ad hoc local reasoning.
@@ -144,9 +144,9 @@ When the user requests skipping any step:
 
 ## Step 1: Clarify Research Question
 
-Invoke `silver:explore` (gsd-explore) via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
+Invoke `silver:clarify` via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
 
-After silver:explore completes, the research question should be specific enough to select a path.
+After silver:clarify completes, the research question should be specific enough to select a path.
 
 ## Step 2: Choose Research Path
 
@@ -158,7 +158,7 @@ Ask:
 > B. Tech selection — "Should we use X or Y?", "Which library/framework/approach is best for our case?", "Compare X vs Y"
 > C. Competitive/product intelligence — "How do competitors solve X?", "What does product Y do that we should learn from?"
 
-Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver:explore output, skip this question and proceed directly.
+Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver:clarify output, skip this question and proceed directly.
 
 ## Path 2a: Market/Landscape Research
 
@@ -214,7 +214,7 @@ The artifact file path will be referenced in the handoff to the receiving workfl
 
 ## Step 3: Apply Research to Engineering Design
 
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: apply research findings to engineering design — "what do we actually build and how?" Use the research artifact as primary input context for the brainstorm.
+Invoke `silver:clarify` via the Skill tool. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. Use the research artifact as primary input context for the clarification pass.
 
 ## Step 4: Hand Off to Implementation Workflow
 

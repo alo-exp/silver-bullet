@@ -147,3 +147,9 @@ Claude-originated structure instead of rewriting the plugin from scratch.
 The marketplace is a registry of installable Codex packages, not a mirror of every
 plugin’s source tree. The wrapper belongs in the marketplace; the real content belongs
 upstream.
+
+## Related install playbook
+
+For the concrete install and hook hygiene checklist that came out of the Silver Bullet
+Codex cleanup work, see
+[docs/internal/alo-labs-plugin-installation-playbook.md](docs/internal/alo-labs-plugin-installation-playbook.md).

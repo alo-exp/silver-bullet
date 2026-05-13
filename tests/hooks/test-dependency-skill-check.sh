@@ -119,8 +119,8 @@ teardown
 
 # Test 6: Bare dependency skill is blocked when missing
 setup
-out=$(run_hook "product-brainstorming")
-assert_blocks "missing product-brainstorming blocked" "$out"
+out=$(run_hook "clarify")
+assert_blocks "missing clarify blocked" "$out"
 teardown
 
 # Test 7: Non-dependency skill passes through

@@ -2,7 +2,8 @@
 name: tdd
 id: tdd
 title: TDD — Test-Driven Development
-description: Enforces Red-Green-Refactor cycle; the iron law for all implementation work
+description: Internal Silver Bullet enforcement wrapper around superpowers:test-driven-development; enforces Red-Green-Refactor for implementation work
+user-invocable: false
 trigger:
   - "TDD"
   - "test-driven"
@@ -11,7 +12,15 @@ trigger:
   - "failing test"
 ---
 
-# TDD — Test-Driven Development
+# /silver:tdd — Internal TDD Enforcement
+
+This skill is an internal Silver Bullet policy layer. It is not picker-visible and is only used by SB workflows.
+
+Canonical contract: `superpowers:test-driven-development`
+
+Before any implementation work, invoke `superpowers:test-driven-development` via the Skill tool and follow its red-green-refactor cycle exactly. Then apply the Silver Bullet-specific rules below.
+
+Activation point: SB workflows invoke this hidden gate immediately before `gsd-execute-phase --tdd` or an equivalent execution boundary for implementation work.
 
 ## The Iron Law
 ```

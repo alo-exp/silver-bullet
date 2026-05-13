@@ -9,7 +9,7 @@ trap 'exit 0' ERR
 # Once a silver:feature / silver:ui / silver:research composition is active,
 # this hook blocks implementation edits until the downstream dependency chain
 # has actually been recorded in the Silver Bullet state file. That prevents the
-# model from "pretending" the GSD / brainstorming / research steps happened and
+# model from "pretending" the GSD / clarification / research steps happened and
 # then jumping straight to local edits.
 
 umask 0077
@@ -87,7 +87,7 @@ case "$composer_slug" in
     required_markers=(gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-execute-phase gsd-ui-review gsd-verify-work)
     ;;
   silver-research)
-    required_markers=(gsd-explore brainstorming)
+    required_markers=(silver-clarify)
     ;;
   *)
     exit 0

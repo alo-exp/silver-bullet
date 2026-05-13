@@ -55,8 +55,34 @@ assert_contains "Silver init skill uses silver prefix" "name: silver:init" "$PAC
 assert_contains "Silver ensure-docs skill uses silver prefix" "name: silver:ensure-docs" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"
 assert_contains "Silver feature skill uses silver prefix" "name: silver:feature" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Silver handoff skill uses silver prefix" "name: silver:handoff" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
+assert_contains "Silver feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
+assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD gate" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
+assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-ui/SKILL.md"
+assert_contains "Silver bugfix skill uses Superpowers TDD directly" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
+assert_contains "Silver bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
+assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
+assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"
+
+LEGACY_GSD_WRAPPERS=(
+  gsd-brainstorm
+  gsd-discuss
+  gsd-execute
+  gsd-intel
+  gsd-plan
+  gsd-progress
+  gsd-review
+  gsd-review-fix
+  gsd-secure
+  gsd-ship
+  gsd-validate
+  gsd-verify
+)
+
+for skill in "${LEGACY_GSD_WRAPPERS[@]}"; do
+  assert_path_absent "Legacy GSD wrapper excluded from SB bundle: $skill" "$PACKAGE_ROOT/.generated-skills/$skill"
+done
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

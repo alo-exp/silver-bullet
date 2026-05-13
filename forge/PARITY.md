@@ -110,7 +110,7 @@ Each major SB workflow runs end-to-end on Forge with the same artifact outputs:
 
 | Workflow | Skills + agents involved | Output artifacts (parity-checked in Phase 69) |
 |---|---|---|
-| `silver-feature` | brainstorming, silver-spec, silver-quality-gates, gsd-planner, gsd-executor, gsd-code-reviewer, gsd-verifier, finishing-a-development-branch | CONTEXT.md, RESEARCH.md, PLAN.md, REVIEW.md, VERIFICATION.md, SECURITY.md, SUMMARY.md |
+| `silver-feature` | silver-clarify, silver-spec, silver-quality-gates, gsd-planner, gsd-executor, gsd-code-reviewer, gsd-verifier, finishing-a-development-branch | CONTEXT.md, RESEARCH.md, PLAN.md, REVIEW.md, VERIFICATION.md, SECURITY.md, SUMMARY.md |
 | `silver-bugfix` | systematic-debugging, gsd-debugger, gsd-planner, gsd-executor, gsd-verifier | DEBUG.md, PLAN.md, VERIFICATION.md, SUMMARY.md |
 | `silver-ui` | silver-feature path + gsd-ui-researcher, gsd-ui-checker, gsd-ui-auditor | UI-SPEC.md, UI-REVIEW.md + standard artifacts |
 | `silver-devops` | silver-blast-radius, devops-quality-gates, devops-skill-router, gsd-planner, gsd-executor | BLAST-RADIUS.md, IAC-REVIEW.md + standard artifacts |

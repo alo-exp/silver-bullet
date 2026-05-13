@@ -14,7 +14,11 @@ if [[ -z "$target_dir" && -n "${GSD_TOOLS_PATH:-}" ]]; then
   target_dir="$(dirname "$GSD_TOOLS_PATH")"
 fi
 if [[ -z "$target_dir" ]]; then
-  target_dir="${HOME}/.claude/get-shit-done/bin"
+  if [[ -n "${GSD_HOME:-}" ]]; then
+    target_dir="${GSD_HOME%/}/bin"
+  else
+    target_dir="${HOME}/.codex/get-shit-done/bin"
+  fi
 fi
 
 mkdir -p "$target_dir"

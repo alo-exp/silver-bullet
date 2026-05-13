@@ -18,6 +18,7 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Doc Scheme Contract | `docs/doc-scheme.json` | Hook-enforced docs contract (`required_docs`, sections, granularity, mappings, archive moves) |
 | PRD Overview | `docs/PRD-Overview.md` | Product vision, requirement areas |
 | Doc Scheme | `docs/doc-scheme.md` | Canonical docs-governance policy and live contract companion |
+| Alo Labs Plugin Install Playbook | `docs/internal/alo-labs-plugin-installation-playbook.md` | Cross-host install, hook, and cache hygiene rules for Alo Labs plugins |
 | Legacy Scheme Wrappers | `docs/documentation-scheme.md`, `docs/project-documentation-scheme.md` | Compatibility pointers for older links |
 | Active Workflow | `docs/workflows/full-dev-cycle.md` | Dev cycle steps |
 | Specs (archive) | `docs/specs/` | Point-in-time design specs |

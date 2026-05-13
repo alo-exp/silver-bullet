@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:feature — Feature Development Workflow — Silver Bullet Help</title>
-<meta name="description" content="Full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → quality-gates → GSD plan/execute/verify → ship.">
+<meta name="description" content="Full SB-orchestrated feature development workflow: intel → clarify → quality-gates → GSD plan/execute/verify → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -144,7 +144,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>FLOW 0 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
         <li><strong>FLOW 1 (ORIENT)</strong> — codebase intel, brownfield scan</li>
         <li><strong>FLOW 2 (EXPLORE)</strong> — scope clarification when intent is fuzzy</li>
-        <li><strong>FLOW 3 (IDEATE)</strong> — brainstorm, architecture decision, system design</li>
+        <li><strong>FLOW 3 (DECIDE)</strong> — clarify, architecture decision, system design</li>
         <li><strong>FLOW 4 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
         <li><strong>FLOW 5 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
         <li><strong>FLOW 7 (EXECUTE)</strong> — wave-based execution with atomic commits</li>
@@ -196,7 +196,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>Fuzzy</td>
             <td>Vague intent, unclear scope, empty arguments</td>
-            <td>Proceed to Step 1b (<code>silver:explore</code>) first, then re-classify</td>
+            <td>Proceed to Step 1b (<code>silver:clarify</code>) first, then re-classify</td>
           </tr>
           <tr>
             <td>Simple</td>
@@ -206,7 +206,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>Complex</td>
             <td>Multi-phase, cross-cutting, significant architecture impact</td>
-            <td>Full workflow including Step 1b (silver:explore + brainstorm)</td>
+            <td>Full workflow including Step 1b (silver:clarify)</td>
           </tr>
         </tbody>
       </table>
@@ -225,16 +225,9 @@ footer a:hover{color:var(--accent-light)}
       <p>Invoke <code>silver:intel</code> (gsd-intel) to orient planning in the codebase. If no intel files exist and this is a brownfield project, also invoke <code>silver:scan</code> (gsd-scan) for rapid structure assessment.</p>
 
       <h3>Step 1b — Fuzzy scope clarification (conditional)</h3>
-      <p>Only if complexity triage found fuzzy intent or arguments are empty: invoke <code>silver:explore</code> (gsd-explore) for Socratic clarification before structured brainstorming.</p>
+      <p>Only if complexity triage found fuzzy intent or arguments are empty: invoke <code>silver:clarify</code> via the Skill tool for Socratic framing, option comparison, and decision-ready handoff before structured planning.</p>
 
-      <h3>Step 1c — Brainstorm</h3>
-      <p>Run both brainstorm tools in sequence:</p>
-      <ul>
-        <li><strong>product-brainstorming</strong> — PM lens: problem definition, user value, personas, success metrics, scope boundaries</li>
-        <li><strong>silver:brainstorm</strong> (superpowers:brainstorming) — engineering lens: architecture, approaches, spec, design doc, spec-review loop</li>
-      </ul>
-
-      <h3>Step 1d — MultAI pre-spec review (conditional)</h3>
+      <h3>Step 1b — MultAI pre-spec review (conditional)</h3>
       <p>Offered automatically when the change is architecturally significant (choosing between 2+ architectures, selecting a tech stack from scratch, domain is novel, change affects public API or data model). SB asks:</p>
       <div class="code-block">This appears to be an architecturally significant change. Would you like 7-AI perspectives on the architecture/approach before locking the spec?
 
@@ -261,10 +254,7 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>gsd-plan-phase</code>. Produces <code>PLAN.md</code> with verification loop.</p>
 
       <h3>Step 7 — Execute phase</h3>
-      <p>In Interactive mode (default): invoke <code>gsd-execute-phase</code>. In Autonomous mode (§10e): invoke <code>gsd-autonomous</code>. If execution fails mid-wave, do not mark the phase complete — route to <code>silver:bugfix</code> for triage, then return here after root cause is resolved.</p>
-
-      <h3>Step 7a — TDD gate (implementation plans only)</h3>
-      <p>Only for plans modifying source files with business logic or application code. Config-only, docs-only, or infra-only plans skip this step. Invoke <code>silver:tdd</code> (superpowers:test-driven-development). Red-green-refactor discipline per implementation task.</p>
+      <p>In Interactive mode (default): invoke <code>gsd-execute-phase --tdd</code> for implementation plans, or <code>gsd-execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd-autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>silver:tdd</code> gate can run before execution. The internal <code>silver:tdd</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution wave starts.</p>
 
       <h3>Step 8 — Verify work</h3>
       <p>Invoke <code>gsd-verify-work</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
@@ -319,7 +309,7 @@ B. No — proceed with spec as-is</div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:feature Add dark mode toggle to the settings panel</div>
-      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips silver:explore, proceeds to intel → product-brainstorm → silver:brainstorm → quality-gates → discuss → plan → execute → TDD → review → verify → ship.</p>
+      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips silver:clarify, proceeds to intel → clarify → quality-gates → discuss → plan → execute → TDD → review → verify → ship.</p>
 
       <div class="divider"></div>
 

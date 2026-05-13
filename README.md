@@ -267,7 +267,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.32.4",
+  "version": "0.33.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",

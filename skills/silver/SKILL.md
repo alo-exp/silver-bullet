@@ -28,20 +28,20 @@ Wait for response, then proceed.
 | Classification | Signals | Action |
 |----------------|---------|--------|
 | Trivial | Typo, config, rename, ≤3 files | Route to `silver:fast` (gsd-fast) — bypass workflow. Note: §10 routing preferences are NOT applied; silver:fast skips preference loading by design. |
-| Simple | Clear scope, ≤1 phase | Route to workflow, skip silver:explore |
-| Complex | Multi-phase, cross-cutting | Full workflow including silver:explore + brainstorm |
-| Fuzzy | Vague intent, unclear scope | Route to `silver:explore` first, then re-classify |
+| Simple | Clear scope, ≤1 phase | Route to workflow, skip silver:clarify |
+| Complex | Multi-phase, cross-cutting | Full workflow including silver:clarify |
+| Fuzzy | Vague intent, unclear scope | Route to `silver:clarify` first, then re-classify |
 
 **Full routing table (first match wins after complexity triage):**
 
 | User intent signals | Route to | Notes |
 |---------------------|----------|-------|
-| "what if", "I'm thinking about", "not sure how to", "help me think" | `silver:explore` (gsd-explore) | Fuzzy — clarify first |
+| "what if", "I'm thinking about", "not sure how to", "help me think" | `silver:clarify` | Fuzzy — clarify first |
 | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | `silver:feature` | Core dev path |
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
-| "I want to build", "I have an idea", "here's my concept", multi-sentence idea description with no SPEC.md | `silver:brainstorm-idea` | Idea-to-milestone orchestration |
+| "I want to build", "I have an idea", "here's my concept", multi-sentence idea description with no SPEC.md | `silver:clarify` | Idea/requirement clarification and handoff |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | AI-guided spec elicitation |
 | "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:research` | Tech decisions, architecture choices |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only — see disambiguation below |
@@ -87,7 +87,7 @@ composition internally.
 | `silver:spec` + `silver:feature` | `silver:spec` first | Spec before implementation |
 | `silver:fast` + domain workflow | Check scope: if truly ≤3 files → `silver:fast`; if domain signals strong → domain workflow; if ambiguous → ask user "A. Treat as trivial  B. Route to [domain]" |
 
-**MultAI auto-offer:** Proactively offer MultAI research before brainstorming when:
+**MultAI auto-offer:** Proactively offer MultAI research before `silver:clarify` when:
 - Choosing between 2+ architectures
 - Selecting a technology stack from scratch
 - Domain is novel (no prior intel in .planning/)
@@ -99,16 +99,17 @@ If input matches two or more destinations with similar confidence, use AskUserQu
 
 > I'm not sure which workflow to use. Which of these best matches what you want to do?
 >
-> A. `silver:feature` — build or extend a feature
-> B. `silver:bugfix` — fix something that's broken
-> C. `silver:ui` — UI, frontend, or design work
-> D. `silver:devops` — infrastructure, CI/CD, or deployment
-> E. `silver:research` — technology decision or spike
-> F. `silver:release` — publish a milestone release
-> G. `silver:fast` — trivial one-liner or config change
-> H. `silver:ingest` — ingest JIRA, Figma, Google Docs, or fetch cross-repo spec
-> I. `silver:handoff` — generate a project-level resume prompt for next session
-> J. Something else — describe it
+> A. `silver:clarify` — shape an idea or requirement into a decision-ready brief
+> B. `silver:feature` — build or extend a feature
+> C. `silver:bugfix` — fix something that's broken
+> D. `silver:ui` — UI, frontend, or design work
+> E. `silver:devops` — infrastructure, CI/CD, or deployment
+> F. `silver:research` — technology decision or spike
+> G. `silver:release` — publish a milestone release
+> H. `silver:fast` — trivial one-liner or config change
+> I. `silver:ingest` — ingest JIRA, Figma, Google Docs, or fetch cross-repo spec
+> J. `silver:handoff` — generate a project-level resume prompt for next session
+> K. Something else — describe it
 >
 > (Enter the letter)
 
@@ -138,7 +139,7 @@ Reason:     {one sentence explaining the match}
 
 ### Routing Priority
 
-1. Complexity triage (trivial → silver:fast; fuzzy → silver:explore)
+1. Complexity triage (trivial → silver:fast; fuzzy → silver:clarify)
 2. "Ship" disambiguation (phase-level vs milestone-level)
 3. Multi-signal conflict resolution table
 4. SB workflow routing table (specific domain matches)

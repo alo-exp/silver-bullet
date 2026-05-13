@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:research — Research &amp; Tech Decision Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated research workflow: clarify question → MultAI research (landscape | tech-selection | competitive) → brainstorm → hand off to feature or devops.">
+<meta name="description" content="SB-orchestrated research workflow: clarify question → MultAI research (landscape | tech-selection | competitive) → clarify → hand off to feature or devops.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -162,7 +162,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
       <h3>Step 1 — Clarify research question</h3>
-      <p>Invoke <code>silver:explore</code> (gsd-explore). Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.</p>
+      <p>Invoke <code>silver:clarify</code> via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.</p>
 
       <h3>Step 2 — Choose research path</h3>
       <p>SB asks which type of research question this is (or infers from context):</p>
@@ -186,7 +186,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>multai:solution-researcher</code> (7-AI competitive intelligence report — how others solve the problem, what gaps exist). Output written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
 
       <h3>Step 3 — Apply research to engineering design</h3>
-      <p>Invoke <code>silver:brainstorm</code> (superpowers:brainstorming). Purpose: apply research findings to engineering design — "what do we actually build and how?" The research artifact serves as primary input context for the brainstorm.</p>
+      <p>Invoke <code>silver:clarify</code> via the Skill tool. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. The research artifact serves as primary input context for the clarification pass.</p>
 
       <div class="divider"></div>
 
@@ -203,7 +203,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:research Should we use React Query or SWR for server state management?</div>
-      <p>Silver Bullet routes to research. silver:explore clarifies the question. Path 2b is selected (tech selection). multai:orchestrator provides 7-AI perspectives, multai:comparator produces weighted matrix, multai:consolidator produces recommendation. silver:brainstorm synthesizes into engineering design. Handoff to silver:feature.</p>
+      <p>Silver Bullet routes to research. silver:clarify clarifies the question. Path 2b is selected (tech selection). multai:orchestrator provides 7-AI perspectives, multai:comparator produces weighted matrix, multai:consolidator produces recommendation. silver:clarify synthesizes into a decision-ready handoff. Handoff to silver:feature.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

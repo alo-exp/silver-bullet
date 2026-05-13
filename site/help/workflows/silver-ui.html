@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:ui — UI/UX Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → gsd-ui-phase (design contract) → execute + TDD → gsd-ui-review → accessibility → ship.">
+<meta name="description" content="SB-orchestrated UI/frontend workflow: intel → clarify → gsd-ui-phase (design contract) → execute + TDD → gsd-ui-review → accessibility → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -180,15 +180,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>silver:intel</code> (gsd-intel) to understand existing UI patterns and component hierarchy. If brownfield project, also invoke <code>silver:scan</code> (gsd-scan) for rapid structure assessment.</p>
 
       <h3>Step 1a — Fuzzy clarification (conditional)</h3>
-      <p>Only if intent is fuzzy or arguments are empty: invoke <code>silver:explore</code> (gsd-explore) for Socratic clarification of UI intent.</p>
+      <p>Only if intent is fuzzy or arguments are empty: invoke <code>silver:clarify</code> via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.</p>
 
-      <h3>Step 1b — Product brainstorming</h3>
-      <p>Invoke <code>/product-brainstorming</code>. Purpose: user flows, personas, success criteria, and scope for the UI feature.</p>
-
-      <h3>Step 1c — Engineering brainstorm</h3>
-      <p>Invoke <code>silver:brainstorm</code> (superpowers:brainstorming). Purpose: UI architecture, component hierarchy, interaction design, spec.</p>
-
-      <h3>Step 1d — MultAI UI perspectives (conditional)</h3>
+      <h3>Step 1b — MultAI UI perspectives (conditional)</h3>
       <p>Only for major UI systems (design system, cross-cutting UI architecture, or user request). SB offers multi-AI UX pattern perspectives via <code>silver:multai</code> (multai:orchestrator).</p>
 
       <h3>Step 2 — Testing strategy</h3>
@@ -210,8 +204,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>gsd-plan-phase</code>. Implementation <code>PLAN.md</code> built on top of <code>UI-SPEC.md</code> contract.</p>
 
       <h3>Step 7 — Execute phase and TDD</h3>
-      <p>Execute: invoke <code>gsd-execute-phase</code> (Interactive) or <code>gsd-autonomous</code> (Autonomous §10e).</p>
-      <p>TDD for component logic: invoke <code>silver:tdd</code> (superpowers:test-driven-development) for testable component units (logic, state, interactions). <em>Skip for pure layout/styling tasks.</em></p>
+      <p>Execute: invoke <code>gsd-execute-phase --tdd</code> for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke <code>gsd-execute-phase</code> without <code>--tdd</code>. In Autonomous mode (§10e): invoke <code>gsd-autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>silver:tdd</code> gate can run before execution. The internal <code>silver:tdd</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution boundary starts.</p>
 
       <h3>Step 8 — Code review</h3>
       <p>Run review sequence in order: <code>silver:request-review</code> → <code>gsd-review</code> → [if issues: <code>gsd-review-fix</code>] → [for major UI systems: <code>gsd-review --all</code>] → <code>silver:receive-review</code>.</p>
@@ -264,7 +257,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
-      <p>Silver Bullet routes to the UI workflow. After intel and brainstorm, gsd-ui-phase creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. gsd-ui-review audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
+      <p>Silver Bullet routes to the UI workflow. After intel and clarify, gsd-ui-phase creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. gsd-ui-review audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

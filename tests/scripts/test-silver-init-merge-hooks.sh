@@ -74,7 +74,7 @@ cat > "$HOME_DIR/.claude/settings.json" <<EOF
           },
           {
             "type": "command",
-            "command": "\"${HOME_DIR}/.Codex/plugins/cache/alo-labs-codex-local/silver-bullet/current/hooks/session-start\"",
+            "command": "\"${HOME_DIR}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/hooks/session-start\"",
             "timeout": 15,
             "async": false
           },
@@ -99,7 +99,7 @@ assert_symlink "stable alias created for versioned SB install" "$STABLE_ALIAS"
 assert_file_exists "stable alias exposes hook surface" "$STABLE_ALIAS/hooks/session-start"
 assert_contains "settings rewritten to stable alias" "$STABLE_ALIAS/hooks/session-start" "$HOME_DIR/.claude/settings.json"
 assert_not_contains "old versioned hook path removed" "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.31.0/hooks/session-start" "$HOME_DIR/.claude/settings.json"
-assert_not_contains "Codex-root hook path removed" "$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/silver-bullet/current/hooks/session-start" "$HOME_DIR/.claude/settings.json"
+assert_not_contains "Codex-root hook path removed" "$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/hooks/session-start" "$HOME_DIR/.claude/settings.json"
 assert_not_contains "Placeholder hook path removed" "\${CLAUDE_PLUGIN_ROOT}/hooks/session-start" "$HOME_DIR/.claude/settings.json"
 assert_contains "new session-start hook registered" "$STABLE_ALIAS/hooks/spec-session-record.sh" "$HOME_DIR/.claude/settings.json"
 assert_contains "new prompt hook registered" "$STABLE_ALIAS/hooks/prompt-reminder.sh" "$HOME_DIR/.claude/settings.json"

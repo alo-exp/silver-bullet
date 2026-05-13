@@ -223,7 +223,7 @@ If B: continue without stopping.
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
-and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.Codex/plugins/cache/*/product-management/skills/`
+and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.codex/plugins/cache/*/product-management/skills/`
 
 If no directory found in any supported cache root, use AskUserQuestion:
 - Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"

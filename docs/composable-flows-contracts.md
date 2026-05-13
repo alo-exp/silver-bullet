@@ -48,28 +48,28 @@ Every flow contract contains these 7 required fields:
 
 ---
 
-### FLOW EXPLORE
+### FLOW CLARIFY
 
 | Field | Value |
 |-------|-------|
 | **Prerequisites** | FLOW 1 completed |
 | **Trigger** | Fuzzy intent, unclear scope, user uncertainty, OR always for complex work |
-| **Steps** | 1. gsd-explore (Always) · 2. product-management:product-brainstorming (Always) · 3. design:user-research (As-needed — user-facing work) · 4. product-management:synthesize-research (As-needed — prior research exists) · 5. product-management:competitive-brief (As-needed — competitive landscape relevant) |
-| **Produces** | Scope summary, problem space documentation |
+| **Steps** | 1. silver:clarify (Always) · 2. design:user-research (As-needed — user-facing work) · 3. product-management:synthesize-research (As-needed — prior research exists) · 4. product-management:competitive-brief (As-needed — competitive landscape relevant) |
+| **Produces** | Scope summary, problem space documentation, decision-ready brief |
 | **Review Cycle** | None |
 | **GSD Impact** | None |
 | **Exit Condition** | Problem space clarified, scope boundaries established |
 
 ---
 
-### FLOW IDEATE
+### FLOW DECIDE
 
 | Field | Value |
 |-------|-------|
 | **Prerequisites** | FLOW 2 completed |
 | **Trigger** | Always for complex work; skipped for simple/clear-scope |
-| **Steps** | 1. superpowers:brainstorming (Always) · 2. engineering:architecture (As-needed — new service, cross-cutting concern, ADR-worthy) · 3. engineering:system-design (As-needed — new service boundary, major component) · 4. design:design-system (As-needed — UI phase, new component type) |
-| **Produces** | ADR, design-system tokens, system-design diagram, or brainstorming spec doc |
+| **Steps** | 1. silver:clarify (Always) · 2. engineering:architecture (As-needed — new service, cross-cutting concern, ADR-worthy) · 3. engineering:system-design (As-needed — new service boundary, major component) · 4. design:design-system (As-needed — UI phase, new component type) |
+| **Produces** | ADR, design-system tokens, system-design diagram, or clarified decision brief |
 | **Review Cycle** | None |
 | **GSD Impact** | None |
 | **Exit Condition** | Architectural direction chosen, design approach locked |
@@ -124,7 +124,7 @@ Every flow contract contains these 7 required fields:
 |-------|-------|
 | **Prerequisites** | PLAN.md exists, STATE.md position matches phase |
 | **Trigger** | Always |
-| **Steps** | 1. superpowers:test-driven-development (As-needed — implementation plans only) · 2. gsd-execute-phase OR gsd-autonomous (Always) · 3. context7-plugin:context7-mcp (Ambient — available during execution) |
+| **Steps** | 1. hidden `silver:tdd` gate → `superpowers:test-driven-development` (As-needed — implementation plans only) · 2. gsd-execute-phase OR gsd-autonomous (Always) · 3. context7-plugin:context7-mcp (Ambient — available during execution) |
 | **Produces** | SUMMARY.md (per plan), code changes |
 | **Review Cycle** | On failure: Insert FLOW 14 (DEBUG) dynamically |
 | **GSD Impact** | Heavy — reads/writes STATE.md, ROADMAP.md, REQUIREMENTS.md. Advances state position. All 10 GSD assumptions apply. |

@@ -482,39 +482,39 @@ bootstrap_claude_dependencies() {
 
 codex_config_file() {
   local config_file
-  for config_file in "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml"; do
+  for config_file in "${HOME}/.codex/config.toml" "${HOME}/.codex/config.toml"; do
     if [[ -f "$config_file" ]]; then
       printf '%s\n' "$config_file"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.Codex/config.toml"
+  printf '%s\n' "${HOME}/.codex/config.toml"
 }
 
 codex_marketplace_root() {
   local marketplace_root
   for marketplace_root in \
-    "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex" \
+    "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex" \
     "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"; do
     if [[ -d "$marketplace_root" ]]; then
       printf '%s\n' "$marketplace_root"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex"
+  printf '%s\n' "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
 }
 
 codex_installed_plugins_file() {
   local registry_file
   for registry_file in \
-    "${HOME}/.Codex/plugins/installed_plugins.json" \
+    "${HOME}/.codex/plugins/installed_plugins.json" \
     "${HOME}/.codex/plugins/installed_plugins.json"; do
     if [[ -f "$registry_file" ]]; then
       printf '%s\n' "$registry_file"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.Codex/plugins/installed_plugins.json"
+  printf '%s\n' "${HOME}/.codex/plugins/installed_plugins.json"
 }
 
 codex_plugin_registered() {
@@ -634,9 +634,8 @@ verify_runtime_dependency_access() {
     assert_file_contains "Codex Silver Bullet marketplace registered" "$config_file" '\[marketplaces\.alo-labs-codex\]'
     assert_file_contains "Codex GSD marketplace registered" "$config_file" '\[marketplaces\.get-shit-done-marketplace\]'
     assert_file_contains "Codex Superpowers marketplace registered" "$config_file" '\[marketplaces\.superpowers-marketplace\]'
-    assert_command_succeeds "Codex Silver Bullet plugin registered for preflight" codex_plugin_registered_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local"
+    assert_command_succeeds "Codex Silver Bullet plugin registered for preflight" codex_plugin_registered "silver-bullet@alo-labs-codex"
     assert_file_contains "Codex Superpowers plugin enabled" "$config_file" '\[plugins\."superpowers@superpowers-marketplace"\]'
-    assert_file_contains "Codex Sidekick plugin enabled" "$config_file" '\[plugins\."sidekick@alo-labs-codex-local"\]'
     assert_file_contains "Codex GSD plugin enabled" "$config_file" '\[plugins\."gsd@get-shit-done-marketplace"\]'
     assert_file_contains "Codex engineering plugin enabled" "$config_file" '\[plugins\."engineering@alo-labs-codex(-local)?"\]'
     assert_file_contains "Codex design plugin enabled" "$config_file" '\[plugins\."design@alo-labs-codex(-local)?"\]'
@@ -650,13 +649,18 @@ verify_runtime_dependency_access() {
     assert_file_exists "Codex Silver Bullet workflow-chain guard synced" "$marketplace_root/plugins/silver-bullet/hooks/workflow-chain-guard.sh"
     assert_file_exists "Codex Silver Bullet template synced" "$marketplace_root/plugins/silver-bullet/templates/silver-bullet.md.base"
     assert_command_succeeds "Codex installed plugin registry exists" test -f "$installed_plugins_file"
-    assert_command_succeeds "Codex Silver Bullet plugin registered" codex_plugin_registered_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local"
-    assert_command_succeeds "Codex Silver Bullet install path exposes package manifest" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex Silver Bullet install path exposes workflow-chain guard" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" "silver-bullet@alo-labs-codex-local" -- "hooks/workflow-chain-guard.sh"
+    assert_command_succeeds "Codex Silver Bullet plugin registered" codex_plugin_registered "silver-bullet@alo-labs-codex"
+    if codex_plugin_registered "silver-bullet@alo-labs-codex-local"; then
+      echo "FAIL: Codex Silver Bullet local alias should not be installed"
+      FAIL=$((FAIL + 1))
+    else
+      echo "PASS: Codex Silver Bullet local alias is absent"
+      PASS=$((PASS + 1))
+    fi
+    assert_command_succeeds "Codex Silver Bullet install path exposes package manifest" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex Silver Bullet install path exposes workflow-chain guard" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- "hooks/workflow-chain-guard.sh"
     assert_command_succeeds "Codex Superpowers plugin registered" codex_plugin_registered_any "superpowers@superpowers-marketplace"
     assert_command_succeeds "Codex Superpowers install path exposes verification skill" codex_plugin_surface_exists_any "superpowers@superpowers-marketplace" -- "skills/verification-before-completion/SKILL.md" "skills/brainstorming/SKILL.md"
-    assert_command_succeeds "Codex Sidekick plugin registered" codex_plugin_registered_any "sidekick@alo-labs-codex-local"
-    assert_command_succeeds "Codex Sidekick install path exposes delegate skill" codex_plugin_surface_exists_any "sidekick@alo-labs-codex-local" -- "skills/codex-delegate/SKILL.md" "skills/forge-delegate/SKILL.md"
     assert_command_succeeds "Codex GSD plugin registered" codex_plugin_registered_any "gsd@get-shit-done-marketplace"
     assert_command_succeeds "Codex GSD install path exposes package manifest" codex_plugin_surface_exists_any "gsd@get-shit-done-marketplace" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex engineering plugin registered" codex_plugin_registered_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local"
