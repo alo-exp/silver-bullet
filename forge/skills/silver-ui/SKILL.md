@@ -1,6 +1,7 @@
 ---
 name: silver-ui
-description: This skill should be used for full SB-orchestrated UI/frontend workflow: intel → clarify → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
+description: >
+  This skill should be used for full SB-orchestrated UI/frontend workflow: orient → clarify/decide → testing strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → verify → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
@@ -17,16 +18,17 @@ Never implements UI directly — orchestrates only.
 
 Before any local UI implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
 
-1. `silver:intel`
-2. `silver:scan` when the project is brownfield
+1. `silver:scan` when rapid SB orientation is useful
+2. `gsd-map-codebase` when the project is brownfield or deeper UI pattern mapping is needed
 3. `silver:clarify`
-4. `silver:quality-gates`
-5. `gsd-discuss-phase`
-6. `gsd-ui-phase`
-7. `gsd-plan-phase`
-8. `gsd-execute-phase` or `gsd-autonomous`
-9. `gsd-ui-review`
-10. `gsd-verify-work`
+4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
+5. `silver:quality-gates`
+6. `gsd:discuss-phase`
+7. `gsd:ui-phase`
+8. `gsd:plan-phase`
+9. `gsd:execute-phase` or `gsd:autonomous`
+10. `gsd:ui-review`
+11. `gsd:verify-work`
 
 If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
 
@@ -51,43 +53,9 @@ UI work: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
 ```
 
-## Multi-Agent Phase Coordination
-
-This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
-
-**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
-
-```
-Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
-```
-
-- On `CLAIMED:` → proceed.
-- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
-- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
-
-**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
-
-```
-Skill(agent="forge-heartbeat-phase", args="<NNN>")
-```
-
-- On `HEARTBEAT-OK:` → continue.
-- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
-
-**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
-
-```
-Skill(agent="forge-release-phase", args="<NNN>")
-```
-
-- On `RELEASED:` → proceed.
-- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
-
-**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
-
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -107,11 +75,11 @@ Check the following artifacts and set skip/include flags:
 ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 5 — PLAN.md exists" || echo "Include FLOW 5"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for UI work. Default full chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP)
 
 Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — this is a UI-focused workflow.
 
@@ -137,35 +105,62 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 ⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
 ```
 
-### 5. Create WORKFLOW.md
+### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the user's original request
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:ui`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed flow chain in the Flow Log section header
+Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
+workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
+`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
+this to verify the active workflow is fully complete before final delivery.
 
-After each path completes, write status to Flow Log table:
+```bash
+# Build a comma-separated flow list from the confirmed composition (use the
+# user-facing FLOW / PATH names so they match what compliance-status surfaces).
+SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:ui "the user's original request" "$SB_FLOWS")
+export SB_WORKFLOW_ID
+echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+
+After each flow / path completes, mark it done:
+
+```bash
+scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
+
+When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
+the workflow:
+
+```bash
+scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+```
+
+`complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
+it from the active set, so the strict final-delivery gate will not match a stale id.
+
+> **Legacy:** the v0.22 single-file `.planning/WORKFLOW.md` mechanism is retired. The
+> per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
+> v0.29.1.
+
+After each path completes, the helper updates the Flow Log row in-place — the helper does
+not edit the file directly.
+
 
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Orient in Codebase
 
-Invoke `silver:intel` (gsd-intel) to understand existing UI patterns and component hierarchy.
+Invoke `silver:scan` via the Skill tool to understand existing UI patterns and component hierarchy.
 
-If brownfield project, also invoke `silver:scan` (gsd-scan) for rapid structure assessment.
+If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` via the Skill tool.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
@@ -182,29 +177,29 @@ Ask:
 > A. Yes — run multai:orchestrator for multi-AI UX review
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator).
+If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
 
 ## Step 2: Testing Strategy
 
-Invoke `/testing-strategy`. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing-plans.
+Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing-plans.
 
 ## Step 2.5: Writing Plans
 
-Invoke `silver:writing-plans` (superpowers:writing-plans). Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
+Invoke `superpowers:writing-plans` via the Skill tool. Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:silver-quality-gates`. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: 9 dimensions with usability + testability emphasis; `silver:security` mandatory.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase`. Purpose: UI phase context → CONTEXT.md with locked decisions.
+Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
 **Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
 
-**Note:** Always active in silver-ui (UI workflow is inherently UI work — no trigger detection needed).
+**Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
 
 **Steps** (all via Skill tool):
 1. `design:design-system` (Always)
@@ -212,19 +207,19 @@ Invoke `gsd-discuss-phase`. Purpose: UI phase context → CONTEXT.md with locked
 3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
 4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
 
-**Iterative:** User can loop steps 1-4. Claude suggests when design contract is solid; user decides exit.
+**Iterative:** User can loop steps 1-4. The helper suggests when design contract is solid; the user decides when to exit.
 
 **Exit Condition:** UI-SPEC.md exists, user accepts design contract.
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase`. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
+Invoke `gsd-plan-phase` via the Skill tool. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
 
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase --tdd` for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
-If mode is Autonomous (§10e): invoke `gsd-autonomous`. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
+If mode is Interactive: invoke `gsd-execute-phase --tdd` via the Skill tool for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
 
 **Internal TDD gate:**
 `silver:tdd` is hidden from the picker and activates immediately before execution for component logic. It delegates to `superpowers:test-driven-development`, so the execute boundary cannot start until the failing-test-first discipline is in place.
@@ -232,17 +227,17 @@ If mode is Autonomous (§10e): invoke `gsd-autonomous`. For implementation plans
 ## Step 8: Code Review
 
 Run review sequence in order:
-1. Invoke `silver:request-review` (superpowers:requesting-code-review).
-2. Invoke `/code-review`. Purpose: establish review criteria before spawning reviewer agents.
-3. Invoke `gsd-code-review`. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant UI systems: invoke `gsd-code-review --all` (cross-AI adversarial review across all available CLIs).
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review).
+1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
+2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
+3. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix` via the Skill tool.
+3. For architecturally significant UI systems: invoke `gsd-review --all` via the Skill tool (cross-AI adversarial review across all available CLIs).
+4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## FLOW UI QUALITY — Post-execution UI audit
 
 **Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
 
-**Note:** Always active in silver-ui (no trigger detection needed).
+**Note:** Always active in silver:ui (no trigger detection needed).
 
 **Steps** (all via Skill tool):
 1. `design:design-critique` (Always)
@@ -257,28 +252,28 @@ Run review sequence in order:
 
 ## Step 10: Frontend Security
 
-Invoke `gsd-secure-phase`. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `silver:security` as the mandatory security gate.
+Invoke `gsd-secure-phase` via the Skill tool. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `silver:security` as the mandatory security gate.
 
 ## Step 11: Verify Work + Test Gap Fill
 
-Invoke `gsd-verify-work`. Non-skippable.
+Invoke `gsd-verify-work` via the Skill tool. Non-skippable.
 
-If coverage gaps remain after verification: invoke `gsd-add-tests`.
+If coverage gaps remain after verification: invoke `gsd-add-tests` via the Skill tool.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase`. Purpose: Nyquist gap filling.
+Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt`. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -290,42 +285,43 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:silver-quality-gates`. Full 9-dimension sweep. Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool. Full 9-dimension sweep. Non-skippable.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
 ```
 
 Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the phase just completed (newest-first). If missing, write it now: one entry summarising what shipped.
-2. **`docs/ARCHITECTURE.md`** — must NOT say "in progress" for completed phases. If stale, update §Current State to reflect completed state.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if architectural patterns, API gotchas, or key decisions were encountered, append them now.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned, append them now.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append task-specific patterns, gotchas, and key decisions.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned.
+4. Update any additional docs changed by the phase (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 
-**Gate:** Do NOT proceed to Step 14 until all four checks pass. Missing doc entries are a pre-ship defect — write them before continuing.
+**Gate:** Do NOT proceed to Step 14 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 14.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 14.
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch).
+Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch`.
-If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
+If A: invoke `gsd-pr-branch` via the Skill tool.
+If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 15: Ship Phase
 
-Invoke `gsd-ship`. Purpose: push branch, create PR, prepare for merge (phase-level).
+Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level).
 
 ## Step 16: Milestone Completion (last phase of milestone only)
 

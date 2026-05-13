@@ -1,7 +1,7 @@
 ---
 name: silver-feature
 description: >
-  This skill should be used for full SB-orchestrated feature development workflow: intel → clarify → silver:quality-gates → GSD plan/execute/verify → ship
+  This skill should be used for full SB-orchestrated feature development workflow: orient → clarify/decide → silver:quality-gates → GSD plan/execute/verify → ship
 argument-hint: "<feature description>"
 version: 0.1.0
 ---
@@ -16,14 +16,15 @@ Never implements features directly — orchestrates only.
 
 Before any local implementation work, the execution trace must show the dependency chain for this workflow. Invoke these downstream skills by their exact trigger syntax in order; plain prose mentions do not count:
 
-1. `$silver:intel`
-2. `$silver:scan` when the project is brownfield
-3. `$silver:clarify`
-4. `$silver:quality-gates`
-5. `$gsd-discuss-phase`
-6. `$gsd-plan-phase`
-7. `$gsd-execute-phase` or `$gsd-autonomous`
-8. `$gsd-verify-work`
+1. `silver:scan` when rapid SB orientation is useful
+2. `gsd-map-codebase` when the project is brownfield or deep codebase mapping is needed
+3. `silver:clarify`
+4. `silver:research` when FLOW DECIDE is needed for architecture, stack, API, or data-model choices
+5. `silver:quality-gates`
+6. `gsd:discuss-phase`
+7. `gsd:plan-phase`
+8. `gsd:execute-phase` or `gsd:autonomous`
+9. `gsd:verify-work`
 
 If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
 
@@ -79,7 +80,7 @@ grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 
 Construct the proposed flow chain from the 18-flow catalog (FLOW 0-17), including only relevant flows based on the context scan. Standard full-feature chain:
 
-FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (INTEL) → FLOW 3 (BRAINSTORM) → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (TDD) → FLOW 10 (REVIEW) → FLOW 11 (VERIFY) → FLOW 12 (SECURE) → FLOW 13 (SHIP)
+FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) [if research/architecture choice needed] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP)
 
 ### 3. Display Proposal
 
@@ -172,13 +173,12 @@ For each remaining phase in the current milestone:
 
 ```
 FOR each phase in remaining_phases:
-  EXECUTE FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+  EXECUTE FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
   INSERT optional flows per composition proposal:
     - FLOW 6 (DESIGN CONTRACT) before FLOW 7 if UI discovered
     - FLOW 8 (UI QUALITY) after FLOW 7 if UI in scope
-    - FLOW 9 (TDD) within FLOW 7 for implementation plans
-    - FLOW 10 (REVIEW) after FLOW 7
-    - FLOW 12 (SECURE) after FLOW 11
+    - Internal TDD gate within FLOW 7 for behavior-changing implementation plans
+    - FLOW 14 (DEBUG) dynamically on execution, CI, test, or verification failure
   TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
     GSD's FLOW 13 (SHIP) handles this as part of phase completion.
     Do NOT use the Edit tool directly — planning-file-guard.sh will block it.
@@ -205,7 +205,7 @@ END FOR
 After completing all flows for a phase, write to WORKFLOW.md Phase Iterations table:
 
 ```
-| Phase {N} | FLOW 5 ✓ → FLOW 7 ✓ → FLOW 11 ✓ → FLOW 13 ✓ |
+| Phase {N} | FLOW 5 ✓ → FLOW 7 ✓ → FLOW 9 ✓ → FLOW 10 ✓ → FLOW 11 ✓ → FLOW 12 ✓ → FLOW 13 ✓ |
 ```
 
 ### 5. Flow Delegation
@@ -246,9 +246,9 @@ If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
 
 ## Step 1a: Codebase Intel
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool to orient planning in the codebase.
+Invoke `silver:scan` via the Skill tool for rapid SB orientation.
 
-If no intel files exist and this is a brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
+If no current codebase intel exists and this is a brownfield project, invoke `gsd-map-codebase` via the Skill tool for deeper GSD-managed mapping.
 
 ## Step 1b: Fuzzy Scope Clarification (conditional)
 
@@ -271,7 +271,7 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. Note: this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both are independent. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
+If A: invoke the installed multi-AI research/orchestration skill if available. Note: this step informs the spec PRE-implementation. Step 9c (`gsd:review --all`) reviews completed code POST-execution. Both are independent. If no multi-AI skill is installed, continue only if the user approves the degraded path.
 
 ## Step 2: Testing Strategy
 
@@ -279,7 +279,7 @@ Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tool
 
 ## Step 2.5: Writing Plans
 
-Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
+Invoke `superpowers:writing-plans` via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
 
 ## Step 2.7: Pre-Build Validation
 

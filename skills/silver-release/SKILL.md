@@ -36,7 +36,7 @@ Release: {$ARGUMENTS or "(version not specified)"}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -54,13 +54,13 @@ ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | g
   || echo "SKIP FLOW 15 — no UI phases in this milestone"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for milestone release. Default chain:
 
-FLOW 12 (QUALITY GATE) → FLOW 15 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE)
+FLOW 12 (QUALITY GATE) → FLOW 15 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE: GSD audit → GSD complete milestone → silver:create-release last)
 
-Short chain — release produces a versioned milestone artifact, not implementation code.
+Short chain — release produces a versioned milestone artifact, not implementation code. GSD owns semver/milestone completion; SB creates the final release artifact only after GSD completion.
 
 ### 3. Display Proposal
 

@@ -26,7 +26,7 @@ check() {
 
 # External skills that are NOT in skills/ directory — from GSD, Superpowers, MultAI, design, etc.
 EXTERNAL_SKILLS=(
-  gsd-intel gsd-scan gsd-explore gsd-discuss-phase gsd-analyze-dependencies
+  gsd-intel gsd-scan gsd-map-codebase gsd-explore gsd-discuss-phase gsd-analyze-dependencies
   gsd-plan-phase gsd-execute-phase gsd-autonomous gsd-verify-work gsd-add-tests
   gsd-code-review gsd-code-review-fix gsd-review gsd-secure-phase gsd-validate-phase
   gsd-ship gsd-pr-branch gsd-complete-milestone gsd-audit-uat gsd-audit-milestone

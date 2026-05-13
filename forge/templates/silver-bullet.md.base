@@ -299,18 +299,20 @@ skill, or SB skill.
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. `WORKFLOW.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
+Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 0-17). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. `WORKFLOW.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
+
+GSD remains the lifecycle authority. SB may route, compose, review, and gate, but semver, milestones, phases, planning, execution, verification, bug fixing, testing, and phase/milestone shipping must flow through GSD-owned skills.
 
 **The eight workflows:**
 
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
 | `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify → gsd-discuss-phase |
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → silver:clarify |
+| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:scan → silver:clarify/decide → GSD plan/execute/verify |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → silver:clarify → gsd-ui-phase |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → MultAI research → silver:clarify |
+| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:scan → silver:clarify/decide → gsd-ui-phase |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan → silver:blast-radius → silver:devops-skill-router |
+| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → silver:research/optional multi-AI → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → `/verify-tests` → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
 

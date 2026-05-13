@@ -1,6 +1,7 @@
 ---
 name: silver-devops
-description: This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
+description: >
+  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
@@ -37,43 +38,9 @@ Change: {$ARGUMENTS or "(not specified)"}
 Mode:   {interactive | autonomous — from §10e or session selection}
 ```
 
-## Multi-Agent Phase Coordination
-
-This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
-
-**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
-
-```
-Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
-```
-
-- On `CLAIMED:` → proceed.
-- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
-- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
-
-**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
-
-```
-Skill(agent="forge-heartbeat-phase", args="<NNN>")
-```
-
-- On `HEARTBEAT-OK:` → continue.
-- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
-
-**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
-
-```
-Skill(agent="forge-release-phase", args="<NNN>")
-```
-
-- On `RELEASED:` → proceed.
-- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
-
-**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
-
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -91,11 +58,11 @@ Check the following artifacts and set skip/include flags:
 
 Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) [if scope unclear] → FLOW 3 (DECIDE) [if IaC/tooling choice needed] → FLOW 12 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 13 (SHIP)
 
 Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included.
 
@@ -121,87 +88,114 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 ⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
 ```
 
-### 5. Create WORKFLOW.md
+### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the infrastructure change description ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:devops`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed flow chain in the Flow Log section header
+Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
+workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
+`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
+this to verify the active workflow is fully complete before final delivery.
 
-After each path completes, write status to Flow Log table:
+```bash
+# Build a comma-separated flow list from the confirmed composition (use the
+# user-facing FLOW / PATH names so they match what compliance-status surfaces).
+SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:devops "the user's original request" "$SB_FLOWS")
+export SB_WORKFLOW_ID
+echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+
+After each flow / path completes, mark it done:
+
+```bash
+scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
+
+When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
+the workflow:
+
+```bash
+scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+```
+
+`complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
+it from the active set, so the strict final-delivery gate will not match a stale id.
+
+> **Legacy:** the v0.22 single-file `.planning/WORKFLOW.md` mechanism is retired. The
+> per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
+> v0.29.1.
+
+After each path completes, the helper updates the Flow Log row in-place — the helper does
+not edit the file directly.
+
 
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
 **Non-skippable gates:** `silver:security` (Step 3b), `silver:devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:intel` (gsd-intel). Purpose: orient in the codebase — understand current infra topology before silver-blast-radius analysis.
+Invoke `silver:scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
-If no intel files exist: invoke `silver:scan` (gsd-scan) for rapid structure assessment.
+If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` via the Skill tool.
 
 ## Step 1: Blast Radius Analysis
 
-Invoke `silver:silver-blast-radius`. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
+Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
 
 ## Step 2: DevOps Skill Router
 
-Invoke `silver:devops-skill-router`. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
+Invoke `silver:devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates`. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
+Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
 
-Note: this is NOT the standard 9-dimension silver:silver-quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
+Note: this is NOT the standard 9-dimension silver:quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
 
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
-Invoke `silver:security`. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
+Invoke `silver:security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase`. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
+Invoke `gsd-discuss-phase` via the Skill tool. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
 
 ## Step 5: Plan Phase
 
-Invoke `gsd-plan-phase`. Purpose: PLAN.md for the infrastructure change.
+Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md for the infrastructure change.
 
 ## Step 6: Execute Phase (TDD skipped)
 
-If mode is Interactive: invoke `gsd-execute-phase`.
-If mode is Autonomous (§10e): invoke `gsd-autonomous`.
+If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
+If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
 
 **TDD is explicitly skipped for infra plans — not applicable.** Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No silver:tdd invocation.
 
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `silver:request-review` (superpowers:requesting-code-review).
-2. Invoke `gsd-code-review`. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant infra changes: invoke `gsd-code-review --all` (fans out to all available external CLIs for cross-AI review).
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review).
+1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
+2. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix`.
+3. For architecturally significant infra changes: invoke `gsd-review --all` via the Skill tool (fans out to all available external CLIs for cross-AI review).
+4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## Step 8: IaC Security + Secrets Verification
 
-Invoke `gsd-secure-phase`. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+Invoke `gsd-secure-phase` via the Skill tool. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -213,31 +207,32 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 9: Deployment Verification
 
-Invoke `gsd-verify-work`. Purpose: deployment verification and UAT. Non-skippable gate.
+Invoke `gsd-verify-work` via the Skill tool. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+Invoke `silver:devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
 ```
 
 Before deploying, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the infrastructure change (newest-first). If missing, write it now.
-2. **`docs/ARCHITECTURE.md`** — update §Current State if the change altered infrastructure topology, pipeline stages, or deployment targets.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if IaC patterns, provider quirks, or config gotchas were encountered, append them.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable DevOps lessons were learned, append them.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append IaC patterns, provider quirks, and config gotchas encountered.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable DevOps lessons learned.
+4. Update any additional docs changed by the work (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 
-**Gate:** Do NOT proceed to Step 11 until all applicable checks pass.
+**Gate:** Do NOT proceed to Step 11 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 11.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 11.
 
 ## Step 11: Ship / Deploy
 
-Invoke `gsd-ship`. Purpose: push branch, deploy, create PR.
+Invoke `gsd-ship` via the Skill tool. Purpose: push branch, deploy, create PR.

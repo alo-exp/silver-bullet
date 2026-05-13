@@ -4,12 +4,12 @@ Items tracked by Silver Bullet. IDs are sequential (SB-B-N). Do not renumber.
 
 ---
 
-### SB-B-1 — docs: reconcile FLOW table skill names with composable contracts
+### [REMOVED 2026-05-13] SB-B-1 — docs: reconcile FLOW table skill names with composable contracts
 
 **Type:** chore
 **Filed:** 2026-04-25
 **Source:** session
-**Status:** open
+**Status:** resolved in Phase 92
 
 FLOW summary table in silver-bullet.md and silver-bullet.md.base has abbreviated/inconsistent skill names vs composable-flows-contracts.md — e.g. FLOW 3 says "silver:brainstorm, product-brainstorming" but contract specifies "superpowers:brainstorming (Always)"; FLOW 6 missing namespace prefixes (design-system vs design:design-system); FLOW 5 missing skills (engineering:testing-strategy, gsd-analyze-dependencies). Pre-existing documentation drift; not blocking but should be reconciled in a future polish pass.
 

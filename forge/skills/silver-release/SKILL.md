@@ -1,6 +1,7 @@
 ---
 name: silver-release
-description: This skill should be used for SB-orchestrated milestone release: silver-quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone
+description: >
+  This skill should be used for SB-orchestrated milestone release: silver:quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone
 argument-hint: "<version or release description, e.g. v1.2.0>"
 version: 0.1.0
 ---
@@ -33,43 +34,9 @@ Display banner:
 Release: {$ARGUMENTS or "(version not specified)"}
 ```
 
-## Multi-Agent Phase Coordination
-
-This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
-
-**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
-
-```
-Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
-```
-
-- On `CLAIMED:` → proceed.
-- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
-- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
-
-**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
-
-```
-Skill(agent="forge-heartbeat-phase", args="<NNN>")
-```
-
-- On `HEARTBEAT-OK:` → continue.
-- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
-
-**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
-
-```
-Skill(agent="forge-release-phase", args="<NNN>")
-```
-
-- On `RELEASED:` → proceed.
-- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
-
-**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
-
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -87,13 +54,13 @@ ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | g
   || echo "SKIP FLOW 15 — no UI phases in this milestone"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for milestone release. Default chain:
 
-FLOW 12 (QUALITY GATE) → FLOW 15 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE)
+FLOW 12 (QUALITY GATE) → FLOW 15 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE: GSD audit → GSD complete milestone → silver:create-release last)
 
-Short chain — release produces a versioned milestone artifact, not implementation code.
+Short chain — release produces a versioned milestone artifact, not implementation code. GSD owns semver/milestone completion; SB creates the final release artifact only after GSD completion.
 
 ### 3. Display Proposal
 
@@ -119,47 +86,74 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 ⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
 ```
 
-### 5. Create WORKFLOW.md
+### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the release version/description ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:release`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed flow chain in the Flow Log section header
+Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
+workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
+`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
+this to verify the active workflow is fully complete before final delivery.
 
-After each path completes, write status to Flow Log table:
+```bash
+# Build a comma-separated flow list from the confirmed composition (use the
+# user-facing FLOW / PATH names so they match what compliance-status surfaces).
+SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:release "the user's original request" "$SB_FLOWS")
+export SB_WORKFLOW_ID
+echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+
+After each flow / path completes, mark it done:
+
+```bash
+scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
+
+When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
+the workflow:
+
+```bash
+scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+```
+
+`complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
+it from the active set, so the strict final-delivery gate will not match a stale id.
+
+> **Legacy:** the v0.22 single-file `.planning/WORKFLOW.md` mechanism is retired. The
+> per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
+> v0.29.1.
+
+After each path completes, the helper updates the Flow Log row in-place — the helper does
+not edit the file directly.
+
 
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
 **Non-skippable gates:** `silver:security` (Step 2a), `silver:quality-gates` pre-release (Step 0), the mandatory full test suite rerun via `/verify-tests` (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
 
 ## Step 0: Pre-Release Quality Gates (9 dimensions)
 
-Invoke `silver:silver-quality-gates`. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
 
 ## Step 1: Cross-Phase UAT
 
-Invoke `gsd-audit-uat`. Purpose: cross-phase UAT — surface all outstanding gaps before release. This gives a complete picture of the milestone state before deciding whether to ship.
+Invoke `gsd-audit-uat` via the Skill tool. Purpose: cross-phase UAT — surface all outstanding gaps before release. This gives a complete picture of the milestone state before deciding whether to ship.
 
 ## Step 2: Milestone Completion Audit
 
-Invoke `gsd-audit-milestone`. Purpose: compare milestone completion vs original intent — are all committed features shipped?
+Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone completion vs original intent — are all committed features shipped?
 
 **After audit:** check for gaps.
 
 ## Step 2a: Security Hard Gate
 
-Invoke `silver:security`. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
+Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
 
 ## FLOW DESIGN HANDOFF — Milestone UI handoff
 
@@ -198,23 +192,23 @@ Wait for user selection. If A: proceed to Step 3a with gaps documented. If B or 
 
 **When iteration count < 2:**
 
-1. Invoke `gsd-plan-milestone-gaps`. Purpose: plan the gap closure phases.
-2. Invoke `silver:feature` for each gap phase.
+1. Invoke `gsd-plan-milestone-gaps` via the Skill tool. Purpose: plan the gap closure phases.
+2. Invoke `silver:feature` via the Skill tool for each gap phase.
 3. After gap phases complete, return to Step 0 (full quality gate sweep again).
 4. Increment iteration count.
 5. Re-run Steps 1–2 to check if gaps are resolved.
 
 ## Step 3a: Verify Existing Documentation
 
-Invoke `gsd-docs-update`. Purpose: verify all existing docs are accurate against current codebase — correct any outdated content before generating new docs.
+Invoke `gsd-docs-update` via the Skill tool. Purpose: verify all existing docs are accurate against current codebase — correct any outdated content before generating new docs.
 
 ## Step 3b: Generate/Update Documentation
 
-After gsd-docs-update completes (accuracy verified), invoke `/documentation`. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
+After gsd-docs-update completes (accuracy verified), invoke `/documentation` via the Skill tool. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
 
 ## Step 4: Milestone Summary
 
-Invoke `gsd-milestone-summary`. Purpose: generate milestone narrative for release notes.
+Invoke `gsd-milestone-summary` via the Skill tool. Purpose: generate milestone narrative for release notes.
 
 ## Step 5: PR Branch (ask user)
 
@@ -224,8 +218,8 @@ Ask using AskUserQuestion:
 >
 > A. Yes — run gsd-pr-branch  B. No — release as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch`.
-If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §10e, commit both.
+If A: invoke `gsd-pr-branch` via the Skill tool.
+If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 6: Cross-Artifact Consistency Review
 
@@ -237,15 +231,17 @@ Do NOT proceed to Step 7 (Ship) until cross-artifact review reports clean pass. 
 
 ## Step 6b: Pre-Ship Deployment Checklist
 
-Invoke `/deploy-checklist`. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
+Invoke `/deploy-checklist` via the Skill tool. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
 
 ## Step 6c: Mandatory Full Test Suite Rerun
 
-Invoke `/verify-tests`. Purpose: rerun the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.sidekick/quality-gate-state`. Non-skippable.
+Invoke `/verify-tests` after the pre-release quality gate has completed and before any ship/release step. Purpose: re-run the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.sidekick/quality-gate-state`. Non-skippable.
+
+**Enforcement:** Do not proceed to Step 7 until the full suite rerun has completed and the marker is recorded.
 
 ## Step 7: Ship — Deploy, CI Green
 
-Invoke `gsd-ship`. Purpose: deploy, ensure CI is green, push the branch. This MUST succeed before milestone is archived.
+Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push the branch. This MUST succeed before milestone is archived.
 
 **Enforcement:** Do not proceed to Step 8 until gsd-ship confirms CI green and deploy succeeded.
 
@@ -253,19 +249,19 @@ Invoke `gsd-ship`. Purpose: deploy, ensure CI is green, push the branch. This MU
 
 **Only after Step 7 (gsd-ship) confirms success:**
 
-Invoke `gsd-complete-milestone`. Purpose: archive milestone, prepare for next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). These commits MUST be on the branch before the release tag is placed.
+Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, prepare for next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). These commits MUST be on the branch before the release tag is placed.
 
 ## Step 9: Create Release
 
 **Only after Step 8 (`gsd-complete-milestone`) commits are on the branch:**
 
-Invoke `silver:silver-create-release`. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
+Invoke `silver:create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
 
 > **Why last?** Creating the tag before milestone archival causes the archival commits to appear after the tag, requiring an immediate patch release. The tag must be the final commit in the release.
 
 ## Step 9b: Post-Release Items Summary
 
-**Trigger:** Execute this step only after Step 9 (`silver-create-release`) has completed and the release tag is published.
+**Trigger:** Execute this step only after Step 9 (`silver:create-release`) has completed and the release tag is published.
 
 Generate a consolidated summary of all items filed and knowledge/lessons recorded during this milestone.
 
@@ -316,13 +312,13 @@ Output:
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
-No items were recorded during this milestone via /silver-add or /silver-rem.
+No items were recorded during this milestone via /silver:add or /silver:rem.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 If `items_filed` is non-empty, separate items by prefix:
-- Lines starting with `- SB-` or `- #` → filed via /silver-add (issues/backlog)
-- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver-rem
+- Lines starting with `- SB-` or `- #` → filed via /silver:add (issues/backlog)
+- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver:rem
 
 Output a formatted summary:
 ```
@@ -332,10 +328,10 @@ Output a formatted summary:
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
-Issues & Backlog filed via /silver-add:
+Issues & Backlog filed via /silver:add:
 {list of SB-/# lines, or "(none)"}
 
-Knowledge & Lessons recorded via /silver-rem:
+Knowledge & Lessons recorded via /silver:rem:
 {list of [knowledge]/[lessons] lines, or "(none)"}
 
 Total: {N} issues/backlog items, {M} knowledge/lessons entries

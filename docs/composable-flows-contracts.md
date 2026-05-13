@@ -1,275 +1,275 @@
 # Composable Flows — Contract Reference
 
-> Derived from [design spec](superpowers/specs/2026-04-14-composable-paths-design.md). The spec is the source of truth.
+This is the canonical contract reference for `/silver` dynamic composition.
 
----
+SB composes flows. GSD owns the project lifecycle. Any semver-relevant change must pass through GSD milestone/phase management, planning, execution, verification, and release gates.
+
+## Naming And Availability
+
+Contracts use logical skill names. At invocation time, use the host-exposed equivalent:
+
+| Logical family | Examples | Notes |
+|----------------|----------|-------|
+| SB | `silver:feature`, `silver:quality-gates`, `silver:verify-tests` | Codex plugin installs may expose `silver-bullet:silver-feature`; source dirs may use `silver-feature`. |
+| GSD | `gsd:do`, `gsd:plan-phase`, `gsd:execute-phase` | Prefer `gsd:do` for freeform GSD delegation. Use exact GSD skill only when a flow contract names it. |
+| Superpowers | `superpowers:test-driven-development`, `superpowers:requesting-code-review` | Required when a flow marks them Always. |
+| Product Management | `product-management:write-spec`, `product-management:competitive-brief` | Optional unless the flow says Always. |
+
+Do not replace a missing Always dependency with ad hoc shell work. Stop, report the missing skill, and offer install-and-retry or an explicitly approved degraded path.
+
+## Atomic Flow Catalog
+
+Each workflow composes from these 18 atomic flows:
+
+| Flow | Name | Primary Owner | Purpose |
+|------|------|---------------|---------|
+| FLOW 0 | BOOTSTRAP | GSD | Project/milestone setup |
+| FLOW 1 | ORIENT | GSD/SB | Codebase and project-state orientation |
+| FLOW 2 | CLARIFY | SB | Problem framing and scope boundaries |
+| FLOW 3 | DECIDE | SB/GSD | Architecture, product, or technical choice |
+| FLOW 4 | SPECIFY | SB/Product Management | SPEC.md and REQUIREMENTS.md creation/refinement |
+| FLOW 5 | PLAN | GSD | Phase discussion, assumptions, dependency analysis, and plans |
+| FLOW 6 | DESIGN CONTRACT | GSD/SB | UI/UX contract where UI scope exists |
+| FLOW 7 | EXECUTE | GSD | Implementation through GSD execution |
+| FLOW 8 | UI QUALITY | GSD/SB | UI-specific audit and gap closure |
+| FLOW 9 | REVIEW | GSD/Superpowers | Code review, findings triage, and fixes |
+| FLOW 10 | SECURE | GSD/SB | Security and safety verification |
+| FLOW 11 | VERIFY | GSD | UAT, tests, and must-have verification |
+| FLOW 12 | QUALITY GATE | SB | Cross-cutting quality dimensions |
+| FLOW 13 | SHIP | GSD | Phase-level PR/CI/ship work |
+| FLOW 14 | DEBUG | GSD/Superpowers/SB | Dynamic failure investigation |
+| FLOW 15 | DESIGN HANDOFF | SB/optional design skills | Milestone-level UI handoff |
+| FLOW 16 | DOCUMENT | GSD/SB | Durable docs and session knowledge |
+| FLOW 17 | RELEASE | GSD/SB | Milestone audit, semver release, archive |
 
 ## Contract Schema
 
-Every flow contract contains these 7 required fields:
+Every flow contract contains these required fields:
 
 | Field | Description |
 |-------|-------------|
-| **Prerequisites** | Artifacts that MUST exist before this flow runs |
-| **Trigger** | Context signals that cause /silver to include this flow |
-| **Steps** | Ordered skill invocations — mandatory vs as-needed |
-| **Produces** | Artifacts created or modified |
-| **Review Cycle** | Artifact → reviewer → artifact-review-assessor → fix → 2-pass (or "None") |
-| **GSD Impact** | Which GSD state fields are read/written |
-| **Exit Condition** | What makes this flow "complete" |
+| Prerequisites | Artifacts or state that must exist before this flow runs |
+| Trigger | Context signals that cause `/silver` to include this flow |
+| Steps | Ordered skill invocations, marked Always or As-needed |
+| Produces | Artifacts created or modified |
+| Review Cycle | Artifact review or fix loop required for this flow |
+| GSD Impact | Which GSD-owned state/artifacts are read or written |
+| Exit Condition | What makes this flow complete |
 
 ---
 
-### FLOW BOOTSTRAP
+## FLOW 0: BOOTSTRAP
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | None (entry point) |
-| **Trigger** | No .planning/ exists, OR prior milestone complete, OR user says "new project/milestone" |
-| **Steps** | 1. episodic-memory:remembering-conversations (Always) · 2. gsd-new-project (As-needed — no .planning/ exists) · 3. gsd-map-codebase (As-needed — codebase exists, no .planning/) · 4. gsd-new-milestone (As-needed — prior milestone complete) · 5. gsd-resume-work (As-needed — continuing prior session) · 6. gsd-progress (As-needed — check current state) |
-| **Produces** | PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
-| **Review Cycle** | ROADMAP.md → review-roadmap → artifact-review-assessor → 2-pass; REQUIREMENTS.md → review-requirements → artifact-review-assessor → 2-pass |
-| **GSD Impact** | Reads: nothing. Writes: PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md (all via GSD internally) |
-| **Exit Condition** | STATE.md exists with valid Current Position |
+| Prerequisites | None |
+| Trigger | No `.planning/`; new project; new milestone; prior milestone complete |
+| Steps | 1. `gsd:new-project` (As-needed, no `.planning/`) · 2. `gsd:map-codebase` (As-needed, brownfield) · 3. `gsd:new-milestone` (As-needed, prior milestone complete) · 4. `gsd:resume-work` (As-needed, existing interrupted work) · 5. `gsd:progress` (As-needed, status check) |
+| Produces | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` |
+| Review Cycle | ROADMAP and REQUIREMENTS review when created or substantially changed |
+| GSD Impact | GSD writes all bootstrap artifacts |
+| Exit Condition | `STATE.md` exists and identifies current milestone/phase state |
 
----
-
-### FLOW ORIENT
+## FLOW 1: ORIENT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 0 completed (STATE.md exists) |
-| **Trigger** | Always included for non-trivial work |
-| **Steps** | 1. gsd-intel (Always) · 2. gsd-scan (As-needed — brownfield, no intel files) · 3. gsd-map-codebase (As-needed — first time, deep analysis) |
-| **Produces** | Intel files in .planning/intel/ |
-| **Review Cycle** | None |
-| **GSD Impact** | None |
-| **Exit Condition** | Intel files exist or scan complete |
+| Prerequisites | FLOW 0 complete, or existing project artifacts present |
+| Trigger | Included for non-trivial work unless current intel is already sufficient |
+| Steps | 1. `silver:scan` (As-needed, rapid SB scan) · 2. `gsd:map-codebase` (As-needed, deeper brownfield mapping) · 3. `gsd:progress` (As-needed, current GSD position) |
+| Produces | `.planning/intel/` or `.planning/codebase/` files when GSD mapping runs; scan summary when SB scan runs |
+| Review Cycle | None |
+| GSD Impact | Reads GSD state; writes only through GSD mapping skills |
+| Exit Condition | Current codebase/project position is known well enough to choose the next flow |
 
----
-
-### FLOW CLARIFY
+## FLOW 2: CLARIFY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 1 completed |
-| **Trigger** | Fuzzy intent, unclear scope, user uncertainty, OR always for complex work |
-| **Steps** | 1. silver:clarify (Always) · 2. design:user-research (As-needed — user-facing work) · 3. product-management:synthesize-research (As-needed — prior research exists) · 4. product-management:competitive-brief (As-needed — competitive landscape relevant) |
-| **Produces** | Scope summary, problem space documentation, decision-ready brief |
-| **Review Cycle** | None |
-| **GSD Impact** | None |
-| **Exit Condition** | Problem space clarified, scope boundaries established |
+| Prerequisites | FLOW 1 complete for project work; none for pure ideation |
+| Trigger | Fuzzy intent, unclear scope, complex work, new idea, user uncertainty |
+| Steps | 1. `silver:clarify` (Always) · 2. `superpowers:brainstorming` (As-needed, creative exploration) · 3. `product-management:synthesize-research` (As-needed, prior research exists) · 4. `product-management:competitive-brief` (As-needed, market/competitive context needed) |
+| Produces | Scope summary, assumptions, boundaries, decision-ready brief |
+| Review Cycle | None |
+| GSD Impact | None directly; handoff feeds GSD discussion/planning |
+| Exit Condition | Scope and next lifecycle route are explicit |
 
----
-
-### FLOW DECIDE
+## FLOW 3: DECIDE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 2 completed |
-| **Trigger** | Always for complex work; skipped for simple/clear-scope |
-| **Steps** | 1. silver:clarify (Always) · 2. engineering:architecture (As-needed — new service, cross-cutting concern, ADR-worthy) · 3. engineering:system-design (As-needed — new service boundary, major component) · 4. design:design-system (As-needed — UI phase, new component type) |
-| **Produces** | ADR, design-system tokens, system-design diagram, or clarified decision brief |
-| **Review Cycle** | None |
-| **GSD Impact** | None |
-| **Exit Condition** | Architectural direction chosen, design approach locked |
+| Prerequisites | FLOW 2 complete or a crisp decision question exists |
+| Trigger | Architecture choice, stack selection, major tradeoff, API/data-model impact |
+| Steps | 1. `silver:research` (Always for unknown/novel decisions) · 2. `gsd:spike` (As-needed, experimental proof) · 3. `gsd:discuss-phase` (As-needed, phase decision capture) |
+| Produces | Research artifact, spike result, ADR-style decision summary, or locked decision in CONTEXT.md |
+| Review Cycle | Research artifact review when used as implementation input |
+| GSD Impact | GSD records phase decisions when `gsd:discuss-phase` runs |
+| Exit Condition | A named option is selected with rationale and known risks |
 
----
-
-### FLOW SPECIFY
+## FLOW 4: SPECIFY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 3 completed, OR user has external spec to ingest |
-| **Trigger** | No SPEC.md exists, OR spec refresh needed, OR external artifacts to ingest. May be skipped ONLY when REQUIREMENTS.md already exists (from FLOW 0). |
-| **Steps** | 1. silver-ingest (As-needed — JIRA/Figma/Google Docs) · 2. product-management:write-spec (As-needed — scaffold) · 3. silver-spec (Always — Socratic elicitation) · 4. silver-validate (Always — gap analysis) |
-| **Produces** | SPEC.md, REQUIREMENTS.md |
-| **Review Cycle** | SPEC.md → review-spec → artifact-review-assessor → 2-pass; REQUIREMENTS.md → review-requirements → artifact-review-assessor → 2-pass; DESIGN.md → review-design → artifact-review-assessor → 2-pass (if exists); INGESTION_MANIFEST.md → review-ingestion-manifest → artifact-review-assessor → 2-pass (if ingest) |
-| **GSD Impact** | None — SPEC.md/REQUIREMENTS.md are SB artifacts |
-| **Exit Condition** | SPEC.md + REQUIREMENTS.md exist, silver-validate shows zero BLOCK findings |
+| Prerequisites | FLOW 2/3 complete, or external artifact exists to ingest |
+| Trigger | Missing/stale SPEC.md, new requirements, external JIRA/Figma/Google Docs/cross-repo spec |
+| Steps | 1. `silver:ingest` (As-needed) · 2. `product-management:write-spec` (As-needed scaffold) · 3. `silver:spec` (Always for human-facing spec elicitation) · 4. `silver:validate` (Always for gap analysis) |
+| Produces | `.planning/SPEC.md`, `.planning/REQUIREMENTS.md`, optional `.planning/INGESTION_MANIFEST.md` |
+| Review Cycle | SPEC, REQUIREMENTS, DESIGN, and INGESTION_MANIFEST review where present |
+| GSD Impact | GSD consumes REQUIREMENTS/ROADMAP later; SB does not directly advance GSD state here |
+| Exit Condition | Requirements are clear enough for GSD phase planning and no blocking validation gaps remain |
 
----
-
-### FLOW PLAN
+## FLOW 5: PLAN
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | ROADMAP.md exists, REQUIREMENTS.md exists, phase directory exists |
-| **Trigger** | Always for every phase |
-| **Steps** | 1. gsd-discuss-phase (Always) · 2. superpowers:writing-plans (Always — spec-to-plan bridge) · 3. engineering:testing-strategy (Always) · 4. gsd-list-phase-assumptions (As-needed) · 5. gsd-analyze-dependencies (Always) · 6. gsd-plan-phase (Always) |
-| **Produces** | CONTEXT.md, RESEARCH.md, PLAN.md |
-| **Review Cycle** | CONTEXT.md → review-context → artifact-review-assessor → 2-pass; RESEARCH.md → review-research → artifact-review-assessor → 2-pass; PLAN.md → gsd-plan-checker → artifact-review-assessor → 2-pass (max 3 iterations) |
-| **GSD Impact** | Reads: STATE.md, REQUIREMENTS.md, ROADMAP.md, PROJECT.md, prior CONTEXT.md, prior SUMMARY.md. Writes: CONTEXT.md, RESEARCH.md, PLAN.md (via GSD internally). Does NOT advance state position. |
-| **Exit Condition** | PLAN.md exists with plan-checker PASS (2 consecutive clean passes) |
+| Prerequisites | ROADMAP and REQUIREMENTS exist; target phase exists |
+| Trigger | Always before execution for non-trivial codebase work |
+| Steps | 1. `gsd:discuss-phase` (Always) · 2. `superpowers:writing-plans` (As-needed bridge from spec/design to plan) · 3. `gsd:list-phase-assumptions` (As-needed) · 4. `gsd:analyze-dependencies` (As-needed/when available) · 5. `gsd:plan-phase` (Always) |
+| Produces | Phase CONTEXT, RESEARCH, PLAN files |
+| Review Cycle | CONTEXT/RESEARCH/PLAN review; plan-checker must pass for implementation work |
+| GSD Impact | GSD reads/writes all planning artifacts and owns phase plan validity |
+| Exit Condition | PLAN files exist for the current phase and are accepted for execution |
 
----
-
-### FLOW DESIGN CONTRACT
+## FLOW 6: DESIGN CONTRACT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 5 completed (PLAN.md exists) |
-| **Trigger** | Phase involves UI (keywords, file types, DESIGN.md existence) |
-| **Steps** | 1. design:design-system (Always in this flow) · 2. design:ux-copy (As-needed) · 3. gsd-ui-phase (Always in this flow) · 4. design:accessibility-review (As-needed — WCAG 2.1 AA) |
-| **Produces** | UI-SPEC.md |
-| **Review Cycle** | Iterative: user can loop steps 1-4. Claude suggests when solid; user decides exit. |
-| **GSD Impact** | gsd-ui-phase produces UI-SPEC.md, does not touch STATE.md |
-| **Exit Condition** | UI-SPEC.md exists, user accepts design contract |
+| Prerequisites | PLAN exists or UI scope is known enough to design |
+| Trigger | UI/frontend/design scope, UI files, Figma/design artifact, accessibility-sensitive change |
+| Steps | 1. `gsd:ui-phase` (Always when available) · 2. optional design-system/UX/accessibility skills (As-needed if installed) · 3. `silver:quality-gates` (As-needed pre-plan quality check) |
+| Produces | UI-SPEC or equivalent design contract |
+| Review Cycle | UI/design review when artifact exists |
+| GSD Impact | `gsd:ui-phase` owns UI-SPEC creation |
+| Exit Condition | UI contract exists or user explicitly accepts no-UI-contract rationale |
 
----
-
-### FLOW EXECUTE
+## FLOW 7: EXECUTE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | PLAN.md exists, STATE.md position matches phase |
-| **Trigger** | Always |
-| **Steps** | 1. hidden `silver:tdd` gate → `superpowers:test-driven-development` (As-needed — implementation plans only) · 2. gsd-execute-phase OR gsd-autonomous (Always) · 3. context7-plugin:context7-mcp (Ambient — available during execution) |
-| **Produces** | SUMMARY.md (per plan), code changes |
-| **Review Cycle** | On failure: Insert FLOW 14 (DEBUG) dynamically |
-| **GSD Impact** | Heavy — reads/writes STATE.md, ROADMAP.md, REQUIREMENTS.md. Advances state position. All 10 GSD assumptions apply. |
-| **Exit Condition** | All PLAN.md files have SUMMARY.md, STATE.md advanced |
+| Prerequisites | PLAN exists; STATE position matches phase |
+| Trigger | Always for implementation work |
+| Steps | 1. `silver:tdd` -> `superpowers:test-driven-development` (As-needed, behavior-changing implementation) · 2. `gsd:execute-phase` or `gsd:autonomous` (Always) |
+| Produces | Code changes, task commits, SUMMARY files |
+| Review Cycle | Insert FLOW 14 DEBUG on execution/test failure |
+| GSD Impact | GSD reads/writes STATE, ROADMAP, plans, summaries, and commits |
+| Exit Condition | All planned tasks complete and SUMMARY artifacts exist |
 
----
-
-### FLOW UI QUALITY
+## FLOW 8: UI QUALITY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 7 completed with UI deliverables |
-| **Trigger** | FLOW 6 was in composition, OR SUMMARY.md contains UI file types |
-| **Steps** | 1. design:design-critique (Always in this flow) · 2. gsd-ui-review (Always in this flow — 6-pillar audit) · 3. design:accessibility-review (Always in this flow) |
-| **Produces** | UI-REVIEW.md |
-| **Review Cycle** | UI-REVIEW.md → artifact-review-assessor → fix critical via GSD → re-audit |
-| **GSD Impact** | None. Fixes route through gsd-execute-phase --gaps-only |
-| **Exit Condition** | UI-REVIEW.md with no critical findings, or user accepts |
+| Prerequisites | FLOW 7 complete with UI deliverables |
+| Trigger | UI flow included, UI files changed, or SUMMARY references UI deliverables |
+| Steps | 1. `gsd:ui-review` (Always when available) · 2. optional design critique/accessibility skills (As-needed if installed) |
+| Produces | UI-REVIEW or equivalent findings |
+| Review Cycle | Critical findings route to GSD gap closure and re-review |
+| GSD Impact | Fixes route through `gsd:execute-phase --gaps-only` or GSD-created gap plans |
+| Exit Condition | No blocking UI findings remain, or user accepts documented residual risk |
 
----
-
-### FLOW REVIEW
+## FLOW 9: REVIEW
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 7 completed |
-| **Trigger** | Always for any composition with FLOW 7 |
-| **Steps** | Layer A: gsd-code-review → superpowers:receiving-code-review → gsd-code-review-fix (automated). Layer B: superpowers:requesting-code-review → superpowers:receiving-code-review → gsd-code-review-fix (re-review). Layer C: engineering:code-review → superpowers:receiving-code-review → gsd-code-review-fix (engineering). Layer D (As-needed): gsd-review --all → superpowers:receiving-code-review → gsd-code-review-fix (cross-AI). |
-| **Produces** | REVIEW.md |
-| **Review Cycle** | Entire cycle iterates until 2 consecutive clean passes across all layers |
-| **GSD Impact** | gsd-code-review produces REVIEW.md. gsd-code-review-fix applies fixes. Neither modifies STATE.md. |
-| **Exit Condition** | 2 consecutive clean passes across all layers |
+| Prerequisites | FLOW 7 complete |
+| Trigger | Always for implementation work |
+| Steps | 1. `superpowers:requesting-code-review` (Always) · 2. `gsd:code-review` (Always) · 3. `gsd:code-review-fix` (As-needed) · 4. `superpowers:receiving-code-review` (Always when findings exist) · 5. `gsd:review` or cross-AI review (As-needed, architecturally significant changes) |
+| Produces | REVIEW files and fix commits |
+| Review Cycle | Iterate until required clean-pass threshold is met |
+| GSD Impact | GSD review/fix skills own review artifacts and changes |
+| Exit Condition | Review gate passes or accepted residual risks are captured |
 
----
-
-### FLOW SECURE
+## FLOW 10: SECURE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 9 completed |
-| **Trigger** | Always — scope varies by project type |
-| **Steps** | 1. security (SENTINEL) (As-needed — software is Claude/AI Plugin or Skill) · 2. gsd-secure-phase (Always) · 3. gsd-validate-phase (Always) · 4. ai-llm-safety (As-needed — LLM agents/prompts/AI content) |
-| **Produces** | SECURITY.md |
-| **Review Cycle** | 2 consecutive clean passes |
-| **GSD Impact** | gsd-secure-phase verifies threat mitigations. gsd-validate-phase fills gaps. Neither modifies STATE.md. |
-| **Exit Condition** | Security findings resolved (2 consecutive clean passes), validation gaps filled |
+| Prerequisites | PLAN or implementation scope known |
+| Trigger | Always for software changes; especially agents, hooks, prompts, infra, auth, data, release |
+| Steps | 1. `silver:security` (Always for SB/plugin/agent safety) · 2. `gsd:secure-phase` (Always for phase security) · 3. `gsd:validate-phase` (As-needed gap filling) · 4. `silver:ai-llm-safety` (As-needed LLM/agent behavior) |
+| Produces | SECURITY and validation artifacts |
+| Review Cycle | Security findings must be resolved or explicitly accepted before ship/release |
+| GSD Impact | GSD secure/validate skills verify mitigations and create gap work |
+| Exit Condition | No blocking security/validation findings remain |
 
----
-
-### FLOW VERIFY
+## FLOW 11: VERIFY
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 7 completed (SUMMARY.md exists) |
-| **Trigger** | Always — NON-SKIPPABLE |
-| **Steps** | 1. gsd-verify-work (Always — NON-SKIPPABLE) · 2. gsd-add-tests (As-needed — coverage gaps) · 3. superpowers:verification-before-completion (Always) |
-| **Produces** | UAT.md, VERIFICATION.md |
-| **Review Cycle** | UAT.md → review-uat → artifact-review-assessor → 2-pass |
-| **GSD Impact** | Reads: STATE.md, SUMMARY.md. Writes: UAT.md, VERIFICATION.md. Does NOT advance position. Internal gap-closure flow. |
-| **Exit Condition** | VERIFICATION.md with status: passed (2 consecutive clean passes) |
+| Prerequisites | FLOW 7 complete; SUMMARY exists |
+| Trigger | Always; non-skippable |
+| Steps | 1. `gsd:verify-work` (Always) · 2. `gsd:add-tests` (As-needed coverage gaps) · 3. `silver:verify-tests` (As-needed fresh suite marker) · 4. `superpowers:verification-before-completion` (Always before completion claim) |
+| Produces | UAT, VERIFICATION, test freshness marker |
+| Review Cycle | Verification gaps route to GSD gap closure and re-verify |
+| GSD Impact | GSD owns verification artifacts and gap creation |
+| Exit Condition | VERIFICATION passes and required tests are fresh |
 
----
-
-### FLOW QUALITY GATE
+## FLOW 12: QUALITY GATE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | Pre-plan: CONTEXT.md exists. Pre-ship: FLOW 11 completed. |
-| **Trigger** | Always — appears TWICE (pre-plan + pre-ship) |
-| **Steps** | 1. quality-gates (9 dimensions) for standard projects OR devops-quality-gates (7 dimensions) for IaC/infra · 2. Individual dimension deep-dive (As-needed — specific failure) |
-| **Produces** | Quality assessment (design-time checklist pre-plan; adversarial audit pre-ship) |
-| **Review Cycle** | None — gate itself is the review. All dimensions must pass. |
-| **GSD Impact** | None |
-| **Exit Condition** | All dimensions pass |
+| Prerequisites | Pre-plan: context exists. Pre-ship: implementation and verification exist. |
+| Trigger | Always pre-plan and pre-ship for non-trivial workflows |
+| Steps | 1. `silver:quality-gates` for product/software work or `silver:devops-quality-gates` for infra/IaC · 2. dimension-specific SB skills (As-needed) |
+| Produces | Quality assessment and gap list |
+| Review Cycle | Gate itself is the review; blocking dimensions must be addressed |
+| GSD Impact | Gaps route into GSD planning/execution |
+| Exit Condition | Blocking quality findings are resolved or formally accepted when policy permits |
 
----
-
-### FLOW SHIP
+## FLOW 13: SHIP
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 12 pre-ship passed, FLOW 11 completed, clean tree, feature branch |
-| **Trigger** | Always |
-| **Steps** | 1. gsd-pr-branch (As-needed) · 2. engineering:deploy-checklist (As-needed — production) · 3. gsd-ship (Always) |
-| **Produces** | PR |
-| **Review Cycle** | None |
-| **GSD Impact** | gsd-ship reads STATE.md, creates PR, updates STATE.md (Status, Last Activity) |
-| **Exit Condition** | PR created, CI green |
+| Prerequisites | FLOW 9/10/11/12 gates satisfied; clean tree or intentional PR branch |
+| Trigger | Phase-level ship/PR/CI step |
+| Steps | 1. `gsd:pr-branch` (As-needed) · 2. `gsd:ship` (Always) |
+| Produces | PR, CI status, phase ship updates |
+| Review Cycle | CI failures insert FLOW 14 DEBUG |
+| GSD Impact | GSD owns phase shipping, PR body, and state updates |
+| Exit Condition | PR/ship step complete and CI/deploy gates are green or explicitly blocked |
 
----
-
-### FLOW DEBUG
+## FLOW 14: DEBUG
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | None — inserted on failure |
-| **Trigger** | Execution failure, CI red, verification failure, unknown error |
-| **Steps** | 1. superpowers:systematic-debugging (Always) · 2. gsd-debug (Always) · 3. engineering:debug (As-needed) · 4. forensics (As-needed — unknown root cause) · 5. gsd-forensics (As-needed — failed GSD workflow) · 6. engineering:incident-response (As-needed — production incident) |
-| **Produces** | Fix plan, root cause analysis |
-| **Review Cycle** | None |
-| **GSD Impact** | None. Fixes route through gsd-execute-phase --gaps-only |
-| **Exit Condition** | Root cause identified, fix plan validated |
+| Prerequisites | None; dynamically inserted on failure |
+| Trigger | Execution failure, failing tests, CI red, verification failure, unknown regression, broken GSD workflow |
+| Steps | 1. `superpowers:systematic-debugging` (Always) · 2. `gsd:debug` (Always for code/workflow failures) · 3. `silver:forensics` (As-needed unknown cause/session reconstruction) · 4. `gsd:forensics` (As-needed failed GSD workflow) |
+| Produces | Root cause, fix plan, diagnostic report |
+| Review Cycle | Fixes route back through PLAN/EXECUTE/VERIFY as needed |
+| GSD Impact | GSD owns debug execution and any gap closure work |
+| Exit Condition | Root cause and next fix route are known |
 
----
-
-### FLOW DESIGN HANDOFF
+## FLOW 15: DESIGN HANDOFF
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | All UI phases verified |
-| **Trigger** | Milestone has UI phases AND in release flow. Runs inside FLOW 17 only (between milestone audit and gap closure — never in per-phase sequence). |
-| **Steps** | 1. design:design-handoff (Always in this flow) · 2. design:design-system (As-needed — final component inventory) |
-| **Produces** | Handoff package |
-| **Review Cycle** | None |
-| **GSD Impact** | None |
-| **Exit Condition** | Handoff package produced |
+| Prerequisites | UI phases verified |
+| Trigger | Milestone release includes UI/design deliverables |
+| Steps | 1. optional design handoff/design-system skills if installed · 2. `silver:handoff` (As-needed project continuation) |
+| Produces | Handoff package or release handoff notes |
+| Review Cycle | None unless handoff artifact requires review |
+| GSD Impact | None directly; release flow consumes output |
+| Exit Condition | UI handoff notes exist or no UI handoff is needed |
 
----
-
-### FLOW DOCUMENT
+## FLOW 16: DOCUMENT
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | FLOW 13 completed |
-| **Trigger** | Always post-ship |
-| **Steps** | 1. gsd-docs-update (Always) · 2. engineering:documentation (Always) · 3. engineering:tech-debt (Always) · 4. gsd-milestone-summary (As-needed — milestone narrative) · 5. episodic-memory:remembering-conversations (Always) · 6. gsd-session-report (As-needed) |
-| **Produces** | Updated docs/, session log |
-| **Review Cycle** | None |
-| **GSD Impact** | gsd-docs-update verifies docs. Neither modifies STATE.md. |
-| **Exit Condition** | docs/ updated, session log completed |
+| Prerequisites | Implementation or release context exists |
+| Trigger | Post-ship, pre-release, docs drift, user asks for docs |
+| Steps | 1. `gsd:docs-update` (Always for codebase docs accuracy) · 2. `silver:ensure-docs` (As-needed doc scheme) · 3. `gsd:milestone-summary` (As-needed milestone narrative) · 4. `gsd:session-report` or `silver:handoff` (As-needed session continuity) |
+| Produces | Updated docs, milestone/session summaries |
+| Review Cycle | Docs semantic/structural checks as configured |
+| GSD Impact | GSD owns docs-update artifacts where applicable |
+| Exit Condition | Required docs are current and no doc gate is blocking |
 
----
-
-### FLOW RELEASE
+## FLOW 17: RELEASE
 
 | Field | Value |
 |-------|-------|
-| **Prerequisites** | All phases shipped |
-| **Trigger** | User signals milestone complete, or last phase shipped |
-| **Steps** | 1. gsd-audit-uat (Always) · 2. gsd-audit-milestone (Always) · 3. FLOW 15 DESIGN HANDOFF (As-needed — if milestone has UI phases, inserted here between steps 2 and 3) · 4. gsd-plan-milestone-gaps (As-needed — gaps found) · 5. create-release (Always) · 6. gsd-complete-milestone (Always) |
-| **Produces** | GitHub Release, archived .planning/ |
-| **Review Cycle** | Cross-artifact review → artifact-review-assessor → fix → pass (before create-release). Gap closure recursion: Claude-suggested, user-decided depth. |
-| **GSD Impact** | gsd-complete-milestone archives .planning/, resets STATE.md |
-| **Exit Condition** | GitHub Release created, milestone archived |
-
----
-
-> This document is generated for quick reference. For full details including GSD compatibility guarantees, anti-stall tiers, and composition templates, see the design spec.
+| Prerequisites | All release-blocking phases complete; verification and review gates satisfied |
+| Trigger | Milestone complete, version/release intent, public ship |
+| Steps | 1. `gsd:audit-uat` (Always) · 2. `gsd:audit-milestone` (Always) · 3. `gsd:plan-milestone-gaps` (As-needed) · 4. FLOW 15 DESIGN HANDOFF (As-needed) · 5. FLOW 16 DOCUMENT (Always) · 6. `gsd:complete-milestone` (Always before tag) · 7. `silver:create-release` (Always last) |
+| Produces | Archived milestone, changelog, tag, GitHub Release |
+| Review Cycle | Cross-artifact and pre-release quality gates must pass before release creation |
+| GSD Impact | GSD owns milestone completion, archive, and semver lifecycle; SB creates final release artifact only after GSD completion |
+| Exit Condition | Release tag and GitHub Release exist and point at the fully archived milestone commit |

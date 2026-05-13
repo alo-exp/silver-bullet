@@ -1,7 +1,7 @@
 ---
 name: silver-ui
 description: >
-  This skill should be used for full SB-orchestrated UI/frontend workflow: intel → clarify → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
+  This skill should be used for full SB-orchestrated UI/frontend workflow: orient → clarify/decide → testing strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → verify → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
@@ -18,16 +18,17 @@ Never implements UI directly — orchestrates only.
 
 Before any local UI implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
 
-1. `silver:intel`
-2. `silver:scan` when the project is brownfield
+1. `silver:scan` when rapid SB orientation is useful
+2. `gsd-map-codebase` when the project is brownfield or deeper UI pattern mapping is needed
 3. `silver:clarify`
-4. `silver:quality-gates`
-5. `gsd-discuss-phase`
-6. `gsd-ui-phase`
-7. `gsd-plan-phase`
-8. `gsd-execute-phase` or `gsd-autonomous`
-9. `gsd-ui-review`
-10. `gsd-verify-work`
+4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
+5. `silver:quality-gates`
+6. `gsd:discuss-phase`
+7. `gsd:ui-phase`
+8. `gsd:plan-phase`
+9. `gsd:execute-phase` or `gsd:autonomous`
+10. `gsd:ui-review`
+11. `gsd:verify-work`
 
 If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
 
@@ -54,7 +55,7 @@ Mode:    {interactive | autonomous — from §10e or session selection}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -74,11 +75,11 @@ Check the following artifacts and set skip/include flags:
 ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 5 — PLAN.md exists" || echo "Include FLOW 5"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for UI work. Default full chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP)
 
 Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — this is a UI-focused workflow.
 
@@ -157,9 +158,9 @@ When the user requests skipping any step:
 
 ## Step 0: Orient in Codebase
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool to understand existing UI patterns and component hierarchy.
+Invoke `silver:scan` via the Skill tool to understand existing UI patterns and component hierarchy.
 
-If brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
+If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` via the Skill tool.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
@@ -184,7 +185,7 @@ Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels for U
 
 ## Step 2.5: Writing Plans
 
-Invoke `silver:writing-plans` (superpowers:writing-plans) via the Skill tool. Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
+Invoke `superpowers:writing-plans` via the Skill tool. Purpose: spec + test strategy → implementation plan with frontend-design emphasis.
 
 ## Step 3: Pre-Plan Quality Gates
 
