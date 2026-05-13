@@ -1,11 +1,12 @@
 ---
 name: silver-spec
-description: This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
+description: >
+  This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
 argument-hint: "<feature name or description>"
 version: 0.1.0
 ---
 
-# /silver:spec -- Spec Elicitation Workflow
+# /silver-spec -- Spec Elicitation Workflow
 
 SB orchestrator for requirements elicitation. Guides PM/BA through structured Socratic dialogue to produce canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` artifacts.
 
@@ -35,7 +36,7 @@ Mode:    {greenfield | augment — detected in Step 0}
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
 **Non-skippable gates:** `Step 3: Socratic Elicitation`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
 
@@ -51,40 +52,6 @@ test -f .planning/SPEC.md && echo "augment" || echo "greenfield"
 - **If `.planning/SPEC.md` does not exist:** greenfield mode. Proceed directly to Step 1.
 
 Update the Mode field in the banner to reflect the detected mode before continuing.
-
-## Multi-Agent Phase Coordination
-
-This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
-
-**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
-
-```
-Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
-```
-
-- On `CLAIMED:` → proceed.
-- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
-- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
-
-**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
-
-```
-Skill(agent="forge-heartbeat-phase", args="<NNN>")
-```
-
-- On `HEARTBEAT-OK:` → continue.
-- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
-
-**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
-
-```
-Skill(agent="forge-release-phase", args="<NNN>")
-```
-
-- On `RELEASED:` → proceed.
-- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
-
-**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
 
 ## Step 1: Context Gathering
 
@@ -107,7 +74,10 @@ If any URL is provided in A, B, or C, note it internally for artifact injection 
 
 Invoke `product-management:write-spec`. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
 
-If the skill is unavailable (invocation fails or skill not found), proceed without it — the SPEC.md template provides equivalent structure. Do not block on this step.
+If the skill is unavailable (invocation fails or skill not found), STOP and
+notify the user instead of proceeding without it. Offer: A. Install the plugin
+and retry  B. Continue only with an explicitly approved degraded path
+  C. Stop / choose a different workflow.
 
 ## Step 3: Socratic Elicitation Dialogue
 
@@ -169,7 +139,7 @@ For each URL provided:
 1. Display the URL and describe what will be extracted.
 2. Attempt extraction:
    - **Google Doc or PPT URL:** attempt text extraction via WebFetch tool. If accessible, show a 3-bullet summary of extracted content. If inaccessible, record the URL in `source-artifacts:` frontmatter for Phase 13 MCP ingestion.
-   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` for design context. If the skill is unavailable, record URL only.
+   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` for design context. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without design context if the user explicitly approves the degraded path.
 3. Ask: "A. Incorporate this content into the spec  B. Skip"
 
 If user selects A: incorporate the relevant content into the appropriate sections during Step 7.
@@ -197,7 +167,9 @@ If no assumptions were surfaced, note this and ask: "Before we write the spec, a
 
 Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
 
-Invoke `design:design-critique`. If the skill is unavailable, skip with a note: "(design:design-critique not available — design review deferred)"
+Invoke `design:design-critique`. If the skill is unavailable,
+STOP and notify the user. Offer install-and-retry first; only continue without
+design critique if the user explicitly approves the degraded path.
 
 ## Step 7: Write .planning/SPEC.md
 
@@ -297,12 +269,12 @@ Assumptions:     {count of [ASSUMPTION] blocks}
 Open questions:  {count of open question items}
 Status:          Draft
 
-Next step: run /silver:feature to begin implementation planning.
+Next step: run /silver-feature to begin implementation planning.
 ```
 
 If any assumptions have `Status: Follow-up-required`, add:
 
 ```
 ⚠  {N} assumption(s) require follow-up before implementation begins.
-   Review .planning/SPEC.md §Assumptions before running /silver:feature.
+   Review .planning/SPEC.md §Assumptions before running /silver-feature.
 ```

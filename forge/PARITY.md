@@ -12,7 +12,7 @@ This document maps every Silver Bullet capability on Claude Desktop to its equiv
 | Hook system | `settings.json` hooks fire on events (PreToolUse, PostToolUse, Stop, etc.) | **No hooks.** Hook gates are replaced with custom agents the main agent invokes as tools at the gating moment. |
 | Subagent system | `Task(subagent_type="X")` spawns isolated context | Forge custom agents at `~/forge/agents/<id>.md` with `tool_supported: true` (per `forgecode.dev/docs/creating-agents`) |
 | Skill nesting | `Skill(skill="X")` invokes another skill | Forge **auto-applies skills based on description-context match** to the user's current task. Cross-skill references inside other skill bodies are NOT chain-resolved — they are read as natural-language instruction. For explicit invocation, use a Forge slash command (see Slash Commands row). |
-| Slash commands | `/gsd:new-project`, etc. (plugin commands) | `forge/commands/<name>.md` (per `forgecode.dev/docs/commands/`); invoked with `:` prefix, e.g. `:gsd-new-project`. Filename becomes the command name. As of v0.32.0 there are 49 ported commands (45 GSD + 3 Superpowers + 1 KW PM). |
+| Slash commands | `/gsd:new-project`, etc. (plugin commands) | `forge/commands/<name>.md` (per `forgecode.dev/docs/commands/`); invoked with `:` prefix, e.g. `:gsd-new-project`. Filename becomes the command name. Current surface: 50 ported commands (45 GSD + 3 Superpowers + 1 KW PM + 1 SB helper). |
 | AskUserQuestion | First-class UI primitive | Plain conversational prompt — same outcome |
 
 ## Hook → Custom Agent Map
@@ -30,11 +30,14 @@ Each SB hook becomes a Forge custom agent. The main agent invokes them as tools 
 | `pr-traceability.sh` | `PostToolUse: gh pr create` | `forge-pr-traceability` | When creating a PR |
 | `ci-status-check.sh` | `PreToolUse / PostToolUse: Bash` | `forge-ci-status-check` | After push, before next commit |
 | `forbidden-skill-check.sh` | `PreToolUse: Skill` | `forge-forbidden-skill-check` | Before applying any skill |
+| `dependency-skill-check.sh` | `PreToolUse: Skill` | `forge-dependency-skill-check` | Before applying dependency skill chains |
+| `instruction-file-guard.sh` | `PreToolUse: Write/Edit/MultiEdit` | `forge-instruction-file-guard` | Before creating/replacing root instruction files |
+| `workflow-chain-guard.sh` | `PreToolUse: Write/Edit/MultiEdit` | `forge-workflow-chain-guard` | Before implementation edits in active composed workflows |
 | `session-start` + `session-log-init.sh` + `spec-session-record.sh` | SessionStart | `forge-session-init` | At session start |
 
 Hooks **not ported** (intentional): `dev-cycle-check.sh` (no plugin cache in Forge), `timeout-check.sh` (different timeout model), `compliance-status.sh` / `prompt-reminder.sh` / `semantic-compress.sh` / `ensure-model-routing.sh` / `record-skill.sh` / `phase-archive.sh` (informational or auto-handled by Forge).
 
-## Slash Command Map (v0.32.0)
+## Slash Command Map (current)
 
 GSD `/gsd:*` commands and selected Superpowers/KW commands are ported as Forge slash commands at `forge/commands/<name>.md` and installed to `~/forge/commands/`. Invoked with `:` prefix, e.g. `:gsd-plan-phase`, `:brainstorm`, `:pm-brainstorm`.
 
@@ -42,15 +45,16 @@ Format: minimal Forge command frontmatter (`name`, `description`); Claude-Code-o
 
 | Source | Count | Examples |
 |---|---|---|
-| GSD (`get-shit-done-cc/commands/gsd/*`) | 43 | `:gsd-new-project`, `:gsd-new-milestone`, `:gsd-discuss-phase`, `:gsd-execute-phase`, `:gsd-complete-milestone`, `:gsd-debug`, `:gsd-fast`, ... |
+| GSD (`get-shit-done-cc/commands/gsd/*`) | 45 | `:gsd-new-project`, `:gsd-new-milestone`, `:gsd-discuss-phase`, `:gsd-execute-phase`, `:gsd-complete-milestone`, `:gsd-debug`, `:gsd-fast`, `:gsd-do`, ... |
 | Superpowers (`obra/superpowers/commands/*`) | 3 | `:brainstorm`, `:execute-plan`, `:write-plan` |
 | Anthropic KW product-management | 1 | `:pm-brainstorm` |
+| Silver Bullet | 1 | `:silver-clarify` |
 
 Earlier porting strategy (v0.28.0) had collapsed slash commands into "skill bodies" — that was misaligned with the Forge spec, since skills auto-load by description-match (not chain-resolve). This corrects that by porting every workflow-essential `/gsd:*` command as a real `:gsd-*` Forge command file.
 
 GSD utility commands NOT ported (Claude-Code-UX-specific, not workflow-relevant on Forge): `note`, `stats`, `help`, `settings`, `inbox`, `thread`, `set-profile`, `sync-skills`, `from-gsd2`, `extract_learnings`, `session-report`, `graphify`, `reapply-patches`, `undo`, `manager`, `workstreams`, `new-workspace`, `list-workspaces`, `remove-workspace`, `join-discord`. Re-port if/when needed.
 
-## SB Templates Map (v0.32.0)
+## SB Templates Map (current)
 
 Project-bootstrap templates from `templates/` are now ported to `forge/templates/` and installed to `~/forge/silver-bullet/templates/`. This closes the broken `silver-init` bootstrap path on Forge.
 
@@ -60,7 +64,8 @@ Project-bootstrap templates from `templates/` are now ported to `forge/templates
 | `workflow.md.base` | Phase-workflow tracker — copied to `.planning/WORKFLOW.md` |
 | `silver-bullet.config.json.default` | Default required-skill lists, paths, options |
 | `CHANGELOG-project.md.base`, `doc-scheme.md.base`, `CLAUDE.md.base` | Project bootstrap docs |
-| `knowledge/`, `lessons/`, `sessions/`, `specs/`, `workflows/` | Subtemplate dirs for `.planning/` scaffolding |
+| `doc-scheme.json.base`, `task-doc-checklist.json.base` | Governed-doc registry and task-doc checklist defaults |
+| `archive/`, `knowledge/`, `lessons/`, `sessions/`, `specs/`, `workflows/` | Subtemplate dirs for `.planning/` scaffolding |
 
 ## Subagent → Custom Agent Map
 
@@ -86,12 +91,14 @@ All **33** GSD subagents are ported as Forge custom agents with the same `id` fo
 
 ## Skill Map
 
-### Silver Bullet skills (62) — copied verbatim
-Format identical; copied with no content changes except for 3 skills with Claude Code-only references:
+### Silver Bullet skills (53) — copied with Forge adaptation
+Format identical; copied with no content changes except for Forge host adaptation and 3 skills with host-specific behavior:
 
 - `silver-update` — replaces `claude mcp install` with `forge-sb-install.sh`
 - `silver-init` — replaces Claude Code plugin checks with Forge install verification
 - `silver-migrate` — documents Claude Desktop → Forge migration path
+
+Current SB-owned Forge surface includes the current doc governance and session continuation skills (`silver-ensure-docs`, `silver-handoff`) plus the refreshed `silver` dynamic router and composable-flow contracts.
 
 ### Superpowers skills (14) — copied from cache
 Sourced from `~/.claude/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/`.
@@ -120,7 +127,7 @@ Each major SB workflow runs end-to-end on Forge with the same artifact outputs:
 
 These are gaps that exist by design and require AGENTS.md guidance to mitigate:
 
-1. **No automatic hook firing** — gates depend on the main agent invoking the right hook-agent at the right moment. AGENTS.md is the central enforcement layer.
+1. **No automatic hook firing** — gates depend on the main agent invoking the right hook-agent at the right moment. AGENTS.md is the central enforcement layer. The current Forge port includes 16 hook-equivalent agents, including dependency-skill, instruction-file, and workflow-chain guards.
 2. **No silent state recording** — Claude Desktop SB writes a state file as skills run. Forge does not. Parity is achieved by gating agents reading the project's artifact state directly (PLAN.md, VERIFICATION.md, etc.) rather than a state file.
 3. **No `/compact` integration** — Forge has its own context engine; SB's `/compact` invocation is unused.
 
@@ -128,8 +135,8 @@ These are gaps that exist by design and require AGENTS.md guidance to mitigate:
 
 After running `forge-sb-install.sh`:
 
-1. Run `:skill` in Forge — confirm ~107 skills + ~49 commands loaded
-2. Run `:agent` in Forge — confirm ~47 custom agents available (13 hook + 33 GSD + 1 Superpowers code-reviewer)
+1. Run `:skill` in Forge — confirm ~109 skills + ~50 commands loaded
+2. Run `:agent` in Forge — confirm ~50 custom agents available (16 hook-equivalent + 33 GSD + 1 Superpowers code-reviewer)
 3. Run a small `silver-feature` task end-to-end and check the produced `.planning/phases/<NNN>/` artifacts match the same workflow on Claude Desktop SB
 4. Compare against Phase 69's `forge/PARITY-REPORT.md` (generated during end-to-end verification)
 

@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST treat security as a first-class cons
 
 **Why this matters:** A single security vulnerability can compromise user data, destroy trust, and cost millions in breach response. Security cannot be "added later" — it must be designed in from the start. Every line of code is an attack surface.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to ALL code — there are no exceptions for "internal" or "low-risk" systems.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to ALL code — there are no exceptions for "internal" or "low-risk" systems.
 
 ---
 
@@ -117,7 +117,7 @@ Every configuration, feature flag, and permission MUST default to the secure opt
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Security Checklist**:
 
@@ -131,7 +131,7 @@ Before finalizing any design or plan, run the **Security Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - Use parameterized queries for ALL database access. No exceptions.

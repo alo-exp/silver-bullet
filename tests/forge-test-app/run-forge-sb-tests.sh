@@ -1,6 +1,6 @@
 #!/bin/bash
 # Forge-Silver Bullet Skill Test Harness
-# Tests ALL 61 scenario checks in realistic todo app development scenarios
+# Tests representative current Forge/Silver Bullet scenarios in a realistic todo app.
 
 set -e
 cd "$(dirname "$0")"
@@ -58,10 +58,10 @@ echo ""
 mkdir -p SCENARIOS
 
 # ============================================
-# SILVER CORE WORKFLOW SKILLS (10 skills)
+# SILVER CORE WORKFLOW SKILLS
 # ============================================
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
-echo -e "${MAGENTA} SILVER CORE WORKFLOW SKILLS (10 skills)${NC}"
+echo -e "${MAGENTA} SILVER CORE WORKFLOW SKILLS${NC}"
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -76,13 +76,14 @@ run_test "silver-quality-gates" "Apply quality standards"   "Run quality checks 
 run_test "silver-release"    "Create release workflow"      "Prepare v1.0.0 release"
 run_test "silver-spec"        "Write feature specification" "Write spec for new feature"
 run_test "silver-validate"   "Validate implementation"       "Verify the API works correctly"
+run_test "silver-handoff"    "Prepare session handoff"        "Wrap up this session for the next agent"
 
 # ============================================
-# SILVER EXTENDED SKILLS (11 skills)
+# SILVER EXTENDED SKILLS
 # ============================================
 echo ""
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
-echo -e "${MAGENTA} SILVER EXTENDED SKILLS (13 skills)${NC}"
+echo -e "${MAGENTA} SILVER EXTENDED SKILLS${NC}"
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
 echo ""
 
@@ -91,33 +92,33 @@ run_test "silver-create-release" "Create GitHub release"   "Create release notes
 run_test "silver-fast"         "Quick code fix"              "Fix this bug quickly"
 run_test "silver-forensics"   "Debug production issue"      "API returns 500 in production"
 run_test "silver-ingest"      "Ingest feature requirements"  "Process these feature requests"
+run_test "silver-ensure-docs" "Reconcile governed docs"      "Ensure the docs scheme is up to date"
 run_test "silver-init"        "Initialize new project"       "Start a new Node.js project"
 run_test "silver-migrate"     "Migrate database schema"      "Add user table to database"
 run_test "silver-review-stats" "Review code statistics"    "Show code quality metrics"
 run_test "silver-update"      "Update dependencies"          "Upgrade all npm packages"
-run_test "silver-validate"    "Validate implementation"     "Run end-to-end validation"
-run_test "silver-silver"      "Silver workflow routing"      "Route between sub-workflows"
+run_test "silver"             "Silver workflow routing"      "Route between sub-workflows"
 
 # ============================================
-# GSD WORKFLOW SKILLS (12 skills)
+# GSD WORKFLOW SKILLS
 # ============================================
 echo ""
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
-echo -e "${MAGENTA} GSD WORKFLOW SKILLS (12 skills)${NC}"
+echo -e "${MAGENTA} GSD WORKFLOW SKILLS${NC}"
 echo -e "${MAGENTA}════════════════════════════════════════════════${NC}"
 echo ""
 
-run_test "gsd-discuss"        "Discuss architecture"          "Debate SQL vs NoSQL for todos"
-run_test "gsd-execute"        "Execute implementation"       "Implement the delete endpoint"
+run_test "gsd-discuss-phase"  "Discuss architecture"          "Debate SQL vs NoSQL for todos"
+run_test "gsd-execute-phase"  "Execute implementation"       "Implement the delete endpoint"
 run_test "gsd-intel"          "Gather project intelligence"   "Analyze the codebase structure"
-run_test "gsd-plan"           "Create implementation plan"     "Plan sprint 1 features"
+run_test "gsd-plan-phase"     "Create implementation plan"     "Plan sprint 1 features"
 run_test "gsd-progress"       "Track progress"               "Show current project status"
-run_test "gsd-review"         "Review code changes"          "Review my pull request"
-run_test "gsd-review-fix"     "Fix review feedback"          "Address code review comments"
-run_test "gsd-secure"         "Security audit"               "Audit API for vulnerabilities"
+run_test "gsd-code-review"    "Review code changes"          "Review my pull request"
+run_test "gsd-code-review-fix" "Fix review feedback"         "Address code review comments"
+run_test "gsd-secure-phase"   "Security audit"               "Audit API for vulnerabilities"
 run_test "gsd-ship"           "Ship to production"           "Deploy todo app to prod"
-run_test "gsd-validate"      "Validate implementation"       "Validate acceptance criteria"
-run_test "gsd-verify"         "Verify test coverage"         "Verify all paths are tested"
+run_test "gsd-validate-phase" "Validate implementation"      "Validate acceptance criteria"
+run_test "gsd-verify-work"    "Verify test coverage"         "Verify all paths are tested"
 
 # ============================================
 # QUALITY & METHODOLOGY SKILLS (10 skills)

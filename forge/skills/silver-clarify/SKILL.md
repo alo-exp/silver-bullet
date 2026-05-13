@@ -5,19 +5,19 @@ argument-hint: "<idea, rough requirement, or requirement doc>"
 version: 0.1.0
 ---
 
-# /silver:clarify — Clarify, Compare, and Hand Off
+# /silver-clarify — Clarify, Compare, and Hand Off
 
 SB orchestrator for the front end of planning. It blends product framing, one-question-at-a-time interviewing, brainstorming discipline, and GSD handoff into one coherent workflow. It does not implement work or write plans; it reduces uncertainty until the next step is obvious.
 
 ## Goal
 
-Convert ambiguous input into a concise brief that `gsd:discuss-phase` can use immediately.
+Convert ambiguous input into a concise brief that `gsd-discuss-phase` can use immediately.
 
 ## Modes
 
 - `--auto`: choose reasonable defaults and ask only when blocked
 - `--all`: surface every gray area before converging
-- `--chain`: after the brief is captured, continue with `gsd:discuss-phase` when project/phase context exists
+- `--chain`: after the brief is captured, continue with `gsd-discuss-phase` when project/phase context exists
 - `--text`: keep the session text-only; no visual companion
 - `--analyze`: read more context up front before asking
 
@@ -98,7 +98,7 @@ If the input is already formalized, focus on gaps and conflicts rather than gene
 
 ### 5. Converge
 
-Pick the strongest direction, or if no decision is appropriate yet, narrow the open questions to the ones `gsd:discuss-phase` must resolve next.
+Pick the strongest direction, or if no decision is appropriate yet, narrow the open questions to the ones `gsd-discuss-phase` must resolve next.
 
 Be decisive. Name the recommendation and the reason for it.
 
@@ -112,10 +112,10 @@ Write a concise brief to `.planning/CLARIFY.md` with:
 - recommendation
 - assumptions
 - open questions
-- next-step notes for `gsd:discuss-phase`
+- next-step notes for `gsd-discuss-phase`
 - explicit notes about any assumptions that need later validation
 
-If `--chain` is set and the project/phase context is already known, hand the brief off to `gsd:discuss-phase` after writing it. If not, state the exact next GSD step needed to make that handoff possible.
+If `--chain` is set and the project/phase context is already known, hand the brief off to `gsd-discuss-phase` after writing it. If not, state the exact next GSD step needed to make that handoff possible.
 
 ## Exit Condition
 

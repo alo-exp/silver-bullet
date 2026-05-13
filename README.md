@@ -86,7 +86,7 @@ Silver Bullet ships a complete port for the [Forge](https://forgecode.dev) codin
 curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
 ```
 
-This installs ~107 skills, ~47 custom agents (10 hook-equivalent + 33 GSD subagents + Superpowers code-reviewer + lock helpers), ~49 slash commands (43+ GSD + Superpowers + KW PM), and the SB project-bootstrap templates to `~/forge/`. Format-compliant per [`forgecode.dev/docs/`](https://forgecode.dev/docs/) (skills, custom agents, slash commands).
+This installs ~109 skills, ~50 custom agents (16 hook-equivalent + 33 GSD subagents + Superpowers code-reviewer), ~50 slash commands (GSD + Superpowers + KW PM + SB helpers), and the SB project-bootstrap templates to `~/forge/`. Format-compliant per [`forgecode.dev/docs/`](https://forgecode.dev/docs/) (skills, custom agents, slash commands).
 
 After install, run `silver-init` inside any project to scaffold `.planning/` and start a workflow. See [`forge/PARITY.md`](forge/PARITY.md) for the Claude-Code ↔ Forge capability map.
 

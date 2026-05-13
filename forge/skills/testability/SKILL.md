@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST produce code that is easy to test in
 
 **Why this matters:** Untestable code is unverifiable code. When a simple test cannot be written for a component, it's because the component has too many hidden dependencies, side effects, or tightly coupled concerns. Testability is a direct measure of design quality.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -122,7 +122,7 @@ Every test MUST run independently:
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Testability Checklist**:
 
@@ -136,7 +136,7 @@ Before finalizing any design or plan, run the **Testability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - Write the test FIRST (TDD). If the test is hard to write, redesign the interface.

@@ -153,7 +153,7 @@ File this item via /silver-add? [Y/n]
 
 **ii.** Increment `CANDIDATE_COUNT` (before asking — this counter tracks candidates presented, regardless of user choice).
 
-Use AskUserQuestion tool:
+Ask the user:
 - Question: "File this item? [Y to file via /silver-add / n to skip]"
 - Options: ["Y", "n"]
 
@@ -208,7 +208,7 @@ Insight: INSIGHT_TEXT (first 200 chars)
 Record this insight via /silver-rem? [Y/n]
 ```
 
-**ii.** Use AskUserQuestion tool:
+**ii.** Ask the user:
 - Question: "Record this insight? [Y to record via /silver-rem / n to skip]"
 - Options: ["Y", "n"]
 
@@ -269,7 +269,7 @@ If no candidates were found at all: show "No unresolved deferred items found. Se
 
 - **`## Needs human review` section is empty or contains `*(none)*`**: Do not generate a candidate from this entry — the section was explicitly cleared by the session author.
 
-- **`## Autonomous decisions` section contains only pre-answered routing entries** (e.g., "Model routing — Planning: Sonnet"): These are procedural pre-answers, not deferrable items. Skip them as candidates.
+- **`## Autonomous decisions` section contains only pre-answered routing entries** (e.g., "Model routing — Planning: Claude host Sonnet / Codex GPT-5.3-medium"): These are procedural pre-answers, not deferrable items. Skip them as candidates.
 
 - **Duplicate across session logs**: Same deferred item text appears in multiple session logs. Record it only once — on first occurrence. The stale check in Step 4 will also suppress it in subsequent files if it was filed after the first session.
 
