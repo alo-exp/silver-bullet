@@ -258,14 +258,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="code-block">Is the change ≤3 files? Is it a typo, rename, or config tweak?
   YES → <strong>Trivial</strong> → route to silver:fast (no planning overhead)
 
-Is the intent vague or scope unclear? Would you need to explore before planning?
-  YES → <strong>Fuzzy</strong> → run silver:explore first, then re-classify
+Is the intent vague or scope unclear? Would you need to clarify before planning?
+  YES → <strong>Fuzzy</strong> → run silver:clarify first, then re-classify
 
 Is the scope clear and does it fit within a single phase?
-  YES → <strong>Simple</strong> → route to the correct workflow, skip explore step
+  YES → <strong>Simple</strong> → route to the correct workflow, skip clarify step
 
 Multi-phase, cross-cutting, architectural, or has significant unknowns?
-  YES → <strong>Complex</strong> → full workflow with silver:explore + silver:brainstorm</div>
+  YES → <strong>Complex</strong> → full workflow with silver:clarify + synthesis</div>
 
       <h3>Classification summary</h3>
       <table class="ref-table">
@@ -288,14 +288,14 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td>Fuzzy</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">Vague intent, unclear scope, needs clarification</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:explore</code> → re-classify</td>
-            <td style="font-family:inherit;font-size:.875rem">Yes — explore first</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>silver:clarify</code> → re-classify</td>
+            <td style="font-family:inherit;font-size:.875rem">Yes — clarify first</td>
           </tr>
           <tr>
             <td>Complex</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">Multi-phase, cross-cutting, architectural, significant unknowns</td>
             <td style="font-family:inherit;font-size:.875rem">Intent-matched workflow with full pre-work</td>
-            <td style="font-family:inherit;font-size:.875rem">Yes — explore + brainstorm</td>
+            <td style="font-family:inherit;font-size:.875rem">Yes — clarify + synthesis</td>
           </tr>
         </tbody>
       </table>
@@ -316,14 +316,14 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
         </thead>
         <tbody>
           <tr>
-            <td><a href="../workflows/silver-brainstorm-idea.html" style="color:var(--accent-light)">/silver:brainstorm-idea</a></td>
+            <td><a href="../workflows/silver-clarify.html" style="color:var(--accent-light)">/silver:clarify</a></td>
             <td style="font-family:inherit;font-size:.875rem">"I want to build", "I'm thinking of", "here's my idea", "what if we", "concept:" — when no SPEC.md exists</td>
-            <td style="font-family:inherit;font-size:.875rem">product-brainstorming → brainstorming → gsd-new-milestone → gsd-discuss-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:clarify → gsd-discuss-phase</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/silver:feature</a></td>
             <td style="font-family:inherit;font-size:.875rem">"add X", "build X", "implement X", "new feature", "enhance X", "extend X"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:intel → product-brainstorming → silver:brainstorm</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:intel → silver:clarify</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-bugfix.html" style="color:var(--accent-light)">/silver:bugfix</a></td>
@@ -333,7 +333,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td><a href="../workflows/silver-ui.html" style="color:var(--accent-light)">/silver:ui</a></td>
             <td style="font-family:inherit;font-size:.875rem">"UI", "frontend", "component", "screen", "design", "interface", "page", "layout"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:intel → silver:clarify → gsd-ui-phase</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/silver:devops</a></td>
@@ -343,7 +343,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td><a href="../workflows/silver-research.html" style="color:var(--accent-light)">/silver:research</a></td>
             <td style="font-family:inherit;font-size:.875rem">"how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:explore → MultAI research → silver:brainstorm</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:clarify → MultAI research → silver:clarify</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>

@@ -10,12 +10,12 @@ check() {
 }
 
 # === SKILLS EXIST ===
-for skill in silver silver-feature silver-bugfix silver-ui silver-devops silver-research \
+for skill in silver silver-feature silver-bugfix silver-ui silver-devops silver-research silver-clarify \
              quality-gates modularity reusability scalability security reliability \
              usability testability extensibility ai-llm-safety \
-             tdd brainstorming writing-plans requesting-code-review receiving-code-review finishing-branch \
+             tdd silver-clarify writing-plans requesting-code-review receiving-code-review finishing-branch \
              gsd-discuss gsd-plan gsd-execute gsd-verify gsd-ship gsd-review \
-             gsd-review-fix gsd-secure gsd-validate gsd-intel gsd-progress gsd-brainstorm; do
+             gsd-review-fix gsd-secure gsd-validate gsd-intel gsd-progress; do
   check "Skill exists: $skill" "[ -f 'forge/skills/$skill/SKILL.md' ]"
 done
 

@@ -305,12 +305,12 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
-| `silver:brainstorm-idea` | "I want to build", "I have an idea", "here's my concept", multi-sentence idea description with no SPEC.md | product-brainstorming → silver:brainstorm → gsd-new-milestone → gsd-discuss-phase |
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → product-brainstorming → silver:brainstorm |
+| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify → gsd-discuss-phase |
+| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → silver:clarify |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |
+| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → silver:clarify → gsd-ui-phase |
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
+| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → MultAI research → silver:clarify |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → `/verify-tests` → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
 
@@ -318,7 +318,7 @@ Silver Bullet workflows are composed from a catalog of 18 flows (FLOW 0-17). Eac
 - Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
 - `silver:security` is always mandatory — cannot be skipped via §9
 - `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
-- TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
+- TDD enforcement is hidden: implementation plans pass through the internal `silver:tdd` gate before `gsd-execute-phase --tdd`; config/infra/doc plans skip TDD
 - `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan; `/verify-tests` runs before final delivery so the test gate is fresh
 - Code review always uses the Superpowers framing pair: `silver:request-review` before and `silver:receive-review` after
 - Cross-AI review (`gsd-review --all`) triggers automatically for architecturally significant changes
@@ -341,12 +341,12 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 |------|------|---------|
 | FLOW 0 | BOOTSTRAP | Project setup — PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
 | FLOW 1 | ORIENT | Codebase intelligence — gsd-intel, gsd-scan, gsd-map-codebase |
-| FLOW 2 | EXPLORE | Research spike — silver:explore, MultAI research |
-| FLOW 3 | IDEATE | Product brainstorming — silver:brainstorm, product-brainstorming |
+| FLOW 2 | CLARIFY | Discovery and framing — silver:clarify, MultAI research |
+| FLOW 3 | DECIDE | Option synthesis — silver:clarify |
 | FLOW 4 | SPECIFY | Spec creation — silver-ingest, write-spec, silver-spec, silver-validate |
 | FLOW 5 | PLAN | Phase planning — discuss-phase, writing-plans, gsd-plan-phase |
 | FLOW 6 | DESIGN CONTRACT | UI/UX design — design-system, ux-copy, gsd-ui-phase |
-| FLOW 7 | EXECUTE | Implementation — gsd-execute-phase with TDD as-needed |
+| FLOW 7 | EXECUTE | Implementation — internal `silver:tdd` gate + `gsd-execute-phase --tdd` |
 | FLOW 8 | UI QUALITY | UI review — design-critique, gsd-ui-review, accessibility-review |
 | FLOW 9 | REVIEW | Code review — 3 parallel layers with triage + fix |
 | FLOW 10 | SECURE | Security audit — SENTINEL, gsd-secure-phase, gsd-validate-phase |

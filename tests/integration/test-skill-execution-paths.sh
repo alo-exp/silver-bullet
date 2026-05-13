@@ -33,12 +33,12 @@ EXTERNAL_SKILLS=(
   gsd-plan-milestone-gaps gsd-fast gsd-multai gsd-debug gsd-forensics
   gsd-docs-update gsd-milestone-summary gsd-ui-phase gsd-ui-review
   "gsd-review --all"
-  "superpowers:brainstorming" "superpowers:writing-plans" "superpowers:test-driven-development"
+  "superpowers:writing-plans" "superpowers:test-driven-development"
   "superpowers:finishing-a-development-branch" "superpowers:requesting-code-review"
   "superpowers:receiving-code-review" "superpowers:systematic-debugging"
   "multai:orchestrator" "multai:landscape-researcher" "multai:consolidator"
   "multai:comparator" "multai:solution-researcher"
-  "/product-brainstorming" "/testing-strategy" "/artifact-reviewer"
+  "/testing-strategy" "/artifact-reviewer"
   "episodic-memory:remembering-conversations"
   "design:design-system" "design:ux-copy" "design:accessibility-review"
   "design:design-critique" "design:design-handoff"
@@ -71,8 +71,7 @@ resolve_silver_alias() {
   case "$cmd" in
     silver:intel)               echo "gsd-intel" ;;
     silver:scan)                echo "gsd-scan" ;;
-    silver:explore)             echo "gsd-explore" ;;
-    silver:brainstorm)          echo "superpowers:brainstorming" ;;
+    silver:clarify)             echo "silver-clarify" ;;
     silver:writing-plans)       echo "superpowers:writing-plans" ;;
     silver:tdd)                 echo "superpowers:test-driven-development" ;;
     silver:finishing-branch)    echo "superpowers:finishing-a-development-branch" ;;
@@ -136,7 +135,7 @@ echo ""
 echo "=== Group 1: Sub-skill Reference Integrity ==="
 
 ORCHESTRATION_SKILLS=(
-  silver-feature silver-devops silver-bugfix silver-ui silver-research silver-release
+  silver-feature silver-devops silver-bugfix silver-ui silver-research silver-release silver-clarify
   silver-quality-gates artifact-reviewer
 )
 

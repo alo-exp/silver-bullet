@@ -9,8 +9,8 @@ trap 'printf "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permis
 # Required dependency surfaces:
 #   - GSD calls used by SB workflows (gsd-*)
 #   - Superpowers, Design, Engineering, Product Management, MultAI namespaces
-#   - Bare dependency skills used directly by SB: product-brainstorming,
-#     code-review, brainstorming, test-driven-development, systematic-debugging,
+#   - Bare dependency skills used directly by SB: code-review, clarify,
+#     test-driven-development, systematic-debugging,
 #     requesting-code-review, receiving-code-review, finishing-a-development-branch,
 #     design-critique, user-research, write-spec
 #
@@ -54,7 +54,7 @@ case "$raw_skill" in
   gsd:*|gsd-*|superpowers:*|design:*|engineering:*|product-management:*)
     dependency_required=true
     ;;
-  product-brainstorming|code-review|brainstorming|test-driven-development|systematic-debugging|requesting-code-review|receiving-code-review|finishing-a-development-branch|design-critique|user-research|write-spec)
+  code-review|clarify|test-driven-development|systematic-debugging|requesting-code-review|receiving-code-review|finishing-a-development-branch|design-critique|user-research|write-spec)
     dependency_required=true
     ;;
 esac

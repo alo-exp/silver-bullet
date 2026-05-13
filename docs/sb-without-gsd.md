@@ -99,7 +99,7 @@ installed, they stall immediately at the first `gsd-*` invocation.
 | `/silver:bugfix` | `gsd-debug`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship` | Parallel debug dispatch, execution, verification, and shipping all fail |
 | `/silver:ui` | `gsd-ui-phase`, `gsd-ui-review`, `gsd-execute-phase`, `gsd-verify-work` | UI design capture, visual review, execution, and verification all fail |
 | `/silver:devops` | `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship` | Execution, verification, and shipping all fail |
-| `/silver:research` | `gsd-explore` (via `silver:explore`); receiving workflow (`silver:feature` / `silver:devops`) also requires GSD | Fuzzy clarification and the receiving implementation workflow fail; MultAI research and brainstorm steps still run |
+| `/silver:research` | `silver:clarify`; receiving workflow (`silver:feature` / `silver:devops`) also requires GSD | Fuzzy clarification and the receiving implementation workflow fail; MultAI research and synthesis steps still run |
 | `/silver:release` | `gsd-ship`, `gsd-complete-milestone`, `gsd-audit-milestone`, `gsd-audit-uat` | Phase shipping, UAT gate, milestone completion, and audit all fail |
 | `/silver:fast` | `gsd-fast` | The quick-task execution mode is unavailable |
 
@@ -107,7 +107,7 @@ installed, they stall immediately at the first `gsd-*` invocation.
 
 The following skills are provided by GSD and are not available unless GSD is installed:
 `gsd-discuss-phase`, `gsd-plan-phase`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship`,
-`gsd-fast`, `gsd-debug`, `gsd-new-project`, `gsd-new-milestone`, `gsd-brainstorm`,
+`gsd-fast`, `gsd-debug`, `gsd-new-project`, `gsd-new-milestone`,
 `gsd-intel`, `gsd-ui-phase`, `gsd-ui-review`, `gsd-secure`, `gsd-complete-milestone`,
 `gsd-audit-milestone`, `gsd-audit-uat`, `gsd-progress`, `gsd-resume`, `gsd-pause`.
 

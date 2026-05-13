@@ -10,17 +10,29 @@ GSD_INSTALL_CMD="${GSD_INSTALL_CMD:-${NPM_BIN} get-shit-done-cc@latest}"
 CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-labs/codex-plugins}"
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
 SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
+GSD_MARKETPLACE_SOURCE="${GSD_MARKETPLACE_SOURCE:-https://github.com/gsd-build/get-shit-done.git}"
 
 resolve_codex_config_file() {
   local config_file
-  mkdir -p "${HOME}/.Codex" "${HOME}/.codex"
-  for config_file in "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml"; do
+  mkdir -p "${HOME}/.codex"
+  for config_file in "${HOME}/.codex/config.toml"; do
     if [[ -f "$config_file" ]]; then
       printf '%s\n' "$config_file"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.Codex/config.toml"
+  printf '%s\n' "${HOME}/.codex/config.toml"
+}
+
+resolve_codex_gsd_home() {
+  local gsd_home
+  for gsd_home in "${HOME}/.codex/get-shit-done"; do
+    if [[ -f "${gsd_home}/VERSION" ]]; then
+      printf '%s\n' "$gsd_home"
+      return 0
+    fi
+  done
+  printf '%s\n' "${HOME}/.codex/get-shit-done"
 }
 
 usage() {
@@ -77,16 +89,17 @@ PY
 
 ensure_marketplace_registered() {
   local source_spec="$1"
+  local marketplace_name="${2:-}"
   local config_file
   config_file="$(resolve_codex_config_file)"
 
-  python3 - "$config_file" "$source_spec" <<'PY'
+  python3 - "$config_file" "$source_spec" "$marketplace_name" <<'PY'
 import pathlib
 import sys
 
 config_path = pathlib.Path(sys.argv[1])
 source_spec = sys.argv[2]
-marketplace_name = 'superpowers-marketplace' if 'superpowers' in source_spec else 'alo-labs-codex'
+marketplace_name = sys.argv[3] or ('superpowers-marketplace' if 'superpowers' in source_spec else 'alo-labs-codex')
 source_type = 'local' if source_spec.startswith('/') else 'git'
 config_path.parent.mkdir(parents=True, exist_ok=True)
 text = config_path.read_text() if config_path.exists() else ''
@@ -187,8 +200,11 @@ PY
     if [[ -d "${REPO_ROOT}/${dir}" ]]; then
       local src_dir="${REPO_ROOT}/${dir}"
       local dst_dir="${marketplace_root}/${dir}"
-      if [[ -e "$dst_dir" ]] && [[ "$(resolve_realpath "$src_dir")" == "$(resolve_realpath "$dst_dir")" ]]; then
+      if [[ -e "$dst_dir" ]] && [[ ! -L "$dst_dir" ]] && [[ "$(resolve_realpath "$src_dir")" == "$(resolve_realpath "$dst_dir")" ]]; then
         continue
+      fi
+      if [[ -L "$dst_dir" ]]; then
+        rm -rf "$dst_dir"
       fi
       mkdir -p "$dst_dir"
       rsync -a --delete "${src_dir}/" "${dst_dir}/"
@@ -211,8 +227,11 @@ PY
     if [[ -e "${REPO_ROOT}/${file}" ]]; then
       local src_file="${REPO_ROOT}/${file}"
       local dst_file="${marketplace_root}/${file}"
-      if [[ -e "$dst_file" ]] && [[ "$(resolve_realpath "$src_file")" == "$(resolve_realpath "$dst_file")" ]]; then
+      if [[ -e "$dst_file" ]] && [[ ! -L "$dst_file" ]] && [[ "$(resolve_realpath "$src_file")" == "$(resolve_realpath "$dst_file")" ]]; then
         continue
+      fi
+      if [[ -L "$dst_file" ]]; then
+        rm -f "$dst_file"
       fi
       cp -p "$src_file" "$dst_file"
     fi
@@ -320,11 +339,10 @@ sync_codex_cache_package_surface() {
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
   local cache_root package_root version_dir
-  for cache_root in "${HOME}/.Codex/plugins/cache" "${HOME}/.codex/plugins/cache"; do
+  for cache_root in "${HOME}/.codex/plugins/cache"; do
     [[ -d "$cache_root" ]] || continue
     for package_root in \
-      "${cache_root}/alo-labs-codex/silver-bullet" \
-      "${cache_root}/alo-labs-codex-local/silver-bullet"; do
+      "${cache_root}/alo-labs-codex/silver-bullet"; do
       [[ -d "$package_root" ]] || continue
       shopt -s nullglob
       for version_dir in "$package_root"/*; do
@@ -348,9 +366,7 @@ sync_codex_installed_plugin_registry_paths() {
   local updates=()
   updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
 
-  for registry_file in \
-    "${HOME}/.Codex/plugins/installed_plugins.json" \
-    "${HOME}/.codex/plugins/installed_plugins.json"; do
+  for registry_file in "${HOME}/.codex/plugins/installed_plugins.json"; do
     [[ -f "$registry_file" ]] || continue
 
     updates=()
@@ -363,9 +379,7 @@ sync_codex_installed_plugin_registry_paths() {
       current_path=""
       stable_path=""
 
-      for cache_root in \
-        "${HOME}/.Codex/plugins/cache" \
-        "${HOME}/.codex/plugins/cache"; do
+      for cache_root in "${HOME}/.codex/plugins/cache"; do
         if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
           current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
           [[ -n "$current_path" ]] && break
@@ -383,7 +397,7 @@ marketplace = sys.argv[2]
 plugin_name = sys.argv[3]
 
 alias_roots = [
-    pathlib.Path.home() / ".Codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
+    pathlib.Path.home() / ".codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
     pathlib.Path.home() / ".codex" / "plugins" / "cache" / marketplace / plugin_name / "current",
 ]
 
@@ -400,7 +414,7 @@ target_path = current_path.resolve()
 for alias_path in alias_roots:
     refresh_alias(alias_path, target_path)
 PY
-      stable_path="${HOME}/.Codex/plugins/cache/${marketplace}/${plugin_name}/current"
+      stable_path="${HOME}/.codex/plugins/cache/${marketplace}/${plugin_name}/current"
       updates+=("${plugin_id}=${stable_path}|${current_path##*/}")
     done < <(python3 - "$registry_file" <<'PY'
 import json
@@ -459,17 +473,92 @@ PY
   done
 }
 
+ensure_codex_dependency_registry_entries() {
+  local registry_file
+  registry_file="${HOME}/.codex/plugins/installed_plugins.json"
+
+  python3 - "$registry_file" <<'PY'
+import datetime
+import json
+import pathlib
+import shutil
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+home = pathlib.Path.home()
+now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+plugin_specs = {
+    "superpowers@superpowers-marketplace": ("superpowers-marketplace", "superpowers"),
+    "gsd@get-shit-done-marketplace": ("get-shit-done-marketplace", "gsd"),
+    "engineering@alo-labs-codex": ("alo-labs-codex", "engineering"),
+    "design@alo-labs-codex": ("alo-labs-codex", "design"),
+    "product-management@alo-labs-codex": ("alo-labs-codex", "product-management"),
+}
+
+data = {"version": 2, "plugins": {}}
+if registry_path.is_file():
+    try:
+        data = json.loads(registry_path.read_text())
+    except Exception:
+        pass
+
+plugins = data.setdefault("plugins", {})
+changed = False
+
+for plugin_id, (marketplace, plugin_name) in plugin_specs.items():
+    plugin_root = home / ".codex" / "plugins" / "cache" / marketplace / plugin_name
+    if not plugin_root.exists():
+        continue
+
+    version_dirs = sorted(
+        [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
+        key=lambda path: path.name,
+    )
+    if not version_dirs:
+        continue
+
+    target_path = version_dirs[-1]
+    current_path = plugin_root / "current"
+    if current_path.exists() or current_path.is_symlink():
+        if current_path.is_dir() and not current_path.is_symlink():
+            shutil.rmtree(current_path)
+        else:
+            current_path.unlink()
+    current_path.symlink_to(target_path)
+
+    entry = {
+        "scope": "project",
+        "projectPath": str(home),
+        "installPath": str(current_path),
+        "version": target_path.name,
+        "installedAt": now,
+        "lastUpdated": now,
+    }
+
+    if plugin_id in plugins and plugins[plugin_id]:
+        plugins[plugin_id][0].update(entry)
+    else:
+        plugins[plugin_id] = [entry]
+    changed = True
+
+if changed:
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+}
+
 normalize_codex_hook_async_flags() {
   local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
 
-  python3 - "$marketplace_root" "$HOME/.Codex/plugins/cache" "$HOME/.codex/plugins/cache" <<'PY'
+  python3 - "$marketplace_root" "$HOME/.codex/plugins/cache" <<'PY'
 import json
 import pathlib
 import sys
 
 marketplace_root = pathlib.Path(sys.argv[1])
-cache_roots = [pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])]
+cache_roots = [pathlib.Path(sys.argv[2])]
 
 # The marketplace keeps a top-level hooks tree and a materialized plugin copy.
 # Both can carry stale async flags, so normalize each surface before Codex reads it.
@@ -665,8 +754,69 @@ if removed:
 PY
 }
 
+purge_legacy_silver_bullet_codex_alias() {
+  python3 - "${HOME}/.codex/plugins/installed_plugins.json" "${HOME}/.codex/config.toml" <<'PY'
+import json
+import pathlib
+import shutil
+import sys
+
+registry_paths = [pathlib.Path(sys.argv[1])]
+config_paths = [pathlib.Path(sys.argv[2])]
+plugin_id = "silver-bullet@alo-labs-codex-local"
+plugin_header = f'[plugins."{plugin_id}"]'
+hooks_prefix = f'[hooks.state."{plugin_id}'
+
+for registry_path in registry_paths:
+    if not registry_path.is_file():
+        continue
+
+    data = json.loads(registry_path.read_text())
+    plugins = data.get("plugins", {})
+    if plugin_id in plugins:
+        del plugins[plugin_id]
+        registry_path.write_text(json.dumps(data, indent=2) + "\n")
+
+for config_path in config_paths:
+    if not config_path.is_file():
+        continue
+
+    text = config_path.read_text()
+    text = text.replace("/.Codex/", "/.codex/")
+    lines = text.splitlines()
+    output = []
+    i = 0
+    changed = False
+
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if stripped == plugin_header or stripped.startswith(hooks_prefix):
+            changed = True
+            i += 1
+            while i < len(lines) and not lines[i].startswith('['):
+                i += 1
+            continue
+        output.append(line)
+        i += 1
+
+    if changed:
+        new_text = '\n'.join(output)
+        if text.endswith('\n'):
+            new_text += '\n'
+        config_path.write_text(new_text)
+
+cache_root = pathlib.Path.home() / ".codex" / "plugins" / "cache" / "alo-labs-codex-local" / "silver-bullet"
+if cache_root.exists():
+    if cache_root.is_dir() and not cache_root.is_symlink():
+        shutil.rmtree(cache_root)
+    else:
+        cache_root.unlink()
+PY
+}
+
 purge_legacy_silver_bullet_hooks_from_user_config() {
-  python3 - "${HOME}/.Codex/hooks.json" "${HOME}/.codex/hooks.json" <<'PY'
+  python3 - "${HOME}/.codex/hooks.json" <<'PY'
 import json
 import pathlib
 import re
@@ -711,7 +861,7 @@ for raw_path in sys.argv[1:]:
         hooks_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 
-  python3 - "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml" <<'PY'
+  python3 - "${HOME}/.codex/config.toml" <<'PY'
 import pathlib
 import sys
 
@@ -746,13 +896,11 @@ PY
 }
 
 seed_silver_bullet_hook_trust_state() {
-  local marketplace_root package_root
+  local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
-  package_root="${marketplace_root}/plugins/silver-bullet"
+  [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
-  [[ -d "${package_root}/hooks" ]] || return 0
-
-  python3 - "$package_root" "${HOME}/.Codex/config.toml" "${HOME}/.codex/config.toml" <<'PY'
+  python3 - "${marketplace_root}/plugins/silver-bullet" "${HOME}/.codex/config.toml" <<'PY'
 import hashlib
 import json
 import pathlib
@@ -760,14 +908,11 @@ import re
 import sys
 
 package_root = pathlib.Path(sys.argv[1])
-target_paths = [pathlib.Path(p) for p in sys.argv[2:]]
-hooks_src = package_root / "hooks" / "hooks.json"
+target_paths = [pathlib.Path(sys.argv[2])]
 
-if not hooks_src.is_file():
+package_hooks_src = package_root / "hooks" / "hooks.json"
+if not package_hooks_src.is_file():
     sys.exit(0)
-
-src_data = json.loads(hooks_src.read_text())
-sb_hooks = src_data.get("hooks", {})
 
 def event_slug(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
@@ -775,13 +920,32 @@ def event_slug(name: str) -> str:
 def trusted_hash(command: str) -> str:
     return "sha256:" + hashlib.sha256(command.encode("utf-8")).hexdigest()
 
+home = pathlib.Path.home()
+def first_existing(*paths):
+    for path in paths:
+        if path.is_file():
+            return path
+    return None
+
+def hooks_data_for(path):
+    if path is None:
+        return {}
+    return json.loads(path.read_text()).get("hooks", {})
+
+resolved_sources = {
+    "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_src,
+    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json"),
+}
+
 entries = []
-for event_name, groups in sb_hooks.items():
-    slug = event_slug(event_name)
-    for group_index, group in enumerate(groups):
-        for hook_index, hook in enumerate(group.get("hooks", [])):
-            key = f"silver-bullet@alo-labs-codex:hooks/hooks.json:{slug}:{group_index}:{hook_index}"
-            entries.append((key, trusted_hash(hook.get("command", ""))))
+
+for prefix, source_path in resolved_sources.items():
+    for event_name, groups in hooks_data_for(source_path).items():
+        slug = event_slug(event_name)
+        for group_index, group in enumerate(groups):
+            for hook_index, hook in enumerate(group.get("hooks", [])):
+                key = f"{prefix}:{slug}:{group_index}:{hook_index}"
+                entries.append((key, trusted_hash(hook.get("command", ""))))
 
 def render_entries():
     lines = []
@@ -809,7 +973,7 @@ for config_path in target_paths:
             continue
 
         if hooks_state_seen:
-            if line.startswith('[hooks.state."silver-bullet@'):
+            if any(line.startswith(f'[hooks.state."{prefix}') for prefix in resolved_sources):
                 changed = True
                 i += 1
                 while i < len(lines) and not lines[i].startswith('['):
@@ -854,14 +1018,14 @@ merge_silver_bullet_hooks_into_user_config() {
 
   [[ -d "${package_root}/hooks" ]] || return 0
 
-  python3 - "$package_root" "${HOME}/.Codex/hooks.json" "${HOME}/.codex/hooks.json" <<'PY'
+  python3 - "$package_root" "${HOME}/.codex/hooks.json" <<'PY'
 import json
 import pathlib
 import re
 import sys
 
 package_root = pathlib.Path(sys.argv[1])
-target_paths = [pathlib.Path(p) for p in sys.argv[2:]]
+target_paths = [pathlib.Path(sys.argv[2])]
 hooks_src = package_root / "hooks" / "hooks.json"
 
 if not hooks_src.is_file():
@@ -948,14 +1112,13 @@ PY
 codex_marketplace_root() {
   local marketplace_root
   for marketplace_root in \
-    "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex" \
     "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"; do
     if [[ -d "$marketplace_root" ]]; then
       printf '%s\n' "$marketplace_root"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.Codex/.tmp/marketplaces/alo-labs-codex"
+  printf '%s\n' "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
 }
 
 find_silver_bullet_project_root() {
@@ -996,6 +1159,159 @@ for skill_md in skills_root.rglob("SKILL.md"):
     updated = name_re.sub(lambda m: f"{m.group(1)}silver:{m.group(2)}", text, count=1)
     if updated != text:
         skill_md.write_text(updated)
+PY
+}
+
+rewrite_codex_bundle_host_paths() {
+  local marketplace_root
+  local package_root
+
+  marketplace_root="$(codex_marketplace_root)"
+  package_root="${marketplace_root}/plugins/silver-bullet"
+
+  [[ -d "$package_root" ]] || return 0
+
+  python3 - "$marketplace_root" "$package_root" "${HOME}/.codex/plugins/cache" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+marketplace_root = pathlib.Path(sys.argv[1])
+package_root = pathlib.Path(sys.argv[2])
+cache_roots = [pathlib.Path(arg) for arg in sys.argv[3:] if arg]
+
+targets = [marketplace_root, package_root]
+for cache_root in cache_roots:
+    package_cache_root = cache_root / "alo-labs-codex" / "silver-bullet"
+    if not package_cache_root.exists():
+        continue
+    for version_dir in package_cache_root.iterdir():
+        if version_dir.name == "current" or not version_dir.is_dir():
+            continue
+        targets.append(version_dir)
+
+path_segment_re = re.compile(r'/\.claude(?=/|$)')
+gsd_sdk_replacements = (
+    (
+        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
+        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
+    ),
+    (
+        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools')",
+        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools')",
+    ),
+)
+home_claude_replacements = (
+    ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
+    ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),
+    ("os.homedir() + '/.claude'", "os.homedir() + '/.codex'"),
+    ('os.homedir() + "/.claude"', 'os.homedir() + "/.codex"'),
+)
+
+def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
+    try:
+        data = json.loads(file_path.read_text())
+    except Exception:
+        return False
+
+    if not isinstance(data, dict) or "hooks" not in data:
+        return False
+
+    changed = False
+
+    def rewrite_value(value):
+        nonlocal changed
+        if isinstance(value, str):
+            updated = value.replace("${CLAUDE_PLUGIN_ROOT}", str(package_root))
+            if file_path.name == "hooks.json":
+                for src, dst in gsd_sdk_replacements:
+                    updated = updated.replace(src, dst)
+                for src, dst in home_claude_replacements:
+                    updated = updated.replace(src, dst)
+                updated = updated.replace("\\.claude/", "\\.codex/")
+                updated = updated.replace(".claude/", ".codex/")
+                updated = updated.replace("~/\\.claude", "~/.codex")
+                updated = updated.replace("$HOME/.claude", "$HOME/.codex")
+                updated = updated.replace("${HOME}/.claude", "${HOME}/.codex")
+                updated = path_segment_re.sub("/.codex", updated)
+            if updated != value:
+                changed = True
+            return updated
+        if isinstance(value, list):
+            return [rewrite_value(item) for item in value]
+        if isinstance(value, dict):
+            return {key: rewrite_value(item) for key, item in value.items()}
+        return value
+
+    updated = rewrite_value(data)
+    if changed:
+        file_path.write_text(json.dumps(updated, indent=2) + "\n")
+    return changed
+
+path_segment_re = re.compile(r'/\.claude(?=/|$)')
+gsd_sdk_replacements = (
+    (
+        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
+        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
+    ),
+    (
+        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools')",
+        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools')",
+    ),
+)
+home_claude_replacements = (
+    ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
+    ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),
+    ("os.homedir() + '/.claude'", "os.homedir() + '/.codex'"),
+    ('os.homedir() + "/.claude"', 'os.homedir() + "/.codex"'),
+)
+
+for root in targets:
+    for file_path in root.rglob("*"):
+        if not file_path.is_file() or file_path.is_symlink():
+            continue
+        if ".git" in file_path.parts:
+            continue
+        try:
+            text = file_path.read_text()
+        except UnicodeDecodeError:
+            continue
+        except Exception:
+            continue
+
+        if file_path.name == "hooks.json" and rewrite_hook_manifest(file_path):
+            continue
+
+        updated = text
+        if file_path.name == "gsd-sdk.cjs":
+            for src, dst in gsd_sdk_replacements:
+                updated = updated.replace(src, dst)
+        for src, dst in home_claude_replacements:
+            updated = updated.replace(src, dst)
+        updated = updated.replace("\\.claude/", "\\.codex/")
+        updated = updated.replace(".claude/", ".codex/")
+        updated = updated.replace("~/\\.claude", "~/.codex")
+        updated = updated.replace("$HOME/.claude", "$HOME/.codex")
+        updated = updated.replace("${HOME}/.claude", "${HOME}/.codex")
+        updated = path_segment_re.sub("/.codex", updated)
+
+        if updated != text:
+            file_path.write_text(updated)
+
+canonical_hooks_path = marketplace_root / "hooks" / "hooks.json"
+if canonical_hooks_path.is_file():
+    try:
+        canonical_hooks_text = canonical_hooks_path.read_text()
+    except Exception:
+        canonical_hooks_text = ""
+    if canonical_hooks_text:
+        for root in targets:
+            hooks_path = root / "hooks" / "hooks.json"
+            if not hooks_path.is_file() or hooks_path == canonical_hooks_path:
+                continue
+            if hooks_path.read_text() != canonical_hooks_text:
+                hooks_path.write_text(canonical_hooks_text)
 PY
 }
 
@@ -1045,33 +1361,41 @@ remove_marketplace_if_present "${CODEX_MARKETPLACE_LEGACY_NAME}"
 ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
 seed_marketplace_snapshot_if_missing
 refresh_marketplace "alo-labs-codex"
+purge_legacy_silver_bullet_codex_alias
 sync_marketplace_package_surface
 sync_marketplace_package_snapshot
 materialize_silver_bullet_package
 sync_materialized_package_surface
 sync_codex_cache_package_surface
+rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
 normalize_codex_hook_async_flags
 ensure_feature_enabled "plugin_hooks"
+ensure_plugin_enabled "superpowers@superpowers-marketplace"
+ensure_plugin_enabled "gsd@get-shit-done-marketplace"
 remove_plugin_enabled "silver@alo-labs-codex"
 ensure_plugin_enabled "product-management@alo-labs-codex"
 ensure_plugin_enabled "engineering@alo-labs-codex"
 ensure_plugin_enabled "design@alo-labs-codex"
+ensure_codex_dependency_registry_entries
 purge_legacy_silver_bullet_hooks_from_user_config
 
-if find_silver_bullet_project_root >/dev/null 2>&1; then
+SB_PROJECT_ROOT=""
+if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
   ensure_plugin_enabled "silver-bullet@alo-labs-codex"
-  seed_silver_bullet_hook_trust_state
+  merge_silver_bullet_hooks_into_user_config
 else
   remove_plugin_enabled "silver-bullet@alo-labs-codex"
-  remove_plugin_enabled "silver-bullet@alo-labs-codex-local"
   printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'
 fi
 
 ensure_marketplace_registered "${SUPERPOWERS_MARKETPLACE_SOURCE}"
+ensure_marketplace_registered "${GSD_MARKETPLACE_SOURCE}" "get-shit-done-marketplace"
 
-if [[ -f "${HOME}/.claude/get-shit-done/VERSION" ]]; then
-  printf 'GSD already installed at %s\n' "${HOME}/.claude/get-shit-done/VERSION"
+GSD_HOME="$(resolve_codex_gsd_home)"
+
+if [[ -f "${GSD_HOME}/VERSION" ]]; then
+  printf 'GSD already installed at %s\n' "${GSD_HOME}/VERSION"
 else
   if ! command -v "${NPM_BIN}" >/dev/null 2>&1; then
     printf 'ERROR: npm/npx not found in PATH; cannot install GSD\n' >&2
@@ -1082,12 +1406,15 @@ else
   # The command is treated as a simple whitespace-delimited invocation.
   # Tests can override it with a tiny helper executable.
   read -r -a GSD_INSTALL_ARGS <<< "${GSD_INSTALL_CMD}"
-  "${GSD_INSTALL_ARGS[@]}"
+  GSD_HOME="$GSD_HOME" "${GSD_INSTALL_ARGS[@]}"
+fi
+
+if [[ -n "$SB_PROJECT_ROOT" ]]; then
+  seed_silver_bullet_hook_trust_state
 fi
 
 sync_silver_bullet_skill_cache
 scrub_legacy_silver_bullet_traces
-merge_silver_bullet_hooks_into_user_config
 
 if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
   LEGACY_SKILLS_HOME="${HOME}/.agents/skills"

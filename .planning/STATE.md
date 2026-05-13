@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.32.5
+milestone: v0.33.1
 milestone_name: Open Issue Burn-down
 current_plan: none
 status: planning
 stopped_at: ""
-last_updated: "2026-05-11T00:00:00.000Z"
-last_activity: 2026-05-11
+last_updated: "2026-05-13T00:00:00.000Z"
+last_activity: 2026-05-13
 progress:
   total_phases: 6
   completed_phases: 0
@@ -18,8 +18,8 @@ progress:
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.32.4 (release line in progress). Prior shipped milestone: v0.31.1.
-**Active milestone:** v0.32.5 Open Issue Burn-down
+**Current version:** v0.33.0 (release line shipped). Prior shipped milestone: v0.31.1.
+**Active milestone:** v0.33.1 Open Issue Burn-down
 **Active phase:** (none — defining requirements)
 **Current plan:** (none)
 
@@ -34,13 +34,13 @@ See: .planning/MILESTONES.md (latest shipped entry + current milestone context)
 
 Phase: Not started (defining requirements)
 Plan: —
-Status: Defining requirements for the v0.32.5 open-issue burn-down
+Status: Defining requirements for the v0.33.1 open-issue burn-down
 
 Progress: [░░░░░░░░░░] 0% (0/6 phases started)
 
-## v0.32.5 burn-down sync
+## v0.33.1 burn-down sync
 
-- Planning docs are being refreshed to match the current release line (`v0.32.4`) and the 22 open issues in scope.
+- Planning docs are being refreshed to match the current release line (`v0.33.0`) and the 22 open issues in scope.
 - Issue clusters: Silver Bullet init/runtime, docs semantic audit, hook inspection policy, backlog reconciliation, and todo-app clear-completed cleanup.
 
 ## Previous milestone summary (v0.31.0)
@@ -64,10 +64,10 @@ Plus pre-release gate fixes: 2 additional GSD command ports, secondary version f
 - Pre-release quality gate: all 4 stages reached 2 consecutive clean rounds before release.
 
 ## Pending Todos
-- Refresh PROJECT/REQUIREMENTS/ROADMAP for v0.32.5 burn-down.
+- Refresh PROJECT/REQUIREMENTS/ROADMAP for v0.33.1 burn-down.
 - Implement Silver Bullet core fixes for init/docs/hooks issue clusters.
 - Implement the todo-app clear-completed feature in the sibling fixture repo and collapse duplicate issues.
-- Prepare release prep work for `v0.32.5` after the backlog burn-down lands.
+- Prepare release prep work for `v0.33.1` after the backlog burn-down lands.
 
 ## Backlog (deferred)
 - shellcheck SC2294 (`eval` pattern at forge-sb-install.sh:67 — pre-existing)
@@ -77,4 +77,4 @@ Plus pre-release gate fixes: 2 additional GSD command ports, secondary version f
 ## Session Continuity
 
 Last session: 2026-05-11
-Stopped at: milestone reset to v0.32.5 planning, project context updated, implementation work pending.
+Stopped at: milestone reset to v0.33.1 planning, project context updated, implementation work pending.

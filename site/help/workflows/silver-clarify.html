@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
-<title>/silver:brainstorm-idea — Idea-to-Milestone Workflow — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet idea-stage orchestration workflow — product brainstorming, engineering brainstorming, milestone creation, and phase-1 decision lock when no SPEC.md exists.">
+<title>/silver:clarify — Idea Clarification Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated clarification workflow: frame the problem, compare options, converge, and hand off to gsd-discuss-phase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -22,7 +22,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);bac
 nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
 .nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none;letter-spacing:-.02em}
 .nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
-.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb a:hover{color:var(--accent-light)}
+.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.nav-breadcrumb a:hover{color:var(--accent-light)}
 .nav-breadcrumb .sep{color:var(--text-dim)}
 .theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
 .theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
@@ -30,9 +31,10 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .page-hero .container{position:relative;z-index:1}
 .breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
-.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}.breadcrumb-nav a:hover{color:var(--accent-light)}
+.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
+.breadcrumb-nav a:hover{color:var(--accent-light)}
 .page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
-.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:640px;line-height:1.7}
 .doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
 @media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
 .doc-sidebar{position:sticky;top:88px;height:fit-content}
@@ -51,7 +53,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .doc-content strong{color:var(--text-primary)}
 .doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
 .divider{height:1px;background:var(--border);margin:36px 0}
-.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
 .callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
 .callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
 .callout-warn{background:var(--red-warn-a07);border:1px solid var(--red-warn-a20)}
@@ -64,7 +66,8 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
 footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
 .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
-footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:var(--accent-light)}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
 .footer-links{display:flex;gap:24px}
 @media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
 </style>
@@ -75,7 +78,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
       <a href="../../../" class="nav-logo">Silver Bullet</a>
-      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Brainstorm Idea</span>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Clarify</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
@@ -88,9 +91,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
 <div class="page-hero">
   <div class="container">
-    <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:brainstorm-idea</span></div>
-    <h1>/silver:brainstorm-idea</h1>
-    <p>Idea-stage orchestration workflow — turns raw concepts into a milestone-ready starting point by pairing PM brainstorming, engineering brainstorming, and GSD milestone capture. Use when there is no <code>SPEC.md</code> yet.</p>
+    <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:clarify</span></div>
+    <h1>/silver:clarify</h1>
+    <p>SB-orchestrated clarification workflow for vague ideas, sketched requirements, or full requirement docs that still need a decision-ready brief before <code>gsd-discuss-phase</code> can pick up.</p>
   </div>
 </div>
 
@@ -102,9 +105,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
         <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Composition</a></li>
         <li><a href="#workflow-steps">Workflow steps</a></li>
-        <li><a href="#spec-handoff">Spec handoff</a></li>
+        <li><a href="#modes">Modes</a></li>
+        <li><a href="#output">Output</a></li>
         <li><a href="#example">Example invocation</a></li>
         <li class="sidebar-section">See also</li>
         <li><a href="./index.html">All workflows</a></li>
@@ -113,82 +116,70 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
     </aside>
 
     <article class="doc-content">
-
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:brainstorm-idea</code> is Silver Bullet's entry point for concept-stage work that is not ready to become a formal <code>SPEC.md</code>. It orchestrates the early thinking needed to turn a raw idea into a milestone seed, but it never writes implementation directly.</p>
-      <p>Invoked directly as <code>/silver:brainstorm-idea</code>, or automatically by <code>/silver</code> when intent classification detects concept-intake signals and no <code>SPEC.md</code> exists. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the broader orchestration model.</p>
-
-      <div class="divider"></div>
-
-      <h2 id="when-to-use">When to use</h2>
-      <p>Entry trigger signals for <code>/silver:brainstorm-idea</code>:</p>
-      <ul>
-        <li>"I want to build" / "I have an idea" / "here's my concept"</li>
-        <li>"what if we" / "thinking of" / other multi-sentence concept descriptions</li>
-        <li>No <code>SPEC.md</code> exists yet, or the user explicitly wants idea-to-milestone intake before formal spec creation</li>
-      </ul>
+      <p><code>/silver:clarify</code> blends product framing, option generation, and convergence into a single workflow. It is the front end of planning: it takes ambiguity, sharpens the problem statement, and produces a handoff that <code>gsd:discuss-phase</code> can use without guessing.</p>
+      <p>It does not implement work or write plans. It helps the user compare options, pressure-test assumptions, and lock a recommendation. If the topic is visual or diagram-heavy, it can offer the browser-based visual companion before the deeper questions begin.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Not a spec workflow:</strong> if the request is already formalized in <code>SPEC.md</code>, route to <code>/silver:spec</code> instead. <code>/silver:brainstorm-idea</code> exists for the raw concept stage.
+          <strong>Good fits:</strong> vague ideas, rough feature briefs, requirement docs that still feel fuzzy, or decision points where the next implementation step is not obvious yet.
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <h2 id="composition">Composition</h2>
-      <p><code>/silver:brainstorm-idea</code> composes the early discovery chain rather than a full implementation pipeline. Typical path: <strong>FLOW 0 (BOOTSTRAP)</strong> → <strong>FLOW 1 (ORIENT)</strong> → <strong>FLOW 3 (IDEATE)</strong>. The workflow then creates a milestone anchor and hands open questions to discussion so the concept can be stabilized.</p>
-      <p>The design intent is to keep idea intake light, but not shallow: PM brainstorming captures the problem and value, engineering brainstorming turns that into a technical shape, and milestone creation makes the next phase concrete.</p>
+      <h2 id="when-to-use">When to use</h2>
+      <ul>
+        <li>"I want to build..." / "I have an idea..." / "Here's my concept..."</li>
+        <li>"What's the best approach for..." / "Should we use X or Y?"</li>
+        <li>A requirement doc exists, but the decisions are still scattered or unclear</li>
+        <li>You want a decision-ready brief before entering GSD discuss-phase</li>
+      </ul>
 
       <div class="divider"></div>
 
       <h2 id="workflow-steps">Workflow steps</h2>
 
-      <h3>Pre-flight</h3>
-      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+      <h3>Step 0 — Load preferences</h3>
+      <p>Read the <code>silver-bullet.md §10</code> workflow preferences and apply stored routing or mode preferences silently.</p>
 
-      <h3>Step 1 — Product brainstorming</h3>
-      <p>Invoke <code>/product-brainstorming</code>. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.</p>
+      <h3>Step 1 — Frame the problem</h3>
+      <p>Restate the goal in plain language, identify who the user is, and note what "done" looks like. If the prompt is already detailed, compress the brief into a cleaner problem statement.</p>
 
-      <h3>Step 2 — Engineering brainstorming</h3>
-      <p>Invoke <code>silver:brainstorm</code>. Purpose: translate the raw concept into an engineering shape — architecture direction, constraints, and implementation implications.</p>
+      <h3>Step 2 — Explore options</h3>
+      <p>Generate 2 to 4 plausible approaches, including a straightforward option and at least one more ambitious alternative. Keep the tradeoffs explicit.</p>
 
-      <h3>Step 3 — Milestone scaffold</h3>
-      <p>Invoke <code>gsd-new-milestone</code>. Purpose: create the milestone anchor and project artifacts that will carry the concept forward.</p>
+      <h3>Step 3 — Pressure-test</h3>
+      <p>Check assumptions, highlight uncertainties, and flag anything that needs research or external validation before implementation starts.</p>
 
-      <h3>Step 4 — Decision lock</h3>
-      <p>Invoke <code>gsd-discuss-phase</code>. Purpose: resolve open questions, capture the Phase 1 context, and lock the first decisions before any deeper planning begins.</p>
+      <h3>Step 4 — Converge</h3>
+      <p>Pick the best path for the current constraints and capture the rationale in a concise decision brief.</p>
+
+      <h3>Step 5 — Handoff</h3>
+      <p>Write <code>.planning/CLARIFY.md</code> and hand off to <code>gsd:discuss-phase</code> once the brief is clear enough for phase discussion.</p>
 
       <div class="divider"></div>
 
-      <h2 id="spec-handoff">Spec handoff</h2>
-      <div class="callout callout-warn">
-        <div class="callout-icon">⚠</div>
-        <div class="callout-body">
-          <strong>Switch to <code>/silver:spec</code> once the concept hardens.</strong> If the user already has formal requirements, acceptance criteria, or a structured <code>SPEC.md</code>, idea intake is the wrong tool. Use <code>/silver:spec</code> for formal spec elicitation and then continue with the spec-driven workflow.
-        </div>
-      </div>
+      <h2 id="modes">Modes</h2>
+      <ul>
+        <li><strong>Interactive</strong> - asks follow-up questions when the input is still fuzzy.</li>
+        <li><strong>Autonomous</strong> - applies sensible defaults, logs decisions, and keeps moving until the brief is decision-ready.</li>
+        <li><strong>Analyze</strong> - leans harder on context synthesis before asking questions.</li>
+        <li><strong>Chain</strong> - continues directly into <code>gsd:discuss-phase</code> when the handoff is ready.</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="output">Output</h2>
+      <p>The main artifact is <code>.planning/CLARIFY.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need GSD discussion.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
-      <div class="code-block">/silver:brainstorm-idea I want to build a guided todo-app onboarding flow</div>
-      <p>Silver Bullet routes to idea intake. Product brainstorming clarifies the problem and value. Engineering brainstorming turns it into a milestone seed. GSD milestone creation and discussion lock the first decisions. The workflow then hands off into the next phase of structured planning.</p>
+      <div class="code-block">/silver:clarify I have a rough idea for a todo app feature, but I'm not sure what the exact scope should be.</div>
+      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes <code>.planning/CLARIFY.md</code>, and hands off to <code>gsd:discuss-phase</code>.</p>
 
-      <div class="divider"></div>
-
-      <h2 id="when-not-to-use">When NOT to use</h2>
-      <p>Do not use <code>silver:brainstorm-idea</code> for:</p>
-      <ul>
-        <li>Already-specified work with an existing <code>SPEC.md</code></li>
-        <li>Implementation, debugging, or bug-fix work</li>
-        <li>Infrastructure, release, or trivial-change tasks</li>
-        <li>Anything that should route to <code>/silver:feature</code>, <code>/silver:bugfix</code>, <code>/silver:devops</code>, <code>/silver:research</code>, <code>/silver:release</code>, or <code>/silver:fast</code> instead</li>
-      </ul>
-      <p>If in doubt, use <code>/silver</code> instead — it will route the request to the correct workflow automatically.</p>
-
-      <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
         <a href="./silver-fast.html">
           <span class="pnb-label">← Previous</span>
@@ -199,7 +190,6 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <span class="pnb-title">/silver:feature</span>
         </a>
       </div>
-
     </article>
   </div>
 </div>

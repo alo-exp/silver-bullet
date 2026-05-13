@@ -43,7 +43,7 @@ assert_file_exists() {
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WRAPPER_SRC="${REPO_ROOT}/scripts/gsd-sdk.cjs"
 INSTALLER="${REPO_ROOT}/scripts/install-gsd-sdk-shim.sh"
-GSD_TOOLS_PATH="${GSD_TOOLS_PATH:-$HOME/.claude/get-shit-done/bin/gsd-tools.cjs}"
+GSD_TOOLS_PATH="${GSD_TOOLS_PATH:-$HOME/.codex/get-shit-done/bin/gsd-tools.cjs}"
 
 [[ -x "$INSTALLER" ]] || { echo "FAIL: installer missing or not executable at $INSTALLER"; exit 1; }
 

@@ -38,7 +38,7 @@ Core execution workflow following the "Get Shit Done" methodology:
 - `gsd-validate` — Spec validation
 - `gsd-intel` — Codebase intelligence
 - `gsd-progress` — Progress reporting
-- `gsd-brainstorm` — Approach exploration
+- `silver-clarify` — Idea clarification and decision handoff
 
 ### Quality Dimensions (9 + master)
 Enforce 9 quality dimensions at design-time and pre-ship:
@@ -53,10 +53,10 @@ Enforce 9 quality dimensions at design-time and pre-ship:
 - `extensibility` — Open/closed, plugin architecture
 - `ai-llm-safety` — Prompt injection, model safety
 
-### Superpowers (7 skills)
+### Superpowers (6 visible skills + 1 internal enforcement)
 Core development skills:
-- `tdd` — Red-green-refactor with iron law
-- `brainstorming` — Product ideation
+- `tdd` — Internal enforcement wrapper around `superpowers:test-driven-development` (hidden from picker; activated at the execution boundary)
+- `silver-clarify` — Product ideation and decision handoff
 - `writing-plans` — Spec to implementation plan
 - `requesting-code-review` — Frame review scope
 - `receiving-code-review` — Handle feedback

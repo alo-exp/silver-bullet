@@ -1,7 +1,7 @@
 ---
 name: silver-ui
 description: >
-  This skill should be used for full SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
+  This skill should be used for full SB-orchestrated UI/frontend workflow: intel → clarify → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
@@ -20,7 +20,7 @@ Before any local UI implementation work, the execution trace must show the depen
 
 1. `silver:intel`
 2. `silver:scan` when the project is brownfield
-3. `silver:brainstorm`
+3. `silver:clarify`
 4. `silver:quality-gates`
 5. `gsd-discuss-phase`
 6. `gsd-ui-phase`
@@ -164,17 +164,9 @@ If brownfield project, also invoke `silver:scan` (gsd-scan) via the Skill tool f
 ## Step 1a: Fuzzy Clarification (conditional)
 
 **Only if intent is fuzzy or $ARGUMENTS is empty:**
-Invoke `silver:explore` (gsd-explore) via the Skill tool for Socratic clarification of UI intent.
+Invoke `silver:clarify` via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.
 
-## Step 1b: Product Brainstorming
-
-Invoke `/product-brainstorming` via the Skill tool. Purpose: user flows, personas, success criteria, and scope for the UI feature. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without it if the user explicitly approves a degraded path.
-
-## Step 1c: Engineering Brainstorm
-
-Invoke `silver:brainstorm` (superpowers:brainstorming) via the Skill tool. Purpose: UI architecture, component hierarchy, interaction design, spec.
-
-## Step 1d: MultAI UI Perspectives (conditional)
+## Step 1b: MultAI UI Perspectives (conditional)
 
 **Only for major UI systems (design system, cross-cutting UI architecture, or user request):**
 
@@ -225,11 +217,11 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: implementation PLAN.md buil
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
+If mode is Interactive: invoke `gsd-execute-phase --tdd` via the Skill tool for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
 
-**TDD for component logic:**
-Invoke `silver:tdd` (superpowers:test-driven-development) via the Skill tool for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
+**Internal TDD gate:**
+`silver:tdd` is hidden from the picker and activates immediately before execution for component logic. It delegates to `superpowers:test-driven-development`, so the execute boundary cannot start until the failing-test-first discipline is in place.
 
 ## Step 8: Code Review
 

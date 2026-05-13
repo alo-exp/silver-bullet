@@ -1,4 +1,4 @@
-# Requirements: Silver Bullet v0.32.5 Open Issue Burn-down
+# Requirements: Silver Bullet v0.33.1 Open Issue Burn-down
 
 **Defined:** 2026-05-11
 **Core Value:** A single enforced workflow that keeps AI agents on the rails while removing the last user-visible gaps.
@@ -28,9 +28,9 @@
 
 ### Release Readiness
 
-- [ ] **REL-01**: Version-facing surfaces are bumped to `v0.32.5` as part of the release prep, including changelog and release badge/material where applicable.
+- [ ] **REL-01**: Version-facing surfaces are bumped to `v0.33.1` as part of the release prep, including changelog and release badge/material where applicable.
 - [ ] **REL-02**: CI is green and the pre-release quality gate passes twice in a row with no findings before release.
-- [ ] **REL-03**: `silver-create-release` produces structured notes and publishes the GitHub Release for `v0.32.5`.
+- [ ] **REL-03**: `silver-create-release` produces structured notes and publishes the GitHub Release for `v0.33.1`.
 
 ## v2 Requirements
 
@@ -69,4 +69,4 @@ None yet. This milestone is intentionally a burn-down of current open issues, no
 
 ---
 *Requirements defined: 2026-05-11*
-*Last updated: 2026-05-11 after v0.32.5 milestone start*
+*Last updated: 2026-05-13 after v0.33.1 milestone start*

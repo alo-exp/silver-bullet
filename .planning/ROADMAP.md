@@ -1,6 +1,6 @@
-# Roadmap: Silver Bullet v0.32.5 Open Issue Burn-down
+# Roadmap: Silver Bullet v0.33.1 Open Issue Burn-down
 
-**Goal:** Close the 22 open GitHub issues in the Silver Bullet repo by fixing the remaining init/docs/hooks gaps, reconciling already-shipped backlog items, clearing the todo-app duplicate cluster, and then shipping `v0.32.5`.
+**Goal:** Close the 22 open GitHub issues in the Silver Bullet repo by fixing the remaining init/docs/hooks gaps, reconciling already-shipped backlog items, clearing the todo-app duplicate cluster, and then shipping `v0.33.1`.
 
 **Phase numbering:** Continues from Phase 86.
 
@@ -48,11 +48,11 @@
 
 **Issues targeted:** #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
 
-### Phase 91: Release v0.32.5
+### Phase 91: Release v0.33.1
 
 **Requirements:** REL-01..03
 
-**Goal:** Bump release-facing version surfaces, run CI and the pre-release quality gate until two consecutive passes are clean, and create/publish the `v0.32.5` GitHub Release with structured notes.
+**Goal:** Bump release-facing version surfaces, run CI and the pre-release quality gate until two consecutive passes are clean, and create/publish the `v0.33.1` GitHub Release with structured notes.
 
 **Issues targeted:** release packaging for the completed burn-down
 
@@ -67,7 +67,7 @@
 | 88. Hook Inspection Ergonomics | HOOK-01 | Pending | Read-only hook inspection |
 | 89. Backlog Reconciliation | TRACK-01 | Pending | Already-shipped issue closure |
 | 90. Todo-App Clear-Completed Burn-down | TRACK-02 | Pending | Sibling fixture + duplicate collapse |
-| 91. Release v0.32.5 | REL-01..03 | Pending | CI + pre-release gate + GitHub Release |
+| 91. Release v0.33.1 | REL-01..03 | Pending | CI + pre-release gate + GitHub Release |
 
 ## Coverage Validation
 
@@ -77,5 +77,5 @@
 - Unmapped requirements: 0 ✓
 
 ---
-*Roadmap defined: 2026-05-11*
-*Last updated: 2026-05-11 after v0.32.5 milestone start*
+*Roadmap defined: 2026-05-13*
+*Last updated: 2026-05-13 after v0.33.1 milestone start*

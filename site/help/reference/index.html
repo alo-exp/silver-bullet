@@ -300,7 +300,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td><a href="../workflows/silver-feature.html">/silver:feature</a></td>
             <td>Feature work</td>
-            <td>Orchestrated feature development workflow. Chains intel → explore (if fuzzy) → product-brainstorm → silver:brainstorm → quality-gates → GSD plan/execute → TDD → code review → verify → ship. Routed automatically by /silver on "add", "build", "implement", "new feature" signals.</td>
+            <td>Orchestrated feature development workflow. Chains intel → clarify (if fuzzy) → quality-gates → GSD plan/execute → TDD → code review → verify → ship. Routed automatically by /silver on "add", "build", "implement", "new feature" signals.</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td>
@@ -310,7 +310,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td><a href="../workflows/silver-ui.html">/silver:ui</a></td>
             <td>UI/UX work</td>
-            <td>UI/UX workflow with mandatory gsd-ui-review gate (6-pillar visual audit including WCAG accessibility). Chains intel → product-brainstorm → silver:brainstorm → quality-gates → gsd-ui-phase → gsd-ui-review → code review → verify → ship. Routed on "UI", "frontend", "component", "screen", "design", "layout" signals.</td>
+            <td>UI/UX workflow with mandatory gsd-ui-review gate (6-pillar visual audit including WCAG accessibility). Chains intel → clarify → quality-gates → gsd-ui-phase → gsd-ui-review → code review → verify → ship. Routed on "UI", "frontend", "component", "screen", "design", "layout" signals.</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-devops.html">/silver:devops</a></td>
@@ -320,7 +320,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td><a href="../workflows/silver-research.html">/silver:research</a></td>
             <td>Research/spike</td>
-            <td>Technology decisions and architecture spikes. Chains silver:explore → MultAI research (proactive offer) → silver:brainstorm → decision with rationale → hand off to implementing workflow. Routed on "how should we", "compare X vs Y", "spike", "which technology" signals.</td>
+            <td>Technology decisions and architecture spikes. Chains silver:clarify → MultAI research (proactive offer) → silver:clarify → decision with rationale → hand off to implementing workflow. Routed on "how should we", "compare X vs Y", "spike", "which technology" signals.</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-release.html">/silver:release</a></td>
@@ -382,14 +382,14 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>First step</th></tr></thead>
         <tbody>
           <tr>
-            <td><a href="../workflows/silver-brainstorm-idea.html">/silver:brainstorm-idea</a></td>
-            <td>I want to build, I have an idea, here's my concept, multi-sentence idea description with no SPEC.md</td>
-            <td>product-brainstorming → silver:brainstorm → gsd-new-milestone → gsd-discuss-phase</td>
+            <td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td>
+            <td>I want to build, I have an idea, here's my concept, sketched requirement, rough brief, multi-sentence idea description with no SPEC.md</td>
+            <td>silver:clarify → gsd-discuss-phase</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-feature.html">/silver:feature</a></td>
             <td>add, build, implement, new feature, enhance, extend</td>
-            <td>Complexity triage → silver:intel (brownfield) → silver:explore (fuzzy) → product-brainstorm</td>
+            <td>Complexity triage → silver:intel (brownfield) → silver:clarify (fuzzy) → discussion-ready brief</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td>
@@ -399,7 +399,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td><a href="../workflows/silver-ui.html">/silver:ui</a></td>
             <td>UI, frontend, component, screen, design, interface, layout, animation, responsive</td>
-            <td>Complexity triage → silver:intel → silver:explore (if fuzzy) → product-brainstorm</td>
+            <td>Complexity triage → silver:intel → silver:clarify (if fuzzy) → discussion-ready brief</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-devops.html">/silver:devops</a></td>
@@ -409,7 +409,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td><a href="../workflows/silver-research.html">/silver:research</a></td>
             <td>how should we, which technology, compare X vs Y, spike, investigate, architecture decision</td>
-            <td>Classify (research vs. feature/bugfix?) → silver:explore → MultAI research offer</td>
+            <td>Classify (research vs. feature/bugfix?) → silver:clarify → MultAI research offer</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-release.html">/silver:release</a></td>
@@ -430,9 +430,9 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Classification</th><th>Signals</th><th>Action</th></tr></thead>
         <tbody>
           <tr><td>Trivial</td><td>Typo, config, rename, ≤3 files</td><td>Route to <code>/silver:fast</code> (gsd-fast) — bypass workflow</td></tr>
-          <tr><td>Simple</td><td>Clear scope, ≤1 phase</td><td>Route to workflow, skip silver:explore</td></tr>
-          <tr><td>Complex</td><td>Multi-phase, cross-cutting</td><td>Full workflow including silver:explore + brainstorm</td></tr>
-          <tr><td>Fuzzy</td><td>Vague intent, unclear scope</td><td>Route to <code>/silver:explore</code> first, then re-classify</td></tr>
+          <tr><td>Simple</td><td>Clear scope, ≤1 phase</td><td>Route to workflow, skip silver:clarify</td></tr>
+          <tr><td>Complex</td><td>Multi-phase, cross-cutting</td><td>Full workflow including silver:clarify + synthesize</td></tr>
+          <tr><td>Fuzzy</td><td>Vague intent, unclear scope</td><td>Route to <code>/silver:clarify</code> first, then re-classify</td></tr>
         </tbody>
       </table>
 

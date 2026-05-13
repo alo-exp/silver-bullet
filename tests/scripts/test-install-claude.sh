@@ -68,7 +68,7 @@ HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install data-engineering@claude-plugins-of
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install frontend-design@claude-plugins-official >/dev/null
 
 OLD_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.27.1"
-CURRENT_CODEX_SB_CACHE_DIR="$HOME_DIR/.Codex/plugins/cache/alo-labs-codex-local/silver-bullet/current"
+CURRENT_CODEX_SB_CACHE_DIR="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 mkdir -p "$(dirname "$OLD_SB_CACHE_DIR")"
 cat > "$HOME_DIR/.claude/settings.json" <<EOF
 {

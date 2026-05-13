@@ -1,6 +1,6 @@
 ---
 name: silver-feature
-description: This skill should be used for full SB-orchestrated feature development workflow: intel → product-brainstorm → brainstorm → silver-quality-gates → GSD plan/execute/verify → ship
+description: This skill should be used for full SB-orchestrated feature development workflow: intel → clarify → silver-quality-gates → GSD plan/execute/verify → ship
 argument-hint: "<feature description>"
 version: 0.1.0
 ---
@@ -17,7 +17,7 @@ Before any local implementation work, the execution trace must show the dependen
 
 1. `$silver:intel`
 2. `$silver:scan` when the project is brownfield
-3. `$silver:brainstorm`
+3. `$silver:clarify`
 4. `$silver:quality-gates`
 5. `$gsd-discuss-phase`
 6. `$gsd-plan-phase`
@@ -220,7 +220,7 @@ Before proceeding, classify the request:
 | Classification | Signals | Action |
 |----------------|---------|--------|
 | Trivial | ≤3 files, typo, config, rename | STOP — route to `silver:fast` instead |
-| Fuzzy | Vague intent, unclear scope | Continue to Step 1b (silver:explore) |
+| Fuzzy | Vague intent, unclear scope | Continue to Step 1b (silver:clarify) |
 | Simple | Clear scope, ≤1 phase | Skip Step 1b, go to Step 1a |
 | Complex | Multi-phase, cross-cutting | Full workflow including Step 1b |
 
@@ -236,19 +236,9 @@ If no intel files exist and this is a brownfield project, also invoke `silver:sc
 
 **Only if complexity triage found fuzzy intent or $ARGUMENTS is empty:**
 
-Invoke `silver:explore` (gsd-explore) for Socratic clarification before structured brainstorming.
+Invoke `silver:clarify` for Socratic framing, option comparison, and decision-ready handoff before planning.
 
-## Step 1c: Brainstorm
-
-Run both brainstorm tools in sequence:
-
-**1c-i: Product brainstorming**
-Invoke `/product-brainstorming`. Purpose: PM lens — problem definition, user value, personas, success metrics, scope boundaries.
-
-**1c-ii: Engineering brainstorm**
-Invoke `silver:brainstorm` (superpowers:brainstorming). Purpose: engineering lens — architecture, approaches, spec, design doc, spec-review loop.
-
-## Step 1d: MultAI Pre-Spec Review (conditional)
+## Step 1c: MultAI Pre-Spec Review (conditional)
 
 **Trigger condition:** Architecture-significant change OR user requested OR any of these auto-trigger signals apply:
 - Choosing between 2+ fundamentally different architectures
@@ -308,8 +298,13 @@ Invoke `gsd-plan-phase`. Purpose: PLAN.md with verification loop.
 
 ## Step 7: Execute Phase
 
-**If mode is Interactive (default):** invoke `gsd-execute-phase`.
-**If mode is Autonomous (§10e):** invoke `gsd-autonomous`.
+**If mode is Interactive (default):**
+- For implementation plans, invoke `gsd-execute-phase --tdd`.
+- For config-only, docs-only, or infra-only plans, invoke `gsd-execute-phase` without `--tdd`.
+
+**If mode is Autonomous (§10e):** invoke `gsd-autonomous`. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
+
+**Internal TDD gate:** `silver:tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It delegates to `superpowers:test-driven-development`, so the execution boundary cannot start until red-green-refactor discipline is in place.
 
 **Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
@@ -320,13 +315,6 @@ Invoke `gsd-plan-phase`. Purpose: PLAN.md with verification loop.
 ```
 Skill(skill="silver-add", args="<description of deferred item>")
 ```
-
-## Step 7a: TDD Gate (implementation plans only)
-
-**Only for implementation plans — skip for config/infra/doc plans:**
-Heuristic: if the PLAN.md modifies source files containing business logic or application code, it is an implementation plan. Config-only, docs-only, or infra-only plans skip this step.
-
-Invoke `silver:tdd` (superpowers:test-driven-development). Purpose: TDD red-green-refactor discipline per implementation task.
 
 ## Step 8: Verify Work
 

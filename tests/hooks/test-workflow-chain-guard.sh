@@ -116,15 +116,15 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui passes after UI markers exist" "$out"
 teardown
 
-# Research workflow: explorer and brainstorming markers are required.
+# Research workflow: clarify marker is required.
 setup
 touch "$TMPDIR_TEST/src/app.js"
-start_workflow "/silver:research" "research gate test" "explore,research,brainstorm,hand-off"
+start_workflow "/silver:research" "research gate test" "clarify,research,hand-off"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:research blocks without explore/brainstorm markers" "$out"
-write_state_markers gsd-explore brainstorming
+assert_blocks "silver:research blocks without clarify marker" "$out"
+write_state_markers silver-clarify
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:research passes after explore/brainstorm markers exist" "$out"
+assert_passes "silver:research passes after clarify marker exists" "$out"
 teardown
 
 echo ""

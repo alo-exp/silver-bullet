@@ -1,6 +1,6 @@
 ---
 name: silver-ui
-description: This skill should be used for full SB-orchestrated UI/frontend workflow: intel → product-brainstorm → brainstorm → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
+description: This skill should be used for full SB-orchestrated UI/frontend workflow: intel → clarify → testing-strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
@@ -12,6 +12,25 @@ SB orchestrator for UI, frontend, component, screen, design, interface, page, la
 **Routing note:** If an instruction matches both silver:feature and silver:ui, silver:ui wins — UI is more specific. silver:bugfix always takes precedence over both.
 
 Never implements UI directly — orchestrates only.
+
+## Mandatory dependency execution
+
+Before any local UI implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
+
+1. `silver:intel`
+2. `silver:scan` when the project is brownfield
+3. `silver:clarify`
+4. `silver:quality-gates`
+5. `gsd-discuss-phase`
+6. `gsd-ui-phase`
+7. `gsd-plan-phase`
+8. `gsd-execute-phase` or `gsd-autonomous`
+9. `gsd-ui-review`
+10. `gsd-verify-work`
+
+If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
+
+The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
 
 ## Pre-flight: Load Preferences
 
@@ -151,17 +170,9 @@ If brownfield project, also invoke `silver:scan` (gsd-scan) for rapid structure 
 ## Step 1a: Fuzzy Clarification (conditional)
 
 **Only if intent is fuzzy or $ARGUMENTS is empty:**
-Invoke `silver:explore` (gsd-explore) for Socratic clarification of UI intent.
+Invoke `silver:clarify` via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.
 
-## Step 1b: Product Brainstorming
-
-Invoke `/product-brainstorming`. Purpose: user flows, personas, success criteria, and scope for the UI feature.
-
-## Step 1c: Engineering Brainstorm
-
-Invoke `silver:brainstorm` (superpowers:brainstorming). Purpose: UI architecture, component hierarchy, interaction design, spec.
-
-## Step 1d: MultAI UI Perspectives (conditional)
+## Step 1b: MultAI UI Perspectives (conditional)
 
 **Only for major UI systems (design system, cross-cutting UI architecture, or user request):**
 
@@ -212,11 +223,11 @@ Invoke `gsd-plan-phase`. Purpose: implementation PLAN.md built on top of UI-SPEC
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase`.
-If mode is Autonomous (§10e): invoke `gsd-autonomous`.
+If mode is Interactive: invoke `gsd-execute-phase --tdd` for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous`. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
 
-**TDD for component logic:**
-Invoke `silver:tdd` (superpowers:test-driven-development) for testable component units (logic, state, interactions). Skip for pure layout/styling tasks.
+**Internal TDD gate:**
+`silver:tdd` is hidden from the picker and activates immediately before execution for component logic. It delegates to `superpowers:test-driven-development`, so the execute boundary cannot start until the failing-test-first discipline is in place.
 
 ## Step 8: Code Review
 
