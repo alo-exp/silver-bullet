@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST handle failure gracefully. Things WI
 
 **Why this matters:** Unreliable systems erode user trust faster than any other quality issue. A system that crashes on bad input, hangs when a dependency is slow, or loses data on failure is not production-ready — no matter how many features it has.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -126,7 +126,7 @@ Data MUST survive failures:
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Reliability Checklist**:
 
@@ -140,7 +140,7 @@ Before finalizing any design or plan, run the **Reliability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - Set explicit timeouts on every HTTP client, DB connection, and external call.

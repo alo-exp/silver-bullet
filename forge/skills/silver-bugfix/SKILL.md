@@ -6,7 +6,7 @@ argument-hint: "<description of the bug or failure>"
 version: 0.1.0
 ---
 
-# /silver:bugfix — Bug, Regression, Test Failure Workflow
+# /silver-bugfix — Bug, Regression, Test Failure Workflow
 
 SB orchestrator for bugs, regressions, crashes, errors, and failing tests. Enforces triage-first discipline: classify the failure type before any investigation begins.
 
@@ -91,7 +91,7 @@ this to verify the active workflow is fully complete before final delivery.
 # user-facing FLOW / PATH names so they match what compliance-status surfaces).
 SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
-SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:bugfix "the bug description ($ARGUMENTS)" "$SB_FLOWS")
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver-bugfix "the bug description ($ARGUMENTS)" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
@@ -127,11 +127,11 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver-security`, `silver-quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Triage — Classify Failure Type
 
-Use AskUserQuestion:
+Ask the user:
 
 > What best describes this failure?
 >
@@ -143,13 +143,13 @@ Wait for selection, then route to the corresponding path below.
 
 ## Path 1A: Known Symptom, Unknown Fix
 
-Invoked when: triage selects A, OR after Path 1B/1C silver:forensics completes and hands off here.
+Invoked when: triage selects A, OR after Path 1B/1C silver-forensics completes and hands off here.
 
 **1A.1 — Systematic debugging hypothesis**
-Invoke `superpowers:systematic-debugging` via the Skill tool. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
+Invoke `superpowers:systematic-debugging`. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
 
 **1A.2 — Persistent debugging investigation**
-Invoke `gsd-debug` via the Skill tool. Purpose: execute investigation with persistent state across context resets.
+Invoke `gsd-debug`. Purpose: execute investigation with persistent state across context resets.
 
 After gsd-debug completes, proceed to Step 2 (TDD).
 
@@ -158,9 +158,9 @@ After gsd-debug completes, proceed to Step 2 (TDD).
 Invoked when: triage selects B.
 
 **1B.1 — Forensic cause reconstruction**
-Invoke `silver:forensics` via the Skill tool. Purpose: SB-owned silver:forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
+Invoke `silver-forensics`. Purpose: SB-owned silver-forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
 
-After silver:forensics completes and outputs the cause classification:
+After silver-forensics completes and outputs the cause classification:
 → Hand off to Path 1A (start at Step 1A.1 with the reconstructed context).
 
 ## Path 1C: Failed GSD Workflow
@@ -168,7 +168,7 @@ After silver:forensics completes and outputs the cause classification:
 Invoked when: triage selects C.
 
 **1C.1 — GSD-specific post-mortem**
-Invoke `gsd-forensics` via the Skill tool. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
+Invoke `gsd-forensics`. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
 
 After gsd-forensics completes and outputs diagnosis:
 → Hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).
@@ -177,45 +177,45 @@ After gsd-forensics completes and outputs diagnosis:
 
 All paths converge here. Before writing any fix code:
 
-Invoke `superpowers:test-driven-development` via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden `silver:tdd` gate before any fix code is written and ensures the bug cannot silently regress.
+Invoke `superpowers:test-driven-development`. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden `silver-tdd` gate before any fix code is written and ensures the bug cannot silently regress.
 
 **Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
 
 ## Step 3: Plan the Fix
 
-Invoke `gsd-plan-phase` via the Skill tool (lightweight, 1-2 tasks only — this is a fix, not a feature).
+Invoke `gsd-plan-phase` (lightweight, 1-2 tasks only — this is a fix, not a feature).
 
 ## Step 4: Execute Fix + Verify Green
 
-Invoke `gsd-execute-phase --tdd` via the Skill tool. Host aliases may expose this as `gsd:execute-phase --tdd`; the required behavior is the same. After execution, verify the regression test from Step 2 is now green.
+Invoke `gsd-execute-phase --tdd`. Host aliases may expose this as `gsd-execute-phase --tdd`; the required behavior is the same. After execution, verify the regression test from Step 2 is now green.
 
 ## Step 5: Code Review
 
 Run the full review sequence in order:
 
-1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
-3. Invoke `gsd-code-review` via the Skill tool.
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `silver-request-review` (superpowers:requesting-code-review).
+2. Invoke `/code-review`. Purpose: establish review criteria before spawning reviewer agents.
+3. Invoke `gsd-code-review`.
+4. Invoke `silver-receive-review` (superpowers:receiving-code-review).
 
 ## Step 6: Verify Work
 
-Invoke `gsd-verify-work` via the Skill tool. Purpose: confirm fix, zero regression. Non-skippable.
+Invoke `gsd-verify-work`. Purpose: confirm fix, zero regression. Non-skippable.
 
 ## Step 7: Security Review
 
-Invoke `silver:security` via the Skill tool. Non-skippable.
+Invoke `silver-security`. Non-skippable.
 
 ## Step 7a: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver:add`.
+Invoke `/tech-debt`. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver-add`.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
 
 ```
-Skill(skill="silver:add", args="<description of deferred item>")
+Skill(skill="silver-add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -227,14 +227,14 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 7b: Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool (affected quality dimensions for the changed code). Non-skippable.
+Invoke `silver-quality-gates` (affected quality dimensions for the changed code). Non-skippable.
 
 ## Step 7c: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver-ensure-docs --recover-scheme"
 ```
 
 Before raising the PR, verify documentation is up to date per the scheme:
@@ -247,8 +247,8 @@ Before raising the PR, verify documentation is up to date per the scheme:
 
 **Gate:** Do NOT proceed to Step 8 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 8.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver-ensure-docs --recover-scheme`, then complete this step before proceeding to Step 8.
 
 ## Step 8: Ship
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR.
+Invoke `gsd-ship`. Purpose: push branch, create PR.

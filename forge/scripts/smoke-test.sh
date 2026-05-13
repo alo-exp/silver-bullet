@@ -26,7 +26,7 @@ echo ""
 echo "[1/8] Global skill set ($FORGE_HOME/skills)"
 if [[ -d "$FORGE_HOME/skills" ]]; then
   N=$(find "$FORGE_HOME/skills" -name SKILL.md | wc -l | tr -d ' ')
-  if [[ "$N" -ge 100 ]]; then ok "$N skills present (≥100 expected)"; else fail "only $N skills (expected ≥100)"; fi
+  if [[ "$N" -ge 109 ]]; then ok "$N skills present (≥109 expected)"; else fail "only $N skills (expected ≥109)"; fi
 else
   fail "$FORGE_HOME/skills does not exist"
 fi
@@ -35,18 +35,19 @@ fi
 echo "[2/8] Global agent set ($FORGE_HOME/agents)"
 if [[ -d "$FORGE_HOME/agents" ]]; then
   N=$(find "$FORGE_HOME/agents" -name "*.md" | wc -l | tr -d ' ')
-  if [[ "$N" -ge 35 ]]; then ok "$N agents present (≥35 expected)"; else fail "only $N agents (expected ≥35)"; fi
+  if [[ "$N" -ge 50 ]]; then ok "$N agents present (≥50 expected)"; else fail "only $N agents (expected ≥50)"; fi
 else
   fail "$FORGE_HOME/agents does not exist"
 fi
 
-# 3. Hook-equivalent agents (10 expected)
+# 3. Hook-equivalent agents (16 expected)
 echo "[3/8] Hook-equivalent agents (forge-*)"
 HOOK_AGENTS=(
   forge-pre-commit-audit forge-pre-pr-audit forge-task-complete-check
   forge-roadmap-freshness forge-spec-floor-check forge-uat-gate
   forge-pr-traceability forge-ci-status-check forge-forbidden-skill-check
-  forge-session-init
+  forge-session-init forge-claim-phase forge-heartbeat-phase forge-release-phase
+  forge-dependency-skill-check forge-instruction-file-guard forge-workflow-chain-guard
 )
 for a in "${HOOK_AGENTS[@]}"; do
   if [[ -f "$FORGE_HOME/agents/$a.md" ]]; then ok "$a present"; else fail "$a MISSING"; fi
@@ -77,7 +78,7 @@ if [[ -f "$FORGE_HOME/agents/code-reviewer.md" ]]; then ok "code-reviewer agent 
 
 # 5. Frontmatter validity (sample check)
 echo "[5/8] Skill+agent frontmatter validity (sampling)"
-SAMPLE_SKILLS=(silver-feature silver-bugfix silver-quality-gates engineering-code-review)
+SAMPLE_SKILLS=(silver-feature silver-bugfix silver-quality-gates silver-ensure-docs silver-handoff engineering-code-review)
 for s in "${SAMPLE_SKILLS[@]}"; do
   f="$FORGE_HOME/skills/$s/SKILL.md"
   if [[ -f "$f" ]] && head -1 "$f" | grep -q "^---$" && grep -q "^name: " "$f" && grep -q "^description: " "$f"; then
@@ -86,7 +87,7 @@ for s in "${SAMPLE_SKILLS[@]}"; do
     fail "$s frontmatter invalid or missing"
   fi
 done
-SAMPLE_AGENTS=(forge-pre-commit-audit gsd-planner gsd-roadmapper)
+SAMPLE_AGENTS=(forge-pre-commit-audit forge-dependency-skill-check forge-instruction-file-guard forge-workflow-chain-guard gsd-planner gsd-roadmapper)
 for a in "${SAMPLE_AGENTS[@]}"; do
   f="$FORGE_HOME/agents/$a.md"
   if [[ -f "$f" ]] && head -1 "$f" | grep -q "^---$" && grep -q "^id: " "$f" && grep -q "^description: " "$f" && grep -q "^tool_supported: true" "$f"; then
@@ -100,7 +101,7 @@ done
 echo "[6/8] Slash commands ($FORGE_HOME/commands)"
 if [[ -d "$FORGE_HOME/commands" ]]; then
   N=$(find "$FORGE_HOME/commands" -name "*.md" | wc -l | tr -d ' ')
-  if [[ "$N" -ge 40 ]]; then ok "$N commands present (≥40 expected)"; else fail "only $N commands (expected ≥40)"; fi
+  if [[ "$N" -ge 50 ]]; then ok "$N commands present (≥50 expected)"; else fail "only $N commands (expected ≥50)"; fi
   # Spot-check critical workflow commands
   for c in gsd-new-project gsd-new-milestone gsd-execute-phase gsd-complete-milestone brainstorm; do
     if [[ -f "$FORGE_HOME/commands/${c}.md" ]]; then ok "command :${c} present"; else fail "command :${c} MISSING"; fi
@@ -112,7 +113,10 @@ fi
 # 7. SB templates (current parity surface)
 echo "[7/8] SB templates ($FORGE_HOME/silver-bullet/templates)"
 if [[ -d "$FORGE_HOME/silver-bullet/templates" ]]; then
-  for t in silver-bullet.md.base workflow.md.base silver-bullet.config.json.default; do
+  for t in silver-bullet.md.base workflow.md.base silver-bullet.config.json.default doc-scheme.json.base task-doc-checklist.json.base; do
+    if [[ -f "$FORGE_HOME/silver-bullet/templates/$t" ]]; then ok "template $t present"; else fail "template $t MISSING"; fi
+  done
+  for t in archive/manifest.md.base specs/SPEC.md.template workflows/full-dev-cycle.md; do
     if [[ -f "$FORGE_HOME/silver-bullet/templates/$t" ]]; then ok "template $t present"; else fail "template $t MISSING"; fi
   done
 else
@@ -141,7 +145,7 @@ if $CHECK_PROJECT; then
   echo "[+] Project-level (.forge/agents)"
   if [[ -d ".forge/agents" ]]; then
     N=$(find .forge/agents -name "*.md" | wc -l | tr -d ' ')
-    if [[ "$N" -ge 35 ]]; then ok "$N agents present at .forge/agents"; else fail ".forge/agents has only $N (expected ≥35)"; fi
+    if [[ "$N" -ge 50 ]]; then ok "$N agents present at .forge/agents"; else fail ".forge/agents has only $N (expected ≥50)"; fi
   else
     fail ".forge/agents does not exist (run forge-sb-install.sh in this project)"
   fi

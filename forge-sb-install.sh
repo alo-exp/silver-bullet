@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Silver Bullet for Forge — Idempotent Installer
-# Installs ~107 skills, ~47 custom agents, ~49 slash commands, and SB templates for use with the Forge coding agent.
+# Installs ~109 skills, ~50 custom agents, ~50 slash commands, and SB templates for use with the Forge coding agent.
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
@@ -220,10 +220,20 @@ install_templates_to() {
   if [[ "$REMOTE_FETCH" == "true" ]]; then
     # Remote: fetch known template files via known list (avoid recursive API listing)
     for f in CHANGELOG-project.md.base CLAUDE.md.base doc-scheme.md.base \
+             doc-scheme.json.base task-doc-checklist.json.base \
              silver-bullet.config.json.default silver-bullet.md.base workflow.md.base; do
       fetch_to "forge/templates/${f}" "${target_dir}/${f}" || true
     done
-    log "  (remote mode: subdir templates skipped — re-run installer locally for full set)"
+    for f in \
+      archive/manifest.md.base \
+      knowledge/INDEX.md.base knowledge/YYYY-MM.md.base \
+      lessons/YYYY-MM.md.base \
+      sessions/session-log.md.base \
+      specs/DESIGN.md.template specs/REQUIREMENTS.md.template specs/SPEC.md.template \
+      workflows/devops-cycle.md workflows/full-dev-cycle.md; do
+      do_run "mkdir -p \"${target_dir}/$(dirname "$f")\""
+      fetch_to "forge/templates/${f}" "${target_dir}/${f}" || true
+    done
   else
     if [[ -d "${SCRIPT_DIR}/forge/templates" ]]; then
       do_run "cp -R \"${SCRIPT_DIR}/forge/templates/\" \"${target_dir}\""

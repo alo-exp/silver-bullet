@@ -89,6 +89,6 @@ enforces them.
 ## Notes
 
 - Silver Bullet for Forge global rules: see `~/forge/AGENTS.md`
-- All ~106 SB skills auto-load from `~/forge/skills/`
-- All ~41 hook-equivalent + GSD subagent custom agents auto-load from `~/forge/agents/`
+- All ~109 SB/dependency skills auto-load from `~/forge/skills/`
+- All ~50 hook-equivalent + GSD subagent custom agents auto-load from `~/forge/agents/`
 - Project-level overrides go in `.forge/skills/` and `.forge/agents/`

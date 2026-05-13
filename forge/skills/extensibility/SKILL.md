@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST allow new functionality to be added 
 
 **Why this matters:** Software that requires modifying core code for every new feature becomes brittle, risky, and slow to evolve. Extensible design lets you add capabilities by writing NEW code — not editing existing, tested, working code. This is the difference between systems that scale with the team and systems that bottleneck at every change.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -134,7 +134,7 @@ The mechanism is the extensible framework. The policy is the configuration/plugi
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Extensibility Checklist**:
 
@@ -148,7 +148,7 @@ Before finalizing any design or plan, run the **Extensibility Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - When adding a new type/format/provider, use registry/strategy pattern — don't add `else if`.

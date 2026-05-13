@@ -25,7 +25,7 @@ If `--reviewer` is omitted, the reviewer is auto-detected from the artifact file
 | *-PLAN.md | gsd-plan-checker | Existing GSD reviewer |
 | Code changes | gsd-code-reviewer | Existing GSD reviewer |
 | VERIFICATION.md | gsd-verifier | Existing GSD reviewer |
-| Security findings | silver:security | Existing SB reviewer |
+| Security findings | silver-security | Existing SB reviewer |
 | SPEC.md | review-spec | New SB reviewer |
 | DESIGN.md | review-design | New SB reviewer |
 | REQUIREMENTS.md | review-requirements | New SB reviewer |

@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}} — Claude Code Instructions
+# {{PROJECT_NAME}} — Coding Agent Instructions
 
 > **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**
 
@@ -13,5 +13,5 @@
 
 ## Project-Specific Rules
 
-<!-- Add project-specific Claude instructions here. -->
+<!-- Add project-specific instructions here. -->
 <!-- Silver Bullet enforcement lives in silver-bullet.md (do not duplicate here). -->

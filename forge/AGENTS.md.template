@@ -25,7 +25,7 @@ If the project has no `.planning/` directory, run the `silver-init` skill first 
 
 Silver Bullet's quality enforcement happens through three layers in Forge:
 
-1. **Skills (auto-applied)** — at `~/forge/skills/` and `.forge/skills/`. Forge picks the right skill based on context. ~107 skills + ~49 commands loaded — silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, silver-quality-gates, silver-blast-radius, all 9 review-* skills, all Anthropic engineering/design/product-management/marketing skills, Superpowers skills, etc.
+1. **Skills (auto-applied)** — at `~/forge/skills/` and `.forge/skills/`. Forge picks the right skill based on context. ~109 skills + ~50 commands loaded — silver-feature, silver-bugfix, silver-ui, silver-devops, silver-release, silver-spec, silver-ensure-docs, silver-handoff, silver-quality-gates, silver-blast-radius, all review-* skills, Anthropic engineering/design/product-management/marketing skills, Superpowers skills, etc.
 
 2. **Hook-equivalent agents (you invoke as tools)** — at `~/forge/agents/` and `.forge/agents/`. These replace the automatic firing of SB hooks on Claude Desktop. You **must** invoke them as tools at the gating moments listed below.
 
@@ -48,6 +48,9 @@ These agents must be invoked as tools at specific moments. Skipping them is trea
 | When creating a PR | `forge-pr-traceability` | Confirms PR description references REQ-IDs and phase number |
 | After `git push`, before next commit | `forge-ci-status-check` | Confirms CI is green on the branch |
 | Before applying any SB/GSD skill | `forge-forbidden-skill-check` | Confirms the skill is not deprecated |
+| Before applying a workflow that depends on GSD/Superpowers/KW skills | `forge-dependency-skill-check` | Fails closed when a referenced dependency skill/command/agent is unavailable |
+| Before creating/replacing root instruction files | `forge-instruction-file-guard` | Prevents accidental prompt-authority file creation or replacement |
+| Before implementation edits in an active composed SB workflow | `forge-workflow-chain-guard` | Confirms prerequisite SB/GSD workflow artifacts exist before edits proceed |
 
 Each agent returns either `ALLOW: <reason>` or `BLOCK: <reason>`. On `BLOCK`, **do not proceed** until the user fixes the underlying condition.
 
@@ -102,15 +105,17 @@ Match the user's request to the right SB workflow skill. The skill's body has th
 | "release", "publish", "version", "go live", "cut a release" | `silver-release` |
 | "trivial", "quick fix", "typo", "one-liner", ≤3 files | `silver-fast` |
 | "ingest JIRA / Figma / Google Doc" | `silver-ingest` |
-| "where are we", "what's left", "show progress", "current status" | `gsd-progress` |
-| "pick up", "resume", "continue where" | `gsd-resume-work` |
+| "where are we", "what's left", "show progress", "current status" | `gsd-do` |
+| "pick up", "resume", "continue where" | `gsd-do` |
+| "handoff", "wrap up session", "continue later", "session summary" | `silver-handoff` |
 | "set up", "initialize", "install Silver Bullet" | `silver-init` |
+| "doc scheme", "ensure docs", "docs checklist", "recover doc scheme" | `silver-ensure-docs` |
 | "quality review", "ilities" | `silver-quality-gates` |
 | "blast radius", "change impact", "rollback plan" | `silver-blast-radius` |
 | "root cause", "session failed", "post-mortem" | `silver-forensics` |
 | "release notes", "github release" | `silver-create-release` |
 
-For ambiguous input, ask the user a 2–4 option clarifying question before applying a skill.
+For most non-trivial bare messages, route through `silver` first. It will compose atomic SB flows around GSD's lifecycle authority or delegate to `gsd-do` when the work is purely GSD-owned. For ambiguous input with material consequences, ask the user a 2–4 option clarifying question before applying a skill.
 
 ---
 
@@ -121,6 +126,9 @@ For ambiguous input, ask the user a 2–4 option clarifying question before appl
 
 ### Quality Gates
 Before any non-trivial production code commit, apply `silver-quality-gates` (or `devops-quality-gates` for IaC). All 9 dimensions must pass — a single ❌ is a hard stop.
+
+### Quality Gate Triggers
+Run the relevant gate before commits, before PR/release/deploy, before declaring completion, and whenever a composed workflow moves from planning into implementation. On Forge this means invoking the hook-equivalent agents plus applying `silver-quality-gates`, `devops-quality-gates`, `silver-verify-tests`, or the review-* skills required by the active flow contract.
 
 ### Plugin Boundary
 Never modify `~/forge/skills/` or `~/forge/agents/` from inside a project session. Treat them as read-only build artifacts. Project-specific overrides go in `.forge/skills/` and `.forge/agents/`.
@@ -137,6 +145,9 @@ When `silver-quality-gates` flags a deferred item, immediately apply `silver-add
 
 - Start each session: invoke `forge-session-init`
 - During work: apply skills as the user requests / context implies
+- Before workflow or dependency skill chains: invoke `forge-dependency-skill-check`
+- Before root instruction file writes: invoke `forge-instruction-file-guard`
+- Before implementation edits inside active composed workflows: invoke `forge-workflow-chain-guard`
 - Before commit: invoke `forge-pre-commit-audit` (and `forge-roadmap-freshness` if SUMMARY.md staged)
 - After push: invoke `forge-ci-status-check`
 - Before PR: invoke `forge-pre-pr-audit`, `forge-pr-traceability`, `forge-uat-gate` (for user-facing phases)

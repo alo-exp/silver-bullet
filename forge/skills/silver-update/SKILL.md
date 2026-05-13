@@ -64,7 +64,7 @@ test -d "$HOME/forge/skills" && find "$HOME/forge/skills" -name SKILL.md | wc -l
 test -d "$HOME/forge/agents" && find "$HOME/forge/agents" -name "*.md" | wc -l
 ```
 
-Expected: ≥100 skills, ≥30 custom agents.
+Expected baseline for the current SB Forge port: ≥109 skills, ≥50 custom agents, and ≥50 slash commands.
 
 ### Step 5 — Reload
 

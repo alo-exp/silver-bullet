@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST produce small, focused modules where
 
 **Why this matters:** When files are large or tightly coupled, the active runtime must compact context to fit them — risking loss of key details. Modular design prevents this by keeping each unit small enough to reason about completely.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -99,7 +99,7 @@ When a change to "users" only touches files in `user/`, modularity is working.
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Modularity Checklist**:
 
@@ -113,7 +113,7 @@ Before finalizing any design or plan, run the **Modularity Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.** Do not defer modularity to refactoring — it is far cheaper to decompose correctly upfront.
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - Check file size after each commit. If approaching the soft limit, split NOW.

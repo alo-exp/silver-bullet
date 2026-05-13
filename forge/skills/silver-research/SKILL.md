@@ -1,16 +1,16 @@
 ---
 name: silver-research
 description: >
-  This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver:feature or silver:devops
+  This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver-feature or silver-devops
 argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
 
-# /silver:research — Tech Decisions, Architecture Spikes, Comparisons
+# /silver-research — Tech Decisions, Architecture Spikes, Comparisons
 
 SB orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to `.planning/research/` and referenced by the receiving workflow.
 
-**Routing note:** `silver:research` takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
+**Routing note:** `silver-research` takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
 
 Never does research directly — orchestrates MultAI research tools and then hands off to the appropriate implementation workflow.
 
@@ -18,10 +18,10 @@ Never does research directly — orchestrates MultAI research tools and then han
 
 Before any local research write-up or handoff, the execution trace must show the dependency chain for this workflow. At minimum:
 
-1. Invoke `silver:clarify`
+1. Invoke `silver-clarify`
 2. Run the relevant MultAI research path
-3. Invoke `silver:clarify`
-4. Handoff to `silver:feature` or `silver:devops` only after the research artifact exists
+3. Invoke `silver-clarify`
+4. Handoff to `silver-feature` or `silver-devops` only after the research artifact exists
 
 If any required downstream skill or MultAI path cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or ad hoc local reasoning.
 
@@ -69,7 +69,7 @@ Construct the proposed flow chain for research/exploration work. Short chain —
 
 FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) → FLOW 4 (SPECIFY) [only when research should become a spec]
 
-No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`) or to `gsd:do` for GSD-owned lifecycle work.
+No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver-feature`, `silver-ui`, `silver-devops`) or to `gsd-do` for GSD-owned lifecycle work.
 
 ### 3. Display Proposal
 
@@ -106,7 +106,7 @@ this to verify the active workflow is fully complete before final delivery.
 # user-facing FLOW / PATH names so they match what compliance-status surfaces).
 SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
-SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:research "the research question" "$SB_FLOWS")
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver-research "the research question" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
@@ -144,9 +144,9 @@ When the user requests skipping any step:
 
 ## Step 1: Clarify Research Question
 
-Invoke `silver:clarify` via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
+Invoke `silver-clarify`. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
 
-After silver:clarify completes, the research question should be specific enough to select a path.
+After silver-clarify completes, the research question should be specific enough to select a path.
 
 ## Step 2: Choose Research Path
 
@@ -158,17 +158,17 @@ Ask:
 > B. Tech selection — "Should we use X or Y?", "Which library/framework/approach is best for our case?", "Compare X vs Y"
 > C. Competitive/product intelligence — "How do competitors solve X?", "What does product Y do that we should learn from?"
 
-Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver:clarify output, skip this question and proceed directly.
+Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver-clarify output, skip this question and proceed directly.
 
 ## Path 2a: Market/Landscape Research
 
 Invoked when: selection is A.
 
 **2a.1 — Landscape research across 9 sections**
-Invoke `multai:landscape-researcher` via the Skill tool. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
+Invoke `multai:landscape-researcher`. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
 
 **2a.2 — Consolidate findings**
-Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
+Invoke `multai:consolidator`. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
 
 **Output:** Write consolidated findings to `.planning/research/<YYYY-MM-DD>-<topic-slug>/landscape-report.md`
 
@@ -179,13 +179,13 @@ Proceed to Step 3.
 Invoked when: selection is B.
 
 **2b.1 — Multi-AI perspectives**
-Invoke `multai:orchestrator` via the Skill tool. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
+Invoke `multai:orchestrator`. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
 
 **2b.2 — Weighted comparison matrix**
-Invoke `multai:comparator` via the Skill tool. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
+Invoke `multai:comparator`. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
 
 **2b.3 — Unified recommendation**
-Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
+Invoke `multai:consolidator`. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
 
 **Output:** Write consolidated report to `.planning/research/<YYYY-MM-DD>-<topic-slug>/comparison-report.md`
 
@@ -196,7 +196,7 @@ Proceed to Step 3.
 Invoked when: selection is C.
 
 **2c.1 — Competitive intelligence research**
-Invoke `multai:solution-researcher` via the Skill tool. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
+Invoke `multai:solution-researcher`. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
 
 **Output:** Write CIR to `.planning/research/<YYYY-MM-DD>-<topic-slug>/competitive-intelligence-report.md`
 
@@ -214,7 +214,7 @@ The artifact file path will be referenced in the handoff to the receiving workfl
 
 ## Step 3: Apply Research to Engineering Design
 
-Invoke `silver:clarify` via the Skill tool. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. Use the research artifact as primary input context for the clarification pass.
+Invoke `silver-clarify`. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. Use the research artifact as primary input context for the clarification pass.
 
 ## Step 4: Hand Off to Implementation Workflow
 
@@ -222,12 +222,12 @@ Ask:
 
 > Research complete. Which workflow should receive these findings?
 >
-> A. silver:feature — build a new feature based on research findings
-> B. silver:devops — infrastructure/deployment change based on research findings
+> A. silver-feature — build a new feature based on research findings
+> B. silver-devops — infrastructure/deployment change based on research findings
 > C. Done — research-only engagement, no implementation needed
 
-If A: invoke `silver:feature` via the Skill tool. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
+If A: invoke `silver-feature`. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
 
-If B: invoke `silver:devops` via the Skill tool. Pass the artifact path as context argument.
+If B: invoke `silver-devops`. Pass the artifact path as context argument.
 
 If C: summarize research artifacts created and their paths. Done.
