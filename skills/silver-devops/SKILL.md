@@ -40,7 +40,7 @@ Mode:   {interactive | autonomous — from §10e or session selection}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -58,11 +58,11 @@ Check the following artifacts and set skip/include flags:
 
 Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) [if scope unclear] → FLOW 3 (DECIDE) [if IaC/tooling choice needed] → FLOW 12 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 13 (SHIP)
 
 Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included.
 
@@ -141,9 +141,9 @@ When the user requests skipping any step:
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:intel` (gsd-intel) via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `silver:scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
-If no intel files exist: invoke `silver:scan` (gsd-scan) via the Skill tool for rapid structure assessment.
+If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` via the Skill tool.
 
 ## Step 1: Blast Radius Analysis
 

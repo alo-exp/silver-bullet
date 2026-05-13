@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.33.1
 milestone_name: Open Issue Burn-down
-current_plan: none
-status: planning
+current_plan: 92-01
+status: phase-complete
 stopped_at: ""
-last_updated: "2026-05-13T00:00:00.000Z"
+last_updated: "2026-05-13T08:33:00.000Z"
 last_activity: 2026-05-13
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 14
 ---
 
 # Project State
@@ -20,8 +20,8 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.33.0 (release line shipped). Prior shipped milestone: v0.31.1.
 **Active milestone:** v0.33.1 Open Issue Burn-down
-**Active phase:** (none — defining requirements)
-**Current plan:** (none)
+**Active phase:** Phase 92 — Dynamic Silver Router & Atomic Flow Composition Alignment
+**Current plan:** 92-01
 
 Last activity: 2026-05-11
 
@@ -32,11 +32,11 @@ See: .planning/MILESTONES.md (latest shipped entry + current milestone context)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for the v0.33.1 open-issue burn-down
+Phase: 92 — Dynamic Silver Router & Atomic Flow Composition Alignment
+Plan: 92-01
+Status: Phase 92 completed; router/contract alignment verified inside the v0.33.1 release line
 
-Progress: [░░░░░░░░░░] 0% (0/6 phases started)
+Progress: [█░░░░░░░░░] 14% (1/7 phases completed)
 
 ## v0.33.1 burn-down sync
 
@@ -68,6 +68,13 @@ Plus pre-release gate fixes: 2 additional GSD command ports, secondary version f
 - Implement Silver Bullet core fixes for init/docs/hooks issue clusters.
 - Implement the todo-app clear-completed feature in the sibling fixture repo and collapse duplicate issues.
 - Prepare release prep work for `v0.33.1` after the backlog burn-down lands.
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 92 added: Dynamic Silver Router & Atomic Flow Composition Alignment. This phase is release-blocking for router/composer contract drift and keeps semver-sensitive work under GSD milestone/phase management.
+- Phase 92 completed on 2026-05-13. `/silver` dynamic routing, atomic flow contracts, workflow skills, templates, Forge mirrors, and Codex package sync now align with current dependency skill catalogs and GSD lifecycle ownership.
 
 ## Backlog (deferred)
 - shellcheck SC2294 (`eval` pattern at forge-sb-install.sh:67 — pre-existing)

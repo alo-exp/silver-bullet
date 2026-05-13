@@ -40,8 +40,8 @@ Then scan the project for artifacts that indicate flow completion. Use this arti
 |------|------|--------------------|----------------|
 | FLOW 0 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if ALL four exist |
 | FLOW 1 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any intel or codebase file exists |
-| FLOW 2 | EXPLORE | (no dedicated artifact) | Mark as "skipped" — cannot infer from artifacts alone |
-| FLOW 3 | IDEATE | `docs/superpowers/specs/*.md`, `.planning/ADR-*.md` | Complete if any matching file exists |
+| FLOW 2 | CLARIFY | (no dedicated artifact) | Mark as "skipped" — cannot infer from artifacts alone |
+| FLOW 3 | DECIDE | `docs/superpowers/specs/*.md`, `.planning/ADR-*.md`, `.planning/research/*.md` | Complete if any matching file exists |
 | FLOW 4 | SPECIFY | `.planning/SPEC.md` | Complete if file exists |
 | FLOW 5 | PLAN | `.planning/phases/*/CONTEXT.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has PLAN.md files |
 | FLOW 6 | DESIGN CONTRACT | `.planning/DESIGN.md`, `.planning/UI-SPEC.md` | Complete if either exists |
@@ -132,7 +132,7 @@ Flows marked PENDING:
   - ... (list each)
 
 Flows excluded from composition:
-  - FLOW 2 (EXPLORE): no artifacts found, skipped
+  - FLOW 2 (CLARIFY): no artifacts found, skipped
   - FLOW 14 (DEBUG): not applicable
   - ...
 
@@ -172,5 +172,5 @@ After user confirms (or after adjustments are agreed):
 - This is a **one-time migration skill**. Once WORKFLOW.md exists, the `/silver` composer manages it going forward.
 - If the user disagrees with any inferred status, adjust before writing — the goal is an accurate starting state, not a perfect one.
 - Flows marked `skipped` in the composition record that they were intentionally not part of this project's workflow. This prevents /silver from re-suggesting them.
-- FLOW 2 (EXPLORE) is almost always `skipped` in migrations — its outputs are narrative and leave no dedicated artifact trail.
+- FLOW 2 (CLARIFY) is almost always `skipped` in migrations — its outputs are narrative and leave no dedicated artifact trail.
 - The `workflow.md.base` template governs the file structure. Do not add sections not present in the template.

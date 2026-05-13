@@ -6,7 +6,7 @@
 
 **Goal:** Close the remaining 22 open issues in the Silver Bullet repo by fixing the init/runtime and docs/hook gaps, reconciling already-shipped backlog items, burning down the todo-app clear-completed duplicate cluster, and then shipping `v0.33.1`.
 
-**Phases planned:** 86-91
+**Phases planned:** 86-92
 
 **Target issue clusters:**
 
@@ -14,9 +14,10 @@
 - Docs semantic audit and enforcement ergonomics: #149, #151
 - Backlog reconciliation: #98
 - Todo-app clear-completed duplicate cluster: #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
+- Router/composer contract drift: Phase 92 local architecture alignment, including local backlog item SB-B-1
 - Release prep: v0.33.1 versioning, CI, pre-release gate, GitHub Release
 
-**Status:** planned; the current release line is v0.33.0.
+**Status:** in progress; Phase 92 completed on 2026-05-13 to keep dynamic `/silver` flow composition and GSD alignment under milestone/semver management. Remaining phases continue the v0.33.1 issue burn-down and release prep.
 
 ## v0.31.1 Docs & State Sync (Shipped: 2026-05-06)
 

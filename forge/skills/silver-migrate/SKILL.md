@@ -1,100 +1,176 @@
 ---
 name: silver-migrate
-description: Migrate a Silver Bullet project from older SB conventions or from Claude Desktop SB to Forge SB — reconciles paths, removes hook-only artifacts, and generates Forge-equivalent setup.
+description: This skill should be used when the user runs `/silver:migrate` or asks to migrate a pre-v0.20.0 mid-milestone project to composable flows — generates `.planning/WORKFLOW.md` from current artifact state and STATE.md.
+version: 0.1.0
 ---
 
-# Silver Migrate — Forge Edition
+# silver:migrate
 
-Migrates a project that was using Silver Bullet on Claude Desktop (with hooks + plugins) to the Forge equivalent setup.
+> Migrates an existing mid-milestone project to composable flows by generating WORKFLOW.md from current artifact state.
+
+**Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
+`${PLUGIN_ROOT}/skills/silver-migrate/SKILL.md`, so the plugin root is two directories up.
+
+---
 
 ## When to Use
 
-- The user moved a project from Claude Desktop to Forge and wants to update the SB scaffolding
-- An older Forge project needs to be brought up to current SB conventions
+- Project started a milestone before composable flows architecture (v0.20.0)
+- `.planning/` directory exists with `STATE.md` but no `WORKFLOW.md`
+- User explicitly runs `/silver:migrate`
 
-## Procedure
+---
 
-### Step 1 — Detect Migration Source
+## Prerequisites
 
-Look for indicators of Claude Desktop SB:
+- `.planning/STATE.md` must exist
+- `.planning/WORKFLOW.md` must NOT exist — if it already exists, migration is unnecessary. Inform the user and exit: "WORKFLOW.md already exists at .planning/WORKFLOW.md — migration is not needed. Use /silver to continue the current workflow."
 
-```bash
-test -f silver-bullet.md && echo "Claude Desktop SB detected (silver-bullet.md present)"
-test -f .silver-bullet.json && echo "SB config detected"
-test -d .planning && echo ".planning/ scaffold exists"
+---
+
+## Steps
+
+### Step 1: Scan Existing Artifacts
+
+Read `.planning/STATE.md` to understand current phase, milestone state, and any completed skills listed.
+
+Then scan the project for artifacts that indicate flow completion. Use this artifact-to-flow mapping:
+
+| Flow | Name | Artifacts to Check | Inference Rule |
+|------|------|--------------------|----------------|
+| FLOW 0 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if ALL four exist |
+| FLOW 1 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any intel or codebase file exists |
+| FLOW 2 | CLARIFY | (no dedicated artifact) | Mark as "skipped" — cannot infer from artifacts alone |
+| FLOW 3 | DECIDE | `docs/superpowers/specs/*.md`, `.planning/ADR-*.md`, `.planning/research/*.md` | Complete if any matching file exists |
+| FLOW 4 | SPECIFY | `.planning/SPEC.md` | Complete if file exists |
+| FLOW 5 | PLAN | `.planning/phases/*/CONTEXT.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has PLAN.md files |
+| FLOW 6 | DESIGN CONTRACT | `.planning/DESIGN.md`, `.planning/UI-SPEC.md` | Complete if either exists |
+| FLOW 7 | EXECUTE | `.planning/phases/*/*-SUMMARY.md` | Complete if current phase has SUMMARY.md files |
+| FLOW 8 | UI QUALITY | `.planning/UI-REVIEW.md` | Complete if file exists |
+| FLOW 9 | REVIEW | `.planning/REVIEW.md`, `.planning/phases/*/REVIEW.md` | Complete if any exists |
+| FLOW 10 | SECURE | `.planning/SECURITY.md` | Complete if file exists |
+| FLOW 11 | VERIFY | `.planning/VERIFICATION.md` | Complete if file exists |
+| FLOW 12 | QUALITY GATE | (checked via STATE.md) | Complete if `silver:quality-gates` appears in STATE.md completed skills |
+| FLOW 13 | SHIP | (checked via STATE.md) | Complete if `gsd-ship` or `deploy-checklist` appears in STATE.md completed skills (FLOW 13 is phase-level ship; `silver:create-release` belongs to FLOW 17) |
+| FLOW 14 | DEBUG | (no dedicated artifact) | Mark as "not applicable" — inserted dynamically only on failure |
+| FLOW 15 | DESIGN HANDOFF | (no dedicated artifact) | Mark as "not applicable" unless milestone has UI phases |
+| FLOW 16 | DOCUMENT | (checked via STATE.md) | Complete if `gsd-docs-update` or documentation skill appears in STATE.md |
+| FLOW 17 | RELEASE | (checked via STATE.md) | Complete if `silver:create-release` appears in STATE.md completed skills |
+
+Record which artifacts were found for each flow. This evidence list will be shown to the user in Step 4.
+
+---
+
+### Step 2: Determine Composition
+
+Based on the artifacts found in Step 1, determine which flows belong to this project's composition:
+
+- **Always include:** FLOW 0, FLOW 1, FLOW 5, FLOW 7, FLOW 11, FLOW 13
+- **Include if artifacts exist:** FLOW 2, FLOW 3, FLOW 4, FLOW 6, FLOW 8, FLOW 9, FLOW 10, FLOW 16, FLOW 17
+- **Include FLOW 12** if silver:quality-gates skill appears in STATE.md
+- **Exclude FLOW 14 and FLOW 15** unless specific evidence exists (UI milestone or debug artifacts)
+- **Exclude flows** with no artifacts AND no STATE.md markers — these were intentionally skipped
+
+For each included flow, assign an inferred status:
+- `complete` — artifact(s) confirmed present
+- `in-progress` — partial artifacts exist (e.g., PLAN.md exists but no SUMMARY.md for FLOW 7)
+- `pending` — no artifacts yet but flow is in composition
+- `skipped` — intentionally excluded (FLOW 2, 14, 15 when not applicable)
+
+---
+
+### Step 3: Generate WORKFLOW.md Content
+
+Read the scaffolding template at `${PLUGIN_ROOT}/templates/workflow.md.base` (resolved from this file's location — do not rely on the downstream project's CWD).
+
+Build the WORKFLOW.md content by filling in:
+
+**Composition section:**
+- `Intent:` → `"Migrated from legacy workflow — see STATE.md for original context"`
+- `Composed:` → current ISO timestamp (e.g. `2026-04-15T12:00:00Z`)
+- `Composer:` → `/silver:migrate`
+- `Mode:` → `interactive`
+
+**Flow Log table:** Add one row per flow in the determined composition:
+```
+| {#} | {FLOW NAME} | {status} | {artifact filename(s) or "—"} | {Yes / No / Inferred} |
 ```
 
-Look for indicators of an older Forge SB:
+**Phase Iterations section:** Add the current phase from STATE.md with status of Flows 5-13 based on inferred statuses.
 
-```bash
-test -f AGENTS.md && grep -q "Silver Bullet" AGENTS.md && echo "Older Forge SB detected"
+**Dynamic Insertions section:** Emit the empty template table (headers only) — no rows. Migration infers static flow state only; dynamic insertions accrue forward via /silver.
+
+**Autonomous Decisions section:** Emit the empty template table (headers only) — no rows.
+
+**Deferred Improvements section:** Emit the empty template table (headers only) — no rows.
+
+**Heartbeat section:**
+- `Last-flow:` → highest flow number with status `complete`
+- `Last-beat:` → current ISO timestamp
+
+**Next Flow section:**
+- Set to the first flow in composition with status `in-progress` or `pending`
+
+---
+
+### Step 4: Present for Confirmation
+
+Display the full generated WORKFLOW.md content to the user.
+
+Also display a summary panel:
+
+```
+## Migration Summary
+
+Flows inferred as COMPLETE:
+  - FLOW 0 (BOOTSTRAP): PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md all present
+  - FLOW 1 (ORIENT): intel files found in .planning/intel/
+  - ... (list each with evidence)
+
+Flows marked PENDING:
+  - FLOW 11 (VERIFY): no VERIFICATION.md found
+  - ... (list each)
+
+Flows excluded from composition:
+  - FLOW 2 (CLARIFY): no artifacts found, skipped
+  - FLOW 14 (DEBUG): not applicable
+  - ...
+
+Next flow after migration: FLOW {N} ({NAME})
 ```
 
-If neither, ask the user what they're migrating from.
+Ask the user to confirm before writing:
 
-### Step 2 — Inventory Existing Artifacts
+> "Does this migration look correct? You can adjust any flow status before I write WORKFLOW.md. Reply 'yes' to confirm, or describe any changes needed."
 
-Capture the project state:
+**Do not write WORKFLOW.md until the user explicitly confirms.**
 
-- `.planning/STATE.md` — current phase, milestone, version
-- `.planning/PROJECT.md` — project context
-- `.planning/ROADMAP.md` — phases
-- `silver-bullet.md` (Claude Desktop only) — enforcement instructions
-- `.silver-bullet.json` (Claude Desktop only) — config
-- `.claude/skills/` (Claude Desktop only) — project skills
-- `.claude/settings.json` (Claude Desktop only) — hook registration
+---
 
-### Step 3 — Move Content That Translates
+### Step 5: Write and Commit
 
-For each artifact:
+After user confirms (or after adjustments are agreed):
 
-| Claude Desktop SB | Forge SB equivalent |
-|---|---|
-| `silver-bullet.md` | Migrate enforcement guidance into `AGENTS.md` |
-| `.silver-bullet.json` (required-skill lists, paths) | Inline equivalent into `AGENTS.md` as prose |
-| `.claude/skills/*/SKILL.md` (project skills) | Move to `.forge/skills/*/SKILL.md` |
-| `.claude/settings.json` hook registration | Replaced by hook-equivalent custom agents at `~/forge/agents/`; AGENTS.md drives invocation |
-| `.planning/*` | Unchanged — moves over as-is |
+1. Write the final WORKFLOW.md content to `.planning/WORKFLOW.md`
+2. Stage and commit:
+   ```
+   git add .planning/WORKFLOW.md
+   git commit -m "docs(workflow): migrate to composable flows via silver:migrate"
+   ```
+3. Confirm to the user: "WORKFLOW.md written and committed. Your project is now on composable flows. Use /silver to continue from FLOW {N} ({NAME})."
 
-### Step 4 — Remove Claude-Specific Artifacts
+---
 
-After translating, remove artifacts that have no Forge equivalent:
+## Produces
 
-```bash
-# After confirming with the user:
-rm -rf .claude/settings.json   # hook registration not used in Forge
-# Optionally keep .claude/ if user dual-runs Claude Desktop and Forge
-```
+- `.planning/WORKFLOW.md` — populated with inferred flow-completion state and confirmed by user before writing
 
-If the user dual-runs both, leave `.claude/` intact and just add the Forge-side files.
-
-### Step 5 — Generate AGENTS.md
-
-If `AGENTS.md` does not exist (or only has minimal content), use the global template at `~/forge/silver-bullet/templates/AGENTS.md.template` (or fetch from `https://raw.githubusercontent.com/alo-exp/silver-bullet/main/templates/AGENTS.md.template`).
-
-Customize for the migrated project — fold in any project-specific conventions captured from `silver-bullet.md` or CLAUDE.md.
-
-### Step 6 — Verify Global Skill+Agent Set
-
-Confirm the Forge global skill+agent set is installed:
-
-```bash
-test -d "$HOME/forge/skills" && find "$HOME/forge/skills" -name SKILL.md | wc -l
-test -d "$HOME/forge/agents" && find "$HOME/forge/agents" -name "*.md" | wc -l
-```
-
-If absent or stale, instruct the user to install:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
-```
-
-### Step 7 — Confirm
-
-Report what was migrated, what was removed, and what manual edits the user should make to `AGENTS.md` (typically: project conventions, language/framework specifics, project-specific routing).
+---
 
 ## Notes
 
-- Forge has no hooks — automatic enforcement is replaced by hook-equivalent custom agents the main agent invokes at gating moments. The migration removes hook registration but the gating logic is preserved (and improved) via these agents.
-- Forge custom agents replace Claude Code subagents — same delegation semantics, configured per `forgecode.dev/docs/creating-agents/`.
-- `.planning/` artifacts (PROJECT.md, ROADMAP.md, STATE.md, etc.) carry over without modification — they are runtime-agnostic.
+- This is a **one-time migration skill**. Once WORKFLOW.md exists, the `/silver` composer manages it going forward.
+- If the user disagrees with any inferred status, adjust before writing — the goal is an accurate starting state, not a perfect one.
+- Flows marked `skipped` in the composition record that they were intentionally not part of this project's workflow. This prevents /silver from re-suggesting them.
+- FLOW 2 (CLARIFY) is almost always `skipped` in migrations — its outputs are narrative and leave no dedicated artifact trail.
+- The `workflow.md.base` template governs the file structure. Do not add sections not present in the template.

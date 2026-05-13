@@ -1,6 +1,7 @@
 ---
 name: silver-bugfix
-description: This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → TDD regression test → plan → execute → review → verify → ship
+description: >
+  This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → TDD regression test → plan → execute → review → verify → ship
 argument-hint: "<description of the bug or failure>"
 version: 0.1.0
 ---
@@ -29,43 +30,9 @@ Display banner:
 Symptom: {$ARGUMENTS or "(not specified)"}
 ```
 
-## Multi-Agent Phase Coordination
-
-This skill participates in cooperative phase ownership across SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB). At any time, each phase under `.planning/phases/<NNN>/` is owned by **exactly one runtime**. The Forge runtime cooperates via three custom agents that wrap the shared `.planning/scripts/phase-lock.sh` helper.
-
-**At phase entry** (immediately after the phase number is resolved — typically after `/gsd-discuss-phase` or `/gsd-plan-phase`):
-
-```
-Skill(agent="forge-claim-phase", args="<NNN>|<short-intent-string>")
-```
-
-- On `CLAIMED:` → proceed.
-- On `BLOCKED:` → STOP and surface the message to the user. Another runtime owns the phase. The user must wait for the other runtime to finish, or use `/forge-delegate` (Phase 73+) to delegate this work to the owning runtime.
-- On `ALLOW (inherited)` / `ALLOW (no helper)` → proceed (delegated subagent or non-multi-agent project).
-
-**During long-running steps** (gsd-execute-phase per wave, gsd-verify-work per pass, any operation > 5 min):
-
-```
-Skill(agent="forge-heartbeat-phase", args="<NNN>")
-```
-
-- On `HEARTBEAT-OK:` → continue.
-- On `WARN: phase <NNN> not owned by this runtime/host` → another runtime stole the lock during a stale-TTL window. STOP and re-claim before continuing.
-
-**At phase exit** (after `/gsd-ship` for the phase, or before handing off to the next phase):
-
-```
-Skill(agent="forge-release-phase", args="<NNN>")
-```
-
-- On `RELEASED:` → proceed.
-- On `WARN:` → continue (release-on-non-owner is informational; the parent skill's flow continues).
-
-**Delegation mode (`SB_PHASE_LOCK_INHERITED=true`):** When this skill runs as a subagent under another runtime's existing lock (set by `/forge-delegate` from the parent), all three agents short-circuit to `ALLOW (inherited)` — the child must NOT acquire its own lock under the parent's existing one.
-
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -81,11 +48,11 @@ Check the following artifacts and set skip/include flags:
 [ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
-FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
 
 Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOTSTRAP) is skipped when `.planning/` already exists.
 
@@ -97,7 +64,7 @@ Display the composition proposal to the user:
 ┌──────────────────────────────────────────────────────────────┐
 │ SILVER BULLET ► FLOW COMPOSED                                │
 ├──────────────────────────────────────────────────────────────┤
-│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → VERIFY → SHIP       │
+│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP │
 │ Skipped: BOOTSTRAP — .planning/ exists                       │
 └──────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
@@ -111,29 +78,56 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 ⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
 ```
 
-### 5. Create WORKFLOW.md
+### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the bug description ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:bugfix`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed flow chain in the Flow Log section header
+Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
+workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
+`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
+this to verify the active workflow is fully complete before final delivery.
 
-After each path completes, write status to Flow Log table:
+```bash
+# Build a comma-separated flow list from the confirmed composition (use the
+# user-facing FLOW / PATH names so they match what compliance-status surfaces).
+SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:bugfix "the bug description ($ARGUMENTS)" "$SB_FLOWS")
+export SB_WORKFLOW_ID
+echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+
+After each flow / path completes, mark it done:
+
+```bash
+scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
+
+When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
+the workflow:
+
+```bash
+scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+```
+
+`complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
+it from the active set, so the strict final-delivery gate will not match a stale id.
+
+> **Legacy:** the v0.22 single-file `.planning/WORKFLOW.md` mechanism is retired. The
+> per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
+> v0.29.1.
+
+After each path completes, the helper updates the Flow Log row in-place — the helper does
+not edit the file directly.
+
 
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, commit both.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:silver-quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Triage — Classify Failure Type
 
@@ -149,13 +143,13 @@ Wait for selection, then route to the corresponding path below.
 
 ## Path 1A: Known Symptom, Unknown Fix
 
-Invoked when: triage selects A, OR after Path 1B/1C silver-forensics completes and hands off here.
+Invoked when: triage selects A, OR after Path 1B/1C silver:forensics completes and hands off here.
 
 **1A.1 — Systematic debugging hypothesis**
-Invoke `superpowers:systematic-debugging`. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
+Invoke `superpowers:systematic-debugging` via the Skill tool. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
 
 **1A.2 — Persistent debugging investigation**
-Invoke `gsd-debug`. Purpose: execute investigation with persistent state across context resets.
+Invoke `gsd-debug` via the Skill tool. Purpose: execute investigation with persistent state across context resets.
 
 After gsd-debug completes, proceed to Step 2 (TDD).
 
@@ -164,9 +158,9 @@ After gsd-debug completes, proceed to Step 2 (TDD).
 Invoked when: triage selects B.
 
 **1B.1 — Forensic cause reconstruction**
-Invoke `silver:silver-forensics`. Purpose: SB-owned silver-forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
+Invoke `silver:forensics` via the Skill tool. Purpose: SB-owned silver:forensics skill (skills/silver-forensics/SKILL.md) — reconstructs cause from git history, artifacts, and state. Outputs a cause classification report.
 
-After silver:silver-forensics completes and outputs the cause classification:
+After silver:forensics completes and outputs the cause classification:
 → Hand off to Path 1A (start at Step 1A.1 with the reconstructed context).
 
 ## Path 1C: Failed GSD Workflow
@@ -174,7 +168,7 @@ After silver:silver-forensics completes and outputs the cause classification:
 Invoked when: triage selects C.
 
 **1C.1 — GSD-specific post-mortem**
-Invoke `gsd-forensics`. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
+Invoke `gsd-forensics` via the Skill tool. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
 
 After gsd-forensics completes and outputs diagnosis:
 → Hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).
@@ -183,45 +177,45 @@ After gsd-forensics completes and outputs diagnosis:
 
 All paths converge here. Before writing any fix code:
 
-Invoke `superpowers:test-driven-development`. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden `silver:tdd` gate before any fix code is written and ensures the bug cannot silently regress.
+Invoke `superpowers:test-driven-development` via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden `silver:tdd` gate before any fix code is written and ensures the bug cannot silently regress.
 
 **Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
 
 ## Step 3: Plan the Fix
 
-Invoke `gsd-plan-phase` (lightweight, 1-2 tasks only — this is a fix, not a feature).
+Invoke `gsd-plan-phase` via the Skill tool (lightweight, 1-2 tasks only — this is a fix, not a feature).
 
 ## Step 4: Execute Fix + Verify Green
 
-Invoke `gsd-execute-phase --tdd`. After execution, verify the regression test from Step 2 is now green.
+Invoke `gsd-execute-phase --tdd` via the Skill tool. Host aliases may expose this as `gsd:execute-phase --tdd`; the required behavior is the same. After execution, verify the regression test from Step 2 is now green.
 
 ## Step 5: Code Review
 
 Run the full review sequence in order:
 
-1. Invoke `silver:request-review` (superpowers:requesting-code-review).
-2. Invoke `/code-review`. Purpose: establish review criteria before spawning reviewer agents.
-3. Invoke `gsd-code-review`.
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review).
+1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
+2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
+3. Invoke `gsd-code-review` via the Skill tool.
+4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## Step 6: Verify Work
 
-Invoke `gsd-verify-work`. Purpose: confirm fix, zero regression. Non-skippable.
+Invoke `gsd-verify-work` via the Skill tool. Purpose: confirm fix, zero regression. Non-skippable.
 
 ## Step 7: Security Review
 
-Invoke `silver:security`. Non-skippable.
+Invoke `silver:security` via the Skill tool. Non-skippable.
 
 ## Step 7a: Tech Debt Review
 
-Invoke `/tech-debt`. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver-add`.
+Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
 
 ```
-Skill(skill="silver-add", args="<description of deferred item>")
+Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -233,27 +227,28 @@ Skill(skill="silver-add", args="<description of deferred item>")
 
 ## Step 7b: Quality Gates
 
-Invoke `silver:silver-quality-gates` (affected quality dimensions for the changed code). Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool (affected quality dimensions for the changed code). Non-skippable.
 
 ## Step 7c: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && echo "Doc-scheme gate required" || echo "No doc-scheme — skip"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
 ```
 
 Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for this fix (newest-first). If missing, write it now.
-2. **`docs/ARCHITECTURE.md`** — update §Current State if the fix changed any architectural constraints.
-3. **`docs/knowledge/YYYY-MM.md`** (current month) — if root-cause patterns or API gotchas were discovered, append them.
-4. **`docs/lessons/YYYY-MM.md`** (current month) — if portable lessons were learned during diagnosis, append them.
+2. **`docs/knowledge/YYYY-MM.md`** (current month) — append root-cause patterns, gotchas, and decisions found during diagnosis.
+3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned during diagnosis.
+4. Update any additional docs changed by the fix (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
+5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 
-**Gate:** Do NOT proceed to Step 8 until all applicable checks pass.
+**Gate:** Do NOT proceed to Step 8 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If no `docs/doc-scheme.md` exists: skip this step entirely and proceed to Step 8.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 8.
 
 ## Step 8: Ship
 
-Invoke `gsd-ship`. Purpose: push branch, create PR.
+Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR.

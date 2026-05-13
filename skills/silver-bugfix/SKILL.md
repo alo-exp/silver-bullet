@@ -32,7 +32,7 @@ Symptom: {$ARGUMENTS or "(not specified)"}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -48,11 +48,11 @@ Check the following artifacts and set skip/include flags:
 [ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
-FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 11 (VERIFY) → FLOW 13 (SHIP)
+FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
 
 Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOTSTRAP) is skipped when `.planning/` already exists.
 
@@ -64,7 +64,7 @@ Display the composition proposal to the user:
 ┌──────────────────────────────────────────────────────────────┐
 │ SILVER BULLET ► FLOW COMPOSED                                │
 ├──────────────────────────────────────────────────────────────┤
-│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → VERIFY → SHIP       │
+│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP │
 │ Skipped: BOOTSTRAP — .planning/ exists                       │
 └──────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
@@ -187,7 +187,7 @@ Invoke `gsd-plan-phase` via the Skill tool (lightweight, 1-2 tasks only — this
 
 ## Step 4: Execute Fix + Verify Green
 
-Invoke `gsd-execute-phase --tdd` via the Skill tool. After execution, verify the regression test from Step 2 is now green.
+Invoke `gsd-execute-phase --tdd` via the Skill tool. Host aliases may expose this as `gsd:execute-phase --tdd`; the required behavior is the same. After execution, verify the regression test from Step 2 is now green.
 
 ## Step 5: Code Review
 

@@ -52,9 +52,17 @@
 
 **Requirements:** REL-01..03
 
-**Goal:** Bump release-facing version surfaces, run CI and the pre-release quality gate until two consecutive passes are clean, and create/publish the `v0.33.1` GitHub Release with structured notes.
+**Goal:** Bump release-facing version surfaces, run CI and the pre-release quality gate until two consecutive passes are clean, and create/publish the `v0.33.1` GitHub Release with structured notes after all release-blocking phases, including Phase 92, are resolved.
 
 **Issues targeted:** release packaging for the completed burn-down
+
+### Phase 92: Dynamic Silver Router & Atomic Flow Composition Alignment
+
+**Requirements:** FLOW-01..07
+
+**Goal:** Reconcile `/silver` dynamic routing with the current SB, GSD, Superpowers, and Product Management skill catalogs; make composed flows as atomic as practical; revise flow contracts; and reinforce that SB enhances GSD without bypassing GSD's phase, testing, bugfix, and semver mechanisms.
+
+**Issues targeted:** local architecture/contract drift; closes local backlog item SB-B-1
 
 ---
 
@@ -68,14 +76,15 @@
 | 89. Backlog Reconciliation | TRACK-01 | Pending | Already-shipped issue closure |
 | 90. Todo-App Clear-Completed Burn-down | TRACK-02 | Pending | Sibling fixture + duplicate collapse |
 | 91. Release v0.33.1 | REL-01..03 | Pending | CI + pre-release gate + GitHub Release |
+| 92. Dynamic Silver Router & Atomic Flow Composition Alignment | FLOW-01..07 | Completed | Router, flow contracts, GSD alignment, and catalog drift resolved; full suite 2002/0 |
 
 ## Coverage Validation
 
-- v1 requirements: 13/13 mapped
-- Milestone phases: 6
+- v1 requirements: 20/20 mapped
+- Milestone phases: 7
 - Open issues in scope: 22
 - Unmapped requirements: 0 ✓
 
 ---
 *Roadmap defined: 2026-05-13*
-*Last updated: 2026-05-13 after v0.33.1 milestone start*
+*Last updated: 2026-05-13 after Phase 92 completion*

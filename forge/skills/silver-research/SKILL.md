@@ -1,6 +1,7 @@
 ---
 name: silver-research
-description: This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver:feature or silver:devops
+description: >
+  This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver:feature or silver:devops
 argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
@@ -46,7 +47,7 @@ Question: {$ARGUMENTS or "(not specified)"}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -62,13 +63,13 @@ Research is an exploration-focused workflow — it produces artifacts, not shipp
 ls .planning/research/ 2>/dev/null | head -5
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for research/exploration work. Short chain — research produces artifacts only:
 
-FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
+FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) → FLOW 4 (SPECIFY) [only when research should become a spec]
 
-No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (silver:feature or silver:devops).
+No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`) or to `gsd:do` for GSD-owned lifecycle work.
 
 ### 3. Display Proposal
 
@@ -78,7 +79,7 @@ Display the composition proposal to the user:
 ┌──────────────────────────────────────────────────────────────────┐
 │ SILVER BULLET ► FLOW COMPOSED                                    │
 ├──────────────────────────────────────────────────────────────────┤
-│ Flows: EXPLORE → IDEATE → SPECIFY                                │
+│ Flows: CLARIFY → DECIDE → SPECIFY (if needed)                    │
 │ Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only  │
 └──────────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
@@ -92,27 +93,54 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 ⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
 ```
 
-### 5. Create WORKFLOW.md
+### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-If `.planning/WORKFLOW.md` does not exist, create it from `templates/workflow.md.base`:
-- Populate `Intent:` with the research question ($ARGUMENTS)
-- Populate `Composed:` with the current ISO timestamp
-- Populate `Composer:` with `/silver:research`
-- Populate `Mode:` with the current mode (interactive or autonomous)
-- Record the confirmed flow chain in the Flow Log section header
+Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
+workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
+`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
+this to verify the active workflow is fully complete before final delivery.
 
-After each path completes, write status to Flow Log table:
+```bash
+# Build a comma-separated flow list from the confirmed composition (use the
+# user-facing FLOW / PATH names so they match what compliance-status surfaces).
+SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:research "the research question" "$SB_FLOWS")
+export SB_WORKFLOW_ID
+echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
-| {#} | FLOW {N} ({name}) | complete | {artifacts produced} | ✓ |
+
+After each flow / path completes, mark it done:
+
+```bash
+scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
+
+When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
+the workflow:
+
+```bash
+scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+```
+
+`complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
+it from the active set, so the strict final-delivery gate will not match a stale id.
+
+> **Legacy:** the v0.22 single-file `.planning/WORKFLOW.md` mechanism is retired. The
+> per-instance `.planning/workflows/<id>.md` files are the only workflow tracker as of
+> v0.29.1.
+
+After each path completes, the helper updates the Flow Log row in-place — the helper does
+not edit the file directly.
+
 
 ## Step-Skip Protocol
 
 When the user requests skipping any step:
 1. Explain why the step exists (one sentence)
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §10b, then commit both files.
+3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
 ## Step 1: Clarify Research Question
 
@@ -137,10 +165,10 @@ Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver:cla
 Invoked when: selection is A.
 
 **2a.1 — Landscape research across 9 sections**
-Invoke `multai:landscape-researcher`. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
+Invoke `multai:landscape-researcher` via the Skill tool. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
 
 **2a.2 — Consolidate findings**
-Invoke `multai:consolidator`. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
+Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
 
 **Output:** Write consolidated findings to `.planning/research/<YYYY-MM-DD>-<topic-slug>/landscape-report.md`
 
@@ -151,13 +179,13 @@ Proceed to Step 3.
 Invoked when: selection is B.
 
 **2b.1 — Multi-AI perspectives**
-Invoke `multai:orchestrator`. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
+Invoke `multai:orchestrator` via the Skill tool. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
 
 **2b.2 — Weighted comparison matrix**
-Invoke `multai:comparator`. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
+Invoke `multai:comparator` via the Skill tool. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
 
 **2b.3 — Unified recommendation**
-Invoke `multai:consolidator`. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
+Invoke `multai:consolidator` via the Skill tool. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
 
 **Output:** Write consolidated report to `.planning/research/<YYYY-MM-DD>-<topic-slug>/comparison-report.md`
 
@@ -168,7 +196,7 @@ Proceed to Step 3.
 Invoked when: selection is C.
 
 **2c.1 — Competitive intelligence research**
-Invoke `multai:solution-researcher`. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
+Invoke `multai:solution-researcher` via the Skill tool. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
 
 **Output:** Write CIR to `.planning/research/<YYYY-MM-DD>-<topic-slug>/competitive-intelligence-report.md`
 
@@ -198,8 +226,8 @@ Ask:
 > B. silver:devops — infrastructure/deployment change based on research findings
 > C. Done — research-only engagement, no implementation needed
 
-If A: invoke `silver:feature`. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
+If A: invoke `silver:feature` via the Skill tool. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
 
-If B: invoke `silver:devops`. Pass the artifact path as context argument.
+If B: invoke `silver:devops` via the Skill tool. Pass the artifact path as context argument.
 
 If C: summarize research artifacts created and their paths. Done.

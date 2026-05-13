@@ -47,7 +47,7 @@ Question: {$ARGUMENTS or "(not specified)"}
 
 ## Composition Proposal
 
-Before beginning execution, read existing artifacts to determine context and propose which PATHs to include or skip.
+Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
 
 ### 1. Context Scan
 
@@ -63,13 +63,13 @@ Research is an exploration-focused workflow — it produces artifacts, not shipp
 ls .planning/research/ 2>/dev/null | head -5
 ```
 
-### 2. Build Path Chain
+### 2. Build Flow Chain
 
 Construct the proposed flow chain for research/exploration work. Short chain — research produces artifacts only:
 
-FLOW 2 (EXPLORE) → FLOW 3 (IDEATE) → FLOW 4 (SPECIFY)
+FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) → FLOW 4 (SPECIFY) [only when research should become a spec]
 
-No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (silver:feature or silver:devops).
+No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`) or to `gsd:do` for GSD-owned lifecycle work.
 
 ### 3. Display Proposal
 
@@ -79,7 +79,7 @@ Display the composition proposal to the user:
 ┌──────────────────────────────────────────────────────────────────┐
 │ SILVER BULLET ► FLOW COMPOSED                                    │
 ├──────────────────────────────────────────────────────────────────┤
-│ Flows: EXPLORE → IDEATE → SPECIFY                                │
+│ Flows: CLARIFY → DECIDE → SPECIFY (if needed)                    │
 │ Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only  │
 └──────────────────────────────────────────────────────────────────┘
 Approve composition? [Y/n]
