@@ -1,11 +1,12 @@
 ---
 name: silver-fast
-description: This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver-feature escalation.
+description: >
+  This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver-feature escalation.
 argument-hint: "<description of change>"
 version: 0.1.0
 ---
 
-# /silver:fast — 3-Tier Complexity Triage
+# /silver-fast — 3-Tier Complexity Triage
 
 SB fast-path with 3-tier routing. Classifies work autonomously and routes to the appropriate execution engine.
 
@@ -31,7 +32,7 @@ Change: {$ARGUMENTS or "(not specified)"}
 
 ## Step 0: Complexity Triage
 
-Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no AskUserQuestion.
+Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no interactive question.
 
 **Tier 1 (Trivial):**
 - ≤3 files AND no logic changes
@@ -134,7 +135,7 @@ Change exceeds fast-path complexity. Routing to silver-feature.
 Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
 ```
 
-Invoke `silver:feature` with $ARGUMENTS. Exit silver:fast.
+Invoke `silver-feature` with $ARGUMENTS. Exit silver-fast.
 
 ## Step 4: Scope Expansion Check
 
@@ -147,7 +148,7 @@ After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the c
 **During Tier 2:** If files modified > 10:
 - Escalate to Tier 3 (silver-feature, Step 3)
 
-Escalation is **autonomous** — no AskUserQuestion needed. Display escalation banner:
+Escalation is **autonomous** — no user question needed. Display escalation banner:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

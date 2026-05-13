@@ -30,7 +30,7 @@ Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of c
 
 Silver Bullet orchestrates your entire software development lifecycle by guiding you through
 a structured series of steps. Each step uses a GSD (Get Shit Done) command or a Silver Bullet
-skill that handles the heavy lifting -- you provide direction, and the active runtime executes.
+skill that handles the heavy lifting -- you provide direction, the active runtime executes.
 
 This guide covers the full journey from project setup through release. Every section tells you:
 
@@ -146,16 +146,13 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 
 **What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
 
-**Default:** host execution tier for all orchestrator work and the majority of GSD agents.
-**Host high tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
+**Default:** host execution tier for all orchestrator work and routine GSD agents.
+**Host high tier reserved for:** design, review, and verification work.
+**Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-**What to expect:** No model choice prompt. Agents auto-select the correct model. High-tier agents
-run deeper reasoning transparently; execution-tier agents handle execution, research, review, and
-documentation at high throughput. The orchestrator (this session) always runs on the host execution tier.
+**What to expect:** No model choice prompt. Agents auto-select the correct model for the current host. Execution-tier agents handle execution, research, and documentation at high throughput; high-tier agents handle design, review, and verification; top-tier agents handle the deepest reasoning cases. The orchestrator (this session) always runs on the host execution tier.
 
-**Autonomous mode:** Same — no escalation prompt. Silent escalation to the host high tier only if a
-planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders,
-or a file-producing step that produces no file). Log escalation as an autonomous decision.
+**Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders, or a file-producing step that produces no file). Log escalation as an autonomous decision.
 
 ---
 
@@ -193,7 +190,7 @@ on your vision without guessing.
 **What to expect:** The active runtime identifies phase-specific gray areas (concrete decisions like
 "session handling" or "duplicate detection", not generic categories like "UX") and asks you
 about each one. Your answers become locked decisions. The active runtime acts as a thinking partner --
-you provide vision, and it captures decisions for the builder agents downstream. Expect 5-15
+you provide vision, the active runtime captures decisions for the builder agents downstream. Expect 5-15
 minutes of focused discussion depending on phase complexity.
 
 Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
@@ -203,7 +200,7 @@ Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
 - If this phase introduces an **architectural decision**: write an ADR inline
   (structure: title, status, context, decision, consequences) before moving to PLAN.
 - If this phase introduces a **new service or major component**: `/system-design`
-- If this phase involves **UI work**: `product-management:product-brainstorming`
+- If this phase involves **UI work**: `silver:clarify`
   (consolidated design skill covering design system, UX copy, and accessibility; WCAG 2.1 AA audit included)   **REQUIRED when UI work** -- DO NOT SKIP
 
 **Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,
@@ -214,7 +211,7 @@ architecture, system-design), ask once before beginning them:
 identifies the wrong gray areas, provide your own list. The discuss step is idempotent --
 re-running overwrites the CONTEXT.md with fresh decisions.
 
-**Autonomous mode:** Use defaults for all gray areas, apply the active runtime's discretion throughout,
+**Autonomous mode:** Use defaults for all gray areas, apply runtime discretion throughout,
 log all auto-decisions to the session log.
 
 ---
@@ -315,7 +312,7 @@ requirements, then runs user acceptance testing (UAT) with persistent state trac
 **What to expect:** The active runtime presents what SHOULD happen for each testable deliverable and
 asks you to confirm reality matches. Tests are presented one at a time. Your responses
 ("yes", descriptions of issues, "skip", "blocked") are recorded in a UAT.md file that
-survives session breaks. Severity is inferred automatically from your descriptions -- the runtime
+survives session breaks. Severity is inferred automatically from your descriptions -- the active runtime
 never asks "how severe is this?". If issues are found, parallel debug agents diagnose root
 causes and a planner creates fix plans automatically. Expect 10-30 minutes depending on how
 many deliverables need verification.
@@ -490,7 +487,7 @@ of the project after this milestone's work.
   ```
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
-  host execution tier base rate; host high tier is approximately 3x multiplier.
+  Host execution tier is the base rate; host high/top tiers are progressively more expensive.
 - Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
   Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
@@ -641,7 +638,7 @@ The transition is offered when ANY of the following are true:
 
 ### What Happens
 
-1. The active runtime offers: "Application shipped. Set up deployment infrastructure? This switches to the DevOps workflow."
+1. The runtime offers: "Application shipped. Set up deployment infrastructure? This switches to the DevOps workflow."
 2. If you accept: `active_workflow` in `.silver-bullet.json` is updated from `full-dev-cycle` to `devops-cycle`
 3. The DevOps workflow (`docs/workflows/devops-cycle.md`) takes over with infrastructure-specific steps including blast radius analysis, environment promotion, and incident response
 
@@ -705,7 +702,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
-- For trivial changes (typos, copy fixes, config tweaks): `touch ~/.claude/.silver-bullet/trivial`
+- For trivial changes (typos, copy fixes, config tweaks): route through `/silver:fast`
 
 ---
 

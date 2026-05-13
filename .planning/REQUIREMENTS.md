@@ -32,6 +32,25 @@
 - [ ] **REL-02**: CI is green and the pre-release quality gate passes twice in a row with no findings before release.
 - [ ] **REL-03**: `silver-create-release` produces structured notes and publishes the GitHub Release for `v0.33.1`.
 
+### Architecture Contract Refresh
+
+- [x] **FLOW-01**: `/silver` routes most non-trivial bare user intent through SB workflow composition or GSD delegation while preserving direct answers for Q&A/status/trivial interactions.
+- [x] **FLOW-02**: Composable flow contracts are atomic enough to support dynamic workflow composition without bundling unrelated lifecycle steps.
+- [x] **FLOW-03**: SB workflow skills reference the current SB, GSD, Superpowers, and Product Management skill catalogs.
+- [x] **FLOW-04**: GSD remains the lifecycle authority for phase, milestone, semver, testing, bugfix, verification, and release mechanics.
+- [x] **FLOW-05**: Templates and runtime instructions align with the refreshed router and flow contracts.
+- [x] **FLOW-06**: Forge mirrors and Codex package sync reflect the updated router/flow contract surface.
+- [x] **FLOW-07**: Verification covers router contracts, package sync, integration hooks, and the full suite.
+
+### Forge Port Parity
+
+- [x] **FORGE-01**: Forge SB-owned skills reflect the current source skill surface, including newly added SB skills.
+- [x] **FORGE-02**: Forge-specific adaptations remain Forge-native and do not regress into Claude/Codex-only installation instructions.
+- [x] **FORGE-03**: Hook-equivalent Forge agents represent the current SB hook surface where Forge can reasonably emulate it.
+- [x] **FORGE-04**: Forge docs, installer counts, smoke tests, and scenario harnesses agree with the updated inventory.
+- [x] **FORGE-05**: Legacy or stale Forge scenario references are removed or renamed to current skill/command names.
+- [x] **FORGE-06**: Verification covers Forge parity plus the broader SB test suite.
+
 ## v2 Requirements
 
 None yet. This milestone is intentionally a burn-down of current open issues, not a broad feature expansion.
@@ -61,10 +80,23 @@ None yet. This milestone is intentionally a burn-down of current open issues, no
 | REL-01 | Phase 91 | Pending |
 | REL-02 | Phase 91 | Pending |
 | REL-03 | Phase 91 | Pending |
+| FLOW-01 | Phase 92 | Completed |
+| FLOW-02 | Phase 92 | Completed |
+| FLOW-03 | Phase 92 | Completed |
+| FLOW-04 | Phase 92 | Completed |
+| FLOW-05 | Phase 92 | Completed |
+| FLOW-06 | Phase 92 | Completed |
+| FLOW-07 | Phase 92 | Completed |
+| FORGE-01 | Phase 93 | Completed |
+| FORGE-02 | Phase 93 | Completed |
+| FORGE-03 | Phase 93 | Completed |
+| FORGE-04 | Phase 93 | Completed |
+| FORGE-05 | Phase 93 | Completed |
+| FORGE-06 | Phase 93 | Completed |
 
 **Coverage:**
-- v1 requirements: 13 total
-- Mapped to phases: 13
+- v1 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0 ✓
 
 ---

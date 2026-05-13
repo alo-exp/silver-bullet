@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v0.33.1
 milestone_name: Open Issue Burn-down
-current_plan: 92-01
-status: phase-complete
+current_plan: ""
+status: ready_for_next_phase
 stopped_at: ""
 last_updated: "2026-05-13T08:33:00.000Z"
 last_activity: 2026-05-13
 progress:
-  total_phases: 7
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 14
+  total_phases: 8
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -20,10 +20,10 @@ progress:
 **Project:** Silver Bullet
 **Current version:** v0.33.0 (release line shipped). Prior shipped milestone: v0.31.1.
 **Active milestone:** v0.33.1 Open Issue Burn-down
-**Active phase:** Phase 92 — Dynamic Silver Router & Atomic Flow Composition Alignment
-**Current plan:** 92-01
+**Active phase:** Phase 86 — Runtime-Aware Bootstrap
+**Current plan:** none
 
-Last activity: 2026-05-11
+Last activity: 2026-05-13
 
 ## Project Reference
 
@@ -32,11 +32,11 @@ See: .planning/MILESTONES.md (latest shipped entry + current milestone context)
 
 ## Current Position
 
-Phase: 92 — Dynamic Silver Router & Atomic Flow Composition Alignment
-Plan: 92-01
-Status: Phase 92 completed; router/contract alignment verified inside the v0.33.1 release line
+Phase: 86 — Runtime-Aware Bootstrap
+Plan: none
+Status: Ready for the next unfinished v0.33.1 burn-down phase
 
-Progress: [█░░░░░░░░░] 14% (1/7 phases completed)
+Progress: [██░░░░░░░░] 25% (2/8 phases completed)
 
 ## v0.33.1 burn-down sync
 
@@ -54,6 +54,11 @@ Progress: [█░░░░░░░░░] 14% (1/7 phases completed)
 Plus pre-release gate fixes: 2 additional GSD command ports, secondary version field bumps, skill body cross-ref rewrite, README Path C Forge section, site badge bump.
 
 **Final inventory:** 107 skills + 47 agents + 49 slash commands + 11 template entries; smoke test 31/31 PASS.
+
+## Current milestone additions
+
+- **Phase 92** — Dynamic Silver Router & Atomic Flow Composition Alignment: completed 2026-05-13 with full suite 2002/0 PASS.
+- **Phase 93** — Forge Port Parity Refresh for Current SB: completed 2026-05-13; Forge refreshed to the current SB source surface with 109 skills, 50 agents, 50 commands, 18 template files, and full suite 2002/0 PASS.
 **Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.31.0
 
 ## Decisions (v0.31.0)
@@ -75,6 +80,7 @@ Plus pre-release gate fixes: 2 additional GSD command ports, secondary version f
 
 - Phase 92 added: Dynamic Silver Router & Atomic Flow Composition Alignment. This phase is release-blocking for router/composer contract drift and keeps semver-sensitive work under GSD milestone/phase management.
 - Phase 92 completed on 2026-05-13. `/silver` dynamic routing, atomic flow contracts, workflow skills, templates, Forge mirrors, and Codex package sync now align with current dependency skill catalogs and GSD lifecycle ownership.
+- Phase 93 completed: Forge Port Parity Refresh for Current SB. Forge skills, hook-equivalent agents, installer/docs, templates, tests, and Codex package sync now match the current SB source surface.
 
 ## Backlog (deferred)
 - shellcheck SC2294 (`eval` pattern at forge-sb-install.sh:67 — pre-existing)

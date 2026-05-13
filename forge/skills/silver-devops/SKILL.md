@@ -1,18 +1,18 @@
 ---
 name: silver-devops
 description: >
-  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
+  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver-blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
 
-# /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow
+# /silver-devops — Infrastructure, CI/CD, IaC, Cloud Workflow
 
 SB orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.
 
 **Key design principles:**
-- No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
-- Uses silver:devops-quality-gates (7 IaC-adapted dimensions) instead of the standard 9-dimension sweep at BOTH pre-plan and pre-ship gates.
+- No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver-feature or silver-research). Blast-radius analysis replaces the product/engineering brainstorm.
+- Uses silver-devops-quality-gates (7 IaC-adapted dimensions) instead of the standard 9-dimension sweep at BOTH pre-plan and pre-ship gates.
 - TDD is not applicable for infra plans — explicitly skipped.
 
 **The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, reusability, extensibility. (Usability omitted — no user-facing interface in IaC.)
@@ -101,7 +101,7 @@ this to verify the active workflow is fully complete before final delivery.
 # user-facing FLOW / PATH names so they match what compliance-status surfaces).
 SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
-SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:devops "the user's original request" "$SB_FLOWS")
+SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver-devops "the user's original request" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
@@ -137,65 +137,65 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 3b), `silver:devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
+**Non-skippable gates:** `silver-security` (Step 3b), `silver-devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `silver-scan`. Purpose: orient in the codebase — understand current infra topology before silver-blast-radius analysis.
 
-If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` via the Skill tool.
+If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase`.
 
 ## Step 1: Blast Radius Analysis
 
-Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
+Invoke `silver-blast-radius`. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
 
 ## Step 2: DevOps Skill Router
 
-Invoke `silver:devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
+Invoke `silver-devops-skill-router`. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
+Invoke `silver-devops-quality-gates`. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
 
-Note: this is NOT the standard 9-dimension silver:quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
+Note: this is NOT the standard 9-dimension silver-quality-gates. The devops workflow uses silver-devops-quality-gates exclusively at both quality gate positions.
 
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
-Invoke `silver:security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
+Invoke `silver-security`. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` via the Skill tool. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
+Invoke `gsd-discuss-phase`. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
 
 ## Step 5: Plan Phase
 
-Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md for the infrastructure change.
+Invoke `gsd-plan-phase`. Purpose: PLAN.md for the infrastructure change.
 
 ## Step 6: Execute Phase (TDD skipped)
 
-If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
+If mode is Interactive: invoke `gsd-execute-phase`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous`.
 
-**TDD is explicitly skipped for infra plans — not applicable.** Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No silver:tdd invocation.
+**TDD is explicitly skipped for infra plans — not applicable.** Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No silver-tdd invocation.
 
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant infra changes: invoke `gsd-review --all` via the Skill tool (fans out to all available external CLIs for cross-AI review).
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `silver-request-review` (superpowers:requesting-code-review).
+2. Invoke `gsd-code-review`. If issues found: invoke `gsd-code-review-fix`.
+3. For architecturally significant infra changes: invoke `gsd-review --all` (fans out to all available external CLIs for cross-AI review).
+4. Invoke `silver-receive-review` (superpowers:receiving-code-review).
 
 ## Step 8: IaC Security + Secrets Verification
 
-Invoke `gsd-secure-phase` via the Skill tool. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+Invoke `gsd-secure-phase`. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
 ### Deferred-Item Capture (mandatory)
 
-During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver:add` — do not accumulate silently.
+During and after execution, any item that is skipped, descoped, out of scope, explicitly deferred, or identified for future work MUST be filed immediately via `/silver-add` — do not accumulate silently.
 
 ```
-Skill(skill="silver:add", args="<description of deferred item>")
+Skill(skill="silver-add", args="<description of deferred item>")
 ```
 
 **Classification quick-reference:**
@@ -207,18 +207,18 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 9: Deployment Verification
 
-Invoke `gsd-verify-work` via the Skill tool. Purpose: deployment verification and UAT. Non-skippable gate.
+Invoke `gsd-verify-work`. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+Invoke `silver-devops-quality-gates` again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 
 ```bash
-[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver:ensure-docs --recover-scheme"
+[ -f "docs/doc-scheme.md" ] && [ -f "docs/doc-scheme.json" ] && echo "Doc-scheme gate required" || echo "Doc scheme missing/incomplete — run /silver-ensure-docs --recover-scheme"
 ```
 
 Before deploying, verify documentation is up to date per the scheme:
@@ -231,8 +231,8 @@ Before deploying, verify documentation is up to date per the scheme:
 
 **Gate:** Do NOT proceed to Step 11 until all checklist/doc checks pass. Missing checklist keys or stale `updated` claims are pre-ship defects.
 
-If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver:ensure-docs --recover-scheme`, then complete this step before proceeding to Step 11.
+If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver-ensure-docs --recover-scheme`, then complete this step before proceeding to Step 11.
 
 ## Step 11: Ship / Deploy
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, deploy, create PR.
+Invoke `gsd-ship`. Purpose: push branch, deploy, create PR.

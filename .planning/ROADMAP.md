@@ -64,6 +64,18 @@
 
 **Issues targeted:** local architecture/contract drift; closes local backlog item SB-B-1
 
+### Phase 93: Forge Port Parity Refresh for Current SB
+
+**Requirements:** FORGE-01..06
+
+**Goal:** Update the Forge port of SB-owned skills, hook-equivalent agents, installer surfaces, parity docs, and Forge test harnesses so Forge reflects the current Silver Bullet source version after the Codex-native and dynamic-flow updates.
+
+**Depends on:** Phase 92
+**Plans:** 1 plan
+
+Plans:
+- [x] 93-01 — Refresh Forge skills, hook-agents, docs, installer, and tests
+
 ---
 
 ## Progress
@@ -77,11 +89,12 @@
 | 90. Todo-App Clear-Completed Burn-down | TRACK-02 | Pending | Sibling fixture + duplicate collapse |
 | 91. Release v0.33.1 | REL-01..03 | Pending | CI + pre-release gate + GitHub Release |
 | 92. Dynamic Silver Router & Atomic Flow Composition Alignment | FLOW-01..07 | Completed | Router, flow contracts, GSD alignment, and catalog drift resolved; full suite 2002/0 |
+| 93. Forge Port Parity Refresh for Current SB | FORGE-01..06 | Completed | Forge refreshed to 109 skills, 50 agents, 50 commands, 18 template files; full suite 2002/0 |
 
 ## Coverage Validation
 
-- v1 requirements: 20/20 mapped
-- Milestone phases: 7
+- v1 requirements: 26/26 mapped
+- Milestone phases: 8
 - Open issues in scope: 22
 - Unmapped requirements: 0 ✓
 

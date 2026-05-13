@@ -9,7 +9,7 @@ Initializes the Silver Bullet structured workflow for a Forge project. Confirms 
 
 ## When to Use
 
-- The user runs `silver:init` or asks "set up silver bullet" or "initialize silver bullet for this project"
+- The user runs `silver-init` or asks "set up silver bullet" or "initialize silver bullet for this project"
 - A project has no `.planning/PROJECT.md` and the user wants to start using SB workflows
 
 ## Prerequisites
@@ -27,7 +27,7 @@ test -d "$HOME/forge/skills" && find "$HOME/forge/skills" -name SKILL.md | wc -l
 test -d "$HOME/forge/agents" && find "$HOME/forge/agents" -name "*.md" | wc -l
 ```
 
-If counts are <100 skills or <30 agents, the install is incomplete — re-run.
+Expected baseline: at least 109 skills and 50 agents. If counts are materially lower, the install is incomplete — re-run.
 
 ## Procedure
 
@@ -88,13 +88,16 @@ Create or update `./AGENTS.md` (Forge's CLAUDE.md equivalent) with:
    - Before any production build → invoke `forge-spec-floor-check` agent
    - When committing a phase SUMMARY.md → invoke `forge-roadmap-freshness` agent
    - At session start → invoke `forge-session-init` agent
+   - Before dependency workflow chains → invoke `forge-dependency-skill-check`
+   - Before root instruction-file creation/replacement → invoke `forge-instruction-file-guard`
+   - Before implementation edits in active composed workflows → invoke `forge-workflow-chain-guard`
 4. GSD subagent-as-tool delegation — list common subagents and when to invoke them (gsd-planner during planning, gsd-verifier after execution, gsd-code-reviewer for review, etc.)
 
 Use the global template at `~/forge/silver-bullet/templates/AGENTS.md.template` if present, falling back to fetching from the SB repo.
 
 ### Step 5 — Create Project `.forge/skills/` and `.forge/agents/` (Optional)
 
-Project-level skill/agent overrides live here. By default `silver:init` does NOT copy global skills to the project — Forge already loads them from `~/forge/skills/`. Only create `.forge/skills/` and `.forge/agents/` if the user wants to override or extend specific skills for this project.
+Project-level skill/agent overrides live here. By default `silver-init` does NOT copy global skills to the project — Forge already loads them from `~/forge/skills/`. Only create `.forge/skills/` and `.forge/agents/` if the user wants to override or extend specific skills for this project.
 
 If the user opts in, create empty directories with a README:
 
@@ -120,11 +123,14 @@ Inform the user: "Created PROJECT.md skeleton. Edit `.planning/PROJECT.md` to fi
 
 ### Step 7 — Verify Skills and Agents Are Loadable
 
-Run a smoke test to confirm Forge can pick up the skills:
+Run a smoke test to confirm Forge can pick up the current skill, command, template, and agent surfaces:
 
 ```bash
 test -d "$HOME/forge/skills/silver-feature" && echo "silver-feature skill OK"
+test -d "$HOME/forge/skills/silver-ensure-docs" && echo "silver-ensure-docs skill OK"
+test -d "$HOME/forge/skills/silver-handoff" && echo "silver-handoff skill OK"
 test -f "$HOME/forge/agents/gsd-planner.md" && echo "gsd-planner agent OK"
+test -f "$HOME/forge/agents/forge-workflow-chain-guard.md" && echo "workflow-chain guard OK"
 ```
 
 If either fails, instruct the user to re-run `forge-sb-install.sh`.
@@ -145,8 +151,8 @@ Global agent set: {M} agents at ~/forge/agents/
 
 Next steps:
   1. Edit .planning/PROJECT.md to define your project
-  2. Use `silver:feature`, `silver:bugfix`, `silver:ui`, etc., to start work
-  3. Use `silver:research` for technology decisions
+  2. Use `silver-feature`, `silver-bugfix`, `silver-ui`, etc., to start work
+  3. Use `silver-research` for technology decisions
 ```
 
 ## Notes

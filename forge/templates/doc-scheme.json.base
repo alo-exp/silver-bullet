@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "sync": {
+    "doc_scheme_md_path": "docs/doc-scheme.md",
+    "task_checklist_path": "docs/task-doc-checklist.json"
+  },
+  "enforcement": {
+    "enabled": true,
+    "granularity_levels": [2, 3]
+  },
+  "mandatory_updated_docs": [
+    "docs/CHANGELOG.md",
+    "docs/knowledge/YYYY-MM.md",
+    "docs/lessons/YYYY-MM.md",
+    "docs/task-doc-checklist.json"
+  ],
+  "required_docs": [
+    {
+      "key": "docs/CHANGELOG.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/knowledge/YYYY-MM.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/lessons/YYYY-MM.md",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/task-doc-checklist.json",
+      "mandatory_updated": true,
+      "required_sections": []
+    },
+    {
+      "key": "docs/doc-scheme.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/doc-scheme.json",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/ARCHITECTURE.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/TESTING.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "docs/knowledge/INDEX.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "README.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    },
+    {
+      "key": "CHANGELOG.md",
+      "mandatory_updated": false,
+      "required_sections": []
+    }
+  ],
+  "preserved_mappings": [],
+  "archive_moves": []
+}

@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST produce components that are written 
 
 **Why this matters:** Duplicated logic drifts over time. When the same concept lives in two places, one gets updated and the other doesn't — causing subtle bugs that are hard to trace. Reusable design prevents this by ensuring every concept has exactly one authoritative implementation.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/gsd-discuss-phase`, before `/gsd-plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -98,7 +98,7 @@ If it's not documented, it won't be reused — it will be reimplemented.
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/gsd-discuss-phase → /gsd-plan-phase)
 
 Before finalizing any design or plan, run the **Reusability Checklist**:
 
@@ -112,7 +112,7 @@ Before finalizing any design or plan, run the **Reusability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/gsd-execute-phase)
 
 As you write code:
 - Before writing new logic, search for existing implementations of the same concept.
