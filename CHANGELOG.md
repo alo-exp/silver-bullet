@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.34.0] — 2026-05-13
+
+## Features
+
+- `refresh Forge port for current SB` (`b71d838`)
+- `align silver router flow composition with GSD` (`8271bda`)
+
+## Other
+
+- `reconcile SB install and skill surface` (`6ad8327`)
+- `update CHANGELOG and README badge for v0.33.0` (`4032476`)
+
+---
+
 ## [0.33.0] — 2026-05-12
 
 ## Features

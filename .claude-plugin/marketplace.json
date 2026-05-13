@@ -1,11 +1,11 @@
 {
   "name": "alo-labs",
   "owner": {
-    "name": "\u0100lo Labs",
+    "name": "Ālo Labs",
     "email": "hello@alolabs.io"
   },
   "metadata": {
-    "description": "Silver Bullet \u2014 AI-native software development enforcement for Claude Code",
+    "description": "Silver Bullet — AI-native software development enforcement for Claude Code",
     "version": "1.0.0"
   },
   "plugins": [
@@ -16,7 +16,7 @@
         "repo": "alo-exp/silver-bullet"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
-      "version": "0.32.4",
+      "version": "0.34.0",
       "author": {
         "name": "Alo Labs",
         "email": "info@alolabs.dev"
