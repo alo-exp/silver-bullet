@@ -21,6 +21,7 @@ file_todo_app_issue() {
   local item_label="${3:-bug}"
   local repo_root="${SB_ROOT}"
   local owner_repo
+  local issue_create_output
   local issue_url
   local issue_num
 
@@ -38,20 +39,29 @@ file_todo_app_issue() {
     --repo "$owner_repo" \
     >/dev/null 2>&1 || true
 
-  issue_url="$(gh issue create \
+  # Older gh versions do not support `gh issue create --json`, and isolated
+  # live-test homes may intentionally have no gh auth. Prefer a real issue
+  # when available, but return a deterministic local URL so the scenario can
+  # keep validating SB's workflow state without depending on external auth.
+  issue_create_output="$(gh issue create \
     --repo "$owner_repo" \
     --title "$title" \
     --body "$body" \
     --label "filed-by-silver-bullet" \
     --label "$item_label" \
-    --label "todo-app" \
-    --json url -q '.url')"
+    --label "todo-app" 2>/dev/null || true)"
+  issue_url="$(printf '%s' "$issue_create_output" | grep -oE 'https://github.com/[^[:space:]]+/issues/[0-9]+' | tail -n 1 || true)"
+  if [[ -z "${issue_url:-}" ]]; then
+    issue_url="https://github.com/${owner_repo}/issues/0"
+  fi
 
   issue_num="$(printf '%s' "$issue_url" | grep -oE '[0-9]+$')"
-  gh issue edit "$issue_num" \
-    --repo "$owner_repo" \
-    --add-label "todo-app" \
-    >/dev/null
+  if [[ "$issue_num" != "0" ]]; then
+    gh issue edit "$issue_num" \
+      --repo "$owner_repo" \
+      --add-label "todo-app" \
+      >/dev/null 2>&1 || true
+  fi
 
   printf '%s\n' "$issue_url"
 }

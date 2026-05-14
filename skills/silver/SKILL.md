@@ -138,7 +138,7 @@ Composition rules:
 - Insert DEBUG dynamically on execution, test, CI, or verification failure.
 - Insert UI QUALITY only when UI artifacts or UI scope exists.
 - Insert DOCUMENT and RELEASE only for milestone/release work, not every phase.
-- Record composed workflow state with `scripts/workflows.sh`.
+- Record composed workflow state with the resolved `workflows.sh` helper from the project or installed plugin.
 
 ### Step 8: Handle ambiguity
 

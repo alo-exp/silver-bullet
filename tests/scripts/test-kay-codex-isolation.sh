@@ -26,6 +26,17 @@ assert_file_contains() {
   fi
 }
 
+assert_file_exists() {
+  local desc="$1" path="$2"
+  if [[ -e "$path" ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing [$path]"
+    (( FAIL++ )) || true
+  fi
+}
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -33,6 +44,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIGINAL_HOME="$TMP/original-home"
 FAKE_BIN="$TMP/bin/kay"
 mkdir -p "$ORIGINAL_HOME/.kay" "$(dirname "$FAKE_BIN")"
+mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion"
 
 cat > "$ORIGINAL_HOME/.kay/kay.toml" <<'EOF'
 [provider]
@@ -45,9 +57,14 @@ EOF
 
 cat > "$FAKE_BIN" <<'EOF'
 #!/usr/bin/env bash
-printf 'kay 0.9.1\n'
+printf 'kay 0.9.3\n'
 EOF
 chmod +x "$FAKE_BIN"
+cat > "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md" <<'EOF'
+---
+name: verification-before-completion
+---
+EOF
 
 export HOME="$ORIGINAL_HOME"
 export CODE_HOME="$TMP/original-code-home"
@@ -66,6 +83,17 @@ assert_eq "MiniMax key is sourced from original Kay config" "test-minimax-key" "
 assert_eq "Kay/Codex binary is preserved" "$FAKE_BIN" "$CODEX_BIN"
 assert_file_contains "Isolated Kay config pins MiniMax provider" "$CODE_HOME/config.toml" 'model_provider = "minimax"'
 assert_file_contains "Isolated Kay config pins MiniMax M2.7" "$CODE_HOME/config.toml" 'model = "MiniMax-M2.7"'
+assert_file_exists "Isolated Kay cache copies dependency plugin versions" "$HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md"
+case "$SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD" in
+  *"MiniMax-M2.7"*"Do not call agent"*"split argv array"*)
+    echo "PASS: isolated Kay prompt guard constrains agents, model, and command arrays"
+    (( PASS++ )) || true
+    ;;
+  *)
+    echo "FAIL: isolated Kay prompt guard missing expected constraints"
+    (( FAIL++ )) || true
+    ;;
+esac
 
 isolated_root="$SB_LIVE_CODEX_ISOLATION_DIR"
 teardown_kay_codex_isolation

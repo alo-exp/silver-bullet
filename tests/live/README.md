@@ -8,7 +8,7 @@ actually work when either runtime triggers them via real tool usage.
 ## Prerequisites
 
 - `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
-- Kay `v0.9.1` available in `PATH` for Codex-compatible runs
+- Kay `v0.9.3` available in `PATH` for Codex-compatible runs
 - MiniMax credentials available through `MINIMAX_API_KEY` or the user's Kay config
 - Authenticated with valid credentials for the runtime(s) you plan to run
 - `jq` installed (`brew install jq`)
