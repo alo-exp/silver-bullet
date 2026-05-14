@@ -43,7 +43,7 @@ GSD is installed. These are the Silver Bullet enforcement layer.
 
 | Hook | Event | What it enforces |
 |------|-------|-----------------|
-| `session-start` | SessionStart | Injects Superpowers + Design context; injects `core-rules.md` at session open; resets branch-scoped state |
+| `session-start` | SessionStart | Injects SB `core-rules.md` and contextual Design guidance when present; resets branch-scoped ephemeral gate files |
 | `spec-session-record.sh` | SessionStart | Records spec version at session open for UAT gate staleness detection |
 | `record-skill.sh` | PostToolUse/Skill | Records every skill invocation to the state file; powers compliance display |
 | `dev-cycle-check.sh` | PreToolUse + PostToolUse / Edit, Write, Bash | HARD STOP if planning quality gates are incomplete before source code edits |
@@ -72,7 +72,7 @@ fully without a GSD install.
 | `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
 | `/silver:init` | Once per project — initializes `silver-bullet.md`, config, CI, then invokes `/silver:ensure-docs --bootstrap`; reconciles any existing project instruction file in place |
 | `/silver:ensure-docs` | Documentation authority — bootstrap/reconcile docs, remediate hook gaps, recover doc scheme contract |
-| `/silver-quality-gates` | Pre-planning quality check across 9 dimensions (modularity, reusability, scalability, security, reliability, usability, testability, extensibility) |
+| `/silver-quality-gates` | Pre-planning quality check across 8 core dimensions plus conditional AI/LLM safety (modularity, reusability, scalability, security, reliability, usability, testability, extensibility) |
 | `/devops-quality-gates` | 7 IaC-adapted quality dimensions for infrastructure work (usability excluded) |
 | `/silver-blast-radius` | Maps change scope, dependencies, failure scenarios, and rollback plan for DevOps changes |
 | `/silver-forensics` | Structured root-cause investigation for failed or stalled sessions; handles session-level issues directly, routes GSD-workflow-level issues to `/gsd:forensics` if GSD is installed |

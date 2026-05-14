@@ -70,7 +70,8 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   (.state.trivial_file // $dt),
   ((.skills.required_deploy // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
-  ((.skills.required_planning // []) | join(" "))
+  ((.skills.required_planning // []) | join(" ")),
+  ((.skills.required_planning_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -79,6 +80,7 @@ trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
 active_workflow=$(printf '%s' "$config_vals" | sed -n '4p')
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
+required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -449,7 +451,7 @@ fi
 # list is enforced by completion-audit.sh on actual delivery commands
 # (gh pr create / gh release create / deploy). Applying it on every Stop
 # event blocks ad-hoc additions that don't warrant a milestone-ship
-# checklist (deploy-checklist for a skill file, create-release per commit,
+# checklist (deploy-checklist for a skill file, silver-create-release per commit,
 # etc.). Stop-tier enforcement now applies the planning floor only —
 # typically just `silver-quality-gates` (and its devops substitute).
 #
@@ -462,7 +464,9 @@ if [[ "$active_workflow" == "devops-cycle" ]]; then
 else
   default_planning="silver-quality-gates"
 fi
-if [[ -n "$required_planning_cfg" ]]; then
+if [[ "$active_workflow" == "devops-cycle" && -n "$required_planning_devops_cfg" ]]; then
+  all_skills="$required_planning_devops_cfg"
+elif [[ -n "$required_planning_cfg" ]]; then
   all_skills="$required_planning_cfg"
 else
   all_skills="$default_planning"

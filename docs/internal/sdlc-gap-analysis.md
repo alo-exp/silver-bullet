@@ -21,7 +21,7 @@ Silver Bullet's two workflows — `full-dev-cycle` (20 steps) and `devops-cycle`
 | 1. Discovery & Requirements | AI-generated from conversation (`/gsd:new-project`) | ⚠️ Partial |
 | 2. Architecture & Design | Conditional: ADR inline, `/system-design`, Design plugin | ⚠️ Partial |
 | 3. Development | Full GSD execution engine (plan/execute/verify) | ✅ Strong |
-| 4. Code Review | `/code-review` (Engineering) + `/requesting-code-review` (dispatches `superpowers:code-reviewer`) + `/receiving-code-review` | ✅ Strong |
+| 4. Code Review | `/requesting-code-review` framing + `/gsd:code-review` authoritative REVIEW.md + `/receiving-code-review` triage | ✅ Strong |
 | 5. Security | Design-time checklist via `/quality-gates` (security dimension) | ⚠️ Partial |
 | 6. Testing | `/testing-strategy` defines strategy; no execution gate | ⚠️ Partial |
 | 7. Quality Gates | 8 dimensions enforced at design phase; IaC variant + blast radius | ✅ Strong |
@@ -139,7 +139,7 @@ For teams shipping software to users — not just merging PRs — this gap is im
 **Severity:** High
 **SDLC Phase:** 10 (Incident Response)
 
-The Engineering plugin includes `/incident-response` but it is not woven into either workflow. The devops-cycle fast path invokes `/blast-radius` and fixes the immediate issue — but:
+The Engineering plugin includes `/incident-response` but it is not woven into either workflow. The devops-cycle fast path invokes `/silver:blast-radius` and fixes the immediate issue — but:
 
 - `/incident-response` is never invoked
 - No post-incident review (PIR/postmortem) skill is required after a fast-path fix
@@ -250,7 +250,7 @@ This analysis focuses on gaps, but it is worth stating what the system gets righ
 - **Enforcement architecture** — 7 independent layers means no single point of bypass; PostToolUse hooks are the right mechanism
 - **Quality gate depth** — 8 quality dimensions applied as hard stops (not warnings) at the design phase sets a high bar
 - **DevOps coverage** — Blast radius assessment + IaC-adapted quality gates + environment promotion is best-in-class for infrastructure workflows
-- **Plugin orchestration** — The combination of GSD + Superpowers + Engineering + Design + 5 optional DevOps plugins into a single enforced workflow is the right architectural vision
+- **Plugin orchestration** — The combination of GSD + SB gates + selected helper plugins into a single enforced workflow is the right architectural vision
 
 The core loop — **design → build → review → deploy** — is solid. The work is to extend the system to both ends of the lifecycle.
 

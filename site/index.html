@@ -948,7 +948,7 @@ img{max-width:100%;height:auto}
   <div class="container">
     <h1><span class="hero-h1-inner"><img src="silver-bullet.png" alt="" class="hero-bullet" aria-hidden="true"><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></span></h1>
     <p class="hero-tagline-caps">COMPOSE. ENFORCE. TRACE. SHIP.</p>
-    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.34.0</div>
+    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.35.0</div>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
@@ -1172,7 +1172,7 @@ img{max-width:100%;height:auto}
           <li>Fresh 200K context per agent &mdash; eliminates context rot</li>
           <li>Atomic git commit per task with conventional format</li>
           <li>Requirements traceability with unique IDs</li>
-          <li>Pre-execution plan verification across 9 dimensions</li>
+          <li>Pre-execution plan verification across 8 core dimensions plus conditional gates</li>
           <li>Brownfield codebase analysis before planning</li>
           <li>Workflow guard and context monitor hooks</li>
         </ul>
@@ -1365,7 +1365,7 @@ img{max-width:100%;height:auto}
       </div>
       <div class="sb-gsd-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="workflow"></i></div><h3>Workflows Are Task-Shaped</h3></div>
-        <p>GSD has <code>gsd:do</code>. SB&rsquo;s extra value is broader workflow composition across SB gates, GSD, Superpowers, Engineering, Design, PM, and DevOps steps.</p>
+        <p>GSD has <code>gsd:do</code>. SB&rsquo;s extra value is broader workflow composition across SB gates, GSD, and selected helper plugins for review, design, PM, DevOps, and release work.</p>
       </div>
       <div class="sb-gsd-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="network"></i></div><h3>Cross-Plugin Orchestration</h3></div>
@@ -1396,8 +1396,8 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">How It Compares</div>
-      <h2 class="section-title">GSD Executes. Superpowers Plans. Silver Bullet Enforces Both.</h2>
-      <p class="section-desc centered">GSD and Superpowers are two of the best standalone plugins in the ecosystem. Silver Bullet orchestrates them both &mdash; and adds everything they can&rsquo;t do alone.</p>
+      <h2 class="section-title">GSD Executes. Silver Bullet Orchestrates.</h2>
+      <p class="section-desc centered">GSD remains the lifecycle and execution authority. Silver Bullet acts as the Agentic Process Orchestrator around it: composing the right task path, enforcing gates, and bringing in optional plugin helpers only when the selected workflow requires them.</p>
     </div>
 
     <div class="compare-grid mt-6">
@@ -1464,9 +1464,9 @@ img{max-width:100%;height:auto}
         </div>
         <ul class="compare-items">
           <li><span class="ci ci-yes">✓</span> Orchestrates GSD (execution engine)</li>
-          <li><span class="ci ci-yes">✓</span> Orchestrates Superpowers (skills)</li>
+          <li><span class="ci ci-yes">✓</span> Calls Superpowers helpers only when required</li>
           <li><span class="ci ci-yes">✓</span> 6-layer technical enforcement + documentation layer</li>
-          <li><span class="ci ci-yes">✓</span> 9 quality dimensions + hard-stop gate</li>
+          <li><span class="ci ci-yes">✓</span> 8 core quality dimensions plus conditional gates + hard-stop gate</li>
           <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
           <li><span class="ci ci-yes">✓</span> Composable workflow orchestration — dynamic composition per context</li>
           <li><span class="ci ci-yes">✓</span> Phase gates — no step can be skipped</li>
@@ -1553,7 +1553,7 @@ img{max-width:100%;height:auto}
         <div class="layer-num">3</div>
         <div>
           <h3>Dependency Gate</h3>
-          <p>Required GSD, Superpowers, Engineering, Design, Product, or DevOps skills must be available. Missing mandatory dependencies fail closed with install-and-retry guidance.</p>
+          <p>Required GSD skills and selected SB helper dependencies must be available. Missing mandatory dependencies fail closed with install-and-retry guidance.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
@@ -1615,63 +1615,63 @@ img{max-width:100%;height:auto}
     <div class="text-center">
       <div class="section-label">Quality Gates</div>
       <h2 class="section-title">Quality Dimensions. Enforced Checkpoints.</h2>
-      <p class="section-desc centered">The <strong>full-dev-cycle</strong> applies 9 quality dimensions via <code>/quality-gates</code>. The <strong>devops-cycle</strong> applies 7 IaC-adapted dimensions via <code>/devops-quality-gates</code> (usability and AI/LLM safety excluded) plus a mandatory <code>/blast-radius</code> assessment. Every dimension is a hard stop &mdash; not a warning.</p>
+      <p class="section-desc centered">The <strong>full-dev-cycle</strong> applies 8 core quality dimensions plus conditional gates via <code>/silver:quality-gates</code>. The <strong>devops-cycle</strong> applies 7 IaC-adapted dimensions via <code>/devops-quality-gates</code> plus a mandatory <code>/silver:blast-radius</code> assessment. Usability and AI/LLM safety are excluded when they do not apply; reusability/extensibility are handled through modularity and change-safety. Every dimension is a hard stop &mdash; not a warning.</p>
     </div>
     <div class="grid grid-4 mt-6">
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:rgba(156,163,175,.12);color:var(--accent2)"><i data-lucide="boxes"></i></div>
         <h3>Modularity</h3>
         <p style="font-size:.85rem">Small, focused modules. File size limits. Change locality max 3&ndash;5 files. Single responsibility enforced.</p>
-        <span class="tag tag-purple mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-purple mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="copy"></i></div>
         <h3>Reusability</h3>
         <p style="font-size:.85rem">DRY, composable components. Rule of Three. No duplication across the codebase.</p>
-        <span class="tag tag-indigo mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-indigo mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:rgba(34,211,238,.12);color:var(--cyan)"><i data-lucide="trending-up"></i></div>
         <h3>Scalability</h3>
         <p style="font-size:.85rem">Stateless by default. Indexed queries. Async processing. Resource limits defined upfront.</p>
-        <span class="tag tag-cyan mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-cyan mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--accent3-a12);color:var(--accent3)"><i data-lucide="shield-check"></i></div>
         <h3>Security</h3>
         <p style="font-size:.85rem">OWASP Top 10. Input validation. Secrets management. Defense in depth. No trust boundaries crossed. SENTINEL hardening: shell injection fixes and markdown injection prevention built in.</p>
-        <span class="tag tag-pink mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-pink mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:rgba(52,211,153,.12);color:var(--green)"><i data-lucide="heart-pulse"></i></div>
         <h3>Reliability</h3>
         <p style="font-size:.85rem">Fault tolerance. Retries with backoff. Circuit breakers. Graceful degradation under load.</p>
-        <span class="tag tag-green mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-green mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--amber-a12);color:var(--amber)"><i data-lucide="target"></i></div>
         <h3>Usability</h3>
         <p style="font-size:.85rem">Intuitive APIs. Actionable error messages. Accessibility. Progressive disclosure of complexity.</p>
-        <span class="tag tag-amber mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-amber mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="flask-conical"></i></div>
         <h3>Testability</h3>
         <p style="font-size:.85rem">Dependency injection. Pure functions. Test seams. Deterministic behavior. No hidden state.</p>
-        <span class="tag tag-indigo mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-indigo mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:rgba(156,163,175,.12);color:var(--accent2)"><i data-lucide="puzzle"></i></div>
         <h3>Extensibility</h3>
         <p style="font-size:.85rem">Open-closed principle. Plugin architecture. Versioned interfaces. Change without breakage.</p>
-        <span class="tag tag-purple mt-2" style="margin-top:12px;display:inline-block">/quality-gates</span>
+        <span class="tag tag-purple mt-2" style="margin-top:12px;display:inline-block">/silver:quality-gates</span>
       </div>
     </div>
 
     <div class="mt-6">
       <div class="callout fade-in">
         <div class="callout-icon"><i data-lucide="alert-triangle"></i></div>
-        <p><strong>DevOps Cycle: Blast Radius First.</strong> Before quality gates, the devops-cycle requires a <code>/blast-radius</code> assessment &mdash; mapping change scope, downstream dependencies, failure scenarios, and rollback plans. Changes rated HIGH require explicit approval and a runbook. CRITICAL changes are a hard stop requiring CAB review.</p>
+        <p><strong>DevOps Cycle: Blast Radius First.</strong> Before quality gates, the devops-cycle requires a <code>/silver:blast-radius</code> assessment &mdash; mapping change scope, downstream dependencies, failure scenarios, and rollback plans. Changes rated HIGH require explicit approval and a runbook. CRITICAL changes are a hard stop requiring CAB review.</p>
       </div>
     </div>
   </div>
@@ -1701,9 +1701,9 @@ img{max-width:100%;height:auto}
         <div class="enforcement-body">
 <span class="stop">&#128683; HARD STOP</span> <span class="dim">&mdash; Planning incomplete.</span>
 <span class="dim">Missing required skills:</span>
-<span class="cross">&#10007;</span> <span class="accent">quality-gates</span>
+<span class="cross">&#10007;</span> <span class="accent">silver-quality-gates</span>
 
-<span class="dim">Run /quality-gates before</span>
+<span class="dim">Run /silver:quality-gates before</span>
 <span class="dim">editing any source file.</span>
 <span class="dim">Then run /gsd:plan-phase.</span>
         </div>
@@ -1723,11 +1723,10 @@ img{max-width:100%;height:auto}
 <span class="stop">&#129521; COMPLETION BLOCKED</span>
 <span class="dim">&mdash; Workflow incomplete.</span>
 
-<span class="cross">&#10007;</span> <span class="accent">/code-review</span>
+<span class="cross">&#10007;</span> <span class="accent">/gsd:code-review</span>
 <span class="cross">&#10007;</span> <span class="accent">/requesting-code-review</span>
-<span class="cross">&#10007;</span> <span class="accent">/testing-strategy</span>
-<span class="cross">&#10007;</span> <span class="accent">/documentation</span>
-<span class="cross">&#10007;</span> <span class="accent">/deploy-checklist</span>
+<span class="cross">&#10007;</span> <span class="accent">/receiving-code-review</span>
+<span class="cross">&#10007;</span> <span class="accent">/verify-tests</span>
 
 <span class="dim">Complete ALL required steps</span>
 <span class="dim">before finalizing.</span>
@@ -1875,24 +1874,22 @@ img{max-width:100%;height:auto}
           <tr><td>3b</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/design-system + /ux-copy + /accessibility-review (if UI)</td><td>Design</td><td></td></tr>
           <tr><td>4</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/silver:quality-gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>5</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>5a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/test-driven-development (before writing any code)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>5a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>tdd (before writing behavior-changing code)</td><td>Silver Bullet wrapper</td><td><span class="step-required">As needed</span></td></tr>
           <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:forensics or /gsd:debug (on failure)</td><td>Silver Bullet / GSD</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review (structured quality review)</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (dispatches code-reviewer agent)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/gsd:code-review (structured quality review)</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>11</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td>12</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>13</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/testing-strategy</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>14</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/tech-debt</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>15</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/documentation</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>18</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>19</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>20</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>13</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:secure-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>14</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:validate-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>15</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>SB-required helper</td><td>Branches only</td></tr>
+          <tr><td>17</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>18</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1925,25 +1922,23 @@ img{max-width:100%;height:auto}
           <tr><td>7a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
           <tr><td>8</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>8a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review (structured quality review)</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (dispatches code-reviewer agent)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/gsd:code-review (authoritative REVIEW.md)</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Environment promotion &mdash; dev &rarr; staging &rarr; prod</td></tr>
           <tr><td>14</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Promote to next environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>15</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Verify promoted environment</td><td>GSD</td><td><span class="step-required">Required</span></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/testing-strategy</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>16a</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>Contextual enrichment (CI/CD, GitOps)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/tech-debt</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/documentation</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:secure-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:validate-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>SB-required helper</td><td>Branches only</td></tr>
           <tr><td>20</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>22</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>23</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>24</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>22</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>23</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
         </tbody>
       </table>
     </div>

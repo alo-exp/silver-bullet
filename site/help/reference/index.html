@@ -316,9 +316,9 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or GSD lifecycle work.</td></tr>
           <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
           <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/lessons files, task checklist, and related docs.</td></tr>
-          <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>9-dimension product/software quality gate: modularity, reusability, scalability, security, reliability, usability, testability, extensibility, and AI/LLM safety where applicable. Failing dimensions become hard requirements.</td></tr>
+          <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety is added only when the phase includes AI behavior. Failing dimensions become hard requirements.</td></tr>
           <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
-          <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, reusability, and extensibility. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
+          <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
           <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for GSD planning or SB gates.</td></tr>
           <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, or stalled SB sessions. Routes GSD-workflow failures to <code>/gsd:forensics</code> and handles SB/session-level failures directly.</td></tr>
           <tr><td>/silver:create-release<span class="badge-small badge-req">Required</span></td><td>Milestone release</td><td>Generates structured release notes, updates release surfaces, creates the final version tag, and publishes the GitHub Release. Runs last inside <code>/silver:release</code>, after ship and milestone archival.</td></tr>
@@ -369,7 +369,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Named workflows that <code>/silver</code> can compose after intent classification. They orchestrate; implementation remains delegated to GSD, Superpowers, SB quality/review skills, and optional external research/provider skills where installed.</p>
+      <p>Named workflows that <code>/silver</code> can compose after intent classification. They orchestrate; implementation remains delegated to GSD, with Superpowers, SB quality/review skills, and optional external research/provider skills used only at explicit helper boundaries where installed.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
@@ -441,19 +441,19 @@ footer a:hover{color:var(--accent-light)}
             <td>User-facing text and messaging decisions. Only required for phases with UI work.</td>
           </tr>
           <tr>
-            <td>/test-driven-development<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
+            <td>tdd<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
             <td>Execute (before writing code)</td>
             <td>Red-green-refactor discipline. Invoke before writing any implementation code in /gsd:execute-phase. Write a failing test first, then implement until it passes, then refactor. Required for behavior-changing software implementation plans. DevOps/IaC workflows explicitly skip TDD and instead use plan/validate/policy/security/drift checks.</td>
           </tr>
           <tr>
-            <td>/code-review<span class="badge-small badge-eng">ENG</span><span class="badge-small badge-req">Required</span></td>
-            <td>Code Review</td>
-            <td>Structured peer code quality review: security (SQL injection, XSS, CSRF, auth flaws), performance (N+1, unbounded queries), correctness (edge cases, race conditions), maintainability. Run before /requesting-code-review.</td>
-          </tr>
-          <tr>
             <td>/requesting-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
             <td>Code Review</td>
-            <td>Dispatches <code>superpowers:code-reviewer</code> for peer code quality review: security, performance, correctness, readability. Loop until 2 consecutive <i data-lucide="check-circle" style="color:var(--green);vertical-align:middle"></i> Approved passes.</td>
+            <td>Frames the review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper discipline. Does not replace the GSD review artifact.</td>
+          </tr>
+          <tr>
+            <td>/gsd:code-review<span class="badge-small badge-gsd">GSD</span><span class="badge-small badge-req">Required</span></td>
+            <td>Code Review</td>
+            <td>Produces the authoritative <code>REVIEW.md</code> artifact through GSD reviewer agents. Loop until two consecutive clean passes.</td>
           </tr>
           <tr>
             <td>/receiving-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
@@ -463,7 +463,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>superpowers:code-reviewer</td>
             <td>Code Review (via /requesting-code-review)</td>
-            <td>Automated reviewer subagent dispatched by /requesting-code-review. Must return <i data-lucide="check-circle" style="color:var(--green);vertical-align:middle"></i> Approved on two consecutive passes before proceeding. Self-limiting — loop ends naturally when two clean passes are produced.</td>
+            <td>Conditional helper reviewer dispatched by /requesting-code-review when selected by the active SB workflow. Must return <i data-lucide="check-circle" style="color:var(--green);vertical-align:middle"></i> Approved on two consecutive passes before proceeding. Self-limiting — loop ends naturally when two clean passes are produced.</td>
           </tr>
         </tbody>
       </table>
@@ -544,7 +544,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.34.0"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.35.0"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -552,9 +552,12 @@ footer a:hover{color:var(--accent-light)}
     <span class="key">"active_workflow"</span>: <span class="str">"full-dev-cycle"</span>
   },
   <span class="key">"skills"</span>: {
-    <span class="key">"required_planning"</span>: [<span class="str">"silver-quality-gates"</span>],
+    <span class="key">"required_planning"</span>: [<span class="str">"silver-quality-gates"</span>, <span class="str">"gsd-discuss-phase"</span>, <span class="str">"gsd-plan-phase"</span>],
+    <span class="key">"required_planning_devops"</span>: [<span class="str">"silver-blast-radius"</span>, <span class="str">"devops-quality-gates"</span>, <span class="str">"gsd-discuss-phase"</span>, <span class="str">"gsd-plan-phase"</span>],
     <span class="key">"required_deploy"</span>: [
       <span class="str">"silver-quality-gates"</span>,
+      <span class="str">"gsd-execute-phase"</span>, <span class="str">"gsd-verify-work"</span>, <span class="str">"gsd-ship"</span>,
+      <span class="str">"gsd-code-review"</span>, <span class="str">"gsd-secure-phase"</span>, <span class="str">"gsd-validate-phase"</span>,
       <span class="str">"code-review"</span>, <span class="str">"requesting-code-review"</span>, <span class="str">"receiving-code-review"</span>,
       <span class="str">"finishing-a-development-branch"</span>,
       <span class="str">"silver-create-release"</span>,
@@ -563,6 +566,11 @@ footer a:hover{color:var(--accent-light)}
       <span class="str">"verify-tests"</span>
     ],
     <span class="key">"all_tracked"</span>: [<span class="comment">"silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "verify-tests", "gsd:*", ...</span>]
+  },
+  <span class="key">"release"</span>: {
+    <span class="key">"profile"</span>: <span class="str">"generic"</span>,
+    <span class="key">"require_plugin_runtime_matrix"</span>: <span class="val">false</span>,
+    <span class="key">"require_pre_release_quality_gate"</span>: <span class="val">false</span>
   },
   <span class="key">"devops_plugins"</span>: {
     <span class="key">"hashicorp"</span>: <span class="val">false</span>,
@@ -728,7 +736,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
 /gsd:debug
 
 <span class="comment"># Verify, review, and prepare final delivery</span>
-/gsd:verify-work → /code-review → /requesting-code-review → /receiving-code-review → /verify-tests
+/gsd:verify-work → /requesting-code-review → /gsd:code-review → /receiving-code-review → /verify-tests
 
 <span class="comment"># Route trivial changes through the supported fast path</span>
 /silver:fast
@@ -737,7 +745,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.34.0</div>
+/silver:release v0.35.0</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>

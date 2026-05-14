@@ -30,7 +30,7 @@ If user intent implies a semver-relevant codebase change, route through an SB wo
 
 ## Skill Namespace Rules
 
-Use logical route names in decisions (`silver:feature`, `gsd:do`, `superpowers:test-driven-development`, `product-management:write-spec`). At invocation time, use the skill name exposed by the current host:
+Use logical route names in decisions (`silver:feature`, `gsd:do`, `tdd`, `product-management:write-spec`). At invocation time, use the skill name exposed by the current host:
 
 - Claude-style slash/skill aliases may expose `silver:feature` and `gsd:do`.
 - Codex plugin installs may expose `silver-bullet:silver-feature` while generated package surfaces expose `silver:feature`.
@@ -94,11 +94,11 @@ First strong match wins after complexity triage and conflict resolution.
 | "doc scheme", "ensure docs", "docs checklist", "docs gate failed", "reconcile docs", "recover doc scheme" | `silver:ensure-docs` | Doc governance authority |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
-| "IaC quality", "devops quality", "terraform quality" | `silver:devops-quality-gates` | DevOps quality audit |
+| "IaC quality", "devops quality", "terraform quality" | `devops-quality-gates` | DevOps quality audit |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Evidence-based post-mortem |
 | "release notes", "github release", "cut release", "tag release" | `silver:create-release` | Release artifact creation inside release flow |
-| "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `silver:verify-tests` | Fresh test gate |
-| "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC routing |
+| "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `verify-tests` | Fresh test gate |
+| "which IaC tool", "terraform vs pulumi", "which cloud skill" | `devops-skill-router` | IaC routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | External artifact ingestion |
 | Any explicit GSD lifecycle request | `gsd:do` | Examples: add phase, plan phase, execute phase, verify, validate, debug, quick, semver, milestone |
 

@@ -10,9 +10,9 @@ Contracts use logical skill names. At invocation time, use the host-exposed equi
 
 | Logical family | Examples | Notes |
 |----------------|----------|-------|
-| SB | `silver:feature`, `silver:quality-gates`, `silver:verify-tests` | Codex plugin installs may expose `silver-bullet:silver-feature`; source dirs may use `silver-feature`. |
+| SB | `silver:feature`, `silver:quality-gates`, `verify-tests` | Codex plugin installs may expose `silver-bullet:silver-feature`; source dirs may use `silver-feature`. |
 | GSD | `gsd:do`, `gsd:plan-phase`, `gsd:execute-phase` | Prefer `gsd:do` for freeform GSD delegation. Use exact GSD skill only when a flow contract names it. |
-| Superpowers | `superpowers:test-driven-development`, `superpowers:requesting-code-review` | Required when a flow marks them Always. |
+| Superpowers | SB wrapper skills such as `tdd`, `requesting-code-review`, and `receiving-code-review` | Required only when a selected SB flow marks them Always. |
 | Product Management | `product-management:write-spec`, `product-management:competitive-brief` | Optional unless the flow says Always. |
 
 Do not replace a missing Always dependency with ad hoc shell work. Stop, report the missing skill, and offer install-and-retry or an explicitly approved degraded path.
@@ -124,7 +124,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | ROADMAP and REQUIREMENTS exist; target phase exists |
 | Trigger | Always before execution for non-trivial codebase work |
-| Steps | 1. `gsd:discuss-phase` (Always) · 2. `superpowers:writing-plans` (As-needed bridge from spec/design to plan) · 3. `gsd:list-phase-assumptions` (As-needed) · 4. `gsd:analyze-dependencies` (As-needed/when available) · 5. `gsd:plan-phase` (Always) |
+| Steps | 1. `gsd:discuss-phase` (Always) · 2. `writing-plans` (As-needed local bridge from spec/design to plan) · 3. `gsd:list-phase-assumptions` (As-needed) · 4. `gsd:analyze-dependencies` (As-needed/when available) · 5. `gsd:plan-phase` (Always) |
 | Produces | Phase CONTEXT, RESEARCH, PLAN files |
 | Review Cycle | CONTEXT/RESEARCH/PLAN review; plan-checker must pass for implementation work |
 | GSD Impact | GSD reads/writes all planning artifacts and owns phase plan validity |
@@ -148,7 +148,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | PLAN exists; STATE position matches phase |
 | Trigger | Always for implementation work |
-| Steps | 1. `silver:tdd` -> `superpowers:test-driven-development` (As-needed, behavior-changing implementation) · 2. `gsd:execute-phase` or `gsd:autonomous` (Always) |
+| Steps | 1. `tdd` -> `superpowers:test-driven-development` (As-needed, behavior-changing implementation) · 2. `gsd:execute-phase` or `gsd:autonomous` (Always) |
 | Produces | Code changes, task commits, SUMMARY files |
 | Review Cycle | Insert FLOW 14 DEBUG on execution/test failure |
 | GSD Impact | GSD reads/writes STATE, ROADMAP, plans, summaries, and commits |
@@ -184,7 +184,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | PLAN or implementation scope known |
 | Trigger | Always for software changes; especially agents, hooks, prompts, infra, auth, data, release |
-| Steps | 1. `silver:security` (Always for SB/plugin/agent safety) · 2. `gsd:secure-phase` (Always for phase security) · 3. `gsd:validate-phase` (As-needed gap filling) · 4. `silver:ai-llm-safety` (As-needed LLM/agent behavior) |
+| Steps | 1. `security` (Always for SB/plugin/agent safety) · 2. `gsd:secure-phase` (Always for phase security) · 3. `gsd:validate-phase` (As-needed gap filling) · 4. `silver:ai-llm-safety` (As-needed LLM/agent behavior) |
 | Produces | SECURITY and validation artifacts |
 | Review Cycle | Security findings must be resolved or explicitly accepted before ship/release |
 | GSD Impact | GSD secure/validate skills verify mitigations and create gap work |
@@ -196,7 +196,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | FLOW 7 complete; SUMMARY exists |
 | Trigger | Always; non-skippable |
-| Steps | 1. `gsd:verify-work` (Always) · 2. `gsd:add-tests` (As-needed coverage gaps) · 3. `silver:verify-tests` (As-needed fresh suite marker) · 4. `superpowers:verification-before-completion` (Always before completion claim) |
+| Steps | 1. `gsd:verify-work` (Always) · 2. `gsd:add-tests` (As-needed coverage gaps) · 3. `verify-tests` (As-needed fresh suite marker) · 4. `superpowers:verification-before-completion` (Always before completion claim) |
 | Produces | UAT, VERIFICATION, test freshness marker |
 | Review Cycle | Verification gaps route to GSD gap closure and re-verify |
 | GSD Impact | GSD owns verification artifacts and gap creation |
@@ -208,7 +208,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | Pre-plan: context exists. Pre-ship: implementation and verification exist. |
 | Trigger | Always pre-plan and pre-ship for non-trivial workflows |
-| Steps | 1. `silver:quality-gates` for product/software work or `silver:devops-quality-gates` for infra/IaC · 2. dimension-specific SB skills (As-needed) |
+| Steps | 1. `silver:quality-gates` for product/software work or `devops-quality-gates` for infra/IaC · 2. dimension-specific SB skills (As-needed) |
 | Produces | Quality assessment and gap list |
 | Review Cycle | Gate itself is the review; blocking dimensions must be addressed |
 | GSD Impact | Gaps route into GSD planning/execution |

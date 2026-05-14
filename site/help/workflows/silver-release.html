@@ -158,8 +158,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h3>Pre-flight</h3>
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
-      <h3>Step 0 — Pre-release quality gates (9 dimensions)</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. Full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. <strong>Non-skippable gate.</strong></p>
+      <h3>Step 0 — Pre-release quality gates (8 core dimensions + conditional gates)</h3>
+      <p>Invoke <code>/silver:quality-gates</code>. 8 core dimensions plus conditional gates before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, and extensibility, with AI/LLM safety only when applicable. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 1 — Cross-phase UAT</h3>
       <p>Invoke <code>gsd:audit-uat</code>. Purpose: cross-phase UAT — surface all outstanding gaps before release. Gives a complete picture of milestone state before deciding whether to ship.</p>
@@ -228,7 +228,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
-      <div class="code-block">/silver:release Cut v0.34.0</div>
+      <div class="code-block">/silver:release Cut v0.35.0</div>
       <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → docs and milestone summary → cross-artifact review → deploy checklist → fresh tests → <code>gsd:ship</code> → <code>gsd:complete-milestone</code> → <code>/silver:create-release</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->

@@ -85,8 +85,8 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 1. Stage A blocks if `quality-gates` is absent from state
 2. Stage A warns and allows when the required skill is unavailable anywhere invocable
 3. Stage A and Stage B both block source edits when planning is incomplete
-4. Phase-skip detection blocks finalization skills before `/code-review`
-5. Stage C allows edits once `code-review` is done and finalization remains
+4. Phase-skip detection warns when finalization skills appear before `/gsd:code-review` while still allowing fixes
+5. Stage C allows edits once `gsd-code-review` is done and finalization remains
 6. Stage D allows edits once all required skills are present
 7. Trivial file bypass never blocks, regardless of state
 8. State tamper, plugin boundary, and devops-cycle regressions are covered in the same suite

@@ -219,7 +219,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Why two-pass review loops also matter.</strong> Verification checks functional correctness. Code review (via <code>/requesting-code-review</code>) checks code quality, security, and maintainability. Both must complete before ship — they cover different concerns and neither replaces the other.</div>
+        <div class="callout-body"><strong>Why two-pass review loops also matter.</strong> Verification checks functional correctness. GSD code review, framed by <code>/requesting-code-review</code>, checks code quality, security, and maintainability. Both must complete before ship — they cover different concerns and neither replaces the other.</div>
       </div>
 
       <div class="divider"></div>
@@ -228,7 +228,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>In Silver Bullet's <a href="composable-workflow.html">composable flows architecture</a>, verification maps to two distinct paths:</p>
       <ul>
         <li><strong>FLOW 11 VERIFY</strong> — the non-skippable verification gate. Runs <code>gsd:verify-work</code>, <code>gsd:add-tests</code> (as-needed for coverage gaps), and <code>superpowers:verification-before-completion</code>. Produces <code>UAT.md</code> and <code>VERIFICATION.md</code>. Cannot be removed from any composition that includes FLOW 7 (EXECUTE).</li>
-        <li><strong>FLOW 12 QUALITY GATE</strong> — dual-mode quality gate that appears <strong>twice</strong> in every composition: once as a <em>design-time checklist</em> before planning (9 quality dimensions), and once as an <em>adversarial audit</em> before shipping. The pre-ship instance runs after FLOW 11 VERIFY completes. Both instances must pass — all dimensions must pass in each.</li>
+        <li><strong>FLOW 12 QUALITY GATE</strong> — dual-mode quality gate that appears <strong>twice</strong> in every composition: once as a <em>design-time checklist</em> before planning (8 core quality dimensions plus conditional gates), and once as an <em>adversarial audit</em> before shipping. The pre-ship instance runs after FLOW 11 VERIFY completes. Both instances must pass — all dimensions must pass in each.</li>
       </ul>
       <p>The dual-mode design separates concerns: FLOW 11 VERIFY confirms functional correctness (tests pass, acceptance criteria met), while FLOW 12 QUALITY GATE pre-ship confirms the full quality posture (security, scalability, maintainability, and 6 other dimensions) before any code reaches production.</p>
 

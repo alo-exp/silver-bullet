@@ -36,11 +36,11 @@
           }
         ]
       },
+  {
+    "matcher": "Bash|Skill",
+    "hooks": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
+        "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
             "async": false,
             "timeout": 10
@@ -125,7 +125,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Skill",
         "hooks": [
           {
             "type": "command",

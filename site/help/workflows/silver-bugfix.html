@@ -203,7 +203,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <h2 id="tdd-regression">Step 2 — TDD regression test (all paths converge here)</h2>
       <p>All three paths converge at this step. Before writing any fix code:</p>
-      <p>Invoke <code>superpowers:test-driven-development</code>. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden <code>/test-driven-development</code> gate before any fix code is written and ensures the bug cannot silently regress.</p>
+      <p>Invoke the SB <code>tdd</code> gate. Purpose: write a failing regression test first — RED must appear before writing any fix. The SB wrapper delegates to the Superpowers TDD skill only at this execution boundary, so bugfix work stays routed through SB+GSD while preserving failing-test-first discipline.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">⚠</div>

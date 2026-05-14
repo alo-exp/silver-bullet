@@ -36,12 +36,12 @@ Defines what each plugin owns. Silver Bullet never duplicates documentation or f
 ## Architectural Distinction
 
 **GSD** is the execution engine — it runs phases, manages state, creates artifacts.
-**Superpowers** provides autonomous patterns — spec-driven development, TDD, subagent dispatch.
+**Superpowers** provides craft-discipline helpers — TDD, review framing/triage, verification-before-completion, and branch finishing when SB explicitly selects them.
 **Silver Bullet** is the enforcement layer — it ensures nothing is skipped, everything is sequenced, and quality gates are met.
 It also owns SB's own packaging surfaces, including the SB-only Codex bundle, the `/silver:*`
 command surface that ships inside it, and the shared marketplace glue for third-party Codex wrappers.
 
-SB adds enforcement to the GSD+Superpowers+Engineering+Design stack. It never replaces any plugin's functionality.
+SB adds enforcement to the SB+GSD core and only calls Superpowers, Engineering, or Design at explicit helper boundaries. It never replaces any plugin's functionality.
 
 If one of those dependency plugins becomes unavailable during a run, SB
 fails closed: stop, notify the user, and offer install-and-retry first.

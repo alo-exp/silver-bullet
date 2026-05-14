@@ -80,7 +80,7 @@ echo "=== planning-file-guard.sh tests ==="
 
 echo "--- Group 1: Protected files are blocked ---"
 
-for protected_file in ROADMAP.md STATE.md PROJECT.md RELEASE.md; do
+for protected_file in ROADMAP.md STATE.md PROJECT.md RELEASE.md REQUIREMENTS.md UAT.md; do
   setup
   out=$(run_hook_edit "${TMPDIR_TEST}/.planning/${protected_file}")
   assert_blocks "blocks Edit on .planning/${protected_file}" "$out"
@@ -89,15 +89,15 @@ for protected_file in ROADMAP.md STATE.md PROJECT.md RELEASE.md; do
   teardown
 done
 
-echo "--- Group 1b: Silver Bullet skill-managed files are NOT blocked ---"
+echo "--- Group 1b: SB-owned planning files are NOT blocked ---"
 
-# REQUIREMENTS.md (silver-spec) and UAT.md (silver-feature) use Write tool — must not be blocked
-for sb_managed_file in REQUIREMENTS.md UAT.md; do
+# SB-owned spec/quality artifacts are allowed; GSD lifecycle files above are protected.
+for sb_managed_file in SPEC.md QUALITY-GATES.md; do
   setup
   out=$(run_hook_edit "${TMPDIR_TEST}/.planning/${sb_managed_file}")
-  assert_passes "does not block SB skill-managed .planning/${sb_managed_file}" "$out"
+  assert_passes "does not block SB-owned .planning/${sb_managed_file}" "$out"
   out=$(run_hook_write "${TMPDIR_TEST}/.planning/${sb_managed_file}")
-  assert_passes "does not block SB skill-managed Write on .planning/${sb_managed_file}" "$out"
+  assert_passes "does not block SB-owned Write on .planning/${sb_managed_file}" "$out"
   teardown
 done
 
@@ -112,6 +112,12 @@ echo "--- Group 2: Non-planning files are NOT blocked ---"
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/01-init/PLAN.md")
 assert_passes "does not block phase directory files" "$out"
+teardown
+
+setup
+mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment/094-01-PLAN.md")
+assert_blocks "blocks nested numbered GSD PLAN artifacts" "$out"
 teardown
 
 setup

@@ -6,11 +6,11 @@ trap 'exit 0' ERR
 # workflows.
 #
 # The workflow tracker (.planning/workflows/<id>.md) is the admission ticket.
-# Once a silver:feature / silver:ui / silver:research composition is active,
-# this hook blocks implementation edits until the downstream dependency chain
-# has actually been recorded in the Silver Bullet state file. That prevents the
-# model from "pretending" the GSD / clarification / research steps happened and
-# then jumping straight to local edits.
+# Once a silver:feature / silver:ui / silver:devops / silver:research
+# composition is active, this hook blocks implementation edits until the
+# pre-execution dependency chain has been recorded in the Silver Bullet state
+# file. It deliberately does not require execute, review, verify, or ship
+# markers before edits; those are post-implementation and final-delivery gates.
 
 umask 0077
 
@@ -81,10 +81,13 @@ composer_slug="$(composer_slug_from_value "$composer_raw")"
 required_markers=()
 case "$composer_slug" in
   silver-feature)
-    required_markers=(gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work)
+    required_markers=(silver-quality-gates gsd-discuss-phase gsd-plan-phase)
     ;;
   silver-ui)
-    required_markers=(gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-execute-phase gsd-ui-review gsd-verify-work)
+    required_markers=(silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase)
+    ;;
+  silver-devops)
+    required_markers=(silver-blast-radius devops-quality-gates gsd-discuss-phase gsd-plan-phase)
     ;;
   silver-research)
     required_markers=(silver-clarify)
@@ -123,4 +126,4 @@ for marker in "${missing_markers[@]}"; do
   missing_lines+="  • ${marker}"$'\n'
 done
 
-emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — %s (%s) is active, but the downstream dependency chain is not yet recorded.\n\nMissing markers:\n%s\nBefore making implementation edits, invoke the missing downstream skills via the Skill tool and wait for them to complete. If any dependency skill is unavailable, stop and notify the user; offer install-and-retry first.' "$composer_raw" "$workflow_id" "$missing_lines")"
+emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — %s (%s) is active, but the pre-execution dependency chain is not yet recorded.\n\nMissing markers:\n%s\nBefore making implementation edits, complete the missing pre-execution SB/GSD steps. Execute, review, verify, and ship markers are checked later by completion gates, not here.' "$composer_raw" "$workflow_id" "$missing_lines")"

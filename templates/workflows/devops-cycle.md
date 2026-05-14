@@ -17,7 +17,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/blast-radius`, `/devops-quality-gates`, `/forensics`, etc. |
+| Silver Bullet skills | Skill tool -- `/silver:blast-radius`, `/devops-quality-gates`, `/silver:forensics`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -112,7 +112,7 @@ treatment after the incident resolves.
 2. **Document the incident** -- Record what is broken, the proposed change, and the
    expected outcome. Even under time pressure, a one-paragraph description prevents
    misaligned fixes.
-3. `/blast-radius` -- Required even in incidents. A rushed unreviewed change can make     **REQUIRED** -- DO NOT SKIP
+3. `/silver:blast-radius` -- Required even in incidents. A rushed unreviewed change can make     **REQUIRED** -- DO NOT SKIP
    incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.
 4. **Apply minimal change** -- Apply in the lowest affected environment first. Verify
    health checks pass. Then promote to the next environment.
@@ -225,7 +225,7 @@ Scan installed skills from two sources:
 
 Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
 current task description. Surface candidates:
-> Skills that may apply to this task: `/blast-radius` -- infra change; `/devops-skill-router` -- IaC toolchain
+> Skills that may apply to this task: `/silver:blast-radius` -- infra change; `/devops-skill-router` -- IaC toolchain
 
 If no matches or both directories absent/empty: log "Skill discovery: no candidates surfaced."
 Write results to `## Skills flagged at discovery` in the session log. **Do not invoke yet.**
@@ -278,7 +278,7 @@ focus on the specific gray areas that are blocking progress.
 rollback plan, and change window risk for this phase. This analysis determines how
 cautiously the change must be applied.
 
-`/blast-radius`                                                                          **REQUIRED** -- DO NOT SKIP
+`/silver:blast-radius`                                                                   **REQUIRED** -- DO NOT SKIP
 
 This step is ALWAYS required and comes BEFORE quality gates. Infrastructure changes can
 have cascading effects -- a networking change can break compute, a security group change
@@ -443,18 +443,20 @@ For AWS, use `aws-cost-optimization` to flag wasteful resources.
 
 ### CODE REVIEW
 
-**What it does:** Peer IaC code quality review focused on infrastructure-specific concerns.
+**What it does:** GSD-owned IaC code quality review focused on infrastructure-specific
+concerns, with SB-required review framing and triage helpers around REVIEW.md.
 
 **Commands (all required, in order):**
 
-1. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
-   Structured peer code quality review (security, performance, correctness, readability).
-   For IaC: covers hardcoded values, overly permissive security groups, missing encryption,
-   unencrypted storage, missing tags, and resource-level access control gaps.
-   Run this before dispatching the automated reviewer.
+1. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+   Frames scope and dispatches `superpowers:code-reviewer` only when the active
+   SB workflow selects that helper discipline. This helper does not replace the
+   GSD review artifact.
 
-2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
-   Dispatches `superpowers:code-reviewer` via the Agent tool for IaC peer code quality review.
+2. `/gsd:code-review`                                                           **REQUIRED** -- DO NOT SKIP
+   Produces the authoritative REVIEW.md through GSD reviewer agents. For IaC: covers
+   hardcoded values, overly permissive security groups, missing encryption,
+   unencrypted storage, missing tags, and resource-level access control gaps.
 
    **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
    A single clean pass is not sufficient. The loop is self-limiting.
@@ -536,7 +538,7 @@ cleanup are all addressed before the work ships. Each skill below is ALWAYS requ
 
 ### Testing Strategy
 
-`/testing-strategy`                                                                      **REQUIRED** -- DO NOT SKIP
+`testing-strategy`                                                                      **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Establishes the testing approach for infrastructure code.
 
@@ -556,7 +558,7 @@ covers each tool in use (e.g., Terratest for Terraform, BATS for shell scripts).
 
 ### Technical Debt
 
-`/tech-debt`                                                                             **REQUIRED** -- DO NOT SKIP
+`tech-debt`                                                                             **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Surfaces technical debt introduced or discovered during this work.
 
@@ -567,7 +569,7 @@ effort, and phase introduced. Format: `| Item | Severity | Effort | Phase introd
 
 ### Documentation
 
-`/documentation`                                                                         **REQUIRED** -- DO NOT SKIP
+`documentation`                                                                         **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Ensures all project documentation reflects the current state.
 
@@ -617,7 +619,7 @@ files from templates and re-run.
 
 ### Branch Cleanup
 
-`superpowers:finishing-a-development-branch`                                              **REQUIRED** -- DO NOT SKIP
+`/finishing-a-development-branch`                                                         **REQUIRED ON BRANCHES** -- DO NOT SKIP
 
 **What it does:** Prepares the branch for merge -- rebases on the base branch, squashes
 if appropriate, and ensures a clean diff.
@@ -647,11 +649,11 @@ Plan output MUST be stored as a pipeline artifact for audit.
 - Autonomous mode: poll every 30 seconds, up to 20 retries (10 min max).
   On timeout: log blocker, surface to user, **STOP deployment steps**.
 - If CI is red: invoke `/gsd:debug`, fix the issue, re-push, re-check.
-  Do NOT proceed to `/deploy-checklist` while CI is failing.
+  Do NOT proceed to `deploy-checklist` while CI is failing.
 
 ### Deploy Checklist
 
-`/deploy-checklist`                                                                      **REQUIRED** -- DO NOT SKIP
+`deploy-checklist`                                                                      **REQUIRED** -- DO NOT SKIP
 
 DevOps additions to standard checklist:
 - [ ] Blast radius assessment reviewed and approved
@@ -699,7 +701,7 @@ authenticated, and that verification passed. Use `/gsd:debug` for specific error
 
 **What it does:** Generates release notes and creates a GitHub Release with a git tag.
 
-`/create-release`                                                                        **REQUIRED** -- DO NOT SKIP
+`/silver-create-release`                                                                 **REQUIRED** -- DO NOT SKIP
 
 **What to expect:** A git tag and GitHub Release with structured notes covering features,
 fixes, and breaking changes. README must have been updated in the documentation step
@@ -785,7 +787,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 - **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
-- **Silver Bullet skills** (blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
+- **Silver Bullet skills** (silver-blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
   by PostToolUse hooks that track Skill tool invocations. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.
@@ -798,16 +800,18 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 ## GSD / Superpowers Ownership Rules
 
-GSD is the authoritative execution orchestrator. Superpowers provides design and review
-capabilities only. Where both tools could apply, GSD wins.
+GSD is the authoritative lifecycle and execution orchestrator. Superpowers is used only
+when an SB workflow explicitly requires a helper boundary such as TDD discipline, review
+framing/triage, verification-before-completion, or branch finishing. Where both tools
+could apply, GSD wins.
 
 | Concern | Owner | Rule |
 |---------|-------|------|
 | Requirements | GSD | `.planning/REQUIREMENTS.md` is the single source of truth. Superpowers must NOT maintain a separate requirements list. |
 | Planning | GSD | Use `/gsd:plan-phase` for all plans. When Superpowers' `brainstorming` skill offers to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**. |
 | Execution | GSD | Always use `/gsd:execute-phase` (wave-based). **NEVER** use `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work. |
-| Design specs | Superpowers | Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`. Superpowers' default path (`docs/superpowers/specs/`) is NOT used -- always override it. |
-| Code review | Superpowers | `/requesting-code-review`, `/receiving-code-review`, `superpowers:code-reviewer` are used for review only, never for execution. |
+| Design specs | SB/GSD | Use GSD-owned phase artifacts for lifecycle specs and `docs/specs/YYYY-MM-DD-<topic>-design.md` for optional design records. Superpowers' default path (`docs/superpowers/specs/`) is not authoritative. |
+| Code review | GSD + SB helpers | `/gsd:code-review` owns REVIEW.md. `/requesting-code-review`, `/receiving-code-review`, and `superpowers:code-reviewer` are used only when selected by the SB workflow, never for execution. |
 
 **Override Superpowers defaults in every session:**
 - Spec save path: `docs/specs/` (not `docs/superpowers/specs/`)

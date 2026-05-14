@@ -22,7 +22,7 @@
 **Source:** skills/silver-feature/SKILL.md  
 **Verdict: PASS**
 
-All 17 steps are present and accurately described. Step numbering matches the SKILL.md. Non-skippable gates (silver:security / silver:quality-gates pre-ship / gsd-verify-work) are correct. The complexity triage table (Trivial/Fuzzy/Simple/Complex) matches exactly. Skill names are correctly spelled throughout. The note distinguishing Step 1d (pre-spec MultAI) from Step 9c (post-execution code review) is faithfully reproduced. Milestone completion lifecycle (Step 17) correctly states max 2 gap-closure iterations. Bottom navigation links are correct (`./index.html` ← and `./silver-bugfix.html` →).
+All 17 steps are present and accurately described. Step numbering matches the SKILL.md. Non-skippable gates (security / silver-quality-gates pre-ship / gsd-verify-work) are correct. The complexity triage table (Trivial/Fuzzy/Simple/Complex) matches exactly. Skill names are correctly spelled throughout. The note distinguishing Step 1d (pre-spec MultAI) from Step 9c (post-execution code review) is faithfully reproduced. Milestone completion lifecycle (Step 17) correctly states max 2 gap-closure iterations. Bottom navigation links are correct (`./index.html` ← and `./silver-bugfix.html` →).
 
 ---
 
@@ -30,7 +30,7 @@ All 17 steps are present and accurately described. Step numbering matches the SK
 **Source:** skills/silver-bugfix/SKILL.md  
 **Verdict: PASS**
 
-Triage options A/B/C are correctly reproduced verbatim. Path 1A (superpowers:systematic-debugging → gsd-debug), Path 1B (silver:forensics), Path 1C (gsd-forensics) are all correctly described with their handoff logic. Step 2 TDD enforcement rule ("RED must appear before writing any fix") is accurate. Steps 3–8 match the SKILL.md with correct step numbers. Non-skippable gates are listed correctly (Step 7 = silver:security, Step 7b = quality-gates, Step 6 = gsd-verify-work). Bottom navigation links are correct.
+Triage options A/B/C are correctly reproduced verbatim. Path 1A (superpowers:systematic-debugging → gsd-debug), Path 1B (silver:forensics), Path 1C (gsd-forensics) are all correctly described with their handoff logic. Step 2 TDD enforcement rule ("RED must appear before writing any fix") is accurate. Steps 3–8 match the SKILL.md with correct step numbers. Non-skippable gates are listed correctly (Step 7 = security, Step 7b = quality-gates, Step 6 = gsd-verify-work). Bottom navigation links are correct.
 
 ---
 
@@ -55,7 +55,7 @@ Similarly, the reference page's Orchestration Workflows table row for `/silver:u
 **Source:** skills/silver-devops/SKILL.md  
 **Verdict: PASS**
 
-All 11 steps are present and correctly described. The 7 IaC quality dimensions are accurately listed (reliability, security, scalability, modularity, testability, observability, change-safety). The page correctly states that Usability and Extensibility are omitted (matching the SKILL.md's explanation: "Usability omitted — no user-facing interface in IaC. Extensibility omitted — IaC is declarative, not extensible."). Non-skippable gates (Step 3b = silver:security, Step 10 = devops-quality-gates, Step 9 = gsd-verify-work) are correct. The blast-radius table (LOW/MEDIUM/HIGH/CRITICAL) is an additive editorial section not in the SKILL.md but contains no contradictory information. Bottom navigation links are correct.
+All 11 steps are present and correctly described. The 7 IaC quality dimensions are accurately listed (reliability, security, scalability, modularity, testability, observability, change-safety). The page correctly states that Usability and Extensibility are omitted (matching the SKILL.md's explanation: "Usability omitted — no user-facing interface in IaC. Extensibility omitted — IaC is declarative, not extensible."). Non-skippable gates (Step 3b = security, Step 10 = devops-quality-gates, Step 9 = gsd-verify-work) are correct. The blast-radius table (LOW/MEDIUM/HIGH/CRITICAL) is an additive editorial section not in the SKILL.md but contains no contradictory information. Bottom navigation links are correct.
 
 ---
 
@@ -88,9 +88,9 @@ The HTML page (line 169) shows the route for *"Active phase in progress, no vers
 Note: The silver-bullet.md §2h also says "gsd-ship inside any workflow = phase-level merge" — consistent with the hyphenated form. The reference/index.html uses `gsd:ship` in its own ship disambiguation table, so this error exists there too (see page 13 findings).
 
 **Issue 6-B — Step 5 description adds an invented constraint ("Blocks if README is stale"):**  
-The HTML page states for Step 5 (Create release): *"Git-history release notes generation + GitHub Release creation with version tag. **Blocks if README is stale.**"* The silver-release SKILL.md does not mention this blocking condition. This constraint does appear in silver-bullet.md §3 rules: *"README.md MUST be updated before release. /create-release will block if README is stale."* However it is attributed to the wrong location in the SKILL.md description — this is a rule from §3 not embedded in the silver:create-release step. The statement is not factually wrong (it's accurate per §3), but it attributes the blocking behavior to Step 5 specifically, which could mislead users about where the check lives. Low severity.
+The HTML page states for Step 5 (Create release): *"Git-history release notes generation + GitHub Release creation with version tag. **Blocks if README is stale.**"* The silver-release SKILL.md does not mention this blocking condition. This constraint does appear in silver-bullet.md §3 rules: *"README.md MUST be updated before release. /silver-create-release will block if README is stale."* However it is attributed to the wrong location in the SKILL.md description — this is a rule from §3 not embedded in the silver:create-release step. The statement is not factually wrong (it's accurate per §3), but it attributes the blocking behavior to Step 5 specifically, which could mislead users about where the check lives. Low severity.
 
-No missing steps. Steps 0–8 are all present. Non-skippable gates callout correctly lists quality-gates (Step 0), silver:security (Step 2a), and gsd-ship must succeed before gsd-complete-milestone (Steps 7–8).
+No missing steps. Steps 0–8 are all present. Non-skippable gates callout correctly lists quality-gates (Step 0), security (Step 2a), and gsd-ship must succeed before gsd-complete-milestone (Steps 7–8).
 
 ---
 
@@ -149,7 +149,7 @@ The HTML states verification for silver:release is *"replaced by the full qualit
 **Source:** silver-bullet.md §10  
 **Verdict: PASS**
 
-All five subsections (§10a through §10e) are present and accurately described. The three non-skippable gates are correctly listed (silver:security, silver:quality-gates pre-ship, gsd-verify-work). The two-file update rule (silver-bullet.md AND templates/silver-bullet.md.base in a single commit) is correctly stated. The recording confirmation protocol (show diff, require explicit "yes") matches silver-bullet.md §2h step-skip protocol. §10e defaults (interactive mode, PR branch = ask, TDD enforcement = per-plan-type) match the actual §10 values in silver-bullet.md exactly.
+All five subsections (§10a through §10e) are present and accurately described. The three non-skippable gates are correctly listed (security, silver-quality-gates pre-ship, gsd-verify-work). The two-file update rule (silver-bullet.md AND templates/silver-bullet.md.base in a single commit) is correctly stated. The recording confirmation protocol (show diff, require explicit "yes") matches silver-bullet.md §2h step-skip protocol. §10e defaults (interactive mode, PR branch = ask, TDD enforcement = per-plan-type) match the actual §10 values in silver-bullet.md exactly.
 
 ---
 
@@ -174,8 +174,8 @@ The Orchestration Workflows table states the first step for `/silver:ui` as: *"C
 **Issue 13-C — /silver:release description invents a "post-release plugin version check" step:**  
 In the Silver Bullet Skills table, the description for `/silver:release` ends with: *"…post-release plugin version check."* The silver-release/SKILL.md has no such step. The 8 steps end at `gsd-complete-milestone`. This is invented content.
 
-**Issue 13-D — /quality-gates is described as "8-dimension" when the standard is 9 dimensions:**  
-The Silver Bullet Skills table entry for `/quality-gates` reads: *"8-dimension quality evaluation (modularity, reusability, scalability, security, reliability, usability, testability, extensibility)."* However, silver-feature/SKILL.md Step 3 explicitly states "all 9 dimensions" and lists: reliability, security, scalability, usability, testability, modularity, reusability, extensibility, **plus devops-quality-gates for infra-touching changes**. The silver-bullet.md §2h also states "Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)." The "8-dimension" count is incorrect — the correct number is 9.
+**Issue 13-D — /quality-gates is described as "8-dimension" when the current standard is 8 core dimensions plus conditional gates:**
+The Silver Bullet Skills table entry for `/quality-gates` reads: *"8-dimension quality evaluation (modularity, reusability, scalability, security, reliability, usability, testability, extensibility)."* However, silver-feature/SKILL.md Step 3 explicitly states "8 core dimensions plus conditional gates" and lists: reliability, security, scalability, usability, testability, modularity, reusability, extensibility, **plus devops-quality-gates for infra-touching changes**. The silver-bullet.md §2h also states "Quality gates run twice per workflow: pre-planning (8 core dimensions plus conditional gates) and pre-ship (8 core dimensions plus conditional gates)." The old "9-dimension" framing is superseded; the current model is 8 core dimensions plus conditional AI/LLM and DevOps gates.
 
 **Issue 13-E — Ship disambiguation table uses `gsd:ship` (colon) instead of `gsd-ship` (hyphen):**  
 Same inconsistency as Issue 6-A, present in the reference page's ship disambiguation table. The term used throughout the SKILL.md files is `gsd-ship`.
@@ -213,7 +213,7 @@ The card links to `workflows/` with the correct relative path. It lists silver:f
 | 13-A | reference/index.html | Medium | /silver:ui skills table description inserts non-existent `accessibility-review` step |
 | 13-B | reference/index.html | Medium | Orchestration Workflows table: /silver:ui first step shows `accessibility-review` (not in SKILL.md) |
 | 13-C | reference/index.html | Low | /silver:release description adds invented "post-release plugin version check" step |
-| 13-D | reference/index.html | Medium | /quality-gates described as "8-dimension" — correct number is 9 |
+| 13-D | reference/index.html | Medium | /quality-gates should be described as 8 core dimensions plus conditional gates |
 | 13-E | reference/index.html | Low | Ship disambiguation table uses `gsd:ship` — should be `gsd-ship` |
 
 ---
@@ -223,7 +223,7 @@ The card links to `workflows/` with the correct relative path. It lists silver:f
 - **9 pages PASS** with no content errors
 - **5 pages have ISSUES** (silver-ui.html, silver-research.html, silver-release.html, verification.html, reference/index.html)
 - **12 distinct issues found**, ranging in severity from Medium to Very Low
-- **Most critical issues:** The invented `accessibility-review` step appearing in two places on the reference page (13-A, 13-B), the wrong step number for gsd-verify-work on the verification concepts page (10-A), the "8-dimension" quality gates count that should be 9 (13-D), and the missing Step 16 on the silver:ui page (3-A)
+- **Most critical issues:** The invented `accessibility-review` step appearing in two places on the reference page (13-A, 13-B), the wrong step number for gsd-verify-work on the verification concepts page (10-A), the stale quality-gates count that needed correction to "8 core dimensions plus conditional gates" (13-D), and the missing Step 16 on the silver:ui page (3-A)
 - **No pages contain information that directly contradicts the actual workflow behavior** — all issues are either omissions, wrong step numbers, or invented/imprecise descriptions
 - **Skill names are correctly spelled** throughout all pages (silver:feature, silver:bugfix, etc.)
 - **Internal links between pages** are all correct relative paths

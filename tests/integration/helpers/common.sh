@@ -11,7 +11,8 @@ FAIL=0
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
+QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state"
+VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 LEGACY_CI_TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
 LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
 
@@ -32,11 +33,18 @@ integration_setup() {
   # Create src dir
   mkdir -p "$TMPDIR_TEST/src"
   touch "$TMPDIR_TEST/src/app.js"
+  mkdir -p "$TMPDIR_TEST/.planning/phases/001-test"
+  cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
+# Review
+
+status: passed
+EOF
 
   # SB project marker files
   printf '%s\n' '# Silver Bullet' > "$TMPDIR_TEST/silver-bullet.md"
 
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   # Mock branch file so session-start sees "feature/test" without touching
   # the live ~/.claude/.silver-bullet/branch file.
   TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
@@ -44,6 +52,7 @@ integration_setup() {
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$INLINE_E2E_MATRIX_FILE"
+  rm -f "$VERIFY_TESTS_FILE"
   # Keep integration runs deterministic by removing global legacy CI bypass artifacts.
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
 }
@@ -54,6 +63,7 @@ integration_teardown() {
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$INLINE_E2E_MATRIX_FILE"
+  rm -f "$VERIFY_TESTS_FILE"
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
 }
@@ -65,8 +75,8 @@ write_default_config() {
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","verification-before-completion","test-driven-development","tech-debt"]
+    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","verification-before-completion","test-driven-development","tech-debt","verify-tests"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -76,8 +86,8 @@ EOCFG
 write_all_skills() {
   cat > "$TMPSTATE" << 'EOSKILLS'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -88,7 +98,9 @@ silver-ensure-docs
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOSKILLS
+  date +%s > "$VERIFY_TESTS_FILE"
 }
 
 # Write a WORKFLOW.md with all paths marked complete
@@ -264,6 +276,9 @@ run_record_skill() {
   local input
   input=$(jq -n --arg s "$skill" '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: $s}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null )
+  if [[ "$skill" == "verify-tests" ]]; then
+    date +%s > "$VERIFY_TESTS_FILE"
+  fi
 }
 
 run_prompt_reminder() {
@@ -396,8 +411,8 @@ write_full_config() {
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
+    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","gsd-code-review","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","verify-tests","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }

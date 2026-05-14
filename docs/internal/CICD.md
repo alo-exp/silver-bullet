@@ -26,9 +26,9 @@
 
 Releases use `gh release create` after the `§9 pre-release quality gate` stages 1–4 pass
 and after both live suites have completed successfully in the current session.
-The `/create-release` skill orchestrates:
-1. Pre-release quality gate (4-stage internal gate: JSON validate, hook test, template parity, changelog entry)
-2. `package.json` version bump
+The `/silver-create-release` skill orchestrates:
+1. Pre-release quality gate handoff verification
+2. Version-surface updates
 3. Git tag (`vX.Y.Z`)
 4. `gh release create` with structured notes (features, fixes, breaking changes)
 

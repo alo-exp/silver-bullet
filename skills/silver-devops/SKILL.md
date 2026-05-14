@@ -1,21 +1,21 @@
 ---
 name: silver-devops
 description: >
-  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 dims) → plan → execute (no TDD) → review → secure → ship
+  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → GSD plan/execute/verify → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
 
 # /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow
 
-SB orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.
+SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work. GSD remains the lifecycle authority for phase planning, execution, verification, and ship.
 
 **Key design principles:**
 - No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
-- Uses silver:devops-quality-gates (7 IaC-adapted dimensions) instead of the standard 9-dimension sweep at BOTH pre-plan and pre-ship gates.
-- TDD is not applicable for infra plans — explicitly skipped.
+- Uses `devops-quality-gates` (7 IaC-adapted dimensions) instead of the standard product quality sweep at BOTH pre-plan and pre-ship gates.
+- Application TDD is not applicable to pure infra plans; IaC uses plan, dry-run, policy, security, drift, and rollback validation instead.
 
-**The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, reusability, extensibility. (Usability omitted — no user-facing interface in IaC.)
+**The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, observability, change-safety. (Usability omitted because infra has no direct user interface; reusability/extensibility are covered by modularity/change-safety in IaC.)
 
 Never implements infra changes directly — orchestrates only.
 
@@ -137,7 +137,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 3b), `silver:devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
+**Non-skippable gates:** `security` (Step 3b), `devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
 
 ## Step 0: Codebase Intel
 
@@ -151,17 +151,17 @@ Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, down
 
 ## Step 2: DevOps Skill Router
 
-Invoke `silver:devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
+Invoke `devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, reusability, extensibility) as the pre-plan gate.
+Invoke `devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
 
-Note: this is NOT the standard 9-dimension silver:quality-gates. The devops workflow uses silver:devops-quality-gates exclusively at both quality gate positions.
+Note: this is NOT the standard product `silver:quality-gates` sweep. The devops workflow uses `devops-quality-gates` exclusively at both quality gate positions.
 
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
-Invoke `silver:security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
+Invoke `security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
 
 ## Step 4: Discuss Phase
 
@@ -171,20 +171,20 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: DevOps phase context →
 
 Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md for the infrastructure change.
 
-## Step 6: Execute Phase (TDD skipped)
+## Step 6: Execute Phase (IaC validation, not app TDD)
 
 If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
 If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
 
-**TDD is explicitly skipped for infra plans — not applicable.** Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No silver:tdd invocation.
+**Application TDD is explicitly skipped for pure infra plans.** Infrastructure and configuration work is declarative; use provider plan/dry-run, policy-as-code, security scans, drift checks, and rollback verification. Do not invoke `tdd` unless the DevOps phase includes behavior-changing application code.
 
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
+1. Invoke `requesting-code-review` (superpowers:requesting-code-review) via the Skill tool.
 2. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix`.
 3. For architecturally significant infra changes: invoke `gsd-review --all` via the Skill tool (fans out to all available external CLIs for cross-AI review).
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
+4. Invoke `receiving-code-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## Step 8: IaC Security + Secrets Verification
 
@@ -211,7 +211,7 @@ Invoke `gsd-verify-work` via the Skill tool. Purpose: deployment verification an
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `silver:devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+Invoke `devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 

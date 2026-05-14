@@ -34,7 +34,7 @@ git commits.
 |---------|--------------|-----|
 | Enforcement / compliance gates | `dev-cycle-check.sh`, `stop-check.sh`, `completion-audit.sh` fire on every tool use | None — GSD has no enforcement hooks |
 | Workflow routing | `/silver` routes freeform instructions to the correct workflow skill | `/gsd:*` commands for specific execution tasks |
-| Quality gates | `/silver-quality-gates` (9 dimensions), `/devops-quality-gates` (7 IaC dimensions) | None |
+| Quality gates | `/silver-quality-gates` (8 core dimensions plus conditional AI/LLM safety), `/devops-quality-gates` (7 IaC dimensions) | None |
 | Planning artifacts | Reads `.planning/` for position awareness but does not write planning files | ROADMAP.md, PLANS.md, STATE.md, REQUIREMENTS.md, CONTEXT.md — all GSD-owned |
 | Multi-agent execution | Dispatches via Agent tool inside `silver:*` workflow steps | Wave-based parallel execution with dependency graphs and fresh 200K-token contexts per agent |
 | Context rot prevention | None | Fresh 200K-token context per subagent — GSD's core value |

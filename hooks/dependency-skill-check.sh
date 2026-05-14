@@ -51,7 +51,7 @@ done
 
 dependency_required=false
 case "$raw_skill" in
-  gsd:*|gsd-*|superpowers:*|design:*|engineering:*|product-management:*)
+  gsd:*|gsd-*|superpowers:*|design:*|engineering:*|product-management:*|multai:*)
     dependency_required=true
     ;;
   code-review|clarify|test-driven-development|systematic-debugging|requesting-code-review|receiving-code-review|finishing-a-development-branch|design-critique|user-research|write-spec)
