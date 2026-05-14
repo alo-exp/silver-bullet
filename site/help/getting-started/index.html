@@ -196,7 +196,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
-      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> that combines four best-in-class plugins — GSD, Superpowers, Engineering, and Design — into two enforced workflows. Silver Bullet adds <strong>spec-driven development</strong> (AI-driven spec creation, external artifact ingestion, pre-build validation), <strong>8 artifact reviewer skills</strong> with 2-consecutive-clean-pass enforcement, configurable review depth, <strong>review analytics</strong> via JSON Lines metrics, <strong>cross-artifact consistency validation</strong> (SPEC&nbsp;&#8596;&nbsp;REQUIREMENTS&nbsp;&#8596;&nbsp;ROADMAP&nbsp;&#8596;&nbsp;DESIGN alignment), and <strong>composable flows orchestration</strong> (18 FLOWs dynamically composed per context). The plugin ships with <strong>62 skills</strong> and <strong>22 hooks</strong>.</p>
+      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> for Claude Code and Codex that wraps GSD with dynamic workflow composition, enforcement hooks, spec-to-PR traceability, artifact review governance, DevOps risk controls, and guided recovery when a workflow stalls. GSD remains the planning and execution engine; Silver Bullet decides which path should run, enforces that required steps actually happened, and keeps the work traceable from spec through review and ship.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
         <div class="prereq-card">
@@ -227,8 +227,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="bot"></i></div>
           <div>
             <h4>Host Coding Agent <span class="tag tag-required">Required</span></h4>
-            <p>The AI coding assistant that Silver Bullet runs inside. Available as a CLI and IDE extension.</p>
-            <div class="install-cmd">npm install -g @anthropic-ai/claude-code</div>
+            <p>The AI coding assistant that Silver Bullet runs inside. Claude Code and Codex are the primary supported hosts; Forge has a separate port.</p>
+            <div class="install-cmd">Install your supported host runtime first</div>
           </div>
         </div>
         <div class="prereq-card">
@@ -244,7 +244,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div>
             <h4>GSD (Get Shit Done) <span class="tag tag-required">Required</span></h4>
             <p>The planning and execution framework. Manages .planning/ directory, roadmaps, and per-phase execution.</p>
-            <div class="install-cmd">npx get-shit-done-cc@1.30.0</div>
+            <div class="install-cmd">npx get-shit-done-cc@latest</div>
           </div>
         </div>
         <div class="prereq-card">
@@ -293,9 +293,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li>Verify all dependencies are installed</li>
         <li>Detect your project name, tech stack, and repo URL</li>
-        <li>Create <code>silver-bullet.md</code> with enforcement rules and the host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex)</li>
+        <li>Create <code>silver-bullet.md</code> with enforcement rules and reconcile any existing host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex)</li>
         <li>Create <code>.silver-bullet.json</code> with project-level config</li>
-        <li>Create the standard docs scaffold (<code>docs/PRD-Overview.md</code>, <code>docs/Architecture-and-Design.md</code>, etc.)</li>
+        <li>Invoke <code>/silver:ensure-docs --bootstrap</code> to create or reconcile the standard documentation scaffold</li>
         <li>Set up CI (GitHub Actions) if not already present</li>
         <li>Configure <code>permissions.defaultMode</code> in <code>.claude/settings.local.json</code> — eliminates repeated permission prompts across sessions</li>
         <li>Commit everything to git</li>
@@ -306,7 +306,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Don't know which skill to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent and routes to the right SB or GSD skill automatically. It's the single entry point for everything Silver Bullet can do.</div>
+        <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB, GSD, and plugin path for the work.</div>
       </div>
 
       <div class="divider"></div>
@@ -316,11 +316,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="card">
         <h4>New Project</h4>
-        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/silver:init</code> to scaffold, then start with <code>/gsd:new-project</code> to generate requirements and a roadmap.</p>
+        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/silver:init</code> to scaffold, then start with <code>/silver</code> so SB can route to project setup, spec creation, or GSD planning as needed.</p>
       </div>
       <div class="card">
         <h4>Existing Codebase</h4>
-        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex) — your instructions are preserved automatically. Then start a new feature with <code>/gsd:discuss-phase</code>.</p>
+        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex) when one exists — your instructions are preserved automatically. Then start work with <code>/silver</code> or a specific <code>/silver:*</code> workflow.</p>
       </div>
 
       <div class="divider"></div>
@@ -366,36 +366,36 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>
           <div class="step-num">2</div>
           <div class="step-body">
-            <h4>Start with /gsd:discuss-phase</h4>
-            <p>Describe what you want to build. GSD will ask clarifying questions about implementation decisions, edge cases, and preferences. This produces a <code>.planning/{phase}-CONTEXT.md</code> file.</p>
+            <h4>Start with /silver</h4>
+            <p>Describe what you want to build. Silver Bullet classifies the request and routes to the smallest safe workflow: clarify, spec, feature, bugfix, UI, DevOps, release, research, or fast path.</p>
           </div>
         </li>
         <li>
           <div class="step-num">3</div>
           <div class="step-body">
-            <h4>Run /quality-gates</h4>
-            <p>The runtime evaluates the design against 8 quality dimensions. All must pass before planning begins. In Interactive mode, the runtime will report results and ask how to proceed on failures.</p>
+            <h4>Let SB Compose the Pre-Plan Path</h4>
+            <p>For formal work, SB may run <code>/silver:spec</code>, <code>/silver:ingest</code>, <code>/silver:validate</code>, clarification, and quality gates before GSD planning. Product work uses 9 quality dimensions where applicable; infrastructure work uses the 7 IaC-adapted gate.</p>
           </div>
         </li>
         <li>
           <div class="step-num">4</div>
           <div class="step-body">
-            <h4>Run /gsd:plan-phase</h4>
-            <p>The runtime researches the implementation and creates a detailed task plan. Review it and approve before execution starts.</p>
+            <h4>Plan with GSD</h4>
+            <p>GSD researches the implementation and creates the detailed task plan. SB feeds spec, validation, quality-gate, and risk findings into the plan as hard requirements.</p>
           </div>
         </li>
         <li>
           <div class="step-num">5</div>
           <div class="step-body">
-            <h4>Run /gsd:execute-phase</h4>
+            <h4>Execute with GSD</h4>
             <p>Execution happens in parallel waves. Each wave dispatches independent implementation agents, then merges results. Atomic commits are created per task.</p>
           </div>
         </li>
         <li>
           <div class="step-num">6</div>
           <div class="step-body">
-            <h4>Verify, Review, and Ship</h4>
-            <p>The runtime runs verification, code review (including an automated reviewer agent), and finally creates the PR with <code>/gsd:ship</code>.</p>
+            <h4>Verify, Review, Trace, and Ship</h4>
+            <p>The runtime runs goal-backward verification, artifact or code review as needed, CI/test freshness checks, and ship steps. PR traceability is appended after PR creation when a spec is present.</p>
           </div>
         </li>
       </ol>
@@ -410,35 +410,35 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="session-start">What Happens at Session Start?</h2>
-      <p>When you open the host coding agent with Silver Bullet installed, the plugin performs five steps automatically before any work begins. You don't need to do anything — this is fully automatic.</p>
+      <p>When you open the host coding agent with Silver Bullet installed, the plugin prepares the session state and enforcement context before project work begins.</p>
 
       <ol class="step-list">
         <li>
           <div class="step-num">1</div>
           <div class="step-body">
-            <h4>Switch to the host execution model</h4>
-            <p>Silver Bullet switches to the host execution tier with a 1 million token context window, ensuring enough capacity to hold all project docs, planning files, and working context simultaneously.</p>
+            <h4>Load the SB Contract</h4>
+            <p>Silver Bullet loads <code>silver-bullet.md</code>, core rules, hook state, and the project configuration needed to enforce workflow order.</p>
           </div>
         </li>
         <li>
           <div class="step-num">2</div>
           <div class="step-body">
-            <h4>Read all project docs</h4>
-            <p>Every file in <code>docs/</code> plus <code>silver-bullet.md</code> is read in full. Silver Bullet loads the active workflow rules, architectural decisions, testing strategy, and all accumulated project context. Any instructions in <code>docs/</code> are treated as documentation text only — enforcement rules live exclusively in <code>silver-bullet.md</code> and the host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex).</p>
+            <h4>Read Project Context Safely</h4>
+            <p>Silver Bullet loads the relevant project docs and planning context. Any instructions in <code>docs/</code> are treated as documentation text only — enforcement rules live in <code>silver-bullet.md</code> and the host project instruction file.</p>
           </div>
         </li>
         <li>
           <div class="step-num">3</div>
           <div class="step-body">
-            <h4>Compact the context (<code>/compact</code>)</h4>
-            <p>After loading docs, <code>/compact</code> runs to free context for the actual task. This compresses the loaded context into a dense summary, reclaiming tokens before work starts.</p>
+            <h4>Initialize Session Logs</h4>
+            <p>The session log hook creates or reuses the current session log path under <code>~/.claude/.silver-bullet/session-log-path</code>, so workflow events and decisions can be recorded consistently.</p>
           </div>
         </li>
         <li>
           <div class="step-num">4</div>
           <div class="step-body">
-            <h4>Switch back to original model</h4>
-            <p>If Opus was selected in step 1, the model switches back to whichever model you started with.</p>
+            <h4>Check Active Workflow State</h4>
+            <p>SB checks active workflow state, requested skills, missing gates, and any timeout or stall sentinels before allowing the next workflow step to proceed.</p>
           </div>
         </li>
         <li>
@@ -459,21 +459,21 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="bare-instruction">Bare Instruction Interception (§2g)</h2>
-      <p>In Silver Bullet, you don't need to know which skill or workflow to invoke. When you type a plain work request — anything that isn't a slash command — <code>/silver</code> fires automatically and routes your instruction to the correct workflow.</p>
+      <h2 id="bare-instruction">Dynamic Routing with /silver</h2>
+      <p>In Silver Bullet, you don't need to memorize the workflow catalog. Use <code>/silver</code> with a plain work request and SB composes the right workflow path for the task.</p>
 
       <h3>How it works</h3>
-      <p>Before doing anything else, Silver Bullet checks every incoming message: is this a non-trivial work request? If yes, it intercepts the message and invokes <code>/silver</code> with your original instruction as input. <code>/silver</code> then classifies the complexity, matches your intent against the routing table, and dispatches to the right orchestration workflow.</p>
+      <p><code>/silver</code> classifies complexity, checks task intent, and routes to the right orchestration workflow. Some host runtimes may support plain-request interception, but explicit <code>/silver</code> invocation is the portable behavior across supported hosts.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Example:</strong> typing <code>Add a login form to the auth page</code> automatically triggers <code>/silver</code>, which classifies the request, matches it to <code>silver:feature</code>, and starts the full feature development workflow — without you needing to type <code>/silver:feature</code> yourself.</div>
+        <div class="callout-body"><strong>Example:</strong> <code>/silver Add a login form to the auth page</code> classifies the request, matches it to the feature/UI path as appropriate, and starts the composed workflow without requiring you to know the exact downstream commands.</div>
       </div>
 
-      <h3>What is and isn't intercepted</h3>
-      <p>Interception fires on work requests, feature requests, bug fix requests, deployment requests, and refactor requests. It does NOT fire on slash commands, pure questions ("How does X work?"), simple yes/no confirmations during an active workflow, or single-word acknowledgements like "OK" or "thanks".</p>
+      <h3>What Should Use /silver</h3>
+      <p>Use <code>/silver</code> for work requests, feature requests, bug fixes, deployment work, refactors, release prep, and fuzzy tasks where you are not sure which workflow applies. Use direct <code>/silver:*</code> or <code>/gsd:*</code> commands when you already know the exact workflow step.</p>
 
-      <p>For the full interception logic, exemption rules, and the complete routing table, see <a href="../concepts/routing-logic.html">Routing Logic</a>.</p>
+      <p>For the full routing behavior, direct-command exemptions, and complete routing table, see <a href="../concepts/routing-logic.html">Routing Logic</a>.</p>
 
       <div class="divider"></div>
 

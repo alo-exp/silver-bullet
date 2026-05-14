@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>Automatic Cost Optimization — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet automatically routes each GSD subagent to the right model tier for the active host — Claude Sonnet/Opus or Codex GPT-5.2-low through GPT-5.5-xhigh — without any manual switching.">
+<title>Operational Efficiency &mdash; Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet keeps process proportional by composing the smallest safe workflow for the task while preserving spec, review, test, and release gates where they matter.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
 .breadcrumb-nav a:hover{color:var(--accent-light)}
 .page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
-.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:620px;line-height:1.7}
 .doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
 @media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
 .doc-sidebar{position:sticky;top:88px;height:fit-content}
@@ -63,27 +63,11 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
 .ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
 .ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
-.ref-table td:first-child{font-family:var(--font-mono);font-size: 1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
 .ref-table tr:last-child td{border-bottom:none}
 .ref-table tr:hover td{background:var(--table-row-hover)}
-.ref-table .cat-row td{font-family:var(--font-sans);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);background:var(--section-alt);padding:6px 14px}
-.tier-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.04em}
-.tier-opus{background:var(--accent3-a12);color:#7c3aed;border:1px solid rgba(107,33,168,.2)}
-.tier-sonnet{background:var(--cyan-a10);color:#0891b2;border:1px solid rgba(6,182,212,.2)}
-.tier-haiku{background:var(--green-warn-a10);color:#059669;border:1px solid var(--green-warn-a20)}
-.tier-session{background:var(--slate-a08);color:#6b7280;border:1px solid var(--slate-a20)}
-[data-theme="dark"] .tier-opus{color:#c084fc;border-color:rgba(192,132,252,.25);background:rgba(192,132,252,.1)}
-[data-theme="dark"] .tier-sonnet{color:#22d3ee;border-color:rgba(34,211,238,.25);background:rgba(34,211,238,.1)}
-[data-theme="dark"] .tier-haiku{color:#34d399;border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.1)}
-[data-theme="dark"] .tier-session{color:#9ca3af;border-color:rgba(156,163,175,.2);background:rgba(156,163,175,.08)}
-.flow-diagram{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:24px;font-family:var(--font-mono);font-size: 1rem;line-height:2;color:var(--text-secondary)}
-.flow-diagram .flow-label{color:var(--text-dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;font-family:var(--font-sans)}
-.flow-diagram .flow-tier{color:var(--accent-light);font-weight:600}
-.flow-diagram .flow-arrow{color:var(--text-dim)}
-.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
 .code-block .comment{color:var(--text-dim)}
-.code-block .key{color:var(--accent-light)}
-.code-block .val{color:var(--amber)}
 .page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
 .page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
 .pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
@@ -116,11 +100,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
       <a href="../../" class="nav-logo">Silver Bullet</a>
-      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span> Cost Optimization</span>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span> Operational Efficiency</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
       <div class="nav-search-wrap">
-        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off">
+        <input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs&hellip;" autocomplete="off">
         <div class="nav-search-results" id="nav-search-results"></div>
       </div>
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0">
@@ -138,10 +122,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <span>/</span>
       <a href="./">Concepts</a>
       <span>/</span>
-      <span>Automatic Cost Optimization</span>
+      <span>Operational Efficiency</span>
     </div>
-    <h1>Automatic Cost Optimization</h1>
-    <p>Silver Bullet automatically routes each AI agent to the right model tier for the active host — Claude Sonnet/Opus or Codex GPT-5.2-low through GPT-5.5-xhigh — with zero manual switching.</p>
+    <h1>Operational Efficiency</h1>
+    <p>Silver Bullet saves effort by composing the smallest safe process for the task. It does not claim a universal model-routing layer; model choice remains the responsibility of the active host and GSD configuration.</p>
   </div>
 </div>
 
@@ -151,298 +135,144 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li class="sidebar-section">Overview</li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#tier-rationale">Tier Rationale</a></li>
-        <li class="sidebar-section">Agent Mapping</li>
-        <li><a href="#full-table">Full Agent Table</a></li>
-        <li><a href="#inline-skills">Inline Skills</a></li>
-        <li class="sidebar-section">Configuration</li>
-        <li><a href="#profiles">Model Profiles</a></li>
-        <li><a href="#setup">Project Setup</a></li>
-        <li><a href="#overrides">Per-Agent Overrides</a></li>
+        <li><a href="#what-it-means">What It Means</a></li>
+        <li><a href="#workflow-fit">Workflow Fit</a></li>
+        <li class="sidebar-section">Efficiency Controls</li>
+        <li><a href="#fast-path">Fast Path</a></li>
+        <li><a href="#dependency-handling">Dependency Handling</a></li>
+        <li><a href="#config">Project Configuration</a></li>
+        <li class="sidebar-section">Boundaries</li>
+        <li><a href="#not-claimed">What Is Not Claimed</a></li>
+        <li><a href="#see-also">See Also</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
-      <h2 id="how-it-works">How It Works</h2>
-      <p>Every GSD workflow spawns multiple specialized subagents to complete a phase — a planner, one or more executors, a verifier, sometimes a researcher and a code reviewer. Without cost optimization, every agent would use the same model, paying Opus prices for tasks that need nothing more than Haiku.</p>
-      <p>Silver Bullet solves this automatically. When a workflow spawns a subagent, the model routing system looks up that agent type in a profile table and selects the appropriate model tier — before the agent even starts. No prompting, no switching, no configuration required at runtime. The tier labels are shared across hosts; the actual model IDs differ by host.</p>
-
-      <div class="flow-diagram">
-        <div class="flow-label">Request flow</div>
-        /silver → /gsd:plan-phase <span class="flow-arrow">→</span> spawns gsd-planner <span class="flow-arrow">→</span> <span class="flow-tier">resolve-model</span> <span class="flow-arrow">→</span> Opus
-                                  <span class="flow-arrow">→</span> spawns gsd-executor <span class="flow-arrow">→</span> <span class="flow-tier">resolve-model</span> <span class="flow-arrow">→</span> Sonnet
-                                  <span class="flow-arrow">→</span> spawns gsd-verifier <span class="flow-arrow">→</span> <span class="flow-tier">resolve-model</span> <span class="flow-arrow">→</span> Opus
-                                  <span class="flow-arrow">→</span> spawns gsd-codebase-mapper <span class="flow-arrow">→</span> <span class="flow-tier">resolve-model</span> <span class="flow-arrow">→</span> Haiku
-      </div>
-
-      <p>The routing system reads <code>.planning/config.json</code> for the active <code>model_profile</code>, looks up the agent in the profile table, and passes the resolved model to the <code>Task()</code> call. All 24 GSD agent types are covered.</p>
-
-      <div class="callout callout-tip">
-        <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Zero friction.</strong> You never choose a model mid-session for GSD work. The routing table encodes the right decision for every agent type. Just run your workflows normally.</div>
-      </div>
-
-      <div class="divider"></div>
-
-      <h2 id="tier-rationale">Tier Rationale</h2>
-      <p>The three tiers reflect a single principle: <strong>spend on reasoning where reasoning changes the outcome</strong>.</p>
-
-      <h3>Opus — Design, Review &amp; Verification</h3>
-      <p>Used where judgment quality directly impacts the result. A weak plan wastes an entire execution phase. A missed security issue ships to production. A false-positive verification passes broken code. These are the moments where Opus earns its cost.</p>
-      <ul>
-        <li><strong>Design agents</strong> make architecture decisions and produce plans that executors follow verbatim. Bad decomposition here cascades into every downstream task.</li>
-        <li><strong>Review agents</strong> catch bugs, security issues, and plan quality problems. Sonnet can follow patterns; catching subtle security flaws requires genuine reasoning.</li>
-        <li><strong>Verification agents</strong> check whether the code actually delivers what the phase promised — goal-backward reasoning, not pattern matching.</li>
-      </ul>
-
-      <h3>Sonnet — Execution &amp; Research</h3>
-      <p>Used for agents that follow explicit instructions. Executors implement a PLAN.md — the reasoning was already done by the planner. Researchers fetch and summarize information. Doc writers fill structured templates. These tasks need competence, not depth.</p>
-
-      <h3>Haiku — Structured Output</h3>
-      <p>Used for agents that extract and format, not reason. Codebase mapping reads files and produces structured summaries. Intel updating writes formatted analysis files. User profiling scores behavioral dimensions from session data. The output format is well-defined; the task is extraction.</p>
-
-      <div class="divider"></div>
-
-      <h2 id="full-table">Full Agent Table</h2>
-      <p>The balanced profile (default) model assignment for all 24 GSD agents:</p>
-
-      <table class="ref-table">
-        <thead>
-          <tr>
-            <th>Agent</th>
-            <th>Model</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="cat-row"><td colspan="3">Design</td></tr>
-          <tr>
-            <td>gsd-planner</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Architecture decisions, task decomposition, MECE planning</td>
-          </tr>
-          <tr>
-            <td>gsd-roadmapper</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Milestone and phase roadmap design</td>
-          </tr>
-          <tr>
-            <td>gsd-ui-researcher</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>UI design contracts and component specifications</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Review — Judgment-Heavy</td></tr>
-          <tr>
-            <td>gsd-plan-checker</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Plan quality review before execution</td>
-          </tr>
-          <tr>
-            <td>gsd-code-reviewer</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Code bugs, security issues, and quality review</td>
-          </tr>
-          <tr>
-            <td>gsd-security-auditor</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Adversarial threat modeling and security audit</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Review — Mechanical</td></tr>
-          <tr>
-            <td>gsd-integration-checker</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Cross-phase dependency and link validation</td>
-          </tr>
-          <tr>
-            <td>gsd-ui-checker</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>UI spec compliance check</td>
-          </tr>
-          <tr>
-            <td>gsd-ui-auditor</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Retroactive UI visual audit</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Verification</td></tr>
-          <tr>
-            <td>gsd-verifier</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Goal-backward phase completion verification</td>
-          </tr>
-          <tr>
-            <td>gsd-doc-verifier</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Documentation factual accuracy check</td>
-          </tr>
-          <tr>
-            <td>gsd-nyquist-auditor</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>UAT coverage gap validation</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Deep Reasoning</td></tr>
-          <tr>
-            <td>gsd-debugger</td>
-            <td><span class="tier-badge tier-opus">Opus</span></td>
-            <td>Systematic bug investigation and root cause analysis</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Execution</td></tr>
-          <tr>
-            <td>gsd-executor</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Plan implementation and atomic commits</td>
-          </tr>
-          <tr>
-            <td>gsd-code-fixer</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Applies findings from code review</td>
-          </tr>
-          <tr>
-            <td>gsd-doc-writer</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Documentation writing and updates</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Research</td></tr>
-          <tr>
-            <td>gsd-phase-researcher</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Phase implementation research and approach analysis</td>
-          </tr>
-          <tr>
-            <td>gsd-project-researcher</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Domain research for new projects and milestones</td>
-          </tr>
-          <tr>
-            <td>gsd-advisor-researcher</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Gray area decision research during discuss phase</td>
-          </tr>
-          <tr>
-            <td>gsd-research-synthesizer</td>
-            <td><span class="tier-badge tier-sonnet">Sonnet</span></td>
-            <td>Multi-stream research synthesis into SUMMARY.md</td>
-          </tr>
-          <tr class="cat-row"><td colspan="3">Structured Output</td></tr>
-          <tr>
-            <td>gsd-codebase-mapper</td>
-            <td><span class="tier-badge tier-haiku">Haiku</span></td>
-            <td>Read-only codebase exploration and pattern extraction</td>
-          </tr>
-          <tr>
-            <td>gsd-assumptions-analyzer</td>
-            <td><span class="tier-badge tier-haiku">Haiku</span></td>
-            <td>Structured assumption listing for phase planning</td>
-          </tr>
-          <tr>
-            <td>gsd-intel-updater</td>
-            <td><span class="tier-badge tier-haiku">Haiku</span></td>
-            <td>Codebase intelligence file generation</td>
-          </tr>
-          <tr>
-            <td>gsd-user-profiler</td>
-            <td><span class="tier-badge tier-haiku">Haiku</span></td>
-            <td>Behavioral dimension scoring from session data</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="divider"></div>
-
-      <h2 id="inline-skills">Inline Skills</h2>
-      <p>Not all Silver Bullet capabilities run as GSD subagents. Skills from Anthropic's plugin suite (design, engineering, product-management, marketing), MultAI, Context7, and Superpowers run <em>inline</em> — they execute in the current session context rather than as spawned agents.</p>
-      <p>Inline skills use the <strong>session model</strong> — whatever model the current host session is already using. The GSD model routing table does not apply to them.</p>
+      <h2 id="what-it-means">What Efficiency Means in v0.34.0</h2>
+      <p>Silver Bullet is an orchestration and enforcement layer around GSD. Its efficiency comes from routing work to the right workflow composition, keeping state in <code>.planning/workflows/&lt;id&gt;.md</code>, and adding only the gates that the task actually needs.</p>
+      <p>That matters because the expensive failure mode in agentic development is not only token cost. It is doing the wrong amount of process: under-reviewing a risky change, over-processing a typo, losing traceability between spec and PR, or discovering after implementation that the plan never covered an acceptance criterion.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Default session model is the host execution tier.</strong> Silver Bullet sets <code>claude-sonnet-4-6</code> on Claude and <code>gpt-5.3-medium</code> on Codex as the session default. Inline skills run on that host default automatically. If you need deeper reasoning for a specific design or architecture skill, switch to the host high tier before invoking it, then switch back.</div>
+        <div class="callout-body"><strong>The current principle:</strong> choose the smallest safe workflow, then enforce it. A trivial change gets a fast path; a fuzzy feature gets clarification and spec work; infrastructure gets blast-radius and IaC gates; release work gets finalization checks.</div>
       </div>
-
-      <h3>Why inline skills aren't routed automatically</h3>
-      <p>Inline skills are conversational — they ask clarifying questions, present options, and iterate with you mid-execution. Subagents are fire-and-forget. Converting interactive skills to subagents would break the back-and-forth that makes them useful, and require serializing the full conversation context into every spawn. The trade-off isn't worth it.</p>
 
       <div class="divider"></div>
 
-      <h2 id="profiles">Model Profiles</h2>
-      <p>The routing table has four built-in profiles. Switch between them with <code>/gsd-set-profile &lt;name&gt;</code>.</p>
-
+      <h2 id="workflow-fit">Workflow Fit Table</h2>
+      <p><code>/silver</code> composes from the available Silver Bullet, GSD, and plugin workflows instead of forcing every request through one fixed pipeline.</p>
       <table class="ref-table">
         <thead>
-          <tr><th>Profile</th><th>Philosophy</th><th>Best for</th></tr>
+          <tr><th>Work Type</th><th>Likely Route</th><th>Efficiency Gain</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>balanced</td>
-            <td>Opus for design/review/verification; Sonnet for execution/research; Haiku for structured output</td>
-            <td>Default — normal development work</td>
+            <td>Typo, copy, config, rename</td>
+            <td><code>/silver:fast</code> &rarr; <code>gsd-fast</code></td>
+            <td>Avoids full planning while still confirming that scope is genuinely trivial.</td>
           </tr>
           <tr>
-            <td>quality</td>
-            <td>Opus for all agents that make decisions; Sonnet for structured-output agents</td>
-            <td>Critical architecture, high-stakes releases</td>
+            <td>Clear feature</td>
+            <td><code>/silver:feature</code> with GSD discuss, plan, execute, verify</td>
+            <td>Keeps GSD as execution engine while SB adds pre-plan gates, artifact review, traceability, and pre-ship checks.</td>
           </tr>
           <tr>
-            <td>budget</td>
-            <td>Sonnet for anything that writes code; Haiku for research and verification</td>
-            <td>High-volume work, conserving quota</td>
+            <td>Fuzzy feature or new product idea</td>
+            <td><code>/silver:clarify</code> or <code>/silver:spec</code> before planning</td>
+            <td>Prevents premature implementation by producing explicit scope, assumptions, and acceptance criteria first.</td>
           </tr>
           <tr>
-            <td>adaptive</td>
-            <td>Opus for planning and debugging; Haiku for checkers and auditors</td>
-            <td>Optimizing cost without sacrificing plan quality</td>
+            <td>External PRD, ticket, Figma, or Google Doc</td>
+            <td><code>/silver:ingest</code> &rarr; spec artifacts &rarr; artifact review</td>
+            <td>Preserves source context and marks missing connector data instead of silently inventing requirements.</td>
           </tr>
           <tr>
-            <td>inherit</td>
-            <td>All agents use the session model</td>
-            <td>Non-Anthropic providers, OpenRouter, local models</td>
+            <td>Plan/spec mismatch risk</td>
+            <td><code>/silver:validate</code></td>
+            <td>Finds uncovered acceptance criteria, open assumptions, and orphan plan tasks before implementation begins.</td>
+          </tr>
+          <tr>
+            <td>Bugfix</td>
+            <td><code>/silver:bugfix</code> with debug and regression verification</td>
+            <td>Spends process on root cause and regression prevention instead of broad feature planning.</td>
+          </tr>
+          <tr>
+            <td>UI/frontend work</td>
+            <td><code>/silver:ui</code> with UI design contract and UI review</td>
+            <td>Adds interface-specific design and visual checks that generic execution would miss.</td>
+          </tr>
+          <tr>
+            <td>Infrastructure, CI/CD, deployment</td>
+            <td><code>/silver:devops</code> with blast-radius and IaC quality gates</td>
+            <td>Uses risk and environment-promotion controls instead of application-only gates.</td>
+          </tr>
+          <tr>
+            <td>Release preparation</td>
+            <td><code>/silver:release</code></td>
+            <td>Concentrates finalization, docs, CI, artifact alignment, and ship checks at the point they matter.</td>
           </tr>
         </tbody>
       </table>
 
       <div class="divider"></div>
 
-      <h2 id="setup">Project Setup</h2>
-      <p>Model routing is activated automatically when you initialize a project with <code>/silver-init</code>. The init skill runs <code>/gsd-new-project</code> (if not already done) and verifies that <code>model_profile: "balanced"</code> is set in <code>.planning/config.json</code>.</p>
-      <p>To verify your project is correctly configured:</p>
-
-      <div class="code-block"><span class="comment"># Check active profile</span>
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get model_profile
-
-<span class="comment"># Should output: balanced</span></div>
-
-      <p>If you see legacy keys (<code>planner_model</code>, <code>researcher_model</code>, <code>checker_model</code>) in your config instead of <code>model_profile</code>, your project was initialized before this feature was introduced. Migrate with:</p>
-
-      <div class="code-block"><span class="comment"># Apply the balanced profile (removes legacy keys automatically)</span>
-/gsd-set-profile balanced</div>
+      <h2 id="fast-path">Fast Path Without Silent Scope Creep</h2>
+      <p><code>/silver:fast</code> exists for low-risk work, but it is not a blanket bypass. It confirms that the change is small and non-architectural before routing to <code>gsd-fast</code>. If scope expands beyond the fast-path limits, the workflow stops and re-routes to the appropriate full workflow.</p>
+      <ul>
+        <li>Good fits: typo fixes, small copy updates, simple config values, one-line renames.</li>
+        <li>Bad fits: feature logic, schema changes, auth, infrastructure, cross-module behavior, or anything that grows past the original scope.</li>
+        <li>The legacy trivial marker is guarded by <code>trivial-file-guard.sh</code>; current Codex-oriented flows should use <code>/silver:fast</code> instead.</li>
+      </ul>
 
       <div class="divider"></div>
 
-      <h2 id="overrides">Per-Agent Overrides</h2>
-      <p>You can override any individual agent without changing the overall profile. Add <code>model_overrides</code> to <code>.planning/config.json</code>:</p>
+      <h2 id="dependency-handling">Dependency Handling</h2>
+      <p>Silver Bullet distinguishes optional enrichment from required execution dependencies. Optional tools can degrade gracefully when unavailable. Required dependencies fail closed so a workflow does not pretend a gate ran when the underlying skill or connector is missing.</p>
+      <p>The <code>dependency-skill-check.sh</code> hook enforces dependency-skill availability before dependent chains proceed. The ingestion workflow follows the same principle for external connectors: unavailable sources are recorded as explicit missing-artifact blocks rather than converted into hallucinated content.</p>
 
-      <div class="code-block">{
-  <span class="key">"model_profile"</span>: <span class="val">"balanced"</span>,
-  <span class="key">"model_overrides"</span>: {
-    <span class="key">"gsd-executor"</span>: <span class="val">"opus"</span>,
-    <span class="key">"gsd-codebase-mapper"</span>: <span class="val">"sonnet"</span>
-  }
-}</div>
+      <div class="divider"></div>
 
-      <p>Overrides take precedence over the profile for that specific agent. Valid values: <code>opus</code>, <code>sonnet</code>, <code>haiku</code>, <code>inherit</code>, or any fully-qualified model ID (e.g. <code>"claude-opus-4-6[1m]"</code> on Claude or <code>"GPT-5.5-xhigh"</code> on Codex) for the deepest context variant.</p>
+      <h2 id="config">Project Configuration</h2>
+      <p>Project-level knobs live in <code>.silver-bullet.json</code> and GSD planning configuration. They let the workflow match the project instead of forcing one universal setup.</p>
+      <table class="ref-table">
+        <thead><tr><th>Config Surface</th><th>What It Controls</th></tr></thead>
+        <tbody>
+          <tr><td><code>.silver-bullet.json</code></td><td>Project defaults such as verification commands, source file patterns, required planning behavior, deployment checks, and semantic compression settings.</td></tr>
+          <tr><td><code>.planning/config.json</code></td><td>GSD workflow settings, review depth, model profile settings if GSD uses them, and other planning/runtime options owned by GSD.</td></tr>
+          <tr><td><code>silver-bullet.md</code> &sect;10</td><td>User workflow preferences: routing preferences, step-skip decisions, lightweight alternatives, and mode preferences recorded after explicit approval.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="not-claimed">What Is Not Claimed</h2>
+      <p>Silver Bullet v0.34.0 does <strong>not</strong> provide a generic automatic model-routing advantage over plain GSD. The historical <code>ensure-model-routing.sh</code> hook is disabled and exits as a no-op. GSD may still expose model profiles or model overrides in its own configuration, but that is not a Silver Bullet-over-GSD benefit.</p>
+      <p>When you need different model behavior, configure it in the active host or in GSD's supported model configuration. Silver Bullet's job is to select, enforce, and trace the workflow path around that execution.</p>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Override sparingly.</strong> The balanced profile was designed to minimize cost without compromising outcome quality. Upgrading low-tier agents to the host high tier usually adds cost without measurable benefit. The most common legitimate override is bumping <code>gsd-debugger</code> to <code>claude-opus-4-6[1m]</code> on Claude or <code>GPT-5.5-xhigh</code> on Codex for sessions involving very large codebases.</div>
+        <div class="callout-body"><strong>Important boundary:</strong> older documentation may refer to automatic host model-tier routing. Treat that as legacy language. The current product positioning is workflow composition and enforcement, not universal model-tier optimization.</div>
       </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a></li>
+        <li><a href="routing-logic.html">Routing Logic</a></li>
+        <li><a href="../workflows/silver-fast.html">/silver:fast</a></li>
+        <li><a href="../workflows/silver-spec.html">/silver:spec</a></li>
+        <li><a href="../workflows/silver-validate.html">/silver:validate</a></li>
+      </ul>
 
       <div class="page-nav-bottom">
         <a href="routing-logic.html">
-          <span class="pnb-label">← Previous</span>
+          <span class="pnb-label">&larr; Previous</span>
           <span class="pnb-title">Routing Logic</span>
         </a>
         <a href="session-startup.html" style="text-align:right">
-          <span class="pnb-label">Next →</span>
+          <span class="pnb-label">Next &rarr;</span>
           <span class="pnb-title">Session Startup</span>
         </a>
       </div>
@@ -453,7 +283,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get model_profile
 
 <footer>
   <div class="container-wide footer-inner">
-    <span>© 2025 Ālo Labs · Silver Bullet</span>
+    <span>&copy; 2026 Ālo Labs &middot; Silver Bullet</span>
     <div class="footer-links">
       <a href="../../">Home</a>
       <a href="../">Help Center</a>
@@ -486,7 +316,6 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get model_profile
 })();
 lucide.createIcons();
 
-// Sidebar active highlight on scroll
 (function(){
   var links = document.querySelectorAll('.sidebar-nav a[href^="#"]');
   var sections = Array.from(links).map(function(l){ return document.querySelector(l.getAttribute('href')); }).filter(Boolean);
@@ -502,7 +331,6 @@ lucide.createIcons();
   sections.forEach(function(s){ obs.observe(s); });
 })();
 
-// Nav search
 (function(){
   var inp = document.getElementById('nav-search-input');
   var res = document.getElementById('nav-search-results');
@@ -521,14 +349,15 @@ lucide.createIcons();
     });
     res.classList.add('open');
   });
-  document.addEventListener('click', function(e){ if(!inp.contains(e.target)&&!res.contains(e.target)) res.classList.remove('open'); });
   inp.addEventListener('keydown', function(e){
     var items = res.querySelectorAll('.nsr-item');
-    if(e.key==='ArrowDown'){ e.preventDefault(); active=Math.min(active+1,items.length-1); items.forEach(function(i,n){ i.classList.toggle('nsr-active',n===active); }); }
-    else if(e.key==='ArrowUp'){ e.preventDefault(); active=Math.max(active-1,0); items.forEach(function(i,n){ i.classList.toggle('nsr-active',n===active); }); }
-    else if(e.key==='Enter'&&active>=0){ items[active].click(); }
-    else if(e.key==='Escape'){ res.classList.remove('open'); inp.blur(); }
+    if(e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(active+1, items.length-1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); active = Math.max(active-1, 0); }
+    else if(e.key === 'Enter' && active >= 0 && items[active]){ e.preventDefault(); items[active].click(); }
+    else if(e.key === 'Escape'){ res.classList.remove('open'); return; }
+    items.forEach(function(it,i){ it.classList.toggle('nsr-active', i === active); });
   });
+  document.addEventListener('click', function(e){ if(!inp.contains(e.target) && !res.contains(e.target)) res.classList.remove('open'); });
 })();
 </script>
 </body>
