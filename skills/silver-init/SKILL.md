@@ -388,7 +388,7 @@ test -d ".planning/codebase" && echo "INTEL_EXISTS" || echo "NO_INTEL"
 ```
 
 If NO_INTEL and project appears brownfield (has source files but no .planning/codebase/):
-Display: "No codebase intelligence found. Running silver:scan to orient planning..."
+Display: "No codebase intelligence found. Running gsd-scan to orient planning..."
 Invoke `/gsd-scan` via the Skill tool. After it completes, continue.
 
 ### 2.2 Detect project name

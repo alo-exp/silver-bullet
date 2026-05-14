@@ -313,10 +313,10 @@ GSD remains the lifecycle authority. SB may route, compose, review, and gate, bu
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
 | `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify → gsd-discuss-phase |
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:scan → silver:clarify/decide → GSD plan/execute/verify |
+| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | gsd-scan → silver:clarify/decide → GSD plan/execute/verify |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:scan → silver:clarify/decide → gsd-ui-phase |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan → silver:blast-radius → devops-skill-router |
+| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | gsd-scan → silver:clarify/decide → gsd-ui-phase |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | gsd-scan → silver:blast-radius → devops-skill-router |
 | `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → silver:research/optional multi-AI → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → `/verify-tests` → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
