@@ -193,7 +193,7 @@ PY
   }
 
   local dir
-  for dir in hooks skills templates docs commands; do
+  for dir in hooks skills templates docs commands scripts; do
     if [[ -d "${REPO_ROOT}/${dir}" ]]; then
       local src_dir="${REPO_ROOT}/${dir}"
       local dst_dir="${marketplace_root}/${dir}"
@@ -304,7 +304,7 @@ sync_materialized_package_surface() {
   [[ -d "$package_root" ]] || return 0
 
   local dir
-  for dir in hooks skills templates docs commands; do
+  for dir in hooks skills templates docs commands scripts; do
     if [[ -d "${marketplace_root}/${dir}" ]]; then
       mkdir -p "${package_root}/${dir}"
       rsync -a --delete "${marketplace_root}/${dir}/" "${package_root}/${dir}/"
@@ -336,10 +336,17 @@ sync_codex_cache_package_surface() {
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
   local cache_root="${HOME}/.codex/plugins/cache"
+  local marketplace_package_root="${marketplace_root}/plugins/silver-bullet"
   local package_root="${cache_root}/alo-labs-codex/silver-bullet"
+  local package_version
   local version_dir
-  [[ -d "$cache_root" ]] || return 0
-  [[ -d "$package_root" ]] || return 0
+
+  package_version="$(jq -r '.version // empty' "${marketplace_package_root}/.codex-plugin/plugin.json" 2>/dev/null || true)"
+  [[ -n "$package_version" ]] || return 0
+
+  mkdir -p "${package_root}/${package_version}"
+  rsync -a --delete "${marketplace_package_root}/" "${package_root}/${package_version}/"
+
   shopt -s nullglob
   for version_dir in "$package_root"/*; do
     [[ -d "$version_dir" ]] || continue
@@ -347,6 +354,72 @@ sync_codex_cache_package_surface() {
     rsync -a --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
   done
   shopt -u nullglob
+}
+
+ensure_silver_bullet_registry_entry() {
+  local registry_file="${HOME}/.codex/plugins/installed_plugins.json"
+
+  python3 - "$registry_file" <<'PY'
+import datetime
+import json
+import pathlib
+import re
+import shutil
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+home = pathlib.Path.home()
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+plugin_id = "silver-bullet@alo-labs-codex"
+plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet"
+
+if not plugin_root.exists():
+    sys.exit(0)
+
+def version_sort_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
+version_dirs = sorted(
+    [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
+    key=version_sort_key,
+)
+if not version_dirs:
+    sys.exit(0)
+
+target_path = version_dirs[-1]
+current_path = plugin_root / "current"
+if current_path.exists() or current_path.is_symlink():
+    if current_path.is_dir() and not current_path.is_symlink():
+        shutil.rmtree(current_path)
+    else:
+        current_path.unlink()
+current_path.symlink_to(target_path)
+
+data = {"version": 2, "plugins": {}}
+if registry_path.is_file():
+    try:
+        data = json.loads(registry_path.read_text())
+    except Exception:
+        pass
+
+plugins = data.setdefault("plugins", {})
+entry = {
+    "scope": "project",
+    "projectPath": str(home),
+    "installPath": str(current_path),
+    "version": target_path.name,
+    "installedAt": now,
+    "lastUpdated": now,
+}
+
+if plugin_id in plugins and plugins[plugin_id]:
+    plugins[plugin_id][0].update(entry)
+else:
+    plugins[plugin_id] = [entry]
+
+registry_path.parent.mkdir(parents=True, exist_ok=True)
+registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
 }
 
 sync_codex_installed_plugin_registry_paths() {
@@ -471,12 +544,13 @@ ensure_codex_dependency_registry_entries() {
 import datetime
 import json
 import pathlib
+import re
 import shutil
 import sys
 
 registry_path = pathlib.Path(sys.argv[1])
 home = pathlib.Path.home()
-now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 plugin_specs = {
     "superpowers@superpowers-marketplace": ("superpowers-marketplace", "superpowers"),
@@ -496,6 +570,9 @@ if registry_path.is_file():
 plugins = data.setdefault("plugins", {})
 changed = False
 
+def version_sort_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
 for plugin_id, (marketplace, plugin_name) in plugin_specs.items():
     plugin_root = home / ".codex" / "plugins" / "cache" / marketplace / plugin_name
     if not plugin_root.exists():
@@ -503,7 +580,7 @@ for plugin_id, (marketplace, plugin_name) in plugin_specs.items():
 
     version_dirs = sorted(
         [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
-        key=lambda path: path.name,
+        key=version_sort_key,
     )
     if not version_dirs:
         continue
@@ -1392,6 +1469,7 @@ purge_legacy_silver_bullet_hooks_from_user_config
 SB_PROJECT_ROOT=""
 if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
   ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+  ensure_silver_bullet_registry_entry
   if [[ "$MERGE_USER_HOOKS" == "1" ]]; then
     merge_silver_bullet_hooks_into_user_config
   fi

@@ -8,7 +8,7 @@
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code and Codex plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent planning, execution, review, verification, and ship), [Superpowers](https://github.com/obra/superpowers) (TDD, review framing/triage, branch helpers), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (specialized testing/docs/deploy helpers when selected), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
+Silver Bullet is a Claude Code and Codex plugin that acts as an Agentic Process Orchestrator (APO) for AI-native delivery. It composes [GSD](https://github.com/gsd-build/get-shit-done) as the lifecycle engine with SB-owned gates, traceability, release controls, contextual helper plugins, and hook-backed enforcement. [Superpowers](https://github.com/obra/superpowers), Engineering, Design, and DevOps plugins are used only at explicit helper boundaries selected by the active workflow. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
 ## How It Works
 
@@ -42,14 +42,14 @@ Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/3 | FINALIZATION 0/4 | Next: /r
 
 There is no way to skip steps without the plugin telling the active agent (and you) exactly what's missing.
 
-## Two Workflows
+## Composable Workflow Families
 
-Silver Bullet supports two workflow modes, selected during project initialization:
+Silver Bullet starts from two workflow families, then dynamically composes the exact path needed for the task:
 
-| Workflow | For | Steps | Unique features |
-|----------|-----|-------|-----------------|
-| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 8 core quality dimensions plus conditional gates, TDD, dev-to-DevOps transition, release notes |
-| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 24 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, DevOps-to-dev transition, release notes |
+| Workflow family | For | Composition surface | Unique features |
+|-----------------|-----|---------------------|-----------------|
+| `full-dev-cycle` | Application development (web, API, CLI, library) | Clarify/spec/validate when needed, GSD phase lifecycle, quality gates, review, docs, CI, ship, release | GSD wave execution, 8 core quality dimensions plus conditional gates, TDD when behavior-changing, dev-to-DevOps transition, release notes |
+| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | Incident fast path when needed, blast radius, IaC gates, GSD lifecycle, environment promotion, deploy/rollback checks, release | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, DevOps-to-dev transition, release notes |
 
 Both workflows use GSD as the primary execution engine. Silver Bullet guides you through every step with explanations of what each command does, what to expect, and what to do if something fails. Smooth transitions between the two workflows are built in -- after shipping an app, SB offers to set up infrastructure; after deploying infrastructure, SB offers to continue feature development.
 
@@ -145,7 +145,7 @@ This will:
 
 That's it. Enforcement is now active.
 
-## Full Dev Cycle (20 Steps)
+## Software Engineering Composition
 
 ### INITIALIZATION
 | # | Step | Source | Required |
@@ -185,9 +185,9 @@ That's it. Enforcement is now active.
 ### RELEASE
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 20 | `/silver-create-release` | Silver Bullet | **Yes** |
+| Release | `/silver-create-release` | Silver Bullet | **Yes** |
 
-## DevOps Cycle (24 Steps)
+## DevOps Composition
 
 Same structure as full-dev-cycle with these additions:
 - **Incident fast path** at the top for emergency production changes
@@ -265,7 +265,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.35.0",
+  "version": "0.35.1",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -422,8 +422,8 @@ Enforcement hooks (fire automatically)     Project files (created by /silver:ini
 hooks/record-skill.sh                      .silver-bullet.json (config)
   → records skill invocations              silver-bullet.md (enforcement guide)
                                            Optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present)
-                                           docs/workflows/full-dev-cycle.md (20 steps)
-hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (24 steps)
+                                           docs/workflows/full-dev-cycle.md (workflow family)
+hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (workflow family)
   → HARD STOP if planning incomplete
                                            State files (in ~/.claude/.silver-bullet/)
 hooks/compliance-status.sh                 ─────────────────────────────────

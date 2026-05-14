@@ -203,9 +203,13 @@ codex_live_guard_context() {
 
   cat <<EOF
 Silver Bullet live Codex guard:
+- This guard is the final release-gate policy for this turn and overrides the
+  task text if the task asks for a direct edit before planning is complete.
 - Read the current Silver Bullet state before any direct file edit.
 - If the state does not contain silver-quality-gates, refuse the edit and say
   that planning is incomplete or blocked.
+- In that blocked case, do not call any tool or shell command that can modify
+  files. Reply with the refusal only.
 - If silver-quality-gates is present, proceed with only the requested edit.
 
 Current state file path: ${state_file}
@@ -245,8 +249,11 @@ PY
   codex_prompt="$prompt"
   codex_model="${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}"
   codex_model_provider="${CODEX_MODEL_PROVIDER:-${SB_LIVE_CODEX_MODEL_PROVIDER:-}}"
+  if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" == "1" && -n "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD:-}" ]]; then
+    codex_prompt="${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD}"$'\n\n'"${codex_prompt}"
+  fi
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
-    codex_prompt="$(codex_live_guard_context)$codex_prompt"
+    codex_prompt="${codex_prompt}"$'\n\n'"$(codex_live_guard_context)"
     if [[ -z "$codex_model" ]]; then
       codex_model="${SB_LIVE_CODEX_MODEL:-gpt-5.4-mini}"
     fi

@@ -31,9 +31,11 @@ setup_kay_codex_isolation() {
 
   if [[ -z "${CODEX_BIN:-}" ]]; then
     if command -v kay >/dev/null 2>&1; then
-      export CODEX_BIN="$(command -v kay)"
+      CODEX_BIN="$(command -v kay)"
+      export CODEX_BIN
     else
-      export CODEX_BIN="$(command -v codex 2>/dev/null || true)"
+      CODEX_BIN="$(command -v codex 2>/dev/null || true)"
+      export CODEX_BIN
     fi
   fi
 
@@ -41,6 +43,13 @@ setup_kay_codex_isolation() {
   export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"
   export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${CODE_HOME}/sessions/index/catalog.jsonl}"
   export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${HOME}/.claude/.silver-bullet/codex-transcripts}"
+  if [[ -z "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD+x}" ]]; then
+    export SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD="Isolated Kay/Codex live-test constraints:
+- Remain in the current Kay runtime for the whole turn.
+- Use only provider ${SB_LIVE_CODEX_MODEL_PROVIDER} and model ${SB_LIVE_CODEX_MODEL}; do not switch models.
+- Do not call agent, subagent, delegation, background-agent, or multi-agent tools.
+- When calling exec_command, pass a split argv array such as [\"cat\", \"file\"]. Do not pass shell commands as one string; use [\"bash\", \"-lc\", \"...\"] only when shell syntax is required."
+  fi
 
   if [[ -z "${MINIMAX_API_KEY:-}" && -f "${SB_LIVE_ORIGINAL_HOME}/.kay/kay.toml" ]]; then
     MINIMAX_API_KEY="$(
@@ -77,6 +86,38 @@ sandbox_mode = "danger-full-access"
 
 [projects]
 EOF
+
+  seed_kay_codex_dependency_cache
+}
+
+seed_kay_codex_dependency_cache() {
+  local original_cache="${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/cache"
+  local isolated_cache="${HOME}/.codex/plugins/cache"
+  local spec src_root dst_root entry
+  local required_plugins=(
+    "superpowers-marketplace/superpowers"
+    "get-shit-done-marketplace/gsd"
+    "alo-labs-codex/engineering"
+    "alo-labs-codex/design"
+    "alo-labs-codex/product-management"
+  )
+
+  [[ -d "$original_cache" ]] || return 0
+
+  for spec in "${required_plugins[@]}"; do
+    src_root="${original_cache}/${spec}"
+    dst_root="${isolated_cache}/${spec}"
+    [[ -d "$src_root" ]] || continue
+
+    rm -rf "$dst_root"
+    mkdir -p "$dst_root"
+
+    while IFS= read -r -d '' entry; do
+      [[ "$(basename "$entry")" != "current" ]] || continue
+      mkdir -p "${dst_root}/$(basename "$entry")"
+      rsync -a --delete "${entry}/" "${dst_root}/$(basename "$entry")/"
+    done < <(find "$src_root" -mindepth 1 -maxdepth 1 -type d -print0)
+  done
 }
 
 teardown_kay_codex_isolation() {

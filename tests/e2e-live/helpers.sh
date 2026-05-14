@@ -24,6 +24,7 @@ INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
+# shellcheck disable=SC2034 # Reserved for live-run budget enforcement.
 MAX_BUDGET="${SB_E2E_LIVE_BUDGET_USD:-10.00}"
 APP_PORT="${SB_E2E_LIVE_PORT:-3456}"
 export APP_PORT
@@ -795,10 +796,11 @@ wait_for_file_or_git_head_contains() {
   local needle="$4"
   local timeout_seconds="${5:-600}"
   local interval_seconds="${6:-2}"
+  local file_path="${repo_dir}/${path}"
   local deadline=$((SECONDS + timeout_seconds))
 
   while (( SECONDS < deadline )); do
-    if grep -qE "$needle" "$path" 2>/dev/null; then
+    if grep -qE "$needle" "$file_path" 2>/dev/null; then
       echo "PASS: $label"
       PASS=$((PASS + 1))
       return 0
@@ -813,7 +815,7 @@ wait_for_file_or_git_head_contains() {
 
   echo "FAIL: $label"
   echo "  expected pattern: $needle"
-  echo "  in file or HEAD path: $repo_dir/$path"
+  echo "  in file or HEAD path: $file_path"
   FAIL=$((FAIL + 1))
   return 1
 }

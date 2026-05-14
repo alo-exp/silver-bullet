@@ -12,6 +12,9 @@
 - Stop duplicating Silver Bullet plugin hooks into user-level Codex hooks and seed trust from the installed plugin hook manifest.
 - Pass Codex/Kay model-provider overrides through the live harness so MiniMax-backed isolated runs use `MiniMax-M2.7` consistently.
 - Harden the live doc-scheme suite so Kay/MiniMax executes deterministic command-array updates instead of fragile synthesized shell heredocs.
+- Seed isolated Kay/Codex live-test plugin caches and registry entries so E2E preflight runs without touching the user's real Codex state.
+- Harden the inline E2E journey against unauthenticated GitHub CLIs and Kay/MiniMax turn loss by applying deterministic local recovery only inside the isolated test workspace.
+- Package `scripts/workflows.sh` for Codex installs and teach composed-workflow skills to resolve it from the project or installed plugin, fixing missing workflow tracking in consumer repos.
 
 ---
 

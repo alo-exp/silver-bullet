@@ -257,7 +257,7 @@ footer .footer-links{display:flex;gap:24px}
     <a href="../" class="back-link">&#8592; Back to Silver Bullet</a>
     <div class="section-label">Feature Comparison</div>
     <h1 class="section-title" style="font-size:clamp(2rem,4vw,3rem);max-width:800px;margin:0 auto 16px">Silver Bullet vs GSD vs Superpowers</h1>
-    <p class="section-desc centered">GSD and Superpowers are two of the best standalone Claude Code plugins in the ecosystem. Silver Bullet includes them both &mdash; and adds everything neither does alone: enforced workflows, quality gates, blast radius assessment, and a six-layer technical compliance engine plus documentation layer.</p>
+    <p class="section-desc centered">GSD is the lifecycle execution engine and Superpowers provides useful helper disciplines. Silver Bullet sits above them as an Agentic Process Orchestrator: it composes the task-specific path, routes across plugins, adds quality and release gates, and enforces traceability through hooks where the runtime supports them.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <span class="tag tag-purple">92 Features</span>
       <span class="tag tag-purple">12 Categories</span>
@@ -287,7 +287,7 @@ footer .footer-links{display:flex;gap:24px}
         <div class="bar-track">
           <div class="bar-fill" style="width:16.3%;background:linear-gradient(90deg,var(--cyan),#0e7490)"></div>
         </div>
-        <div class="sc-verdict">GSD is the best execution engine in the Claude Code ecosystem. It solves context rot at the architectural level with fresh 200K contexts per task, wave-based parallelism, and atomic commits. It does not provide planning, code review, quality gates, or workflow enforcement.</div>
+        <div class="sc-verdict">GSD is the lifecycle engine for planning, execution, review, verification, and phase-level ship. It solves context rot with fresh task contexts, wave-based parallelism, and atomic commits. Silver Bullet adds broader cross-plugin composition, release governance, and hook-backed enforcement around it.</div>
       </div>
 
       <div class="score-card">
@@ -313,7 +313,7 @@ footer .footer-links{display:flex;gap:24px}
         <div class="bar-track">
           <div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#374151,#7a8ea0,#c8d8e4,#7a8ea0)"></div>
         </div>
-        <div class="sc-verdict">Silver Bullet is the orchestration layer. It includes GSD and Superpowers as dependencies, adds Engineering and Design plugins, wraps everything in twelve enforcement layers, and provides two dedicated workflows (20-step app dev, 24-step DevOps) with hard-stop quality gates.</div>
+        <div class="sc-verdict">Silver Bullet is the Agentic Process Orchestrator. It uses GSD as the lifecycle engine, calls Superpowers only at SB-required helper boundaries, adds Engineering and Design helpers when the workflow needs them, and composes app, UI, DevOps, bugfix, research, validation, and release paths with hard-stop quality gates.</div>
       </div>
 
     </div>
@@ -437,7 +437,7 @@ footer .footer-links{display:flex;gap:24px}
           <tr><td>Enforced end-to-end development workflow</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Multi-step phase sequencing</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-yes">✔</td></tr>
           <tr><td>Phase gate enforcement (cannot skip steps)</td><td class="prio-critical">Critical</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
-          <tr><td>Multiple workflow modes (app dev + DevOps)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Composable workflow families (app dev + DevOps)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Incident fast path / emergency bypass</td><td class="prio-medium">Medium</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Per-phase loop (discuss → plan → execute → verify → review)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Environment promotion workflow (dev → staging → prod)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
@@ -594,7 +594,7 @@ footer .footer-links{display:flex;gap:24px}
       <table class="feat-table">
         <thead><tr><th>Feature</th><th>Priority</th><th class="plat-col">Silver Bullet</th><th class="plat-col">Superpowers</th><th class="plat-col">GSD</th></tr></thead>
         <tbody>
-          <tr><td>Dedicated DevOps workflow (24-step)</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
+          <tr><td>Composed DevOps workflow with incident and promotion paths</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>IaC-specific quality gates</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Blast radius assessment for infra changes</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
           <tr><td>Context-aware DevOps skill routing</td><td class="prio-high">High</td><td class="tick-col tick-yes">✔</td><td class="tick-col tick-no">–</td><td class="tick-col tick-no">–</td></tr>
@@ -735,7 +735,7 @@ footer .footer-links{display:flex;gap:24px}
         <div class="when-role" style="color:var(--accent-light)">Agentic Process Orchestrator (APO)</div>
         <ul>
           <li>You want the complete enforced process — not just tools</li>
-          <li>You need GSD + Superpowers + quality gates + DevOps, all working together</li>
+          <li>You need SB+GSD plus contextual helper plugins, all working through one orchestrated path</li>
           <li>Your AI keeps skipping steps despite CLAUDE.md instructions</li>
           <li>You're shipping infrastructure and need blast radius enforcement</li>
           <li>You want twelve independent enforcement layers — no single point of bypass</li>

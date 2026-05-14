@@ -146,8 +146,12 @@ else
     cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
 matrix=${marker}
 EOF
+    cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
   else
     rm -f "$E2E_LIVE_MATRIX_FILE"
+    rm -f "$INLINE_E2E_MATRIX_FILE"
     echo "  NOTE: E2E release marker not written because the full Claude/Codex matrix was not run."
   fi
   echo "  OVERALL: ALL SCENARIOS PASSED"
