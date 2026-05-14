@@ -138,8 +138,6 @@ def parse_state(raw_text: str) -> dict[str, str]:
 
 source_by_prefix = {
     "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_path,
-    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json", home / ".codex" / "hooks.json"),
-    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json", home / ".codex" / "hooks.json"),
 }
 
 expected = {}
@@ -215,8 +213,6 @@ def parse_state(raw_text: str) -> dict[str, str]:
 
 source_by_prefix = {
     "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_path,
-    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json", home / ".codex" / "hooks.json"),
-    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json", home / ".codex" / "hooks.json"),
 }
 
 expected = {}
@@ -783,12 +779,12 @@ assert_contains "Product-management registry install path refreshed" "$FAKE_PROD
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
-assert_contains "Requested-skill recorder merged into Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Requested-skill recorder merged into Codex user config mirror" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Skill recorder merged into Codex user config" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Skill recorder merged into Codex user config mirror" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Instruction guard merged into Codex user config" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Instruction guard merged into Codex user config mirror" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Requested-skill recorder not duplicated into Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Requested-skill recorder not duplicated into Codex user config mirror" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Skill recorder not duplicated into Codex user config" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Skill recorder not duplicated into Codex user config mirror" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Instruction guard not duplicated into Codex user config" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Instruction guard not duplicated into Codex user config mirror" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
 assert_contains "GSD hook preserved in Codex user config" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_contains "GSD hook preserved in Codex user config mirror" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
