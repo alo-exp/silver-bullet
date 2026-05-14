@@ -186,6 +186,8 @@ footer{border-top:1px solid var(--border);padding:48px 0;color:var(--text-dim);f
 footer .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
 footer a{color:var(--text-secondary);text-decoration:none}
 footer a:hover{color:var(--accent-light)}
+footer .footer-brand-group{display:flex;flex-direction:column;gap:4px}
+footer .footer-credit{font-size:.9rem;color:var(--text-secondary)}
 footer .footer-links{display:flex;gap:24px}
 
 /* ── RESPONSIVE ── */
@@ -303,7 +305,7 @@ footer .footer-links{display:flex;gap:24px}
 
       <div class="score-card winner">
         <div class="sc-name" style="background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</div>
-        <div class="sc-role" style="color:var(--accent-light)">Agentic Process Orchestrator</div>
+        <div class="sc-role" style="color:var(--accent-light)">Agentic Process Orchestrator (APO)</div>
         <div>
           <span class="sc-num" style="background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent">295</span><span class="sc-denom">pts</span>
         </div>
@@ -730,7 +732,7 @@ footer .footer-links{display:flex;gap:24px}
 
       <div class="when-card" style="border-color:rgba(200,210,222,.45);background:linear-gradient(160deg,var(--bg-card),rgba(200,210,222,.08) 35%,var(--slate-a02))">
         <h3 style="background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</h3>
-        <div class="when-role" style="color:var(--accent-light)">Agentic Process Orchestrator</div>
+        <div class="when-role" style="color:var(--accent-light)">Agentic Process Orchestrator (APO)</div>
         <ul>
           <li>You want the complete enforced process — not just tools</li>
           <li>You need GSD + Superpowers + quality gates + DevOps, all working together</li>
@@ -752,9 +754,9 @@ footer .footer-links{display:flex;gap:24px}
 <footer>
   <div class="container">
     <div class="footer-inner">
-      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span></div>
-      <div style="font-size:.9rem;color:var(--text-secondary)">
-        Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a>
+      <div class="footer-brand-group">
+        <span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span>
+        <div class="footer-credit">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
       </div>
       <div class="footer-links">
         <a href="../">Home</a>
