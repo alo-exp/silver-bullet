@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>User Workflow Preferences — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet records and applies user workflow preferences: routing, step-skip protocol, tool preferences, MultAI preferences, and mode preferences.">
+<meta name="description" content="How Silver Bullet records and applies user workflow preferences: routing, step-skip protocol, tool preferences, research/review tool preferences, and mode preferences.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -148,7 +148,7 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#routing">§10a Routing Preferences</a></li>
         <li><a href="#step-skip">§10b Step-Skip Preferences</a></li>
         <li><a href="#tools">§10c Tool Preferences</a></li>
-        <li><a href="#multai">§10d MultAI Preferences</a></li>
+        <li><a href="#research-review-tools">§10d Research/Review Tool Preferences</a></li>
         <li><a href="#mode">§10e Mode Preferences</a></li>
         <li><a href="#recording">Recording a Preference</a></li>
         <li><a href="#non-skippable">Non-Skippable Gates</a></li>
@@ -231,17 +231,17 @@ footer a:hover{color:var(--accent-light)}
       </table>
       <p>Example: you may prefer <code>/silver:research</code> over <code>/brainstorming</code> for technology spikes. Recording this preference means Silver Bullet routes all research decision points to <code>silver:research</code> automatically.</p>
 
-      <h2 id="multai">§10d — MultAI Preferences</h2>
-      <p>MultAI runs multi-model reviews using multiple AI providers in parallel. §10d controls when MultAI is automatically offered and which models are used.</p>
+      <h2 id="research-review-tools">§10d — Research/Review Tool Preferences</h2>
+      <p>Some workflows can call optional research or review providers, including multi-AI research tools when installed. §10d records when those tools should be offered, auto-run, or skipped for a given trigger.</p>
       <table class="pref-table">
         <thead><tr><th>Column</th><th>What it means</th></tr></thead>
         <tbody>
-          <tr><td>Trigger</td><td>The scenario that would invoke MultAI (e.g., "architecturally significant changes", "cross-AI code review")</td></tr>
+          <tr><td>Trigger</td><td>The scenario that would invoke an optional research/review tool (e.g., architecturally significant changes, cross-AI review, technology selection)</td></tr>
           <tr><td>Disposition</td><td><code>auto-offer</code> (prompt the user) | <code>auto-run</code> (run without prompting) | <code>skip</code> (never offer)</td></tr>
           <tr><td>Since</td><td>Date recorded</td></tr>
         </tbody>
       </table>
-      <p>MultAI is offered automatically for architecturally significant changes. If you find the prompt disruptive you can set a disposition of <code>skip</code> for specific triggers, or <code>auto-run</code> to have it run silently without asking.</p>
+      <p>For example, you can keep a multi-AI architecture review as <code>auto-offer</code>, set it to <code>auto-run</code> for high-risk architecture choices, or set <code>skip</code> for low-risk triggers where the extra review is not useful.</p>
 
       <h2 id="mode">§10e — Mode Preferences</h2>
       <p>Mode preferences capture session-level defaults so you do not have to re-answer the same questions each session.</p>
@@ -280,21 +280,21 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>silver:security</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
-            <p>Security review is mandatory for every non-trivial change. It cannot be skipped, deferred, or combined with another step.</p>
+            <h4>Security checks <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <p>Security review is mandatory for every non-trivial change through <code>gsd:secure-phase</code> and the Security dimension inside <code>/silver:quality-gates</code>. It cannot be skipped, deferred, or treated as implicitly covered.</p>
           </div>
         </div>
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>silver:quality-gates</code> pre-ship <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <h4><code>/silver:quality-gates</code> pre-ship <span class="tag tag-no-skip">Cannot skip</span></h4>
             <p>Quality gates must pass before shipping. The pre-ship quality gate run is separate from the pre-planning run and cannot be bypassed.</p>
           </div>
         </div>
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>gsd-verify-work</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <h4><code>gsd:verify-work</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
             <p>Work verification is required before completion can be declared. The completion audit hook blocks if this step is missing.</p>
           </div>
         </div>
