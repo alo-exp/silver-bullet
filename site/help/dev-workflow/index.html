@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Software Engineering Workflow — Silver Bullet Help</title>
-<meta name="description" content="The complete 20-step Silver Bullet software engineering workflow: Discuss, Quality Gates, Plan, Execute, Verify, Code Review, Finalization, CI/CD, Ship, and Release.">
+<meta name="description" content="The Silver Bullet software engineering workflow composition: intent routing, quality gates, GSD planning and execution, verification, code review, docs, CI, ship, and release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -163,9 +163,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#finalization">Steps 13–16: Finalization</a></li>
         <li><a href="#artifact-review-gate">Steps 17a–17b: Review Gates</a></li>
         <li><a href="#deployment">Step 17c: CI/CD</a></li>
-        <li><a href="#deploy-check">Step 18: Deploy Checklist</a></li>
-        <li><a href="#ship">Step 19: Ship</a></li>
-        <li><a href="#release">Step 20: Release</a></li>
+        <li><a href="#deploy-check">Deploy Checklist</a></li>
+        <li><a href="#ship">Ship</a></li>
+        <li><a href="#release">Release</a></li>
         <li class="sidebar-section">Rules</li>
         <li><a href="#review-loop">Review Loop Rule</a></li>
         <li><a href="#anti-skip">Anti-skip rules</a></li>
@@ -180,7 +180,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h2 id="overview">How the Workflow Loop Works</h2>
-      <p>The Silver Bullet software engineering workflow has three sections:</p>
+      <p>The Silver Bullet software engineering workflow is a composed path with three recurring sections:</p>
       <ol>
         <li><strong>Project initialization</strong> — runs once per project to produce requirements and a roadmap</li>
         <li><strong>Per-phase loop</strong> — repeats for every phase in the roadmap (Steps 3–12)</li>
@@ -406,7 +406,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">15</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Update or create project documentation according to the SB doc scheme: README, docs/PRD-Overview.md when applicable, docs/ARCHITECTURE.md, docs/TESTING.md, docs/internal/CICD.md when relevant, docs/doc-scheme.md/json, task doc checklist, docs/CHANGELOG.md, and monthly knowledge/lessons files. <strong>README must be updated here before Step 20 (release) can proceed.</strong> Also required: complete the session log file (path stored at <code>~/.claude/.silver-bullet/session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, Knowledge and lessons additions, and runtime/cost note when available. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
+          <p class="step-desc">Update or create project documentation according to the SB doc scheme: README, docs/PRD-Overview.md when applicable, docs/ARCHITECTURE.md, docs/TESTING.md, docs/internal/CICD.md when relevant, docs/doc-scheme.md/json, task doc checklist, docs/CHANGELOG.md, and monthly knowledge/lessons files. <strong>README must be updated before release can proceed.</strong> Also required: complete the session log file (path stored at <code>~/.claude/.silver-bullet/session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Agent Teams dispatched, Autonomous decisions, Outcome, Knowledge and lessons additions, and runtime/cost note when available. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
         </div>
       </div>
 
@@ -443,7 +443,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">17c</div>
         <div>
           <div class="step-meta"><span class="step-title">CI/CD pipeline</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">CI must be green before any deployment step. Run local verify commands first, then check CI status with <code>gh run list --limit 1 --json status,conclusion</code>. In Interactive mode, the runtime shows status and waits for confirmation. In Autonomous mode, the runtime polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to Step 18 while CI is failing.</p>
+          <p class="step-desc">CI must be green before any deployment step. Run local verify commands first, then check CI status with <code>gh run list --limit 1 --json status,conclusion</code>. In Interactive mode, the runtime shows status and waits for confirmation. In Autonomous mode, the runtime polls every 30 seconds up to 10 minutes. If CI is red: fix, re-push, re-check. Do not proceed to the deployment checklist while CI is failing.</p>
         </div>
       </div>
 

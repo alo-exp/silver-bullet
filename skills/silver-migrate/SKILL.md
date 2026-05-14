@@ -55,18 +55,39 @@ Use GSD artifacts for phase position. Use SB markers only for SB compliance prog
 
 ### Step 3: Start Per-Instance Workflow Tracking
 
-Use `scripts/workflows.sh start`:
+Resolve the workflow helper, then run its start subcommand:
 
 ```bash
 SB_FLOWS="<comma-separated inferred flow list>"
-SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver:migrate "migrated legacy project state" "$SB_FLOWS")
+if [[ -x scripts/workflows.sh ]]; then
+  SB_WORKFLOWS_BIN="scripts/workflows.sh"
+else
+  SB_WORKFLOWS_BIN="$(
+    for root in \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
+      if [[ -x "$root/scripts/workflows.sh" ]]; then
+        printf "%s\n" "$root/scripts/workflows.sh"
+        break
+      fi
+    done
+  )"
+fi
+if [[ -z "${SB_WORKFLOWS_BIN:-}" ]]; then
+  echo "Silver Bullet workflow tracker not found. Run /silver:update or reinstall Silver Bullet, then retry." >&2
+  exit 1
+fi
+
+SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:migrate "migrated legacy project state" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 ```
 
 For each inferred-complete flow, mark it complete:
 
 ```bash
-scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
+"$SB_WORKFLOWS_BIN" complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
 
 Leave the first uncertain or unfinished flow pending. Do not mark execution, review, security, verification, or ship complete unless the corresponding GSD artifact exists.

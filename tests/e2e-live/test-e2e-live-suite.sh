@@ -34,9 +34,23 @@ assert_executable() {
   fi
 }
 
+assert_file_contains() {
+  local label="$1"
+  local path="$2"
+  local pattern="$3"
+  if grep -Eq "$pattern" "$path"; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 echo "=== e2e-live suite sanity checks ==="
 assert_exists "suite runner exists" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
+assert_file_contains "suite runner writes inline release marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'matrix=inline-full-surface'
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
 assert_exists "dependency-access preflight exists" "${SCRIPT_DIR}/dependency-access-preflight.sh"
 assert_executable "dependency-access preflight is executable" "${SCRIPT_DIR}/dependency-access-preflight.sh"

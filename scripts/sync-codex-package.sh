@@ -48,6 +48,7 @@ PACKAGE_ENTRIES=(
   .silver-bullet.json
   docs
   hooks
+  scripts
   templates
 )
 

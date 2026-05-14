@@ -95,7 +95,7 @@ In autonomous mode (§10e), auto-confirm the composition proposal with a log mes
 
 ### 5. Start workflow tracking (Pass 2 — workflows.sh)
 
-Invoke `scripts/workflows.sh start` to register this composition as an active workflow.
+Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
 The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
 workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
 `gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
@@ -106,7 +106,28 @@ this to verify the active workflow is fully complete before final delivery.
 # user-facing FLOW / PATH names so they match what compliance-status surfaces).
 SB_FLOWS="<flow1>,<flow2>,..."   # filled in from the confirmed chain
 
-SB_WORKFLOW_ID=$(scripts/workflows.sh start /silver-research "the research question" "$SB_FLOWS")
+if [[ -x scripts/workflows.sh ]]; then
+  SB_WORKFLOWS_BIN="scripts/workflows.sh"
+else
+  SB_WORKFLOWS_BIN="$(
+    for root in \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
+      if [[ -x "$root/scripts/workflows.sh" ]]; then
+        printf "%s\n" "$root/scripts/workflows.sh"
+        break
+      fi
+    done
+  )"
+fi
+if [[ -z "${SB_WORKFLOWS_BIN:-}" ]]; then
+  echo "Silver Bullet workflow tracker not found. Run /silver:update or reinstall Silver Bullet, then retry." >&2
+  exit 1
+fi
+
+SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver-research "the research question" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 echo "Workflow tracker started: $SB_WORKFLOW_ID"
 ```
@@ -114,14 +135,14 @@ echo "Workflow tracker started: $SB_WORKFLOW_ID"
 After each flow / path completes, mark it done:
 
 ```bash
-scripts/workflows.sh complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
+"$SB_WORKFLOWS_BIN" complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
 
 When the entire composition finishes (after the final SHIP / RELEASE flow lands), close
 the workflow:
 
 ```bash
-scripts/workflows.sh complete "$SB_WORKFLOW_ID"
+"$SB_WORKFLOWS_BIN" complete "$SB_WORKFLOW_ID"
 ```
 
 `complete` archives the file under `.planning/workflows/.archive/<id>.md` and removes
