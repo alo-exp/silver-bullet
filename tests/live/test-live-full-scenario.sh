@@ -16,7 +16,7 @@ assert_file_exists "S7: SB state directory exists" "${HOME}/.claude/.silver-bull
 assert_response_contains "S7: response contains a greeting or answer" "$response" "Hello|hello|hi|4|four|2\+2|answer"
 live_teardown
 
-# --- S8: Abbreviated lifecycle (silver-quality-gates -> code-review -> edit) ---
+# --- S8: Abbreviated lifecycle (silver-quality-gates -> gsd-code-review -> edit) ---
 echo "--- S8: Abbreviated lifecycle ---"
 live_setup
 
@@ -27,10 +27,10 @@ hook_out=$(printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-ga
   | bash "${SB_ROOT}/hooks/record-skill.sh" 2>/dev/null || true)
 assert_state_contains "S8.1: silver-quality-gates recorded" "silver-quality-gates"
 
-# Step 2: seed code-review and related review skills (saves cost vs real invocation)
-echo "  S8.2: Seeding code-review state..."
-seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
-assert_state_contains "S8.2: code-review in state" "code-review"
+# Step 2: seed gsd-code-review and related review skills (saves cost vs real invocation)
+echo "  S8.2: Seeding gsd-code-review state..."
+seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+assert_state_contains "S8.2: gsd-code-review in state" "gsd-code-review"
 
 # Step 3: attempt edit (should succeed at Stage C)
 echo "  S8.3: Attempting edit at Stage C..."

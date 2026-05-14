@@ -6,7 +6,7 @@ A complete Forge-native implementation of the Silver Bullet development workflow
 
 Silver Bullet for Forge ports the Silver Bullet (SB) development workflow system from Claude Code plugin format to Forge's native primitives. It provides:
 
-- **41 skills** organized into workflows (GSD, Quality Gates, Superpowers, Silver Orchestrator)
+- **41 skills** organized into workflows (GSD, quality gates, SB delegation helpers, Silver Orchestrator)
 - **AGENTS.md templates** for session management and routing
 - **Idempotent installer** with dry-run support
 
@@ -40,8 +40,8 @@ Core execution workflow following the "Get Shit Done" methodology:
 - `gsd-progress` — Progress reporting
 - `silver-clarify` — Idea clarification and decision handoff
 
-### Quality Dimensions (9 + master)
-Enforce 9 quality dimensions at design-time and pre-ship:
+### Quality Dimensions (8 core + conditional)
+Enforce 8 core quality dimensions at design-time and pre-ship, with AI/LLM safety added only when the work includes model, agent, prompt, retrieval, eval, or automated-decision behavior:
 - `quality-gates` — Consolidated master skill
 - `modularity` — Single responsibility, change locality
 - `reusability` — DRY principle, abstractions
@@ -53,8 +53,8 @@ Enforce 9 quality dimensions at design-time and pre-ship:
 - `extensibility` — Open/closed, plugin architecture
 - `ai-llm-safety` — Prompt injection, model safety
 
-### Superpowers (6 visible skills + 1 internal enforcement)
-Core development skills:
+### SB Delegation Helpers (Superpowers-backed only when required)
+Core helper skills used at explicit SB workflow boundaries:
 - `tdd` — Internal enforcement wrapper around `superpowers:test-driven-development` (hidden from picker; activated at the execution boundary)
 - `silver-clarify` — Product ideation and decision handoff
 - `writing-plans` — Spec to implementation plan
@@ -84,7 +84,7 @@ Forge detects "add" → routes to silver-feature → runs full workflow
 ```
 > quality gates
 
-Forge detects trigger → runs all 9 dimensions → reports pass/fail
+Forge detects trigger → runs the applicable quality dimensions → reports pass/fail
 ```
 
 ### TDD

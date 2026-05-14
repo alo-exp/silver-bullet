@@ -117,9 +117,9 @@ The coverage registry should include at least these groups:
 | Install / bootstrap | `silver:init`, `silver:add`, `silver:remove` | Install SB into the desktop session, scaffold the todo app, file an issue when something feels off, and retire at least one temporary artifact or issue during cleanup |
 | Discovery / framing | `silver:explore`, `silver:scan`, `silver:research`, `silver:blast-radius` | Use them before the first feature and again before any larger change or risky tweak |
 | Feature delivery | `silver:feature`, `silver:ui`, `silver:fast` | Build at least one real user-visible enhancement, one UI refinement, and one trivial change that is genuinely small enough for the fast path |
-| Defect handling | `silver:bugfix`, `silver:forensics`, `silver:tdd` | Deliberately surface or reproduce a bug, reconstruct it, write a regression test, and fix it |
-| Governance / quality | `silver:quality-gates`, `silver:request-review`, `silver:receive-review` | Run quality checks before moving forward, then review the work and respond to findings |
-| Release readiness | `silver:create-release`, `silver:release`, `silver:finishing-branch` | Prepare the todo-app branch for release, create release notes/tag, and clean up the branch state |
+| Defect handling | `silver:bugfix`, `silver:forensics`, `tdd` | Deliberately surface or reproduce a bug, reconstruct it, write a regression test, and fix it |
+| Governance / quality | `silver:quality-gates`, `requesting-code-review`, `receiving-code-review` | Run quality checks before moving forward, then review the work and respond to findings |
+| Release readiness | `silver:create-release`, `silver:release`, `finishing-branch` | Prepare the todo-app branch for release, create release notes/tag, and clean up the branch state |
 | Project orchestration | `gsd-new-project`, `gsd-new-milestone`, `gsd-discuss-phase`, `gsd-plan-phase`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship`, `gsd-code-review`, `gsd-ui-phase`, `gsd-ui-review`, `gsd-secure-phase`, `gsd-debug`, `gsd-forensics` | Use these as the structured backbone of the journey where they naturally fit the app work |
 
 The implementation must treat the current integration coverage list as the source
@@ -198,10 +198,10 @@ append-only for the duration of the session and should contain entries like:
 | Discovery | `silver:explore` | decision note in session transcript | no |
 | Feature | `silver:feature` | feature diff + tests | maybe |
 | UI | `silver:ui` | browser screenshot / DOM proof | maybe |
-| Bugfix | `silver:bugfix`, `silver:forensics`, `silver:tdd` | failing test -> fix -> green test | yes/no |
+| Bugfix | `silver:bugfix`, `silver:forensics`, `tdd` | failing test -> fix -> green test | yes/no |
 | Cleanup | `silver:fast`, `silver:remove` | tiny change or retired temp artifact | maybe |
-| Governance | `silver:quality-gates`, `silver:request-review`, `silver:receive-review` | review notes / gate output | no |
-| Release | `silver:create-release`, `silver:release`, `silver:finishing-branch` | tag / release note / branch cleanup | no |
+| Governance | `silver:quality-gates`, `requesting-code-review`, `receiving-code-review` | review notes / gate output | no |
+| Release | `silver:create-release`, `silver:release`, `finishing-branch` | tag / release note / branch cleanup | no |
 
 The ledger is the proof artifact for "100% coverage" in the live run.
 

@@ -6,7 +6,7 @@ version: 0.1.0
 
 # /silver:create-release — Release Notes & GitHub Release
 
-Use this skill after `/gsd:ship` to generate release notes and publish them.
+Use this skill after the GSD milestone lifecycle has completed. Phase-level shipping belongs to `gsd:ship`; milestone archival belongs to `gsd-complete-milestone`; this skill owns only the final public release artifact: release notes, optional CHANGELOG/README updates, tag, and GitHub Release.
 
 ## Security Boundary
 

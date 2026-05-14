@@ -76,24 +76,24 @@ As SB drives the workflow, check off each step:
 
 ### Per-Phase Loop
 - [ ] `/gsd:discuss-phase` invoked with what/expect/fail explanations shown to user
-- [ ] `/silver-quality-gates` invoked (8 quality dimensions checked)
+- [ ] `/silver-quality-gates` invoked (8 core quality dimensions plus conditional gates checked)
 - [ ] `/gsd:plan-phase` invoked (PLAN.md created)
 - [ ] `/test-driven-development` invoked BEFORE implementation code
 - [ ] `/gsd:execute-phase` invoked (commits produced)
 - [ ] `/gsd:verify-work` invoked (UAT tests presented)
-- [ ] `/code-review` invoked (structured quality review: security, performance, correctness)
-- [ ] `/requesting-code-review` invoked (dispatches `superpowers:code-reviewer`, 2 consecutive approvals)
+- [ ] `/requesting-code-review` invoked (frames the review scope and dispatches Superpowers review help only where SB requires it)
+- [ ] `/gsd:code-review` invoked (authoritative `REVIEW.md`, 2 consecutive clean passes)
 - [ ] `/receiving-code-review` invoked
 
 ### Finalization
-- [ ] `/testing-strategy` invoked
-- [ ] `/tech-debt` invoked
-- [ ] `/documentation` invoked (README updated)
+- [ ] `testing-strategy` invoked
+- [ ] `tech-debt` invoked
+- [ ] `documentation` invoked (README updated)
 - [ ] `/finishing-a-development-branch` invoked
 
 ### Deployment
 - [ ] CI/CD verification step ran
-- [ ] `/deploy-checklist` invoked
+- [ ] `deploy-checklist` invoked
 
 ### Ship & Release
 - [ ] `/gsd:ship` invoked (or equivalent for direct-to-main)
@@ -137,7 +137,7 @@ cat ~/.claude/.silver-bullet/state | sort -u
 
 **Required skills in state file:**
 - [ ] `silver-quality-gates`
-- [ ] `code-review`
+- [ ] `gsd-code-review`
 - [ ] `requesting-code-review`
 - [ ] `receiving-code-review`
 - [ ] `testing-strategy`

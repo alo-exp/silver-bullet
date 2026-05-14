@@ -89,6 +89,11 @@ out=$(run_hook "git commit -m 'test'")
 assert_passes "git commit passes silently" "$out"
 teardown
 
+setup
+out=$(run_hook "rg -n 'gsd-plan-phase|gsd-fast|gsd-quick' skills docs")
+assert_passes "read-only rg containing GSD skill names passes silently" "$out"
+teardown
+
 # Test 2: gsd-plan-phase blocked when no SPEC.md
 echo "--- Group 2: gsd-plan-phase hard block ---"
 setup

@@ -735,7 +735,7 @@ assert_contains "Installed SB router skill uses silver name" "name: silver" "$FA
 assert_contains "Installed SB feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$FAKE_SB_PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Installed SB feature skill documents hidden TDD gate" "Internal TDD gate" "$FAKE_SB_PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Installed SB UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$FAKE_SB_PACKAGE_ROOT/skills/silver-ui/SKILL.md"
-assert_contains "Installed SB bugfix skill uses Superpowers TDD directly" "superpowers:test-driven-development" "$FAKE_SB_PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
+assert_contains "Installed SB bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$FAKE_SB_PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
 assert_contains "Installed SB bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$FAKE_SB_PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
 assert_contains "TDD skill hidden from picker in installed package" "user-invocable: false" "$FAKE_SB_PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD in installed package" "superpowers:test-driven-development" "$FAKE_SB_PACKAGE_ROOT/skills/tdd/SKILL.md"

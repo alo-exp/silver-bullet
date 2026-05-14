@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
-  "version": "0.33.0",
-  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, and templates only; GSD, Superpowers, Engineering, and Design are installed from their official sources.",
+  "version": "0.35.0",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, and templates only; GSD and selected helper plugins are installed from their official sources.",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
@@ -23,8 +23,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Silver Bullet",
-    "shortDescription": "Enforced GSD workflows for Codex and Claude",
-    "longDescription": "Silver Bullet layers Silver Bullet-owned skills, hooks, and workflow assets onto Codex and Claude Code to keep development work on the GSD path. Third-party dependencies are installed from their own sources rather than vendored into the SB Codex bundle.",
+    "shortDescription": "SB+GSD Agentic Process Orchestrator",
+    "longDescription": "Silver Bullet layers SB-owned skills, hooks, and workflow assets onto Codex and Claude Code to compose task-shaped workflows around GSD. Third-party dependencies are installed from their own sources rather than vendored into the SB Codex bundle.",
     "developerName": "Alo Labs",
     "category": "Development",
     "capabilities": [

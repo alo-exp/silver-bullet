@@ -37,7 +37,7 @@ write_default_config
 
 # Record skills
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "code-review"   >/dev/null
+run_record_skill "gsd-code-review"   >/dev/null
 
 # Confirm skills are present before simulated session restart
 assert_contains "S2.1: silver-quality-gates recorded before restart" \
@@ -50,8 +50,8 @@ run_session_start >/dev/null 2>&1 || true
 state_after=$(cat "$TMPSTATE" 2>/dev/null || echo "")
 assert_contains "S2.2: silver-quality-gates persists after session restart (same branch)" \
   "$state_after" "silver-quality-gates"
-assert_contains "S2.3: code-review persists after session restart (same branch)" \
-  "$state_after" "code-review"
+assert_contains "S2.3: gsd-code-review persists after session restart (same branch)" \
+  "$state_after" "gsd-code-review"
 
 integration_teardown
 
@@ -63,9 +63,9 @@ integration_setup
 write_default_config
 
 # Record all required_deploy skills EXCEPT verification-before-completion
-for skill in silver-quality-gates code-review requesting-code-review receiving-code-review \
+for skill in silver-quality-gates gsd-code-review requesting-code-review receiving-code-review \
              testing-strategy documentation finishing-a-development-branch \
-             deploy-checklist silver-create-release test-driven-development tech-debt; do
+             deploy-checklist silver-create-release test-driven-development tech-debt verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 
@@ -152,8 +152,8 @@ printf '{
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
   "skills": {
     "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
   },
   "state": { "state_file": "%s", "trivial_file": "%s/trivial-test-%s" }
 }\n' "$TMPSTATE" "$SB_TEST_DIR" "$TEST_RUN_ID" > "$TMPCFG"
@@ -167,13 +167,14 @@ out=$(run_stop_check "Stop")
 assert_blocked "S5.1: stop-check blocks when required devops skills are missing" "$out"
 
 # Record all devops required skills (including quality-gate stages and review loops)
-for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \
+for skill in silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review \
              receiving-code-review testing-strategy documentation \
              finishing-a-development-branch deploy-checklist silver-create-release \
              verification-before-completion test-driven-development tech-debt \
-             review-loop-pass-1 review-loop-pass-2; do
+             verify-tests review-loop-pass-1 review-loop-pass-2; do
   echo "$skill" >> "$TMPSTATE"
 done
+date +%s > "$VERIFY_TESTS_FILE"
 
 out=$(run_stop_check "Stop")
 assert_allowed "S5.2: stop-check allows after all devops required skills recorded" "$out"

@@ -127,7 +127,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ## Step 0: Triage — Classify Failure Type
 
@@ -177,7 +177,7 @@ After gsd-forensics completes and outputs diagnosis:
 
 All paths converge here. Before writing any fix code:
 
-Invoke `superpowers:test-driven-development` via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden `silver:tdd` gate before any fix code is written and ensures the bug cannot silently regress.
+Invoke `tdd` via the Skill tool. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden TDD gate before any fix code is written and ensures the bug cannot silently regress. `tdd` delegates to Superpowers only at this explicit SB-required execution boundary.
 
 **Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
 
@@ -193,10 +193,9 @@ Invoke `gsd-execute-phase --tdd` via the Skill tool. Host aliases may expose thi
 
 Run the full review sequence in order:
 
-1. Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `/code-review` via the Skill tool. Purpose: establish review criteria before spawning reviewer agents.
-3. Invoke `gsd-code-review` via the Skill tool.
-4. Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `requesting-code-review` (superpowers:requesting-code-review) via the Skill tool.
+2. Invoke `gsd-code-review` via the Skill tool. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it.
+3. Invoke `receiving-code-review` (superpowers:receiving-code-review) via the Skill tool.
 
 ## Step 6: Verify Work
 
@@ -204,11 +203,11 @@ Invoke `gsd-verify-work` via the Skill tool. Purpose: confirm fix, zero regressi
 
 ## Step 7: Security Review
 
-Invoke `silver:security` via the Skill tool. Non-skippable.
+Invoke `security` via the Skill tool. Non-skippable.
 
 ## Step 7a: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver:add`.
+Invoke `tech-debt` via the Skill tool when available. Purpose: identify and document any technical debt introduced by the fix. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 

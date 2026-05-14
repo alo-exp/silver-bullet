@@ -132,7 +132,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>Key design principles:</strong></p>
       <ul>
         <li><strong>No brainstorming phase</strong> — infrastructure changes are driven by operational requirements established upstream (in <code>silver:feature</code> or <code>silver:research</code>). Blast-radius analysis replaces the product/engineering brainstorm.</li>
-        <li><strong>7 IaC quality dimensions</strong> instead of the product 9 — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
+        <li><strong>7 IaC quality dimensions</strong> instead of the product 8 core dimensions plus conditional gates — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
         <li><strong>TDD explicitly skipped</strong> — infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources.</li>
       </ul>
 
@@ -149,7 +149,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="iac-quality-dims">7 IaC quality dimensions</h2>
-      <p>These replace the standard 9-dimension quality gates for all infra work. Applied at both pre-plan (Step 3) and pre-ship (Step 10) gates:</p>
+      <p>These replace the standard product/software quality gate for all infra work. Applied at both pre-plan (Step 3) and pre-ship (Step 10) gates:</p>
       <ul>
         <li><strong>Reliability</strong> — failure modes, retry logic, health checks</li>
         <li><strong>Security</strong> — secrets handling, IAM boundaries, network exposure</li>
@@ -177,7 +177,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>/devops-skill-router</code>. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.</p>
 
       <h3>Step 3 — Pre-plan DevOps quality gates (7 IaC dimensions)</h3>
-      <p>Invoke <code>/devops-quality-gates</code>. All 7 IaC-adapted dimensions run as the pre-plan gate. <strong>Not</strong> the standard 9-dimension <code>/silver:quality-gates</code> — the devops workflow uses <code>/devops-quality-gates</code> exclusively at both quality gate positions.</p>
+      <p>Invoke <code>/devops-quality-gates</code>. All 7 IaC-adapted dimensions run as the pre-plan gate. <strong>Not</strong> the standard product/software <code>/silver:quality-gates</code> — the devops workflow uses <code>/devops-quality-gates</code> exclusively at both quality gate positions.</p>
 
       <h3>Step 3b — Infrastructure security (mandatory, non-skippable)</h3>
       <p>Review the security findings from <code>/devops-quality-gates</code> before planning. Secrets, IAM permissions, network exposure, and data handling must be addressed as design requirements before <code>gsd:plan-phase</code> runs.</p>
@@ -190,7 +190,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h3>Step 6 — Execute phase (TDD skipped)</h3>
       <p>Invoke <code>gsd:execute-phase</code> (Interactive) or <code>gsd:autonomous</code> (Autonomous §10e).</p>
-      <p><strong>TDD is explicitly skipped for infra plans — not applicable.</strong> Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No <code>/test-driven-development</code> invocation.</p>
+      <p><strong>TDD is explicitly skipped for infra plans — not applicable.</strong> Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No <code>tdd</code> invocation.</p>
 
       <h3>Step 7 — Code review (IaC review)</h3>
       <p>Run review sequence: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant infra: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>.</p>

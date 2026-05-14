@@ -129,7 +129,7 @@ teardown
 echo "--- Test 4: Review skills complete -> REVIEW 3/3 ---"
 setup
 write_cfg
-printf 'silver-quality-gates\ncode-review\nrequesting-code-review\nreceiving-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nrequesting-code-review\ngsd-code-review\nreceiving-code-review\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "review skills complete -> REVIEW 3/3" "$out" "REVIEW 3/3"
 teardown
@@ -161,7 +161,7 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 # Planning done; next should be in review phase
-assert_contains "planning done -> Next: code-review" "$out" "code-review"
+assert_contains "planning done -> Next: requesting-code-review" "$out" "requesting-code-review"
 teardown
 
 # Test 8: Mode file respected — autonomous mode shown in output
@@ -192,7 +192,7 @@ teardown
 echo "--- Test 10: Total step count correct ---"
 setup
 write_cfg
-printf 'silver-quality-gates\ncode-review\nrequesting-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nrequesting-code-review\ngsd-code-review\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "3 lines in state -> Silver Bullet: 3 steps" "$out" "3 steps"
 teardown
@@ -201,7 +201,7 @@ teardown
 echo "--- Test 11: Finalization phase counts ---"
 setup
 write_cfg
-printf 'testing-strategy\ndocumentation\nfinishing-a-development-branch\ndeploy-checklist\n' > "$TMPSTATE"
+printf 'finishing-a-development-branch\nverification-before-completion\ntest-driven-development\nverify-tests\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "4 finalization skills -> FINALIZATION 4/4" "$out" "FINALIZATION 4/4"
 teardown

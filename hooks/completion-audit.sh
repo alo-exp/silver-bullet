@@ -60,7 +60,7 @@ fi
 #     → Require full required_deploy skill list
 #
 # This prevents the deadlock where GSD's execution subagents cannot commit
-# because finalization skills (code-review, testing-strategy, etc.) aren't done yet.
+# because final-delivery skills (GSD review, branch finishing, verify-tests, etc.) are not done yet.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -147,11 +147,14 @@ SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
-quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state"
+quality_gate_state_file="${HOME}/.claude/.silver-bullet/quality-gate-state"
 verify_tests_state_file="${HOME}/.claude/.silver-bullet/verify-tests-state"
 required_planning_cfg=""
 required_deploy_cfg=""
+required_planning_devops_cfg=""
 active_workflow="full-dev-cycle"
+release_require_plugin_runtime_matrix="false"
+release_require_pre_release_quality_gate="false"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
@@ -159,8 +162,12 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
   ((.skills.required_planning // []) | join(" ")),
+  ((.skills.required_planning_devops // []) | join(" ")),
   ((.skills.required_deploy // []) | join(" ")),
-  (.project.active_workflow // "full-dev-cycle")
+  (.project.active_workflow // "full-dev-cycle"),
+  (.release.quality_gate_state_file // ""),
+  ((.release.require_plugin_runtime_matrix // false) | tostring),
+  ((.release.require_pre_release_quality_gate // false) | tostring)
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -168,8 +175,13 @@ state_file="${state_file/#\~/$HOME}"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
-required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
-active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
+required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '6p')
+cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '7p')
+[[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
+release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '8p')
+release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '9p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -189,7 +201,7 @@ case "$trivial_file" in
 esac
 case "$quality_gate_state_file" in
   "$HOME"/.claude/*) ;;
-  *) quality_gate_state_file="${HOME}/.claude/.sidekick/quality-gate-state" ;;
+  *) quality_gate_state_file="${HOME}/.claude/.silver-bullet/quality-gate-state" ;;
 esac
 case "$verify_tests_state_file" in
   "$HOME"/.claude/*) ;;
@@ -462,7 +474,11 @@ if [[ "$is_intermediate" == true ]]; then
   else
     DEFAULT_PLANNING="silver-quality-gates"
   fi
-  planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
+  if [[ "$active_workflow" == "devops-cycle" && -n "$required_planning_devops_cfg" ]]; then
+    planning_skills="$required_planning_devops_cfg"
+  else
+    planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
+  fi
 
   missing_planning=""
   ignored_planning=""
@@ -520,47 +536,51 @@ release_live_matrix_file="${HOME}/.claude/.silver-bullet/release-live-matrix"
 e2e_live_matrix_file="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
 inline_e2e_matrix_file="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
 if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
-  release_matrix_value=""
-  e2e_matrix_value=""
-  inline_matrix_value=""
-  if [[ -f "$release_live_matrix_file" && ! -L "$release_live_matrix_file" ]]; then
-    release_matrix_value=$(grep -E '^matrix=' "$release_live_matrix_file" 2>/dev/null || true)
-  fi
-  if [[ -f "$e2e_live_matrix_file" && ! -L "$e2e_live_matrix_file" ]]; then
-    e2e_matrix_value=$(grep -E '^matrix=' "$e2e_live_matrix_file" 2>/dev/null || true)
-  fi
-  if [[ -f "$inline_e2e_matrix_file" && ! -L "$inline_e2e_matrix_file" ]]; then
-    inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
+  if [[ "$release_require_plugin_runtime_matrix" == "true" || "${SB_REQUIRE_PLUGIN_RELEASE_MATRIX:-0}" == "1" ]]; then
+    release_matrix_value=""
+    e2e_matrix_value=""
+    inline_matrix_value=""
+    if [[ -f "$release_live_matrix_file" && ! -L "$release_live_matrix_file" ]]; then
+      release_matrix_value=$(grep -E '^matrix=' "$release_live_matrix_file" 2>/dev/null || true)
+    fi
+    if [[ -f "$e2e_live_matrix_file" && ! -L "$e2e_live_matrix_file" ]]; then
+      e2e_matrix_value=$(grep -E '^matrix=' "$e2e_live_matrix_file" 2>/dev/null || true)
+    fi
+    if [[ -f "$inline_e2e_matrix_file" && ! -L "$inline_e2e_matrix_file" ]]; then
+      inline_matrix_value=$(grep -E '^matrix=' "$inline_e2e_matrix_file" 2>/dev/null || true)
+    fi
+
+    if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+      :
+    elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+      :
+    else
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in ~/.claude/.silver-bullet/inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+      exit 0
+    fi
   fi
 
-  if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
-    :
-  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
-    :
-  else
-    emit_block "$(printf '🛑 RELEASE BLOCKED — The live matrix and inline todo-app journey have not both been completed for this release session.\n\nRun tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in ~/.claude/.silver-bullet/inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
-    exit 0
-  fi
+  if [[ "$release_require_pre_release_quality_gate" == "true" || "${SB_REQUIRE_PRE_RELEASE_QUALITY_GATE:-0}" == "1" ]]; then
+    quality_gate_ready=false
+    if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
+      quality_gate_ready=true
+      for marker in \
+        quality-gate-stage-1 \
+        quality-gate-stage-2 \
+        quality-gate-stage-3 \
+        quality-gate-stage-4 \
+        full-test-suite-rerun; do
+        if ! grep -qx "$marker" "$quality_gate_state_file" 2>/dev/null; then
+          quality_gate_ready=false
+          break
+        fi
+      done
+    fi
 
-  quality_gate_ready=false
-  if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
-    quality_gate_ready=true
-    for marker in \
-      quality-gate-stage-1 \
-      quality-gate-stage-2 \
-      quality-gate-stage-3 \
-      quality-gate-stage-4 \
-      full-test-suite-rerun; do
-      if ! grep -qx "$marker" "$quality_gate_state_file" 2>/dev/null; then
-        quality_gate_ready=false
-        break
-      fi
-    done
-  fi
-
-  if [[ "$quality_gate_ready" != true ]]; then
-    emit_block "$(printf '🛑 RELEASE BLOCKED — The pre-release quality sequence has not been completed in this session.\n\nBefore /silver-release, complete the 4-stage quality gate in docs/internal/pre-release-quality-gate.md, record quality-gate-stage-1 through quality-gate-stage-4 in ~/.claude/.sidekick/quality-gate-state, rerun bash tests/run-all-tests.sh, record full-test-suite-rerun in the same file, then retry.' )"
-    exit 0
+    if [[ "$quality_gate_ready" != true ]]; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The configured pre-release quality sequence has not been completed in this session.\n\nComplete the configured 4-stage quality gate, record quality-gate-stage-1 through quality-gate-stage-4 in %s, rerun bash tests/run-all-tests.sh, record full-test-suite-rerun in the same file, then retry.' "$quality_gate_state_file" )"
+      exit 0
+    fi
   fi
 
   release_commit_sha=$(git -C "$project_root" rev-parse HEAD 2>/dev/null || true)
@@ -627,8 +647,8 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
-  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+  DEFAULT_REQUIRED="silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 fi
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
@@ -679,15 +699,22 @@ for skill in $required_skills; do
   fi
 done
 
-# ── Check code review triad ordering ─────────────────────────────────────────
-# Enforce: code-review must precede requesting-code-review,
-#          requesting-code-review must precede receiving-code-review
+# ── Check code review ordering ───────────────────────────────────────────────
+# Enforce: requesting-code-review frames the review, gsd-code-review produces
+# REVIEW.md, and receiving-code-review triages findings after review output exists.
 ordering_issues=""
-if has_skill "code-review" && has_skill "requesting-code-review"; then
-  cr_line=$(skill_line "code-review")
+if has_skill "requesting-code-review" && has_skill "gsd-code-review"; then
   req_line=$(skill_line "requesting-code-review")
-  if [[ "$cr_line" -gt 0 && "$req_line" -gt 0 && "$req_line" -lt "$cr_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /requesting-code-review was run BEFORE /code-review (wrong order)\n"
+  cr_line=$(skill_line "gsd-code-review")
+  if [[ "$req_line" -gt 0 && "$cr_line" -gt 0 && "$cr_line" -lt "$req_line" ]]; then
+    ordering_issues="${ordering_issues}  ⚠️  /gsd:code-review was run BEFORE /requesting-code-review (wrong order)\n"
+  fi
+fi
+if has_skill "gsd-code-review" && has_skill "receiving-code-review"; then
+  cr_line=$(skill_line "gsd-code-review")
+  recv_line=$(skill_line "receiving-code-review")
+  if [[ "$cr_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$cr_line" ]]; then
+    ordering_issues="${ordering_issues}  ⚠️  /receiving-code-review was run BEFORE /gsd:code-review (wrong order)\n"
   fi
 fi
 if has_skill "requesting-code-review" && has_skill "receiving-code-review"; then
@@ -698,21 +725,49 @@ if has_skill "requesting-code-review" && has_skill "receiving-code-review"; then
   fi
 fi
 
-# ── Artifact existence check (non-blocking, informational) ───────────────────
+# ── Artifact existence check (blocking for recorded GSD lifecycle work) ───────
 # Verifies that key GSD phases produced expected output files.
 # These checks prove the work was done, not just that the skill was invoked.
-artifact_warnings=""
+artifact_blocks=""
 project_root=$(dirname "$config_file")
+
+find_planning_artifact() {
+  local pattern="$1"
+  [[ -d "$project_root/.planning" ]] || return 1
+  find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
+}
 
 # gsd-execute-phase should produce .planning/STATE.md
 if has_skill "gsd-execute-phase" && [[ ! -f "$project_root/.planning/STATE.md" ]]; then
-  artifact_warnings="${artifact_warnings}  ⚠️  /gsd:execute-phase was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /gsd:execute-phase was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
 fi
 
-# gsd-verify-work should produce VERIFICATION.md
-if has_skill "gsd-verify-work" && [[ ! -f "$project_root/VERIFICATION.md" ]] && \
-   [[ ! -f "$project_root/.planning/VERIFICATION.md" ]]; then
-  artifact_warnings="${artifact_warnings}  ⚠️  /gsd:verify-work was recorded but VERIFICATION.md is absent — was verification actually completed?\n"
+# gsd-verify-work should produce UAT/verification artifacts.
+if has_skill "gsd-verify-work" && \
+   [[ ! -f "$project_root/.planning/UAT.md" ]] && \
+   ! find_planning_artifact '*-UAT.md' && \
+   ! find_planning_artifact '*VERIFICATION.md' && \
+   ! find_planning_artifact 'VERIFICATION.md'; then
+  artifact_blocks="${artifact_blocks}  ❌ /gsd:verify-work was recorded but no UAT/VERIFICATION artifact was found under .planning/ — was verification actually completed?\n"
+fi
+
+if has_skill "gsd-code-review" && \
+   [[ ! -f "$project_root/.planning/REVIEW.md" ]] && \
+   ! find_planning_artifact '*-REVIEW.md' && \
+   ! find_planning_artifact 'REVIEW.md'; then
+  artifact_blocks="${artifact_blocks}  ❌ /gsd:code-review was recorded but no REVIEW artifact was found under .planning/ — was code review actually completed?\n"
+fi
+
+if has_skill "gsd-secure-phase" && \
+   ! find_planning_artifact '*-SECURITY.md' && \
+   ! find_planning_artifact 'SECURITY.md'; then
+  artifact_blocks="${artifact_blocks}  ❌ /gsd:secure-phase was recorded but no SECURITY artifact was found under .planning/ — was security verification actually completed?\n"
+fi
+
+if has_skill "gsd-validate-phase" && \
+   ! find_planning_artifact '*-VALIDATION.md' && \
+   ! find_planning_artifact 'VALIDATION.md'; then
+  artifact_blocks="${artifact_blocks}  ❌ /gsd:validate-phase was recorded but no VALIDATION artifact was found under .planning/ — was validation actually completed?\n"
 fi
 
 # Fresh test execution marker: if verify-tests is required and has been recorded,
@@ -768,8 +823,8 @@ elif [[ -n "$ordering_issues" ]]; then
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
-elif [[ -n "$artifact_warnings" ]]; then
-  msg=$(printf '⚠️  ARTIFACT WARNING — Skills recorded but expected output files are missing. This may indicate vacuous skill invocation (calling a skill without doing the work):\n\n%s\nProceed only if these artifacts exist under a different path. Enforcement is invocation-based, not outcome-based.' "$artifact_warnings")
+elif [[ -n "$artifact_blocks" ]]; then
+  msg=$(printf '🛑 ARTIFACT BLOCKED — GSD lifecycle markers were recorded but expected output files are missing. This may indicate vacuous skill invocation or an incomplete workflow:\n\n%s\nComplete the owning GSD workflow step and produce the artifact before final delivery.' "$artifact_blocks")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
@@ -777,7 +832,8 @@ elif [[ -n "$artifact_warnings" ]]; then
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
-  jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
+  emit_block "$msg"
+  exit 0
 else
   if [[ -n "$ignored" ]]; then
     ignored_lines=""

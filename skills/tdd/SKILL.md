@@ -12,13 +12,13 @@ trigger:
   - "failing test"
 ---
 
-# /silver:tdd — Internal TDD Enforcement
+# tdd — Internal TDD Enforcement
 
 This skill is an internal Silver Bullet policy layer. It is not picker-visible and is only used by SB workflows.
 
 Canonical contract: `superpowers:test-driven-development`
 
-Before any implementation work, invoke `superpowers:test-driven-development` via the Skill tool and follow its red-green-refactor cycle exactly. Then apply the Silver Bullet-specific rules below.
+Before any implementation work, invoke `superpowers:test-driven-development` via the Skill tool and follow its red-green-refactor cycle exactly. This wrapper is the SB-approved Superpowers delegation point for TDD; callers enter through the SB `tdd` wrapper, not the Superpowers skill directly. Then apply the Silver Bullet-specific rules below.
 
 Activation point: SB workflows invoke this hidden gate immediately before `gsd-execute-phase --tdd` or an equivalent execution boundary for implementation work.
 

@@ -7,9 +7,10 @@ Detailed phase-level designs live in `docs/specs/YYYY-MM-DD-<topic>-design.md`.
 
 Silver Bullet ships two first-class plugin surfaces: a Claude Code plugin (`.claude-plugin/`)
 and a Codex bundle (`plugins/silver-bullet/`). Both are composed of shell hook scripts, slash-command
-markdown files, skill markdown files, JSON configuration, and workflow documentation. SB wraps the
-GSD, Superpowers, Engineering, and Design plugins with an enforcement layer that prevents the
-runtime from skipping required workflow steps.
+markdown files, skill markdown files, JSON configuration, and workflow documentation. SB wraps GSD
+as the lifecycle authority and calls Superpowers, Engineering, Design, and other helper plugins only
+at explicit workflow-selected boundaries. Its enforcement layer prevents the runtime from skipping
+required workflow steps.
 
 Claude packaging remains the canonical host-integrated surface. The Codex bundle is SB-only and
 is synchronized from the repo root. Third-party plugins that do not publish Codex artifacts are

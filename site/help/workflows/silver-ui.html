@@ -189,10 +189,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>/testing-strategy</code>. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing plans.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>/writing-plans</code> (superpowers:writing-plans). Purpose: spec and test strategy into implementation plan with frontend-design emphasis.</p>
+      <p>Invoke the local <code>/writing-plans</code> helper only when SB needs a pre-GSD plan-shaping aid for complex UI scope. Otherwise, keep implementation planning inside <code>gsd:plan-phase</code>.</p>
 
       <h3>Step 3 — Pre-plan quality gates</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. All 9 dimensions run, with usability and testability emphasized for UI work. Security is handled through the quality-gate security dimension and later secure-phase review.</p>
+      <p>Invoke <code>/silver:quality-gates</code>. All applicable dimensions run, with usability and testability emphasized for UI work. Security is handled through the quality-gate security dimension and later secure-phase review.</p>
 
       <h3>Step 4 — Discuss phase</h3>
       <p>Invoke <code>gsd:discuss-phase</code>. UI phase context → <code>CONTEXT.md</code> with locked decisions.</p>
@@ -204,10 +204,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>gsd:plan-phase</code>. Implementation <code>PLAN.md</code> built on top of <code>UI-SPEC.md</code> contract.</p>
 
       <h3>Step 7 — Execute phase and TDD</h3>
-      <p>Execute: invoke <code>gsd:execute-phase --tdd</code> for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke <code>gsd:execute-phase</code> without <code>--tdd</code>. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>/test-driven-development</code> gate can run before execution. The internal <code>/test-driven-development</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution boundary starts.</p>
+      <p>Execute: invoke <code>gsd:execute-phase --tdd</code> for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke <code>gsd:execute-phase</code> without <code>--tdd</code>. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>tdd</code> gate can run before execution. The internal <code>tdd</code> gate is hidden from the picker and delegates to Superpowers only at that explicit SB execution boundary.</p>
 
       <h3>Step 8 — Code review</h3>
-      <p>Run review sequence in order: <code>/requesting-code-review</code> → <code>gsd:review</code> → [if issues: <code>gsd:review-fix</code>] → [for major UI systems: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>.</p>
+      <p>Run review sequence in order: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for major UI systems: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>. The review-framing helpers run only because this SB review boundary selects them.</p>
 
       <h3 id="ui-visual-audit">Step 9 — UI visual audit</h3>
       <p>Invoke <code>gsd:ui-review</code>. <strong>This step is unique to the UI workflow.</strong> Purpose: 6-pillar visual audit of implemented UI:</p>
@@ -230,7 +230,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>gsd:validate-phase</code>. Nyquist validation gap filling.</p>
 
       <h3>Step 13 — Pre-ship quality gates</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. Full 9-dimension sweep. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>/silver:quality-gates</code>. 8 core dimensions plus conditional gates. <strong>Non-skippable gate.</strong></p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
       <p>Invoke <code>/finishing-a-development-branch</code> → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. Phase-level merge.</p>

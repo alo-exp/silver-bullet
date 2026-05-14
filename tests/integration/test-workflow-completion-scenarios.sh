@@ -20,10 +20,10 @@ out=$(run_stop_check "Stop")
 assert_blocked "S1.1: stop-check blocks when required skills are missing" "$out"
 
 # Step 2: Record all skills progressively
-skills=("silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+skills=("silver-quality-gates" "requesting-code-review" "gsd-code-review" "receiving-code-review"
         "testing-strategy" "documentation" "finishing-a-development-branch"
         "deploy-checklist" "silver-create-release" "verification-before-completion"
-        "test-driven-development" "tech-debt")
+        "test-driven-development" "tech-debt" "verify-tests")
 for skill in "${skills[@]}"; do
   run_record_skill "$skill" >/dev/null
 done
@@ -70,8 +70,8 @@ write_default_config
 # All skills present
 cat > "$TMPSTATE" << 'EOSKILLS'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -81,7 +81,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOSKILLS
+date +%s > "$VERIFY_TESTS_FILE"
 
 # Step 1: PR create allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
@@ -140,11 +142,11 @@ echo "--- Scenario 5: Skill ordering enforcement ---"
 integration_setup
 write_default_config
 
-# Write all skills but with requesting-code-review BEFORE code-review
+# Write all skills but with gsd-code-review before requesting-code-review.
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-code-review
 requesting-code-review
-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -154,7 +156,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+date +%s > "$VERIFY_TESTS_FILE"
 
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_contains "S5.1: ordering issue detected" "$out" "wrong order"

@@ -161,9 +161,9 @@ skills are recorded in the state file before allowing source file edits.
 | Stage | Condition | Action |
 |-------|-----------|--------|
 | A | Planning skills missing | HARD STOP — deny/block |
-| B | Planning done, no `code-review` | BLOCK source edits |
-| — | Phase skip detected (finalization before code-review) | BLOCK |
-| C | `code-review` done, finalization not yet started | Allow with reminder |
+| B | Planning done, no `gsd-code-review` | Allow implementation edits; final delivery remains gated |
+| — | Phase skip detected (finalization before gsd-code-review) | Warn but allow fixes |
+| C | `gsd-code-review` done, finalization not yet started | Allow with reminder |
 | D | All phases complete | Allow |
 
 **Additional protections in this hook (sub-sections):**
@@ -232,13 +232,14 @@ only (`required_planning`). Blocked with "COMMIT BLOCKED".
 **§9 pre-release gate:** `gh release create` additionally requires
 `quality-gate-stage-1` through `quality-gate-stage-4` in the state file.
 
-**Ordering enforcement:** Checks that `code-review` precedes `requesting-code-review`
-and `receiving-code-review` in the state file. Out-of-order invocation is flagged.
+**Ordering enforcement:** Checks that `requesting-code-review` frames review before
+`gsd-code-review`, and that `receiving-code-review` runs after review output exists.
+Out-of-order invocation is flagged.
 
 **Main branch handling:** On `main`/`master`, `finishing-a-development-branch` is
 removed from the required list.
 
-**DevOps workflow:** `blast-radius` and `devops-quality-gates` replace `quality-gates`
+**DevOps workflow:** `silver-blast-radius` and `devops-quality-gates` replace `silver-quality-gates`
 for Tier 1.
 
 **Config keys read:** `skills.required_planning`, `skills.required_deploy`,
@@ -330,7 +331,7 @@ block. Runs async so it never delays Claude's next action.
 
 **Output format:**
 ```json
-{"hookSpecificOutput":{"message":"✅ quality-gates ✅ code-review ❌ testing-strategy ..."}}
+{"hookSpecificOutput":{"message":"Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/3 | FINALIZATION 0/4 | Next: /requesting-code-review"}}
 ```
 
 **Config keys read:** `skills.required_deploy`, `state.state_file`
@@ -602,7 +603,7 @@ techniques that are insufficient on their own:
 | `project.src_pattern` | string | `/src/` | Path prefix that triggers stage enforcement in `dev-cycle-check.sh` |
 | `project.src_exclude_pattern` | string | `__tests__\|\.test\.` | Regex: files matching this skip enforcement (test files) |
 | `project.active_workflow` | string | `full-dev-cycle` | Sets skill lists for intermediate and final delivery checks |
-| `skills.required_planning` | string[] | `["quality-gates"]` | Skills required before any source edit (Stage A gate) |
+| `skills.required_planning` | string[] | `["silver-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"]` | Skills required before any source edit (Stage A gate) |
 | `skills.required_deploy` | string[] | (12-skill default list) | Skills required before PR/deploy/release commands and before Stop hook allows completion |
 | `state.state_file` | string | `~/.claude/.silver-bullet/state` | Path to the skill recording state file |
 | `state.trivial_file` | string | `~/.claude/.silver-bullet/trivial` | Path to the trivial bypass marker file |
@@ -613,18 +614,22 @@ techniques that are insufficient on their own:
 One skill name per line, appended by `record-skill.sh` after each Skill invocation:
 
 ```
-quality-gates
-code-review
+silver-quality-gates
 requesting-code-review
+gsd-code-review
 receiving-code-review
-testing-strategy
-documentation
+gsd-discuss-phase
+gsd-plan-phase
+gsd-execute-phase
+gsd-verify-work
+gsd-ship
+gsd-secure-phase
+gsd-validate-phase
 finishing-a-development-branch
-deploy-checklist
-create-release
+silver-create-release
 verification-before-completion
 test-driven-development
-tech-debt
+verify-tests
 ```
 
 ### Environment Variable Overrides
@@ -637,36 +642,44 @@ tech-debt
 ### Default required_deploy Skill List (full-dev-cycle workflow)
 
 ```
-quality-gates
-code-review
+silver-quality-gates
+gsd-discuss-phase
+gsd-plan-phase
+gsd-execute-phase
+gsd-verify-work
+gsd-ship
 requesting-code-review
+gsd-code-review
 receiving-code-review
-testing-strategy
-documentation
 finishing-a-development-branch
-deploy-checklist
-create-release
+silver-create-release
+gsd-secure-phase
+gsd-validate-phase
 verification-before-completion
 test-driven-development
-tech-debt
+verify-tests
 ```
 
 ### Default required_deploy Skill List (devops-cycle workflow)
 
 ```
-blast-radius
+silver-blast-radius
 devops-quality-gates
-code-review
+gsd-discuss-phase
+gsd-plan-phase
+gsd-execute-phase
+gsd-verify-work
+gsd-ship
 requesting-code-review
+gsd-code-review
 receiving-code-review
-testing-strategy
-documentation
 finishing-a-development-branch
-deploy-checklist
-create-release
+silver-create-release
+gsd-secure-phase
+gsd-validate-phase
 verification-before-completion
 test-driven-development
-tech-debt
+verify-tests
 ```
 
 ### Mandatory Finalization Skills (always required regardless of config)
@@ -675,10 +688,10 @@ The following skills are always appended to the `required_deploy` list and canno
 removed via config:
 
 ```
-testing-strategy
-documentation
 finishing-a-development-branch
-deploy-checklist
+verification-before-completion
+test-driven-development
+verify-tests
 ```
 
 Exception: `finishing-a-development-branch` is dropped when on `main` or `master` branch.

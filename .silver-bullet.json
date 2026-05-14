@@ -1,6 +1,6 @@
 {
-  "config_version": "0.34.0",
-  "version": "0.34.0",
+  "config_version": "0.35.0",
+  "version": "0.35.0",
   "project": {
     "name": "silver-bullet",
     "src_pattern": "/hooks/|/skills/|/templates/",
@@ -9,11 +9,26 @@
   },
   "skills": {
     "required_planning": [
-      "silver-quality-gates"
+      "silver-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase"
+    ],
+    "required_planning_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase"
     ],
     "required_deploy": [
       "silver-quality-gates",
-      "code-review",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-code-review",
+      "gsd-secure-phase",
+      "gsd-validate-phase",
       "requesting-code-review",
       "receiving-code-review",
       "finishing-a-development-branch",
@@ -25,7 +40,14 @@
     "required_deploy_devops": [
       "silver-blast-radius",
       "devops-quality-gates",
-      "code-review",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-code-review",
+      "gsd-secure-phase",
+      "gsd-validate-phase",
       "requesting-code-review",
       "receiving-code-review",
       "finishing-a-development-branch",
@@ -58,7 +80,22 @@
       "usability",
       "testability",
       "extensibility",
+      "silver-bugfix",
+      "silver-clarify",
+      "silver-devops",
+      "silver-fast",
+      "silver-feature",
       "silver-forensics",
+      "silver-handoff",
+      "silver-ingest",
+      "silver-migrate",
+      "silver-release",
+      "silver-research",
+      "silver-review-stats",
+      "silver-spec",
+      "silver-ui",
+      "silver-update",
+      "silver-validate",
       "silver-add",
       "silver-init",
       "silver-ensure-docs",
@@ -73,10 +110,12 @@
       "gsd-execute-phase",
       "gsd-verify-work",
       "gsd-ship",
+      "gsd-code-review",
       "gsd-debug",
       "gsd-ui-phase",
       "gsd-ui-review",
       "gsd-secure-phase",
+      "gsd-validate-phase",
       "silver-remove",
       "silver-rem",
       "silver-scan"
@@ -92,6 +131,12 @@
   "state": {
     "state_file": "~/.claude/.silver-bullet/state",
     "trivial_file": "~/.claude/.silver-bullet/trivial"
+  },
+  "release": {
+    "profile": "silver-bullet-plugin",
+    "require_plugin_runtime_matrix": true,
+    "require_pre_release_quality_gate": true,
+    "quality_gate_state_file": "~/.claude/.silver-bullet/quality-gate-state"
   },
   "_notifications_comment": "Google Chat webhook is now read from the $SB_GCHAT_WEBHOOK env var (see skills/silver-create-release/SKILL.md). Do NOT commit webhook URLs to this file.",
   "semantic_compression": {

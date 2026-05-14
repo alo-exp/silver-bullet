@@ -8,27 +8,36 @@ version: 0.1.0
 
 # /silver:feature — Feature Development Workflow
 
-SB orchestrator for new feature development. Chains GSD (execution backbone), Superpowers (craft discipline), MultAI (multi-AI intelligence), and SB quality gates in the sequence defined in silver-bullet.md §2h.
+SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around the GSD phase lifecycle. GSD remains the execution backbone; Superpowers and other dependency plugins are invoked only when a selected SB flow explicitly requires them.
 
 Never implements features directly — orchestrates only.
 
 ## Mandatory dependency execution
 
-Before any local implementation work, the execution trace must show the dependency chain for this workflow. Invoke these downstream skills by their exact trigger syntax in order; plain prose mentions do not count:
+SB separates pre-execution gates from post-execution gates.
+
+Before implementation edits, the execution trace must show only the pre-execution dependency chain that unlocks GSD execution:
 
 1. `silver:scan` when rapid SB orientation is useful
 2. `gsd-map-codebase` when the project is brownfield or deep codebase mapping is needed
-3. `silver:clarify`
+3. `silver:clarify` when scope is fuzzy
 4. `silver:research` when FLOW DECIDE is needed for architecture, stack, API, or data-model choices
 5. `silver:quality-gates`
 6. `gsd:discuss-phase`
 7. `gsd:plan-phase`
-8. `gsd:execute-phase` or `gsd:autonomous`
-9. `gsd:verify-work`
+
+After implementation, final delivery requires the post-execution chain:
+
+1. `gsd:execute-phase` or `gsd:autonomous`
+2. `gsd:verify-work`
+3. `gsd-code-review` and review triage/fix steps
+4. `gsd-secure-phase`
+5. `gsd-validate-phase`
+6. `gsd-ship`
 
 If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
 
-The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
+The `workflow-chain-guard.sh` hook enforces only the pre-execution chain at edit time. Completion hooks enforce review, security, verification, artifacts, and ship gates before final delivery.
 
 ## Pre-flight: Load Preferences
 
@@ -195,20 +204,11 @@ FOR each phase in remaining_phases:
       rm -f ~/.claude/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
-  AFTER phase complete: advance to next phase
-  UPDATE WORKFLOW.md Phase Iterations table
+  AFTER phase complete: advance to next phase through GSD state
 END FOR
 ```
 
-### 4. Update WORKFLOW.md After Each Phase
-
-After completing all flows for a phase, write to WORKFLOW.md Phase Iterations table:
-
-```
-| Phase {N} | FLOW 5 ✓ → FLOW 7 ✓ → FLOW 9 ✓ → FLOW 10 ✓ → FLOW 11 ✓ → FLOW 12 ✓ → FLOW 13 ✓ |
-```
-
-### 5. Flow Delegation
+### 4. Flow Delegation
 
 The existing Step 0 through Step 17 sections below serve as the implementation of each flow in the loop. The supervision loop (next section) runs BETWEEN each flow execution.
 
@@ -216,9 +216,9 @@ The existing Step 0 through Step 17 sections below serve as the implementation o
 
 The supervision loop runs BETWEEN each flow completion. It checks exit conditions, evaluates composition changes, detects stall, advances, and reports progress. Implement as inline logic at each flow boundary.
 
-Six steps per boundary: **SL-1** exit-condition check → **SL-2** composition re-evaluation (debug/UI insertion triggers) → **SL-3** 4-tier anti-stall detection → **SL-4** advance → **SL-5** progress report → **SL-6** WORKFLOW.md update.
+Six steps per boundary: **SL-1** exit-condition check → **SL-2** composition re-evaluation (debug/UI insertion triggers) → **SL-3** 4-tier anti-stall detection → **SL-4** advance → **SL-5** progress report → **SL-6** workflow tracker update via `scripts/workflows.sh`.
 
-For full details on each step including stall-detection tiers, heartbeat sentinel, and WORKFLOW.md table formats, see **`references/supervision-loop.md`**.
+For full details on each step including stall-detection tiers, heartbeat sentinel, and workflow tracker formats, see **`references/supervision-loop.md`**.
 
 ---
 
@@ -229,7 +229,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
-**Non-skippable gates:** `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
 
 ## Step 0: Complexity Triage
 
@@ -275,11 +275,11 @@ If A: invoke the installed multi-AI research/orchestration skill if available. N
 
 ## Step 2: Testing Strategy
 
-Invoke `/testing-strategy` via the Skill tool. Purpose: define test levels, tooling, coverage targets — MUST run after spec approval and before writing-plans so test requirements are baked into the implementation plan.
+Invoke `testing-strategy` via the Skill tool when the dependency is installed. Purpose: define test levels, tooling, coverage targets before GSD planning. If unavailable, capture test strategy in GSD discuss/plan artifacts instead of inventing an untracked substitute.
 
 ## Step 2.5: Writing Plans
 
-Invoke `superpowers:writing-plans` via the Skill tool. Purpose: convert approved spec + test strategy → structured implementation plan.
+Invoke `writing-plans` when SB needs its local planning helper; otherwise keep implementation planning inside `gsd:plan-phase`. Do not run Superpowers planning unless the selected SB flow explicitly requires that dependency.
 
 ## Step 2.7: Pre-Build Validation
 
@@ -296,11 +296,11 @@ Only proceed to Step 3 (silver:quality-gates) when silver:validate reports zero 
 
 WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
 
-## Step 3: Pre-Plan Quality Gates (9 dimensions)
+## Step 3: Pre-Plan Quality Gates (8 core dimensions + conditional gates)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: all 9 dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: 8 core dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility — plus conditional AI/LLM safety when the phase includes AI behavior and `devops-quality-gates` for infra-touching changes.
 
-`silver:security` is always mandatory regardless of §10 preferences. `silver:testability` is embedded in silver:quality-gates (one of the 9 dimensions — not a separate step).
+`security` is always mandatory regardless of §10 preferences. `testability` is embedded in silver:quality-gates (one of the core dimensions — not a separate step).
 
 ## Step 4: Discuss Phase
 
@@ -320,9 +320,9 @@ Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md with verification l
 - For implementation plans, invoke `gsd-execute-phase --tdd` via the Skill tool.
 - For config-only, docs-only, or infra-only plans, invoke `gsd-execute-phase` without `--tdd`.
 
-**If mode is Autonomous (§10e):** invoke `gsd-autonomous` via the Skill tool. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `silver:tdd` gate can run before execution.
+**If mode is Autonomous (§10e):** invoke `gsd-autonomous` via the Skill tool. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `tdd` gate can run before execution.
 
-**Internal TDD gate:** `silver:tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It delegates to `superpowers:test-driven-development`, so the execution boundary cannot start until red-green-refactor discipline is in place.
+**Internal TDD gate:** `tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It delegates to `superpowers:test-driven-development`, so Superpowers is used only at this explicit SB execution boundary.
 
 **Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
@@ -346,15 +346,11 @@ Invoke `gsd-add-tests` via the Skill tool. Purpose: generate tests from UAT crit
 
 ## Step 9a: Request Code Review
 
-Invoke `silver:request-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
-
-## Step 9a2: Code Review Criteria
-
-Invoke `/code-review` via the Skill tool. Purpose: establish review criteria and checklist before spawning reviewer agents — ensures reviewers have explicit quality bar to evaluate against.
+Invoke `requesting-code-review` (superpowers:requesting-code-review) via the Skill tool. Purpose: frame review scope and focus rigorously before spawning reviewers.
 
 ## Step 9b: Run Code Review
 
-Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md.
+Invoke `gsd-code-review` via the Skill tool. Purpose: spawn reviewer agents → REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
 
 If issues found in REVIEW.md: invoke `gsd-code-review-fix` via the Skill tool to auto-fix findings atomically before human review.
 
@@ -366,7 +362,7 @@ Invoke `gsd-review --all` via the Skill tool. Purpose: cross-AI adversarial peer
 
 ## Step 9d: Receive Review
 
-Invoke `silver:receive-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
+Invoke `receiving-code-review` (superpowers:receiving-code-review) via the Skill tool. Purpose: disciplined response to findings — no blind agreement.
 
 ## Step 9e: Backlog capture from review
 
@@ -381,7 +377,7 @@ If all findings were fixed or no advisory items exist, output: "No deferred revi
 
 ## Step 10: Security Review
 
-Invoke `silver:security` via the Skill tool. Non-skippable gate.
+Invoke `security` via the Skill tool. Non-skippable gate.
 
 ## Step 11: Secure Phase
 
@@ -393,11 +389,11 @@ Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist validation gap 
 
 ## Step 12b: Tech Debt Review
 
-Invoke `/tech-debt` via the Skill tool. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver:add`.
+Invoke `tech-debt` via the Skill tool when available. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver:add`.
 
-## Step 13: Pre-Ship Quality Gates (9 dimensions)
+## Step 13: Pre-Ship Quality Gates (8 core dimensions + conditional gates)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before shipping. Non-skippable gate.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: full 8-core-dimension sweep, plus conditional AI/LLM and DevOps gates where applicable, before shipping. Non-skippable gate.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -421,7 +417,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool. Purpose: merge / PR / cleanup decision.
+Invoke `finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool. Purpose: merge / PR / cleanup decision.
 
 ## Step 15a: PR Branch (ask user)
 
@@ -503,4 +499,4 @@ If no items were deferred during this session, output: "Post-work sweep: no defe
 
 ### Reference Files
 
-- **`references/supervision-loop.md`** — Full supervision loop step details (SL-1 through SL-6), anti-stall tiers, heartbeat sentinel, WORKFLOW.md formats
+- **`references/supervision-loop.md`** — Full supervision loop step details (SL-1 through SL-6), anti-stall tiers, heartbeat sentinel, workflow tracker formats

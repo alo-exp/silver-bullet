@@ -269,7 +269,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div>
           <div class="step-meta"><span class="step-title">/silver:quality-gates</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">All relevant Silver Bullet quality dimensions are evaluated against the current design: modularity, reusability, scalability, security, reliability, usability, testability, extensibility, and AI/LLM safety where applicable. All relevant dimensions must pass. <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
-          <div class="step-output">→ Produces: Quality gate report (all 9 dimensions pass/fail)</div>
+          <div class="step-output">→ Produces: Quality gate report (8 core dimensions plus conditional gates pass/fail)</div>
         </div>
       </div>
 
@@ -297,7 +297,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">6</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Wave-based parallel execution. GSD splits the plan into waves of independent tasks, dispatches each task as a separate agent in an isolated worktree, then runs a merge gate after each wave before the next begins. <strong>Before writing implementation code: invoke <code>/test-driven-development</code> (required) — red-green-refactor discipline per task.</strong> One atomic commit per task.</p>
+          <p class="step-desc">Wave-based parallel execution. GSD splits the plan into waves of independent tasks, dispatches each task as a separate agent in an isolated worktree, then runs a merge gate after each wave before the next begins. <strong>Before writing implementation code: invoke <code>tdd</code> (required) — red-green-refactor discipline per task.</strong> One atomic commit per task.</p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
       </div>
@@ -325,16 +325,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
-          <div class="step-meta"><span class="step-title">/code-review</span><span class="badge badge-eng">Engineering</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Structured peer code quality review: security (SQL injection, XSS, CSRF, auth flaws), performance (N+1 queries, unbounded results), correctness (edge cases, race conditions), and maintainability. Run this before dispatching the automated reviewer. Distinct from GSD's goal verification — this reviews the code quality itself.</p>
+          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Frames review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper discipline. This helper does not replace GSD's authoritative code-review artifact.</p>
         </div>
       </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Dispatches <code>superpowers:code-reviewer</code> as an automated reviewer subagent for peer code quality review: security, performance, correctness, and readability. Distinct from GSD's goal verification — this reviews the code itself, not whether it achieves the goal.</p>
+          <div class="step-meta"><span class="step-title">/gsd:code-review</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Produces the authoritative <code>REVIEW.md</code> through GSD reviewer agents. Distinct from GSD's goal verification — this reviews the code itself, not whether it achieves the goal.</p>
         </div>
       </div>
 
@@ -346,7 +346,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
-          <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Triages all feedback from Step 9. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 11–12).</p>
         </div>
       </div>

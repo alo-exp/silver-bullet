@@ -403,23 +403,23 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/code-review</span><span class="badge badge-eng">Engineering</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Structured peer code quality review for IaC: hardcoded values that should be variables, overly permissive security groups, missing encryption or backups, missing tags, and resource-level access control gaps. Run this before dispatching the automated reviewer.</p>
+          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Frames IaC review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper discipline. This helper does not replace GSD's authoritative code-review artifact.</p>
         </div>
       </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
-          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Dispatches <code>superpowers:code-reviewer</code> for IaC peer code quality review: hardcoded values that should be variables, missing tags/labels, security groups that are too permissive, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files. Review loop: re-dispatch until <i data-lucide="check-circle" style="color:var(--green);vertical-align:middle"></i> Approved TWICE IN A ROW. Self-limiting.</p>
+          <div class="step-meta"><span class="step-title">/gsd:code-review</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Produces the authoritative <code>REVIEW.md</code> through GSD reviewer agents. For IaC: hardcoded values that should be variables, missing tags/labels, overly permissive security groups, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files.</p>
         </div>
       </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">11</div>
         <div>
-          <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">Superpowers</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Triage all feedback. Accepted items become the input for post-review execution (Steps 12–13).</p>
         </div>
       </div>

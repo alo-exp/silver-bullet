@@ -333,7 +333,7 @@ intentional; both lists contain the same deploy, review, and verification skills
    in the state file and will always appear as "missing" in the skills check.
 4. Invoke all real skills, then trigger a Stop event — phantom skills still block.
 
-**Known phantom skills (as of v0.27.0):**
+**Historical phantom skills (as of v0.27.0; not the current release contract):**
 `code-review`, `testing-strategy`, `documentation`, `deploy-checklist`, `tech-debt`
 
 **Root cause:**

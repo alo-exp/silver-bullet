@@ -48,11 +48,11 @@ classifies intent and dispatches to the appropriate workflow.
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
-- `silver:security` is always mandatory — cannot be skipped via §5
+- `security` is always mandatory — cannot be skipped via §5
 - `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
-- TDD enforcement (`silver:tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
+- TDD enforcement (`tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
 - `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
-- Code review always uses the Superpowers framing pair: `silver:request-review` before and `silver:receive-review` after
+- Code review always uses the Superpowers framing pair: `requesting-code-review` before and `receiving-code-review` after
 - Cross-AI review (`gsd-review`) triggers automatically for architecturally significant changes
 - `gsd-ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
 - When user selects Autonomous mode at session start, `gsd-autonomous` drives all remaining phases
@@ -63,7 +63,7 @@ When the user requests skipping a workflow step, SB:
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. Records the decision in §10 if user chooses A permanently
 
-Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 **Step-by-step workflow tables (canonical — skill files implement these):**
 
@@ -298,10 +298,10 @@ Replace the existing "Step 2: Match intent against routing table" section with:
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
-| "IaC quality", "devops quality", "terraform quality" | `silver:devops-quality-gates` | Ad-hoc DevOps quality |
+| "IaC quality", "devops quality", "terraform quality" | `devops-quality-gates` | Ad-hoc DevOps quality |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Post-mortem investigation |
 | "release notes", "github release", "cut release", "tag release" | `silver:create-release` | Release artifact creation |
-| "which IaC tool", "terraform vs pulumi", "which cloud skill" | `silver:devops-skill-router` | IaC tool routing |
+| "which IaC tool", "terraform vs pulumi", "which cloud skill" | `devops-skill-router` | IaC tool routing |
 
 **"Ship" disambiguation:**
 

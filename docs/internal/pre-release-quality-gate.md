@@ -1,55 +1,56 @@
 # Pre-Release Quality Gate
 
-Before ANY release (`/create-release`), the following four-stage quality gate MUST
+Before ANY release (`/silver-create-release`), the following four-stage quality gate MUST
 be completed in order. Each stage has its own completion criteria. Skipping a stage
 or declaring it complete without meeting the criteria is a violation.
 
 **IMPORTANT**: This gate runs AFTER the normal workflow finalization steps (testing,
-documentation, branch cleanup, deploy checklist) and BEFORE `/create-release`.
-The `/create-release` skill will not be invoked until all four stages pass.
+documentation, branch cleanup, deploy checklist) and BEFORE `/silver-create-release`.
+The `/silver-create-release` skill will not be invoked until all four stages pass.
 
 ---
 
-## Stage 1 — Code Review (FLOW 9: Three-Layer Parallel)
+## Stage 1 — Code Review (FLOW 9: SB+GSD Review Stack)
 
 Runs SB's FLOW 9 code-review structure against the release candidate
-(see `docs/composable-flows-contracts.md` §FLOW 9). Three independent review
-layers run in parallel; each layer has its own triage + fix sub-cycle; the
-overall stage iterates until **2 consecutive clean passes across all layers**.
+(see `docs/composable-flows-contracts.md` §FLOW 9). GSD owns the authoritative
+`REVIEW.md`; SB surrounds it with the Superpowers review-framing pair only where
+the active release workflow requires that helper discipline. The stage iterates
+until **2 consecutive clean passes across the active review stack**.
 
-### Layer structure
+### Review stack
 
-Each layer produces findings → triages via `superpowers:receiving-code-review`
-→ applies fixes via `gsd-code-review-fix`. All three always run. Layer D is
-conditional.
+Each review pass produces findings → triages via `superpowers:receiving-code-review`
+→ applies fixes via `gsd-code-review-fix`. Cross-AI review is conditional.
 
-| Layer | Reviewer skill | Frame | Triage | Fix |
-|-------|---------------|-------|--------|-----|
-| A (Always) | `gsd-code-review` | SB automated reviewer agents → `REVIEW.md` | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
-| B (Always) | `superpowers:requesting-code-review` (dispatches `superpowers:code-reviewer`) | Peer quality review via subagent | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
-| C (Always) | `engineering:code-review` | Structured review: security, performance, correctness, maintainability | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
-| D (As-needed) | `gsd-review --all` | Cross-AI adversarial peer review — required when change is architecturally significant or user requests it. `--all` fans out to every available CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor). | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| Step | Skill | Role | Triage | Fix |
+|------|-------|------|--------|-----|
+| 1 (Always for this release gate) | `superpowers:requesting-code-review` | Frames the review scope and dispatches the Superpowers reviewer because this SB gate explicitly requires review helper discipline | n/a | n/a |
+| 2 (Always) | `gsd-code-review` | Authoritative GSD review agents → `REVIEW.md` | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
+| 3 (As-needed) | `gsd-review --all` | Cross-AI adversarial peer review — required when change is architecturally significant or user requests it. `--all` fans out to every available CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor). | `superpowers:receiving-code-review` | `gsd-code-review-fix` |
 
 ### Execution
 
-1. **Parallel dispatch.** For each round, invoke Layers A, B, C (and D when
-   triggered). Sequential invocation is acceptable per D-65 — true Agent-tool
-   parallelism is an optimization, not a gate requirement.
-2. **Per-layer triage.** After each layer produces findings, run
-   `superpowers:receiving-code-review` against that layer's output. Do NOT
-   merge findings across layers before triage — each reviewer's frame stays
-   intact through its own triage pass.
-3. **Per-layer fix.** Apply accepted findings via `gsd-code-review-fix`
+1. **Frame the review.** Invoke `superpowers:requesting-code-review` so the
+   active runtime states scope, files, and risks before reviewers run.
+2. **Run GSD review.** Invoke `gsd-code-review` and treat its `REVIEW.md` as
+   the authoritative review artifact.
+3. **Optional adversarial review.** Invoke `gsd-review --all` only when the
+   release is architecturally significant or the user requests cross-AI review.
+4. **Triage.** Run `superpowers:receiving-code-review` against each review
+   output that contains findings. Do NOT merge findings before triage — each
+   reviewer frame stays intact through its own triage pass.
+5. **Fix.** Apply accepted findings via `gsd-code-review-fix`
    (atomic commits per finding). Non-accepted findings with rationale go to
    `REVIEW.md` notes.
-4. **Backlog capture.** Before starting the next round, any low-priority /
+6. **Backlog capture.** Before starting the next round, any low-priority /
    deferred / advisory findings not fixed in this round MUST be filed via
    `gsd-add-backlog` — do not silently drop them.
-5. **Round boundary.** A "clean round" = all 3 (or 4) layers produced zero
+7. **Round boundary.** A "clean round" = all active review steps produced zero
    accepted findings in that round.
-6. **Loop**: run rounds until **2 consecutive clean rounds across all active
-   layers**. Match the review cycle discipline used in Stages 2 and 4.
-7. **MANDATORY — invoke `/superpowers:verification-before-completion`** via
+8. **Loop**: run rounds until **2 consecutive clean rounds across all active
+   review steps**. Match the review cycle discipline used in Stages 2 and 4.
+9. **MANDATORY — invoke `/superpowers:verification-before-completion`** via
    the Skill tool. Running verification commands manually is NOT a substitute
    for invoking the skill. You need BOTH: (a) run the actual verification
    commands (tests, CI status, lint), AND (b) invoke the skill so
@@ -59,7 +60,7 @@ conditional.
 ### Retro-audit mode
 
 When this gate runs retroactively against an already-shipped release (no
-release candidate to fix), Layers A/B/C still run for findings, but the
+release candidate to fix), the active review stack still runs for findings, but the
 "fix and loop until 2 clean rounds" cycle is replaced by **"file every
 accepted finding as a backlog item for the next patch release"**. Stage
 markers are NOT recorded in retro-audit mode — the markers are reserved for
@@ -125,10 +126,10 @@ After all four stages pass in the current session, rerun the full test suite
 before release finalization:
 
 1. Run `/verify-tests`
-2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.sidekick/quality-gate-state`
+2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.silver-bullet/quality-gate-state`
 3. Do not invoke `/silver-release` until both the rerun marker and the `/verify-tests` freshness marker are present
 
-`hooks/completion-audit.sh` blocks release creation until the sidekick file
+`hooks/completion-audit.sh` blocks release creation until the quality-gate file
 contains the four stage markers plus `full-test-suite-rerun`, and the
 `/verify-tests` freshness marker is still present.
 
@@ -140,9 +141,9 @@ Each stage is enforced via the mandatory `/superpowers:verification-before-compl
 skill invocation. When invoked, it is recorded in the state file
 (`~/.claude/.silver-bullet/state`); `hooks/completion-audit.sh` tracks required skill
 invocations to gate `gh release create`. The stage completion markers and the
-full-suite rerun marker live in `~/.claude/.sidekick/quality-gate-state`.
+full-suite rerun marker live in `~/.claude/.silver-bullet/quality-gate-state`.
 
-**Session reset:** The `session-start` hook clears the sidekick quality-gate file at
+**Session reset:** The `session-start` hook clears the Silver Bullet quality-gate file at
 the beginning of every session. Each release cycle must earn its own gate pass in
 the current session.
 

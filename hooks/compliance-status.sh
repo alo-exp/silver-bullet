@@ -221,7 +221,7 @@ for skill in $required_planning; do
 done
 
 # --- REVIEW phase ---
-review_skills="code-review requesting-code-review receiving-code-review"
+review_skills="requesting-code-review gsd-code-review receiving-code-review"
 review_done=0
 review_total=0
 for _ in $review_skills; do ((review_total++)) || true; done
@@ -235,7 +235,7 @@ for skill in $review_skills; do
 done
 
 # --- FINALIZATION phase ---
-final_skills="testing-strategy documentation finishing-a-development-branch deploy-checklist"
+final_skills="finishing-a-development-branch verification-before-completion test-driven-development verify-tests"
 final_done=0
 final_total=0
 for _ in $final_skills; do ((final_total++)) || true; done

@@ -11,7 +11,7 @@ ALL_37_SKILLS=(
   "silver-quality-gates" "silver-blast-radius" "devops-quality-gates" "devops-skill-router"
   "design-system" "ux-copy"
   "architecture" "system-design"
-  "code-review" "requesting-code-review" "receiving-code-review"
+  "gsd-code-review" "code-review" "requesting-code-review" "receiving-code-review"
   "testing-strategy" "documentation"
   "finishing-a-development-branch" "deploy-checklist"
   "silver-create-release"
@@ -83,7 +83,7 @@ integration_setup
 write_full_config
 
 out=$(run_record_skill "nonexistent-skill")
-assert_contains "S3.1: output says no tracked skills found" "$out" "No tracked skills found"
+assert_contains "S3.1: output says no tracked skills found" "$out" "No completed tracked skill invocation found"
 
 if ! grep -q "nonexistent-skill" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S3.2: nonexistent-skill not in state file\n'
@@ -161,9 +161,9 @@ write_default_config
 
 # Record all 12 required_deploy skills
 required_deploy_skills=(
-  "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
-  "testing-strategy" "documentation" "finishing-a-development-branch" "deploy-checklist"
-  "silver-create-release" "verification-before-completion" "test-driven-development" "tech-debt"
+  "silver-quality-gates" "requesting-code-review" "gsd-code-review" "receiving-code-review"
+  "finishing-a-development-branch" "silver-create-release"
+  "verification-before-completion" "test-driven-development" "verify-tests"
 )
 for skill in "${required_deploy_skills[@]}"; do
   run_record_skill "$skill" >/dev/null

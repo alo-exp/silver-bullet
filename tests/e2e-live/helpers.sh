@@ -203,7 +203,7 @@ PY
 }
 
 write_quality_gate_state_marker() {
-  local gate_file="${HOME}/.claude/.sidekick/quality-gate-state"
+  local gate_file="${HOME}/.claude/.silver-bullet/quality-gate-state"
   mkdir -p "$(dirname "$gate_file")"
   cat > "$gate_file" <<'EOF'
 quality-gate-stage-1

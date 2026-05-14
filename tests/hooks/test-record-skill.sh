@@ -117,6 +117,12 @@ run_hook "some-unknown-skill" >/dev/null
 assert_not_in_state "unknown skill not recorded" "some-unknown-skill"
 teardown
 
+# Test 2b: Project all_tracked is additive to packaged defaults, not a replacement
+setup
+run_hook "silver:scan" >/dev/null
+assert_in_state "default SB route remains recordable when project config has partial all_tracked" "silver-scan"
+teardown
+
 # Test 3: Namespace prefix stripped (e.g., superpowers:code-review → code-review)
 setup
 run_hook "superpowers:code-review" >/dev/null

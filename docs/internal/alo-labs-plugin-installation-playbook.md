@@ -88,8 +88,8 @@ If a plugin enforces a development method, keep the real enforcement at the exec
 
 Silver Bullet uses this pattern for TDD:
 
-- `silver:tdd` is hidden
-- `silver:tdd` delegates to `superpowers:test-driven-development`
+- `tdd` is hidden
+- `tdd` delegates to `superpowers:test-driven-development`
 - `gsd-execute-phase --tdd` is the real execution trigger for implementation work
 
 ## 7. Do not vendor dependency plugins into a parent bundle

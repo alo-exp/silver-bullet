@@ -90,7 +90,7 @@ EOF
   "project": {"name":"live-test","src_pattern":"/src/","src_exclude_pattern":"__tests__|\\\\.test\\\\.","active_workflow":"full-dev-cycle"},
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
+    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
     "all_tracked": ["silver-quality-gates","silver-init","silver-ingest","silver-scan","silver-research","silver-blast-radius","silver-spec","silver-add","silver-feature","silver-ui","silver-fast","silver-forensics","silver-bugfix","silver-validate","silver-create-release","silver-release","silver-update","silver-remove","silver-rem","silver-ensure-docs","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","verification-before-completion","test-driven-development","tech-debt","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ui-phase","gsd-ui-review"]
   },
   "state": {"state_file":"${REAL_STATE}","trivial_file":"${REAL_TRIVIAL}"}

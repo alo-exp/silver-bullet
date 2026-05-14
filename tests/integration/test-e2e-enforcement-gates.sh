@@ -17,16 +17,16 @@ out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.1: edit blocked with no planning (Stage A)" "$out"
 assert_contains "S1.2: mentions HARD STOP" "$out" "HARD STOP"
 
-# Record silver-quality-gates only: Stage B block (code-review required)
+# Record silver-quality-gates only: Stage B implementation window
 run_record_skill "silver-quality-gates" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_blocked "S1.3: edit blocked without code-review (Stage B)" "$out"
-assert_contains "S1.4: mentions code-review" "$out" "code-review"
+assert_allowed "S1.3: edit allowed after planning, before gsd-code-review (Stage B)" "$out"
+assert_contains "S1.4: mentions code review remains required" "$out" "Code review"
 
 # Record code-review: Stage C — now ALLOWED
-run_record_skill "code-review" >/dev/null
+run_record_skill "gsd-code-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.5: edit allowed after planning + code-review (Stage C)" "$out"
+assert_allowed "S1.5: edit allowed after planning + gsd-code-review (Stage C)" "$out"
 
 integration_teardown
 
@@ -57,9 +57,9 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S3.1: PR create blocked with only planning" "$out"
 
 # Record all required_deploy: PR now ALLOWED
-for skill in silver-quality-gates code-review requesting-code-review receiving-code-review \
-             testing-strategy documentation finishing-a-development-branch deploy-checklist \
-             silver-create-release verification-before-completion test-driven-development tech-debt; do
+for skill in silver-quality-gates requesting-code-review gsd-code-review receiving-code-review \
+             finishing-a-development-branch silver-create-release verification-before-completion \
+             test-driven-development verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
@@ -79,21 +79,21 @@ out=$(run_forbidden_skill "subagent-driven-development")
 assert_blocked "S5.2: subagent-driven-development is blocked" "$out"
 
 out=$(run_forbidden_skill "code-review")
-assert_allowed "S5.3: code-review is allowed (not forbidden)" "$out"
+assert_allowed "S5.3: gsd-code-review is allowed (not forbidden)" "$out"
 
 integration_teardown
 
 # Scenario 6: Phase-skip detection
-echo "--- Scenario 6: Phase-skip detection (finalization before code-review) ---"
+echo "--- Scenario 6: Phase-skip detection (finalization before gsd-code-review) ---"
 integration_setup
 write_default_config
 
-# Record silver-quality-gates + testing-strategy but NOT code-review
+# Record silver-quality-gates + finalization but NOT gsd-code-review
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "testing-strategy" >/dev/null
+run_record_skill "silver-create-release" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_blocked "S6.1: edit blocked due to phase-skip (testing before code-review)" "$out"
-assert_contains "S6.2: mentions phase skip" "$out" "Phase skip"
+assert_allowed "S6.1: edit allowed so phase-skip fixes can proceed" "$out"
+assert_contains "S6.2: warns final delivery remains blocked" "$out" "final delivery remains blocked"
 
 integration_teardown
 
@@ -123,15 +123,15 @@ assert_allowed "S7.4: stop-check allows SubagentStop with all skills + stages" "
 integration_teardown
 
 # Scenario 8: Code review ordering enforcement
-echo "--- Scenario 8: Code review ordering (requesting before code-review) ---"
+echo "--- Scenario 8: Code review ordering (requesting before gsd-code-review) ---"
 integration_setup
 write_default_config
 
-# Write state with requesting-code-review BEFORE code-review
+# Write state with gsd-code-review BEFORE requesting-code-review
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-code-review
 requesting-code-review
-code-review
 receiving-code-review
 testing-strategy
 documentation

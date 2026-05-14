@@ -65,10 +65,12 @@ esac
 # ── Extract requested route(s) from prompt ──────────────────────────────────
 #
 # We record two kinds of markers:
-# - SB routes: `silver:init`, `silver:feature`, etc → state marker `silver-init`, ...
+# - SB routes: `silver:init`, `silver:feature`, etc → requested marker `silver-init`, ...
 # - GSD phase names mentioned in text: `gsd-discuss-phase`, `gsd-plan-phase`, ...
 #
 # We keep this intentionally conservative: only record SB and GSD markers.
+# Requested routes are intentionally stored separately from completed state so
+# prompt text cannot satisfy workflow gates.
 
 skills=()
 
@@ -92,11 +94,13 @@ done < <(printf '%s' "$prompt" | grep -oE '\\bgsd-[a-zA-Z0-9-]+\\b' 2>/dev/null 
 
 [[ ${#skills[@]} -gt 0 ]] || exit 0
 
+REQUESTED_FILE="${STATE_FILE}.requested"
+
 # Ensure file exists (SEC-02: do not follow symlinks).
-if [[ -L "$STATE_FILE" ]]; then
+if [[ -L "$REQUESTED_FILE" ]]; then
   exit 0
 fi
-touch -- "$STATE_FILE" 2>/dev/null || true
+touch -- "$REQUESTED_FILE" 2>/dev/null || true
 
 canonicalize() {
   local raw="$1"
@@ -117,8 +121,8 @@ for raw in "${skills[@]}"; do
   esac
 
   # No duplicates.
-  if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
-    printf '%s\n' "$skill" >>"$STATE_FILE" 2>/dev/null || true
+  if ! grep -qx "$skill" "$REQUESTED_FILE" 2>/dev/null; then
+    printf '%s\n' "$skill" >>"$REQUESTED_FILE" 2>/dev/null || true
   fi
 done
 

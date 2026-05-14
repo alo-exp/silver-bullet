@@ -19,16 +19,16 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 | 11 | **ROADMAP Freshness Gate** | `roadmap-freshness.sh` (PreToolUse/Bash) | git commit | Committing SUMMARY.md without ticking the corresponding ROADMAP.md checkbox |
 | 12 | **Redundant Instructions** | `silver-bullet.md` + optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present) | Every session | Same rules enforced across multiple surfaces for defense-in-depth |
 
-## Dev Cycle Gate (4-Stage)
+## Dev Cycle Gate
 
-`dev-cycle-check.sh` enforces a sequential workflow. When an active `.planning/workflows/<id>.md` exists, the dev-cycle gate requires `SB_WORKFLOW_ID` admission before non-trivial source edits. The 4-stage skill-based check is the legacy fallback for projects without a composed workflow.
+`dev-cycle-check.sh` enforces pre-execution readiness. When an active `.planning/workflows/<id>.md` exists, the dev-cycle gate requires `SB_WORKFLOW_ID` admission before non-trivial source edits. The skill-based check is the legacy fallback for projects without a composed workflow.
 
 | Stage | Requires | Blocks Until |
 |-------|----------|-------------|
-| A — Quality Gates | `quality-gates` in state | Design-phase quality review done |
-| B — Planning | Planning skills in state | GSD planning complete |
-| C — Code Review | `code-review` in state | Review before finalization |
-| D — Finalization | All `required_deploy` skills | All required skills invoked |
+| A — Planning Floor | `required_planning` skills in state | SB/GSD pre-execution gates complete |
+| B — Implementation Window | Planning floor complete | Source edits are allowed; review/verify/ship remain final-delivery gates |
+| C — Review Recorded | `gsd-code-review` in state | Source edits still allowed; finalization remains gated |
+| D — Finalization | All `required_deploy` skills plus expected GSD artifacts | Final delivery commands allowed |
 
 ## Composed-Workflow-First Enforcement Pattern
 
@@ -51,10 +51,7 @@ Detection: hooks check for `.planning/workflows/` existence and active `.md` fil
 | `all_tracked` | Discovery — hooks record invocation | Observability only |
 | `required_deploy` | Hard gate — must be in state before shipping | `completion-audit.sh` blocks commit/push/release |
 
-Current `required_deploy` (canonical source: `templates/silver-bullet.config.json.default`):
-`silver-quality-gates`, `code-review`, `requesting-code-review`, `receiving-code-review`,
-`finishing-a-development-branch`, `silver-create-release`, `verification-before-completion`,
-`test-driven-development`, `verify-tests`
+Current `required_deploy` (canonical source: `templates/silver-bullet.config.json.default`) includes SB quality gates, core GSD lifecycle markers (`gsd-discuss-phase`, `gsd-plan-phase`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship`, review/security/validation), review framing, finalization, release creation, verification-before-completion, TDD where applicable, and `verify-tests`.
 
 Conditional skills (NOT in `required_deploy`): `accessibility-review` (UI only), `incident-response` (DevOps only)
 
@@ -69,24 +66,16 @@ Before any release, 4 stages must pass in the current session:
 | 3 | Public-Facing Content Refresh | All user surfaces current |
 | 4 | Security Audit (SENTINEL) | Two consecutive clean passes |
 
-Each stage requires explicit `/superpowers:verification-before-completion` invocation. The sidekick quality-gate file is cleared on session start — no stale markers.
-The shared Claude/Codex live matrix (`tests/live/run-live-tests.sh`) and the
-todo-app live E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) are additional
-mandatory release prerequisites. The live todo-app suite now runs one inline
-full-surface journey and must also write `matrix=inline-full-surface` to
-`~/.claude/.silver-bullet/inline-e2e-matrix`. Both live markers must succeed
-in the current session before `gh release create` is allowed. The stage markers
-and the mandatory post-gate full-suite rerun marker live in
-`~/.claude/.sidekick/quality-gate-state`. The full-suite rerun itself now runs
-through `/verify-tests`, which also writes `~/.claude/.silver-bullet/verify-tests-state`
-so final delivery can detect stale source changes.
+Each stage requires explicit `superpowers:verification-before-completion` invocation because the release gate document requires it. The quality-gate file is cleared on session start — no stale markers.
+
+For the Silver Bullet plugin repo, the shared Claude/Codex live matrix (`tests/live/run-live-tests.sh`) and the todo-app live E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) are additional mandatory release prerequisites. Downstream projects use the generic release profile unless their `.silver-bullet.json` opts into plugin-runtime release matrices. The stage markers and the mandatory post-gate full-suite rerun marker live in `~/.claude/.silver-bullet/quality-gate-state`. The full-suite rerun itself runs through `verify-tests`, which also writes `~/.claude/.silver-bullet/verify-tests-state` so final delivery can detect stale source changes.
 
 ## Environment Variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `SILVER_BULLET_STATE_FILE` | `~/.claude/.silver-bullet/state` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
-| `SILVER_BULLET_QUALITY_GATE_STATE_FILE` | `~/.claude/.sidekick/quality-gate-state` | Override the release-quality-gate marker file used by `completion-audit.sh` and `session-start`. Intended for testing — lets test suites point hooks at a temp file instead of the real sidekick file. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start.sh`). Paths outside `~/.claude/` are rejected and fall back to the default. |
+| `SILVER_BULLET_QUALITY_GATE_STATE_FILE` | `~/.claude/.silver-bullet/quality-gate-state` | Override the release-quality-gate marker file used by `completion-audit.sh` and `session-start`. Intended for testing — lets test suites point hooks at a temp file instead of the real gate file. Must resolve to a path inside `~/.claude/` (security guard enforced by `session-start`). Paths outside `~/.claude/` are rejected and fall back to the default. |
 | `SILVER_BULLET_VERIFY_TESTS_STATE_FILE` | `~/.claude/.silver-bullet/verify-tests-state` | Override the test-execution freshness marker used by `completion-audit.sh`, `dev-cycle-check.sh`, `session-start`, and `/verify-tests`. Intended for testing — lets test suites point the gate at a temp file instead of the real freshness marker. Must resolve to a path inside `~/.claude/` (security guard enforced by the hooks). Paths outside `~/.claude/` are rejected and fall back to the default. |
 
 ## Bypass Detection

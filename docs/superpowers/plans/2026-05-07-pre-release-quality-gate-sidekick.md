@@ -2,15 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make the 4-stage pre-release quality gate mandatory for releases, add the required full-test-suite rerun marker, and record both in `~/.claude/.sidekick/quality-gate-state`.
+**Goal:** Make the 4-stage pre-release quality gate mandatory for releases, add the required full-test-suite rerun marker, and record both in `~/.claude/.silver-bullet/quality-gate-state`.
 
-**Architecture:** Keep the core SB skill log in `~/.claude/.silver-bullet/state`, but move pre-release gate markers plus the full-suite rerun marker into a separate sidekick-owned file so release-gate progress is isolated from general skill tracking. Enforce the gate in `hooks/completion-audit.sh`, clear the sidekick state in `hooks/session-start`, and update the release docs so the gate instructions and enforcement match.
+**Architecture:** Keep the core SB skill log in `~/.claude/.silver-bullet/state`, but move pre-release gate markers plus the full-suite rerun marker into a separate sidekick-owned file so release-gate progress is isolated from general skill tracking. Enforce the gate in `hooks/completion-audit.sh`, clear the Silver Bullet quality-gate state in `hooks/session-start`, and update the release docs so the gate instructions and enforcement match.
 
 **Tech Stack:** Bash hooks, shell tests, Markdown docs.
 
 ---
 
-### Task 1: Add release-gate sidekick state enforcement
+### Task 1: Add release-gate Silver Bullet quality-gate state enforcement
 
 **Files:**
 - Modify: `hooks/completion-audit.sh`
@@ -41,7 +41,7 @@ Expected: FAIL on the new sidekick marker case because the hook still reads `~/.
 - [ ] **Step 3: Write minimal implementation**
 
 ```bash
-sidekick_gate_file="${HOME}/.claude/.sidekick/quality-gate-state"
+sidekick_gate_file="${HOME}/.claude/.silver-bullet/quality-gate-state"
 if [[ -f "$sidekick_gate_file" && ! -L "$sidekick_gate_file" ]] && \
    grep -qx 'quality-gate-stage-1' "$sidekick_gate_file" && \
    grep -qx 'quality-gate-stage-2' "$sidekick_gate_file" && \
@@ -57,13 +57,13 @@ fi
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
-Expected: PASS with the new sidekick state case and existing live-matrix cases.
+Expected: PASS with the new Silver Bullet quality-gate state case and existing live-matrix cases.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add hooks/completion-audit.sh hooks/session-start tests/hooks/test-completion-audit.sh tests/hooks/test-session-start.sh
-git commit -m "fix(release): enforce pre-release gate via sidekick state"
+git commit -m "fix(release): enforce pre-release gate via Silver Bullet quality-gate state"
 ```
 
 ### Task 2: Update gate documentation and release guidance
@@ -94,7 +94,7 @@ Expected: HITs remain until the docs are updated.
 - [ ] **Step 3: Write minimal implementation**
 
 ```markdown
-Replace stage-marker instructions with `~/.claude/.sidekick/quality-gate-state` and add the `full-test-suite-rerun` requirement.
+Replace stage-marker instructions with `~/.claude/.silver-bullet/quality-gate-state` and add the `full-test-suite-rerun` requirement.
 Add a note that the 4-stage gate must record two consecutive clean passes before the marker is written.
 ```
 
@@ -107,7 +107,7 @@ Expected: no hits in the updated gate docs; remaining hits only in general skill
 
 ```bash
 git add docs/internal/pre-release-quality-gate.md skills/silver-release/SKILL.md silver-bullet.md templates/silver-bullet.md.base tests/test-app/silver-bullet.md docs/SECURITY.md
-git commit -m "docs: move pre-release gate markers to sidekick state"
+git commit -m "docs: move pre-release gate markers to Silver Bullet quality-gate state"
 ```
 
 ### Task 3: Verify the release path end to end
@@ -124,12 +124,12 @@ bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-session-start.s
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Expected: the session-start suite should fail until it clears `~/.claude/.sidekick/quality-gate-state`.
+Expected: the session-start suite should fail until it clears `~/.claude/.silver-bullet/quality-gate-state`.
 
 - [ ] **Step 3: Write minimal implementation**
 
 ```bash
-rm -f -- "${HOME}/.claude/.sidekick/quality-gate-state" 2>/dev/null
+rm -f -- "${HOME}/.claude/.silver-bullet/quality-gate-state" 2>/dev/null
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -141,5 +141,5 @@ Expected: PASS and the new sidekick file is cleared on session start.
 
 ```bash
 git add tests/hooks/test-session-start.sh tests/hooks/test-completion-audit.sh
-git commit -m "test: cover pre-release gate sidekick state cleanup"
+git commit -m "test: cover pre-release gate Silver Bullet quality-gate state cleanup"
 ```

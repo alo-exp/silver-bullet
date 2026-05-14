@@ -103,7 +103,7 @@ run_command() {
   local repo_root="$1"
   local command_str="$2"
   printf '[verify-tests] Running: %s\n' "$command_str"
-  if ! bash -lc 'set -euo pipefail; cd "$1" && eval "$2"' _ "$repo_root" "$command_str"; then
+  if ! (cd "$repo_root" && bash -e -u -o pipefail -c "$command_str"); then
     printf '[verify-tests] Failed: %s\n' "$command_str" >&2
     return 1
   fi

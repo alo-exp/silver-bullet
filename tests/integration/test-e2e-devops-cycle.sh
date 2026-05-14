@@ -14,8 +14,8 @@ write_devops_config() {
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
   "skills": {
     "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt"]
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -37,15 +37,15 @@ run_record_skill "silver-blast-radius" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.3: edit blocked with only silver-blast-radius (devops-quality-gates missing)" "$out"
 
-# Record devops-quality-gates: Stage B (code-review still needed)
+# Record devops-quality-gates: Stage B implementation window
 run_record_skill "devops-quality-gates" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_blocked "S1.4: edit blocked without code-review (Stage B)" "$out"
+assert_allowed "S1.4: edit allowed after devops planning, before gsd-code-review (Stage B)" "$out"
 
 # Record code-review: Stage C — ALLOWED
-run_record_skill "code-review" >/dev/null
+run_record_skill "gsd-code-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.5: edit allowed after silver-blast-radius + devops-quality-gates + code-review" "$out"
+assert_allowed "S1.5: edit allowed after silver-blast-radius + devops-quality-gates + gsd-code-review" "$out"
 
 integration_teardown
 
@@ -99,10 +99,9 @@ out=$(run_stop_check "Stop")
 assert_blocked "S4.1: stop-check blocks when all required devops skills are missing" "$out"
 
 # Record all devops required_deploy skills
-for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \
-             receiving-code-review testing-strategy documentation \
-             finishing-a-development-branch deploy-checklist silver-create-release \
-             verification-before-completion test-driven-development tech-debt; do
+for skill in silver-blast-radius devops-quality-gates requesting-code-review gsd-code-review \
+             receiving-code-review finishing-a-development-branch silver-create-release \
+             verification-before-completion test-driven-development verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 out=$(run_stop_check "Stop")
@@ -122,12 +121,12 @@ out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/main.tf")
 # also don't match in full-dev-cycle. Either way, enforcement applies.
 assert_blocked "S5.1: .tf edit blocked in devops-cycle (no devops planning)" "$out"
 
-# Record devops planning + code-review: ALLOWED
+# Record devops planning + gsd-code-review: ALLOWED
 run_record_skill "silver-blast-radius" >/dev/null
 run_record_skill "devops-quality-gates" >/dev/null
-run_record_skill "code-review" >/dev/null
+run_record_skill "gsd-code-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/main.tf")
-assert_allowed "S5.2: .tf edit allowed after devops planning + code-review" "$out"
+assert_allowed "S5.2: .tf edit allowed after devops planning + gsd-code-review" "$out"
 
 integration_teardown
 
@@ -142,10 +141,9 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'infra: promote to
 assert_blocked "S6.1: PR blocked with only silver-blast-radius" "$out"
 
 # Record all devops required_deploy
-for skill in silver-blast-radius devops-quality-gates code-review requesting-code-review \
-             receiving-code-review testing-strategy documentation \
-             finishing-a-development-branch deploy-checklist silver-create-release \
-             verification-before-completion test-driven-development tech-debt; do
+for skill in silver-blast-radius devops-quality-gates requesting-code-review gsd-code-review \
+             receiving-code-review finishing-a-development-branch silver-create-release \
+             verification-before-completion test-driven-development verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'infra: promote to staging'")

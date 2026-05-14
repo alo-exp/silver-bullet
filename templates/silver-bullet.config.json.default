@@ -1,6 +1,6 @@
 {
-  "config_version": "0.32.3",
-  "version": "0.32.3",
+  "config_version": "0.35.0",
+  "version": "0.35.0",
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -9,11 +9,26 @@
   },
   "skills": {
     "required_planning": [
-      "silver-quality-gates"
+      "silver-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase"
+    ],
+    "required_planning_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase"
     ],
     "required_deploy": [
       "silver-quality-gates",
-      "code-review",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-code-review",
+      "gsd-secure-phase",
+      "gsd-validate-phase",
       "requesting-code-review",
       "receiving-code-review",
       "finishing-a-development-branch",
@@ -25,7 +40,14 @@
     "required_deploy_devops": [
       "silver-blast-radius",
       "devops-quality-gates",
-      "code-review",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-code-review",
+      "gsd-secure-phase",
+      "gsd-validate-phase",
       "requesting-code-review",
       "receiving-code-review",
       "finishing-a-development-branch",
@@ -57,7 +79,22 @@
       "usability",
       "testability",
       "extensibility",
+      "silver-bugfix",
+      "silver-clarify",
+      "silver-devops",
+      "silver-fast",
+      "silver-feature",
       "silver-forensics",
+      "silver-handoff",
+      "silver-ingest",
+      "silver-migrate",
+      "silver-release",
+      "silver-research",
+      "silver-review-stats",
+      "silver-spec",
+      "silver-ui",
+      "silver-update",
+      "silver-validate",
       "silver-add",
       "silver-init",
       "silver-ensure-docs",
@@ -72,10 +109,12 @@
       "gsd-execute-phase",
       "gsd-verify-work",
       "gsd-ship",
+      "gsd-code-review",
       "gsd-debug",
       "gsd-ui-phase",
       "gsd-ui-review",
       "gsd-secure-phase",
+      "gsd-validate-phase",
       "silver-remove",
       "silver-rem",
       "silver-scan"
@@ -94,6 +133,12 @@
     "trivial_file": "~/.claude/.silver-bullet/trivial"
   },
   "issue_tracker": "gsd",
+  "release": {
+    "profile": "generic",
+    "require_plugin_runtime_matrix": false,
+    "require_pre_release_quality_gate": false,
+    "quality_gate_state_file": "~/.claude/.silver-bullet/quality-gate-state"
+  },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {
     "enabled": true,

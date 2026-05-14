@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-14 — sb-gsd-alignment
+**What**: Re-aligned Silver Bullet around GSD as the lifecycle authority, making SB the Agentic Process Orchestrator that composes pre-execution quality checks, GSD execution, and final delivery gates without blocking implementation on post-execution markers.
+**Commits**: —
+**Skills run**: SB+GSD alignment pass, quality-gate prep
+**Virtual cost**: ~$0.45 (high complexity — hooks, skill contracts, docs, package sync, and tests)
+**KNOWLEDGE.md**: updated (GSD artifact ownership, requested-vs-completed markers, plugin-specific release gates)
+
 ## 2026-05-10 — docs-surface-declutter
 **What**: Collapsed overlapping documentation-scheme pages into compatibility wrappers, marked older verification and flow-parallelism design notes as historical snapshots, and simplified the knowledge index to point at the canonical doc-scheme contract.
 **Commits**: —

@@ -21,7 +21,7 @@ The strongest SB-over-GSD benefits are:
 
 1. **Enforcement:** SB blocks skipped planning, review, verification, CI, docs, and release steps through host hooks.
 2. **Dynamic workflow composition:** SB selects and composes the right flow chain for the task at hand, rather than forcing every request through a rigid pre-defined workflow.
-3. **Cross-plugin orchestration:** SB sequences GSD, Superpowers, Engineering, Design, Product Management, DevOps plugins, and SB-owned gates into one process.
+3. **Cross-plugin orchestration:** SB sequences GSD with selected helper plugins for review, design, Product Management, DevOps enrichment, and SB-owned gates into one process.
 4. **Spec and acceptance governance:** SB adds spec elicitation, artifact ingestion, pre-build validation, UAT freshness, and PR traceability around GSD's implementation lifecycle.
 5. **Artifact review governance:** SB adds a generic reviewer framework, two-pass review loops, reviewer-assessor triage, and review analytics across planning artifacts.
 6. **Quality gates:** SB adds product, security, test, release, and DevOps gates outside GSD's core execution loop.
@@ -104,7 +104,7 @@ This report counts only the behaviors SB adds or enforces beyond plain GSD.
 | Quality gates | GSD verification and review artifacts | Product, DevOps, security, review, test, docs, and release gates |
 | Commit/PR/deploy/release safety | Mostly operator discipline plus GSD workflow | Mechanical gates on tool use and delivery commands |
 | Delivery traceability | Can be represented manually in artifacts | PR descriptions and `SPEC.md` implementation links are updated from captured spec session state |
-| Cross-plugin integration | Mostly outside GSD | Explicit sequencing of GSD, Superpowers, Engineering, Design, Product Management, and SB skills |
+| Cross-plugin integration | Mostly outside GSD | Explicit sequencing of GSD, SB gates, and selected helper plugins |
 | Session continuity | GSD state and artifacts | GSD state plus SB state, session logs, issue capture, knowledge, lessons, handoff, anti-stall warnings, and forensics |
 | DevOps workflow | GSD can execute infra tasks | SB adds infra-specific risk, promotion, incident, and deploy gates |
 
@@ -132,7 +132,7 @@ SB adds a multi-layer enforcement system. Important layers include:
 - `record-skill.sh`: records skill invocations
 - `dev-cycle-check.sh`: blocks code edits before planning/quality gates
 - `workflow-chain-guard.sh`: blocks source edits when a composed workflow is active but the required downstream dependency chain is not recorded
-- `dependency-skill-check.sh`: fails closed when required GSD, Superpowers, Design, Engineering, Product Management, or DevOps dependency skills are unavailable
+- `dependency-skill-check.sh`: fails closed when required GSD skills or selected helper dependencies are unavailable
 - `planning-file-guard.sh`: blocks direct edits to GSD-owned planning artifacts
 - `trivial-file-guard.sh`: blocks legacy trivial-marker bypass writes
 - `instruction-file-guard.sh`: prevents SB from synthesizing new root instruction files during Codex initialization
@@ -208,14 +208,14 @@ SB's value is task-shaped orchestration, not just freeform routing. It turns GSD
 
 ### Plain GSD
 
-GSD focuses on planning and execution. It does not own the full set of Superpowers, Engineering, Design, Product Management, and optional DevOps plugin steps.
+GSD focuses on planning and execution. It does not own the full set of SB release gates, design/product enrichment, review helper, or optional DevOps plugin steps.
 
 ### Silver Bullet addition
 
 SB explicitly sequences multiple plugins:
 
 - **GSD:** planning, execution, verification, milestone lifecycle
-- **Superpowers:** TDD, code-review request/receive loops, verification-before-completion, branch finishing
+- **Superpowers:** TDD, review framing/triage, verification-before-completion, branch finishing when SB explicitly selects those helper boundaries
 - **Engineering:** testing strategy, documentation, deploy checklist, incident response, architecture
 - **Design:** design system, UX copy, accessibility, design critique
 - **Product Management:** spec and research enrichment where installed
@@ -267,7 +267,7 @@ GSD can discuss, plan, execute, verify, review, and validate a phase, but plain 
 
 ### Silver Bullet addition
 
-SB requires quality gates before planning and again before shipping. For product/software work, it checks 9 dimensions. For infrastructure work, it checks 7 IaC-adapted dimensions.
+SB requires quality gates before planning and again before shipping. For product/software work, it checks 8 core dimensions plus conditional AI/LLM safety. For infrastructure work, it checks 7 IaC-adapted dimensions.
 
 Product/software dimensions include:
 
@@ -692,7 +692,7 @@ The follow-up codebase pass found several SB capabilities that the earlier repor
 |---|---|---|---|
 | Enforcement hooks | Relies more on agent/operator discipline | Blocks unsafe edits and delivery actions | Fewer skipped steps |
 | Dynamic workflow composition | `gsd:do` handles GSD freeform delegation, but not full multi-plugin flow selection | `/silver` classifies intent and composes a task-specific flow chain | Right-sized process for each task |
-| Cross-plugin orchestration | GSD does not own other plugins | Sequences Superpowers, Engineering, Design, PM, DevOps | Full SDLC coverage |
+| Cross-plugin orchestration | GSD does not own other plugins | Sequences SB gates and selected helper plugins around GSD | Full SDLC coverage |
 | Spec, ingestion, validation, UAT | GSD can execute plans but does not own SB's spec-first traceability layer | `SPEC.md`, `REQUIREMENTS.md`, `INGESTION_MANIFEST.md`, `VALIDATION.md`, and `UAT.md` gates | Better requirements-to-implementation coverage |
 | Quality gates | Not SB-style cross-cutting gates | 9 product dimensions, 7 IaC dimensions | Better design before code |
 | Test freshness | Verification can become stale after edits | `/verify-tests` marker invalidated on source changes | Safer final delivery |

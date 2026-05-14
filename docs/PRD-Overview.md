@@ -8,14 +8,15 @@ document during the FINALIZATION step of each phase.
 ## Product Vision
 
 Silver Bullet is a host coding-agent plugin for AI-native software engineers and DevOps practitioners
-who need reliable, step-skipping-proof agentic workflows. It combines GSD, Superpowers,
-Engineering, and Design plugins into a single orchestrated process enforced by 7 compliance layers
+who need reliable, step-skipping-proof agentic workflows. It combines GSD with SB-owned
+quality/release gates and selected helper plugins into one Agentic Process Orchestrator enforced
+by layered hook, artifact, dependency, completion, CI, documentation, live-matrix, and release gates
 so the runtime can never silently skip planning, quality gates, testing, or review steps.
 
 ## Core Value
 
 Single enforced workflow that eliminates the gap between "what AI should do" and "what AI actually
-does" — 7 compliance layers, zero single-point-of-bypass.
+does" — layered technical enforcement, zero single-point-of-bypass.
 
 ## Requirement Areas
 
@@ -35,7 +36,8 @@ All four skills tracked in `all_tracked`; `test-driven-development` and `tech-de
 
 ## Out of Scope
 
-- Silver Bullet does not replace GSD, Superpowers, Engineering, or Design — it orchestrates them.
+- Silver Bullet does not replace GSD or helper plugins — it orchestrates them, with GSD as the
+  lifecycle authority and helper plugins called only at explicit SB-selected boundaries.
   It never modifies third-party plugin files.
 - Silver Bullet does not implement project-specific business logic. It enforces workflow process
   regardless of the underlying project type or tech stack.

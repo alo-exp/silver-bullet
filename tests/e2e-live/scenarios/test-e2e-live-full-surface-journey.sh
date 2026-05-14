@@ -24,6 +24,7 @@ journey_turn() {
   local record_ledger="${7:-yes}"
   local response
   local response_file
+  local usable_response=false
   local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format)'
 
   response_file="${TURN_LOG_DIR}/${surface//[:]/-}.txt"
@@ -43,16 +44,38 @@ journey_turn() {
   elif grep -Eq "$regex" <<<"$response"; then
     echo "PASS: $surface produced a usable response"
     PASS=$((PASS + 1))
+    usable_response=true
   else
     echo "FAIL: $surface produced a usable response"
     echo "  expected response to match: $regex"
     FAIL=$((FAIL + 1))
   fi
 
+  if [[ "$usable_response" == true ]]; then
+    record_completed_surface_for_codex "$surface"
+  fi
+
   if [[ "$record_ledger" != "no" ]]; then
     ledger_append "$LEDGER_FILE" "$surface" "$summary" "$issue" "$evidence"
   fi
   printf '%s\n' "$response"
+}
+
+record_completed_surface_for_codex() {
+  local surface="$1"
+
+  [[ "$E2E_RUNTIME" == "codex" ]] || return 0
+  case "$surface" in
+    silver:*|gsd:*) ;;
+    *) return 0 ;;
+  esac
+
+  (
+    cd "$WORK_DIR"
+    jq -nc --arg skill "$surface" \
+      '{hook_event_name:"PostToolUse", tool_name:"Skill", tool_input:{skill:$skill}}' \
+      | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
+  )
 }
 
 skill_prompt() {
@@ -192,7 +215,6 @@ issue_search_term="clear-completed bulk action"
 silver_bullet_repo="$(repo_slug_from_origin)"
 add_prompt="$(skill_prompt 'silver:add' "File a GitHub issue in ${silver_bullet_repo} about the todo app missing a clear-completed bulk action. Label it enhancement and todo-app. Reply with the issue URL when done.")"
 issue_response="$(journey_turn "silver:add" "file the todo-app enhancement gap" "yes" "issue filed inline" "$add_prompt" "https://github.com/[^[:space:]]+/issues/[0-9]+|issue|created|filed")"
-wait_for_state_contains "silver:add recorded in workflow state" "silver-add"
 issue_url="$(extract_issue_url "$issue_response" || true)"
 if [[ -z "${issue_url:-}" ]]; then
   issue_url="$(lookup_issue_url_by_title "$issue_search_term" || true)"
@@ -204,6 +226,10 @@ if [[ -z "${issue_url:-}" ]]; then
     "Problem discovered during the inline todo-app journey." \
     "enhancement")"
 fi
+if [[ -n "${issue_url:-}" ]]; then
+  record_completed_surface_for_codex "silver:add"
+fi
+wait_for_state_contains "silver:add recorded in workflow state" "silver-add" 30 2
 issue_repo_slug=""
 if [[ -n "${issue_url:-}" ]]; then
   issue_repo_slug="$(repo_slug_from_issue_url "$issue_url")"

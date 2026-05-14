@@ -15,13 +15,14 @@ TEST_RUN_ID="$$"
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}" 2>/dev/null || true
+  rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}.requested" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "${TMPSTATE}.requested"
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -36,7 +37,7 @@ EOF
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "${TMPSTATE}.requested"
 }
 
 run_hook() {
@@ -58,6 +59,18 @@ assert_in_state() {
   fi
 }
 
+assert_in_requested() {
+  local label="$1"
+  local skill="$2"
+  if grep -qx "$skill" "${TMPSTATE}.requested" 2>/dev/null; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$skill' not found in requested-state: $(cat "${TMPSTATE}.requested" 2>/dev/null || echo '(empty)')"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 assert_not_in_state() {
   local label="$1"
   local skill="$2"
@@ -70,24 +83,39 @@ assert_not_in_state() {
   fi
 }
 
+assert_not_in_requested() {
+  local label="$1"
+  local skill="$2"
+  if ! grep -qx "$skill" "${TMPSTATE}.requested" 2>/dev/null; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$skill' unexpectedly found in requested-state"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 echo "=== record-requested-skill.sh tests ==="
 
 setup
 run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:scan` and then invoke `gsd:plan-phase`.'
-assert_in_state "silver:scan request recorded" "silver-scan"
-assert_in_state "gsd:plan-phase request recorded" "gsd-plan-phase"
+assert_in_requested "silver:scan request recorded as requested, not completed" "silver-scan"
+assert_in_requested "gsd:plan-phase request recorded as requested, not completed" "gsd-plan-phase"
+assert_not_in_state "silver:scan is not recorded as completed" "silver-scan"
 teardown
 
 setup
 rm -f "$TMPDIR_TEST/.silver-bullet.json"
 rm -f "$TMPDIR_TEST/silver-bullet.md"
 run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:init` and then stop.'
-assert_in_state "silver:init request recorded before scaffold exists" "silver-init"
+assert_in_requested "silver:init request recorded before scaffold exists" "silver-init"
+assert_not_in_state "silver:init is not recorded as completed before scaffold exists" "silver-init"
 teardown
 
 setup
 run_hook 'hello world, no routed skill markers here'
-assert_not_in_state "non-SB prompt does not record anything" "silver-scan"
+assert_not_in_requested "non-SB prompt does not record requested routes" "silver-scan"
+assert_not_in_state "non-SB prompt does not record completed routes" "silver-scan"
 teardown
 
 echo ""

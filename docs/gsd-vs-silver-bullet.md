@@ -10,7 +10,7 @@ Silver Bullet (SB) and Get Shit Done (GSD) are complementary, not competing, plu
 |---|---|
 | Is GSD a hard dependency of SB? | **No.** Most SB features work standalone. Flow skills (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`) call into GSD internally and require it; ad-hoc enforcement (hooks, `silver:init`, `silver:add`, `silver:rem`, `silver:scan`) does not. |
 | Can you use GSD without SB? | **Yes.** GSD is a complete planning/execution toolkit on its own. SB adds enforcement on top. |
-| Recommended combo? | **GSD + SB + Superpowers**, all installed. This is what `silver:init` assumes and what every flow skill is composed against. |
+| Recommended combo? | **SB + GSD as the core**, with Superpowers installed for the specific helper boundaries SB selects (TDD, review framing/triage, verification, branch finishing). |
 
 ## What Each Provides
 
@@ -34,8 +34,8 @@ SB is an enforcement and orchestration layer that sits on top of GSD. It owns:
 - **Flow skills** (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast`) — orchestrators that sequence GSD commands, Superpowers skills, and quality skills into a single named workflow
 - **Item-capture skills** (`silver:add`, `silver:remove`, `silver:rem`, `silver:scan`) for tracking deferred items, knowledge, and lessons across sessions
 - **Session-handoff skill** (`silver:handoff`) for generating reusable, project-level resume prompts between sessions
-- **Quality skills** (`silver:quality-gates`, `silver:blast-radius`, `silver:devops-quality-gates`)
-- **Pre-release quality gate** (4 stages: code review → TDD → quality gates → final verify)
+- **Quality skills** (`silver:quality-gates`, `silver:blast-radius`, `devops-quality-gates`)
+- **Pre-release quality gate** (4 stages: SB+GSD review stack → consistency audit → public content refresh → SENTINEL security audit)
 
 SB is the **make sure it actually happens** layer. It doesn't generate the plan or run the work — it ensures the plan was followed.
 

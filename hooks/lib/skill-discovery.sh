@@ -108,7 +108,18 @@ sb_skill_canonical_name() {
   # compliance state uses hyphenated markers (`silver-init`, `silver-feature`,
   # etc.). Do not strip the `silver:` prefix.
   if [[ "$skill" == silver:* ]]; then
-    printf 'silver-%s' "${skill#silver:}"
+    case "${skill#silver:}" in
+      security) printf 'security' ;;
+      tdd) printf 'tdd' ;;
+      verify-tests) printf 'verify-tests' ;;
+      devops-quality-gates) printf 'devops-quality-gates' ;;
+      devops-skill-router) printf 'devops-skill-router' ;;
+      finishing-branch) printf 'finishing-branch' ;;
+      request-review) printf 'requesting-code-review' ;;
+      receive-review) printf 'receiving-code-review' ;;
+      writing-plans) printf 'writing-plans' ;;
+      *) printf 'silver-%s' "${skill#silver:}" ;;
+    esac
     return 0
   fi
 

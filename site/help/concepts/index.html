@@ -200,7 +200,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Inside the host coding agent, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
       <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
-<span class="cmd">/requesting-code-review</span>  <span class="comment"># dispatches code-reviewer subagent for peer review</span>
+<span class="cmd">/requesting-code-review</span>  <span class="comment"># frames review; may dispatch helper reviewer</span>
 <span class="cmd">/silver</span> quality review   <span class="comment"># routes to the right skill automatically</span></div>
 
       <h3>The /silver Router</h3>
@@ -265,24 +265,22 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="superpowers">Superpowers</h2>
-      <p><strong>Superpowers</strong> is a design and review plugin that provides skills for brainstorming, system design, code review, and UX copy. In the Silver Bullet workflow, Superpowers fills the <em>design and review</em> role while GSD handles planning and execution.</p>
+      <h2 id="superpowers">Superpowers Helpers</h2>
+      <p><strong>Superpowers</strong> is used by Silver Bullet only at explicit helper boundaries selected by the active workflow. GSD remains the lifecycle authority for planning, execution, verification, code-review artifacts, and shipping. SB may call Superpowers-backed helpers for TDD discipline, review framing/triage, verification-before-completion, and branch finishing.</p>
 
-      <h3>Key Superpowers Skills Used in Silver Bullet</h3>
+      <h3>Key Superpowers-backed Helpers Used in Silver Bullet</h3>
       <ul>
-        <li><strong><code>/brainstorming</code></strong> — Explores problem space before planning begins</li>
-        <li><strong><code>/system-design</code></strong> — Architecture decisions for new services or components</li>
-        <li><strong><code>/design-system</code></strong> — UI component and design token decisions (UI work only)</li>
-        <li><strong><code>/ux-copy</code></strong> — User-facing text and messaging decisions (UI work only)</li>
-        <li><strong><code>/code-review</code></strong> — Structured peer code quality review: security (SQL injection, XSS, auth flaws), performance (N+1, unbounded queries), correctness (edge cases, race conditions), and maintainability. Run before dispatching the automated reviewer. From Engineering plugin.</li>
-        <li><strong><code>/requesting-code-review</code></strong> — Dispatches <code>superpowers:code-reviewer</code> for peer code quality review (security, performance, readability). Loop until 2 consecutive approvals.</li>
+        <li><strong><code>tdd</code></strong> — SB wrapper that delegates to Superpowers TDD only before behavior-changing execution</li>
+        <li><strong><code>/requesting-code-review</code></strong> — Frames review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper. It does not replace <code>/gsd:code-review</code>.</li>
         <li><strong><code>/receiving-code-review</code></strong> — Triage all feedback: accept or reject each item with reasoning before fixing</li>
+        <li><strong><code>/verification-before-completion</code></strong> — Final claim verification helper used by SB release gates</li>
+        <li><strong><code>/finishing-a-development-branch</code></strong> — Branch/PR finishing helper used only at the selected ship boundary</li>
       </ul>
 
       <div class="divider"></div>
 
-      <h2 id="ownership">GSD / Superpowers Ownership Model</h2>
-      <p>Both GSD and Superpowers are capable of producing plans, specifications, and executing tasks. Silver Bullet enforces a strict ownership split to prevent duplication and conflicts:</p>
+      <h2 id="ownership">SB / GSD / Helper Ownership Model</h2>
+      <p>Silver Bullet enforces a strict ownership split to prevent duplicate planning, duplicate review artifacts, and execution outside GSD:</p>
 
       <table class="ownership-table">
         <thead>
@@ -290,10 +288,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </thead>
         <tbody>
           <tr><td>Requirements</td><td><span class="owner-gsd">GSD</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth. Superpowers must not maintain a separate requirements list.</td></tr>
-          <tr><td>Planning</td><td><span class="owner-gsd">GSD</span></td><td>Use <code>/gsd:plan-phase</code> for all plans. When Superpowers' brainstorming offers to hand off to <code>writing-plans</code>, redirect to <code>/gsd:plan-phase</code>.</td></tr>
+          <tr><td>Planning</td><td><span class="owner-gsd">GSD</span></td><td>Use <code>/gsd:plan-phase</code> for all plans. SB may run optional helper steps before planning, but they never replace PLAN.md.</td></tr>
           <tr><td>Execution</td><td><span class="owner-gsd">GSD</span></td><td>Always use <code>/gsd:execute-phase</code> (wave-based). Never use <code>superpowers:subagent-driven-development</code> for project work.</td></tr>
-          <tr><td>Design specs</td><td><span class="owner-sp">Superpowers</span></td><td>Save to <code>docs/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code>. The default Superpowers path (<code>docs/superpowers/specs/</code>) is not used.</td></tr>
-          <tr><td>Code review</td><td><span class="owner-sp">Superpowers + Engineering</span></td><td><code>/code-review</code> (Engineering), <code>/requesting-code-review</code>, <code>/receiving-code-review</code>, and <code>superpowers:code-reviewer</code> are for review only, never execution.</td></tr>
+          <tr><td>Design specs</td><td><span class="owner-gsd">SB/GSD</span></td><td>Use GSD-owned phase artifacts for lifecycle specs and <code>docs/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code> for optional design records.</td></tr>
+          <tr><td>Code review</td><td><span class="owner-gsd">GSD + SB helpers</span></td><td><code>/gsd:code-review</code> owns <code>REVIEW.md</code>. <code>/requesting-code-review</code>, <code>/receiving-code-review</code>, and <code>superpowers:code-reviewer</code> are helper-only and never execute project work.</td></tr>
         </tbody>
       </table>
 
@@ -305,7 +303,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="quality-gates">Quality Gates</h2>
-      <p>Quality gates are a mandatory pre-planning step where the active runtime evaluates the proposed design against 9 product quality dimensions when applicable. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
+      <p>Quality gates are a mandatory pre-planning step where the active runtime evaluates the proposed design against 8 core product quality dimensions plus conditional gates when applicable. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
 
       <div class="dims-grid">
         <div class="dim-card"><div class="dim-icon"><i data-lucide="puzzle"></i></div><div class="dim-name">Modularity</div><div class="dim-desc">Components are independently replaceable</div></div>
@@ -328,7 +326,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.34.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.35.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual Skill tool invocations. The completion audit trusts state, not prose claims.</p></div></div>
@@ -429,7 +427,7 @@ docs/
     YYYY-MM.md               <span class="comment"># Monthly knowledge entries</span>
   lessons/                   <span class="comment"># Portable lessons learned (monthly files)</span>
     YYYY-MM.md               <span class="comment"># Monthly lessons by category</span>
-  specs/                     <span class="comment"># Detailed design specs (Superpowers)</span>
+  specs/                     <span class="comment"># Optional detailed design records (SB/GSD)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span></div>
 

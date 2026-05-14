@@ -220,7 +220,7 @@ state — never from the SB state file.
 - Session mode (`~/.claude/.silver-bullet/mode`)
 - Session init sentinel (`~/.claude/.silver-bullet/session-init`)
 
-**Sidekick quality-gate file (`~/.claude/.sidekick/quality-gate-state`) is ONLY for:**
+**SB quality-gate file (`~/.claude/.silver-bullet/quality-gate-state`) is ONLY for:**
 - Quality gate stage markers (`quality-gate-stage-1` through `quality-gate-stage-4`)
 - Full-test-suite rerun marker (`full-test-suite-rerun`)
 
@@ -319,18 +319,18 @@ GSD remains the lifecycle authority. SB may route, compose, review, and gate, bu
 | `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:scan → silver:clarify/decide → GSD plan/execute/verify |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:scan → silver:clarify/decide → gsd-ui-phase |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan → silver:blast-radius → silver:devops-skill-router |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan → silver:blast-radius → devops-skill-router |
 | `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → silver:research/optional multi-AI → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
 
 **Workflow enforcement rules:**
-- Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
-- `silver:security` is always mandatory — cannot be skipped via §9
-- `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
-- TDD enforcement is hidden: implementation plans pass through the internal `silver:tdd` gate before `gsd-execute-phase --tdd`; config/infra/doc plans skip TDD
-- `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
-- Code review always uses the Superpowers framing pair: `silver:request-review` before and `silver:receive-review` after
+- Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
+- `security` is always mandatory — cannot be skipped via §9
+- `silver:devops` uses 7 IaC-adapted dimensions (`devops-quality-gates`) instead of the product sweep: reliability, security, scalability, modularity, testability, observability, and change-safety
+- TDD enforcement is hidden: implementation plans pass through the internal `tdd` gate before `gsd-execute-phase --tdd`; config/infra/doc plans skip TDD
+- `testing-strategy` runs when installed; otherwise test strategy is captured inside GSD discuss/plan artifacts
+- Code review uses GSD review artifacts plus the Superpowers framing pair (`requesting-code-review` before and `receiving-code-review` after) only where the active SB workflow requires it
 - Cross-AI review (`gsd-review --all`) triggers automatically for architecturally significant changes
 - `gsd-ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
 - When user selects Autonomous mode at session start, `gsd-autonomous` drives all remaining phases
@@ -341,7 +341,7 @@ When the user requests skipping a workflow step, SB:
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
-Non-skippable gates: `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 #### Composable Flows Catalog
 
@@ -356,12 +356,12 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 4 | SPECIFY | Spec creation — silver-ingest, write-spec, silver-spec, silver-validate |
 | FLOW 5 | PLAN | Phase planning — discuss-phase, writing-plans, gsd-plan-phase |
 | FLOW 6 | DESIGN CONTRACT | UI/UX design — design-system, ux-copy, gsd-ui-phase |
-| FLOW 7 | EXECUTE | Implementation — internal `silver:tdd` gate + `gsd-execute-phase --tdd` |
+| FLOW 7 | EXECUTE | Implementation — internal `tdd` gate + `gsd-execute-phase --tdd` |
 | FLOW 8 | UI QUALITY | UI review — design-critique, gsd-ui-review, design:accessibility-review |
 | FLOW 9 | REVIEW | Code review — 3 parallel layers with triage + fix |
 | FLOW 10 | SECURE | Security audit — SENTINEL, gsd-secure-phase, gsd-validate-phase |
 | FLOW 11 | VERIFY | Verification — gsd-verify-work, verification-before-completion |
-| FLOW 12 | QUALITY GATE | Quality dimensions — 9-dimension check, dual-mode (design-time + adversarial) |
+| FLOW 12 | QUALITY GATE | 8 core quality dimensions plus conditional gates, dual-mode (design-time + adversarial) |
 | FLOW 13 | SHIP | Phase shipping — gsd-ship, PR creation |
 | FLOW 14 | DEBUG | Debugging — systematic-debugging, gsd-debug (dynamic insertion on failure) |
 | FLOW 15 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 17 only |
@@ -421,7 +421,7 @@ You MUST NOT:
 - Claim work is complete without running `/gsd:verify-work`
 - Accept a completion claim from any plugin or skill (GSD, Superpowers, etc.) without invoking `/verification-before-completion` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
-- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §9 preferences — these gates are permanent
+- Override a non-skippable gate (security, silver:quality-gates pre-ship, gsd-verify-work) via §9 preferences — these gates are permanent
 - Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute a GSD phase (plan, execute, verify) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next GSD phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
@@ -460,9 +460,9 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 | Step | Artifact | Reviewer | Two-Pass Required | Producing Workflow |
 |------|----------|----------|-------------------|--------------------|
 | Plan creation | {phase}-NN-PLAN.md | /gsd:plan-checker | YES | /gsd:plan-phase |
-| Execution | Code changes + SUMMARY.md | /gsd:code-reviewer | YES | /gsd:execute-phase |
+| Execution | Code changes + SUMMARY.md | /gsd:code-review | YES | /gsd:execute-phase |
 | Verification | VERIFICATION.md | /gsd:verify-work | YES | /gsd:verify-work |
-| Security check | Security findings | /silver:security | YES | /silver:security |
+| Security check | Security findings | /security | YES | /security |
 | Spec elicitation | SPEC.md | /artifact-reviewer --reviewer review-spec | YES | /silver:spec Step 7 |
 | Design capture | DESIGN.md | /artifact-reviewer --reviewer review-design | YES | /silver:spec Step 9 |
 | Requirements derivation | REQUIREMENTS.md | /artifact-reviewer --reviewer review-requirements | YES | /silver:spec Step 8, /gsd:new-milestone |
@@ -494,11 +494,11 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 
 **EXRV-01 (plan-checker):** After /gsd:plan-phase creates a PLAN.md, invoke /gsd:plan-checker iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
 
-**EXRV-02 (code-reviewer):** After /gsd:execute-phase completes code changes, invoke /gsd:code-reviewer iteratively. If ISSUE findings are returned, apply fixes via /gsd:code-review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
+**EXRV-02 (code review):** After /gsd:execute-phase completes code changes, invoke /gsd:code-review iteratively. If ISSUE findings are returned, apply fixes via /gsd:code-review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
 
 **EXRV-03 (verifier):** After /gsd:verify-work produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
-**EXRV-04 (security-auditor):** After /silver:security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
+**EXRV-04 (security-auditor):** After /security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
 
 ### 3a-i. Post-Command Review Gates
 
@@ -614,7 +614,7 @@ without these artifacts is a §3 violation regardless of how the phase was execu
 | /gsd:plan-phase | {phase}-NN-PLAN.md (1+) | .planning/phases/{phase}/ |
 | /gsd:execute-phase | {phase}-NN-SUMMARY.md per plan | .planning/phases/{phase}/ |
 | /gsd:verify-work | VERIFICATION.md | .planning/phases/{phase}/ or project root |
-| /code-review | REVIEW.md | .planning/phases/{phase}/ or project root |
+| /gsd:code-review | REVIEW.md | .planning/phases/{phase}/ or project root |
 
 **Pre-advance check:** Before invoking the NEXT phase's GSD command, verify the
 PREVIOUS phase's artifacts exist. If they do not exist, STOP and either:
@@ -731,8 +731,7 @@ If not `balanced`, run `/gsd-set-profile balanced`.
 
 ## 6. GSD / Superpowers Ownership Rules
 
-GSD is the authoritative execution orchestrator. Superpowers provides design and review
-capabilities only. Where both tools could apply, **GSD wins**.
+GSD is the authoritative execution orchestrator. Superpowers provides craft-discipline helpers only where an active SB workflow explicitly calls for them. Where both tools could apply, **GSD wins**.
 
 Silver Bullet orchestrates the user experience and delegates execution to GSD. Silver
 Bullet owns what to do and when; GSD owns how.
@@ -742,19 +741,21 @@ Bullet owns what to do and when; GSD owns how.
 - **Execution**: Always use `/gsd:execute-phase` (wave-based). NEVER use
   `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work.
   "Project work" means implementation and planning. Code review, design review, and security
-  audit are NOT execution — Superpowers review skills are used for those per the workflow.
+  audit are NOT execution; Superpowers review helpers are used only when the active SB
+  workflow explicitly selects them.
 - **Planning**: Always use `/gsd:plan-phase` as the GSD execution planner (produces PLAN.md).
-  When Superpowers' `brainstorming` skill offers to hand off to `writing-plans` as a
-  **substitute** for planning, redirect to `/gsd:plan-phase` instead.
-  **Exception — silver:feature Step 2.5:** `silver:writing-plans` (superpowers:writing-plans)
-  is used as a precursor to gsd-plan-phase, not a substitute — it produces a spec/implementation
-  plan document, after which gsd-plan-phase creates the GSD PLAN.md. Both are used in sequence.
+  If a Superpowers skill offers to hand off to `writing-plans` as a substitute for planning,
+  redirect to `/gsd:plan-phase`. SB may invoke its local `writing-plans` helper only as an
+  optional precursor when the active composition explicitly includes it; it never replaces
+  the GSD PLAN.md.
 - **Requirements**: `.planning/REQUIREMENTS.md` is the single source of truth (owned by GSD).
   Superpowers must NOT create or maintain a separate requirements list.
 - **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
   Superpowers' default path (`docs/superpowers/specs/`) is overridden — use `docs/specs/`.
-- **Code review**: Engineering's `/code-review` and Superpowers' review skills (`/requesting-code-review`,
-  `/receiving-code-review`, `superpowers:code-reviewer`) are used for review only.
+- **Code review**: GSD owns the authoritative `REVIEW.md` artifact through `/gsd:code-review`.
+  Superpowers review helpers (`/requesting-code-review`, `/receiving-code-review`,
+  `superpowers:code-reviewer`) are used only where the active SB workflow requires review
+  framing or triage.
 
 > **Anti-Skip:** You are violating this rule if you use superpowers:executing-plans or superpowers:subagent-driven-development for project execution. The compliance-status hook shows "GSD owns execution" as a constant reminder.
 
@@ -776,7 +777,7 @@ These rules apply to ALL file operations, in every context and session mode.
 
 ## 8. Third-Party Plugin Boundary
 
-Silver Bullet orchestrates four external plugins (GSD, Superpowers, Engineering, Design)
+Silver Bullet orchestrates GSD as the lifecycle authority plus selected helper plugins
 but **NEVER modifies their skill files**. All behavioral changes MUST be implemented in
 Silver Bullet's own orchestrator layer — silver-bullet.md, workflows, hooks, or Silver Bullet skills.
 
@@ -808,12 +809,12 @@ or declaring it complete without meeting the criteria violates Section 3.
 documentation, branch cleanup, deploy checklist) and BEFORE `/silver-create-release`.
 The `/silver-create-release` skill will not be invoked until all four stages pass.
 
-### Stage 1 — Code Review Triad
+### Stage 1 — Code Review Stack
 
-Run all three review skills in sequence, then fix all issues. Repeat until clean.
+Run the SB-required review stack in sequence, then fix all issues. Repeat until clean.
 
-1. Invoke `/code-review` (Engineering) — structured quality review: security, performance, correctness, maintainability
-2. Invoke `/requesting-code-review` — dispatches `superpowers:code-reviewer` automated reviewer
+1. Invoke `/requesting-code-review` — frame review scope and, where available, dispatch `superpowers:code-reviewer`
+2. Invoke `/gsd:code-review` — produce the authoritative `REVIEW.md`
 3. Invoke `/receiving-code-review` — triage combined feedback from steps 1-2
 4. Fix all accepted issues
 5. **Loop**: repeat steps 1-4 until `/receiving-code-review` produces zero accepted items
@@ -822,7 +823,7 @@ Run all three review skills in sequence, then fix all issues. Repeat until clean
    You need BOTH: (a) run the actual verification commands, AND (b) invoke the skill so
    `record-skill.sh` tracks it. If you ran tests/CI/checks but did not invoke the skill,
    you have NOT completed this step. Do NOT record the stage marker until BOTH are done.
-7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.sidekick/quality-gate-state`
+7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/quality-gate-state`
 
 ### Stage 2 — Big-Picture Consistency Audit
 
@@ -838,7 +839,7 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
 3. **Loop**: repeat until two consecutive audit passes find zero issues
 4. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
-5. Record stage completion: `echo "quality-gate-stage-2" >> ~/.claude/.sidekick/quality-gate-state`
+5. Record stage completion: `echo "quality-gate-stage-2" >> ~/.claude/.silver-bullet/quality-gate-state`
 
 ### Stage 3 — Public-Facing Content Refresh
 
@@ -866,7 +867,7 @@ Verify and update all user-visible surfaces to reflect the current state.
 5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
 6. Push and confirm CI green
-7. Record stage completion: `echo "quality-gate-stage-3" >> ~/.claude/.sidekick/quality-gate-state`
+7. Record stage completion: `echo "quality-gate-stage-3" >> ~/.claude/.silver-bullet/quality-gate-state`
 
 ### Stage 4 — Security Audit (SENTINEL)
 
@@ -878,7 +879,7 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 4. **Loop**: repeat until two consecutive audit passes find zero issues
 5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
-6. Record stage completion: `echo "quality-gate-stage-4" >> ~/.claude/.sidekick/quality-gate-state`
+6. Record stage completion: `echo "quality-gate-stage-4" >> ~/.claude/.silver-bullet/quality-gate-state`
 
 ## Mandatory Full Test Suite Rerun
 
@@ -886,24 +887,24 @@ After all four stages pass in the current session, rerun the full test suite
 before release finalization:
 
 1. Run `bash tests/run-all-tests.sh`
-2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.sidekick/quality-gate-state`
+2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.silver-bullet/quality-gate-state`
 3. Do not invoke `/silver-create-release` until the rerun marker is present
 
-`hooks/completion-audit.sh` blocks release creation until the sidekick file
+`hooks/completion-audit.sh` blocks release creation until the SB quality-gate file
 contains the four stage markers plus `full-test-suite-rerun`.
 
 ### Pre-Release Gate Enforcement
 
 The completion audit hook (`hooks/completion-audit.sh`) blocks `gh release create`
 until all required workflow skills AND quality gate markers are recorded in the
-sidekick file (`~/.claude/.sidekick/quality-gate-state`). Required markers:
+SB quality-gate file (`~/.claude/.silver-bullet/quality-gate-state`). Required markers:
 - Stage 1: `quality-gate-stage-1` (recorded per instructions above)
 - Stage 2: `quality-gate-stage-2` (recorded per instructions above)
 - Stage 3: `quality-gate-stage-3` (recorded per instructions above)
 - Stage 4: `quality-gate-stage-4` (recorded per instructions above)
 - Full-suite rerun: `full-test-suite-rerun` (recorded after `bash tests/run-all-tests.sh`)
 
-**Session reset:** The `session-start` hook clears the sidekick quality-gate file at
+**Session reset:** The `session-start` hook clears the SB quality-gate file at
 the start of every session. This means gate progress never leaks across sessions.
 
 > **Anti-Skip:** You are violating this rule if you release without running all 4 stages
@@ -914,7 +915,7 @@ If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependen
 issue, ambiguous design decision), log it under "Needs human review" and surface
 to the user before proceeding to the next stage.
 
-> **Anti-Skip:** You are violating this rule if you attempt /silver-create-release without all four quality-gate-stage-N markers and the full-test-suite-rerun marker in the sidekick state file. completion-audit.sh will block the release. Each stage requires explicit /superpowers:verification-before-completion invocation — the marker alone is insufficient.
+> **Anti-Skip:** You are violating this rule if you attempt /silver-create-release without all four quality-gate-stage-N markers and the full-test-suite-rerun marker in the SB quality-gate state file. completion-audit.sh will block the release. Each stage requires explicit /superpowers:verification-before-completion invocation — the marker alone is insufficient.
 
 ---
 
