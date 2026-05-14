@@ -1,14 +1,15 @@
 # Silver Bullet Live AI E2E Tests
 
-These tests invoke the **real `claude` CLI** or **real `codex` CLI** with the Silver
-Bullet plugin loaded and stored credentials. They verify that SB enforcement hooks
+These tests invoke the **real `claude` CLI** or a **Kay-backed Codex-compatible
+runtime** with the Silver Bullet plugin loaded and stored credentials. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
 actually work when either runtime triggers them via real tool usage.
 
 ## Prerequisites
 
 - `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
-- `codex` CLI available in `PATH` for Codex runs
+- Kay `v0.9.1` available in `PATH` for Codex-compatible runs
+- MiniMax credentials available through `MINIMAX_API_KEY` or the user's Kay config
 - Authenticated with valid credentials for the runtime(s) you plan to run
 - `jq` installed (`brew install jq`)
 - Git available
@@ -61,6 +62,9 @@ Each runtime run uses:
 - An isolated temp workspace directory (`mktemp -d`)
 - Isolated state files: `~/.claude/.silver-bullet/live-test-state-{PID}`
 - Isolated trivial files: `~/.claude/.silver-bullet/live-test-trivial-{PID}`
+- For Codex-compatible runs, an isolated temporary `HOME`, `CODE_HOME`, and
+  `CODEX_HOME` backed by Kay/MiniMax so the test installer never rewrites the
+  user's real `~/.codex` hook cache.
 
 The matrix runs Claude and Codex sequentially so they do not clobber each other's
 shared SB state. All temp files are cleaned up after each scenario.

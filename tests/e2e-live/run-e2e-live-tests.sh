@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
@@ -94,11 +95,14 @@ for runtime in "${RUNTIMES[@]}"; do
       exit 1
     fi
   else
-    if ! command -v codex >/dev/null 2>&1; then
-      echo "ERROR: codex CLI not found in PATH"
+    # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+    source "$CODEX_ISOLATION_HELPER"
+    setup_kay_codex_isolation
+    if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
+      echo "ERROR: Kay/Codex CLI not found or not working"
       exit 1
     fi
-    if ! "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
+    if ! CODEX_BIN="$CODEX_BIN" "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
       echo "ERROR: codex marketplace/bootstrap install failed"
       exit 1
     fi
@@ -117,6 +121,10 @@ for runtime in "${RUNTIMES[@]}"; do
   if [[ -n "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}" ]]; then
     rm -f "$E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE"
     unset E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE
+  fi
+
+  if [[ "$runtime" == "codex" ]]; then
+    teardown_kay_codex_isolation
   fi
 done
 

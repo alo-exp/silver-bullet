@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/lib/kay-codex-isolation.sh"
 RUNTIMES=()
 RELEASE_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/release-live-matrix"
 full_matrix_requested=false
@@ -58,11 +59,14 @@ for runtime in "${RUNTIMES[@]}"; do
       fi
       ;;
     codex)
-      if ! command -v codex >/dev/null 2>&1; then
-        echo "ERROR: codex CLI not found in PATH"
+      # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+      source "$CODEX_ISOLATION_HELPER"
+      setup_kay_codex_isolation
+      if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
+        echo "ERROR: Kay/Codex CLI not found or not working"
         exit 1
       fi
-      if ! "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
+      if ! CODEX_BIN="$CODEX_BIN" "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
         echo "ERROR: codex marketplace/bootstrap install failed"
         exit 1
       fi
@@ -77,6 +81,10 @@ for runtime in "${RUNTIMES[@]}"; do
   run_suite "$runtime" "Skill Recording" "$SCRIPT_DIR/test-live-skill-recording.sh"
   run_suite "$runtime" "Full Scenario" "$SCRIPT_DIR/test-live-full-scenario.sh"
   run_suite "$runtime" "Doc Scheme" "$SCRIPT_DIR/test-live-doc-scheme.sh"
+
+  if [[ "$runtime" == "codex" ]]; then
+    teardown_kay_codex_isolation
+  fi
 done
 
 echo ""
