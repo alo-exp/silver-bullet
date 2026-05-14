@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PURGE_LEGACY_SKILLS=0
+MERGE_USER_HOOKS="${SB_CODEX_MERGE_USER_HOOKS:-0}"
 CODEX_BIN="${CODEX_BIN:-codex}"
 NPM_BIN="${NPM_BIN:-npx}"
 GSD_INSTALL_CMD="${GSD_INSTALL_CMD:-${NPM_BIN} get-shit-done-cc@latest}"
@@ -889,7 +890,7 @@ seed_silver_bullet_hook_trust_state() {
   marketplace_root="$(codex_marketplace_root)"
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
-  python3 - "${marketplace_root}/plugins/silver-bullet" "${HOME}/.codex/config.toml" <<'PY'
+  python3 - "${marketplace_root}/plugins/silver-bullet" "${HOME}/.codex/config.toml" "$MERGE_USER_HOOKS" <<'PY'
 import hashlib
 import json
 import pathlib
@@ -898,6 +899,7 @@ import sys
 
 package_root = pathlib.Path(sys.argv[1])
 target_paths = [pathlib.Path(sys.argv[2])]
+merge_user_hooks = sys.argv[3] == "1"
 
 package_hooks_src = package_root / "hooks" / "hooks.json"
 if not package_hooks_src.is_file():
@@ -916,15 +918,36 @@ def first_existing(*paths):
             return path
     return None
 
+def installed_package_hooks_path():
+    registry_path = home / ".codex" / "plugins" / "installed_plugins.json"
+    if registry_path.is_file():
+        try:
+            data = json.loads(registry_path.read_text())
+            entries = data.get("plugins", {}).get("silver-bullet@alo-labs-codex", [])
+        except Exception:
+            entries = []
+        for entry in entries:
+            install_path = pathlib.Path(entry.get("installPath", ""))
+            hooks_path = install_path / "hooks" / "hooks.json"
+            if hooks_path.is_file():
+                return hooks_path
+
+    return first_existing(
+        home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet" / "current" / "hooks" / "hooks.json",
+        package_hooks_src,
+    )
+
 def hooks_data_for(path):
     if path is None:
         return {}
     return json.loads(path.read_text()).get("hooks", {})
 
 resolved_sources = {
-    "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_src,
-    str(home / ".codex" / "hooks.json"): first_existing(home / ".codex" / "hooks.json"),
+    "silver-bullet@alo-labs-codex:hooks/hooks.json": installed_package_hooks_path(),
 }
+user_hooks_prefix = str(home / ".codex" / "hooks.json")
+if merge_user_hooks:
+    resolved_sources[user_hooks_prefix] = first_existing(home / ".codex" / "hooks.json")
 
 entries = []
 
@@ -962,7 +985,7 @@ for config_path in target_paths:
             continue
 
         if hooks_state_seen:
-            if any(line.startswith(f'[hooks.state."{prefix}') for prefix in resolved_sources):
+            if any(line.startswith(f'[hooks.state."{prefix}') for prefix in (*resolved_sources, user_hooks_prefix)):
                 changed = True
                 i += 1
                 while i < len(lines) and not lines[i].startswith('['):
@@ -1369,7 +1392,9 @@ purge_legacy_silver_bullet_hooks_from_user_config
 SB_PROJECT_ROOT=""
 if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
   ensure_plugin_enabled "silver-bullet@alo-labs-codex"
-  merge_silver_bullet_hooks_into_user_config
+  if [[ "$MERGE_USER_HOOKS" == "1" ]]; then
+    merge_silver_bullet_hooks_into_user_config
+  fi
 else
   remove_plugin_enabled "silver-bullet@alo-labs-codex"
   printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'

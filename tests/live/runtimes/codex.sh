@@ -229,6 +229,7 @@ runtime_invoke() {
   local transcript_path
   local codex_prompt
   local codex_model
+  local codex_model_provider
 
   cli="$(runtime_cli_path)"
   tmpdir="${TMPDIR:-/tmp}"
@@ -242,7 +243,8 @@ print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00
 PY
 )"
   codex_prompt="$prompt"
-  codex_model="${CODEX_MODEL:-}"
+  codex_model="${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}"
+  codex_model_provider="${CODEX_MODEL_PROVIDER:-${SB_LIVE_CODEX_MODEL_PROVIDER:-}}"
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
     codex_prompt="$(codex_live_guard_context)$codex_prompt"
     if [[ -z "$codex_model" ]]; then
@@ -258,6 +260,7 @@ PY
   output=$(
     cd "$SB_ROOT" && \
       CODEX_MODEL="$codex_model" \
+      CODEX_MODEL_PROVIDER="$codex_model_provider" \
       CODEX_BIN="$cli" \
       CODEX_WORK_DIR="$WORK_DIR" \
       CODEX_PROMPT_FILE="$prompt_file" \

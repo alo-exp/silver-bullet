@@ -1,6 +1,7 @@
 # Silver Bullet Live Todo-App E2E Suite
 
-This suite runs the real Claude and Codex CLIs against an isolated copy of the
+This suite runs the real Claude CLI and the Kay-backed Codex-compatible runtime
+against an isolated copy of the
 standalone sibling `test-todo-app` repo and drives one inline full-surface development journey
 against the todo app fixture. The journey starts with install UX, moves through
 discovery, feature delivery, defect repair, cleanup, and release prep, and
@@ -35,3 +36,7 @@ Fast preflight:
 
 Each scenario starts from a fresh workspace copied from the standalone sibling `test-todo-app` repo and is
 cleaned up after completion.
+
+For Codex-compatible runs, the suite creates an isolated temporary `HOME`,
+`CODE_HOME`, and `CODEX_HOME` before bootstrapping the SB Codex package. That
+keeps live E2E installs from changing the user's real `~/.codex` hook cache.

@@ -18,6 +18,7 @@ set json_output [env_or_default CODEX_JSON "0"]
 set transcript_file [env_or_default CODEX_TRANSCRIPT_FILE ""]
 set last_message_file [env_or_default CODEX_LAST_MESSAGE_FILE ""]
 set model [env_or_default CODEX_MODEL ""]
+set model_provider [env_or_default CODEX_MODEL_PROVIDER ""]
 set reasoning_effort [env_or_default CODEX_REASONING_EFFORT ""]
 set ready_timeout [expr {int([env_or_default CODEX_INTERACTIVE_READY_TIMEOUT 20])}]
 set quiet_timeout [expr {int([env_or_default CODEX_INTERACTIVE_QUIET_TIMEOUT 5])}]
@@ -42,6 +43,9 @@ if {$bypass eq "1"} {
 }
 if {$model ne ""} {
   lappend args --model $model
+}
+if {$model_provider ne ""} {
+  lappend args --config "model_provider=$model_provider"
 }
 if {$reasoning_effort ne ""} {
   # Use the same model, but force the reasoning level for cost control in live E2E runs.
