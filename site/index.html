@@ -1766,14 +1766,14 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Workflows</div>
-      <h2 class="section-title">Composable Workflow Orchestration. Every Step Enforced.</h2>
-      <p class="section-desc centered"><code>/silver</code> routes work into the right composition: feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, or fast path. The comparison section is intentionally left unchanged until the next data pass.</p>
+      <h2 class="section-title">Task-Shaped Workflows. GSD-Backed Execution. SB-Enforced Evidence.</h2>
+      <p class="section-desc centered"><code>/silver</code> is the APO router: it classifies the request, composes the smallest safe workflow, delegates lifecycle work to GSD, and wraps execution with the right gates, reviews, documentation, DevOps controls, and release evidence.</p>
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Orchestration Workflows <span style="opacity:.6">(10)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('dev')">Full Dev Cycle <span style="opacity:.6">(20 steps)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps Cycle <span style="opacity:.6">(24 steps)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(10)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('dev')">Software Delivery Loop <span style="opacity:.6">(20)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps / IaC Loop <span style="opacity:.6">(24)</span></button>
     </div>
 
     <div id="workflow-orch" class="workflow-panel active" style="overflow-x:auto">
@@ -1790,44 +1790,44 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
-            <td>intel → brainstorm → quality-gates → plan → execute → TDD → review → verify → ship</td>
-            <td><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td>orient → clarify/decide if needed → spec/validate as needed → quality gates → GSD discuss/plan/execute/verify → review/secure → ship</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">gsd:verify-work</span> <span class="step-required">gsd:secure-phase</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
-            <td>triage (A/B/C) → debug → TDD regression test → plan fix → execute → review → verify → ship</td>
-            <td><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td>triage → systematic debugging or forensics → regression coverage → GSD fix path → review → verify → quality gates → ship</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">gsd:verify-work</span> <span class="step-required">review loop</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
-            <td>intel → brainstorm → quality-gates → gsd-ui-phase → execute → gsd-ui-review → verify → ship</td>
-            <td><span class="step-required">silver:security</span> <span class="step-required">quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td>orient → clarify if needed → UI design contract → GSD execute → UI quality review → verify → quality gates → ship</td>
+            <td><span class="step-required">gsd:ui-phase</span> <span class="step-required">gsd:ui-review</span> <span class="step-required">/silver:quality-gates</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
-            <td>intel → blast-radius → devops-quality-gates → plan → execute → review → verify → ship</td>
-            <td><span class="step-required">silver:security</span> <span class="step-required">devops-quality-gates</span> <span class="step-required">gsd-verify-work</span></td>
+            <td>orient → blast radius → DevOps skill routing → IaC quality gates → GSD plan/execute/verify → promote → ship</td>
+            <td><span class="step-required">/silver:blast-radius</span> <span class="step-required">/devops-quality-gates</span> <span class="step-required">gsd:verify-work</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"how should we", "compare X vs Y", "spike", "which technology"</td>
-            <td>explore → MultAI research (3 workflows) → brainstorm → decision with rationale → hand off</td>
-            <td><em style="color:var(--text-dim)">No code changes — no enforcement gates</em></td>
+            <td>clarify question → configured research path → decision artifact → implementation handoff or research-only stop</td>
+            <td><em style="color:var(--text-dim)">No code changes; artifact quality and handoff discipline apply</em></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td>quality-gates → UAT audit → milestone audit → docs → create-release → gsd-ship → complete-milestone</td>
-            <td><span class="step-required">quality-gates</span> <span class="step-required">silver:security</span> <span class="step-required">gsd-ship</span></td>
+            <td>quality gates → UAT audit → milestone audit → docs/review/fresh tests → gsd:ship → gsd:complete-milestone → /silver:create-release</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">gsd:ship</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">Trivial: ≤3 files, typo, rename, config tweak</td>
-            <td>confirm trivial → gsd-fast → atomic commit (no planning overhead)</td>
-            <td><em style="color:var(--text-dim)">Bypasses workflow enforcement by design</em></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">Typos, config tweaks, bounded small changes, dependency bumps</td>
+            <td>Tier 1 → gsd:fast; Tier 2 → gsd:quick with flags; Tier 3 → /silver:feature</td>
+            <td><span class="step-required">scope expansion check</span> <span class="step-required">GSD verification</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-spec.html" style="color:var(--accent-light);text-decoration:none">/silver:spec</a></td>
@@ -1844,13 +1844,13 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-validate.html" style="color:var(--accent-light);text-decoration:none">/silver:validate</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Before implementation; check SPEC coverage against PLAN.md</td>
-            <td>parse SPEC → scan plans → gap analysis → assumption awareness → VALIDATION.md</td>
+            <td>parse SPEC → scan plans → BLOCK/WARN/INFO gap analysis → assumption awareness → VALIDATION.md</td>
             <td><span class="step-required">BLOCK findings stop implementation</span></td>
           </tr>
         </tbody>
       </table>
       <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
-        All workflows invoked via <code>/silver &lt;anything&gt;</code> — the router classifies intent and dispatches automatically.
+        Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the route. Use direct <code>/silver:*</code> or <code>/gsd:*</code> commands when you already know the exact step.
         &nbsp;<a href="help/workflows/" style="color:var(--accent-light)">View full workflow docs &rarr;</a>
       </p>
     </div>
@@ -1873,12 +1873,12 @@ img{max-width:100%;height:auto}
           <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/gsd:discuss-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/system-design (if architectural)</td><td>Engineering</td><td></td></tr>
           <tr><td>3b</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/design-system + /ux-copy + /accessibility-review (if UI)</td><td>Design</td><td></td></tr>
-          <tr><td>4</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/quality-gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>4</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/silver:quality-gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>5</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>5a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/test-driven-development (before writing any code)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/forensics (on failure)</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:forensics or /gsd:debug (on failure)</td><td>Silver Bullet / GSD</td><td></td></tr>
           <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/code-review (structured quality review)</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (dispatches code-reviewer agent)</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>Superpowers</td><td><span class="step-required">Required</span></td></tr>
@@ -1892,7 +1892,7 @@ img{max-width:100%;height:auto}
           <tr><td>17</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
           <tr><td>18</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>19</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>20</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/create-release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>20</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1917,7 +1917,7 @@ img{max-width:100%;height:auto}
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#8635; Per-phase loop &mdash; repeat for each phase in ROADMAP.md</td></tr>
           <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/gsd:discuss-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>4</td><td><span class="phase-badge phase-blast">BLAST RADIUS</span></td><td>/blast-radius</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>4</td><td><span class="phase-badge phase-blast">BLAST RADIUS</span></td><td>/silver:blast-radius</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>5</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/devops-quality-gates (7 dimensions)</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>6</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
           <tr><td>6a</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
@@ -1943,7 +1943,7 @@ img{max-width:100%;height:auto}
           <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>/deploy-checklist</td><td>Engineering</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>22</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
           <tr><td>23</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>24</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/create-release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>24</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
         </tbody>
       </table>
     </div>
