@@ -421,7 +421,7 @@ for plugin_id in data.get("plugins", {}):
 PY
     )
 
-    [[ "${#updates[@]}" -gt 0 ]] || continue
+    [[ "${#updates[@]}" -gt 0 ]] || return 0
 
     python3 - "$registry_file" "$updated_at" "${updates[@]}" <<'PY'
 import json
