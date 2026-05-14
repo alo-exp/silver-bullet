@@ -169,8 +169,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <tbody>
           <tr>
             <td>Typo, copy, config, rename</td>
-            <td><code>/silver:fast</code> &rarr; <code>gsd-fast</code></td>
+            <td><code>/silver:fast</code> &rarr; <code>gsd:fast</code></td>
             <td>Avoids full planning while still confirming that scope is genuinely trivial.</td>
+          </tr>
+          <tr>
+            <td>Bounded small change</td>
+            <td><code>/silver:fast</code> &rarr; <code>gsd:quick</code> with flags</td>
+            <td>Uses lightweight discussion, research, or validation only when signals require it, then escalates if scope grows.</td>
           </tr>
           <tr>
             <td>Clear feature</td>
@@ -218,10 +223,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="fast-path">Fast Path Without Silent Scope Creep</h2>
-      <p><code>/silver:fast</code> exists for low-risk work, but it is not a blanket bypass. It confirms that the change is small and non-architectural before routing to <code>gsd-fast</code>. If scope expands beyond the fast-path limits, the workflow stops and re-routes to the appropriate full workflow.</p>
+      <p><code>/silver:fast</code> exists for low-risk and bounded work, but it is not a blanket bypass. Tier 1 routes truly trivial changes to <code>gsd:fast</code>; Tier 2 routes bounded medium changes to <code>gsd:quick</code> with the right flags. If scope expands beyond the fast-path limits, the workflow escalates to <code>silver:feature</code>.</p>
       <ul>
         <li>Good fits: typo fixes, small copy updates, simple config values, one-line renames.</li>
-        <li>Bad fits: feature logic, schema changes, auth, infrastructure, cross-module behavior, or anything that grows past the original scope.</li>
+        <li>Medium fits: small logic updates, dependency bumps, or 4–10-file changes where the impact is local and clear.</li>
+        <li>Bad fits: schema changes, auth, infrastructure, cross-module behavior, new capabilities, or anything that grows past the original scope.</li>
         <li>The legacy trivial marker is guarded by <code>trivial-file-guard.sh</code>; current Codex-oriented flows should use <code>/silver:fast</code> instead.</li>
       </ul>
 

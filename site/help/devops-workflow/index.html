@@ -228,9 +228,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>Fast Path Steps</h3>
       <ol>
-        <li><strong>Invoke <code>/incident-response</code></strong> (<strong>required</strong>) — Establish severity classification, timeline, communication protocol, and rollback trigger criteria before any changes.</li>
+        <li><strong>Create or update the incident response runbook</strong> — Establish severity classification, timeline, communication protocol, and rollback trigger criteria before any changes.</li>
         <li><strong>Document the incident</strong> — What is broken, what the proposed change is, expected outcome.</li>
-        <li><strong>Run <code>/blast-radius</code></strong> — Required even in incidents. A rushed unreviewed change can make incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.</li>
+        <li><strong>Run <code>/silver:blast-radius</code></strong> — Required even in incidents. A rushed unreviewed change can make incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.</li>
         <li><strong>Apply the minimal change</strong> in the lowest affected environment first, verify, then promote.</li>
         <li><strong>Create a post-incident review task</strong> — Full cycle review of the emergency change after the incident resolves, including <code>/devops-quality-gates</code> retroactively.</li>
         <li><strong>Commit with <code>[HOTFIX]</code> prefix</strong> and reference the incident ticket.</li>
@@ -295,7 +295,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">4</div>
         <div>
-          <div class="step-meta"><span class="step-title">/blast-radius</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:blast-radius</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Maps change scope, downstream dependencies, failure scenarios, rollback plan, and change window risk. Produces a rating that gates whether the phase can proceed.</p>
           <div class="step-output" style="margin-top:8px">→ Produces: blast radius rating + rollback plan</div>
         </div>
@@ -333,7 +333,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--red),#b91c1c)">5</div>
         <div>
           <div class="step-meta"><span class="step-title">/devops-quality-gates</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Applies 7 IaC-adapted quality dimensions against the infrastructure design, excluding usability and AI/LLM safety when they do not apply. Same base framework as <code>/quality-gates</code>, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention, and infra reliability. All 7 dimensions must pass. <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
+          <p class="step-desc">Applies 7 IaC-adapted quality dimensions against the infrastructure design, excluding usability and AI/LLM safety when they do not apply. Same base framework as <code>/silver:quality-gates</code>, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention, and infra reliability. All 7 dimensions must pass. <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
         </div>
       </div>
 
@@ -368,7 +368,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">7</div>
         <div>
           <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment only</strong> (dev or equivalent). Higher environments (staging, production) are promoted in the Environment Promotion section (steps 14–15) after all phases complete. <strong>Before writing IaC implementation: invoke <code>/test-driven-development</code> (required) — red-green-refactor per task (Terratest / conftest / OPA for Terraform; helm test / BATS for Helm).</strong> Commit atomically per task.</p>
+          <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment only</strong> (dev or equivalent). Higher environments (staging, production) are promoted in the Environment Promotion section (steps 14–15) after all phases complete. <strong>TDD is explicitly skipped for IaC execution. Use plan output, policy checks, validation commands, secrets/IAM review, drift detection, and rollback verification instead of red-green-refactor.</strong> Commit atomically per task.</p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
       </div>
@@ -391,7 +391,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
             <li>Runbook updated to reflect actual applied state</li>
           </ul>
           <div class="step-output" style="margin-top:8px">→ Produces: .planning/{phase}-VERIFICATION.md</div>
-          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>If step 8 fails:</strong> invoke <code>/forensics</code> before retrying. If root cause is implementation: re-run steps 7–8 only. If root cause is design/plan: return to step 3 (discuss).</p>
+          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>If step 8 fails:</strong> invoke <code>/silver:forensics</code> before retrying. If root cause is implementation: re-run steps 7–8 only. If root cause is design/plan: return to step 3 (discuss).</p>
         </div>
       </div>
 
@@ -477,7 +477,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">16</div>
         <div>
           <div class="step-meta"><span class="step-title">/testing-strategy</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Define the IaC test strategy: unit tests (module validation, policy-as-code with conftest/OPA), integration tests (Terratest, BATS, Helm test), end-to-end tests (smoke tests against deployed environments), and drift detection schedule.</p>
+          <p class="step-desc">Define the IaC verification strategy: module validation, policy-as-code, plan/apply review, smoke checks, drift detection cadence, rollback checks, and environment promotion evidence.</p>
         </div>
       </div>
 
@@ -493,7 +493,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">18</div>
         <div>
           <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Update or create all documentation. Minimum required: README, docs/PRD-Overview.md (or docs/Infra-PRD.md for pure infra projects), docs/Architecture-and-Design.md, docs/Testing-Strategy-and-Plan.md, <strong>docs/Runbooks.md</strong> (DevOps-specific: one section per phase/component), docs/CICD.md. Also update <strong>docs/KNOWLEDGE.md</strong> (architecture patterns, gotchas, decisions), <strong>docs/CHANGELOG.md</strong> (prepend new entry), and complete the <strong>session log</strong>.</p>
+          <p class="step-desc">Update documentation according to the SB doc scheme: README, docs/ARCHITECTURE.md, docs/TESTING.md, docs/internal/CICD.md or runbook docs when relevant, docs/CHANGELOG.md, monthly docs/knowledge/YYYY-MM.md and docs/lessons/YYYY-MM.md entries, task doc checklist, and the session log.</p>
         </div>
       </div>
 
@@ -563,9 +563,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">24</div>
         <div>
-          <div class="step-meta"><span class="step-title">/create-release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Generates release notes and creates the GitHub Release. README must have been updated in Step 18 before this step can proceed. Tag, release notes, and changelog entry are produced.</p>
-          <div class="step-output">→ Produces: git tag, GitHub Release, structured release notes</div>
+          <div class="step-meta"><span class="step-title">/silver:release</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Runs the milestone-level release workflow for publishable infrastructure work: release quality gates, audits, documentation, fresh tests, <code>gsd:ship</code>, <code>gsd:complete-milestone</code>, then <code>/silver:create-release</code> as the final tag/release step.</p>
+          <div class="step-output">→ Produces: completed milestone, git tag, GitHub Release, structured release notes</div>
         </div>
       </div>
 

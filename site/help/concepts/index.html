@@ -145,7 +145,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container">
     <div class="breadcrumb-nav"><a href="../">Help Center</a><span>/</span><span>Core Concepts</span></div>
     <h1>Core Concepts</h1>
-    <p>The mental models that make Silver Bullet understandable — skills, hooks, quality gates, and why GSD is the authoritative orchestrator.</p>
+    <p>The mental models that make Silver Bullet understandable: APO routing, skills, hooks, quality gates, GSD lifecycle execution, and cross-plugin orchestration.</p>
   </div>
 </div>
 
@@ -156,7 +156,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul class="sidebar-nav">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#hooks">Hooks</a></li>
-        <li><a href="#gsd">GSD — The Orchestrator</a></li>
+        <li><a href="#gsd">GSD — Lifecycle Engine</a></li>
         <li><a href="#superpowers">Superpowers</a></li>
         <li><a href="#ownership">Ownership Model</a></li>
         <li><a href="#quality-gates">Quality Gates</a></li>
@@ -198,7 +198,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>How Skills Are Invoked</h3>
       <p>Inside the host coding agent, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
-      <div class="code-block"><span class="cmd">/quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
+      <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
 <span class="cmd">/requesting-code-review</span>  <span class="comment"># dispatches code-reviewer subagent for peer review</span>
 <span class="cmd">/silver</span> quality review   <span class="comment"># routes to the right skill automatically</span></div>
@@ -217,37 +217,30 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="hooks">Hooks</h2>
-      <p>A <strong>hook</strong> is a shell script that the host coding agent runs automatically in response to events — most importantly, after every tool use (<code>PostToolUse</code>). Silver Bullet uses hooks to enforce the workflow without relying on runtime self-discipline.</p>
+      <p>A <strong>hook</strong> is a script that the host coding agent runs on lifecycle events such as <code>PreToolUse</code>, <code>PostToolUse</code>, <code>UserPromptSubmit</code>, <code>Stop</code>, and session start. Silver Bullet uses hooks to make the process enforceable instead of relying on the active runtime to remember every rule.</p>
 
-      <h3>Enforcement Hooks (4)</h3>
+      <h3>What Hooks Enforce</h3>
       <ul>
-        <li><strong>Skill tracker</strong> — Records which skills have been invoked this session. Used by the completion audit.</li>
-        <li><strong>Stage enforcer</strong> — Hard stops if you try to advance to planning before discussion is complete.</li>
-        <li><strong>Compliance status</strong> — Shows a progress bar of required steps completed on every tool use.</li>
-        <li><strong>Completion audit</strong> — Blocks <code>git commit</code>, <code>git push</code>, and deploy commands if required skills are missing.</li>
-      </ul>
-
-      <h3>Support Hooks (4 + session start)</h3>
-      <ul>
-        <li><strong>Semantic compression</strong> — Runs after each Skill invocation; TF-IDF-ranks your codebase and injects relevant context. See <a href="#semantic-context">Semantic Context Compression</a>.</li>
-        <li><strong>Session log init</strong> — Creates the session log file on first Bash use; stores path in <code>~/.claude/.silver-bullet/session-log-path</code>.</li>
-        <li><strong>CI status check</strong> — Intercepts push/deploy Bash commands and verifies CI is green before allowing them to proceed.</li>
-        <li><strong>Timeout check</strong> — Monitors for stall conditions and surfaces a timeout sentinel to break infinite loops.</li>
-        <li><strong>Session start</strong> — Runs at session open and context transitions; loads SB rules, project context, and active workflow state.</li>
+        <li><strong>Skill recording</strong> — records actual Skill tool invocations; implicit coverage never counts.</li>
+        <li><strong>Workflow order</strong> — blocks plan/execute/ship movement when required upstream gates are missing.</li>
+        <li><strong>Planning file ownership</strong> — blocks direct edits to GSD-managed artifacts and forces the owning GSD workflow to make lifecycle changes.</li>
+        <li><strong>Completion and delivery gates</strong> — blocks final delivery commands until the required planning, review, verification, test, CI, and release gates are complete.</li>
+        <li><strong>CI freshness</strong> — warns or blocks based on operation type so broken builds do not reach PR/deploy/release steps.</li>
+        <li><strong>Prompt reminders</strong> — re-inject missing-step state before user prompts so context compaction cannot erase the workflow contract.</li>
       </ul>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Hooks run outside the runtime's context.</strong> They're shell scripts executed by the host coding agent itself, not by the active runtime. This means they can't be overridden by runtime reasoning or instructions — they're a hard system constraint.</div>
+        <div class="callout-body"><strong>Hooks run outside runtime reasoning.</strong> They are host-level scripts, so a model cannot simply decide to ignore them. Hook-capable runtimes get hard gates; non-hook runtimes can still use SB workflows, but some enforcement becomes advisory until the runtime exposes equivalent hooks.</div>
       </div>
 
       <h3 id="trivial-changes">Trivial Changes</h3>
-      <p>Not every edit needs a full workflow. For small, non-logic changes (typos, copy fixes, config tweaks), use <code>/silver:fast</code> so SB can classify the scope and route to <code>gsd-fast</code> without the full workflow overhead.</p>
+      <p>Not every edit needs a full workflow. For trivial edits and bounded medium changes, use <code>/silver:fast</code>. It routes Tier 1 work to <code>gsd:fast</code>, Tier 2 work to <code>gsd:quick</code> with flags, and escalates anything larger into the full Silver Bullet workflow instead of relying on legacy marker files.</p>
 
       <div class="divider"></div>
 
-      <h2 id="gsd">GSD — The Authoritative Orchestrator</h2>
-      <p><strong>GSD (Get Shit Done)</strong> is the planning and execution engine at the core of Silver Bullet. It manages the complete lifecycle of a development task — from requirements through shipment — using a structured file-based workflow in the <code>.planning/</code> directory.</p>
+      <h2 id="gsd">GSD — The Lifecycle Engine</h2>
+      <p><strong>GSD (Get Shit Done)</strong> is the planning and execution engine inside Silver Bullet. SB composes the surrounding workflow; GSD owns requirements, roadmap, per-phase planning, execution, verification, and phase-level ship. It manages the complete lifecycle of a development task — from requirements through shipment — using a structured file-based workflow in the <code>.planning/</code> directory.</p>
 
       <h3>What GSD Manages</h3>
       <ul>
@@ -327,7 +320,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3>How Quality Gates Are Evaluated</h3>
-      <p>The <code>/quality-gates</code> skill evaluates each relevant dimension, commonly by dispatching parallel reviewers in isolated worktrees. Results are synthesised by the active runtime. The most conservative finding wins: if one reviewer flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
+      <p>The <code>/silver:quality-gates</code> skill evaluates each relevant dimension, commonly by dispatching parallel reviewers in isolated worktrees. Results are synthesised by the active runtime. The most conservative finding wins: if one reviewer flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
 
       <h3>DevOps Quality Gates</h3>
       <p>For infrastructure work, <code>/devops-quality-gates</code> applies 7 IaC-adapted dimensions, excluding usability and AI/LLM safety when they do not apply. The focus shifts to idempotency, drift prevention, least-privilege IAM, and infrastructure reliability.</p>
@@ -335,93 +328,21 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Twelve independent enforcement layers — Silver Bullet hooks covering every hook type (PreToolUse, PostToolUse, Stop, UserPromptSubmit, SubagentStop), GSD runtime hooks, plus redundant instructions that reinforce the same rules across multiple files:</p>
+      <p>Silver Bullet v0.34.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
-        <div class="layer-card">
-          <div class="layer-num">1</div>
-          <div>
-            <h4>Pre+PostToolUse — Skill Tracker</h4>
-            <p>Records every Skill tool invocation in the session state file. The source of truth for which required steps have been completed.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">2</div>
-          <div>
-            <h4>Pre+PostToolUse — Stage Enforcer</h4>
-            <p>Reads session state and issues a HARD STOP if the runtime attempts to advance to the next phase before completing the current one (e.g., starting PLAN before /quality-gates passes).</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">3</div>
-          <div>
-            <h4>Pre+PostToolUse — Compliance Status</h4>
-            <p>After every tool use, outputs a progress indicator showing which required steps are complete and which are pending. Keeps you informed without being obtrusive.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">4</div>
-          <div>
-            <h4>PreToolUse — Planning File Guard</h4>
-            <p>Blocks direct edits to GSD-managed planning artifacts (<code>ROADMAP.md</code>, <code>STATE.md</code>, <code>PROJECT.md</code>, <code>RELEASE.md</code>, milestone audit files) via Edit, Write, or MultiEdit. Forces the owning GSD skill to be used instead. Bypass available via override file for one-off doc fixes.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">5</div>
-          <div>
-            <h4>Pre+PostToolUse — Completion Audit</h4>
-            <p>Intercepts <code>git commit</code>, <code>git push</code>, and deploy commands. Uses a two-tier check: <strong>commits and pushes</strong> only require quality gates to have run; <strong>PR creation, deploys, and releases</strong> require the full required skill list. Blocks with a specific list of what's incomplete. Registers as PreToolUse so blocking is unbypassable — even in bypass-permissions mode.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">6</div>
-          <div>
-            <h4>PreToolUse — CI Gate</h4>
-            <p>Intercepts <code>git push</code> commands and checks the most recent CI run for the branch. Broken builds cannot be pushed — CI must be green first.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">7</div>
-          <div>
-            <h4>Stop / SubagentStop — Completion Gate</h4>
-            <p>Fires when the runtime declares a task complete. Blocks if required skills are still missing. Re-injected on every message so it survives compaction and cannot be lost mid-session.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">8</div>
-          <div>
-            <h4>UserPromptSubmit — Prompt Reminder</h4>
-            <p>Before every user message is processed, re-injects the list of missing required skills and the core enforcement rules. Ensures the runtime cannot "forget" the workflow even after context compaction.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">9</div>
-          <div>
-            <h4>PreToolUse — Forbidden Skill Gate</h4>
-            <p>Blocks deprecated or project-forbidden skills before they execute. Configurable via <code>skills.forbidden</code> in <code>.silver-bullet.json</code>.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">10</div>
-          <div>
-            <h4>GSD Workflow Guard</h4>
-            <p>GSD&rsquo;s own hook detects file edits made outside a <code>/gsd:*</code> command and warns immediately. Independent of Silver Bullet&rsquo;s hooks.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">11</div>
-          <div>
-            <h4>PreToolUse — ROADMAP Freshness Gate</h4>
-            <p>Intercepts <code>git commit</code> when a phase <code>SUMMARY.md</code> is staged but the corresponding <code>ROADMAP.md</code> checkbox is not ticked. Prevents milestone state from diverging from execution reality — phases cannot be declared done without updating the roadmap.</p>
-          </div>
-        </div>
-        <div class="layer-card">
-          <div class="layer-num">12</div>
-          <div>
-            <h4>Redundant Instructions + Anti-Rationalization</h4>
-            <p>The workflow is described in both the workflow file and the host project instruction file. Explicit rules prohibit the runtime from deciding a step is &ldquo;not applicable&rdquo; without user approval, or claiming it &ldquo;already covered&rdquo; a skill without actually invoking it.</p>
-          </div>
-        </div>
+        <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual Skill tool invocations. The completion audit trusts state, not prose claims.</p></div></div>
+        <div class="layer-card"><div class="layer-num">2</div><div><h4>Dev Cycle Gate</h4><p><code>dev-cycle-check.sh</code> enforces the current composed workflow stage and prevents premature source edits or phase movement.</p></div></div>
+        <div class="layer-card"><div class="layer-num">3</div><div><h4>Planning File Guard</h4><p><code>planning-file-guard.sh</code> blocks direct edits to GSD-managed artifacts such as ROADMAP, STATE, PROJECT, RELEASE, and milestone audit files.</p></div></div>
+        <div class="layer-card"><div class="layer-num">4</div><div><h4>Completion Audit</h4><p><code>completion-audit.sh</code> checks planning-floor and final-delivery requirements before git, PR, deploy, and release operations.</p></div></div>
+        <div class="layer-card"><div class="layer-num">5</div><div><h4>CI Status Check</h4><p><code>ci-status-check.sh</code> keeps red CI from reaching PR/deploy/release. Commits can still proceed so CI fixes are not trapped locally.</p></div></div>
+        <div class="layer-card"><div class="layer-num">6</div><div><h4>Compliance Score</h4><p><code>compliance-status.sh</code> shows current gate state after tool use so the active runtime and user can see what remains.</p></div></div>
+        <div class="layer-card"><div class="layer-num">7</div><div><h4>Phase Archive</h4><p>Completed phase artifacts are checked and archived consistently so roadmap state does not drift from execution artifacts.</p></div></div>
+        <div class="layer-card"><div class="layer-num">8</div><div><h4>Stop Hook</h4><p><code>stop-check.sh</code> fires when the runtime tries to finish and blocks completion claims if required gates are still missing.</p></div></div>
+        <div class="layer-card"><div class="layer-num">9</div><div><h4>Prompt Recorder + Reminder</h4><p><code>record-requested-skill.sh</code> and <code>prompt-reminder.sh</code> preserve requested-skill state across user messages and compaction.</p></div></div>
+        <div class="layer-card"><div class="layer-num">10</div><div><h4>Forbidden Skill Gate</h4><p><code>forbidden-skill-check.sh</code> blocks deprecated or project-forbidden skills before they execute.</p></div></div>
+        <div class="layer-card"><div class="layer-num">11</div><div><h4>ROADMAP Freshness Gate</h4><p><code>roadmap-freshness.sh</code> blocks phase-completion commits when SUMMARY artifacts and ROADMAP checkboxes disagree.</p></div></div>
+        <div class="layer-card"><div class="layer-num">12</div><div><h4>Redundant Instructions</h4><p>The same core rules are present in the SB contract, workflow docs, host project instructions, and hooks to prevent rationalized skips.</p></div></div>
       </div>
 
       <div class="divider"></div>
@@ -619,8 +540,8 @@ docs/
       <h3>JSON Lines Metrics</h3>
       <p>Each record captures: artifact type, review depth, round number, pass/fail result, finding categories, and timestamp. The metrics file accumulates across sessions, giving you a long-running history of artifact quality.</p>
 
-      <h3>silver-review-stats Reports</h3>
-      <p>Run <code>/silver-review-stats</code> to generate three summary tables from the accumulated metrics:</p>
+      <h3>silver:review-stats Reports</h3>
+      <p>Run <code>/silver:review-stats</code> to generate three summary tables from the accumulated metrics:</p>
       <ul>
         <li><strong>Pass rates by artifact type</strong> — what percentage of review rounds pass cleanly</li>
         <li><strong>Rounds to clean pass</strong> — how many rounds artifacts typically need before approval</li>
@@ -628,7 +549,7 @@ docs/
       </ul>
 
       <h3>Verification-Before-Completion in Review Loop</h3>
-      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>gsd-verify-work</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
+      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>gsd:verify-work</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
 
       <div class="divider"></div>
 
@@ -644,7 +565,7 @@ docs/
       <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
 
       <h3>Where It Runs</h3>
-      <p>The cross-artifact reviewer fires at two points: <strong>Step 17b</strong> in <code>silver:feature</code> (after artifact review gates, before milestone audit) and <strong>Step 7</strong> in <code>silver:release</code> (after <code>/gsd:ship</code> and before <code>gsd-complete-milestone</code>).</p>
+      <p>The cross-artifact reviewer fires at two points: <strong>Step 17b</strong> in <code>silver:feature</code> (after artifact review gates, before milestone audit) and <strong>Step 7</strong> in <code>silver:release</code> (after <code>/gsd:ship</code> and before <code>gsd:complete-milestone</code>).</p>
 
       <div class="divider"></div>
 
@@ -676,14 +597,14 @@ docs/
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="filter"></i></div>
           <h4>Complexity Triage</h4>
-          <p>Trivial → silver:fast. Fuzzy → silver:clarify first. Simple → direct workflow. Complex → clarify + synthesize. Prevents over-engineering trivial changes.</p>
+          <p>Trivial or bounded medium → silver:fast. Fuzzy → silver:clarify first. Simple → direct workflow. Complex → clarify + synthesize. Prevents both over-processing small work and under-processing risky work.</p>
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="operational-efficiency">Operational Efficiency</h2>
-      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Trivial work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host and GSD configuration; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
+      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Small and bounded work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host and GSD configuration; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="cpu"></i></div>
@@ -700,17 +621,17 @@ docs/
       <div class="divider"></div>
 
       <h2 id="verification">Verification Before Completion</h2>
-      <p><code>gsd-verify-work</code> is a non-skippable gate that runs before any workflow completes. It is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
+      <p><code>gsd:verify-work</code> is a non-skippable gate that runs before any workflow completes. It is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="check-circle-2"></i></div>
           <h4><a href="verification.html" style="color:var(--accent-light);text-decoration:none">Verification Before Completion →</a></h4>
-          <p>What gsd-verify-work checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
+          <p>What gsd:verify-work checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="shield-check"></i></div>
           <h4>Non-Skippable Gates</h4>
-          <p>Three gates are permanently non-skippable: <code>silver:security</code>, <code>silver:quality-gates</code> pre-ship, and <code>gsd-verify-work</code>. No §10 preference can waive them.</p>
+          <p>Permanent gates cannot be waived through §10: <code>gsd:verify-work</code>, pre-ship <code>/silver:quality-gates</code>, and secure-phase/security-dimension checks for non-trivial work.</p>
         </div>
       </div>
 
@@ -744,7 +665,7 @@ docs/
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="refresh-cw"></i></div>
           <h4>Automatic Updates</h4>
-          <p>Silver Bullet, GSD, Superpowers/Design/Engineering plugins, and MultAI are each version-checked at session start. Outdated components surface an update prompt before work begins.</p>
+          <p>Silver Bullet and GSD are version-checked at session start. Companion plugin versions are surfaced where the host exposes metadata, and optional research/review plugins are reported when installed.</p>
         </div>
       </div>
 

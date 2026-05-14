@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:feature — Feature Development Workflow — Silver Bullet Help</title>
-<meta name="description" content="Full SB-orchestrated feature development workflow: intel → clarify → quality-gates → GSD plan/execute/verify → ship.">
+<meta name="description" content="Full SB-orchestrated feature development workflow: orientation → clarify when needed → quality gates → GSD plan/execute/verify → review and ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -102,7 +102,7 @@ footer a:hover{color:var(--accent-light)}
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:feature</span></div>
     <h1>/silver:feature</h1>
-    <p>Full SB-orchestrated feature development workflow — from codebase intel through quality gates, TDD, code review, and ship.</p>
+    <p>Full SB-orchestrated feature development workflow — from codebase orientation through quality gates, TDD where applicable, code review, verification, and ship.</p>
   </div>
 </div>
 
@@ -131,7 +131,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
-      <p><strong>It never implements features directly — it orchestrates only.</strong> Every implementation step is delegated to the appropriate specialist skill (GSD, Superpowers, MultAI). This separation keeps the orchestration layer clean and each specialist focused.</p>
+      <p><strong>It never implements features directly — it orchestrates only.</strong> Every implementation step is delegated to the appropriate specialist skill: GSD for lifecycle execution, Superpowers for review/craft discipline, SB for gates and orchestration, and optional research/review providers when configured. This separation keeps the orchestration layer clean and each specialist focused.</p>
       <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow catalog.</p>
 
       <div class="divider"></div>
@@ -142,8 +142,8 @@ footer a:hover{color:var(--accent-light)}
       <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a path chain. For a typical feature request the proposed composition looks like:</p>
       <ul>
         <li><strong>FLOW 0 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
-        <li><strong>FLOW 1 (ORIENT)</strong> — codebase intel, brownfield scan</li>
-        <li><strong>FLOW 2 (EXPLORE)</strong> — scope clarification when intent is fuzzy</li>
+        <li><strong>FLOW 1 (ORIENT)</strong> — codebase and project-state orientation</li>
+        <li><strong>FLOW 2 (CLARIFY)</strong> — scope clarification when intent is fuzzy</li>
         <li><strong>FLOW 3 (DECIDE)</strong> — clarify, architecture decision, system design</li>
         <li><strong>FLOW 4 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
         <li><strong>FLOW 5 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
@@ -201,7 +201,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>Simple</td>
             <td>Clear scope, ≤1 phase, well-defined output</td>
-            <td>Skip Step 1b, go directly to Step 1a (codebase intel)</td>
+            <td>Skip Step 1b, go directly to Step 1a (orientation)</td>
           </tr>
           <tr>
             <td>Complex</td>
@@ -216,69 +216,69 @@ footer a:hover{color:var(--accent-light)}
       <h2 id="workflow-steps">Workflow steps</h2>
 
       <h3>Pre-flight</h3>
-      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes. Stored routing, skip, tool, MultAI, and mode preferences are silently applied throughout the workflow.</p>
+      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes. Stored routing, skip, research-tool, and mode preferences are silently applied throughout the workflow.</p>
 
       <h3>Step 0 — Complexity triage</h3>
       <p>Classify the request (see table above). If trivial: invoke <code>silver:fast</code> and exit. If fuzzy: proceed to Step 1b. If simple or complex: proceed to Step 1a.</p>
 
-      <h3>Step 1a — Codebase intel</h3>
-      <p>Invoke <code>silver:intel</code> (gsd-intel) to orient planning in the codebase. If no intel files exist and this is a brownfield project, also invoke <code>silver:scan</code> (gsd-scan) for rapid structure assessment.</p>
+      <h3>Step 1a — Codebase orientation</h3>
+      <p>Invoke <code>silver:scan</code> for rapid SB orientation. If this is a brownfield project or deeper structure mapping is needed, invoke <code>/gsd:map-codebase</code> for GSD-managed codebase mapping.</p>
 
       <h3>Step 1b — Fuzzy scope clarification (conditional)</h3>
       <p>Only if complexity triage found fuzzy intent or arguments are empty: invoke <code>silver:clarify</code> via the Skill tool for Socratic framing, option comparison, and decision-ready handoff before structured planning.</p>
 
-      <h3>Step 1b — MultAI pre-spec review (conditional)</h3>
+      <h3>Step 1c — Optional research review (conditional)</h3>
       <p>Offered automatically when the change is architecturally significant (choosing between 2+ architectures, selecting a tech stack from scratch, domain is novel, change affects public API or data model). SB asks:</p>
-      <div class="code-block">This appears to be an architecturally significant change. Would you like 7-AI perspectives on the architecture/approach before locking the spec?
+      <div class="code-block">This appears to be an architecturally significant change. Would you like the configured research/review path to run before locking the spec?
 
-A. Yes — run MultAI pre-spec review (multai:orchestrator)
+A. Yes — run the configured multi-AI/research review path
 B. No — proceed with spec as-is</div>
-      <p><strong>Note:</strong> this step informs the spec PRE-implementation. Step 9c (gsd-review --all) reviews completed code POST-execution. Both steps are independent.</p>
+      <p><strong>Note:</strong> this step informs the spec PRE-implementation. Step 9c (gsd:review --all) reviews completed code POST-execution. Both steps are independent.</p>
 
       <h3>Step 2 — Testing strategy</h3>
       <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>silver:writing-plans</code> (superpowers:writing-plans). Purpose: convert approved spec and test strategy into a structured implementation plan.</p>
+      <p>Invoke <code>/writing-plans</code> (superpowers:writing-plans). Purpose: convert approved spec and test strategy into a structured implementation plan.</p>
 
       <h3>Step 3 — Pre-plan quality gates (9 dimensions)</h3>
-      <p>Invoke <code>silver:quality-gates</code>. All 9 dimensions: reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes. <code>silver:security</code> is always mandatory regardless of §10 preferences.</p>
+      <p>Invoke <code>/silver:quality-gates</code>. All 9 dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
 
       <h3>Step 4 — Discuss phase</h3>
-      <p>Invoke <code>gsd-discuss-phase</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
+      <p>Invoke <code>gsd:discuss-phase</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
 
       <h3>Step 5 — Analyze dependencies</h3>
-      <p>Invoke <code>gsd-analyze-dependencies</code>. Maps phase dependencies before GSD creates the plan.</p>
+      <p>Invoke <code>gsd:analyze-dependencies</code>. Maps phase dependencies before GSD creates the plan.</p>
 
       <h3>Step 6 — Plan phase</h3>
-      <p>Invoke <code>gsd-plan-phase</code>. Produces <code>PLAN.md</code> with verification loop.</p>
+      <p>Invoke <code>gsd:plan-phase</code>. Produces <code>PLAN.md</code> with verification loop.</p>
 
       <h3>Step 7 — Execute phase</h3>
-      <p>In Interactive mode (default): invoke <code>gsd-execute-phase --tdd</code> for implementation plans, or <code>gsd-execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd-autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>silver:tdd</code> gate can run before execution. The internal <code>silver:tdd</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution wave starts.</p>
+      <p>In Interactive mode (default): invoke <code>gsd:execute-phase --tdd</code> for implementation plans, or <code>gsd:execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code> only when the underlying GSD TDD mode is already enabled. For behavior-changing code, the TDD boundary uses <code>/test-driven-development</code> before the execution wave starts.</p>
 
       <h3>Step 8 — Verify work</h3>
-      <p>Invoke <code>gsd-verify-work</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>gsd:verify-work</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 8b — Test gap fill (conditional)</h3>
-      <p>Only if gsd-verify-work surfaces coverage gaps: invoke <code>gsd-add-tests</code> to generate tests from UAT criteria.</p>
+      <p>Only if gsd:verify-work surfaces coverage gaps: invoke <code>gsd:add-tests</code> to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>silver:request-review</code> (superpowers:requesting-code-review) → <code>gsd-code-review</code> → [if issues: <code>gsd-code-review-fix</code>] → [for arch-significant changes: <code>gsd-review --all</code>] → <code>silver:receive-review</code> (superpowers:receiving-code-review).</p>
+      <p>Run in order: <code>/requesting-code-review</code> (superpowers:requesting-code-review) → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code> (superpowers:receiving-code-review).</p>
 
-      <h3>Step 10 — Security review</h3>
-      <p>Invoke <code>silver:security</code>. <strong>Non-skippable gate — cannot be bypassed via §10.</strong></p>
+      <h3>Step 10 — Secure phase</h3>
+      <p>Invoke <code>gsd:secure-phase</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase. <strong>Non-skippable gate — cannot be bypassed via §10.</strong></p>
 
-      <h3>Steps 11–13 — Secure, validate, pre-ship quality gates</h3>
-      <p>Invoke <code>gsd-secure-phase</code> (retroactive threat mitigation verification) → <code>gsd-validate-phase</code> (Nyquist validation gap filling) → <code>silver:quality-gates</code> again (full 9-dimension pre-ship sweep). Pre-ship quality gates are <strong>non-skippable</strong>.</p>
+      <h3>Steps 11–13 — Validate and pre-ship quality gates</h3>
+      <p>Invoke <code>gsd:validate-phase</code> (Nyquist validation gap filling) → <code>/silver:quality-gates</code> again (full 9-dimension pre-ship sweep). Pre-ship quality gates are <strong>non-skippable</strong>.</p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
-      <p>Invoke <code>silver:finishing-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd-pr-branch</code> → <code>gsd-ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
+      <p>Invoke <code>/finishing-a-development-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
 
       <h3>Step 16 — Episodic memory</h3>
       <p>Invoke <code>episodic-memory:remembering-conversations</code> to record key decisions and lessons from this feature.</p>
 
       <h3>Step 17 — Milestone completion (last phase only)</h3>
-      <p>If this is the last phase of the milestone: run <code>gsd-audit-uat</code> → <code>gsd-audit-milestone</code> → gap-closure loop (max 2 iterations) → <code>gsd-complete-milestone</code>.</p>
+      <p>If this is the last phase of the milestone: run <code>gsd:audit-uat</code> → <code>gsd:audit-milestone</code> → gap-closure loop (max 2 iterations) → <code>gsd:complete-milestone</code>.</p>
 
       <div class="divider"></div>
 
@@ -288,9 +288,9 @@ B. No — proceed with spec as-is</div>
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:security</code> (Step 10)</li>
-            <li><code>silver:quality-gates</code> pre-ship (Step 13)</li>
-            <li><code>gsd-verify-work</code> (Step 8)</li>
+            <li><code>gsd:secure-phase</code> (Step 10)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (Step 13)</li>
+            <li><code>gsd:verify-work</code> (Step 8)</li>
           </ul>
         </div>
       </div>
@@ -309,12 +309,12 @@ B. No — proceed with spec as-is</div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:feature Add dark mode toggle to the settings panel</div>
-      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips silver:clarify, proceeds to intel → clarify → quality-gates → discuss → plan → execute → TDD → review → verify → ship.</p>
+      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips the extra clarification path, proceeds through orientation, quality gates, GSD discuss/plan/execute, TDD where applicable, review, verify, and ship.</p>
 
       <div class="divider"></div>
 
       <h2 id="preferences">Preferences</h2>
-      <p>§10 routing preferences are loaded at pre-flight and silently applied throughout the workflow. Stored preferences include routing overrides, step skips, tool choices, MultAI opt-in/out, and session mode (interactive vs autonomous).</p>
+      <p>§10 routing preferences are loaded at pre-flight and silently applied throughout the workflow. Stored preferences include routing overrides, step skips, tool choices, research/review tool opt-in/out, and session mode (interactive vs autonomous).</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

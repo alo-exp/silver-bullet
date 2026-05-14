@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
-<title>/silver:fast — Trivial Change Fast Path — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet trivial change fast path — complexity triage confirms ≤3 files, routes directly to gsd-fast, no planning overhead. §10 preferences not applied.">
+<title>/silver:fast — Fast Path Triage — Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet fast path triage — routes trivial work to gsd:fast, bounded medium work to gsd:quick with flags, and escalates complex work to /silver:feature. §10 preferences not applied.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -90,7 +90,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:fast</span></div>
     <h1>/silver:fast</h1>
-    <p>Trivial change fast path — bypass workflow for ≤3 file changes: typos, config values, renames. Routes directly to gsd-fast with no planning overhead.</p>
+    <p>Fast path triage for small and bounded work — routes trivial edits to gsd:fast, medium changes to gsd:quick with the right flags, and escalates complex work into the full Silver Bullet workflow chain.</p>
   </div>
 </div>
 
@@ -118,7 +118,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:fast</code> is Silver Bullet's entry point for changes that don't need the full composable flows chain. It uses a <strong>3-tier complexity triage</strong> to route each request to the right execution path — preventing both over-engineering trivial changes and under-engineering medium-complexity ones.</p>
-      <p>Invoked directly as <code>/silver:fast</code>, or automatically by <code>/silver</code> when complexity triage classifies the request as Tier 1 (Trivial) or Tier 2 (Medium). See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow architecture used by Tier 3 escalations.</p>
+      <p>Invoked directly as <code>/silver:fast</code>, or by <code>/silver</code> when the request is clearly low-risk enough for fast-path triage. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow architecture used by Tier 3 escalations.</p>
 
       <div class="divider"></div>
 
@@ -130,12 +130,12 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <tr>
             <td>Tier 1 — Trivial</td>
             <td>≤3 files, typo, config value, symbol rename, one-liner, comment update</td>
-            <td>Route directly to <code>gsd-fast</code> — one-shot execution, no planning overhead</td>
+            <td>Route directly to <code>gsd:fast</code> — one-shot execution, no planning overhead</td>
           </tr>
           <tr>
             <td>Tier 2 — Medium</td>
             <td>4–10 files, clear scope, limited logic change, no cross-cutting concerns</td>
-            <td>Route to <code>gsd-quick</code> with flag composition: <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, <code>--full</code> as needed</td>
+            <td>Route to <code>gsd:quick</code> with flag composition: <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, <code>--full</code> as needed</td>
           </tr>
           <tr>
             <td>Tier 3 — Complex</td>
@@ -165,17 +165,17 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Entry trigger signals for <code>/silver:fast</code>:</p>
       <ul>
         <li>"trivial" / "quick fix" / "typo" / "one-liner" / "config value"</li>
-        <li>≤3 files, rename, comment update</li>
-        <li>Automatically invoked by <code>/silver</code> when complexity triage classifies as Trivial</li>
+        <li>Small copy, config, rename, comment, dependency, or bounded logic updates</li>
+        <li>Automatically invoked by <code>/silver</code> when the request is clearly safe for fast-path triage</li>
       </ul>
 
       <div class="divider"></div>
 
-      <h2 id="scope-limit">Scope limit</h2>
+      <h2 id="scope-limit">Scope Limit</h2>
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
         <div class="callout-body">
-          <strong>silver:fast is strictly for ≤3 file changes.</strong> If the work expands beyond this limit during execution, the fast path STOPS immediately and offers escalation to a named workflow. False trivial classifications cause under-reviewed changes. When scope is ambiguous: escalate.
+          <strong>silver:fast is not a bypass for complex work.</strong> Tier 1 is limited to ≤3 files with no logic change. Tier 2 can handle 4–10 files, small logic changes, or dependency updates through <code>gsd:quick</code>. Anything cross-cutting, schema-affecting, capability-creating, or larger than 10 files escalates to <code>silver:feature</code>.
         </div>
       </div>
 
@@ -186,41 +186,49 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h3>Pre-flight: banner only</h3>
       <p>Displays a fast-path banner. No preference loading (intentional).</p>
 
-      <h3>Step 0 — Complexity triage gate</h3>
-      <p>Before invoking gsd-fast, SB confirms the change is truly trivial:</p>
-      <div class="code-block">Confirming trivial scope for: {change description}
+      <h3>Step 0 — Autonomous complexity triage</h3>
+      <p>SB classifies the request before choosing an execution engine:</p>
+      <div class="code-block">Tier 1: ≤3 files AND no logic change
+  → gsd:fast
 
-Does this change:
+Tier 2: 4–10 files OR small logic change OR dependency update
+  → gsd:quick with --discuss, --research, --validate, or --full as needed
 
-A. Touch ≤3 files AND is a typo / config value / rename / one-liner? → proceed to fast path
-B. Touch >3 files OR involves logic, dependency, or schema changes? → escalate to full workflow</div>
-      <p>If A (trivial confirmed): proceed to Step 1.</p>
-      <p>If B (non-trivial): do NOT invoke gsd-fast. Instead, SB asks which workflow to route to (silver:feature / silver:bugfix / silver:ui / silver:devops / silver:research) and invokes the chosen workflow with the original arguments.</p>
+Tier 3: >10 files OR cross-cutting OR schema change OR new capability
+  → silver:feature</div>
+      <p>Ambiguity always moves to the safer higher tier. There is no manual step-skip preference loading in this workflow.</p>
 
-      <h3>Step 1 — Execute fast path</h3>
-      <p>Only reached if Step 0 confirms trivial scope. Invoke <code>gsd-fast</code> with the change description as argument.</p>
+      <h3>Step 1 — Tier 1 execution</h3>
+      <p>If the request is truly trivial, invoke <code>gsd:fast</code> with the change description. After execution, run the scope expansion check.</p>
 
-      <h3 id="scope-expansion">Step 2 — Scope expansion stop condition</h3>
-      <p>During or after gsd-fast execution, if scope expands beyond 3 files, the fast path stops immediately:</p>
-      <div class="code-block">Scope has expanded beyond 3 files. Fast path cannot continue.
+      <h3>Step 2 — Tier 2 execution</h3>
+      <p>If the request is bounded but no longer trivial, detect the required <code>gsd:quick</code> flags:</p>
+      <ul>
+        <li><code>--discuss</code> for ambiguity, tradeoffs, or multiple approaches</li>
+        <li><code>--research</code> for new libraries, unfamiliar domains, or investigation-heavy work</li>
+        <li><code>--validate</code> for production code changes that need explicit validation</li>
+        <li><code>--full</code> when all three signals apply</li>
+      </ul>
+      <p>Any deferred items discovered during Tier 2 execution are filed through <code>/silver:add</code>.</p>
 
-Files now affected: {list}</div>
-      <p>SB then asks which workflow should take over (silver:feature / silver:bugfix / silver:devops / stop for manual review). The chosen workflow receives the original arguments.</p>
+      <h3 id="scope-expansion">Step 3 — Scope expansion check</h3>
+      <p>After Tier 1 or Tier 2 execution, SB checks the actual modified scope. Tier 1 expands to Tier 2 when it touches 4–10 files, and Tier 1 or Tier 2 escalates to <code>silver:feature</code> when it exceeds 10 files or becomes cross-cutting.</p>
+      <div class="code-block">FAST PATH ESCALATION
+Reason: Scope expanded from {original tier} to {new tier}
+Files affected: {count}
+Routing to: {gsd:quick|silver:feature}</div>
 
-      <h3>Step 3 — Verify</h3>
-      <p>After gsd-fast completes (and scope remained ≤3 files throughout): run the verification command from gsd-fast output. If no automated verification is available, SB asks the user to confirm the change looks correct.</p>
-
-      <h3>Step 4 — Confirm</h3>
-      <p>SB displays a completion summary showing: change description, files modified count (confirmed ≤3), status: committed.</p>
+      <h3>Step 4 — Verify and confirm</h3>
+      <p>Run the verification command surfaced by the selected GSD path. SB then displays the classification, execution route, files modified, verification result, and commit status.</p>
 
       <div class="divider"></div>
 
       <h2 id="when-not-to-use">When NOT to use</h2>
       <p>Do not use <code>silver:fast</code> for:</p>
       <ul>
-        <li>Any change touching 4+ files</li>
-        <li>Business logic changes (even "small" ones)</li>
-        <li>Dependency additions or removals</li>
+        <li>Anything expected to touch more than 10 files</li>
+        <li>Cross-cutting business logic or multi-module behavior</li>
+        <li>Dependency changes with broad runtime, security, or compatibility impact</li>
         <li>Schema changes (database, API, config format)</li>
         <li>Changes with downstream impact on other systems</li>
         <li>Security-related changes</li>
@@ -231,7 +239,7 @@ Files now affected: {list}</div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:fast Fix typo in README installation section</div>
-      <p>Silver Bullet confirms trivial scope (1 file, typo). Invokes gsd-fast. README updated, verified, committed. Done.</p>
+      <p>Silver Bullet classifies this as Tier 1, invokes <code>gsd:fast</code>, verifies the README update, confirms the file count stayed inside the trivial boundary, and commits the change.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

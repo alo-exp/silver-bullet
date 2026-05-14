@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:ui — UI/UX Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated UI/frontend workflow: intel → clarify → gsd-ui-phase (design contract) → execute + TDD → gsd-ui-review → accessibility → ship.">
+<meta name="description" content="SB-orchestrated UI/frontend workflow: orientation → clarify when needed → gsd:ui-phase design contract → execute with TDD where applicable → gsd:ui-review → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:ui</span></div>
     <h1>/silver:ui</h1>
-    <p>Full SB-orchestrated UI/frontend workflow — from intel through design contract (gsd-ui-phase), TDD for components, UI visual audit, accessibility review, and ship.</p>
+    <p>Full SB-orchestrated UI/frontend workflow — from orientation through design contract (gsd:ui-phase), TDD for testable behavior, UI visual audit, accessibility review, and ship.</p>
   </div>
 </div>
 
@@ -133,7 +133,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <ul>
         <li><code>design:design-system</code> — component tokens and design system decisions</li>
         <li><code>design:ux-copy</code> (as-needed) — user-facing text and messaging</li>
-        <li><code>gsd-ui-phase</code> — produces <code>UI-SPEC.md</code> design contract with component API and layout rules</li>
+        <li><code>gsd:ui-phase</code> — produces <code>UI-SPEC.md</code> design contract with component API and layout rules</li>
         <li><code>design:accessibility-review</code> (as-needed) — WCAG 2.1 AA compliance</li>
       </ul>
       <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan (FLOW 7) is built on top of this contract — implementation must match the spec.</p>
@@ -143,10 +143,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>Steps:</strong></p>
       <ul>
         <li><code>design:design-critique</code> — design quality review</li>
-        <li><code>gsd-ui-review</code> — 6-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)</li>
+        <li><code>gsd:ui-review</code> — 6-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)</li>
         <li><code>design:accessibility-review</code> — WCAG 2.1 AA enforcement</li>
       </ul>
-      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>gsd-execute-phase --gaps-only</code> for targeted fixes.</p>
+      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>gsd:execute-phase --gaps-only</code> for targeted fixes.</p>
 
       <h3>Full composition for UI work</h3>
       <p>A typical <code>silver:ui</code> composition: FLOW 0 → FLOW 1 → FLOW 2 (if fuzzy) → FLOW 3 → FLOW 4 → FLOW 5 → <strong>FLOW 6 (DESIGN CONTRACT)</strong> → FLOW 7 → <strong>FLOW 8 (UI QUALITY)</strong> → FLOW 9 → FLOW 10 → FLOW 11 → FLOW 12 → FLOW 13 → FLOW 16.</p>
@@ -177,40 +177,40 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
       <h3>Step 0 — Orient in codebase</h3>
-      <p>Invoke <code>silver:intel</code> (gsd-intel) to understand existing UI patterns and component hierarchy. If brownfield project, also invoke <code>silver:scan</code> (gsd-scan) for rapid structure assessment.</p>
+      <p>Invoke <code>silver:scan</code> to understand existing UI patterns and component hierarchy. If deeper brownfield mapping is needed, invoke <code>/gsd:map-codebase</code> for GSD-managed structure assessment.</p>
 
       <h3>Step 1a — Fuzzy clarification (conditional)</h3>
       <p>Only if intent is fuzzy or arguments are empty: invoke <code>silver:clarify</code> via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.</p>
 
-      <h3>Step 1b — MultAI UI perspectives (conditional)</h3>
-      <p>Only for major UI systems (design system, cross-cutting UI architecture, or user request). SB offers multi-AI UX pattern perspectives via <code>silver:multai</code> (multai:orchestrator).</p>
+      <h3>Step 1b — Optional UI research perspectives (conditional)</h3>
+      <p>Only for major UI systems (design system, cross-cutting UI architecture, or user request). SB can run the configured research/review path for UX pattern perspectives when that optional provider is installed.</p>
 
       <h3>Step 2 — Testing strategy</h3>
       <p>Invoke <code>/testing-strategy</code>. Purpose: define test levels for UI (component, visual, e2e) — MUST run after spec approval and before writing plans.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>silver:writing-plans</code> (superpowers:writing-plans). Purpose: spec and test strategy into implementation plan with frontend-design emphasis.</p>
+      <p>Invoke <code>/writing-plans</code> (superpowers:writing-plans). Purpose: spec and test strategy into implementation plan with frontend-design emphasis.</p>
 
       <h3>Step 3 — Pre-plan quality gates</h3>
-      <p>Invoke <code>silver:quality-gates</code>. 9 dimensions with usability and testability emphasis. <code>silver:security</code> is always mandatory.</p>
+      <p>Invoke <code>/silver:quality-gates</code>. All 9 dimensions run, with usability and testability emphasized for UI work. Security is handled through the quality-gate security dimension and later secure-phase review.</p>
 
       <h3>Step 4 — Discuss phase</h3>
-      <p>Invoke <code>gsd-discuss-phase</code>. UI phase context → <code>CONTEXT.md</code> with locked decisions.</p>
+      <p>Invoke <code>gsd:discuss-phase</code>. UI phase context → <code>CONTEXT.md</code> with locked decisions.</p>
 
       <h3 id="design-contract">Step 5 — UI phase: design contract</h3>
-      <p>Invoke <code>gsd-ui-phase</code>. <strong>This step is the key differentiator from silver:feature.</strong> Purpose: create <code>UI-SPEC.md</code> design contract — component API, layout rules, interaction spec. The implementation plan in Step 6 is built on top of this contract.</p>
+      <p>Invoke <code>gsd:ui-phase</code>. <strong>This step is the key differentiator from silver:feature.</strong> Purpose: create <code>UI-SPEC.md</code> design contract — component API, layout rules, interaction spec. The implementation plan in Step 6 is built on top of this contract.</p>
 
       <h3>Step 6 — Plan phase</h3>
-      <p>Invoke <code>gsd-plan-phase</code>. Implementation <code>PLAN.md</code> built on top of <code>UI-SPEC.md</code> contract.</p>
+      <p>Invoke <code>gsd:plan-phase</code>. Implementation <code>PLAN.md</code> built on top of <code>UI-SPEC.md</code> contract.</p>
 
       <h3>Step 7 — Execute phase and TDD</h3>
-      <p>Execute: invoke <code>gsd-execute-phase --tdd</code> for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke <code>gsd-execute-phase</code> without <code>--tdd</code>. In Autonomous mode (§10e): invoke <code>gsd-autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>silver:tdd</code> gate can run before execution. The internal <code>silver:tdd</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution boundary starts.</p>
+      <p>Execute: invoke <code>gsd:execute-phase --tdd</code> for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke <code>gsd:execute-phase</code> without <code>--tdd</code>. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code>, but only for implementation plans when the underlying GSD TDD mode is already enabled; otherwise stay interactive so the internal <code>/test-driven-development</code> gate can run before execution. The internal <code>/test-driven-development</code> gate is hidden from the picker and delegates to <code>superpowers:test-driven-development</code> before the execution boundary starts.</p>
 
       <h3>Step 8 — Code review</h3>
-      <p>Run review sequence in order: <code>silver:request-review</code> → <code>gsd-review</code> → [if issues: <code>gsd-review-fix</code>] → [for major UI systems: <code>gsd-review --all</code>] → <code>silver:receive-review</code>.</p>
+      <p>Run review sequence in order: <code>/requesting-code-review</code> → <code>gsd:review</code> → [if issues: <code>gsd:review-fix</code>] → [for major UI systems: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>.</p>
 
       <h3 id="ui-visual-audit">Step 9 — UI visual audit</h3>
-      <p>Invoke <code>gsd-ui-review</code>. <strong>This step is unique to the UI workflow.</strong> Purpose: 6-pillar visual audit of implemented UI:</p>
+      <p>Invoke <code>gsd:ui-review</code>. <strong>This step is unique to the UI workflow.</strong> Purpose: 6-pillar visual audit of implemented UI:</p>
       <ul>
         <li>Layout fidelity (matches UI-SPEC.md contract)</li>
         <li>Accessibility (WCAG 2.1 AA compliance)</li>
@@ -221,22 +221,22 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       </ul>
 
       <h3>Step 10 — Frontend security</h3>
-      <p>Invoke <code>gsd-secure-phase</code> (XSS, CSP, auth surface) and <code>silver:security</code> (mandatory security gate). Both run at this step.</p>
+      <p>Invoke <code>gsd:secure-phase</code> for XSS, CSP, auth surface, secrets exposure, and security-sensitive UI behavior. This is the explicit secure-phase gate for UI work.</p>
 
       <h3>Step 11 — Verify work and test gap fill</h3>
-      <p>Invoke <code>gsd-verify-work</code>. <strong>Non-skippable gate.</strong> If coverage gaps remain: invoke <code>gsd-add-tests</code>.</p>
+      <p>Invoke <code>gsd:verify-work</code>. <strong>Non-skippable gate.</strong> If coverage gaps remain: invoke <code>gsd:add-tests</code>.</p>
 
       <h3>Step 12 — Validate phase</h3>
-      <p>Invoke <code>gsd-validate-phase</code>. Nyquist validation gap filling.</p>
+      <p>Invoke <code>gsd:validate-phase</code>. Nyquist validation gap filling.</p>
 
       <h3>Step 13 — Pre-ship quality gates</h3>
-      <p>Invoke <code>silver:quality-gates</code>. Full 9-dimension sweep. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>/silver:quality-gates</code>. Full 9-dimension sweep. <strong>Non-skippable gate.</strong></p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
-      <p>Invoke <code>silver:finishing-branch</code> → optionally <code>gsd-pr-branch</code> → <code>gsd-ship</code>. Phase-level merge.</p>
+      <p>Invoke <code>/finishing-a-development-branch</code> → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. Phase-level merge.</p>
 
       <h3 id="step-16">Step 16 — Milestone completion (last phase only)</h3>
-      <p>Ask: <em>"Is this the last phase of the current milestone?"</em> If yes, run the full milestone lifecycle: <code>gsd-audit-uat</code> → <code>gsd-audit-milestone</code> → [gap-closure loop, max 2 iterations: <code>gsd-plan-milestone-gaps</code> → <code>silver:feature</code> for gap phases] → <code>gsd-complete-milestone</code>. If no — done.</p>
+      <p>Ask: <em>"Is this the last phase of the current milestone?"</em> If yes, run the full milestone lifecycle: <code>gsd:audit-uat</code> → <code>gsd:audit-milestone</code> → [gap-closure loop, max 2 iterations: <code>gsd:plan-milestone-gaps</code> → <code>/silver:feature</code> for gap phases] → <code>gsd:complete-milestone</code>. If no — done.</p>
 
       <div class="divider"></div>
 
@@ -246,9 +246,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:security</code> (Step 10)</li>
-            <li><code>silver:quality-gates</code> pre-ship (Step 13)</li>
-            <li><code>gsd-verify-work</code> (Step 11)</li>
+            <li><code>gsd:secure-phase</code> (Step 10)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (Step 13)</li>
+            <li><code>gsd:verify-work</code> (Step 11)</li>
           </ul>
         </div>
       </div>
@@ -257,7 +257,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
-      <p>Silver Bullet routes to the UI workflow. After intel and clarify, gsd-ui-phase creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. gsd-ui-review audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
+      <p>Silver Bullet routes to the UI workflow. After orientation and clarification when needed, gsd:ui-phase creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. gsd:ui-review audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

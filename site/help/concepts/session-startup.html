@@ -187,7 +187,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Silver Bullet checks the active workflow tracker, requested skills, required gates, phase locks, and any stall or timeout state. If a prior composition exists under <code>.planning/workflows/&lt;id&gt;.md</code>, the runtime can resume from the next required step instead of starting over.</p>
 
       <h2 id="step5">Step 5 — Update checks</h2>
-      <p>Before starting project work, the runtime may run version checks for Silver Bullet, GSD, and related plugins. Each check is independent — a failure in one does not block the others.</p>
+      <p>Before starting project work, the runtime may run version checks for Silver Bullet, GSD, and installed companion plugins. Each check is independent; a failure in one check does not block the rest of startup.</p>
 
       <div class="update-card">
         <h4>5.1 Silver Bullet <span class="badge badge-auto">auto-offer</span></h4>
@@ -208,7 +208,7 @@ footer a:hover{color:var(--accent-light)}
           <span class="update-opt opt-a">A. Yes, update now</span>
           <span class="update-opt">B. Skip</span>
         </div>
-        <p style="margin-top:10px">If A: runs <code>/gsd-update</code> via the Skill tool. If B or either version is unknown: skips and continues.</p>
+        <p style="margin-top:10px">If A: runs <code>/gsd:update</code> via the Skill tool. If B or either version is unknown: skips and continues.</p>
       </div>
 
       <div class="update-card">
@@ -218,14 +218,9 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="update-card">
-        <h4>5.4 MultAI <span class="badge badge-auto">auto-offer</span></h4>
-        <p>Reads the installed MultAI version from the plugin registry and compares it to the latest entry in <code>~/.claude/plugins/cache/multai/CHANGELOG.md</code>. If outdated:</p>
-        <p><em>"MultAI v{installed} appears outdated. Update now?"</em></p>
-        <div class="update-options">
-          <span class="update-opt opt-a">A. Yes, run /multai:update</span>
-          <span class="update-opt">B. Skip</span>
-        </div>
-        <p style="margin-top:10px">If A: runs <code>/multai:update</code>. If B or check fails (CHANGELOG missing, version unreadable): skips and continues.</p>
+        <h4>5.4 Optional research/review plugins <span class="badge badge-info">informational</span></h4>
+        <p>When optional research, review, design, or DevOps plugins expose version metadata, Silver Bullet reports their installed status during startup. If an optional dependency is required by the selected workflow and is missing, the workflow stops and offers install-and-retry instead of silently substituting ad hoc reasoning.</p>
+        <p>Update those plugins through the active host's plugin manager or the shared Codex marketplace, depending on runtime.</p>
       </div>
 
       <h2 id="silver-update">The <code>/silver:update</code> flow</h2>

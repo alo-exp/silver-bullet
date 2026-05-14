@@ -251,7 +251,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="zap"></i></div>
           <div>
             <h4>Superpowers <span class="tag tag-required">Required</span></h4>
-            <p>Design and review skills. Provides brainstorming, code review, system design, and UX copy capabilities.</p>
+            <p>Review and branch-management skills. Provides brainstorming, code review, worktree/branch finishing, and verification-before-completion workflows.</p>
             <div class="install-cmd">/plugin install obra/superpowers</div>
           </div>
         </div>
@@ -267,8 +267,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="palette"></i></div>
           <div>
             <h4>Design + Engineering Plugins <span class="tag tag-optional">Recommended</span></h4>
-            <p>Extends Superpowers with design system and documentation skills.</p>
-            <div class="install-cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/design</div>
+            <p>Optional knowledge-work skills for testing strategy, documentation, deploy checklists, design systems, UX copy, and accessibility review.</p>
+            <div class="install-cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering<br>/plugin install anthropics/knowledge-work-plugins/tree/main/design</div>
           </div>
         </div>
       </div>
@@ -281,10 +281,26 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Once prerequisites are in place, install the plugin from inside your host coding agent:</p>
-      <div class="code-label">Inside your host coding agent</div>
-      <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span></div>
-      <p>This installs the plugin into <code>~/.claude/plugins/cache/silver-bullet/</code> and makes its skills and hooks available immediately.</p>
+      <p>Silver Bullet supports multiple host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage.</p>
+
+      <h3>Claude Code Plugin</h3>
+      <p>Install Silver Bullet from the host plugin manager, then install the required dependency plugins from their official sources.</p>
+      <div class="code-label">Claude Code</div>
+      <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span>
+<span class="cmd">/plugin install obra/superpowers</span>
+<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</span>
+<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/design</span></div>
+
+      <h3>Codex Local Dev Install</h3>
+      <p>When working from a Silver Bullet repository checkout in Codex, use the installer script. It refreshes the curated SB-only Codex bundle, registers the shared <code>alo-labs/codex-plugins</code> marketplace, installs supported dependencies from official sources where needed, and removes stale legacy SB skill copies.</p>
+      <div class="code-label">From this repository checkout</div>
+      <div class="code-block"><span class="cmd">./scripts/install-codex.sh --purge-legacy-skills</span></div>
+
+      <h3>Forge Runtime</h3>
+      <p>Silver Bullet also ships a Forge port. Use the idempotent installer, then run <code>silver-init</code> inside a project.</p>
+      <div class="code-label">Forge</div>
+      <div class="code-block"><span class="cmd">curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash</span>
+<span class="cmd">silver-init</span></div>
 
       <h3>Initialize a Project</h3>
       <p>Navigate to your project directory and run:</p>
@@ -407,8 +423,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <div class="divider"></div>
-
       <h2 id="session-start">What Happens at Session Start?</h2>
       <p>When you open the host coding agent with Silver Bullet installed, the plugin prepares the session state and enforcement context before project work begins.</p>
 
@@ -445,7 +459,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">5</div>
           <div class="step-body">
             <h4>Check for updates</h4>
-            <p>Silver Bullet checks four components for outdated versions: Silver Bullet itself, GSD, the Superpowers/Design/Engineering plugins, and MultAI. If any are outdated, you're offered an update prompt. This keeps your toolchain current without requiring manual checks.</p>
+            <p>Silver Bullet checks its own version, GSD, and installed companion plugins where the host exposes version metadata. Outdated SB/GSD components surface update prompts; companion plugins are reported so you can refresh them through the host plugin manager.</p>
           </div>
         </li>
       </ol>

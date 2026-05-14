@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:release — Milestone Release Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated milestone release workflow: quality-gates → UAT audit → milestone audit → gap-closure → docs → release notes → gsd-ship → complete-milestone.">
+<meta name="description" content="SB-orchestrated milestone release workflow: quality gates → audits → docs → cross-artifact review → fresh tests → ship → complete milestone → create release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:release</span></div>
     <h1>/silver:release</h1>
-    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>gsd-ship</code>.</p>
+    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>gsd:ship</code>.</p>
   </div>
 </div>
 
@@ -138,7 +138,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="ship-disambiguation">Ship disambiguation</h2>
-      <p>Silver Bullet distinguishes between phase-level ship (<code>gsd-ship</code>) and milestone-level release (<code>silver:release</code>) based on context signals:</p>
+      <p>Silver Bullet distinguishes between phase-level ship (<code>gsd:ship</code>) and milestone-level release (<code>silver:release</code>) based on context signals:</p>
 
       <table class="ref-table">
         <thead><tr><th>Signal in your message</th><th>Route</th></tr></thead>
@@ -146,7 +146,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <tr><td>Contains version number (v2.0, 1.4.0…)</td><td><code>silver:release</code></td></tr>
           <tr><td>Contains "changelog" or "release notes"</td><td><code>silver:release</code></td></tr>
           <tr><td>Contains "go live", "to production", "publicly"</td><td><code>silver:release</code></td></tr>
-          <tr><td>Active phase in progress, no version signal</td><td><code>gsd-ship</code> (phase merge)</td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>gsd:ship</code> (phase merge)</td></tr>
           <tr><td>No active phase, end of milestone</td><td><code>silver:release</code></td></tr>
         </tbody>
       </table>
@@ -159,16 +159,16 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
       <h3>Step 0 — Pre-release quality gates (9 dimensions)</h3>
-      <p>Invoke <code>silver:quality-gates</code>. Full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>/silver:quality-gates</code>. Full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 1 — Cross-phase UAT</h3>
-      <p>Invoke <code>gsd-audit-uat</code>. Purpose: cross-phase UAT — surface all outstanding gaps before release. Gives a complete picture of milestone state before deciding whether to ship.</p>
+      <p>Invoke <code>gsd:audit-uat</code>. Purpose: cross-phase UAT — surface all outstanding gaps before release. Gives a complete picture of milestone state before deciding whether to ship.</p>
 
       <h3>Step 2 — Milestone completion audit</h3>
-      <p>Invoke <code>gsd-audit-milestone</code>. Purpose: compare milestone completion vs original intent — are all committed features shipped?</p>
+      <p>Invoke <code>gsd:audit-milestone</code>. Purpose: compare milestone completion vs original intent — are all committed features shipped?</p>
 
-      <h3>Step 2a — Security hard gate</h3>
-      <p>Invoke <code>silver:security</code>. Independent pre-release security review — mandatory regardless of §10 preferences. Runs after milestone audit so it covers the full set of changes being released. <strong>Non-skippable.</strong></p>
+      <h3>Step 2a — Release security status</h3>
+      <p>Review the Security dimension from <code>/silver:quality-gates</code> and confirm completed phases have passed their secure-phase checks. Security is enforced through the quality-gate and GSD secure-phase artifacts.</p>
 
       <h3 id="gap-closure">Step 2b — Gap-closure loop (conditional, max 2 iterations)</h3>
       <p>Only if gaps found in Step 2. Track iteration count. After 2 iterations with remaining gaps, SB presents:</p>
@@ -177,28 +177,37 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><strong>B.</strong> Extend milestone — defer release, continue work</li>
         <li><strong>C.</strong> Abort release — requires manual decision to resume</li>
       </ul>
-      <p>Each iteration: invoke <code>gsd-plan-milestone-gaps</code> → invoke <code>silver:feature</code> for each gap phase → return to Step 0 (full quality gate sweep).</p>
+      <p>Each iteration: invoke <code>gsd:plan-milestone-gaps</code> → invoke <code>/silver:feature</code> for each gap phase → return to Step 0 (full quality gate sweep).</p>
 
       <h3>Step 3a — Verify existing documentation</h3>
-      <p>Invoke <code>gsd-docs-update</code>. Purpose: verify all existing docs are accurate against current codebase before generating new docs.</p>
+      <p>Invoke <code>gsd:docs-update</code>. Purpose: verify all existing docs are accurate against current codebase before generating new docs.</p>
 
       <h3>Step 3b — Generate/update documentation</h3>
-      <p>After gsd-docs-update completes: invoke <code>/documentation</code>. Generates/updates GitHub README, user guide, website help section, and project page. Runs on verified-accurate foundation only.</p>
+      <p>After <code>gsd:docs-update</code> completes: invoke <code>/documentation</code>. Generates or updates README, user docs, Help Center content, and project pages on a verified foundation.</p>
 
       <h3>Step 4 — Milestone summary</h3>
-      <p>Invoke <code>gsd-milestone-summary</code>. Generates milestone narrative for release notes.</p>
+      <p>Invoke <code>gsd:milestone-summary</code>. Generates milestone narrative for release notes.</p>
 
-      <h3>Step 5 — Create release</h3>
-      <p>Invoke <code>silver:create-release</code>. Git-history release notes generation + GitHub Release creation with version tag. Blocks if README is stale.</p>
+      <h3>Step 5 — PR branch (optional)</h3>
+      <p>SB asks: "Would you like a clean PR branch (strips .planning/ commits)?" A. Yes / B. No / C. Save as permanent preference. If A: invoke <code>gsd:pr-branch</code>.</p>
 
-      <h3>Step 6 — PR branch (optional)</h3>
-      <p>SB asks: "Would you like a clean PR branch (strips .planning/ commits)?" A. Yes / B. No / C. Save as permanent preference. If A: invoke <code>gsd-pr-branch</code>.</p>
+      <h3>Step 6 — Cross-artifact consistency review</h3>
+      <p>If <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> exist, run the cross-artifact reviewer against SPEC, REQUIREMENTS, ROADMAP, and DESIGN when present. Do not proceed to ship until blocking alignment findings are resolved.</p>
 
-      <h3>Step 7 — Ship: deploy, CI green, tag push</h3>
-      <p>Invoke <code>gsd-ship</code>. Deploy, ensure CI is green, push the version tag. <strong>This MUST succeed before milestone is archived (Step 8).</strong></p>
+      <h3>Step 6b — Pre-ship deployment checklist</h3>
+      <p>Invoke <code>/deploy-checklist</code>. It verifies deployment conditions, rollback plan, monitoring, and release readiness before <code>gsd:ship</code> executes.</p>
+
+      <h3>Step 6c — Mandatory fresh test run</h3>
+      <p>Invoke <code>/verify-tests</code> after pre-release quality gates and before any ship or release step. This writes the freshness marker consumed by SB hooks, so the release is based on current test evidence.</p>
+
+      <h3>Step 7 — Ship: deploy and CI green</h3>
+      <p>Invoke <code>gsd:ship</code>. Deploy, ensure CI is green, and push the release branch. <strong>This MUST succeed before milestone archival.</strong></p>
 
       <h3>Step 8 — Complete milestone</h3>
-      <p>Only after Step 7 confirms success: invoke <code>gsd-complete-milestone</code>. Archives milestone, prepares for next version. This is the final step — milestone is officially closed after this.</p>
+      <p>Only after Step 7 confirms success: invoke <code>gsd:complete-milestone</code>. It archives the milestone and prepares the next version. These archival commits must land before the release tag is created.</p>
+
+      <h3>Step 9 — Create release</h3>
+      <p>Only after milestone archival: invoke <code>/silver:create-release</code>. It updates release notes/changelog surfaces, creates the final version tag, and publishes the GitHub Release. Tagging happens last so the release captures the completed milestone state.</p>
 
       <div class="divider"></div>
 
@@ -208,9 +217,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:quality-gates</code> pre-release (Step 0)</li>
-            <li><code>silver:security</code> (Step 2a)</li>
-            <li><code>gsd-ship</code> (Step 7) must succeed before <code>gsd-complete-milestone</code> (Step 8)</li>
+            <li><code>/silver:quality-gates</code> pre-release (Step 0)</li>
+            <li><code>/verify-tests</code> fresh release-session test run (Step 6c)</li>
+            <li><code>gsd:ship</code> (Step 7) must succeed before <code>gsd:complete-milestone</code> (Step 8)</li>
+            <li><code>/silver:create-release</code> (Step 9) runs only after milestone archival</li>
           </ul>
         </div>
       </div>
@@ -218,8 +228,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
-      <div class="code-block">/silver:release Cut v0.13.0 with the new orchestration workflows</div>
-      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security review → documentation update → release notes → GitHub Release → gsd-ship → milestone archived.</p>
+      <div class="code-block">/silver:release Cut v0.34.0</div>
+      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → docs and milestone summary → cross-artifact review → deploy checklist → fresh tests → <code>gsd:ship</code> → <code>gsd:complete-milestone</code> → <code>/silver:create-release</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
