@@ -176,7 +176,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <div class="path-block">
         <h4>1A.2 — Persistent debugging investigation</h4>
-        <p>Invoke <code>gsd-debug</code>. Purpose: execute investigation with persistent state across context resets. After gsd-debug completes, proceed to Step 2 (TDD).</p>
+        <p>Invoke <code>gsd:debug</code>. Purpose: execute investigation with persistent state across context resets. After gsd:debug completes, proceed to Step 2 (TDD).</p>
       </div>
 
       <div class="divider"></div>
@@ -196,14 +196,14 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <div class="path-block">
         <h4>1C.1 — GSD-specific post-mortem</h4>
-        <p>Invoke <code>gsd-forensics</code>. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Produces a diagnosis of what went wrong in the GSD layer. After gsd-forensics completes: hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).</p>
+        <p>Invoke <code>gsd:forensics</code>. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Produces a diagnosis of what went wrong in the GSD layer. After gsd:forensics completes: hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).</p>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="tdd-regression">Step 2 — TDD regression test (all paths converge here)</h2>
       <p>All three paths converge at this step. Before writing any fix code:</p>
-      <p>Invoke <code>superpowers:test-driven-development</code>. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden <code>silver:tdd</code> gate before any fix code is written and ensures the bug cannot silently regress.</p>
+      <p>Invoke <code>superpowers:test-driven-development</code>. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden <code>/test-driven-development</code> gate before any fix code is written and ensures the bug cannot silently regress.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">⚠</div>
@@ -213,25 +213,25 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
       </div>
 
       <h3>Step 3 — Plan the fix</h3>
-      <p>Invoke <code>gsd-plan-phase</code> (lightweight — 1–2 tasks only. This is a fix, not a feature).</p>
+      <p>Invoke <code>gsd:plan-phase</code> (lightweight — 1–2 tasks only. This is a fix, not a feature).</p>
 
       <h3>Step 4 — Execute fix and verify green</h3>
-      <p>Invoke <code>gsd-execute-phase --tdd</code>. After execution, verify the regression test from Step 2 is now green.</p>
+      <p>Invoke <code>gsd:execute-phase --tdd</code>. After execution, verify the regression test from Step 2 is now green.</p>
 
       <h3>Step 5 — Code review</h3>
-      <p>Run the full review sequence in order: <code>silver:request-review</code> (superpowers:requesting-code-review) → <code>gsd-code-review</code> → <code>silver:receive-review</code> (superpowers:receiving-code-review).</p>
+      <p>Run the full review sequence in order: <code>/requesting-code-review</code> (superpowers:requesting-code-review) → <code>gsd:code-review</code> → <code>/receiving-code-review</code> (superpowers:receiving-code-review).</p>
 
       <h3>Step 6 — Verify work</h3>
-      <p>Invoke <code>gsd-verify-work</code>. Purpose: confirm fix, zero regression. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>gsd:verify-work</code>. Purpose: confirm fix, zero regression. <strong>Non-skippable gate.</strong></p>
 
-      <h3>Step 7 — Security review</h3>
-      <p>Invoke <code>silver:security</code>. <strong>Non-skippable gate — mandatory regardless of §10 preferences.</strong></p>
+      <h3>Step 7 — Security-sensitive review</h3>
+      <p>Check the fix through the security criteria used by code review and the Security dimension of <code>/silver:quality-gates</code>. Security is enforced as part of the review and quality-gate path.</p>
 
       <h3>Step 7b — Quality gates</h3>
-      <p>Invoke <code>silver:quality-gates</code> for affected quality dimensions of the changed code. <strong>Non-skippable.</strong></p>
+      <p>Invoke <code>/silver:quality-gates</code> for affected quality dimensions of the changed code. <strong>Non-skippable.</strong></p>
 
       <h3>Step 8 — Ship</h3>
-      <p>Invoke <code>gsd-ship</code>. Purpose: push branch, create PR.</p>
+      <p>Invoke <code>gsd:ship</code>. Purpose: push branch, create PR.</p>
 
       <div class="divider"></div>
 
@@ -241,9 +241,9 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:security</code> (Step 7)</li>
-            <li><code>silver:quality-gates</code> pre-ship (Step 7b)</li>
-            <li><code>gsd-verify-work</code> (Step 6)</li>
+            <li>Security dimension inside <code>/silver:quality-gates</code> (Step 7b)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (Step 7b)</li>
+            <li><code>gsd:verify-work</code> (Step 6)</li>
           </ul>
         </div>
       </div>
@@ -252,7 +252,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:bugfix Login form throws 500 on empty password field</div>
-      <p>Silver Bullet presents triage options. You select A (known symptom, unknown fix). SB invokes systematic-debugging to form a hypothesis, then gsd-debug to investigate. Root cause found → write failing regression test → plan fix → execute → review → verify → ship.</p>
+      <p>Silver Bullet presents triage options. You select A (known symptom, unknown fix). SB invokes systematic-debugging to form a hypothesis, then gsd:debug to investigate. Root cause found → write failing regression test → plan fix → execute → review → verify → ship.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

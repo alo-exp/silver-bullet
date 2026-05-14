@@ -187,20 +187,20 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="issue-card">
         <h4>"Engineering plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Engineering plugin provides <code>/testing-strategy</code>, <code>/documentation</code>, and <code>/deploy-checklist</code>.</p>
+        <p class="ic-cause"><strong>Cause:</strong> The Engineering plugin provides <code>/testing-strategy</code>, <code>/tech-debt</code>, <code>/documentation</code>, <code>/deploy-checklist</code>, and related engineering support skills.</p>
         <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</code>.</p>
       </div>
 
       <div class="issue-card">
         <h4>"Design plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Design plugin provides <code>/design-system</code> and <code>/ux-copy</code> for UI work.</p>
+        <p class="ic-cause"><strong>Cause:</strong> The Design plugin provides <code>/design-system</code>, <code>/ux-copy</code>, <code>/accessibility-review</code>, and design critique support for UI work.</p>
         <p class="ic-fix"><strong>Fix:</strong> Run <code>/plugin install anthropics/knowledge-work-plugins/tree/main/design</code>.</p>
       </div>
 
       <div class="issue-card">
         <h4>"GSD plugin not found"</h4>
         <p class="ic-cause"><strong>Cause:</strong> GSD (Get Shit Done) is the primary execution engine. Without it, no workflow commands work.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>npx get-shit-done-cc@1.30.0</code> to install GSD.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>npx get-shit-done-cc@latest</code> to install GSD.</p>
       </div>
 
       <div class="callout callout-tip">
@@ -223,7 +223,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>CI is red and Silver Bullet won't let me proceed</h4>
         <p class="ic-cause"><strong>Cause:</strong> This is intentional. The CI gate emits a hard stop (<code>decision: "block"</code>) when CI is failing.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/gsd:debug</code> to investigate. The workflow cannot proceed until CI is green.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/gsd:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
       </div>
 
       <div class="issue-card">
@@ -241,13 +241,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Session timed out or was interrupted</h4>
         <p class="ic-cause"><strong>Cause:</strong> Context window exhaustion, network interruption, or the autonomous mode timeout sentinel fired.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Start a new session and run <code>/gsd:next</code> to find where you left off. GSD tracks progress in <code>.planning/</code> files that persist across sessions. Then use <code>/forensics</code> to investigate what went wrong.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Start a new session and run <code>/gsd:next</code> to find where you left off. GSD tracks progress in <code>.planning/</code> files that persist across sessions. Then use <code>/silver:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
       </div>
 
       <div class="issue-card">
         <h4>Verification failed and I'm stuck in a loop</h4>
         <p class="ic-cause"><strong>Cause:</strong> <code>/gsd:verify-work</code> failed and the workflow is retrying steps 6-7 (execute + verify) repeatedly.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/forensics</code> to identify the root cause. If the root cause is in the plan or design (not implementation), return to step 3 (discuss) rather than re-executing.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/silver:forensics</code> for session/workflow failures or <code>/gsd:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design (not implementation), return to step 3 (discuss) rather than re-executing.</p>
       </div>
 
       <div class="issue-card">
@@ -300,7 +300,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"HARD STOP — Planning incomplete"</h4>
         <p class="ic-cause"><strong>Cause:</strong> You are editing source files before completing quality gates. The stage enforcer hook blocks this.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/quality-gates</code> (dev workflow) or <code>/blast-radius</code> + <code>/devops-quality-gates</code> (DevOps workflow) before editing source code.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:quality-gates</code> for software work, or <code>/silver:blast-radius</code> plus <code>/devops-quality-gates</code> for DevOps/IaC work before editing source code.</p>
       </div>
 
       <div class="issue-card">
@@ -323,14 +323,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <div class="issue-card">
-        <h4>Bypassing enforcement for trivial changes</h4>
-        <p class="ic-cause"><strong>Cause:</strong> You need to make a small fix (typo, comment, config tweak) without running the full workflow.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as trivial and dispatch <code>gsd-fast</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
+        <h4>Using the fast path for small changes</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You need to make a small or bounded fix without running the full composed workflow.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as Tier 1 (<code>gsd:fast</code>), Tier 2 (<code>gsd:quick</code> with flags), or Tier 3 escalation to <code>silver:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
       </div>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Do not abuse the trivial fast path.</strong> It exists for genuine typos and copy fixes, not as a shortcut for skipping review. Frequent use defeats the purpose of enforcement.</div>
+        <div class="callout-body"><strong>Do not abuse the fast path.</strong> It exists for genuinely small or bounded work, not as a shortcut for skipping review. If the change becomes cross-cutting or risky, let the escalation happen.</div>
       </div>
 
       <!-- PAGE NAV -->

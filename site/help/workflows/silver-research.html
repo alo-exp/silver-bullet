@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../../favicon.png">
 <link rel="shortcut icon" href="../../../favicon.ico">
 <title>/silver:research — Research &amp; Tech Decision Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated research workflow: clarify question → MultAI research (landscape | tech-selection | competitive) → clarify → hand off to feature or devops.">
+<meta name="description" content="SB-orchestrated research workflow: clarify question → configured research path → decision artifact → hand off to feature, UI, DevOps, or GSD.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:research</span></div>
     <h1>/silver:research</h1>
-    <p>SB-orchestrated research workflow for technology decisions, architecture spikes, and comparative analysis — clarify question, run MultAI research, synthesize findings, hand off.</p>
+    <p>SB-orchestrated research workflow for technology decisions, architecture spikes, and comparative analysis — clarify question, run configured research, synthesize findings, hand off.</p>
   </div>
 </div>
 
@@ -107,7 +107,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
         <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#multai-auto-offer">MultAI auto-offer</a></li>
+        <li><a href="#research-tool-auto-offer">Research tool auto-offer</a></li>
         <li><a href="#workflow-steps">Workflow steps</a></li>
         <li><a href="#research-paths">Research paths</a></li>
         <li><a href="#handoff">Handoff to implementation</a></li>
@@ -122,13 +122,13 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>.planning/research/</code> and referenced by the receiving workflow.</p>
-      <p><strong>It never does research directly — it orchestrates MultAI research tools and then hands off to the appropriate implementation workflow.</strong> The research lineage is fully traceable via the <code>.planning/research/</code> directory.</p>
-      <p><code>silver:research</code> uses <strong>composable flows architecture</strong> — it composes paths from the 18-flow catalog focused on pre-implementation discovery. Typical paths: <strong>FLOW 0 (BOOTSTRAP)</strong> → <strong>FLOW 1 (ORIENT)</strong> → <strong>FLOW 2 (EXPLORE)</strong> → <strong>FLOW 3 (IDEATE)</strong>. After research completes, it hands off to <code>silver:feature</code> or <code>silver:devops</code> which compose their own full path chains. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, invokes the configured research provider when available, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
+      <p><code>silver:research</code> uses <strong>composable flows architecture</strong> — it composes only the flows needed for pre-implementation discovery. Typical path: <strong>FLOW 2 (CLARIFY)</strong> → <strong>FLOW 3 (DECIDE)</strong> → <strong>FLOW 4 (SPECIFY)</strong> when the research should become a spec. After research completes, it can hand off to <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, or <code>gsd:do</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Routing precedence:</strong> <code>silver:research</code> takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
+          <strong>Routing precedence:</strong> <code>silver:research</code> takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and implementation, run research first, then hand off.
         </div>
       </div>
 
@@ -145,8 +145,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <div class="divider"></div>
 
-      <h2 id="multai-auto-offer">When MultAI is auto-offered</h2>
-      <p>Silver Bullet proactively offers multi-AI research when:</p>
+      <h2 id="research-tool-auto-offer">When Research Tools Are Auto-Offered</h2>
+      <p>Silver Bullet proactively offers deeper research or multi-perspective review when:</p>
       <ul>
         <li>Choosing between 2 or more fundamentally different architectures</li>
         <li>Selecting a technology stack from scratch (no prior art in <code>.planning/</code>)</li>
@@ -162,7 +162,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
       <h3>Step 1 — Clarify research question</h3>
-      <p>Invoke <code>silver:clarify</code> via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.</p>
+      <p>Invoke <code>/silver:clarify</code>. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong research path on an ambiguous question.</p>
 
       <h3>Step 2 — Choose research path</h3>
       <p>SB asks which type of research question this is (or infers from context):</p>
@@ -177,33 +177,35 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h2 id="research-paths">Research paths</h2>
 
       <h3>Path 2a — Market/landscape research</h3>
-      <p>Invoke <code>multai:landscape-researcher</code> (9-section market landscape report) → <code>multai:consolidator</code> (synthesize into unified findings). Output written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code>.</p>
+      <p>Run the configured landscape research provider, then consolidate the findings into a decision-ready artifact. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code>.</p>
 
       <h3>Path 2b — Tech selection research</h3>
-      <p>Invoke <code>multai:orchestrator</code> (7-AI perspectives on the technical question) → <code>multai:comparator</code> (weighted comparison matrix) → <code>multai:consolidator</code> (unified recommendation). Output written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>
+      <p>Run the configured comparison path: gather multiple perspectives, evaluate the options against weighted criteria, and consolidate a recommendation. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>
 
       <h3>Path 2c — Competitive/product intelligence</h3>
-      <p>Invoke <code>multai:solution-researcher</code> (7-AI competitive intelligence report — how others solve the problem, what gaps exist). Output written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
+      <p>Run the configured product or competitive-intelligence path to identify how other products solve the problem, what gaps exist, and what can be adapted. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
 
       <h3>Step 3 — Apply research to engineering design</h3>
-      <p>Invoke <code>silver:clarify</code> via the Skill tool. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. The research artifact serves as primary input context for the clarification pass.</p>
+      <p>Invoke <code>/silver:clarify</code> again with the research artifact as primary context. Purpose: turn findings into a decision-ready handoff that the implementation workflow can absorb.</p>
 
       <div class="divider"></div>
 
       <h2 id="handoff">Step 4 — Handoff to implementation workflow</h2>
-      <p>After research and brainstorm complete, SB asks which workflow should receive the findings:</p>
+      <p>After research completes, SB asks which workflow should receive the findings:</p>
       <ul>
         <li><strong>A. silver:feature</strong> — build a new feature based on research findings</li>
-        <li><strong>B. silver:devops</strong> — infrastructure/deployment change based on research findings</li>
-        <li><strong>C. Done</strong> — research-only engagement, no implementation needed</li>
+        <li><strong>B. silver:ui</strong> — product or interface work based on research findings</li>
+        <li><strong>C. silver:devops</strong> — infrastructure/deployment change based on research findings</li>
+        <li><strong>D. gsd:do</strong> — delegate to GSD for lifecycle-owned project work</li>
+        <li><strong>E. Done</strong> — research-only engagement, no implementation needed</li>
       </ul>
-      <p>If A or B: the artifact path (<code>.planning/research/&lt;date&gt;-&lt;topic&gt;/</code>) is passed as context argument so <code>gsd-discuss-phase</code> can reference it. Research lineage is always preserved.</p>
+      <p>If the research continues into implementation, the artifact path (<code>.planning/research/&lt;date&gt;-&lt;topic&gt;/</code>) is passed as context so downstream GSD discussion, planning, and verification can reference it. Research lineage is always preserved.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:research Should we use React Query or SWR for server state management?</div>
-      <p>Silver Bullet routes to research. silver:clarify clarifies the question. Path 2b is selected (tech selection). multai:orchestrator provides 7-AI perspectives, multai:comparator produces weighted matrix, multai:consolidator produces recommendation. silver:clarify synthesizes into a decision-ready handoff. Handoff to silver:feature.</p>
+      <p>Silver Bullet routes to research. <code>/silver:clarify</code> clarifies the question. Path 2b is selected. The configured research path produces perspectives, comparison criteria, and a recommendation artifact. <code>/silver:clarify</code> synthesizes the artifact into a decision-ready handoff. The result can then be routed to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/gsd:do</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

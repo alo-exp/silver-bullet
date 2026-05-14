@@ -175,20 +175,20 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>FLOW 1</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td>
-            <td style="font-family:inherit;font-size:.875rem">Build intel files — scan codebase, map architecture</td>
+            <td style="font-family:inherit;font-size:.875rem">Orient on codebase, project state, and current workflow position</td>
             <td style="font-family:inherit;font-size:.875rem">Always included for non-trivial work</td>
           </tr>
           <tr>
             <td>FLOW 2</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXPLORE</td>
-            <td style="font-family:inherit;font-size:.875rem">Clarify scope, user research, competitive brief</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">CLARIFY</td>
+            <td style="font-family:inherit;font-size:.875rem">Clarify scope, assumptions, boundaries, and decision-ready handoff</td>
             <td style="font-family:inherit;font-size:.875rem">Fuzzy intent, unclear scope, or user uncertainty</td>
           </tr>
           <tr>
             <td>FLOW 3</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">IDEATE</td>
-            <td style="font-family:inherit;font-size:.875rem">Brainstorm, architecture decisions, system design</td>
-            <td style="font-family:inherit;font-size:.875rem">Always for complex work; skipped for clear-scope simple work</td>
+            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DECIDE</td>
+            <td style="font-family:inherit;font-size:.875rem">Architecture, product, or technical decision artifact</td>
+            <td style="font-family:inherit;font-size:.875rem">Architecture choice, stack selection, major tradeoff, API/data-model impact</td>
           </tr>
           <tr>
             <td>FLOW 4</td>
@@ -211,7 +211,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>FLOW 7</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td>
-            <td style="font-family:inherit;font-size:.875rem">Wave-based parallel execution via gsd-execute-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">Wave-based parallel execution via gsd:execute-phase</td>
             <td style="font-family:inherit;font-size:.875rem">Always</td>
           </tr>
           <tr>
@@ -235,7 +235,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>FLOW 11</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td>
-            <td style="font-family:inherit;font-size:.875rem">Non-skippable verification gate — gsd-verify-work</td>
+            <td style="font-family:inherit;font-size:.875rem">Non-skippable verification gate — gsd:verify-work</td>
             <td style="font-family:inherit;font-size:.875rem">Always — NON-SKIPPABLE</td>
           </tr>
           <tr>
@@ -247,7 +247,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>FLOW 13</td>
             <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td>
-            <td style="font-family:inherit;font-size:.875rem">Create PR via gsd-ship</td>
+            <td style="font-family:inherit;font-size:.875rem">Create PR via gsd:ship</td>
             <td style="font-family:inherit;font-size:.875rem">Always</td>
           </tr>
           <tr>
@@ -284,7 +284,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <ol>
         <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
-        <li><strong>Step selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 steps apply. Always-included steps (FLOW 7 EXECUTE, FLOW 11 VERIFY, FLOW 12 QUALITY GATE, FLOW 13 SHIP) are anchors. Context-dependent steps (FLOW 2 EXPLORE, FLOW 6 DESIGN CONTRACT, FLOW 8 UI QUALITY, FLOW 14 DEBUG) are added based on signals.</li>
+        <li><strong>Step selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 steps apply. Always-included steps (FLOW 7 EXECUTE, FLOW 11 VERIFY, FLOW 12 QUALITY GATE, FLOW 13 SHIP) are anchors. Context-dependent steps (FLOW 2 CLARIFY, FLOW 3 DECIDE, FLOW 6 DESIGN CONTRACT, FLOW 8 UI QUALITY, FLOW 14 DEBUG) are added based on signals.</li>
         <li><strong>Chain ordering</strong> — Steps are ordered by their dependency graph. FLOW 0 before FLOW 1 before FLOW 5 before FLOW 7, etc. Dynamic insertions (e.g. FLOW 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
         <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which steps are included and why, before execution begins.</li>
       </ol>
