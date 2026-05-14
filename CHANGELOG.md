@@ -13,6 +13,7 @@
 
 ## Other
 
+- `prepare v0.34.0` (`04cd162`)
 - `reconcile SB install and skill surface` (`6ad8327`)
 - `update CHANGELOG and README badge for v0.33.0` (`4032476`)
 
