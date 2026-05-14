@@ -134,7 +134,7 @@ var IDX = [
     "url": "/help/workflows/silver-devops.html",
     "anchor": "overview",
     "title": "/silver:devops",
-    "text": "DevOps workflow uses silver:scan, /silver:blast-radius, devops skill routing, /devops-quality-gates, GSD plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
+    "text": "DevOps workflow uses gsd-scan, /silver:blast-radius, devops skill routing, /devops-quality-gates, GSD plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
   },
   {
     "page": "Workflows",

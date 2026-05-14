@@ -68,7 +68,7 @@ done
 
 for file in "$template" "$root_rules" "$forge_template"; do
   assert_contains "template states GSD authority in ${file#$REPO_ROOT/}" "GSD remains the lifecycle authority" "$file"
-  assert_contains "template uses silver:scan in ${file#$REPO_ROOT/}" "silver:scan" "$file"
+  assert_contains "template uses gsd-scan in ${file#$REPO_ROOT/}" "gsd-scan" "$file"
   assert_not_contains "template has no silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
 done
 

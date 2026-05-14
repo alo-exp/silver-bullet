@@ -28,7 +28,7 @@ assert_path_absent() {
 
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
-  if grep -qF "$needle" "$file"; then
+  if grep -qF -- "$needle" "$file"; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
@@ -49,12 +49,15 @@ assert_file_exists "Silver Bullet init skill available" "$PACKAGE_ROOT/skills/si
 assert_file_exists "Silver Bullet ensure-docs skill available" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"
 assert_file_exists "Silver Bullet feature skill available" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_file_exists "Silver Bullet handoff skill available" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
+assert_file_exists "Silver Bullet scan helper available" "$PACKAGE_ROOT/scripts/silver-scan.sh"
+assert_file_exists "Silver Bullet scan generated skill available" "$PACKAGE_ROOT/.generated-skills/silver-scan/SKILL.md"
 assert_file_exists "Stamped template present" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Silver router skill has silver name" "name: silver" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_contains "Silver init skill uses silver prefix" "name: silver:init" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_contains "Silver ensure-docs skill uses silver prefix" "name: silver:ensure-docs" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"
 assert_contains "Silver feature skill uses silver prefix" "name: silver:feature" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Silver handoff skill uses silver prefix" "name: silver:handoff" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
+assert_contains "Silver scan generated skill uses silver prefix" "name: silver:scan" "$PACKAGE_ROOT/.generated-skills/silver-scan/SKILL.md"
 assert_contains "Silver feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD gate" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-ui/SKILL.md"
