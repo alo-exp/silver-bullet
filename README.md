@@ -1,270 +1,344 @@
 # Silver Bullet
 
 [![version](https://img.shields.io/badge/version-v0.35.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.1)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
+**Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
 
-> *"There is no single development, in either technology or management technique, which by itself promises even one order-of-magnitude improvement..."* — Fred Brooks, 1986
+Silver Bullet is the orchestration and enforcement layer around
+[GSD](https://github.com/gsd-build/get-shit-done). GSD remains the lifecycle
+engine: project state, roadmaps, phase planning, execution, verification, review,
+ship, and milestone work. Silver Bullet adds the missing operating system around
+that engine: dynamic workflow composition, hook-backed gates, cross-plugin
+sequencing, quality controls, traceability, documentation governance, and release
+discipline.
 
-Brooks was right then. AI changes the equation now.
+Plain version: describe what you want to do. Start with `/silver`. Silver Bullet
+classifies the task, composes the right workflow for that task, invokes GSD where
+GSD owns the lifecycle, and keeps the agent from skipping required steps before
+code, PRs, deploys, or releases.
 
-Silver Bullet is a Claude Code and Codex plugin that acts as an Agentic Process Orchestrator (APO) for AI-native delivery. It composes [GSD](https://github.com/gsd-build/get-shit-done) as the lifecycle engine with SB-owned gates, traceability, release controls, contextual helper plugins, and hook-backed enforcement. [Superpowers](https://github.com/obra/superpowers), Engineering, Design, and DevOps plugins are used only at explicit helper boundaries selected by the active workflow. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
+> "There is no single development, in either technology or management technique,
+> which by itself promises even one order-of-magnitude improvement..." -
+> Fred Brooks, 1986
+
+Brooks was right. Silver Bullet is not one magic technique. It is the coordinated
+process layer that makes AI-native delivery less dependent on agent memory and
+operator vigilance.
+
+## What Silver Bullet Adds
+
+GSD is already a strong planning and execution system. Silver Bullet adds the
+APO layer around it:
+
+| Area | Plain GSD | Silver Bullet + GSD |
+|------|-----------|---------------------|
+| Entry point | `gsd:*` commands and `gsd:do` | `/silver` routes freeform work into a task-shaped SB+GSD workflow |
+| Workflow shape | GSD lifecycle commands | Dynamic composition from 18 atomic flows |
+| Process discipline | Instructional and artifact-driven | Hook-enforced and state-tracked |
+| Cross-plugin work | Manual or ad hoc | Explicit sequencing across GSD, SB gates, and selected helper plugins |
+| Quality | GSD review and verification | Product, security, DevOps, docs, UAT, CI, and release gates |
+| Delivery safety | Operator discipline plus GSD artifacts | Mechanical blocks on unsafe edits, planning-file writes, PRs, deploys, and releases |
+| Continuity | GSD state and phase artifacts | Session logs, handoff, issue capture, knowledge capture, anti-stall checks, and forensics |
+
+The important distinction: Silver Bullet does not replace GSD. It composes around
+GSD and preserves GSD as the authority for `.planning/`, semver-relevant project
+work, execution, verification, review, ship, and milestone lifecycle.
+
+## Current Positioning
+
+Silver Bullet is an **Agentic Process Orchestrator (APO)**:
+
+- **Agentic**: built for AI coding agents that can forget, shortcut, overfit, or
+  over-trust their own prior context.
+- **Process**: turns SDLC discipline into explicit flows, artifacts, and gates.
+- **Orchestrator**: chooses and sequences the right tools for the task instead of
+  forcing every task through one rigid workflow.
+
+Silver Bullet uses helper plugins only at selected boundaries. Superpowers is
+used for SB-required helper surfaces such as TDD, review framing, review
+receiving, verification-before-completion, and branch finishing when the active
+workflow calls for them. It is not the execution engine; GSD owns execution.
 
 ## How It Works
 
-When you edit source code without completing the planning phase, you see this:
+You normally start with:
 
-```
-🚫 HARD STOP — Planning incomplete. Missing skills:
-❌ silver-quality-gates
-Run the missing planning skills before editing source code.
+```text
+/silver improve the account settings page and ship it safely
 ```
 
-When you try to `git commit` before completing the full workflow:
+The router classifies the request, displays the selected route, and invokes the
+appropriate SB or GSD workflow. Examples:
 
+| Intent | Typical route | Why |
+|--------|---------------|-----|
+| Build or enhance a feature | `silver:feature` | Adds SB gates around GSD planning, execution, review, verification, and ship |
+| Fix a regression | `silver:bugfix` | Inserts debug/TDD before the normal lifecycle |
+| Work on UI | `silver:ui` | Adds design contract and UI quality review around GSD execution |
+| Change infrastructure | `silver:devops` | Adds blast radius, IaC gates, promotion, and rollback discipline |
+| Research a decision | `silver:research` | Produces a decision artifact before implementation |
+| Prepare a release | `silver:release` | Runs documentation, UAT, milestone, release, and publication gates |
+| Make a small safe edit | `silver:fast` | Routes low-risk work through a lighter path |
+| Ask GSD to choose a lifecycle action | `gsd:do` | Delegates directly to GSD where GSD owns the decision |
+
+### Dynamic Composition, Not A Fixed Script
+
+Silver Bullet starts from two workflow families, then composes the exact flow
+chain needed for the task:
+
+| Workflow family | Use for | Composition surface |
+|-----------------|---------|---------------------|
+| `full-dev-cycle` | Applications, APIs, CLIs, libraries, plugin work | Clarify, specify, plan, execute, review, secure, verify, document, ship, release |
+| `devops-cycle` | Terraform, Kubernetes, Helm, CI/CD, cloud, ops | Incident path, blast radius, IaC quality, environment promotion, deploy/rollback, release |
+
+The canonical flow catalog lives in
+[docs/composable-flows-contracts.md](docs/composable-flows-contracts.md). It
+contains 18 atomic flows:
+
+```text
+BOOTSTRAP -> ORIENT -> CLARIFY -> DECIDE -> SPECIFY -> PLAN
+-> DESIGN CONTRACT -> EXECUTE -> UI QUALITY -> REVIEW -> SECURE
+-> VERIFY -> QUALITY GATE -> SHIP -> DEBUG -> DESIGN HANDOFF
+-> DOCUMENT -> RELEASE
 ```
-🛑 COMPLETION BLOCKED — Workflow incomplete.
 
-You are attempting to commit/push/deploy but these required steps are missing:
-  ❌ /gsd:code-review
-  ❌ /requesting-code-review
-  ❌ /receiving-code-review
-  ❌ /verify-tests
-  ❌ /finishing-a-development-branch
-Complete ALL required workflow steps before finalizing.
+`/silver` includes only the flows whose prerequisites and triggers apply. For
+example, a UI bugfix can include DEBUG, DESIGN CONTRACT, EXECUTE, UI QUALITY,
+REVIEW, VERIFY, and SHIP without pretending every task needs a release flow.
+
+## Enforcement Model
+
+Silver Bullet is intentionally more than instructions in a README. It installs
+hooks that observe real tool usage and state transitions.
+
+Common examples:
+
+```text
+HARD STOP - Planning incomplete.
+Missing: silver-quality-gates, gsd-discuss-phase, gsd-plan-phase
+Run the missing planning steps before editing source code.
 ```
 
-On every single tool use, you see progress:
-
+```text
+COMPLETION BLOCKED - Workflow incomplete.
+Final delivery requires review, security, validation, test freshness,
+release readiness, and ship markers before PR/deploy/release commands proceed.
 ```
-Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/3 | FINALIZATION 0/4 | Next: /requesting-code-review
+
+```text
+Silver Bullet: 8 steps | PLANNING 3/3 | REVIEW 1/3 | FINALIZATION 0/4
+Next: requesting-code-review
 ```
 
-There is no way to skip steps without the plugin telling the active agent (and you) exactly what's missing.
+### Two-Tier Delivery Discipline
 
-## Composable Workflow Families
+Silver Bullet deliberately does not block every useful intermediate commit.
 
-Silver Bullet starts from two workflow families, then dynamically composes the exact path needed for the task:
+- **Planning floor**: source edits and intermediate development commits require
+  the selected SB+GSD pre-execution chain.
+- **Final delivery floor**: PR creation, deploy commands, release commands, and
+  completion claims require the broader review/security/validation/test/release
+  chain.
 
-| Workflow family | For | Composition surface | Unique features |
-|-----------------|-----|---------------------|-----------------|
-| `full-dev-cycle` | Application development (web, API, CLI, library) | Clarify/spec/validate when needed, GSD phase lifecycle, quality gates, review, docs, CI, ship, release | GSD wave execution, 8 core quality dimensions plus conditional gates, TDD when behavior-changing, dev-to-DevOps transition, release notes |
-| `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | Incident fast path when needed, blast radius, IaC gates, GSD lifecycle, environment promotion, deploy/rollback checks, release | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, DevOps-to-dev transition, release notes |
+This keeps GSD's atomic task commits viable while still blocking premature final
+delivery.
 
-Both workflows use GSD as the primary execution engine. Silver Bullet guides you through every step with explanations of what each command does, what to expect, and what to do if something fails. Smooth transitions between the two workflows are built in -- after shipping an app, SB offers to set up infrastructure; after deploying infrastructure, SB offers to continue feature development.
+### Enforcement Layers
 
-## The APO Ecosystem
+| Layer | Hook or surface | Purpose |
+|-------|-----------------|---------|
+| 1 | `record-skill.sh` | Records completed SB/GSD/helper skill invocations |
+| 2 | `record-requested-skill.sh` | Records requested `/silver` and GSD routes before work starts |
+| 3 | `prompt-reminder.sh` | Re-injects missing steps and core rules before each user prompt |
+| 4 | `dev-cycle-check.sh` | Blocks source edits before the required planning floor |
+| 5 | `workflow-chain-guard.sh` | Blocks active composed workflows when downstream dependency markers are missing |
+| 6 | `dependency-skill-check.sh` | Fails closed when required dependency skills are unavailable |
+| 7 | `planning-file-guard.sh` | Blocks direct edits to GSD-owned planning artifacts |
+| 8 | `completion-audit.sh` | Blocks PR/deploy/release and selected delivery commands when final gates are missing |
+| 9 | `ci-status-check.sh` | Blocks push, PR, and release while CI is red; commit remains warning-only so CI fixes are possible |
+| 10 | `stop-check.sh` | Blocks task-complete declarations when required gates are missing |
+| 11 | `uat-gate.sh` and `spec-floor-check.sh` | Enforce minimum spec and UAT evidence before lifecycle completion |
+| 12 | `forbidden-skill-check.sh`, `instruction-file-guard.sh`, `trivial-file-guard.sh` | Protect against deprecated paths, unsafe instruction-file creation, and legacy bypass abuse |
 
-| Plugin | Role | Key capabilities |
-|--------|------|-----------------|
-| **GSD** (primary) | Multi-agent execution | Fresh 200K-token context per agent, wave-based parallel execution, dependency graphs, atomic per-task commits, context rot prevention |
-| **Silver Bullet** | Agentic Process Orchestrator | Dynamic task composition, enforcement hooks, quality gates, release gates, Help Center/runtime guidance |
-| **Superpowers** | SB-required helper boundaries | TDD discipline, review framing/triage, verification-before-completion, branch finishing when selected by SB |
-| **Design / DevOps / other plugins** | Contextual enrichment | UI copy/design, provider-specific IaC checks, research, and risk analysis when the selected workflow requires them |
+Additional support hooks handle session logging, timeout/stall warnings,
+semantic compression, roadmap freshness, PR traceability, phase archive safety,
+and compliance status.
+
+Hook-backed enforcement requires a runtime that supports the relevant hook
+events. In less capable runtimes, Silver Bullet can still provide workflow
+guidance, but hard blocks depend on host support.
+
+## Runtime Support
+
+| Runtime | Status | Notes |
+|---------|--------|-------|
+| Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
+| Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
+| Kay | Tested Codex-compatible runtime | Used for isolated Codex live testing with MiniMax M2.7 |
+| Forge | Port available | Uses Forge skills, slash commands, and hook-equivalent custom agents |
+
+Silver Bullet's Codex package intentionally contains only SB-owned surfaces:
+skills, hooks, templates, commands, and helper scripts. GSD, Superpowers, and
+selected helper plugins are installed from their own official sources or via
+thin Codex wrappers in the shared `alo-labs/codex-plugins` marketplace.
 
 ## Install
 
-Silver Bullet keeps its own Codex package SB-only. Dependencies come from their official sources:
-
-- GSD: `npx get-shit-done-cc@latest`
-- Superpowers: `/plugin install obra/superpowers` in Claude Code, or `codex plugin marketplace add https://github.com/obra/superpowers-marketplace.git` in Codex
-- Anthropic knowledge-work plugins: install the upstream Claude plugin in Claude Code, or let the shared `alo-labs/codex-plugins` marketplace fetch the thin Codex wrappers for Codex at install time
-
-Install `jq` if you don't have it:
-```bash
-brew install jq    # macOS
-apt install jq     # Linux
-```
-
-### Forge runtime (forgecode.dev)
-
-Silver Bullet ships a complete port for the [Forge](https://forgecode.dev) coding agent. One-command idempotent install:
+Install `jq` first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
+brew install jq
+# or
+sudo apt install jq
 ```
 
-This installs ~109 skills, ~50 custom agents (16 hook-equivalent + 33 GSD subagents + the Superpowers helper reviewer), ~50 slash commands (GSD + selected helper surfaces + SB helpers), and the SB project-bootstrap templates to `~/forge/`. Format-compliant per [`forgecode.dev/docs/`](https://forgecode.dev/docs/) (skills, custom agents, slash commands).
+### Claude Code
 
-After install, run `silver-init` inside any project to scaffold `.planning/` and start a workflow. See [`forge/PARITY.md`](forge/PARITY.md) for the Claude-Code ↔ Forge capability map.
+Install Silver Bullet and its normal helper dependencies:
 
-### Codex local dev install
+```text
+/plugin install alo-exp/silver-bullet
+/plugin install obra/superpowers
+/plugin install anthropics/knowledge-work-plugins/tree/main/engineering
+/plugin install anthropics/knowledge-work-plugins/tree/main/design
+```
 
-If you are using this repo checkout directly in Codex, register the shared marketplace and refresh the package snapshot:
+Install GSD:
+
+```bash
+npx get-shit-done-cc@latest
+```
+
+Then open a project and run:
+
+```text
+/silver:init
+```
+
+### Codex
+
+For local development from this repository checkout:
 
 ```bash
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
-This syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`, registers the shared `alo-labs/codex-plugins` marketplace, installs GSD and Superpowers from their official sources when needed, and removes the older SB skill copies from `~/.agents/skills` so Codex uses the package in this repo. When the current working directory is an actual Silver Bullet project root (`.silver-bullet.json` + `silver-bullet.md` present), the script also enables the Silver Bullet plugin in Codex; otherwise it leaves SB unactivated and purges stale SB hook-state entries so unrelated projects do not pick up SB hooks. The `/silver` router and `/silver:*` command surface ship inside the same SB bundle, so Codex sees one Silver Bullet plugin instead of a split command plugin. The bundle intentionally keeps project-instance artifacts like `./.planning/`, `./.claude/`, and `./.forge/` in the repo root instead of treating them as Codex plugin content. The stamped base template lives at `templates/silver-bullet.md.base`; projects receive that content as `silver-bullet.md` during init.
+The installer:
 
-### Optional DevOps plugins
+- syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`
+- registers the shared `alo-labs/codex-plugins` marketplace
+- installs or wires GSD and Superpowers from their official sources when needed
+- keeps `/silver` and `/silver:*` in the main Silver Bullet package
+- includes the packaged `scripts/workflows.sh` helper used by composed workflow
+  tracking
+- enables SB only when the current working directory is an actual SB project
+  root (`.silver-bullet.json` plus `silver-bullet.md`)
+- purges stale SB user-level hook entries so unrelated Codex projects do not get
+  Silver Bullet hooks
+- seeds Codex hook trust from the installed plugin manifest instead of
+  duplicating SB hooks into the user's global hook cache
 
-If you'll use the `devops-cycle` workflow, these optional plugins provide context-aware
-enrichment. Silver Bullet's skill orchestrator automatically selects the best plugin for
-your IaC toolchain and cloud provider. None are required — the workflow works without them.
+For isolated Codex-compatible live testing, Kay `v0.9.3` plus MiniMax M2.7 is the
+tested path. The live harness creates temporary `HOME`, `CODE_HOME`, and
+`CODEX_HOME` roots so tests do not rewrite the user's real Codex hook cache.
 
+### Forge
+
+Silver Bullet also ships a Forge port:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
 ```
-/plugin marketplace add hashicorp/agent-skills          # Terraform, Packer
-/plugin marketplace add awslabs/agent-plugins           # AWS architecture, serverless, databases
-/plugin marketplace add pulumi/agent-skills             # Pulumi programs, IaC migration
-/plugin marketplace add ahmedasmar/devops-claude-skills  # k8s, CI/CD, GitOps, monitoring, cost optimization
-/plugin marketplace add wshobson/agents                 # Kubernetes operations, Helm, multi-agent teams
+
+Then run `silver-init` in the target project.
+
+See [forge/PARITY.md](forge/PARITY.md) for the Claude Code to Forge capability
+map.
+
+### Optional DevOps Plugins
+
+The `devops-cycle` works without optional DevOps plugins, but these enrich
+provider-specific work when installed:
+
+```text
+/plugin marketplace add hashicorp/agent-skills
+/plugin marketplace add awslabs/agent-plugins
+/plugin marketplace add pulumi/agent-skills
+/plugin marketplace add ahmedasmar/devops-claude-skills
+/plugin marketplace add wshobson/agents
 ```
 
-| Plugin | Best for |
-|--------|----------|
-| `hashicorp/agent-skills` | Terraform HCL authoring, module design, provider development, Packer images |
-| `awslabs/agent-plugins` | AWS architecture, serverless (Lambda/API GW), databases, CDK/CloudFormation |
-| `pulumi/agent-skills` | Pulumi programs, ComponentResource, Automation API, IaC migration (TF/CDK/CF/ARM → Pulumi) |
-| `ahmedasmar/devops-claude-skills` | Terraform/Terragrunt, k8s troubleshooting, AWS cost optimization, CI/CD pipelines, GitOps (ArgoCD/Flux), monitoring/observability |
-| `wshobson/agents` | Kubernetes manifests/Helm/GitOps/security, multi-agent orchestration |
+Silver Bullet detects installed DevOps plugins during `/silver:init` and records
+availability in `.silver-bullet.json`.
 
-During `/silver:init` setup, Silver Bullet detects which of these are installed
-and stores the results in `.silver-bullet.json`. The `devops-cycle` workflow then uses
-the `/devops-skill-router` to invoke the best available skill at each trigger point.
+## Project Initialization
 
-### Initialize your project
+Run this once in a project:
 
-Open your project in the host coding agent and run:
-
-```
+```text
 /silver:init
 ```
 
-This will:
-- Check that all 4 plugin dependencies are installed
-- Auto-detect your project name, tech stack, and source directory
-- Ask whether this is an application or DevOps/infrastructure project
-- Create `silver-bullet.md` (11-section enforcement guide, §0–§10) and reconcile any existing `CLAUDE.md` / `AGENTS.md` project instructions if present
-- Create `.silver-bullet.json` with your project config
-- Copy the appropriate workflow file(s) to `docs/workflows/`
-- Scan existing `docs/` and offer to migrate them to the SB documentation scheme (100% transparent — originals preserved as `.pre-sb-backup`, every action requires your approval)
-- Create placeholder docs (`docs/ARCHITECTURE.md`, `docs/TESTING.md`, `docs/knowledge/`, `docs/lessons/`, etc.)
-- Commit everything
+It will:
 
-That's it. Enforcement is now active.
+- detect project name, source paths, stack, and workflow type
+- create or update `.silver-bullet.json`
+- create `silver-bullet.md` from `templates/silver-bullet.md.base`
+- reconcile existing host instruction files (`CLAUDE.md` in Claude, `AGENTS.md`
+  in Codex) without overwriting user-owned content
+- copy workflow docs into `docs/workflows/`
+- scaffold the documentation scheme and durable knowledge/lessons folders
+- initialize or connect GSD planning artifacts
+- set up enforcement state paths under `~/.claude/.silver-bullet/`
 
-## Software Engineering Composition
+After that, use `/silver` for normal work.
 
-### INITIALIZATION
-| # | Step | Source | Required |
-|---|------|--------|----------|
-| 1 | Worktree decision | Inline | No |
-| 2 | `/gsd:new-project` | GSD | If new project |
+## Built-In Skills And Routes
 
-### PER-PHASE LOOP (repeat for each phase in ROADMAP)
-| # | Step | Source | Required |
-|---|------|--------|----------|
-| 3 | `/gsd:discuss-phase` | GSD | **Yes** |
-| 4 | `/silver-quality-gates` | Silver Bullet | **Yes** |
-| 5 | `/gsd:plan-phase` | GSD | **Yes** |
-| 6 | `/gsd:execute-phase` | GSD | **Yes** |
-| 7 | `/gsd:verify-work` | GSD | **Yes** |
-| 8 | `/requesting-code-review` (review framing helper) | SB-required helper | **Yes** |
-| 9 | `/gsd:code-review` (authoritative REVIEW.md) | GSD | **Yes** |
-| 10 | `/receiving-code-review` | SB-required helper | **Yes** |
-| 11-12 | Post-review plan + execute | GSD | If needed |
+| Route or skill | Purpose |
+|----------------|---------|
+| `/silver` | Main natural-language router and APO entry point |
+| `/silver:init` | Project setup, dependency checks, config, workflow docs, doc scheme |
+| `/silver:feature` | Feature workflow around GSD lifecycle |
+| `/silver:bugfix` | Debug/TDD-oriented bugfix workflow |
+| `/silver:ui` | UI workflow with design contract and UI quality gates |
+| `/silver:devops` | Infrastructure workflow with blast radius and IaC gates |
+| `/silver:research` | Research and decision workflow |
+| `/silver:spec` | Spec and requirements elicitation |
+| `/silver:ingest` | External artifact ingestion with manifest review |
+| `/silver:validate` | Gap analysis and validation before implementation or release |
+| `/silver:release` | Release preparation workflow |
+| `/silver:create-release` | Final release artifact creation after GSD release readiness |
+| `/silver:fast` | Small, low-risk work through a routed fast path |
+| `/silver:ensure-docs` | Documentation scheme bootstrap, reconciliation, and recovery |
+| `/silver:scan` | Session/codebase scan for deferred issues and insights |
+| `/silver:add` | File an issue or backlog item |
+| `/silver:remove` | Remove or close an issue/backlog item |
+| `/silver:rem` | Capture knowledge or lessons learned |
+| `/silver:handoff` | Create a project-level handoff prompt |
+| `/silver:forensics` | Reconstruct failed, stalled, or abandoned sessions |
+| `/silver:quality-gates` | Product/software quality assessment |
+| `/silver-blast-radius` | DevOps change-impact and rollback assessment |
+| `/devops-quality-gates` | IaC quality assessment |
+| `/devops-skill-router` | Selects optional DevOps plugin skills for the current toolchain |
+| `/verify-tests` | Runs configured verification commands or stack defaults and writes a freshness marker |
 
-### FINALIZATION
-| # | Step | Source | Required |
-|---|------|--------|----------|
-| 13 | `/gsd:secure-phase` | GSD | **Yes** |
-| 14 | `/gsd:validate-phase` | GSD | **Yes** |
-| 15 | `/verify-tests` | Silver Bullet | **Yes** |
-| 16 | `/finishing-a-development-branch` | SB-required helper | Branches only |
-| 17 | `/silver:create-release` | Silver Bullet | Releases only |
+Logical route names may appear differently by host. For example, a Codex plugin
+install may expose `silver-bullet:silver-feature`, while generated command
+surfaces may expose `silver:feature`. The workflow contracts use logical names;
+the host adapter chooses the equivalent exposed name.
 
-### DEPLOYMENT
-| # | Step | Source | Required |
-|---|------|--------|----------|
-| 17 | CI/CD pipeline (CI must be green) | Inline | **Yes** |
-| 18 | `/deploy-checklist` | Engineering | **Yes** |
-| 19 | `/gsd:ship` | GSD | **Yes** |
+## Configuration
 
-### RELEASE
-| # | Step | Source | Required |
-|---|------|--------|----------|
-| Release | `/silver-create-release` | Silver Bullet | **Yes** |
+Project config lives in `.silver-bullet.json`. The default source of truth is
+[templates/silver-bullet.config.json.default](templates/silver-bullet.config.json.default).
 
-## DevOps Composition
-
-Same structure as full-dev-cycle with these additions:
-- **Incident fast path** at the top for emergency production changes
-- **`/silver-blast-radius`** assessment before quality gates (maps change scope, dependencies, failure scenarios, rollback plan)
-- **`/devops-quality-gates`** — 7 IaC-adapted quality dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety
-- **Environment promotion** section (dev → staging → prod)
-- `.yml`/`.yaml` files are NOT exempt from enforcement (they are infrastructure code)
-
-## Built-in Silver Bullet Skills
-
-Skills installed by this plugin that extend the workflow:
-
-| Skill | When to use |
-|-------|-------------|
-| `/silver` | Main entry point — routes freeform text to the best SB or GSD skill |
-| `/silver:init` | Once per project — initializes silver-bullet.md, config, CI, then reconciles any existing project instruction file and invokes `/silver:ensure-docs --bootstrap` |
-| `/silver:ensure-docs` | Documentation authority — bootstrap/reconcile docs, remediate hook gaps, recover doc scheme contract |
-| `/silver:feature` | Orchestrated workflow for feature development |
-| `/silver:bugfix` | Orchestrated workflow for bug investigation and fixes |
-| `/silver:ui` | Orchestrated workflow for UI/UX work |
-| `/silver:devops` | Orchestrated workflow for infrastructure and DevOps tasks |
-| `/silver:research` | Orchestrated workflow for research and exploration |
-| `/silver:release` | Orchestrated workflow for release preparation |
-| `/silver:fast` | Orchestrated workflow for quick, low-overhead tasks |
-| `/silver-quality-gates` | Before planning (dev) — checks 8 core dimensions plus conditional AI/LLM and DevOps gates |
-| `/silver-blast-radius` | Before planning (DevOps) — maps change scope, dependencies, and rollback plan |
-| `/devops-quality-gates` | Before planning (DevOps) — checks the 7 IaC-adapted dimensions |
-| `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
-| `/silver-forensics` | After a completed, failed, or abandoned session — routes to GSD forensics for workflow issues, handles session-level issues directly |
-| `/silver-create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
-| `/verify-tests` | Test execution gate — runs configured verify commands or stack defaults and writes the freshness marker |
-| `/silver-add` | Classify and file an issue or backlog item — routes to GitHub Issues + project board or local `docs/issues/` |
-| `/silver-remove` | Remove an issue or backlog item by ID — closes GitHub issues or marks `[REMOVED]` in local docs |
-| `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
-| `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, cross-references git/CHANGELOG/GitHub Issues, files survivors via `/silver-add` and `/silver-rem` |
-| `/silver-handoff` | Session wrap-up helper — generates a reusable project-level handoff prompt for the next session |
-
-### `/silver-forensics`
-
-When a session produces wrong output, stalls, or is abandoned, `/forensics` guides the active agent through structured root-cause investigation rather than blind retrying.
-
-**GSD-aware routing (v0.9.0):** Before running its own investigation, `/forensics` checks whether the issue is a GSD-workflow-level problem (plan drift, execution anomalies, stuck loops, missing artifacts). If so, it routes to `/gsd:forensics` which specializes in `.planning/` artifact analysis. Session-level issues (timeout, stall, SB enforcement failures) remain handled by SB's forensics directly.
-
-**Three investigation paths (for session-level issues):**
-1. **Session-level** — Timeout flag, session log, git history → classifies as pre-answer gap, anti-stall trigger, genuine blocker, external kill, or unknown
-2. **Task-level** — Plan vs. diff comparison, test failures → classifies as plan ambiguity, implementation drift, upstream dependency, or verification gap
-3. **General** — Open-ended; delegates to Path 1 or 2 after one targeted follow-up
-
-**Output:** Saves a `docs/forensics/YYYY-MM-DD-<slug>.md` report with symptom, evidence, root cause, contributing factors, next steps, and prevention.
-
----
-
-## Twelve Enforcement Layers
-
-The plugin doesn't rely on the agent reading instructions. It enforces compliance through hooks that fire automatically:
-
-| Layer | How it works |
-|-------|-------------|
-| **1. Skill tracker** | `record-skill.sh` fires on every Skill tool invocation. Records completed skills to state file. |
-| **2. Stage enforcer** | `dev-cycle-check.sh` fires on every Edit/Write/Bash. HARD STOP if quality gates incomplete and you're touching source code. |
-| **3. Compliance status** | `compliance-status.sh` fires on every tool use. Shows progress score so the active agent always knows where it stands. |
-| **4. Planning file guard** | `planning-file-guard.sh` fires on every Edit/Write/MultiEdit. Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning GSD skill instead. |
-| **5. Completion audit** | `completion-audit.sh` fires on every Bash command. Blocks `git commit`, `git push`, `gh pr create`, and `deploy` if workflow is incomplete. |
-| **6. CI gate** | `ci-status-check.sh` checks CI status on git operations. `git push`, `gh pr create`, and `gh release create` are **blocked** when CI is failing — broken builds cannot reach the remote. `git commit` emits a **warning** only (never blocked — committing a CI fix must always succeed). |
-| **7. Stop hook** | `stop-check.sh` fires when the active agent declares a task complete. Blocks if `required_planning` skills (planning floor) are missing — survives compaction. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands. |
-| **8. Prompt reminder** | `prompt-reminder.sh` fires on every user prompt. Re-injects missing-skill list and core enforcement rules before the active agent processes any message. |
-| **9. Forbidden skill gate** | `forbidden-skill-check.sh` blocks deprecated/forbidden skills before they execute. |
-| **10. GSD workflow guard** | GSD's own hook detects file edits made outside a `/gsd:*` command and warns. |
-| **11. ROADMAP freshness gate** | `roadmap-freshness.sh` fires on every `git commit`. Blocks if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked — prevents milestone state from diverging from execution reality. |
-| **12. Redundant instructions + anti-rationalization** | Project instruction file + workflow file both enforce the same rules. Explicit rules against skipping, combining, or implicitly covering steps. |
-
-## Customization
-
-Edit `.silver-bullet.json` in your project root:
+Minimal shape:
 
 ```json
 {
+  "config_version": "0.35.1",
   "version": "0.35.1",
   "project": {
     "name": "my-app",
@@ -273,8 +347,11 @@ Edit `.silver-bullet.json` in your project root:
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": ["silver-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"],
-    "required_planning_devops": ["silver-blast-radius", "devops-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"],
+    "required_planning": [
+      "silver-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase"
+    ],
     "required_deploy": [
       "silver-quality-gates",
       "gsd-discuss-phase",
@@ -285,38 +362,14 @@ Edit `.silver-bullet.json` in your project root:
       "gsd-code-review",
       "gsd-secure-phase",
       "gsd-validate-phase",
-      "requesting-code-review", "receiving-code-review",
+      "requesting-code-review",
+      "receiving-code-review",
       "finishing-a-development-branch",
       "silver-create-release",
       "verification-before-completion",
       "test-driven-development",
       "verify-tests"
-    ],
-    "all_tracked": [
-      "silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "devops-skill-router",
-      "design-system", "ux-copy",
-      "architecture", "system-design",
-      "gsd-code-review", "code-review", "requesting-code-review", "receiving-code-review",
-      "finishing-a-development-branch",
-      "silver-create-release",
-      "verify-tests",
-      "modularity", "reusability", "scalability", "security",
-      "reliability", "usability", "testability", "extensibility",
-      "silver-forensics", "silver-add", "silver-init",
-      "verification-before-completion",
-      "test-driven-development", "accessibility-review", "incident-response",
-      "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
-      "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-code-review", "gsd-debug",
-      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase", "gsd-validate-phase",
-      "silver-remove", "silver-rem", "silver-scan"
     ]
-  },
-  "devops_plugins": {
-    "hashicorp": false,
-    "awslabs": false,
-    "pulumi": false,
-    "devops-skills": false,
-    "wshobson": false
   },
   "state": {
     "state_file": "~/.claude/.silver-bullet/state",
@@ -331,142 +384,150 @@ Edit `.silver-bullet.json` in your project root:
 }
 ```
 
-### What you can change
+Important fields:
 
-| Field | What it controls | Default |
-|-------|-----------------|---------|
-| `src_pattern` | Which file paths trigger enforcement | `/src/` |
-| `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
-| `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
-| `required_planning` | Skills that must run before implementation edits | `silver-quality-gates`, `gsd-discuss-phase`, `gsd-plan-phase` |
-| `required_planning_devops` | DevOps-specific planning floor | `silver-blast-radius`, `devops-quality-gates`, `gsd-discuss-phase`, `gsd-plan-phase` |
-| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | SB quality gates, GSD lifecycle markers, review/security/validation, release creation, verification, TDD, and `verify-tests` |
-| `release` | Release-profile gates | Generic by default; SB plugin releases opt into plugin-runtime live matrix and 4-stage pre-release gate |
-| `all_tracked` | All skills that get recorded | 44 skills (canonical source: `templates/silver-bullet.config.json.default`) |
-| `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
+| Field | Meaning |
+|-------|---------|
+| `project.src_pattern` | Regex for files that count as source and trigger enforcement |
+| `project.src_exclude_pattern` | Regex for source-like files excluded from implementation gates |
+| `project.active_workflow` | `full-dev-cycle` or `devops-cycle` |
+| `skills.required_planning` | Planning floor before implementation work |
+| `skills.required_planning_devops` | DevOps-specific planning floor |
+| `skills.required_deploy` | Final delivery floor for PR/deploy/release |
+| `skills.all_tracked` | Canonical list of skill markers hooks record |
+| `devops_plugins` | Optional DevOps plugin availability detected by init |
+| `release.require_plugin_runtime_matrix` | Opt-in live runtime release gate for plugin projects |
+| `release.require_pre_release_quality_gate` | Opt-in 4-stage pre-release quality gate |
+| `semantic_compression` | TF-IDF context compression settings for large files |
 
-> **Two-tier enforcement**: implementation unlocks after the selected SB+GSD pre-execution chain is complete. The full `required_deploy` list is checked only at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked by post-execution gates.
+Downstream projects normally use the generic release profile. This repository
+opts into plugin-runtime live matrices and the 4-stage pre-release gate because
+Silver Bullet itself is a Claude/Codex plugin.
 
-> **Release matrix gate**: plugin-runtime live matrices and the 4-stage pre-release quality gate are opt-in release-profile gates. This repository enables them for SB plugin releases; downstream projects keep the generic release profile unless they explicitly opt in.
+## Documentation Governance
 
-## Fast Path (`silver:fast`)
+Silver Bullet treats documentation as a delivery artifact, not an afterthought.
 
-Silver Bullet routes small, non-logic changes through `/silver:fast`. That workflow
-classifies the request and dispatches to `gsd-fast`, so trivial edits still use the
-same routed entry point as every other SB task.
+`/silver:init` scaffolds a doc scheme from
+[templates/doc-scheme.md.base](templates/doc-scheme.md.base). The hooks then
+check that required docs are present and current when delivery commands run. The
+release flow expects README, changelog, architecture/testing/release docs, and
+workflow docs to match the current product surface.
 
-Use `/silver:fast` for:
-- typos
-- copy edits
-- config tweaks
-- other small changes that do not need the full workflow
+Useful docs:
 
-The old touch-file bypass is deprecated for Codex agents. The supported way to
-handle a small change is to route through `/silver:fast`.
+- [docs/PRD-Overview.md](docs/PRD-Overview.md) - product overview
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - system architecture
+- [docs/ENFORCEMENT.md](docs/ENFORCEMENT.md) - enforcement details
+- [docs/SDLC-MAP.md](docs/SDLC-MAP.md) - SDLC coverage matrix
+- [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md) -
+  canonical flow contracts
+- [docs/sb-benefits-over-plain-gsd.md](docs/sb-benefits-over-plain-gsd.md) -
+  detailed SB-over-GSD analysis
 
-> **CI-red push (use the dedicated override instead):** `git commit` is never blocked by the CI gate — it warns only. If CI is failing and you need to *push* a fix, use the dedicated CI override rather than any legacy trivial-marker workflow:
-> ```bash
-> touch ~/.claude/.silver-bullet/ci-red-override
-> ```
-> This bypasses only the CI gate. Remove it once CI is green.
+## Testing
 
-**Note**: In `devops-cycle` mode, `.yml`, `.yaml`, `.json`, and `.toml` files are infrastructure code and are NOT auto-exempted from enforcement.
-
-## For CI/CD Pipelines
-
-Copy the deploy gate snippet into your pipeline:
+Run the normal suite:
 
 ```bash
-# In your deploy script:
+bash scripts/verify-tests.sh
+```
+
+That runs hook unit tests, script unit tests, integration scenarios, E2E harness
+sanity checks, and coverage matrix checks. Current release baseline:
+
+```text
+2,025 passed, 0 failed
+```
+
+Run live runtime tests when validating plugin/runtime behavior:
+
+```bash
+bash tests/live/run-live-tests.sh
+bash tests/e2e-live/run-e2e-live-tests.sh
+```
+
+Limit live tests to one runtime:
+
+```bash
+SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
+SB_E2E_LIVE_RUNTIMES=codex bash tests/e2e-live/run-e2e-live-tests.sh
+```
+
+Codex-compatible live tests use Kay `v0.9.3` and MiniMax M2.7 when configured.
+The harness isolates config roots so live tests do not mutate the user's normal
+Codex hook cache.
+
+## CI/CD And Release Gates
+
+For downstream deploy pipelines, use:
+
+```bash
 bash scripts/deploy-gate-snippet.sh
-
-# Or with bypass:
-bash scripts/deploy-gate-snippet.sh --skip-workflow-check
 ```
 
-This checks the workflow state file and blocks deployment if required skills are missing.
+The snippet checks the workflow state file and blocks deploys if required
+delivery skills are missing.
 
-## Updating
+Release behavior:
 
-If the plugin is updated and you want to refresh templates:
+- `git commit` is warning-only for red CI, so CI fixes can be committed.
+- `git push`, `gh pr create`, and `gh release create` are blocked when CI is red.
+- `gh release create` can require plugin live matrices and the pre-release
+  quality-gate markers when the project release profile opts in.
+- The SB plugin repo requires the shared live matrix, todo-app live E2E marker,
+  inline full-surface marker, 4-stage pre-release gate, and a fresh full-suite
+  rerun before release.
 
+## Repository Layout
+
+```text
+commands/                         Codex/Claude command surfaces
+skills/                           Source SB skills
+hooks/                            Runtime enforcement hooks
+scripts/                          Installers, workflow helpers, verification tools
+templates/                        Project config, instruction, workflow, and docs templates
+docs/                             Product, architecture, enforcement, testing, release docs
+site/                             Public website and Help Center
+plugins/silver-bullet/            Codex package surface, mostly symlinks to source
+forge/                            Forge runtime port
+tests/                            Unit, integration, live, and E2E harnesses
+.claude-plugin/                   Claude plugin marketplace metadata
+.planning/                        GSD project lifecycle artifacts for this repo
 ```
-/silver:init
-```
 
-It detects the existing config and asks if you want to refresh templates while preserving your customizations.
+The Codex package symlinks source-owned assets into `plugins/silver-bullet/`.
+Project-instance artifacts such as `.planning/`, `.claude/`, `.forge/`, and
+runtime state are not treated as plugin package content.
 
 ## Troubleshooting
 
-**"jq not found"** — Install jq: `brew install jq` (macOS) or `apt install jq` (Linux).
+| Symptom | Fix |
+|---------|-----|
+| `jq not found` | Install `jq` with Homebrew or apt |
+| `/silver` not available in Claude Code | Install the plugin and restart/reload the Claude Code session |
+| `/silver` not available in Codex | Run `./scripts/install-codex.sh --purge-legacy-skills` from this repo checkout |
+| GSD skills missing | Install/update GSD with `npx get-shit-done-cc@latest` |
+| Superpowers helper missing | Install `obra/superpowers`; SB uses it only at selected helper boundaries |
+| Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` both exist in the project root |
+| Too many files trigger enforcement | Adjust `project.src_pattern` and `project.src_exclude_pattern` |
+| YAML/JSON edits are unexpectedly gated | In `devops-cycle`, YAML/JSON/TOML are infrastructure code and intentionally gated |
+| CI is red and you need to push a fix | Commit normally; for push use the explicit CI override marker only when fixing CI: `touch ~/.claude/.silver-bullet/ci-red-override` |
+| Want to refresh templates | Re-run `/silver:init`; it detects existing config and preserves project-owned content |
+| Want to start fresh | Remove `.silver-bullet.json` and `silver-bullet.md`, then rerun `/silver:init` |
 
-**"Superpowers plugin not found"** — Run `/plugin install obra/superpowers`.
+## Current Release
 
-**"Engineering plugin not found"** — Run `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`.
-
-**"Design plugin not found"** — Run `/plugin install anthropics/knowledge-work-plugins/tree/main/design`.
-
-**"GSD plugin not found"** — Run `npx get-shit-done-cc@1.30.0`.
-
-**Hooks not firing** — Make sure you ran `/silver:init` in the project. Check that `.silver-bullet.json` exists in your project root.
-
-**Wrong files triggering enforcement** — Edit `src_pattern` in `.silver-bullet.json` to match your project's source directory (e.g., `/app/` or `/lib/`).
-
-**Want to start fresh** — Delete `.silver-bullet.json` and any optional project instruction file you want to reset (`CLAUDE.md` / `AGENTS.md`), then run `/silver:init` again.
-
-## Architecture
-
-```
-Enforcement hooks (fire automatically)     Project files (created by /silver:init)
-──────────────────────────────────────     ───────────────────────────────────────────────
-hooks/record-skill.sh                      .silver-bullet.json (config)
-  → records skill invocations              silver-bullet.md (enforcement guide)
-                                           Optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present)
-                                           docs/workflows/full-dev-cycle.md (workflow family)
-hooks/dev-cycle-check.sh                   docs/workflows/devops-cycle.md (workflow family)
-  → HARD STOP if planning incomplete
-                                           State files (in ~/.claude/.silver-bullet/)
-hooks/compliance-status.sh                 ─────────────────────────────────
-  → progress score on every tool use       ~/.claude/.silver-bullet/state (skill log)
-                                           ~/.claude/.silver-bullet/trivial (bypass flag)
-hooks/completion-audit.sh                  ~/.claude/.silver-bullet/mode (interactive|autonomous)
-  → blocks commit/push/deploy              ~/.claude/.silver-bullet/session-log-path
-
-hooks/roadmap-freshness.sh
-  → blocks commit if phase SUMMARY.md staged without ROADMAP.md checkbox ticked
-
-hooks/stop-check.sh
-  → blocks task-complete if skills missing (fires on Stop/SubagentStop)
-
-hooks/prompt-reminder.sh
-  → re-injects missing skills + core rules before every user message
-
-hooks/forbidden-skill-check.sh
-  → blocks deprecated/forbidden skills (PreToolUse/Skill)
-
-Support hooks (fire automatically)
-───────────────────────────────────
-hooks/semantic-compress.sh
-  → TF-IDF context compression after Skill invocations
-
-hooks/session-log-init.sh
-  → creates session log file on first Bash use
-
-hooks/ci-status-check.sh
-  → verifies CI green before push/deploy proceeds
-
-hooks/timeout-check.sh
-  → monitors for stall conditions
-
-hooks/session-start
-  → injects SB core rules at session open; injects Design context when present
-
-External enforcement (GSD's own hooks)
-──────────────────────────────────────
-GSD workflow guard → warns on edits outside /gsd:* commands
-GSD context monitor → warns at ≤35% tokens, escalates at ≤25%
-```
+- Version: `0.35.1`
+- Release: [v0.35.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.1)
+- Notable changes:
+  - Codex/Kay live tests are isolated from the user's real Codex hook cache.
+  - SB hooks are no longer duplicated into user-level Codex hook config.
+  - Codex trust is seeded from the installed plugin hook manifest.
+  - `scripts/workflows.sh` is packaged for Codex installs and resolved by
+    composed workflow skills.
+  - Public content and docs now frame SB as an APO around SB+GSD.
 
 ## License
 
-MIT — [Alo Labs](https://alolabs.dev)
+MIT - [Alo Labs](https://alolabs.dev)
