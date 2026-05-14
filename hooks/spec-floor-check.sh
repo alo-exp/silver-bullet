@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse hook (matcher: Bash)
+# PreToolUse hook (matcher: Bash|Skill)
 # Enforces spec floor — hard-blocks gsd-plan-phase without a minimum viable SPEC.md,
 # and emits an advisory warning for gsd-fast/gsd-quick when no spec exists.
 
@@ -33,22 +33,69 @@ emit_block() {
   fi
 }
 
-# Extract command from Bash tool input
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
-[[ -z "$cmd" ]] && exit 0
+# Extract command/skill intent from tool input. For Bash, only inspect the
+# first shell command token from the first line; never match heredoc bodies,
+# comments, prose, or read-only paths that merely contain a skill name.
+tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+cmd=""
+skill=""
+if [[ "$tool_name" == "Skill" ]]; then
+  skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
+else
+  raw_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+  [[ -z "$raw_cmd" ]] && exit 0
+  cmd_first_line=$(printf '%s' "$raw_cmd" | sed -n '1p')
+  # Strip leading env assignments and common shell wrappers.
+  cmd=$(printf '%s' "$cmd_first_line" | sed -E 's/^[[:space:]]+//; s/^([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+)*//; s/^(command|exec)[[:space:]]+//; s/[[:space:]].*$//')
+  # Read-only inspection commands may search for skill names as text. Do not
+  # treat those string arguments as invocations.
+  case "$cmd" in
+    rg|grep|egrep|fgrep|sed|awk|cat|nl|head|tail|find|ls|jq|git)
+      exit 0
+      ;;
+  esac
+fi
 
 # Detect command type — is this gsd-plan-phase or gsd-fast/gsd-quick?
-# Note (ME-03): This hook is registered as a Bash matcher only (see hooks/hooks.json).
-# GSD commands invoked via the Skill tool will NOT trigger this hook — only direct
-# Bash invocations of gsd-plan-phase match here. This is intentional: the spec floor
-# check fires when the user runs gsd-plan-phase as a shell command. Skill-tool
-# invocations are handled separately by the workflow gate in dev-cycle-check.sh.
 is_plan_phase=false
 is_fast=false
 
-if printf '%s' "$cmd" | grep -qwE 'gsd-plan-phase|gsd[- ]plan[- ]phase'; then
+case "$skill" in
+  gsd:plan-phase|gsd-plan-phase)
+    is_plan_phase=true
+    ;;
+  gsd:fast|gsd-fast|gsd:quick|gsd-quick)
+    is_fast=true
+    ;;
+esac
+
+if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
+  case "$cmd" in
+    gsd-plan-phase|gsd-plan|gsd-plan-phase.sh)
+      is_plan_phase=true
+      ;;
+    gsd-fast|gsd-quick)
+      is_fast=true
+      ;;
+  esac
+fi
+
+if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
+  # Allow direct slash-style strings as a defensive fallback, but only when the
+  # first shell token itself is the route. This avoids blocking `sed ... gsd-plan-phase/SKILL.md`.
+  case "$cmd" in
+    /gsd:plan-phase|/gsd-plan-phase)
+      is_plan_phase=true
+      ;;
+    /gsd:fast|/gsd-fast|/gsd:quick|/gsd-quick)
+      is_fast=true
+      ;;
+  esac
+fi
+
+if [[ "$is_plan_phase" == true ]]; then
   is_plan_phase=true
-elif printf '%s' "$cmd" | grep -qwE 'gsd-fast|gsd[- ]fast|gsd[- ]quick'; then
+elif [[ "$is_fast" == true ]]; then
   is_fast=true
 fi
 

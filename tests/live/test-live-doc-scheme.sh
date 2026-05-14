@@ -49,7 +49,7 @@ disable_codex_guard() {
 }
 
 seed_stage_c() {
-  seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+  seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 }
 
 # --- S1: Doc scheme scaffold — knowledge and lessons files created from scratch ---
@@ -102,7 +102,7 @@ cat > "$WORK_DIR/docs/CHANGELOG.md" << EOCL
 EOCL
 git -C "$WORK_DIR" add -A
 git -C "$WORK_DIR" commit -q -m "seed changelog"
-response=$(invoke_claude_permissive "Prepend a new CHANGELOG entry to docs/CHANGELOG.md for today's work. Task slug: redis-cache. What was done: Added Redis cache-aside layer for API responses. Commits: abc1234. Skills run: silver-quality-gates, code-review. Knowledge updated: Architecture Patterns. Lessons updated: stack, practice.")
+response=$(invoke_claude_permissive "Prepend a new CHANGELOG entry to docs/CHANGELOG.md for today's work. Task slug: redis-cache. What was done: Added Redis cache-aside layer for API responses. Commits: abc1234. Skills run: silver-quality-gates, gsd-code-review. Knowledge updated: Architecture Patterns. Lessons updated: stack, practice.")
 assert_file_contains "S3: new entry has slug" "$WORK_DIR/docs/CHANGELOG.md" "redis-cache"
 assert_file_contains "S3: new entry has date" "$WORK_DIR/docs/CHANGELOG.md" "$current_month"
 assert_file_contains "S3: entry has Knowledge ref" "$WORK_DIR/docs/CHANGELOG.md" "Knowledge|knowledge"

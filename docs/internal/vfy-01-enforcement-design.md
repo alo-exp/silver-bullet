@@ -14,7 +14,7 @@
 The current enforcement model has two tiers:
 
 - **Tier 1 (intermediate commits):** requires only `required_planning` skills (default: `silver-quality-gates`). Allows GSD execute-phase subagents to make atomic commits during development.
-- **Tier 2 (final delivery):** requires the full `required_deploy` skill list (e.g., `verification-before-completion`, `code-review`, `testing-strategy`, etc.).
+- **Tier 2 (final delivery):** requires the full `required_deploy` skill list (e.g., `gsd-code-review`, `verification-before-completion`, `verify-tests`, etc.).
 
 `verification-before-completion` is currently enforced only at the final delivery gate (`gh pr create`, `gh release create`, `deploy`). There is no enforcement at intermediate task boundaries — the active runtime can execute all plans in a phase without triggering verification at any sub-milestone. A user could complete 10 plans across 2 phases and not run `verification-before-completion` until the last git push before shipping.
 

@@ -93,27 +93,27 @@ assert_passes() {
 
 echo "=== workflow-chain-guard.sh tests ==="
 
-# Feature workflow: missing GSD markers should block implementation edits.
+# Feature workflow: missing pre-execution SB+GSD markers should block implementation edits.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:feature" "feature gate test" "bootstrap,design,execute,verify"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:feature blocks without GSD markers" "$out"
-write_state_markers gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work
+assert_blocks "silver:feature blocks without SB+GSD pre-execution markers" "$out"
+write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:feature passes after GSD markers exist" "$out"
+assert_passes "silver:feature passes after SB+GSD pre-execution markers exist" "$out"
 teardown
 
-# UI workflow: all UI-specific GSD markers must be present.
+# UI workflow: UI-specific pre-execution SB+GSD markers must be present.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:ui" "ui gate test" "orient,design,plan,execute,review,verify"
 write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:ui blocks until UI markers are present" "$out"
-write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-execute-phase gsd-ui-review gsd-verify-work
+assert_blocks "silver:ui blocks until UI pre-execution markers are present" "$out"
+write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:ui passes after UI markers exist" "$out"
+assert_passes "silver:ui passes after UI pre-execution markers exist" "$out"
 teardown
 
 # Research workflow: clarify marker is required.

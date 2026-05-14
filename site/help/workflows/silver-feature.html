@@ -131,7 +131,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
-      <p><strong>It never implements features directly — it orchestrates only.</strong> Every implementation step is delegated to the appropriate specialist skill: GSD for lifecycle execution, Superpowers for review/craft discipline, SB for gates and orchestration, and optional research/review providers when configured. This separation keeps the orchestration layer clean and each specialist focused.</p>
+      <p><strong>It never implements features directly — it orchestrates only.</strong> Implementation is delegated to GSD for lifecycle execution. SB owns gates and orchestration, and calls Superpowers or other helper plugins only at explicit boundaries selected by the active workflow. This separation keeps the orchestration layer clean and each specialist focused.</p>
       <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow catalog.</p>
 
       <div class="divider"></div>
@@ -151,7 +151,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>FLOW 9 (REVIEW)</strong> — multi-layer code review sequence</li>
         <li><strong>FLOW 10 (SECURE)</strong> — security audit, threat mitigation verification</li>
         <li><strong>FLOW 11 (VERIFY)</strong> — goal-backward verification, UAT</li>
-        <li><strong>FLOW 12 (QUALITY GATE)</strong> — 9-dimension quality sweep (pre-plan and pre-ship)</li>
+        <li><strong>FLOW 12 (QUALITY GATE)</strong> — 8 core quality dimensions plus conditional gates (pre-plan and pre-ship)</li>
         <li><strong>FLOW 13 (SHIP)</strong> — PR creation, CI green</li>
         <li><strong>FLOW 16 (DOCUMENT)</strong> — docs update, episodic memory</li>
       </ul>
@@ -233,16 +233,16 @@ footer a:hover{color:var(--accent-light)}
 
 A. Yes — run the configured multi-AI/research review path
 B. No — proceed with spec as-is</div>
-      <p><strong>Note:</strong> this step informs the spec PRE-implementation. Step 9c (gsd:review --all) reviews completed code POST-execution. Both steps are independent.</p>
+      <p><strong>Note:</strong> this step informs the spec PRE-implementation. The optional cross-AI review inside Step 9 reviews completed code POST-execution. Both steps are independent.</p>
 
       <h3>Step 2 — Testing strategy</h3>
       <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>/writing-plans</code> (superpowers:writing-plans). Purpose: convert approved spec and test strategy into a structured implementation plan.</p>
+      <p>Invoke the local <code>/writing-plans</code> helper only when SB needs a pre-GSD plan-shaping aid for complex scope. Otherwise, keep implementation planning inside <code>gsd:plan-phase</code>.</p>
 
-      <h3>Step 3 — Pre-plan quality gates (9 dimensions)</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. All 9 dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
+      <h3>Step 3 — Pre-plan quality gates (8 core dimensions + conditional gates)</h3>
+      <p>Invoke <code>/silver:quality-gates</code>. All applicable dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
 
       <h3>Step 4 — Discuss phase</h3>
       <p>Invoke <code>gsd:discuss-phase</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
@@ -254,7 +254,7 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>gsd:plan-phase</code>. Produces <code>PLAN.md</code> with verification loop.</p>
 
       <h3>Step 7 — Execute phase</h3>
-      <p>In Interactive mode (default): invoke <code>gsd:execute-phase --tdd</code> for implementation plans, or <code>gsd:execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code> only when the underlying GSD TDD mode is already enabled. For behavior-changing code, the TDD boundary uses <code>/test-driven-development</code> before the execution wave starts.</p>
+      <p>In Interactive mode (default): invoke <code>gsd:execute-phase --tdd</code> for implementation plans, or <code>gsd:execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code> only when the underlying GSD TDD mode is already enabled. For behavior-changing code, the TDD boundary uses <code>tdd</code> before the execution wave starts.</p>
 
       <h3>Step 8 — Verify work</h3>
       <p>Invoke <code>gsd:verify-work</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
@@ -263,13 +263,13 @@ B. No — proceed with spec as-is</div>
       <p>Only if gsd:verify-work surfaces coverage gaps: invoke <code>gsd:add-tests</code> to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>/requesting-code-review</code> (superpowers:requesting-code-review) → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code> (superpowers:receiving-code-review).</p>
+      <p>Run in order: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>. The review-framing helpers run only because this SB review boundary selects them.</p>
 
       <h3>Step 10 — Secure phase</h3>
       <p>Invoke <code>gsd:secure-phase</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase. <strong>Non-skippable gate — cannot be bypassed via §10.</strong></p>
 
       <h3>Steps 11–13 — Validate and pre-ship quality gates</h3>
-      <p>Invoke <code>gsd:validate-phase</code> (Nyquist validation gap filling) → <code>/silver:quality-gates</code> again (full 9-dimension pre-ship sweep). Pre-ship quality gates are <strong>non-skippable</strong>.</p>
+      <p>Invoke <code>gsd:validate-phase</code> (Nyquist validation gap filling) → <code>/silver:quality-gates</code> again (8 core dimensions plus conditional gates). Pre-ship quality gates are <strong>non-skippable</strong>.</p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
       <p>Invoke <code>/finishing-a-development-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>

@@ -19,7 +19,7 @@ write_default_config
 # Pre-populate env-var-backed state with skills
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
+gsd-code-review
 EOF
 # Set mock branch to "old-branch" so session-start detects a change.
 # integration_setup created TMPBRANCH with "feature/test"; overwrite it here.
@@ -47,7 +47,7 @@ write_default_config
 # AND an arbitrary non-gsd non-skill marker to verify it is preserved on same-branch restart.
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
+gsd-code-review
 gsd-execute-phase
 custom-marker-1
 EOF
@@ -61,17 +61,17 @@ else
   FAIL=$((FAIL + 1)); printf 'FAIL: S2.1: silver-quality-gates skill was removed\n'
 fi
 
-if grep -q "code-review" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.2: code-review skill retained\n'
+if grep -qx "gsd-code-review" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S2.2: gsd-code-review skill retained\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.2: code-review skill was removed\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.2: gsd-code-review skill was removed\n'
 fi
 
-# gsd-* markers should be removed
-if ! grep -q "gsd-" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S2.3: gsd- markers cleaned\n'
+# GSD lifecycle markers are skill evidence and should persist on the same branch.
+if grep -qx "gsd-execute-phase" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S2.3: GSD lifecycle markers retained\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S2.3: gsd- markers still present\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S2.3: GSD lifecycle markers were removed\n'
 fi
 
 # Non-gsd markers (anything that does not start with "gsd-") are not touched by

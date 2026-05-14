@@ -1,6 +1,6 @@
 ---
 name: devops-quality-gates
-description: This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /gsd:plan-phase in the devops-cycle workflow. Skips usability (no user-facing interface in IaC). All dimensions must pass — any ❌ is a hard stop.
+description: This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /gsd:plan-phase in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop.
 user-invocable: false
 version: 0.1.0
 ---
@@ -19,15 +19,15 @@ directories up.
 
 ## Step 1: Load quality dimension skills
 
-Use the Read tool to read each of the following files:
+Use the Read tool to read each of the following core dimension files:
 
 1. `${PLUGIN_ROOT}/skills/modularity/SKILL.md`
-2. `${PLUGIN_ROOT}/skills/reusability/SKILL.md`
-3. `${PLUGIN_ROOT}/skills/scalability/SKILL.md`
-4. `${PLUGIN_ROOT}/skills/security/SKILL.md`
-5. `${PLUGIN_ROOT}/skills/reliability/SKILL.md`
-6. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
-7. `${PLUGIN_ROOT}/skills/extensibility/SKILL.md`
+2. `${PLUGIN_ROOT}/skills/scalability/SKILL.md`
+3. `${PLUGIN_ROOT}/skills/security/SKILL.md`
+4. `${PLUGIN_ROOT}/skills/reliability/SKILL.md`
+5. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
+
+Then apply the built-in observability and change-safety checks below. Together these form the 7 IaC dimensions.
 
 > **Note**: Usability is intentionally excluded — infrastructure has no direct user-facing interface. If this change introduces a developer-facing CLI, dashboard, or runbook that humans interact with, include usability.
 
@@ -42,11 +42,6 @@ Apply each dimension through an infrastructure-as-code lens:
 - Each module has a single responsibility (networking, compute, storage, monitoring)
 - No monolithic root modules that provision unrelated resources
 - Variable inputs and output values are the module API — keep them minimal and stable
-
-### Reusability (IaC)
-- Modules are parameterized — no hardcoded environment names, region strings, or account IDs
-- Shared modules live in a registry or `modules/` directory, not copy-pasted
-- Naming conventions are consistent so modules compose predictably
 
 ### Scalability (IaC)
 - Resources are sized with auto-scaling where the service supports it
@@ -76,10 +71,17 @@ Apply each dimension through an infrastructure-as-code lens:
 - New IaC modules have a corresponding test (Terratest, conftest, BATS, or similar)
 - Plan output is reviewed as part of the PR, not just apply logs
 
-### Extensibility (IaC)
-- New environments can be added by adding a new tfvars file, not by duplicating modules
-- Module interfaces don't need to change to add a new resource of the same type
-- Tags/labels are applied consistently so new tooling can be layered without module changes
+### Observability (IaC)
+- Metrics, logs, traces, dashboards, or alerts are provisioned with the resource where applicable
+- Alert thresholds and ownership are explicit, not tribal knowledge
+- Pipeline failures expose actionable diagnostics
+- Runbooks link to the relevant monitoring surfaces
+
+### Change-Safety (IaC)
+- Rollback path is documented and realistic
+- Plan/diff output is reviewed before apply/deploy
+- State migrations, destructive changes, and replacement resources are called out
+- Changes are staged or canaryable when blast radius is non-trivial
 
 ---
 
@@ -104,12 +106,12 @@ Output a report in this format:
 | Dimension     | Result | Notes |
 |---------------|--------|-------|
 | Modularity    | ✅/❌  | ...   |
-| Reusability   | ✅/❌  | ...   |
 | Scalability   | ✅/❌  | ...   |
 | Security      | ✅/❌  | ...   |
 | Reliability   | ✅/❌  | ...   |
 | Testability   | ✅/❌  | ...   |
-| Extensibility | ✅/❌  | ...   |
+| Observability | ✅/❌  | ...   |
+| Change-Safety | ✅/❌  | ...   |
 | Usability     | ⚠️ N/A | No user-facing interface in this IaC change |
 
 ### Failures requiring redesign

@@ -102,7 +102,7 @@ Silver Bullet covers phases 3–8 of the SDLC strongly, with partial coverage of
 **Target:** Close GAP 5 — the gap between "PR merged" and "release published."
 
 **What to build:**
-- Extend `/create-release` with:
+- Extend `/silver-create-release` with:
   - Semantic versioning validation (`patch` / `minor` / `major` classification)
   - CHANGELOG.md auto-generation from commit messages + PR body
   - Migration guide template for breaking changes

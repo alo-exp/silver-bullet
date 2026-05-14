@@ -1,5 +1,28 @@
 # Changelog
 
+## [Unreleased]
+
+---
+
+## [0.35.0] — 2026-05-14
+
+## Bug Fixes
+
+- Align Silver Bullet hook and skill contracts with GSD lifecycle ownership.
+- Fix Codex package version drift and stamp all release surfaces consistently.
+
+## Features
+
+- Position Silver Bullet as an Agentic Process Orchestrator around GSD.
+- Add configurable plugin-runtime release gates so the four-stage/live-matrix gate can stay SB-plugin-specific until generalized.
+
+## Documentation
+
+- Refresh SB/GSD alignment guidance, enforcement docs, workflow docs, and release-gate notes.
+- Update Help Center and website copy to describe SB+GSD first, with Superpowers and other plugins as selected helper boundaries.
+
+---
+
 ## [0.34.0] — 2026-05-14
 
 ## Bug Fixes

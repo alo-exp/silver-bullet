@@ -160,7 +160,7 @@ jobs:
           config=".silver-bullet.json"
           template="templates/silver-bullet.config.json.default"
           fail=0
-          for key in required_deploy all_tracked required_planning required_deploy_devops; do
+          for key in required_deploy all_tracked required_planning required_planning_devops required_deploy_devops; do
             live=$(jq -r --arg k "$key" '.skills[$k] // [] | sort | .[]' "$config")
             tmpl=$(jq -r --arg k "$key" '.skills[$k] // [] | sort | .[]' "$template")
             if [[ "$live" != "$tmpl" ]]; then

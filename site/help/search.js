@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the host Skill tool. /silver is the APO router that accepts natural language, classifies complexity, and composes SB, GSD, Superpowers, and optional plugin paths."
+    "text": "Skills are markdown process guides invoked through the host Skill tool. /silver is the APO router that accepts natural language, classifies complexity, and composes SB, GSD, and selected helper plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -211,7 +211,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.34.0, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.35.0, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",
@@ -232,7 +232,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "skills",
     "title": "Skill not found",
-    "text": "Install required dependencies: GSD via npx get-shit-done-cc@latest, Superpowers, Engineering, Design, and host-specific marketplace dependencies. Start a new session after installing skills."
+    "text": "Install required dependencies: GSD via npx get-shit-done-cc@latest plus the selected helper plugins SB needs for your workflows. Start a new session after installing skills."
   },
   {
     "page": "Troubleshooting",

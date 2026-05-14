@@ -31,6 +31,7 @@ export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
 
 cleanup_all() {
   rm -f "$TMPSTATE" "$TMPBRANCH" 2>/dev/null || true
+  rm -f "${TMPSTATE}.requested" 2>/dev/null || true
   rm -f "${TMPTRIVIAL}" 2>/dev/null || true
   rm -f "$RELEASE_LIVE_MATRIX_FILE" "$E2E_LIVE_MATRIX_FILE" 2>/dev/null || true
   rm -f "$QUALITY_GATE_FILE" 2>/dev/null || true
@@ -224,16 +225,16 @@ assert_file_contains "same branch -> code-review preserved" "$TMPSTATE" "code-re
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-# Test 4: Same branch -> gsd-* markers stripped
-echo "--- Test 4: Same branch -> gsd-* markers stripped ---"
+# Test 4: Same branch -> GSD lifecycle markers survive session restart
+echo "--- Test 4: Same branch -> GSD lifecycle markers survive session restart ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_contains "same branch -> silver-quality-gates preserved" "$TMPSTATE" "silver-quality-gates"
-assert_file_not_contains "same branch -> gsd-discuss-phase stripped" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_not_contains "same branch -> gsd-plan-phase stripped" "$TMPSTATE" "gsd-plan-phase"
+assert_file_contains "same branch -> gsd-discuss-phase preserved" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_contains "same branch -> gsd-plan-phase preserved" "$TMPSTATE" "gsd-plan-phase"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
@@ -303,10 +304,11 @@ cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
 {"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
 EOF
 run_hook "$HOOK_WORKDIR" >/dev/null
-assert_file_contains "prompt replay recorded silver-init" "$TMPSTATE" "silver-init"
+assert_file_contains "prompt replay recorded silver-init as requested" "${TMPSTATE}.requested" "silver-init"
+assert_file_not_contains "prompt replay did not mark silver-init completed" "$TMPSTATE" "silver-init"
 rm -f "$HOOK_WORKDIR/.silver-bullet.prompt.json"
 rm -rf "$HOOK_WORKDIR"
-rm -f "$TMPBRANCH" "$TMPSTATE"
+rm -f "$TMPBRANCH" "$TMPSTATE" "${TMPSTATE}.requested"
 
 # Test 7b: Fresh init prompt replay records requested skill markers before scaffold exists
 echo "--- Test 7b: Fresh init prompt replay records requested skill markers ---"
@@ -318,10 +320,11 @@ cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
 {"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
 EOF
 run_hook "$HOOK_WORKDIR" >/dev/null
-assert_file_contains "fresh init prompt replay recorded silver-init" "$TMPSTATE" "silver-init"
+assert_file_contains "fresh init prompt replay recorded silver-init as requested" "${TMPSTATE}.requested" "silver-init"
+assert_file_not_contains "fresh init prompt replay did not mark silver-init completed" "$TMPSTATE" "silver-init"
 rm -f "$HOOK_WORKDIR/.silver-bullet.prompt.json"
 rm -rf "$HOOK_WORKDIR"
-rm -f "$TMPBRANCH" "$TMPSTATE"
+rm -f "$TMPBRANCH" "$TMPSTATE" "${TMPSTATE}.requested"
 
 # ── Output / injection tests ──────────────────────────────────────────────────
 
@@ -445,8 +448,8 @@ fi
 # State file must NOT have been wiped — skill recordings should survive
 assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
 assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Both branch-file-absent and same-branch paths strip gsd-* markers only.
-assert_file_not_contains "branch file absent -> gsd-* markers stripped" "$TMPSTATE" "gsd-discuss-phase"
+# Branch-file-absent and same-branch startup preserve GSD lifecycle evidence.
+assert_file_contains "branch file absent -> gsd-* markers preserved" "$TMPSTATE" "gsd-discuss-phase"
 assert_file_missing "branch file absent -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"
@@ -488,14 +491,14 @@ assert_file_contains "#87-B: resume preserves gsd-discuss-phase" "$TMPSTATE" "gs
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-echo "--- Test #87-C: clear source still strips gsd-* (legitimate reset path) ---"
+echo "--- Test #87-C: clear source preserves GSD lifecycle markers ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf 'silver-quality-gates\ngsd-discuss-phase\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook_source "$HOOK_WORKDIR" "clear" >/dev/null
 assert_file_contains "#87-C: clear preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
-assert_file_not_contains "#87-C: clear strips gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_contains "#87-C: clear preserves gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 

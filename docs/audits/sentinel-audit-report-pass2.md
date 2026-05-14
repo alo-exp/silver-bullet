@@ -107,7 +107,7 @@ The prohibition on writing to §10 without confirmation is also reinforced in th
 | ID | Description | Status | Notes |
 |----|-------------|--------|-------|
 | F5-02 | src_pattern whitelist regex narrow (alphanumeric only) | **RESOLVED/ACCEPTABLE** | Sanitization to `/src/` default on invalid pattern is present (line 174). |
-| F10-02 | Non-skippable gate list repeated in multiple places | **INFORMATIONAL** | `silver:security`, `silver:quality-gates`, `gsd-verify-work` are listed consistently. No divergence found. |
+| F10-02 | Non-skippable gate list repeated in multiple places | **INFORMATIONAL** | `security`, `silver:quality-gates`, `gsd-verify-work` are listed consistently. No divergence found. |
 
 ---
 

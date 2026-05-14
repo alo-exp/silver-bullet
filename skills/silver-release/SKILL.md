@@ -1,14 +1,14 @@
 ---
 name: silver-release
 description: >
-  This skill should be used for SB-orchestrated milestone release: silver:quality-gates → audit → gap-closure (max 2x) → docs → release notes → gsd-ship → gsd-complete-milestone
+  This skill should be used for SB-orchestrated milestone release: silver:quality-gates → audit → gap-closure (max 2x) → docs → GSD ship/complete milestone → silver:create-release
 argument-hint: "<version or release description, e.g. v1.2.0>"
 version: 0.1.0
 ---
 
 # /silver:release — Ship, Version, Publish, Go Live
 
-SB orchestrator for milestone-level publishing. Handles versioned releases, changelogs, documentation, GitHub Releases, and milestone archival.
+SB Agentic Process Orchestrator for milestone-level publishing. It handles release composition, changelogs, documentation, and GitHub Releases while GSD owns phase ship, milestone audit, and milestone completion artifacts.
 
 **Distinction from gsd-ship:** `gsd-ship` inside other workflows = phase-level merge (push branch → create PR → prepare for merge). `silver:release` = milestone-level publishing (versioned release, docs, changelog, GitHub Release, milestone archival). These are different abstraction levels. SB disambiguates "ship" intent at routing time.
 
@@ -135,11 +135,11 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `silver:security` (Step 2a), `silver:quality-gates` pre-release (Step 0), the mandatory full test suite rerun via `/verify-tests` (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last — this ordering is non-negotiable.
+**Non-skippable gates:** `security` (Step 2a), `silver:quality-gates` pre-release (Step 0), the mandatory full test suite rerun via `verify-tests` (Step 6c), `gsd-verify-work` (embedded in milestone audit), cross-artifact review (Step 6) must pass before Step 7 (gsd-ship), `gsd-ship` (Step 7) must succeed before Step 8 (gsd-complete-milestone), and Step 8 must succeed before Step 9 (Create Release). Tag is placed last by SB only after GSD milestone completion — this ordering is non-negotiable.
 
-## Step 0: Pre-Release Quality Gates (9 dimensions)
+## Step 0: Pre-Release Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: full 9-dimension sweep before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, extensibility. Non-skippable.
+Invoke `silver:quality-gates` via the Skill tool. Purpose: full 8-core-dimension sweep before any release audit begins, plus conditional AI/LLM safety and DevOps gates where applicable. Non-skippable.
 
 ## Step 1: Cross-Phase UAT
 
@@ -153,7 +153,7 @@ Invoke `gsd-audit-milestone` via the Skill tool. Purpose: compare milestone comp
 
 ## Step 2a: Security Hard Gate
 
-Invoke `silver:security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
+Invoke `security` via the Skill tool. Purpose: independent pre-release security review — mandatory regardless of §10 preferences. Non-skippable. Runs after milestone audit (Step 2) so it covers the full set of changes being released.
 
 ## FLOW DESIGN HANDOFF — Milestone UI handoff
 
@@ -204,7 +204,7 @@ Invoke `gsd-docs-update` via the Skill tool. Purpose: verify all existing docs a
 
 ## Step 3b: Generate/Update Documentation
 
-After gsd-docs-update completes (accuracy verified), invoke `/documentation` via the Skill tool. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
+After gsd-docs-update completes (accuracy verified), invoke `documentation` via the Skill tool when available. Purpose: generate/update GitHub README, user guide, website help section, and project page. Runs AFTER gsd-docs-update so it generates new content on top of verified accuracy — never generates on stale foundation.
 
 ## Step 4: Milestone Summary
 
@@ -231,11 +231,11 @@ Do NOT proceed to Step 7 (Ship) until cross-artifact review reports clean pass. 
 
 ## Step 6b: Pre-Ship Deployment Checklist
 
-Invoke `/deploy-checklist` via the Skill tool. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable.
+Invoke `deploy-checklist` via the Skill tool when available. Purpose: verify all pre-deployment conditions are met before gsd-ship executes — infrastructure, environment config, rollback plan, monitoring. Non-skippable when the release includes deployment.
 
 ## Step 6c: Mandatory Full Test Suite Rerun
 
-Invoke `/verify-tests` after the pre-release quality gate has completed and before any ship/release step. Purpose: re-run the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.sidekick/quality-gate-state`. Non-skippable.
+Invoke `verify-tests` after the pre-release quality gate has completed and before any ship/release step. Purpose: re-run the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.silver-bullet/quality-gate-state`. Non-skippable.
 
 **Enforcement:** Do not proceed to Step 7 until the full suite rerun has completed and the marker is recorded.
 
@@ -249,7 +249,7 @@ Invoke `gsd-ship` via the Skill tool. Purpose: deploy, ensure CI is green, push 
 
 **Only after Step 7 (gsd-ship) confirms success:**
 
-Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone, prepare for next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). These commits MUST be on the branch before the release tag is placed.
+Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone and prepare for the next version. Produces archival commits (ROADMAP, MILESTONES, STATE, RETROSPECTIVE). In the SB release composition, GSD completion must not be followed by a second GSD-owned public tag; `silver:create-release` owns the final public release tag/GitHub Release step.
 
 ## Step 9: Create Release
 

@@ -16,7 +16,7 @@ TEST_RUN_ID="$$"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-QUALITY_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state-${TEST_RUN_ID}"
+QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state-${TEST_RUN_ID}"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 
@@ -41,8 +41,13 @@ write_cfg() {
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","verify-tests"],
-    "all_tracked": ["silver-quality-gates","code-review"]
+    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review"]
+  },
+  "release": {
+    "require_plugin_runtime_matrix": true,
+    "require_pre_release_quality_gate": true,
+    "quality_gate_state_file": "${QUALITY_GATE_FILE}"
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -180,6 +185,12 @@ setup() {
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
+  mkdir -p "$TMPDIR_TEST/.planning/phases/001-test"
+  cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
+# Review
+
+status: passed
+EOF
   git -C "$TMPGIT" init -q
   git -C "$TMPGIT" config user.email "test@test.com"
   git -C "$TMPGIT" config user.name "Test"
@@ -298,7 +309,7 @@ cat > "$TMPCFG" << 'EOF'
   "skills": {
     "required_planning": ["not-a-real-skill"],
     "required_deploy": ["not-a-real-skill"],
-    "all_tracked": ["silver-quality-gates","code-review"]
+    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review"]
   },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
@@ -336,8 +347,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -365,19 +376,19 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
+gsd-code-review
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without full workflow skills" "$out"
-assert_contains "release block message mentions live matrix" "$out" "live matrix"
+assert_contains "release block message mentions plugin runtime gate" "$out" "plugin-runtime release matrix"
 teardown
 
 # Test 10: gh release create blocked until live matrix runs
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -397,7 +408,7 @@ write_verify_tests_state
 rm -f "$RELEASE_LIVE_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without shared live matrix marker" "$out"
-assert_contains "release block mentions live matrix gate" "$out" "live matrix and inline todo-app journey have not both been completed"
+assert_contains "release block mentions live matrix gate" "$out" "plugin-runtime release matrix"
 assert_contains "release block mentions run-live-tests" "$out" "tests/live/run-live-tests.sh"
 teardown
 
@@ -405,8 +416,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -438,8 +449,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -473,8 +484,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -514,8 +525,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -553,8 +564,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -593,8 +604,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -634,8 +645,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -683,8 +694,8 @@ setup
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -704,14 +715,14 @@ out=$(run_hook "PreToolUse" "gh pr create --title 'hotfix'")
 assert_passes "gh pr create passes on main without finishing-a-development-branch" "$out"
 teardown
 
-# Test 15: Code review triad ordering detected (requesting before code)
+# Test 15: Code review stack ordering detected (GSD review before framing)
 echo "--- Group 4: Ordering enforcement ---"
 setup
-# Put skills with requesting-code-review BEFORE code-review in the state file
+# Put gsd-code-review BEFORE requesting-code-review in the state file
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-code-review
 requesting-code-review
-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -728,12 +739,12 @@ out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_contains "ordering issue detected for wrong sequence" "$out" "wrong order"
 teardown
 
-# Test 16: Correct triad order passes cleanly
+# Test 16: Correct review-stack order passes cleanly
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -747,7 +758,7 @@ verify-tests
 EOF
 write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_passes "correct triad order passes without ordering warning" "$out"
+assert_passes "correct review-stack order passes without ordering warning" "$out"
 # Should NOT contain "wrong order"
 if ! printf '%s' "$out" | grep -q "wrong order"; then
   echo "  ✅ no false ordering warning on correct sequence"
@@ -791,8 +802,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -816,8 +827,8 @@ echo "--- Group 8: Delivery doc-scheme gate ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -840,8 +851,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -869,8 +880,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -905,8 +916,8 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1042,8 +1053,8 @@ WFEOF
 _full_state() {
   cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
 requesting-code-review
+gsd-code-review
 receiving-code-review
 testing-strategy
 documentation

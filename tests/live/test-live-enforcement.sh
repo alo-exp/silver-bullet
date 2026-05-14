@@ -20,13 +20,13 @@ assert_file_not_modified "S1: target file unchanged when edit is blocked" "$targ
 # file-level invariants are the release-relevant signal here.
 live_teardown
 
-# --- S2: Planning gate opens after silver-quality-gates + code-review ---
+# --- S2: Planning gate opens after silver-quality-gates + gsd-code-review ---
 echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
-seed_state "silver-quality-gates" "code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S2 test edit'. Just add the comment, nothing else.")
 sleep 2
-# With silver-quality-gates AND code-review recorded, Stage C is reached — edit should succeed
+# With silver-quality-gates AND gsd-code-review recorded, Stage C is reached — edit should succeed
 assert_response_not_contains "S2: no HARD STOP in response" "$response" "HARD STOP"
 assert_response_not_contains "S2: no BLOCKED planning incomplete" "$response" "BLOCKED.*Planning incomplete"
 live_teardown

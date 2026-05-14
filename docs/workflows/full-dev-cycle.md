@@ -19,8 +19,8 @@
 | `/silver` smart orchestrator | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/quality-gates`, `/blast-radius`, etc. |
-| Gap-filling skills | Skill tool -- `/testing-strategy`, `/verify-tests`, `/documentation`, etc. |
+| Silver Bullet skills | Skill tool -- `/silver:quality-gates`, `/silver:blast-radius`, etc. |
+| Gap-filling skills | Skill tool -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -218,25 +218,24 @@ log all auto-decisions to the session log.
 
 ### QUALITY GATES
 
-**What it does:** Evaluates the current design against all 9 Silver Bullet quality dimensions
+**What it does:** Evaluates the current design against 8 core Silver Bullet quality dimensions plus conditional AI/LLM and DevOps gates
 and produces a consolidated pass/fail report. A failure is a hard stop, not a warning.
 
-**Command:** `/quality-gates`                                                    **REQUIRED** -- DO NOT SKIP
+**Command:** `/silver:quality-gates`                                             **REQUIRED** -- DO NOT SKIP
 
-**What to expect:** All 9 dimensions (modularity, reusability, scalability, security,
-reliability, usability, testability, extensibility, and AI/LLM safety) are evaluated in parallel -- one agent per
+**What to expect:** 8 core dimensions (modularity, reusability, scalability, security, reliability, usability, testability, extensibility) are evaluated in parallel, with AI/LLM safety added only when the work includes AI behavior and DevOps gates added for infrastructure-touching changes -- one agent per
 dimension. Results are synthesized into a single report. Every dimension must pass. Expect 2-5
 minutes.
 
-**Agent Team dispatch**: Dispatch all 9 quality dimensions as a single parallel Agent Team
+**Agent Team dispatch**: Dispatch the applicable quality dimensions as a single parallel Agent Team
 wave -- one agent per dimension, `isolation: "worktree"`. The active runtime synthesizes results.
 Conflict resolution: more conservative/restrictive finding wins; resolution rationale logged
 in session log. **Autonomous mode:** All dispatches use `run_in_background: true`.
 
 **If it fails:** Read the report to identify which dimension(s) failed. Fix the specific
-design issue in your CONTEXT.md or design artifacts, then re-run `/quality-gates`. Do not
-proceed to PLAN until all 9 dimensions pass. Phase order is a hard constraint: do NOT start
-PLAN before `/quality-gates` completes.
+design issue in your CONTEXT.md or design artifacts, then re-run `/silver:quality-gates`. Do not
+proceed to PLAN until all applicable dimensions pass. Phase order is a hard constraint: do NOT start
+PLAN before `/silver:quality-gates` completes.
 
 ---
 
@@ -278,7 +277,7 @@ task producing an atomic git commit and each plan producing a SUMMARY.md.
 **Command:** `/gsd:execute-phase`                                                **REQUIRED** -- DO NOT SKIP
 
 **Pre-execution requirement:**
-`superpowers:test-driven-development` -- Before writing any implementation code:            **REQUIRED** -- DO NOT SKIP
+`tdd` -- Before writing any implementation code:            **REQUIRED** -- DO NOT SKIP
 establish red-green-refactor discipline. Write the failing test first, make it
 pass, then refactor. TDD applies per task within each GSD wave.
 
@@ -328,16 +327,16 @@ Do not advance to Code Review until verification passes. Blind retries compound 
 
 **Agent Team scope for Code Review steps:** The review steps below may use parallel agents
 (security, performance, correctness) with `isolation: "worktree"`.
-`/requesting-code-review` is human-facing and runs sequentially after agent review resolves.
+`/requesting-code-review` is the SB-required review-framing helper and runs before GSD review.
 **Autonomous mode:** Agent dispatches use `run_in_background: true`.
 
 ---
 
 ### CODE REVIEW
 
-**What it does:** Runs peer code quality review (security, performance, correctness,
-readability -- distinct from GSD's goal verification), then requests and processes external
-review feedback.
+**What it does:** Runs GSD-owned peer code quality review (security, performance,
+correctness, readability -- distinct from GSD's goal verification), with SB-required
+review framing and triage helpers around the authoritative REVIEW.md artifact.
 
 **Commands (all required, in order):**
 
@@ -346,14 +345,14 @@ review feedback.
    are available as inputs to the review. Covers OWASP LLM Top 10, prompt injection,
    privilege escalation, and data exfiltration patterns.
 
-2. `/code-review`                                                                **REQUIRED** -- DO NOT SKIP
-   Structured peer code quality review (security, performance, correctness, readability).
-   Covers SQL injection, XSS, N+1 queries, race conditions, edge cases, and maintainability.
-   Run this before dispatching the automated reviewer.
+2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
+   Frames scope and dispatches `superpowers:code-reviewer` only when the active
+   SB workflow selects that helper discipline. This helper does not replace the
+   GSD review artifact.
 
-3. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
-   Dispatches `superpowers:code-reviewer` via the Agent tool to perform peer code quality
-   review (security, performance, correctness, readability).
+3. `/gsd:code-review`                                                           **REQUIRED** -- DO NOT SKIP
+   Produces the authoritative REVIEW.md through GSD reviewer agents. Covers SQL
+   injection, XSS, N+1 queries, race conditions, edge cases, and maintainability.
    **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
    A single clean pass is not sufficient. The loop is self-limiting -- it ends naturally
    when two consecutive passes are clean. Never stop early on "minor" issues.
@@ -361,9 +360,9 @@ review feedback.
 4. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
    Triage and accept/reject all items from the review above.
 
-**What to expect:** A thorough multi-pass review process. The automated reviewer runs at
-least twice (requiring two consecutive approvals). External review is requested and all
-feedback is triaged. Accepted items become inputs for the Post-Review Execution step below.
+**What to expect:** A thorough multi-pass review process. GSD writes REVIEW.md, the
+framing helper keeps review scope explicit, and all feedback is triaged. Accepted
+items become inputs for the Post-Review Execution step below.
 
 **If review finds issues:** Accepted items flow into the Post-Review Execution step.
 Rejected items are documented with rationale. If the review loop does not converge after
@@ -406,7 +405,7 @@ for merge. These five skills are always required regardless of project type.
 
 ### Testing Strategy
 
-**Command:** `/testing-strategy`                                                 **REQUIRED** -- DO NOT SKIP
+**Command:** `testing-strategy`                                                 **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Defines the test strategy for the project: test pyramid structure, coverage
 goals, test classification, and tooling decisions.
@@ -438,7 +437,7 @@ PR creation or release.
 
 ### Tech Debt
 
-**Command:** `/tech-debt`                                                        **REQUIRED** -- DO NOT SKIP
+**Command:** `tech-debt`                                                        **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Identifies, categorizes, and prioritizes technical debt introduced or
 surfaced during this milestone.
@@ -452,7 +451,7 @@ surfaced during this milestone.
 
 ### Documentation
 
-**Command:** `/documentation`                                                    **REQUIRED** -- DO NOT SKIP
+**Command:** `documentation`                                                    **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Updates or creates all project documentation to reflect the current state
 of the project after this milestone's work.
@@ -503,7 +502,7 @@ files that need updating.
 
 ### Branch Cleanup
 
-**Command:** `superpowers:finishing-a-development-branch`                        **REQUIRED** -- DO NOT SKIP
+**Command:** `/finishing-a-development-branch`                                   **REQUIRED ON BRANCHES** -- DO NOT SKIP
 
 **What it does:** Performs branch rebase, cleanup, and merge preparation so the branch is
 ready for PR creation.
@@ -538,14 +537,14 @@ Use existing pipeline or set one up before deploying. GitHub repos: use GitHub A
 - Check CI: `gh run list --limit 1 --json status,conclusion`
 - **Autonomous mode**: poll every 30 seconds, up to 20 retries (10 min max).
   On timeout: log blocker under "Needs human review", surface to user, **STOP
-  deployment steps**. Do NOT proceed to `/deploy-checklist` while CI status is unknown.
+  deployment steps**. Do NOT proceed to `deploy-checklist` while CI status is unknown.
 - **Interactive mode**: show status. If `in_progress`: inform user, wait for
   confirmation to re-check or proceed.
 - **CI MUST be green.** If CI is red: invoke `/gsd:debug`, fix the issue, re-push,
-  and re-check CI. Do NOT proceed to `/deploy-checklist` while CI is failing.
+  and re-check CI. Do NOT proceed to `deploy-checklist` while CI is failing.
   Repeat fix-push-check until CI passes.
 - **Missing ci.yml rule**: if `.github/workflows/ci.yml` is absent at this step,
-  The active runtime must NOT invoke `/deploy-checklist`. Log as blocker under "Needs human review",
+  The active runtime must NOT invoke `deploy-checklist`. Log as blocker under "Needs human review",
   surface missing file to user, stop deployment steps.
 - Race condition: the post-commit hook (ci-status-check.sh) reflects the last
   *completed* run, not necessarily this push. This polling loop is the authoritative gate.
@@ -557,7 +556,7 @@ re-check. Do not proceed until CI is green. Repeat the fix-push-check loop as ne
 
 ### Deploy Checklist
 
-**Command:** `/deploy-checklist`                                                 **REQUIRED** -- DO NOT SKIP
+**Command:** `deploy-checklist`                                                 **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Runs a pre-deployment verification gate covering environment config,
 secrets, database migrations, rollback plan, and monitoring readiness.
@@ -594,7 +593,7 @@ Produces: pull request with phase summaries and requirement coverage.
 
 ## STEP 6: RELEASE
 
-**Command:** `/create-release`                                                   **REQUIRED** -- DO NOT SKIP
+**Command:** `/silver-create-release`                                            **REQUIRED** -- DO NOT SKIP
 
 **What it does:** Generates structured release notes and creates a GitHub Release with a
 git tag.
@@ -633,7 +632,7 @@ infrastructure as code.
 
 The transition is offered when ANY of the following are true:
 - **IaC files present**: `*.tf` (Terraform), `Dockerfile`, `docker-compose.yml`, Kubernetes manifests (`k8s/`, `kubernetes/`)
-- **Deploy checklist flagged gaps**: `/deploy-checklist` in STEP 4 identified infrastructure gaps that need addressing
+- **Deploy checklist flagged gaps**: `deploy-checklist` in STEP 4 identified infrastructure gaps that need addressing
 - **User request**: You explicitly ask to set up deployment infrastructure
 
 ### What Happens
@@ -699,7 +698,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
   GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
   that track Skill tool invocations. "I already covered this" is NOT valid.
-- Phase order is a hard constraint: do NOT start PLAN before `/quality-gates` completes.
+- Phase order is a hard constraint: do NOT start PLAN before `/silver:quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
 - For trivial changes (typos, copy fixes, config tweaks): route through `/silver:fast`
@@ -708,16 +707,18 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 ## GSD / Superpowers Ownership Rules
 
-GSD is the authoritative execution orchestrator. Superpowers provides design and review
-capabilities only. Where both tools could apply, GSD wins.
+GSD is the authoritative lifecycle and execution orchestrator. Superpowers is used only
+when an SB workflow explicitly requires a helper boundary such as TDD discipline, review
+framing/triage, verification-before-completion, or branch finishing. Where both tools
+could apply, GSD wins.
 
 | Concern | Owner | Rule |
 |---------|-------|------|
 | Requirements | GSD | `.planning/REQUIREMENTS.md` is the single source of truth. Superpowers must NOT maintain a separate requirements list. |
 | Planning | GSD | Use `/gsd:plan-phase` for all plans. When Superpowers' `brainstorming` skill offers to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**. |
 | Execution | GSD | Always use `/gsd:execute-phase` (wave-based). **NEVER** use `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work. |
-| Design specs | Superpowers | Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`. Superpowers' default path (`docs/superpowers/specs/`) is NOT used -- always override it. |
-| Code review | Superpowers | `/requesting-code-review`, `/receiving-code-review`, `superpowers:code-reviewer` are used for review only, never for execution. |
+| Design specs | SB/GSD | Use GSD-owned phase artifacts for lifecycle specs and `docs/specs/YYYY-MM-DD-<topic>-design.md` for optional design records. Superpowers' default path (`docs/superpowers/specs/`) is not authoritative. |
+| Code review | GSD + SB helpers | `/gsd:code-review` owns REVIEW.md. `/requesting-code-review`, `/receiving-code-review`, and `superpowers:code-reviewer` are used only when selected by the SB workflow, never for execution. |
 
 **Override Superpowers defaults in every session:**
 - Spec save path: `docs/specs/` (not `docs/superpowers/specs/`)

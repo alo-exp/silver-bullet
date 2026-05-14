@@ -6,11 +6,11 @@ trap 'exit 0' ERR
 # Blocks direct edits to GSD-managed planning artifacts (.planning/ROADMAP.md etc.)
 # that must only be modified through the appropriate GSD skill.
 #
-# Protected files (GSD-managed — updated by GSD CLI tools, not by Claude's Write/Edit):
-#   .planning/ROADMAP.md, STATE.md, PROJECT.md, RELEASE.md, v*-MILESTONE-*.md
-#
-# NOT protected (Silver Bullet skill-managed — owning skills use Write/Edit tool):
-#   .planning/REQUIREMENTS.md (silver-spec), .planning/UAT.md (silver-feature)
+# Protected files (GSD-managed — updated by GSD CLI tools, not by direct
+# Write/Edit): top-level project state plus nested phase lifecycle artifacts
+# such as .planning/phases/**/PLAN.md, SUMMARY.md, REVIEW.md, SECURITY.md,
+# and VERIFICATION.md. SB may own separate spec/quality artifacts, but it does
+# not directly mutate GSD lifecycle artifacts.
 #
 # Bypass: create ~/.claude/.silver-bullet/planning-edit-override (file, not symlink)
 # or set env var SB_ALLOW_PLANNING_EDITS=1 before starting Claude Code.
@@ -26,23 +26,34 @@ input=$(cat)
 file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
 [[ -z "$file_path" ]] && exit 0
 
-# Only care about files immediately inside a .planning/ directory
 # Canonicalize path to prevent traversal bypass (e.g. .planning/sub/../ROADMAP.md)
 _norm_path=$(python3 -c "import os,sys; print(os.path.normpath(sys.argv[1]))" "$file_path" 2>/dev/null || printf '%s' "$file_path")
-dir_basename=$(basename "$(dirname "$_norm_path")")
-[[ "$dir_basename" != ".planning" ]] && exit 0
-
+case "$_norm_path" in
+  /*) ;;
+  *) _norm_path="$PWD/$_norm_path" ;;
+esac
 basename_path=$(basename "$_norm_path")
 
-# Check if the file is in the protected set (GSD-managed only)
-# REQUIREMENTS.md and UAT.md are intentionally excluded — they are managed by
-# Silver Bullet skills (silver-spec and silver-feature) using the Write tool.
+# Check if the file is in the protected set (GSD-managed lifecycle artifacts).
+# SB-owned spec and quality files remain outside this protected set unless they
+# are core GSD planning state files.
 protected=false
-case "$basename_path" in
-  ROADMAP.md|STATE.md|PROJECT.md|RELEASE.md)
+planning_rel=""
+case "$_norm_path" in
+  */.planning/*)
+    planning_rel="${_norm_path#*/.planning/}"
+    ;;
+  *) exit 0 ;;
+esac
+
+case "$planning_rel" in
+  ROADMAP.md|STATE.md|PROJECT.md|RELEASE.md|REQUIREMENTS.md|UAT.md)
     protected=true
     ;;
-  v*-MILESTONE-*.md)
+  v*-MILESTONE-*.md|milestones/*.md)
+    protected=true
+    ;;
+  phases/*/*-PLAN.md|phases/*/*-SUMMARY.md|phases/*/*-REVIEW.md|phases/*/*-SECURITY.md|phases/*/*-VERIFICATION.md|phases/*/VERIFICATION.md|phases/*/REVIEW.md|phases/*/SECURITY.md)
     protected=true
     ;;
 esac
@@ -117,10 +128,31 @@ case "$basename_path" in
     skill_hint="Use /gsd-new-project instead."
     ;;
   RELEASE.md)
-    skill_hint="Use /silver-release or /create-release instead."
+    skill_hint="Use /silver-release or /silver-create-release instead."
+    ;;
+  REQUIREMENTS.md)
+    skill_hint="Use /gsd-new-project, /gsd-new-milestone, /gsd-spec-phase, or /gsd-ingest-docs instead. SB specs should live in SB-owned spec artifacts, not overwrite GSD requirements directly."
+    ;;
+  UAT.md)
+    skill_hint="Use /gsd-verify-work or /gsd-validate-phase instead."
     ;;
   v*-MILESTONE-*.md)
     skill_hint="Use /gsd-audit-milestone instead."
+    ;;
+  *-PLAN.md|PLAN.md)
+    skill_hint="Use /gsd-plan-phase instead."
+    ;;
+  *-SUMMARY.md|SUMMARY.md)
+    skill_hint="Use /gsd-execute-phase, /gsd-milestone-summary, or the relevant GSD phase completion skill instead."
+    ;;
+  *-REVIEW.md|REVIEW.md)
+    skill_hint="Use /gsd-code-review instead."
+    ;;
+  *-SECURITY.md|SECURITY.md)
+    skill_hint="Use /gsd-secure-phase instead."
+    ;;
+  *-VERIFICATION.md|VERIFICATION.md)
+    skill_hint="Use /gsd-verify-work or /gsd-validate-phase instead."
     ;;
 esac
 

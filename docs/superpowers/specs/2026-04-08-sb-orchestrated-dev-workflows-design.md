@@ -56,24 +56,24 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | 1d | `silver:multai` [arch-significant or user-requested] | 7-AI perspectives on architecture/approach before spec is locked. Distinct from Step 9c (gsd-review): 1d informs the spec pre-implementation; 9c reviews completed code post-execution. Both can fire independently. |
 | 2 | `/testing-strategy` | Define test levels, tooling, coverage targets — must run before writing-plans so test requirements are baked into the plan |
 | 2.5 | `silver:writing-plans` (superpowers:writing-plans) | Convert approved spec + test strategy → structured implementation plan |
-| 3 | `silver:quality-gates` [pre-plan] | All 9 dimensions: reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes. `silver:security` always mandatory regardless of §5. `silver:testability` is one of the 9 dimensions — not a separate step. |
+| 3 | `silver:quality-gates` [pre-plan] | All 9 dimensions: reliability, security, scalability, usability, testability, modularity, reusability, extensibility, plus devops-quality-gates for infra-touching changes. `security` always mandatory regardless of §5. `silver:testability` is one of the 9 dimensions — not a separate step. |
 | 4 | `gsd-discuss-phase` | Adaptive questioning → CONTEXT.md with locked decisions for planner |
 | 5 | `gsd-analyze-dependencies` | Map phase dependencies before GSD creates the plan |
 | 6 | `gsd-plan-phase` | PLAN.md with verification loop |
 | 7 | `gsd-execute-phase` | Wave-based execution with worktrees |
-| 7a | `silver:tdd` [impl plans only] | TDD red-green-refactor per implementation task |
+| 7a | `tdd` [impl plans only] | TDD red-green-refactor per implementation task |
 | 7b | [config/infra/doc plans] | Skip TDD — not applicable |
 | 8 | `gsd-code-review-fix` [if issues in REVIEW.md] | Auto-fix findings atomically before human review |
-| 9a | `silver:request-review` (superpowers:requesting-code-review) | Frame review scope and focus rigorously |
+| 9a | `requesting-code-review` (superpowers:requesting-code-review) | Frame review scope and focus rigorously |
 | 9b | `gsd-code-review` | Spawn reviewer agents → REVIEW.md |
 | 9c | `gsd-review` [arch-significant] | Cross-AI adversarial peer review — post-execution code review, distinct from Step 1d pre-spec MultAI |
-| 9d | `silver:receive-review` (superpowers:receiving-code-review) | Disciplined response to findings — no blind agreement |
+| 9d | `receiving-code-review` (superpowers:receiving-code-review) | Disciplined response to findings — no blind agreement |
 | 10 | `gsd-add-tests` [if coverage gaps remain] | Fill test coverage gaps post-execution |
 | 11 | `gsd-secure-phase` | Retroactive threat mitigation verification |
 | 12 | `gsd-validate-phase` | Nyquist validation gap filling |
 | 13 | `gsd-verify-work` | UAT, must-haves, artifact checks |
 | 14 | `silver:quality-gates` [pre-ship] | Full 9-dimension sweep before shipping |
-| 15a | `silver:finishing-branch` (superpowers:finishing-a-development-branch) | Merge / PR / cleanup decision |
+| 15a | `finishing-branch` (superpowers:finishing-a-development-branch) | Merge / PR / cleanup decision |
 | 15b | `gsd-pr-branch` [ask user; save pref to §5] | Clean PR branch stripping .planning/ commits |
 | 16 | `gsd-ship` | Push branch, create PR, prepare for merge (phase-level) |
 | 17 [last phase of milestone only] | `gsd-audit-uat` → `gsd-audit-milestone` → [gaps] `gsd-plan-milestone-gaps` → back to step 1 of gap phases (max 2 gap-closure iterations) → `gsd-complete-milestone` | Milestone completion lifecycle |
@@ -92,10 +92,10 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | 1A [known symptom, unknown fix] | `superpowers:systematic-debugging` → `gsd-debug` | Structure hypothesis first; then execute investigation with persistent state across context resets |
 | 1B [unknown cause, needs reconstruction] | `silver:forensics` → then path 1A | `silver:forensics` (SB-owned, wraps `skills/forensics/SKILL.md`): reconstructs cause from git history, artifacts, and state. Outputs a cause classification report, then hands off to 1A. |
 | 1C [failed GSD workflow specifically] | `gsd-forensics` → then path 1A | GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis, then hands off to 1A. |
-| 2 | `silver:tdd` | Write failing regression test first — red must appear before writing any fix |
+| 2 | `tdd` | Write failing regression test first — red must appear before writing any fix |
 | 3 | `gsd-plan-phase` [lightweight, 1-2 tasks] | Plan the fix |
-| 4 | `gsd-execute-phase` + `silver:tdd` | Execute fix, verify green |
-| 5 | `silver:request-review` + `gsd-code-review` + `silver:receive-review` | Review the fix |
+| 4 | `gsd-execute-phase` + `tdd` | Execute fix, verify green |
+| 5 | `requesting-code-review` + `gsd-code-review` + `receiving-code-review` | Review the fix |
 | 6 | `gsd-verify-work` | Confirm fix, zero regression |
 | 7 | `silver:quality-gates` [pre-ship] | Security + affected quality dimensions |
 | 8 | `gsd-ship` | Push branch, create PR |
@@ -115,18 +115,18 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | 1d | `silver:multai` [major UI system] | Multi-AI UX pattern perspectives |
 | 2 | `/testing-strategy` | Test levels for UI (component, visual, e2e) — before writing-plans |
 | 2.5 | `silver:writing-plans` | Spec + test strategy → implementation plan |
-| 3 | `silver:quality-gates` [pre-plan] | Usability + testability emphasis; `silver:security` mandatory |
+| 3 | `silver:quality-gates` [pre-plan] | Usability + testability emphasis; `security` mandatory |
 | 4 | `gsd-discuss-phase` | UI phase context → CONTEXT.md |
 | 5 | `gsd-ui-phase` | UI-SPEC.md design contract |
 | 6 | `gsd-plan-phase` | Implementation PLAN.md |
-| 7 | `gsd-execute-phase` + `silver:tdd` [component logic] | Execute with TDD for testable component units |
-| 8 | `silver:request-review` + `gsd-code-review` + [arch-sig] `gsd-review` + `silver:receive-review` | Layered code review |
+| 7 | `gsd-execute-phase` + `tdd` [component logic] | Execute with TDD for testable component units |
+| 8 | `requesting-code-review` + `gsd-code-review` + [arch-sig] `gsd-review` + `receiving-code-review` | Layered code review |
 | 9 | `gsd-ui-review` | 6-pillar visual audit of implemented UI |
 | 10 | `gsd-secure-phase` | Frontend security: XSS, CSP, auth surface |
 | 11 | `gsd-verify-work` + `gsd-add-tests` [gaps] | UAT + test gap filling |
 | 12 | `gsd-validate-phase` | Nyquist gap filling |
 | 13 | `silver:quality-gates` [pre-ship] | Full sweep |
-| 14 | `silver:finishing-branch` + [ask] `gsd-pr-branch` | Merge/PR decision |
+| 14 | `finishing-branch` + [ask] `gsd-pr-branch` | Merge/PR decision |
 | 15 | `gsd-ship` | Push branch, create PR, prepare for merge (phase-level) |
 | 16 [last phase of milestone only] | `gsd-audit-uat` → `gsd-audit-milestone` → [gaps] `gsd-plan-milestone-gaps` → back to step 1 of gap phases (max 2 iterations) → `gsd-complete-milestone` | Milestone completion lifecycle — same chain as silver:feature Step 17 |
 
@@ -136,9 +136,9 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 
 **Entry triggers:** "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops"
 
-> **SB-owned skills used here:** `silver:blast-radius` (maps change scope, failure modes, rollback), `silver:devops-skill-router` (routes to right IaC/cloud skill), `silver:devops-quality-gates` (7 IaC-adapted dimensions). All three are defined in `skills/blast-radius/`, `skills/devops-skill-router/`, `skills/devops-quality-gates/` respectively. See Section 9 for ownership.
+> **SB-owned skills used here:** `silver:blast-radius` (maps change scope, failure modes, rollback), `devops-skill-router` (routes to right IaC/cloud skill), `devops-quality-gates` (7 IaC-adapted dimensions). All three are defined in `skills/blast-radius/`, `skills/devops-skill-router/`, `skills/devops-quality-gates/` respectively. See Section 9 for ownership.
 
-**`silver:devops-quality-gates` dimensions (7):** reliability, security, scalability, modularity, testability, observability, change-safety. Usability is omitted (no user-facing interface in IaC). Extensibility is omitted (IaC is declarative, not extensible). These 7 are used at both the pre-plan gate (Step 3) and the pre-ship gate (Step 10) — the standard 9-dimension sweep does not apply to devops workflows.
+**`devops-quality-gates` dimensions (7):** reliability, security, scalability, modularity, testability, observability, change-safety. Usability is omitted (no user-facing interface in IaC). Extensibility is omitted (IaC is declarative, not extensible). These 7 are used at both the pre-plan gate (Step 3) and the pre-ship gate (Step 10) — the standard 9-dimension sweep does not apply to devops workflows.
 
 > **No brainstorming phase:** `silver:devops` omits `/product-brainstorming` and `silver:brainstorm`. Infrastructure changes are driven by operational requirements established upstream (in `silver:feature` or `silver:research`). Blast-radius analysis (Step 1) replaces the product/engineering brainstorm for this workflow class.
 
@@ -147,16 +147,16 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | 0 | `silver:intel` (gsd-intel) | Orient in codebase — understand current infra topology before blast-radius analysis |
 | 0b | `silver:scan` [if no intel files] | Rapid structure assessment |
 | 1 | `silver:blast-radius` | Map change scope, downstream deps, failure modes, rollback plan |
-| 2 | `silver:devops-skill-router` | Route to right IaC/cloud skill (Terraform, Pulumi, AWS, k8s…) |
-| 3 | `silver:devops-quality-gates` | 7 IaC-adapted quality dimensions (pre-plan gate) |
-| 3b | `silver:security` [always] | Infrastructure security mandatory — independent hard gate |
+| 2 | `devops-skill-router` | Route to right IaC/cloud skill (Terraform, Pulumi, AWS, k8s…) |
+| 3 | `devops-quality-gates` | 7 IaC-adapted quality dimensions (pre-plan gate) |
+| 3b | `security` [always] | Infrastructure security mandatory — independent hard gate |
 | 4 | `gsd-discuss-phase` | DevOps phase context → CONTEXT.md |
 | 5 | `gsd-plan-phase` | PLAN.md |
 | 6 | `gsd-execute-phase` [TDD skipped] | Execute — TDD not applicable for infra plans |
-| 7 | `silver:request-review` + `gsd-code-review` + [arch-sig] `gsd-review` + `silver:receive-review` | IaC review |
+| 7 | `requesting-code-review` + `gsd-code-review` + [arch-sig] `gsd-review` + `receiving-code-review` | IaC review |
 | 8 | `gsd-secure-phase` | IaC security + secrets verification |
 | 9 | `gsd-verify-work` | Deployment verification |
-| 10 | `silver:devops-quality-gates` [pre-ship] | 7 IaC-adapted dimensions sweep before deploy — same gate as Step 3, not the standard 9 |
+| 10 | `devops-quality-gates` [pre-ship] | 7 IaC-adapted dimensions sweep before deploy — same gate as Step 3, not the standard 9 |
 | 11 | `gsd-ship` | Deploy |
 
 ---
@@ -275,7 +275,7 @@ When user requests skipping a workflow step, SB always:
 2. Offers lettered options: A. Accept skip, B. Lightweight alternative, C. Show me what you have
 3. Records the decision in §5 if user chooses A permanently
 
-**Non-skippable gates** (hard stops regardless of §5): `silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates** (hard stops regardless of §5): `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
 
 ### 6.6 Multi-Signal Conflict Resolution
 
@@ -299,11 +299,11 @@ Five testing skill invocations form a non-overlapping chain across each feature/
 |-------|-----------------|-------|---------|
 | 1st | After spec approval, before writing-plans (Step 2) | `/testing-strategy` | Planning-time: defines WHAT to test and HOW — test levels, tooling, coverage targets, test data strategy |
 | 2nd | Pre-planning quality gate (Step 3) | `silver:testability` (embedded in `silver:quality-gates`) | Design-time: ensures architecture CAN be tested — DI, pure functions, seams, observable state |
-| 3rd | During execution, impl plans only (Step 7a) | `silver:tdd` | Execution-time: red-green-refactor discipline per task |
+| 3rd | During execution, impl plans only (Step 7a) | `tdd` | Execution-time: red-green-refactor discipline per task |
 | 4th | Post-execution, if coverage gaps (Step 10) | `gsd-add-tests` | Gap-filling: generate tests from UAT criteria |
 | 5th | Pre-ship quality gate (Step 14) | `silver:testability` (embedded in `silver:quality-gates`) | Final check: shipped code still has testable architecture |
 
-> Note: `silver:testability` is one of the 9 standard quality dimensions — it runs as part of `silver:quality-gates`, not as a separate step. The 9 dimensions are: reliability, security, scalability, usability, testability, modularity, reusability, extensibility. `silver:devops-quality-gates` replaces all 9 with its 7 IaC-specific dimensions for devops workflows.
+> Note: `silver:testability` is one of the 9 standard quality dimensions — it runs as part of `silver:quality-gates`, not as a separate step. The 9 dimensions are: reliability, security, scalability, usability, testability, modularity, reusability, extensibility. `devops-quality-gates` replaces all 9 with its 7 IaC-specific dimensions for devops workflows.
 
 ---
 
@@ -368,7 +368,7 @@ When user expresses a preference:
 
 ### 8.4 Conflict Resolution
 
-`§5` overrides workflow defaults. Hard gates (`silver:security`, `silver:quality-gates` pre-ship, `gsd-verify-work`) are never overridable.
+`§5` overrides workflow defaults. Hard gates (`security`, `silver:quality-gates` pre-ship, `gsd-verify-work`) are never overridable.
 
 ---
 

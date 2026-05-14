@@ -251,7 +251,11 @@ To reset workflow state intentionally, run in your terminal:
       src_exclude_pattern='__tests__|\.test\.'
     fi
     active_workflow=$(jq -r '.project.active_workflow // "full-dev-cycle"' "$config_file")
-    custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file")
+    if [[ "$active_workflow" == "devops-cycle" ]]; then
+      custom_planning=$(jq -r '(.skills.required_planning_devops // .skills.required_planning // []) | join(" ")' "$config_file")
+    else
+      custom_planning=$(jq -r '(.skills.required_planning // []) | join(" ")' "$config_file")
+    fi
     [[ -n "$custom_planning" ]] && required_planning="$custom_planning"
     cfg_state=$(jq -r '.state.state_file // ""' "$config_file")
     [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
@@ -521,10 +525,12 @@ To reset workflow state intentionally, run in your terminal:
   fi
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
-  # Derive finalization_skills from config required_deploy; fall back to hardcoded defaults.
+  # Derive post-review/finalization skills from config required_deploy; fall back to
+  # hardcoded defaults. GSD discuss/plan/execute/verify are normal pre-review
+  # lifecycle markers and must not be treated as phase-skip evidence.
   finalization_skills="finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
   if [[ -n "$config_file" ]]; then
-    cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(. != "code-review" and . != "requesting-code-review" and . != "receiving-code-review" and . != "silver-quality-gates")) | join(" ")' "$config_file" 2>/dev/null || true)
+    cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(. != "silver-quality-gates" and . != "silver-blast-radius" and . != "devops-quality-gates" and . != "gsd-discuss-phase" and . != "gsd-plan-phase" and . != "gsd-execute-phase" and . != "gsd-verify-work" and . != "gsd-code-review" and . != "requesting-code-review" and . != "receiving-code-review")) | join(" ")' "$config_file" 2>/dev/null || true)
     [[ -n "$cfg_finalization" ]] && finalization_skills="$cfg_finalization"
   fi
   has_finalization=false
@@ -535,22 +541,20 @@ To reset workflow state intentionally, run in your terminal:
     fi
   done
 
-  if [[ "$has_finalization" == true ]] && ! has_skill "code-review"; then
-    phase_skip_msg=$(printf '🚫 BLOCKED — Phase skip detected: finalization skills invoked before /code-review.\n\nYou must run /code-review BEFORE finalization steps (finishing-a-development-branch, silver-create-release, etc.). This order is mandatory.\n\nRun /code-review now before continuing to edit source code.')
-    emit_block "$phase_skip_msg"
-    exit 0
-  fi
-
-  if ! has_skill "code-review"; then
-    # Stage B: all planning done, no code-review — BLOCK source edits
-    block_msg="🚫 BLOCKED — Code review required before further source edits. Planning is complete but you must run /code-review before editing source code. Non-source operations (reading, commits, skill invocations) are still allowed."
-    emit_block "$block_msg"
+  if ! has_skill "gsd-code-review"; then
+    # Stage B: planning done, implementation window open. Code review is a
+    # post-implementation/final-delivery gate and must not block GSD execution.
+    if [[ "$has_finalization" == true ]]; then
+      printf '{"hookSpecificOutput":{"message":"⚠️ Planning verified, but finalization markers exist before gsd-code-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."}}'
+    else
+      printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Implementation edits allowed. Code review, verification, and finalization remain required before delivery."}}'
+    fi
     exit 0
   fi
 
   if ! has_skill "finishing-a-development-branch"; then
-    # Stage C: has code-review, finalization remaining
-    printf '{"hookSpecificOutput":{"message":"✅ Code review done. Finalization remaining — run /finishing-a-development-branch, /silver-create-release, /verification-before-completion, /test-driven-development when ready."}}'
+    # Stage C: has gsd-code-review, finalization remaining
+    printf '{"hookSpecificOutput":{"message":"✅ GSD code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."}}'
     exit 0
   fi
 

@@ -2,8 +2,8 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# SessionStart hook: inject Superpowers /using-superpowers skill into context
-# AND perform branch-scoped state reset.
+# SessionStart hook: inject Silver Bullet core rules into context and perform
+# branch-scoped state reset.
 #
 # v0.30.0 fix (#87): the hook now reads the SessionStart JSON payload from
 # stdin to extract the `source` field. Claude Code emits SessionStart on
@@ -12,10 +12,9 @@ trap 'exit 0' ERR
 #   - resume   : continuing a prior session
 #   - clear    : explicit /clear by the user
 #   - compact  : /compact (auto or manual) — context compression, NOT a reset
-# Previously, all four triggered the destructive `gsd-*` strip, wiping
-# mid-session GSD progress markers on every compact. Now only `startup` and
-# `clear` perform state mutations; `resume` and `compact` are treated as
-# benign session-resume events that must not touch state.
+# Previously, all four triggered destructive cleanup, wiping mid-session GSD
+# progress on every compact. Now only `startup` and `clear` reset ephemeral gate
+# files; `resume` and `compact` are benign continuation events.
 #
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -52,7 +51,7 @@ fi
 # Ensure user-scoped state directory exists
 SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
-SIDEKICK_GATE_FILE="${HOME}/.claude/.sidekick/quality-gate-state"
+QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state"
 
 # Fresh init / exec-mode prompt replay.
 #
@@ -113,12 +112,12 @@ done
 # sessions, the full state is cleared — forcing a fresh workflow for the new branch.
 # This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
 #
-# Within the same branch: gsd-* markers are reset on each session start (forcing
-# fresh GSD tracking per session), but skill recordings accumulate (so mid-feature
-# work across multiple sessions is preserved).
+# Within the same branch: skill recordings accumulate so mid-feature work across
+# sessions is preserved. GSD lifecycle markers are real skill records, not
+# disposable session markers, and must survive startup on the same branch.
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
-quality_gate_state_file="${SIDEKICK_GATE_FILE}"
+quality_gate_state_file="${QUALITY_GATE_FILE}"
 verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 
 # Env var override — allows tests to redirect state writes to a temp file
@@ -143,7 +142,7 @@ esac
 quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
 case "$quality_gate_state_file" in
   "$HOME"/.claude/*) ;;
-  *) quality_gate_state_file="${SIDEKICK_GATE_FILE}" ;;
+  *) quality_gate_state_file="${QUALITY_GATE_FILE}" ;;
 esac
 
 # Env var override for the test execution gate file.
@@ -164,12 +163,11 @@ fi
 stored_branch=""
 [[ -f "$branch_file" ]] && stored_branch=$(cat "$branch_file" 2>/dev/null || true)
 
-# v0.30.0 fix (#87 Bug 1+3): only mutate state on `startup` and `clear` events.
-# `resume` and `compact` are benign session-continuation events — wiping gsd-*
-# markers or resetting the state file mid-feature breaks multi-session GSD
-# enforcement. Empty `current_branch` is also treated as no-op (Bug 3): we
-# cannot prove a branch mismatch when the value isn't readable, and wiping on
-# uncertainty causes data loss.
+# v0.30.0 fix (#87 Bug 1+3): only mutate branch/gate state on `startup` and
+# `clear` events. `resume` and `compact` are benign continuation events. Empty
+# `current_branch` is also treated as no-op (Bug 3): we cannot prove a branch
+# mismatch when the value isn't readable, and wiping on uncertainty causes data
+# loss.
 sb_should_mutate=false
 case "$sb_session_source" in
   startup|clear) sb_should_mutate=true ;;
@@ -185,10 +183,6 @@ if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_fil
   if [[ ! -s "$branch_file" ]]; then
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
-  if [[ -f "$state_file" && ! -L "$state_file" ]]; then
-    sed -i.bak '/^gsd-/d' "$state_file"
-    rm -f -- "${state_file}.bak"
-  fi
 elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branch" && "$current_branch" != "$stored_branch" ]]; then
   # Branch changed — full state reset for fresh workflow.
   # NOTE: requires BOTH current_branch AND stored_branch to be non-empty.
@@ -202,9 +196,9 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
 elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]; then
-  # Same branch — reset session-specific gsd-* markers only (transient per-session GSD phase markers).
-  sed -i.bak '/^gsd-/d' "$state_file"
-  rm -f -- "${state_file}.bak"
+  # Same branch — preserve recorded skill state. GSD markers are authoritative
+  # lifecycle evidence and must not be discarded on session startup.
+  :
 fi
 # `compact` and `resume` fall through with no state mutation.
 
@@ -245,14 +239,6 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# Locate the Superpowers using-superpowers SKILL.md (glob, not find — faster and more restrictive)
-# Security: validate resolved path stays within ~/.claude/plugins/cache/ before reading
-sp_file=$(ls ~/.claude/plugins/cache/*/superpowers/*/skills/using-superpowers/SKILL.md 2>/dev/null | head -1 || true)
-if [[ -n "${sp_file:-}" ]]; then
-  _sp_resolved="$(cd "$(dirname "$sp_file")" 2>/dev/null && pwd)/$(basename "$sp_file")" || sp_file=""
-  [[ "${_sp_resolved:-}" == "${HOME}/.claude/plugins/cache/"* ]] || sp_file=""
-fi
-
 # Locate Design plugin design-system SKILL.md
 design_file=$(ls ~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md 2>/dev/null | head -1 || true)
 [[ -z "${design_file:-}" ]] && design_file=$(ls ~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md 2>/dev/null | head -1 || true)
@@ -282,15 +268,8 @@ fi
 
 # Build combined context
 combined=""
-if [[ -n "${sp_file:-}" ]]; then
-  combined=$(cat "$sp_file")
-fi
 if [[ -n "${design_file:-}" ]]; then
-  combined="${combined:+$combined
-
----
-
-}Design plugin detected. Use /design:design-system and /design:ux-copy when the workflow requires UI/UX work."
+  combined="Design plugin detected. Use /design:design-system and /design:ux-copy only when the active Silver Bullet workflow requires UI/UX work."
 fi
 
 # Append core enforcement rules so they survive compaction (Tier 2 rule injection)

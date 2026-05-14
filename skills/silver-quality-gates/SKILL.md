@@ -9,7 +9,9 @@ version: 0.1.0
 
 # /silver:quality-gates — Consolidated Quality Review
 
-Applies all 9 Silver Bullet quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
+Applies Silver Bullet's quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
+
+The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included conditionally when the phase includes AI/LLM behavior, model calls, prompts, evals, agents, retrieval, or automated decisioning.
 
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/silver-quality-gates/SKILL.md`, so the plugin root is two directories up.
@@ -36,11 +38,11 @@ Use the disambiguation table to determine mode:
 | Yes | No | **design-time** (mid-execution, treat as pre-plan) |
 | Yes | Yes | **adversarial** (pre-ship quality gate) |
 
-**Record the detected mode.** It controls Step 2 behavior for all 9 dimensions.
+**Record the detected mode.** It controls Step 2 behavior for all applicable dimensions.
 
 ---
 
-## Step 1: Load all quality dimension skills
+## Step 1: Load quality dimension skills
 
 Use the Read tool to read each of the following files:
 
@@ -52,7 +54,7 @@ Use the Read tool to read each of the following files:
 6. `${PLUGIN_ROOT}/skills/usability/SKILL.md`
 7. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
 8. `${PLUGIN_ROOT}/skills/extensibility/SKILL.md`
-9. `${PLUGIN_ROOT}/skills/ai-llm-safety/SKILL.md`
+9. `${PLUGIN_ROOT}/skills/ai-llm-safety/SKILL.md` only when the phase includes AI/LLM behavior
 
 ---
 
@@ -88,7 +90,7 @@ Output a report in this format:
 | Usability     | ✅/❌  | ...   |
 | Testability   | ✅/❌  | ...   |
 | Extensibility | ✅/❌  | ...   |
-| AI/LLM Safety | ✅/❌  | ...   |
+| AI/LLM Safety | ✅/❌/N/A | included only when applicable |
 
 ### Failures requiring redesign
 [List each ❌ item with the specific rule violated and required fix]

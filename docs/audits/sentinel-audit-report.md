@@ -300,7 +300,7 @@ These are unauthenticated, and the GitHub API response for `releases/latest` is 
 
 **Description:** The silver:fast path is explicitly designed to bypass the entire SB enforcement pipeline:
 - No planning (quality-gates skipped)
-- No security review (silver:security skipped)
+- No security review (security skipped)
 - No code review cycle
 - No testing strategy
 - `silver-bullet.md §10 routing preferences are NOT applied`
@@ -638,7 +638,7 @@ printf '%s' "$command_str" | grep -qE '\.claude/[^/]+/(state|branch|trivial|mode
 | F7-01, F3-01 | Add git tag signature verification (`git verify-tag`) before accepting any update. Display diff of changed files. Require explicit user confirmation showing the commit SHA. Consider a TOFU (Trust On First Use) pinned SHA model. |
 | F2-01 | Add explicit UNTRUSTED DATA boundary to session startup doc read. Distinguish between "reading for context" and "reading as instructions." Consider a separate trusted-instructions-only path for silver-bullet.md vs. informational-only path for docs/. |
 | F2-02 | Apply UNTRUSTED DATA boundary pattern (already used in forensics/SKILL.md) to silver-init's reading of README.md, CONTEXT.md, and CLAUDE.md. |
-| F5-01 | Require silver:security to always run even on the fast path for any change touching authentication, secrets, API endpoints, or data-handling code. Add a secondary mechanical check: verify ≤3 files were actually modified before closing out. |
+| F5-01 | Require security to always run even on the fast path for any change touching authentication, secrets, API endpoints, or data-handling code. Add a secondary mechanical check: verify ≤3 files were actually modified before closing out. |
 | F7-02 | Document the transitive trust assumption explicitly. Consider adding a plugin integrity check step in silver-init that verifies plugin file hashes against known-good values. |
 | F10-01 | Add explicit review confirmation before writing any preference to §10. Log the exact change being made. Consider requiring a diff display before the commit of both files is made. |
 

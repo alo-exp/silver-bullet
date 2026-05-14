@@ -2,7 +2,7 @@
 
 Single-page view of which Silver Bullet skills, artifacts, and enforcement layers activate at each SDLC stage. This is SB's authoritative coverage matrix.
 
-**Last updated:** 2026-04-13 (v0.16.0)
+**Last updated:** 2026-05-14 (v0.35.0)
 
 ## Coverage Matrix
 
@@ -18,7 +18,7 @@ Single-page view of which Silver Bullet skills, artifacts, and enforcement layer
 | **Security** | `gsd-secure-phase` | SECURITY.md | Security auditor (threat model verify) | Full |
 | **UAT** | `gsd-audit-uat` | UAT.md | UAT gate (SPEC AC ↔ evidence mapping) | Full |
 | **Quality Gates** | `/quality-gates`, 8 ility skills | Per-dimension assessment | Dev-cycle gate Stage A (blocks code until quality review) | Full |
-| **Release** | `silver-release` / `create-release` | CHANGELOG, GitHub release | Pre-release quality gate (4-stage), completion audit | Full |
+| **Release** | `silver-release` / `silver-create-release` | CHANGELOG, GitHub release | Pre-release quality gate (4-stage), completion audit | Full |
 | **Observability** | `silver-review-stats` | review-analytics.jsonl | Analytics rotation at 1000 lines | Partial |
 | **Maintenance** | `gsd-forensics`, `gsd-debug` | debug/ reports | Forensics skill | Partial |
 | **Milestone Close** | `gsd-complete-milestone` | milestone archives | Phase archive hook, STATE.md reset | Full |
@@ -58,7 +58,7 @@ SPEC.md ──→ REQUIREMENTS.md ──→ ROADMAP.md phases
 
 This map documents what SB enforces. It does NOT document:
 - GSD execution mechanics (see GSD reference docs)
-- Superpowers autonomous patterns (see Superpowers README)
+- Superpowers helper boundaries selected by SB workflows
 - Individual plugin skill behavior (see respective SKILL.md files)
 
 SB's role is the enforcement and wiring layer — connecting plugins into a guaranteed-complete SDLC.

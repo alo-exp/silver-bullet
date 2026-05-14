@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.34.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.34.0)
+[![version](https://img.shields.io/badge/version-v0.35.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.0)
 
 **Agentic Process Orchestrator for AI-native Software Engineering & DevOps**
 
@@ -8,7 +8,7 @@
 
 Brooks was right then. AI changes the equation now.
 
-Silver Bullet is a Claude Code and Codex plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent execution), [Superpowers](https://github.com/obra/superpowers) (code review, branch management), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (testing, docs, deploy), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
+Silver Bullet is a Claude Code and Codex plugin that orchestrates the best open-source agentic workflows into one enforced process. It combines [GSD](https://github.com/gsd-build/get-shit-done) (multi-agent planning, execution, review, verification, and ship), [Superpowers](https://github.com/obra/superpowers) (TDD, review framing/triage, branch helpers), [Engineering](https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering) (specialized testing/docs/deploy helpers when selected), and [Design](https://github.com/anthropics/knowledge-work-plugins/tree/main/design) (design system, UX copy, accessibility) into one guided workflow with 12 layers of compliance. Those dependencies are installed from their own official sources; Silver Bullet's Codex package stays SB-only, and the shared [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) marketplace hosts any Codex-specific wrapper packaging for third-party plugins. **You don't need to know GSD** -- Silver Bullet guides you through every step, explains what's happening, and handles errors. Just describe what you want to build.
 
 ## How It Works
 
@@ -26,13 +26,11 @@ When you try to `git commit` before completing the full workflow:
 🛑 COMPLETION BLOCKED — Workflow incomplete.
 
 You are attempting to commit/push/deploy but these required steps are missing:
-  ❌ /code-review
+  ❌ /gsd:code-review
   ❌ /requesting-code-review
   ❌ /receiving-code-review
-  ❌ /testing-strategy
-  ❌ /documentation
+  ❌ /verify-tests
   ❌ /finishing-a-development-branch
-  ❌ /deploy-checklist
 Complete ALL required workflow steps before finalizing.
 ```
 
@@ -50,19 +48,19 @@ Silver Bullet supports two workflow modes, selected during project initializatio
 
 | Workflow | For | Steps | Unique features |
 |----------|-----|-------|-----------------|
-| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 9 quality dimensions, TDD, dev-to-DevOps transition, release notes |
+| `full-dev-cycle` | Application development (web, API, CLI, library) | 20 | GSD wave execution, 8 core quality dimensions plus conditional gates, TDD, dev-to-DevOps transition, release notes |
 | `devops-cycle` | Infrastructure / DevOps (Terraform, k8s, Helm, CI/CD) | 24 | Blast radius assessment, IaC-adapted quality gates, environment promotion, incident fast path, DevOps-to-dev transition, release notes |
 
 Both workflows use GSD as the primary execution engine. Silver Bullet guides you through every step with explanations of what each command does, what to expect, and what to do if something fails. Smooth transitions between the two workflows are built in -- after shipping an app, SB offers to set up infrastructure; after deploying infrastructure, SB offers to continue feature development.
 
-## The Four-Plugin Ecosystem
+## The APO Ecosystem
 
 | Plugin | Role | Key capabilities |
 |--------|------|-----------------|
 | **GSD** (primary) | Multi-agent execution | Fresh 200K-token context per agent, wave-based parallel execution, dependency graphs, atomic per-task commits, context rot prevention |
-| **Superpowers** | Code review + branch management | Brainstorming, requesting-code-review, receiving-code-review, git worktrees, verification |
-| **Engineering** | Testing + docs + deploy | code-review, testing-strategy, documentation, deploy-checklist, debugging, architecture |
-| **Design** | Design system + UX | design-system, ux-copy, accessibility-review, design-critique |
+| **Silver Bullet** | Agentic Process Orchestrator | Dynamic task composition, enforcement hooks, quality gates, release gates, Help Center/runtime guidance |
+| **Superpowers** | SB-required helper boundaries | TDD discipline, review framing/triage, verification-before-completion, branch finishing when selected by SB |
+| **Design / DevOps / other plugins** | Contextual enrichment | UI copy/design, provider-specific IaC checks, research, and risk analysis when the selected workflow requires them |
 
 ## Install
 
@@ -86,7 +84,7 @@ Silver Bullet ships a complete port for the [Forge](https://forgecode.dev) codin
 curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
 ```
 
-This installs ~109 skills, ~50 custom agents (16 hook-equivalent + 33 GSD subagents + Superpowers code-reviewer), ~50 slash commands (GSD + Superpowers + KW PM + SB helpers), and the SB project-bootstrap templates to `~/forge/`. Format-compliant per [`forgecode.dev/docs/`](https://forgecode.dev/docs/) (skills, custom agents, slash commands).
+This installs ~109 skills, ~50 custom agents (16 hook-equivalent + 33 GSD subagents + the Superpowers helper reviewer), ~50 slash commands (GSD + selected helper surfaces + SB helpers), and the SB project-bootstrap templates to `~/forge/`. Format-compliant per [`forgecode.dev/docs/`](https://forgecode.dev/docs/) (skills, custom agents, slash commands).
 
 After install, run `silver-init` inside any project to scaffold `.planning/` and start a workflow. See [`forge/PARITY.md`](forge/PARITY.md) for the Claude-Code ↔ Forge capability map.
 
@@ -163,19 +161,19 @@ That's it. Enforcement is now active.
 | 5 | `/gsd:plan-phase` | GSD | **Yes** |
 | 6 | `/gsd:execute-phase` | GSD | **Yes** |
 | 7 | `/gsd:verify-work` | GSD | **Yes** |
-| 8 | `/code-review` (structured quality review) | Engineering | **Yes** |
-| 9 | `/requesting-code-review` (dispatches code-reviewer) | Superpowers | **Yes** |
-| 10 | `/receiving-code-review` | Superpowers | **Yes** |
+| 8 | `/requesting-code-review` (review framing helper) | SB-required helper | **Yes** |
+| 9 | `/gsd:code-review` (authoritative REVIEW.md) | GSD | **Yes** |
+| 10 | `/receiving-code-review` | SB-required helper | **Yes** |
 | 11-12 | Post-review plan + execute | GSD | If needed |
 
 ### FINALIZATION
 | # | Step | Source | Required |
 |---|------|--------|----------|
-| 13 | `/testing-strategy` | Engineering | **Yes** |
-| 13b | `/verify-tests` | Silver Bullet | **Yes** |
-| 14 | `/tech-debt` | Engineering | **Yes** |
-| 15 | `/documentation` | Engineering | **Yes** |
-| 16 | `/finishing-a-development-branch` | Superpowers | **Yes** |
+| 13 | `/gsd:secure-phase` | GSD | **Yes** |
+| 14 | `/gsd:validate-phase` | GSD | **Yes** |
+| 15 | `/verify-tests` | Silver Bullet | **Yes** |
+| 16 | `/finishing-a-development-branch` | SB-required helper | Branches only |
+| 17 | `/silver:create-release` | Silver Bullet | Releases only |
 
 ### DEPLOYMENT
 | # | Step | Source | Required |
@@ -194,7 +192,7 @@ That's it. Enforcement is now active.
 Same structure as full-dev-cycle with these additions:
 - **Incident fast path** at the top for emergency production changes
 - **`/silver-blast-radius`** assessment before quality gates (maps change scope, dependencies, failure scenarios, rollback plan)
-- **`/devops-quality-gates`** — 7 IaC-adapted quality dimensions (usability excluded)
+- **`/devops-quality-gates`** — 7 IaC-adapted quality dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety
 - **Environment promotion** section (dev → staging → prod)
 - `.yml`/`.yaml` files are NOT exempt from enforcement (they are infrastructure code)
 
@@ -214,9 +212,9 @@ Skills installed by this plugin that extend the workflow:
 | `/silver:research` | Orchestrated workflow for research and exploration |
 | `/silver:release` | Orchestrated workflow for release preparation |
 | `/silver:fast` | Orchestrated workflow for quick, low-overhead tasks |
-| `/silver-quality-gates` | Before planning (dev) — checks all 9 quality dimensions in parallel |
+| `/silver-quality-gates` | Before planning (dev) — checks 8 core dimensions plus conditional AI/LLM and DevOps gates |
 | `/silver-blast-radius` | Before planning (DevOps) — maps change scope, dependencies, and rollback plan |
-| `/devops-quality-gates` | Before planning (DevOps) — 7 IaC-adapted quality dimensions (usability excluded) |
+| `/devops-quality-gates` | Before planning (DevOps) — checks the 7 IaC-adapted dimensions |
 | `/devops-skill-router` | During DevOps execution — routes to best available IaC toolchain plugin |
 | `/silver-forensics` | After a completed, failed, or abandoned session — routes to GSD forensics for workflow issues, handles session-level issues directly |
 | `/silver-create-release` | After `/gsd:ship` — generates release notes and creates GitHub Release |
@@ -267,7 +265,7 @@ Edit `.silver-bullet.json` in your project root:
 
 ```json
 {
-  "version": "0.34.0",
+  "version": "0.35.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -275,20 +273,30 @@ Edit `.silver-bullet.json` in your project root:
     "active_workflow": "full-dev-cycle"
   },
   "skills": {
-    "required_planning": ["silver-quality-gates"],
+    "required_planning": ["silver-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"],
+    "required_planning_devops": ["silver-blast-radius", "devops-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"],
     "required_deploy": [
       "silver-quality-gates",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
+      "gsd-verify-work",
+      "gsd-ship",
+      "gsd-code-review",
+      "gsd-secure-phase",
+      "gsd-validate-phase",
+      "requesting-code-review", "receiving-code-review",
       "finishing-a-development-branch",
       "silver-create-release",
       "verification-before-completion",
-      "test-driven-development"
+      "test-driven-development",
+      "verify-tests"
     ],
     "all_tracked": [
       "silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "devops-skill-router",
       "design-system", "ux-copy",
       "architecture", "system-design",
-      "code-review", "requesting-code-review", "receiving-code-review",
+      "gsd-code-review", "code-review", "requesting-code-review", "receiving-code-review",
       "finishing-a-development-branch",
       "silver-create-release",
       "verify-tests",
@@ -298,8 +306,8 @@ Edit `.silver-bullet.json` in your project root:
       "verification-before-completion",
       "test-driven-development", "accessibility-review", "incident-response",
       "gsd-new-project", "gsd-new-milestone", "gsd-discuss-phase", "gsd-plan-phase",
-      "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-debug",
-      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase",
+      "gsd-execute-phase", "gsd-verify-work", "gsd-ship", "gsd-code-review", "gsd-debug",
+      "gsd-ui-phase", "gsd-ui-review", "gsd-secure-phase", "gsd-validate-phase",
       "silver-remove", "silver-rem", "silver-scan"
     ]
   },
@@ -313,6 +321,12 @@ Edit `.silver-bullet.json` in your project root:
   "state": {
     "state_file": "~/.claude/.silver-bullet/state",
     "trivial_file": "~/.claude/.silver-bullet/trivial"
+  },
+  "release": {
+    "profile": "generic",
+    "require_plugin_runtime_matrix": false,
+    "require_pre_release_quality_gate": false,
+    "quality_gate_state_file": "~/.claude/.silver-bullet/quality-gate-state"
   }
 }
 ```
@@ -324,17 +338,16 @@ Edit `.silver-bullet.json` in your project root:
 | `src_pattern` | Which file paths trigger enforcement | `/src/` |
 | `src_exclude_pattern` | Which files are exempt (regex) | `__tests__\|\.test\.` |
 | `active_workflow` | Which workflow to enforce | `full-dev-cycle` |
-| `required_planning` | Skills that must run before code edits | `silver-quality-gates` |
-| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | silver-quality-gates, code-review, requesting-code-review, receiving-code-review, finishing-a-development-branch, silver-create-release, verification-before-completion, test-driven-development, verify-tests |
+| `required_planning` | Skills that must run before implementation edits | `silver-quality-gates`, `gsd-discuss-phase`, `gsd-plan-phase` |
+| `required_planning_devops` | DevOps-specific planning floor | `silver-blast-radius`, `devops-quality-gates`, `gsd-discuss-phase`, `gsd-plan-phase` |
+| `required_deploy` | Skills required for final delivery (gh pr create, deploy, release) — see two-tier enforcement note below | SB quality gates, GSD lifecycle markers, review/security/validation, release creation, verification, TDD, and `verify-tests` |
+| `release` | Release-profile gates | Generic by default; SB plugin releases opt into plugin-runtime live matrix and 4-stage pre-release gate |
 | `all_tracked` | All skills that get recorded | 44 skills (canonical source: `templates/silver-bullet.config.json.default`) |
 | `devops_plugins` | Which optional DevOps plugins are installed (auto-detected) | all `false` |
 
-> **Two-tier enforcement**: `git commit` and `git push` only require `required_planning` skills (default: `silver-quality-gates`). The full `required_deploy` list is only checked at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked.
+> **Two-tier enforcement**: implementation unlocks after the selected SB+GSD pre-execution chain is complete. The full `required_deploy` list is checked only at final delivery time — `gh pr create`, deploy commands, and `gh release create`. This allows GSD's `/gsd:execute-phase` to make atomic commits during development without being blocked by post-execution gates.
 
-> **Release matrix gate**: before `/silver-create-release` or `gh release create`,
-> run `tests/live/run-live-tests.sh` and `tests/e2e-live/run-e2e-live-tests.sh`
-> successfully in the current session so both the hook/runtime matrix and the
-> todo-app E2E path are proven and both release markers are set.
+> **Release matrix gate**: plugin-runtime live matrices and the 4-stage pre-release quality gate are opt-in release-profile gates. This repository enables them for SB plugin releases; downstream projects keep the generic release profile unless they explicitly opt in.
 
 ## Fast Path (`silver:fast`)
 
@@ -446,7 +459,7 @@ hooks/timeout-check.sh
   → monitors for stall conditions
 
 hooks/session-start
-  → injects Superpowers + Design context; injects core-rules.md at session open
+  → injects SB core rules at session open; injects Design context when present
 
 External enforcement (GSD's own hooks)
 ──────────────────────────────────────

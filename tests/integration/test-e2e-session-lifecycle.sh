@@ -43,7 +43,7 @@ write_default_config
 # v0.30.0 #85: Stop now enforces required_planning only — having
 # silver-quality-gates would satisfy it, so the test must record skills
 # that leave the planning floor missing for the block path to fire.
-run_record_skill "code-review" >/dev/null
+run_record_skill "gsd-code-review" >/dev/null
 run_record_skill "documentation" >/dev/null
 
 # stop-check still blocks (planning floor missing)
