@@ -222,7 +222,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
-      <p>Skills required by Silver Bullet's workflows. <code>/silver</code> is the smart router — the single entry point that dispatches to any SB or GSD skill. Quality gates, blast radius, forensics, release notes, and <code>/silver:init</code> are Silver Bullet's own. Deploy checklist, testing strategy, tech debt, documentation, and finishing-a-development-branch come from Superpowers and Engineering plugins that Silver Bullet enforces.</p>
+      <p>Skills required by Silver Bullet's workflows. <code>/silver</code> is the dynamic composer that accepts freeform intent and selects the right SB, GSD, and plugin path for the task. Quality gates, blast radius, forensics, release notes, and <code>/silver:init</code> are Silver Bullet's own. Deploy checklist, testing strategy, tech debt, documentation, and finishing-a-development-branch come from Superpowers and Engineering plugins that Silver Bullet enforces.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -230,12 +230,12 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>/silver</td>
             <td>Anytime</td>
-            <td>Smart router — accepts freeform natural language and dispatches to the most appropriate Silver Bullet or GSD skill. Performs complexity triage (Trivial / Simple / Complex / Fuzzy) before routing. See <a href="#complexity-triage">Complexity Triage</a> below. Use when you're unsure which skill to invoke.</td>
+            <td>Dynamic workflow composer — accepts freeform natural language, classifies complexity and intent, then dispatches the right Silver Bullet, GSD, and plugin path. Performs complexity triage (Trivial / Simple / Complex / Fuzzy) before routing. See <a href="#complexity-triage">Complexity Triage</a> below. Use when you're unsure which workflow applies.</td>
           </tr>
           <tr>
             <td>/quality-gates<span class="badge-small badge-req">Required</span></td>
             <td>Before Plan</td>
-            <td>9-dimension quality evaluation (modularity, reusability, scalability, security, reliability, usability, testability, extensibility, plus devops-quality-gates for infra-touching changes). Dispatches parallel agents. All must pass.</td>
+            <td>9-dimension product quality evaluation: modularity, reusability, scalability, security, reliability, usability, testability, extensibility, and AI/LLM safety where applicable. All relevant dimensions must pass.</td>
           </tr>
           <tr>
             <td>/blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td>
@@ -245,7 +245,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td>
             <td>Before Plan (DevOps)</td>
-            <td>IaC-adapted quality gates — 7 dimensions (usability excluded). Same base framework as /quality-gates, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention. Dispatches 7 parallel agents.</td>
+            <td>IaC-adapted quality gates — 7 dimensions, excluding usability and AI/LLM safety when they do not apply. Same base framework as /quality-gates, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention.</td>
           </tr>
           <tr>
             <td>design:accessibility-review<span class="badge-small badge-cond">UI only</span><span class="badge-small badge-req">Required</span></td>
@@ -362,7 +362,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>/silver:validate</td>
             <td>After spec creation, before planning</td>
-            <td>Runs three validation gates: spec floor check (<code>spec-floor-check.sh</code>) for SPEC.md completeness, PR-to-spec traceability (<code>pr-traceability.sh</code>), and UAT pipeline gate (<code>uat-gate.sh</code>). All three must pass before planning can proceed.</td>
+            <td>Read-only pre-build gap analysis. Reads <code>.planning/SPEC.md</code> and PLAN.md files, maps acceptance criteria to planned work, surfaces assumptions and open questions, emits BLOCK/WARN/INFO findings, and writes <code>.planning/VALIDATION.md</code>. BLOCK findings must be resolved before implementation.</td>
           </tr>
           <tr>
             <td>/silver-review-stats</td>
@@ -376,7 +376,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Eight pre-designed workflows invoked automatically by <code>/silver</code> after intent classification. Each workflow chains GSD, Superpowers, MultAI, and Silver Bullet quality gates in a defined sequence. They orchestrate — they never implement directly.</p>
+      <p>Named workflows that <code>/silver</code> can compose after intent classification. Each workflow chains GSD, Superpowers, MultAI, artifact review, and Silver Bullet gates in the sequence the task needs. They orchestrate — they never implement directly.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>First step</th></tr></thead>
@@ -420,6 +420,21 @@ footer a:hover{color:var(--accent-light)}
             <td><a href="../workflows/silver-fast.html">/silver:fast</a></td>
             <td>trivial, quick fix, typo, one-liner, config value, rename, ≤3 files</td>
             <td>Confirm trivial (≤3 files?) → gsd-fast execution → atomic commit</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-spec.html">/silver:spec</a></td>
+            <td>formal spec, clarify requirements, acceptance criteria, user stories, write a spec</td>
+            <td>Mode detection → Socratic elicitation → SPEC.md + REQUIREMENTS.md → artifact review</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-ingest.html">/silver:ingest</a></td>
+            <td>JIRA, Figma, Google Docs, Confluence, external artifact, source URL</td>
+            <td>Connector check → artifact extraction → SPEC/DESIGN draft → INGESTION_MANIFEST review</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-validate.html">/silver:validate</a></td>
+            <td>validate spec, validate plan, gap analysis, assumption awareness</td>
+            <td>Read SPEC.md → scan PLAN.md files → gap analysis → VALIDATION.md</td>
           </tr>
         </tbody>
       </table>
@@ -655,8 +670,8 @@ Mode: interactive | autonomous
 <span class="comment">## KNOWLEDGE.md additions</span>
 updated (Architecture patterns, Key decisions) | no changes
 
-<span class="comment">## Virtual cost</span>
-~$0.45 (Sonnet, medium complexity)</div>
+<span class="comment">## Runtime/cost note</span>
+{host runtime, rough usage/cost estimate if available}</div>
 
       <div class="divider"></div>
 
@@ -761,13 +776,8 @@ updated (Architecture patterns, Key decisions) | no changes
 <span class="comment"># Full finalization + release sequence</span>
 /testing-strategy → /documentation → /finishing-a-development-branch → /deploy-checklist → /gsd-ship → /create-release</div>
 
-      <h3>Model Routing Guidance</h3>
-      <p>Silver Bullet uses the host execution model by default. Claude defaults to <code>claude-sonnet-4-6</code>; Codex defaults to <code>gpt-5.3-medium</code>. You're asked about the host high tier at two transition points only:</p>
-      <ul>
-        <li>Before the Planning phase begins (Discuss step) — for deeper reasoning on complex architectures</li>
-        <li>Before Design sub-steps (design-system, ux-copy, architecture, system-design) — for richer design output</li>
-      </ul>
-      <p>In Autonomous mode, the host execution tier is used throughout. Claude escalates to <code>claude-opus-4-6</code> and Codex escalates to <code>GPT-5.4-high</code> silently only if planning output is measurably incomplete (fewer than 5 lines, contains <code>TBD</code> or <code>[TODO]</code> placeholders, or a file-producing step produces no file).</p>
+      <h3>Runtime and Model Boundaries</h3>
+      <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. The historical <code>ensure-model-routing.sh</code> hook is disabled and exits as a no-op. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

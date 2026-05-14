@@ -166,7 +166,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#semantic-context">Semantic Context</a></li>
         <li><a href="#file-structure">File Structure</a></li>
         <li><a href="#documentation">Documentation Scheme</a></li>
-        <li class="sidebar-section">v0.14–v0.16 Features</li>
+        <li class="sidebar-section">Spec And Review Pipeline</li>
         <li><a href="#spec-driven">Spec-Driven Development</a></li>
         <li><a href="#artifact-review">Artifact Review System</a></li>
         <li><a href="#review-analytics">Review Analytics</a></li>
@@ -177,7 +177,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="artifact-review-assessor.html">→ Artifact Review Assessor</a></li>
         <li class="sidebar-section">Routing &amp; Behavior</li>
         <li><a href="#routing-logic">Routing Logic</a></li>
-        <li><a href="#cost-optimization">Automatic Cost Optimization</a></li>
+        <li><a href="#operational-efficiency">Operational Efficiency</a></li>
         <li><a href="#verification">Verification Before Completion</a></li>
         <li><a href="#preferences">User Workflow Preferences</a></li>
         <li><a href="#session-startup">Session Startup</a></li>
@@ -187,7 +187,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="skills">Skills</h2>
-      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet ships with <strong>62 skills</strong> in total — including 7 orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), 3 spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), <strong>8 artifact reviewer skills</strong> (SPEC, DESIGN, REQUIREMENTS, ROADMAP, CONTEXT, RESEARCH, INGESTION_MANIFEST, UAT), and supporting skills for quality gates, enforcement, analytics, and project management.</p>
+      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet includes orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), artifact reviewer skills, and supporting skills for quality gates, enforcement, analytics, and project management.</p>
 
       <h3>How Skills Are Stored</h3>
       <p>Skills live in two locations:</p>
@@ -204,7 +204,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <span class="cmd">/silver</span> quality review   <span class="comment"># routes to the right skill automatically</span></div>
 
       <h3>The /silver Router</h3>
-      <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, matches your intent against the full routing table of SB skills, and invokes the right one — without you needing to know the exact skill name. For GSD planning and execution work, it delegates to <code>/gsd:do</code> automatically. It's the single entry point for users who don't know which skill to invoke.</p>
+      <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB, GSD, and plugin workflow path for the work at hand. GSD has its own <code>/gsd:do</code> router; Silver Bullet's added value is broader dynamic workflow composition plus enforcement around GSD-backed execution.</p>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
@@ -233,7 +233,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Session log init</strong> — Creates the session log file on first Bash use; stores path in <code>~/.claude/.silver-bullet/session-log-path</code>.</li>
         <li><strong>CI status check</strong> — Intercepts push/deploy Bash commands and verifies CI is green before allowing them to proceed.</li>
         <li><strong>Timeout check</strong> — Monitors for stall conditions and surfaces a timeout sentinel to break infinite loops.</li>
-        <li><strong>Session start</strong> — Runs once at session open (on <code>startup</code>, <code>/clear</code>, or <code>/compact</code>); injects Superpowers and Design plugin context.</li>
+        <li><strong>Session start</strong> — Runs at session open and context transitions; loads SB rules, project context, and active workflow state.</li>
       </ul>
 
       <div class="callout callout-info">
@@ -312,7 +312,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="quality-gates">Quality Gates</h2>
-      <p>Quality gates are a mandatory pre-planning step where the active runtime evaluates the proposed design against 8 quality dimensions. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
+      <p>Quality gates are a mandatory pre-planning step where the active runtime evaluates the proposed design against 9 product quality dimensions when applicable. All must pass before planning begins — a single <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
 
       <div class="dims-grid">
         <div class="dim-card"><div class="dim-icon"><i data-lucide="puzzle"></i></div><div class="dim-name">Modularity</div><div class="dim-desc">Components are independently replaceable</div></div>
@@ -323,13 +323,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="dim-card"><div class="dim-icon"><i data-lucide="target"></i></div><div class="dim-name">Usability</div><div class="dim-desc">Intuitive APIs and interfaces</div></div>
         <div class="dim-card"><div class="dim-icon"><i data-lucide="flask-conical"></i></div><div class="dim-name">Testability</div><div class="dim-desc">Isolated, fast, deterministic tests</div></div>
         <div class="dim-card"><div class="dim-icon"><i data-lucide="plug"></i></div><div class="dim-name">Extensibility</div><div class="dim-desc">Open for extension, closed for modification</div></div>
+        <div class="dim-card"><div class="dim-icon"><i data-lucide="brain-circuit"></i></div><div class="dim-name">AI/LLM Safety</div><div class="dim-desc">Prompt, tool, and data-boundary risks</div></div>
       </div>
 
       <h3>How Quality Gates Are Evaluated</h3>
-      <p>The <code>/quality-gates</code> skill dispatches 8 parallel agents — one per dimension — each in an isolated worktree. Results are synthesised by the active runtime. The most conservative finding wins: if one agent flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
+      <p>The <code>/quality-gates</code> skill evaluates each relevant dimension, commonly by dispatching parallel reviewers in isolated worktrees. Results are synthesised by the active runtime. The most conservative finding wins: if one reviewer flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
 
       <h3>DevOps Quality Gates</h3>
-      <p>For infrastructure work, <code>/devops-quality-gates</code> applies 7 IaC-adapted dimensions (usability is excluded — it's application-specific) — focusing on idempotency, drift prevention, least-privilege IAM, and infrastructure reliability instead of application concerns.</p>
+      <p>For infrastructure work, <code>/devops-quality-gates</code> applies 7 IaC-adapted dimensions, excluding usability and AI/LLM safety when they do not apply. The focus shifts to idempotency, drift prevention, least-privilege IAM, and infrastructure reliability.</p>
 
       <div class="divider"></div>
 
@@ -532,7 +533,7 @@ docs/
       <div class="divider"></div>
 
       <h2 id="spec-driven">Spec-Driven Development</h2>
-      <p>Silver Bullet&rsquo;s spec pipeline (v0.14.0) introduces three new skills that take you from raw requirements to a validated, traceable SPEC.md before any code is written.</p>
+      <p>Silver Bullet&rsquo;s spec pipeline provides three skills that take you from raw requirements to a validated, traceable SPEC.md before any code is written.</p>
 
       <h3>SPEC.md Canonical Format</h3>
       <p>The <code>SPEC.md</code> file is the authoritative spec artifact. It holds structured requirements, acceptance criteria, assumption tracking, and a cross-reference to source inputs (JIRA tickets, Figma links, PRD excerpts). All downstream artifacts — REQUIREMENTS.md, ROADMAP.md, DESIGN.md — must stay aligned with SPEC.md.</p>
@@ -544,11 +545,12 @@ docs/
       <p><code>/silver:ingest</code> ingests artifacts from external sources — JIRA epics/issues, Figma files, and Google Docs — via MCP connectors. No custom API code is written; all external data access is delegated to MCP. The output is a structured INGESTION_MANIFEST that maps external inputs to spec sections.</p>
 
       <h3>silver:validate — Pre-Build Validation</h3>
-      <p><code>/silver:validate</code> runs three validation gates before planning begins:</p>
+      <p><code>/silver:validate</code> performs read-only pre-build gap analysis. It reads <code>.planning/SPEC.md</code> plus any PLAN.md files, emits BLOCK/WARN/INFO findings, surfaces all assumptions, and writes <code>.planning/VALIDATION.md</code>. BLOCK findings must be resolved before implementation begins.</p>
+      <p>Related hooks enforce adjacent lifecycle guarantees:</p>
       <ul>
         <li><strong>Spec floor check</strong> (<code>spec-floor-check.sh</code>) — verifies the SPEC.md meets minimum completeness requirements</li>
-        <li><strong>PR-to-spec traceability</strong> (<code>pr-traceability.sh</code>) — ensures every PR links back to a requirement in SPEC.md</li>
-        <li><strong>UAT pipeline gate</strong> (<code>uat-gate.sh</code>) — blocks planning if UAT criteria are not yet defined</li>
+        <li><strong>PR-to-spec traceability</strong> (<code>pr-traceability.sh</code>) — appends spec traceability after PR creation</li>
+        <li><strong>UAT pipeline gate</strong> (<code>uat-gate.sh</code>) — blocks milestone completion when UAT is missing, failing, or stale</li>
       </ul>
 
       <h3>Multi-Repo Spec Coordination</h3>
@@ -557,7 +559,7 @@ docs/
       <div class="divider"></div>
 
       <h2 id="artifact-review">Artifact Review System</h2>
-      <p>Silver Bullet v0.15.0 introduced a structured artifact review framework. Eight reviewer skills apply domain-specific quality checks to planning artifacts, and a 2-consecutive-clean-pass rule ensures artifacts are genuinely ready before they are approved.</p>
+      <p>Silver Bullet includes a structured artifact review framework. Reviewer skills apply domain-specific quality checks to planning artifacts, and a 2-consecutive-clean-pass rule ensures artifacts are genuinely ready before they are approved.</p>
 
       <h3>8 Reviewer Skills</h3>
       <div class="concept-grid">
@@ -612,7 +614,7 @@ docs/
       <div class="divider"></div>
 
       <h2 id="review-analytics">Review Analytics</h2>
-      <p>Silver Bullet v0.18.1 added structured metrics emission to the review loop. Every review round appends a JSON Lines record to a metrics file — no configuration required.</p>
+      <p>Silver Bullet emits structured metrics from the review loop. Every review round appends a JSON Lines record to a metrics file — no configuration required.</p>
 
       <h3>JSON Lines Metrics</h3>
       <p>Each record captures: artifact type, review depth, round number, pass/fail result, finding categories, and timestamp. The metrics file accumulates across sessions, giving you a long-running history of artifact quality.</p>
@@ -631,7 +633,7 @@ docs/
       <div class="divider"></div>
 
       <h2 id="cross-artifact">Cross-Artifact Consistency</h2>
-      <p>Silver Bullet v0.18.1 adds a cross-artifact consistency reviewer that validates alignment across the full planning artifact chain in a single pass. It is wired into milestone completion and the release workflow — misaligned artifacts block shipping.</p>
+      <p>Silver Bullet includes a cross-artifact consistency reviewer that validates alignment across the full planning artifact chain in a single pass. It is wired into milestone completion and the release workflow — misaligned artifacts block shipping.</p>
 
       <h3>What Is Validated</h3>
       <ul>
@@ -664,12 +666,12 @@ docs/
       <div class="divider"></div>
 
       <h2 id="routing-logic">Routing Logic</h2>
-      <p><code>/silver</code> is the single entry point for all Silver Bullet work. Every message is classified before routing — using complexity triage (Trivial / Simple / Fuzzy / Complex) and a full intent-matching table — so the right path composition always fires. The <strong>§2g bare instruction interception</strong> rule means you don't need to invoke <code>/silver</code> explicitly: typing a plain work request triggers it automatically.</p>
+      <p><code>/silver</code> is the dynamic composition entry point for Silver Bullet work. It classifies complexity and intent, then composes the appropriate path from SB workflows, GSD commands, and supporting plugin skills. In runtimes that support prompt interception, plain work requests may be routed through this layer; explicit <code>/silver</code> invocation remains the portable path.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="git-branch"></i></div>
           <h4><a href="routing-logic.html" style="color:var(--accent-light);text-decoration:none">Routing Logic →</a></h4>
-          <p>Complexity triage decision tree, full routing table, §2g bare instruction interception, and ship disambiguation.</p>
+          <p>Complexity triage decision tree, full routing table, explicit routing behavior, and ship disambiguation.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="filter"></i></div>
@@ -680,18 +682,18 @@ docs/
 
       <div class="divider"></div>
 
-      <h2 id="cost-optimization">Automatic Cost Optimization</h2>
-      <p>Silver Bullet automatically routes each GSD subagent to the right model tier based on what that agent does. The tier labels are shared across hosts; Claude maps them to Sonnet/Opus/Haiku, while Codex maps them to GPT-5.2-low through GPT-5.5-xhigh. No manual model switching required. The active profile is set in <code>.planning/config.json</code> and applied to all 24 agent types at spawn time.</p>
+      <h2 id="operational-efficiency">Operational Efficiency</h2>
+      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Trivial work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host and GSD configuration; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="cpu"></i></div>
-          <h4><a href="cost-optimization.html" style="color:var(--accent-light);text-decoration:none">Automatic Cost Optimization →</a></h4>
-          <p>How host-aware model routing works, the full 24-agent tier table, model profiles, per-agent overrides, and project setup.</p>
+          <h4><a href="cost-optimization.html" style="color:var(--accent-light);text-decoration:none">Operational Efficiency →</a></h4>
+          <p>How SB avoids both under-processing risky changes and over-processing trivial work through workflow fit, fast-path boundaries, and dependency handling.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
-          <h4>Three Tiers</h4>
-          <p>High tier where judgment changes the outcome (planning, review, verification). Execution tier for execution and research. Structured-output tier for codebase mapping, profiling, and intel files.</p>
+          <h4>Smallest Safe Workflow</h4>
+          <p>SB spends process where it changes outcomes: spec quality, review gates, test and CI freshness, artifact alignment, and release readiness.</p>
         </div>
       </div>
 
@@ -732,12 +734,12 @@ docs/
       <div class="divider"></div>
 
       <h2 id="session-startup">Session Startup</h2>
-      <p>At the start of every new session, Silver Bullet automatically performs five steps: switch to the host execution model, read all project docs, compact the context, switch back to the original model, and check for updates to Silver Bullet, GSD, plugins, and MultAI. This is the §0 startup sequence.</p>
+      <p>At the start of every new session, Silver Bullet loads the SB contract, relevant project context, session state, active workflow state, and update checks before project work begins. This is the §0 startup sequence.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="play-circle"></i></div>
           <h4><a href="session-startup.html" style="color:var(--accent-light);text-decoration:none">Session Startup →</a></h4>
-          <p>The full §0 5-step automatic initialization sequence: host model switching, doc loading, context compaction, and version checks for all four components.</p>
+          <p>The full §0 initialization sequence: SB contract, project context, session state, active workflow state, and version checks.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="refresh-cw"></i></div>

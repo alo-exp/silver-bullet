@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../../favicon.png">
+<link rel="shortcut icon" href="../../../favicon.ico">
+<title>/silver:ingest &mdash; External Artifact Ingestion Workflow &mdash; Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet ingestion workflow for JIRA, Figma, Google Docs, Confluence, and cross-repo specs using MCP connectors and explicit missing-artifact tracking.">
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}h1,h2,h3,h4,.nav-logo{font-family:var(--font-heading)}.container{max-width:860px;margin:0 auto;padding:0 24px}.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}.nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none}.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}.nav-breadcrumb .sep{color:var(--text-dim)}.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary)}.page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}.page-hero .container{position:relative;z-index:1}.breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:650px}.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}@media(max-width:768px){.doc-layout{grid-template-columns:1fr}.doc-sidebar{display:none}}.doc-sidebar{position:sticky;top:88px;height:fit-content}.sidebar-nav{list-style:none;display:flex;flex-direction:column;gap:2px}.sidebar-nav li a{display:block;padding:7px 12px;border-radius:var(--radius-sm);font-size:.85rem;color:var(--text-secondary);text-decoration:none}.sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}.sidebar-nav .sidebar-section{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);padding:16px 12px 4px}.doc-content h2{font-size:1.4rem;font-weight:800;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}.doc-content h2:first-child{margin-top:0}.doc-content h3{font-size:1rem;font-weight:700;margin-bottom:10px;margin-top:28px}.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}.doc-content ul,.doc-content ol{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}.doc-content li{margin-bottom:5px}.doc-content strong{color:var(--text-primary)}.doc-content code{font-family:var(--font-mono);background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}.divider{height:1px;background:var(--border);margin:36px 0}.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;background:var(--slate-a08);border:1px solid var(--slate-a20)}.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:top}.ref-table td:first-child{font-family:var(--font-mono);color:var(--accent-light);font-weight:600}.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:240px}.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}footer a{color:var(--text-secondary);text-decoration:none}.footer-links{display:flex;gap:24px}
+</style>
+</head>
+<body>
+<nav><div class="nav-inner"><div style="display:flex;align-items:center;gap:16px"><a href="../../../" class="nav-logo">Silver Bullet</a><span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Ingest</span></div><button class="theme-btn" onclick="toggleTheme()" id="theme-btn">Theme</button></div></nav>
+<div class="page-hero"><div class="container"><div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:ingest</span></div><h1>/silver:ingest</h1><p>External artifact ingestion workflow that preserves source context and turns tickets, docs, designs, and cross-repo specs into canonical planning artifacts.</p></div></div>
+<div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On this page</li><li><a href="#overview">Overview</a></li><li><a href="#sources">Supported sources</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow steps</a></li><li><a href="#failure-handling">Failure handling</a></li><li><a href="#handoff">Spec handoff</a></li><li class="sidebar-section">See also</li><li><a href="./index.html">All workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
+<article class="doc-content">
+<h2 id="overview">Overview</h2>
+<p><code>/silver:ingest</code> imports external product and design context into Silver Bullet's planning artifacts. It never calls APIs directly; all external data access is delegated to configured MCP connectors.</p>
+<p>The workflow is resumable through <code>.planning/INGESTION_MANIFEST.md</code>. Successful artifacts are skipped on later runs, while failed artifacts remain visible and actionable.</p>
+<div class="callout"><div class="callout-body"><strong>Core value:</strong> ingestion prevents the agent from inventing requirements when upstream context is missing. Missing or inaccessible sources are recorded explicitly at the point where their content was expected.</div></div>
+<div class="divider"></div>
+<h2 id="sources">Supported Sources</h2>
+<table class="ref-table"><thead><tr><th>Source</th><th>How it is handled</th></tr></thead><tbody>
+<tr><td>JIRA</td><td>Fetch issue summary, description, acceptance criteria, links, and attachments metadata via Atlassian MCP.</td></tr>
+<tr><td>Confluence</td><td>Resolve Confluence links found in ticket descriptions and include fetched page content in spec context.</td></tr>
+<tr><td>Figma</td><td>Requires the user to select target frames in Figma before MCP extraction. Produces design context and tokens for DESIGN.md.</td></tr>
+<tr><td>Google Docs</td><td>Reads document text through Google Drive MCP when available; fallback behavior is explicit and source-aware.</td></tr>
+<tr><td>Cross-repo spec</td><td><code>--source-url</code> mode fetches an upstream repo spec and pins version context for multi-repo coordination.</td></tr>
+</tbody></table>
+<div class="divider"></div>
+<h2 id="outputs">Outputs</h2>
+<ul>
+  <li><code>.planning/SPEC.md</code> — created or augmented from source context.</li>
+  <li><code>.planning/DESIGN.md</code> — created when Figma or design source context is available.</li>
+  <li><code>.planning/INGESTION_MANIFEST.md</code> — source-by-source audit trail of success, failure, and extraction status.</li>
+</ul>
+<div class="divider"></div>
+<h2 id="steps">Workflow Steps</h2>
+<ol>
+  <li><strong>Mode detection:</strong> choose artifact-ingest or cross-repo-fetch mode.</li>
+  <li><strong>Connector check:</strong> detect Atlassian, Figma, and Google Drive MCP availability.</li>
+  <li><strong>JIRA and link resolution:</strong> fetch ticket context and queue linked design or doc artifacts.</li>
+  <li><strong>Figma extraction:</strong> wait for explicit user confirmation after target frames are selected.</li>
+  <li><strong>Google Docs extraction:</strong> read document content when connector access is available.</li>
+  <li><strong>Assemble drafts:</strong> write or augment SPEC.md and DESIGN.md from extracted context.</li>
+  <li><strong>Manifest review:</strong> write INGESTION_MANIFEST.md and run artifact review to two consecutive clean passes.</li>
+</ol>
+<div class="divider"></div>
+<h2 id="failure-handling">Failure Handling</h2>
+<p>Connector failures do not silently block the whole ingestion run unless they prevent required output generation. Instead, each failed artifact is recorded with status and reason, and the spec receives an explicit <code>[ARTIFACT MISSING: ...]</code> block in the section where that content was expected.</p>
+<p>That behavior keeps downstream GSD planning honest: implementers can see which requirements came from source material and which areas still need human follow-up.</p>
+<div class="divider"></div>
+<h2 id="handoff">Spec Handoff</h2>
+<p>After ingestion, run <code>/silver:spec</code> if the imported material needs additional elicitation, or <code>/silver:validate</code> if plans already exist and need coverage analysis.</p>
+<div class="code-block">/silver:ingest PROJ-123
+/silver:spec Augment the checkout recovery spec from ingested artifacts
+/silver:validate</div>
+<div class="page-nav-bottom"><a href="silver-spec.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/silver:spec</span></a><a href="silver-validate.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/silver:validate</span></a></div>
+</article></div></div>
+<footer><div class="container-wide footer-inner"><span>&copy; 2026 Ālo Labs &middot; Silver Bullet</span><div class="footer-links"><a href="../../../">Home</a><a href="../../">Help Center</a><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a></div></div></footer>
+<script>function toggleTheme(){var e=document.documentElement,t=e.getAttribute('data-theme')||'dark',n=t==='dark'?'light':'dark';e.setAttribute('data-theme',n);localStorage.setItem('sb-theme',n)}(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('sb-theme')||'dark')})();</script>
+</body>
+</html>

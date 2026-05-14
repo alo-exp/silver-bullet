@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Routing Logic — Silver Bullet Help</title>
-<meta name="description" content="How /silver classifies intent and routes to the correct orchestration workflow. Complexity triage decision tree, full routing table, and bare instruction interception.">
+<meta name="description" content="How /silver classifies intent and composes the correct Silver Bullet, GSD, and plugin workflow. Complexity triage decision tree, full routing table, and explicit routing behavior.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -147,7 +147,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#bare-instruction">Bare Instruction Interception</a></li>
+        <li><a href="#bare-instruction">Explicit and Host-Supported Routing</a></li>
         <li><a href="#complexity-triage">Complexity Triage Decision Tree</a></li>
         <li><a href="#routing-table">Full Routing Table</a></li>
         <li><a href="#ship-disambiguation">Ship Disambiguation</a></li>
@@ -158,35 +158,34 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> is the single entry point for all Silver Bullet work. You never invoke orchestration workflows directly — you either type a bare instruction or call <code>/silver</code> explicitly, and the router handles classification and dispatch.</p>
-      <p>Every message passing through <code>/silver</code> goes through two sequential steps before work begins:</p>
+      <p><code>/silver</code> is Silver Bullet's dynamic workflow composer. It is the portable way to ask SB to classify a task and route it through the right SB, GSD, and plugin path. You can still invoke specific orchestration workflows directly when you know the exact command.</p>
+      <p>Every request passing through <code>/silver</code> goes through two sequential steps before work begins:</p>
       <ol>
-        <li><strong>Bare instruction interception (§2g)</strong> — if your message is a plain work request rather than a slash command, <code>/silver</code> is invoked automatically before anything else happens.</li>
+        <li><strong>Explicit or host-supported routing</strong> — explicit <code>/silver</code> invocation is always supported; plain-request interception is host/runtime dependent.</li>
         <li><strong>Complexity triage</strong> — the router classifies the request as Trivial, Simple, Fuzzy, or Complex to determine whether an exploration step is needed and which paths to compose.</li>
       </ol>
       <p>After triage, <code>/silver</code> performs <strong>path composition</strong> — selecting from 18 composable flows and assembling an ordered chain appropriate for the classified work. This replaces fixed step-by-step pipelines: each composition is tailored to the context, not predetermined. See <a href="composable-workflow.html">Composable Workflow Orchestration</a> for the full flow catalog.</p>
 
       <div class="divider"></div>
 
-      <h2 id="bare-instruction">Bare Instruction Interception (§2g)</h2>
-      <p>Silver Bullet intercepts bare natural-language instructions at the start of every user turn, before any tool use. When you type a plain work request — not a slash command — <code>/silver</code> is invoked automatically.</p>
+      <h2 id="bare-instruction">Explicit and Host-Supported Routing</h2>
+      <p>Use <code>/silver</code> when you want Silver Bullet to classify a natural-language work request. Some host runtimes may support bare-instruction interception, but explicit invocation is the cross-host behavior to rely on.</p>
 
       <h3>Why interception exists</h3>
-      <p>Without interception, it's easy to accidentally bypass orchestration. If you type "Add a login form" directly, a plain AI assistant would start writing code immediately, skipping quality gates, brainstorming, planning, and all verification steps. Interception makes <code>/silver</code> the mandatory gateway for all non-trivial work.</p>
+      <p>Without routing through SB, it is easy to accidentally bypass orchestration. If a plain assistant starts writing code immediately, it can skip clarification, spec work, quality gates, GSD planning, review, and verification. <code>/silver</code> makes the workflow decision explicit and traceable.</p>
 
       <h3>How it works</h3>
       <ol>
-        <li>User sends a message that is not a slash command</li>
-        <li>Silver Bullet checks: is this a non-trivial work request?</li>
-        <li>If yes: intercept — invoke <code>/silver</code> via the Skill tool, passing the original instruction as arguments</li>
-        <li><code>/silver</code> performs complexity triage and routes to the correct workflow</li>
+        <li>User invokes <code>/silver</code> with a natural-language work request, or the host routes a supported plain request into <code>/silver</code>.</li>
+        <li>Silver Bullet checks whether this is a non-trivial work request and what kind of work it is.</li>
+        <li><code>/silver</code> performs complexity triage and composes the correct workflow path.</li>
         <li>The work proceeds through the full orchestrated pipeline</li>
       </ol>
 
-      <h3>What gets intercepted vs. exempted</h3>
+      <h3>What should route through /silver</h3>
       <table class="intercept-table">
         <thead>
-          <tr><th>Message type</th><th>Intercepted?</th><th>Example</th></tr>
+          <tr><th>Message type</th><th>Route through /silver?</th><th>Example</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -244,13 +243,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Anti-skip rule:</strong> Silver Bullet violates its own enforcement design if it reads a non-trivial bare instruction and begins responding or executing work without first invoking <code>/silver</code>. The router exists to ensure every task reaches the right skill — bypassing it defeats the enforcement model.</div>
+        <div class="callout-body"><strong>Anti-skip rule:</strong> when work is routed through <code>/silver</code>, the runtime must follow the composed workflow instead of jumping straight into code. The router exists to ensure every task reaches the right skill path; bypassing the selected path defeats the enforcement model.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="complexity-triage">Complexity Triage Decision Tree</h2>
-      <p>Once a message reaches <code>/silver</code> (either via interception or direct invocation), the router classifies it using a 4-way triage. The classification determines which workflow fires and whether a scoping step runs first.</p>
+      <p>Once a request reaches <code>/silver</code>, the router classifies it using a 4-way triage. The classification determines which workflow fires and whether a scoping step runs first.</p>
 
       <h3>The four classifications</h3>
       <p>Work through these questions in order:</p>
