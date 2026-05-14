@@ -132,7 +132,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>Key design principles:</strong></p>
       <ul>
         <li><strong>No brainstorming phase</strong> — infrastructure changes are driven by operational requirements established upstream (in <code>silver:feature</code> or <code>silver:research</code>). Blast-radius analysis replaces the product/engineering brainstorm.</li>
-        <li><strong>7 IaC quality dimensions</strong> instead of the standard 9 — at both pre-plan and pre-ship gates. (Usability and extensibility omitted — no user-facing interface in IaC; IaC is declarative, not extensible.)</li>
+        <li><strong>7 IaC quality dimensions</strong> instead of the product 9 — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
         <li><strong>TDD explicitly skipped</strong> — infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources.</li>
       </ul>
 
