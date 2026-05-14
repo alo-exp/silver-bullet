@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.34.0] — 2026-05-13
+## [0.34.0] — 2026-05-14
+
+## Bug Fixes
+
+- `harden codex-native live harness and release config` (`7cf1129`)
 
 ## Features
 
