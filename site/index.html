@@ -701,6 +701,60 @@ section:nth-child(even){background:var(--section-alt)}
 .ci-no{color:var(--text-dim)}
 .compare-missing{font-size:.9rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
 
+/* ───── SB VS GSD SECTION ───── */
+.sb-gsd-overview{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);
+  gap:28px;align-items:stretch;
+}
+@media(max-width:900px){.sb-gsd-overview{grid-template-columns:1fr}}
+.sb-gsd-panel{
+  background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04));
+  border:1px solid var(--mint-a32);border-radius:var(--radius-lg);
+  padding:34px;position:relative;overflow:hidden;
+}
+.sb-gsd-panel h3{font-size:1.15rem;font-weight:800;margin-bottom:12px}
+.sb-gsd-panel p{color:var(--text-secondary);font-size:.96rem;line-height:1.7}
+.sb-gsd-split{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;
+}
+@media(max-width:600px){.sb-gsd-split{grid-template-columns:1fr}}
+.sb-gsd-mini{
+  border:1px solid var(--border);border-radius:var(--radius);padding:18px;
+  background:var(--bg-card);
+}
+.sb-gsd-mini .mini-label{
+  font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);margin-bottom:8px;
+}
+.sb-gsd-mini strong{display:block;font-size:1rem;margin-bottom:6px;color:var(--text-primary)}
+.sb-gsd-mini span{font-size:.86rem;color:var(--text-secondary);line-height:1.5}
+.sb-gsd-benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.sb-gsd-benefit-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.sb-gsd-benefit-grid{grid-template-columns:repeat(2,1fr)}}
+.sb-gsd-benefit{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:26px;transition:all .3s;
+}
+.sb-gsd-benefit:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-3px)}
+.sb-gsd-benefit .benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sb-gsd-benefit .benefit-icon{
+  width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  color:var(--accent-light);background:var(--accent-a12);font-size:1.25rem;flex-shrink:0;
+}
+.sb-gsd-benefit h3{font-size:1rem;font-weight:800;line-height:1.25}
+.sb-gsd-benefit p{font-size:.88rem;color:var(--text-secondary);line-height:1.6}
+.sb-gsd-proof{
+  display:flex;flex-direction:column;gap:12px;
+}
+.sb-gsd-proof-row{
+  display:grid;grid-template-columns:136px 1fr;gap:14px;align-items:start;
+  border-bottom:1px solid var(--border);padding-bottom:12px;
+}
+.sb-gsd-proof-row:last-child{border-bottom:0;padding-bottom:0}
+@media(max-width:600px){.sb-gsd-proof-row{grid-template-columns:1fr;gap:4px}}
+.sb-gsd-proof-row strong{font-size:.82rem;color:var(--accent-light);font-family:var(--font-mono)}
+.sb-gsd-proof-row span{font-size:.9rem;color:var(--text-secondary);line-height:1.5}
+
 /* ───── CALLOUT ───── */
 .callout{
   background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
@@ -863,6 +917,7 @@ img{max-width:100%;height:auto}
       <li><a href="#problem">Problem</a></li>
       <li><a href="#solution">How It Works</a></li>
       <li><a href="#ecosystem">Ecosystem</a></li>
+      <li><a href="#sb-vs-gsd">SB vs GSD</a></li>
       <li><a href="#quality-gates">Quality Gates</a></li>
       <li><a href="#enforcement">Enforcement</a></li>
       <li><a href="#operational-efficiency">Efficiency</a></li>
@@ -1259,6 +1314,77 @@ img{max-width:100%;height:auto}
         <div class="callout-icon"><i data-lucide="plug"></i></div>
         <p><strong>Smart skill routing, not blind fallback.</strong> Silver Bullet&rsquo;s <code>/devops-skill-router</code> maps context such as Terraform authoring, Kubernetes troubleshooting, or AWS deployment to the best available enrichment. Optional enrichments can degrade gracefully; required dependency skills fail closed so the workflow cannot pretend a missing gate ran.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────── SB VS GSD ────── -->
+<section id="sb-vs-gsd" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Silver Bullet vs Plain GSD</div>
+      <h2 class="section-title">Silver Bullet vs Plain GSD</h2>
+      <p class="section-desc centered">GSD is the planning and execution engine. Silver Bullet is the orchestration, enforcement, traceability, review, DevOps, documentation, and release layer around that engine.</p>
+    </div>
+
+    <div class="sb-gsd-overview mt-6">
+      <div class="sb-gsd-panel fade-in">
+        <h3>Plain GSD helps the agent do the work well. Silver Bullet helps ensure the whole delivery process actually happens.</h3>
+        <p>Silver Bullet does not replace GSD or claim GSD&rsquo;s lifecycle as its own. It composes the right task-shaped workflow, sequences GSD with adjacent plugins, and blocks unsafe progress until the expected evidence exists: spec coverage, UAT, review, fresh tests, docs, CI, DevOps risk controls, and release readiness.</p>
+        <div class="sb-gsd-split">
+          <div class="sb-gsd-mini">
+            <div class="mini-label">Plain GSD</div>
+            <strong>Execution engine</strong>
+            <span>Plans phases, manages <code>.planning/</code>, executes with fresh agent context, verifies work, and ships milestones.</span>
+          </div>
+          <div class="sb-gsd-mini">
+            <div class="mini-label">Silver Bullet + GSD</div>
+            <strong>Enforced operating layer</strong>
+            <span>Routes the task, composes cross-plugin steps, preserves traceability, and gates edits, PRs, deploys, and releases.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-gsd-panel fade-in">
+        <h3>The strongest SB-over-GSD benefits</h3>
+        <div class="sb-gsd-proof">
+          <div class="sb-gsd-proof-row"><strong>Enforcement</strong><span>Host hooks block skipped planning, review, verification, docs, CI, and release steps.</span></div>
+          <div class="sb-gsd-proof-row"><strong>Composition</strong><span><code>/silver</code> builds the workflow chain for feature, bugfix, UI, DevOps, research, release, or fast-path work.</span></div>
+          <div class="sb-gsd-proof-row"><strong>Traceability</strong><span>Specs, validation findings, UAT state, PR descriptions, and implementation links stay connected.</span></div>
+          <div class="sb-gsd-proof-row"><strong>Governance</strong><span>Artifact review, DevOps safety, docs freshness, session continuity, and non-skippable gates wrap GSD execution.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-gsd-benefit-grid mt-6">
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="shield-check"></i></div><h3>Process Becomes Enforced</h3></div>
+        <p>GSD gives the right lifecycle. SB adds hook-level blockers so agents cannot silently edit, commit, PR, deploy, or release before required evidence exists.</p>
+      </div>
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="workflow"></i></div><h3>Workflows Are Task-Shaped</h3></div>
+        <p>GSD has <code>gsd:do</code>. SB&rsquo;s extra value is broader workflow composition across SB gates, GSD, Superpowers, Engineering, Design, PM, and DevOps steps.</p>
+      </div>
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="network"></i></div><h3>Cross-Plugin Orchestration</h3></div>
+        <p>SB sequences GSD with review, TDD, docs, design, testing, product, DevOps, and release capabilities without pretending those tools are interchangeable.</p>
+      </div>
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="file-check-2"></i></div><h3>Spec-To-PR Traceability</h3></div>
+        <p><code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>, UAT gates, and PR traceability connect accepted requirements to delivered implementation.</p>
+      </div>
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="clipboard-check"></i></div><h3>Artifact Review Governance</h3></div>
+        <p>SB reviews specs, requirements, design, roadmap, research, ingestion manifests, UAT, and cross-artifact consistency with audit trails and review analytics.</p>
+      </div>
+      <div class="sb-gsd-benefit fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="server-cog"></i></div><h3>DevOps And Release Safety</h3></div>
+        <p>Blast-radius analysis, IaC-adapted quality gates, promotion checks, deployment checklists, CI-red blocking, and release gates surround GSD milestone work.</p>
+      </div>
+    </div>
+
+    <div class="text-center mt-6 fade-in">
+      <a href="sb-vs-gsd/" class="btn btn-primary">Learn More &rarr;</a>
     </div>
   </div>
 </section>
