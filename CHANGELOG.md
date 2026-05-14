@@ -4,6 +4,16 @@
 
 ---
 
+## [0.35.1] — 2026-05-15
+
+## Bug Fixes
+
+- Isolate Kay-backed Codex live tests so SB test runs no longer rewrite the user's real Codex hook cache.
+- Stop duplicating Silver Bullet plugin hooks into user-level Codex hooks and seed trust from the installed plugin hook manifest.
+- Pass Codex/Kay model-provider overrides through the live harness so MiniMax-backed isolated runs use `MiniMax-M2.7` consistently.
+
+---
+
 ## [0.35.0] — 2026-05-14
 
 ## Bug Fixes
