@@ -410,7 +410,7 @@ claude_interactive_invoke() {
 
   permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
   if [[ "$mode" == "permissive" ]]; then
-    permission_mode="bypassPermissions"
+    permission_mode="acceptEdits"
   fi
 
   continue_flag=0
@@ -425,6 +425,7 @@ claude_interactive_invoke() {
       CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
       CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
       CLAUDE_PERMISSION_MODE="$permission_mode" \
+      CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-600}" \
       CLAUDE_CONTINUE="$continue_flag" \
       expect "$CLAUDE_INTERACTIVE_INVOKE"
   ) || true
@@ -745,7 +746,7 @@ assert_file_absent() {
 wait_for_file_exists() {
   local label="$1"
   local path="$2"
-  local timeout_seconds="${3:-120}"
+  local timeout_seconds="${3:-600}"
   local interval_seconds="${4:-2}"
   local deadline=$((SECONDS + timeout_seconds))
 
@@ -767,7 +768,7 @@ wait_for_file_contains() {
   local label="$1"
   local path="$2"
   local needle="$3"
-  local timeout_seconds="${4:-120}"
+  local timeout_seconds="${4:-600}"
   local interval_seconds="${5:-2}"
   local deadline=$((SECONDS + timeout_seconds))
 
@@ -792,7 +793,7 @@ wait_for_file_or_git_head_contains() {
   local repo_dir="$2"
   local path="$3"
   local needle="$4"
-  local timeout_seconds="${5:-120}"
+  local timeout_seconds="${5:-600}"
   local interval_seconds="${6:-2}"
   local deadline=$((SECONDS + timeout_seconds))
 
@@ -820,7 +821,11 @@ wait_for_file_or_git_head_contains() {
 wait_for_state_contains() {
   local label="$1"
   local needle="$2"
-  local timeout_seconds="${3:-120}"
+  # Live Claude turns can take several minutes before the skill-state marker
+  # lands, especially for research / blast-radius / feature-style turns.
+  # Give the harness a much wider default window so it waits for the actual
+  # record rather than timing out while the model is still working.
+  local timeout_seconds="${3:-600}"
   local interval_seconds="${4:-2}"
   local deadline=$((SECONDS + timeout_seconds))
 

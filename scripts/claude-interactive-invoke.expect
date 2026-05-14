@@ -23,7 +23,7 @@ set work_dir [env_or_default CLAUDE_WORK_DIR ""]
 set prompt_file [env_or_default CLAUDE_PROMPT_FILE ""]
 set model [env_or_default CLAUDE_MODEL "sonnet"]
 set effort [env_or_default CLAUDE_EFFORT "low"]
-set permission_mode [env_or_default CLAUDE_PERMISSION_MODE "bypassPermissions"]
+set permission_mode [env_or_default CLAUDE_PERMISSION_MODE "acceptEdits"]
 set continue_flag [env_or_default CLAUDE_CONTINUE "0"]
 set debug_log [env_or_default CLAUDE_INTERACTIVE_LOG_FILE ""]
 set debug_trace [env_or_default CLAUDE_INTERACTIVE_DEBUG "0"]
@@ -65,14 +65,7 @@ if {$continue_flag eq "1"} {
 }
 
 log_user 1
-set spawn_args [list $cli {*}$args]
-if {$command_name ne ""} {
-  lappend spawn_args "/$command_name"
-  if {[string length $prompt_body] > 0} {
-    lappend spawn_args $prompt_body
-  }
-}
-spawn -noecho {*}$spawn_args
+spawn -noecho $cli {*}$args
 
 if {$continue_flag eq "0"} {
   set trust_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_DELAY_MS 2000])}]
@@ -84,35 +77,35 @@ if {$continue_flag eq "0"} {
 
 after $post_prompt_delay_ms
 set timeout $ready_timeout
-expect {
-  -re {(?s)bypass.*permissions.*on} {
-    # Main prompt is live and ready for input.
-  }
-  -re {Try "how does .* work\?"} {
-    # Claude has rendered the prompt helper text; it is ready for input.
-  }
-  -re {❯} {
-    # Prompt marker is live and ready for input.
-  }
-  timeout {
-    puts stderr "ERROR: timed out waiting for Claude prompt to become ready"
-    exit 1
-  }
-  eof {
-    puts stderr "ERROR: Claude exited before the prompt became ready"
-    exit 1
-  }
-}
-
-set timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_TIMEOUT 900])}]
-
+set prompt_submitted 0
 set saw_prompt 0
 set final_marker_seen 0
 set require_final_marker 0
 if {$command_name eq "silver-init"} {
   set require_final_marker 1
+  if {$quiet_timeout < 600} {
+    # Silver init is the longest-running bootstrap path in the live matrix.
+    # Give it a wider quiet window so it can finish scaffolding before we cut
+    # it off and misclassify the result as an incomplete init.
+    set quiet_timeout 600
+  }
 }
+
 expect {
+  -re {Yes, I accept} {
+    # Accept the Claude CLI permission confirmation if it appears so the
+    # actual Silver Bullet workflow can start and respond to the prompt chain.
+    send -- "2\r"
+    exp_continue
+  }
+  -re {(?s)bypass.*permissions.*on} {
+    # Main prompt is live and ready for input.
+    exp_continue
+  }
+  -re {Try "how does .* work\?"} {
+    # Claude has rendered the prompt helper text; it is ready for input.
+    exp_continue
+  }
   -re {Silver Bullet initialized\. Start any task and the active workflow will be enforced automatically\.} {
     set final_marker_seen 1
     exp_continue
@@ -151,8 +144,49 @@ expect {
     send -- "a\r"
     exp_continue
   }
+  -re {accept.*edits.*on} {
+    if {$prompt_submitted == 0} {
+      if {$command_name ne ""} {
+        send -- "/$command_name"
+        if {[string length $prompt_body] > 0} {
+          send -- " "
+          send -- $prompt_body
+        }
+      } elseif {[string length $prompt_body] > 0} {
+        send -- $prompt_body
+      }
+      if {$command_name ne "" || [string length $prompt_body] > 0} {
+        send -- "\r"
+      }
+      set prompt_submitted 1
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
+  -re {0.*tokens} {
+    if {$prompt_submitted == 0} {
+      if {$command_name ne ""} {
+        send -- "/$command_name"
+        if {[string length $prompt_body] > 0} {
+          send -- " "
+          send -- $prompt_body
+        }
+      } elseif {[string length $prompt_body] > 0} {
+        send -- $prompt_body
+      }
+      if {$command_name ne "" || [string length $prompt_body] > 0} {
+        send -- "\r"
+      }
+      set prompt_submitted 1
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
   -re {❯} {
     if {$require_final_marker == 1 && $final_marker_seen == 0} {
+      exp_continue
+    }
+    if {$prompt_submitted == 0} {
       exp_continue
     }
     set saw_prompt 1
@@ -170,8 +204,11 @@ expect {
       }
     } elseif {$saw_prompt} {
       # The session has returned to a prompt and gone quiet, so the response is complete.
-    } else {
+    } elseif {$prompt_submitted} {
       puts stderr "ERROR: timed out waiting for Claude response"
+      exit 1
+    } else {
+      puts stderr "ERROR: timed out waiting for Claude prompt to become ready"
       exit 1
     }
   }

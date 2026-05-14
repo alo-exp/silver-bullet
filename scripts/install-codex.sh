@@ -13,25 +13,21 @@ SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github
 GSD_MARKETPLACE_SOURCE="${GSD_MARKETPLACE_SOURCE:-https://github.com/gsd-build/get-shit-done.git}"
 
 resolve_codex_config_file() {
-  local config_file
+  local config_file="${HOME}/.codex/config.toml"
   mkdir -p "${HOME}/.codex"
-  for config_file in "${HOME}/.codex/config.toml"; do
-    if [[ -f "$config_file" ]]; then
-      printf '%s\n' "$config_file"
-      return 0
-    fi
-  done
+  if [[ -f "$config_file" ]]; then
+    printf '%s\n' "$config_file"
+    return 0
+  fi
   printf '%s\n' "${HOME}/.codex/config.toml"
 }
 
 resolve_codex_gsd_home() {
-  local gsd_home
-  for gsd_home in "${HOME}/.codex/get-shit-done"; do
-    if [[ -f "${gsd_home}/VERSION" ]]; then
-      printf '%s\n' "$gsd_home"
-      return 0
-    fi
-  done
+  local gsd_home="${HOME}/.codex/get-shit-done"
+  if [[ -f "${gsd_home}/VERSION" ]]; then
+    printf '%s\n' "$gsd_home"
+    return 0
+  fi
   printf '%s\n' "${HOME}/.codex/get-shit-done"
 }
 
@@ -338,25 +334,22 @@ sync_codex_cache_package_surface() {
   marketplace_root="$(codex_marketplace_root)"
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
-  local cache_root package_root version_dir
-  for cache_root in "${HOME}/.codex/plugins/cache"; do
-    [[ -d "$cache_root" ]] || continue
-    for package_root in \
-      "${cache_root}/alo-labs-codex/silver-bullet"; do
-      [[ -d "$package_root" ]] || continue
-      shopt -s nullglob
-      for version_dir in "$package_root"/*; do
-        [[ -d "$version_dir" ]] || continue
-        [[ "$(basename "$version_dir")" == "current" ]] && continue
-        rsync -a --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
-      done
-      shopt -u nullglob
-    done
+  local cache_root="${HOME}/.codex/plugins/cache"
+  local package_root="${cache_root}/alo-labs-codex/silver-bullet"
+  local version_dir
+  [[ -d "$cache_root" ]] || return 0
+  [[ -d "$package_root" ]] || return 0
+  shopt -s nullglob
+  for version_dir in "$package_root"/*; do
+    [[ -d "$version_dir" ]] || continue
+    [[ "$(basename "$version_dir")" == "current" ]] && continue
+    rsync -a --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
   done
+  shopt -u nullglob
 }
 
 sync_codex_installed_plugin_registry_paths() {
-  local registry_file
+  local registry_file="${HOME}/.codex/plugins/installed_plugins.json"
   local updated_at
   local plugin_id
   local plugin_name
@@ -366,28 +359,25 @@ sync_codex_installed_plugin_registry_paths() {
   local updates=()
   updated_at="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
 
-  for registry_file in "${HOME}/.codex/plugins/installed_plugins.json"; do
-    [[ -f "$registry_file" ]] || continue
+  [[ -f "$registry_file" ]] || return 0
 
-    updates=()
-    while IFS= read -r plugin_id; do
-      [[ -n "$plugin_id" ]] || continue
-      [[ "$plugin_id" == *"@"* ]] || continue
+  updates=()
+  while IFS= read -r plugin_id; do
+    [[ -n "$plugin_id" ]] || continue
+    [[ "$plugin_id" == *"@"* ]] || continue
 
-      plugin_name="${plugin_id%@*}"
-      marketplace="${plugin_id#*@}"
-      current_path=""
-      stable_path=""
+    plugin_name="${plugin_id%@*}"
+    marketplace="${plugin_id#*@}"
+    current_path=""
+    stable_path=""
 
-      for cache_root in "${HOME}/.codex/plugins/cache"; do
-        if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
-          current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-          [[ -n "$current_path" ]] && break
-        fi
-      done
+    local cache_root="${HOME}/.codex/plugins/cache"
+    if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
+      current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+    fi
 
-      [[ -n "$current_path" ]] || continue
-      python3 - "$current_path" "$marketplace" "$plugin_name" <<'PY'
+    [[ -n "$current_path" ]] || continue
+    python3 - "$current_path" "$marketplace" "$plugin_name" <<'PY'
 import pathlib
 import shutil
 import sys
@@ -470,7 +460,6 @@ for plugin_id, entries in data.get("plugins", {}).items():
 if changed:
     registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
-  done
 }
 
 ensure_codex_dependency_registry_entries() {
@@ -1110,14 +1099,11 @@ PY
 }
 
 codex_marketplace_root() {
-  local marketplace_root
-  for marketplace_root in \
-    "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"; do
-    if [[ -d "$marketplace_root" ]]; then
-      printf '%s\n' "$marketplace_root"
-      return 0
-    fi
-  done
+  local marketplace_root="${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
+  if [[ -d "$marketplace_root" ]]; then
+    printf '%s\n' "$marketplace_root"
+    return 0
+  fi
   printf '%s\n' "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
 }
 
