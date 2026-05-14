@@ -7,8 +7,8 @@
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='light'?'light':'dark');</script>
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
-<title>Silver Bullet vs Plain GSD &mdash; Benefits Report</title>
-<meta name="description" content="A comprehensive report on what Silver Bullet adds over plain GSD: dynamic workflow composition, cross-plugin orchestration, hook enforcement, spec traceability, artifact review, DevOps safety, docs governance, and release gates.">
+<title>Silver Bullet vs Plain GSD &mdash; What Silver Bullet Adds</title>
+<meta name="description" content="What Silver Bullet adds over plain GSD: dynamic workflow composition, cross-plugin orchestration, hook enforcement, spec traceability, artifact review, DevOps safety, docs governance, and release gates.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -92,14 +92,14 @@ section:nth-child(even){background:var(--section-alt)}
 .card:hover,.benefit-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-3px)}
 .card h3,.benefit-card h3{font-size:1.05rem;font-weight:800;margin-bottom:8px;line-height:1.25}
 .card p,.benefit-card p{font-size:.92rem;color:var(--text-secondary);line-height:1.65}
-.hero-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:24px;align-items:stretch}
+.hero-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
 @media(max-width:920px){.hero-split{grid-template-columns:1fr}}
 .role-card{border-color:var(--mint-a32);background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04))}
 .role-card .role-label{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.09em;color:var(--text-dim);margin-bottom:10px}
 .role-card strong{display:block;font-size:1.35rem;font-family:var(--font-heading);letter-spacing:-.02em;margin-bottom:8px}
-.role-card ul{list-style:none;padding:0;margin:20px 0 0;display:flex;flex-direction:column;gap:9px}
-.role-card li{font-size:.9rem;color:var(--text-secondary);line-height:1.45;display:flex;gap:8px}
-.role-card li::before{content:'>';color:var(--accent-light);font-weight:900;flex-shrink:0}
+.role-card ul{list-style:disc;padding-left:1.2rem;margin:20px 0 0}
+.role-card li{font-size:.9rem;color:var(--text-secondary);line-height:1.45;margin-bottom:9px;padding-left:.2rem}
+.role-card li::marker{color:var(--accent-light)}
 .benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .benefit-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--accent-light);background:var(--accent-a12);font-size:1.25rem;flex-shrink:0}
 .benefit-card .small-label{font-family:var(--font-mono);font-size:.72rem;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
@@ -113,17 +113,13 @@ td:first-child{color:var(--text-primary);font-weight:700}
 .pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--accent-a12);color:var(--accent-light)}
 .matrix{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:920px){.matrix{grid-template-columns:1fr}}
-.list-card ul{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:9px}
-.list-card li{font-size:.91rem;color:var(--text-secondary);line-height:1.45;display:flex;gap:8px}
-.list-card li::before{content:'->';color:var(--accent-light);font-family:var(--font-mono);font-weight:800;flex-shrink:0}
+.list-card ul{list-style:disc;padding-left:1.2rem;margin:14px 0 0}
+.list-card li{font-size:.91rem;color:var(--text-secondary);line-height:1.45;margin-bottom:9px;padding-left:.2rem}
+.list-card li::marker{color:var(--accent-light)}
 .callout{background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--slate-a12));border:1px solid var(--mint-a32);border-radius:var(--radius-lg);padding:34px;max-width:860px;margin:0 auto;text-align:center}
 .callout p{font-size:1.02rem;color:var(--text-secondary);line-height:1.7}
 .callout strong{color:var(--text-primary)}
 .note{font-size:.85rem;color:var(--text-dim);line-height:1.6}
-.source-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media(max-width:920px){.source-grid{grid-template-columns:1fr}}
-.source-grid a{display:block;text-decoration:none;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;font-size:.84rem;transition:all .2s}
-.source-grid a:hover{color:var(--accent-light);border-color:var(--border-hover)}
 footer{border-top:1px solid var(--border);padding:44px 0;color:var(--text-dim);font-size:.85rem}
 footer .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
 footer a{color:var(--text-secondary);text-decoration:none}
@@ -151,9 +147,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <a href="../" class="logo">Silver Bullet</a>
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
     <ul class="nav-links">
-      <li><a href="#summary">Summary</a></li>
+      <li><a href="#summary">Overview</a></li>
       <li><a href="#benefits">Benefits</a></li>
-      <li><a href="#governance">Governance</a></li>
+      <li><a href="#governance">Ownership</a></li>
       <li><a href="#when">When To Use</a></li>
       <li><a href="../compare/">Compare</a></li>
     </ul>
@@ -169,9 +165,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <header class="hero">
   <div class="container text-center">
     <a href="../" class="back-link">&larr; Back to Silver Bullet</a>
-    <div class="section-label">Benefits Report</div>
+    <div class="section-label">GSD + Silver Bullet</div>
     <h1 class="section-title">Silver Bullet vs Plain GSD</h1>
-    <p class="section-desc">Plain GSD is the planning and execution engine. Silver Bullet is the orchestration, enforcement, traceability, review, DevOps, documentation, and release-governance layer around that engine.</p>
+    <p class="section-desc">Plain GSD gives agents a strong planning and execution engine. Silver Bullet adds the operating layer teams need when work must be routed, reviewed, traced, documented, verified, and safely shipped.</p>
     <div class="tag-row">
       <span class="tag">v0.34.0</span>
       <span class="tag">Dynamic workflow composition</span>
@@ -184,9 +180,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <section id="summary">
   <div class="container">
     <div class="text-center">
-      <div class="section-label">Executive Summary</div>
-      <h2 class="section-title">GSD Executes. Silver Bullet Enforces The Delivery System Around It.</h2>
-      <p class="section-desc">Silver Bullet does not replace GSD. The clean distinction is that GSD helps an agent do the work well, while Silver Bullet helps ensure the agent follows the whole software-delivery process before code, PRs, deploys, or releases happen.</p>
+      <div class="section-label">The Short Version</div>
+      <h2 class="section-title">GSD Executes. Silver Bullet Keeps Delivery Governed.</h2>
+      <p class="section-desc">Silver Bullet does not replace GSD. GSD helps an agent do the work well; Silver Bullet helps ensure the whole delivery path happens before code, PRs, deploys, or releases move forward.</p>
     </div>
 
     <div class="hero-split mt-6">
@@ -212,9 +208,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
     </div>
 
-    <div class="callout mt-6 fade-in">
-      <p><strong>The strategic positioning:</strong> GSD is the engine. Silver Bullet is the enforced operating system around the engine. It solves a different problem: workflow compliance for agentic software delivery.</p>
-    </div>
   </div>
 </section>
 
@@ -223,7 +216,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <div class="text-center">
       <div class="section-label">Main Benefits</div>
       <h2 class="section-title">What Silver Bullet Adds Over Plain GSD</h2>
-      <p class="section-desc">These are the defensible SB-over-GSD benefits from the current codebase and documentation surfaces, excluding capabilities that GSD already owns.</p>
+      <p class="section-desc">The most important gains are practical: fewer skipped steps, stronger traceability, better artifact quality, safer DevOps work, and clearer release readiness.</p>
     </div>
 
     <div class="grid grid-3 mt-6">
@@ -310,9 +303,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <section id="governance">
   <div class="container">
     <div class="text-center">
-      <div class="section-label">Clean Boundary</div>
-      <h2 class="section-title">What Should Not Be Counted As A Silver Bullet Benefit</h2>
-      <p class="section-desc">Silver Bullet integrates GSD, but a clean comparison should not credit SB for capabilities GSD already owns.</p>
+      <div class="section-label">Clear Ownership</div>
+      <h2 class="section-title">What GSD Still Owns</h2>
+      <p class="section-desc">Silver Bullet is strongest when the ownership line is clear: GSD remains the execution engine, while SB supplies orchestration and enforcement around it.</p>
     </div>
 
     <div class="table-wrap mt-6 fade-in">
@@ -354,8 +347,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container">
     <div class="text-center">
       <div class="section-label">Operational Impact</div>
-      <h2 class="section-title">Who Benefits From The SB Layer</h2>
-      <p class="section-desc">The value is different for product owners, agents, maintainers, and infrastructure operators.</p>
+      <h2 class="section-title">Who Benefits From Silver Bullet</h2>
+      <p class="section-desc">Different teams feel the value in different places: clearer acceptance evidence, fewer skipped gates, better project memory, and safer infrastructure changes.</p>
     </div>
     <div class="grid grid-4 mt-6">
       <div class="card list-card fade-in">
@@ -444,42 +437,20 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <section>
   <div class="container">
     <div class="text-center">
-      <div class="section-label">Near-Term Follow-Ups</div>
-      <h2 class="section-title">Two Areas To Generalize Next</h2>
-      <p class="section-desc">The report identifies two important next steps for making SB&rsquo;s value broader and more visible in downstream projects.</p>
+      <div class="section-label">Current Scope Notes</div>
+      <h2 class="section-title">Where The Product Is Still Expanding</h2>
+      <p class="section-desc">Silver Bullet already adds concrete value around GSD. Two areas are being expanded so that value becomes more generic and more visible during live work.</p>
     </div>
     <div class="grid grid-2 mt-6">
       <div class="card fade-in">
         <h3>Generic Release Gate</h3>
-        <p>The four-stage pre-release quality gate is real for this Claude/Codex plugin project. The generic product claim should be release-gate architecture today, with the full four-stage flow generalized for downstream projects next.</p>
+        <p>The release-gate architecture already exists around review, tests, CI, docs, and release readiness. The full four-stage pre-release sequence is strongest in this plugin project today and is being generalized for downstream projects.</p>
       </div>
       <div class="card fade-in">
         <h3>Contextual User Guidance</h3>
-        <p>Static docs are not enough. SB should explain, during work, what is happening now, why the next gate matters, what evidence it produced, and the shortest safe recovery path when a gate blocks.</p>
+        <p>The next step is more contextual guidance during live work: what is happening now, why the next gate matters, what evidence was produced, and the shortest safe recovery path when a gate blocks.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<section>
-  <div class="container">
-    <div class="text-center">
-      <div class="section-label">Source Basis</div>
-      <h2 class="section-title">Report Inputs</h2>
-      <p class="section-desc">This page is based on the local report <code>docs/sb-benefits-over-plain-gsd.md</code>, which was derived from Silver Bullet documents, hooks, commands, skills, and the follow-up codebase gap analysis.</p>
-    </div>
-    <div class="source-grid mt-6">
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/README.md" target="_blank" rel="noopener">README.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/silver-bullet.md" target="_blank" rel="noopener">silver-bullet.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/ENFORCEMENT.md" target="_blank" rel="noopener">docs/ENFORCEMENT.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/composable-flows-contracts.md" target="_blank" rel="noopener">composable-flows-contracts.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/SDLC-MAP.md" target="_blank" rel="noopener">docs/SDLC-MAP.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/workflows/full-dev-cycle.md" target="_blank" rel="noopener">full-dev-cycle.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/workflows/devops-cycle.md" target="_blank" rel="noopener">devops-cycle.md</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/hooks/dev-cycle-check.sh" target="_blank" rel="noopener">hooks/dev-cycle-check.sh</a>
-      <a href="https://github.com/alo-exp/silver-bullet/blob/main/hooks/completion-audit.sh" target="_blank" rel="noopener">hooks/completion-audit.sh</a>
-    </div>
-    <p class="note mt-4 text-center">The page intentionally separates SB-owned benefits from GSD-owned capabilities so the comparison does not over-credit Silver Bullet for GSD&rsquo;s execution engine.</p>
   </div>
 </section>
 
