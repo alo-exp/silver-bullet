@@ -49,7 +49,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | Step | Skill(s) | Purpose |
 |------|----------|---------|
 | 0 | `silver:intel` (gsd-intel) | Query codebase intelligence to orient planning |
-| 0b | `silver:scan` [brownfield only, if no intel files] | Rapid structure assessment |
+| 0b | `gsd-scan` [brownfield only, if no intel files] | Rapid structure assessment |
 | 1a | `silver:explore` [fuzzy ideas only] | Socratic clarification before structured brainstorming |
 | 1b | `/product-brainstorming` | PM lens: problem definition, user value, personas, success metrics, scope |
 | 1c | `silver:brainstorm` (superpowers:brainstorming) | Engineering lens: architecture, approaches, spec, design doc, spec-review loop |
@@ -108,7 +108,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 
 | Step | Skill(s) | Purpose |
 |------|----------|---------|
-| 0 | `silver:intel` + `silver:scan` [brownfield] | Orient in codebase |
+| 0 | `silver:intel` + `gsd-scan` [brownfield] | Orient in codebase |
 | 1a | `silver:explore` [fuzzy] | Clarify fuzzy UI intent |
 | 1b | `/product-brainstorming` | User flows, personas, success criteria |
 | 1c | `silver:brainstorm` | UI architecture, component hierarchy, interaction design, spec |
@@ -145,7 +145,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | Step | Skill(s) | Purpose |
 |------|----------|---------|
 | 0 | `silver:intel` (gsd-intel) | Orient in codebase — understand current infra topology before blast-radius analysis |
-| 0b | `silver:scan` [if no intel files] | Rapid structure assessment |
+| 0b | `gsd-scan` [if no intel files] | Rapid structure assessment |
 | 1 | `silver:blast-radius` | Map change scope, downstream deps, failure modes, rollback plan |
 | 2 | `devops-skill-router` | Route to right IaC/cloud skill (Terraform, Pulumi, AWS, k8s…) |
 | 3 | `devops-quality-gates` | 7 IaC-adapted quality dimensions (pre-plan gate) |

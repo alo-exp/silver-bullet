@@ -18,7 +18,7 @@ Never implements UI directly — orchestrates only.
 
 Before any local UI implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
 
-1. `silver:scan` when rapid SB orientation is useful
+1. `gsd-scan` when rapid SB orientation is useful
 2. `gsd-map-codebase` when the project is brownfield or deeper UI pattern mapping is needed
 3. `silver:clarify`
 4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
@@ -179,7 +179,7 @@ When the user requests skipping any step:
 
 ## Step 0: Orient in Codebase
 
-Invoke `silver:scan` via the Skill tool to understand existing UI patterns and component hierarchy.
+Invoke `gsd-scan` via the Skill tool to understand existing UI patterns and component hierarchy.
 
 If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` via the Skill tool.
 

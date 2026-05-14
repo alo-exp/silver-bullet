@@ -162,7 +162,7 @@ When the user requests skipping any step:
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `gsd-scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
 If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` via the Skill tool.
 

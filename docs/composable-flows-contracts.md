@@ -76,7 +76,7 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | FLOW 0 complete, or existing project artifacts present |
 | Trigger | Included for non-trivial work unless current intel is already sufficient |
-| Steps | 1. `silver:scan` (As-needed, rapid SB scan) · 2. `gsd:map-codebase` (As-needed, deeper brownfield mapping) · 3. `gsd:progress` (As-needed, current GSD position) |
+| Steps | 1. `gsd-scan` (As-needed, rapid codebase scan) · 2. `gsd:map-codebase` (As-needed, deeper brownfield mapping) · 3. `gsd:progress` (As-needed, current GSD position) |
 | Produces | `.planning/intel/` or `.planning/codebase/` files when GSD mapping runs; scan summary when SB scan runs |
 | Review Cycle | None |
 | GSD Impact | Reads GSD state; writes only through GSD mapping skills |

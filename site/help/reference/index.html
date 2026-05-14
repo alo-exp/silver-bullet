@@ -326,7 +326,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
           <tr><td>/silver:remove</td><td>Deferred work</td><td>Removes or retires a tracked work item by ID.</td></tr>
           <tr><td>/silver:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable lessons into monthly files under <code>docs/knowledge/</code> and <code>docs/lessons/</code>.</td></tr>
-          <tr><td>/silver:scan</td><td>Orientation / retrospective</td><td>Supports rapid SB orientation and retrospective session scanning for unaddressed deferred items and knowledge/lesson candidates.</td></tr>
+          <tr><td>/silver:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/lesson candidates.</td></tr>
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
@@ -375,7 +375,7 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
         <tbody>
           <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td><code>silver:clarify</code> → <code>/gsd:discuss-phase</code> handoff</td></tr>
-          <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage → <code>silver:scan</code> / <code>/gsd:map-codebase</code> → clarify/research if needed → quality gates → GSD plan/execute/verify → review/ship</td></tr>
+          <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage → <code>gsd-scan</code> / <code>/gsd:map-codebase</code> → clarify/research if needed → quality gates → GSD plan/execute/verify → review/ship</td></tr>
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td>triage path → systematic debugging or forensics → regression test → fix → verify/review</td></tr>
           <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation → clarify/research if needed → UI design contract → GSD plan/execute → visual/UI audit → verify/ship</td></tr>
           <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, deploy, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation → blast radius → DevOps skill routing → IaC quality gates → GSD plan/execute without TDD → review/security/verify/ship</td></tr>

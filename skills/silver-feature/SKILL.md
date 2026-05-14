@@ -18,7 +18,7 @@ SB separates pre-execution gates from post-execution gates.
 
 Before implementation edits, the execution trace must show only the pre-execution dependency chain that unlocks GSD execution:
 
-1. `silver:scan` when rapid SB orientation is useful
+1. `gsd-scan` when rapid SB orientation is useful
 2. `gsd-map-codebase` when the project is brownfield or deep codebase mapping is needed
 3. `silver:clarify` when scope is fuzzy
 4. `silver:research` when FLOW DECIDE is needed for architecture, stack, API, or data-model choices
@@ -267,7 +267,7 @@ If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
 
 ## Step 1a: Codebase Intel
 
-Invoke `silver:scan` via the Skill tool for rapid SB orientation.
+Invoke `gsd-scan` via the Skill tool for rapid SB orientation.
 
 If no current codebase intel exists and this is a brownfield project, invoke `gsd-map-codebase` via the Skill tool for deeper GSD-managed mapping.
 

@@ -259,7 +259,7 @@ PY
 
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
-  if grep -qF "$needle" "$file"; then
+  if grep -qF -- "$needle" "$file"; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
@@ -270,7 +270,7 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" needle="$2" file="$3"
-  if ! grep -qF "$needle" "$file"; then
+  if ! grep -qF -- "$needle" "$file"; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
@@ -658,7 +658,9 @@ assert_file_exists "SB hooks config materialized" "$FAKE_SB_PACKAGE_ROOT/hooks/h
 assert_not_symlink "SB skills directory materialized" "$FAKE_SB_PACKAGE_ROOT/skills"
 assert_not_symlink "SB scripts directory materialized" "$FAKE_SB_PACKAGE_ROOT/scripts"
 assert_file_exists "SB workflows helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/workflows.sh"
+assert_file_exists "SB scan helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/silver-scan.sh"
 assert_file_exists "Current cache workflows helper synced" "$FAKE_CACHE_ROOT/scripts/workflows.sh"
+assert_file_exists "Current cache scan helper synced" "$FAKE_CACHE_ROOT/scripts/silver-scan.sh"
 assert_no_async_true "SB hooks config normalized for Codex package" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_no_async_true "Current cache hooks config normalized for Codex package" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "Marketplace root SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
@@ -728,10 +730,14 @@ assert_contains "TDD skill hidden from picker in source bundle" "user-invocable:
 assert_contains "TDD skill delegates to Superpowers TDD in source bundle" "superpowers:test-driven-development" "$REPO_ROOT/plugins/silver-bullet/skills/tdd/SKILL.md"
 assert_contains "SB init generated skill uses no-new-CLAUDE contract" "without creating one" "$REPO_ROOT/plugins/silver-bullet/.generated-skills/silver-init/SKILL.md"
 assert_not_contains "SB init generated skill no longer promises fresh CLAUDE.md creation" "scaffolds silver-bullet.md + CLAUDE.md + config + workflow files" "$REPO_ROOT/plugins/silver-bullet/.generated-skills/silver-init/SKILL.md"
+assert_file_exists "SB scan generated skill available in source bundle" "$REPO_ROOT/plugins/silver-bullet/.generated-skills/silver-scan/SKILL.md"
+assert_contains "SB scan generated skill uses silver prefix" "name: silver:scan" "$REPO_ROOT/plugins/silver-bullet/.generated-skills/silver-scan/SKILL.md"
 assert_contains "Installed SB init skill uses silver prefix" "name: silver:init" "$FAKE_SB_PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_contains "Installed SB ensure-docs skill uses silver prefix" "name: silver:ensure-docs" "$FAKE_SB_PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"
 assert_contains "Installed SB feature skill uses silver prefix" "name: silver:feature" "$FAKE_SB_PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Installed SB router skill uses silver name" "name: silver" "$FAKE_SB_PACKAGE_ROOT/skills/silver/SKILL.md"
+assert_file_exists "Installed SB scan generated skill available" "$FAKE_CACHE_ROOT/.generated-skills/silver-scan/SKILL.md"
+assert_contains "Installed SB scan generated skill uses silver prefix" "name: silver:scan" "$FAKE_CACHE_ROOT/.generated-skills/silver-scan/SKILL.md"
 assert_contains "Installed SB feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$FAKE_SB_PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Installed SB feature skill documents hidden TDD gate" "Internal TDD gate" "$FAKE_SB_PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_contains "Installed SB UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$FAKE_SB_PACKAGE_ROOT/skills/silver-ui/SKILL.md"

@@ -312,7 +312,7 @@ After that, use `/silver` for normal work.
 | `/silver:create-release` | Final release artifact creation after GSD release readiness |
 | `/silver:fast` | Small, low-risk work through a routed fast path |
 | `/silver:ensure-docs` | Documentation scheme bootstrap, reconciliation, and recovery |
-| `/silver:scan` | Session/codebase scan for deferred issues and insights |
+| `/silver:scan` | Retrospective session scan for deferred issues and insights |
 | `/silver:add` | File an issue or backlog item |
 | `/silver:remove` | Remove or close an issue/backlog item |
 | `/silver:rem` | Capture knowledge or lessons learned |

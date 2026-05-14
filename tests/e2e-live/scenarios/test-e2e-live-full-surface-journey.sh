@@ -240,8 +240,8 @@ if [[ "$workflow_docs_present" != true ]]; then
 fi
 
 journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Ingest the todo-app codebase, summarize the current app structure, and note the most relevant files before any changes are made.')"
-journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
-wait_for_state_contains "silver:scan recorded in workflow state" "silver-scan"
+journey_turn "gsd-scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'gsd-scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
+wait_for_state_contains "gsd-scan recorded in workflow state" "gsd-scan"
 research_prompt="$(skill_prompt 'silver:research' 'Research the clearest next enhancement for the todo-app, and explicitly follow the Silver Bullet research chain: invoke silver:clarify first, then summarize the implementation path in a way a teammate could follow. Do not skip the nested skill calls.')"
 journey_turn "silver:research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
 research_log="${TURN_LOG_DIR}/silver-research.txt"
