@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='light'?'light':'dark');</script>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="shortcut icon" href="../favicon.ico">
+<title>Silver Bullet vs Plain GSD &mdash; Benefits Report</title>
+<meta name="description" content="A comprehensive report on what Silver Bullet adds over plain GSD: dynamic workflow composition, cross-plugin orchestration, hook enforcement, spec traceability, artifact review, DevOps safety, docs governance, and release gates.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+:root{
+  --bg-page:#f6f4f0;--bg-card:#ffffff;--bg-code:#ece8e0;
+  --bg-hero:linear-gradient(160deg,#eae4da 0%,#eee8de 25%,#f4f0e8 48%,#f6f2ea 62%,#f0ece4 80%,#eae6dc 100%);
+  --accent:#00c834;--accent-light:#009a28;--accent2:#006fa8;--accent3:#6b21d4;
+  --green:#00a82e;--amber:#a86000;--red:#aa1830;--cyan:#006fa8;
+  --text-primary:#050f08;--text-secondary:#0d3a1a;--text-dim:#285c38;
+  --border:#8cc4a4;--border-hover:#4a9464;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --font-heading:'Space Grotesk',system-ui,sans-serif;--font-body:'Roboto',system-ui,sans-serif;--font-mono:'Roboto Mono',monospace;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.10);--shadow-glow:0 0 40px rgba(0,170,46,.08);
+  --nav-bg:rgba(246,244,240,.92);--nav-mobile-bg:rgba(246,244,240,.99);--section-alt:rgba(236,230,220,.55);
+  --table-row-hover:rgba(0,170,46,.03);
+  --accent-a04:color-mix(in srgb,var(--accent) 4%,transparent);
+  --accent-a07:color-mix(in srgb,var(--accent) 7%,transparent);
+  --accent-a10:color-mix(in srgb,var(--accent) 10%,transparent);
+  --accent-a12:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-a15:color-mix(in srgb,var(--accent) 15%,transparent);
+  --accent-a25:color-mix(in srgb,var(--accent) 25%,transparent);
+  --mint-a07:rgba(160,210,180,.07);--mint-a10:rgba(160,210,180,.10);--mint-a14:rgba(160,210,180,.14);
+  --mint-a22:rgba(160,210,180,.22);--mint-a32:rgba(160,210,180,.32);--mint-a45:rgba(160,210,180,.45);
+  --cyan-a10:rgba(0,204,255,.10);--cyan-a12:rgba(0,204,255,.12);--cyan-a25:rgba(0,204,255,.25);
+  --amber-a12:rgba(251,191,36,.12);--red-a12:rgba(180,60,80,.12);--green-a12:rgba(52,211,153,.12);
+  --accent3-a12:rgba(244,114,182,.12);--slate-a12:rgba(100,116,139,.12);--grad-1:#005818;--grad-2:#008a24;--grad-4:#00c034;
+}
+[data-theme="dark"]{
+  --bg-page:#080c10;--bg-card:#0f1520;--bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --accent:#00a82e;--accent-light:#00a82e;--accent2:#00ccff;--accent3:#a855f7;
+  --green:#00a82e;--amber:#ffaa00;--red:#c44060;--cyan:#00ccff;
+  --text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-dim:#64748b;
+  --border:#112218;--border-hover:#1a3824;--shadow-lg:0 20px 60px rgba(0,0,0,.7);--shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --nav-bg:rgba(8,12,16,.92);--nav-mobile-bg:rgba(8,12,16,.99);--section-alt:rgba(12,20,16,.7);--table-row-hover:rgba(0,255,65,.02);
+}
+body,nav,section,.card,.benefit-card,.table-wrap,.callout{transition:background .25s,background-color .25s,border-color .25s,color .25s,box-shadow .25s}
+body{font-family:var(--font-body);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,.logo,.section-title,.section-label,.btn,.tag,.nav-cta,.hero-kicker{font-family:var(--font-heading)}
+.container{max-width:1180px;margin:0 auto;padding:0 24px}
+.text-center{text-align:center}.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}.mt-8{margin-top:64px}
+code{font-family:var(--font-mono);font-size:.9em;color:var(--accent-light)}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+nav .nav-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+nav .logo{font-weight:800;font-size:1.1rem;color:var(--text-primary);letter-spacing:-.02em;text-decoration:none}
+nav .nav-links{display:flex;gap:24px;list-style:none}
+nav .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s}
+nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-cta{background:linear-gradient(135deg,var(--grad-1),var(--grad-2));color:#fff;padding:8px 20px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+.nav-toggle{display:none;background:none;border:none;color:var(--text-primary);font-size:1.5rem;cursor:pointer}
+@media(max-width:820px){
+  nav .nav-links{display:none}
+  .nav-toggle{display:block}
+  nav .nav-links.active{display:flex;flex-direction:column;position:absolute;top:64px;left:0;right:0;background:var(--nav-mobile-bg);padding:20px 24px;gap:16px;border-bottom:1px solid var(--border)}
+  nav .nav-cta{display:none}
+}
+.hero{background:var(--bg-hero);padding:118px 0 80px;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero .container{position:relative;z-index:1}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);text-decoration:none;font-size:.85rem;font-weight:600;margin-bottom:28px;transition:color .2s}
+.back-link:hover{color:var(--accent-light)}
+.section-label{text-transform:uppercase;font-size:.75rem;font-weight:800;letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px}
+.section-title{font-size:clamp(1.9rem,3.5vw,3.1rem);font-weight:900;letter-spacing:-.04em;line-height:1.12;margin-bottom:18px}
+.section-desc{font-size:1.03rem;color:var(--text-secondary);max-width:760px;margin:0 auto 42px;line-height:1.75}
+.hero-kicker{font-size:.9rem;font-weight:800;letter-spacing:.18em;color:var(--accent-light);margin-bottom:20px}
+.tag-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-size:.75rem;font-weight:700;letter-spacing:.03em;background:var(--accent-a10);border:1px solid var(--accent-a25);color:var(--accent-light)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border-radius:999px;font-size:.9rem;font-weight:700;text-decoration:none;transition:all .25s;border:none;cursor:pointer;min-height:44px}
+.btn-primary{background:linear-gradient(135deg,var(--grad-1),var(--grad-2));color:#fff;box-shadow:0 4px 20px var(--accent-a25)}
+.btn-primary:hover{background:linear-gradient(135deg,var(--grad-2),var(--grad-4));transform:translateY(-2px)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border-hover)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+section{padding:76px 0}
+section:nth-child(even){background:var(--section-alt)}
+.grid{display:grid;gap:20px}.grid-2{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:920px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+@media(min-width:921px) and (max-width:1120px){.grid-3,.grid-4{grid-template-columns:repeat(2,1fr)}}
+.card,.benefit-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;position:relative;overflow:hidden;transition:all .3s}
+.card:hover,.benefit-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-3px)}
+.card h3,.benefit-card h3{font-size:1.05rem;font-weight:800;margin-bottom:8px;line-height:1.25}
+.card p,.benefit-card p{font-size:.92rem;color:var(--text-secondary);line-height:1.65}
+.hero-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:24px;align-items:stretch}
+@media(max-width:920px){.hero-split{grid-template-columns:1fr}}
+.role-card{border-color:var(--mint-a32);background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04))}
+.role-card .role-label{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.09em;color:var(--text-dim);margin-bottom:10px}
+.role-card strong{display:block;font-size:1.35rem;font-family:var(--font-heading);letter-spacing:-.02em;margin-bottom:8px}
+.role-card ul{list-style:none;padding:0;margin:20px 0 0;display:flex;flex-direction:column;gap:9px}
+.role-card li{font-size:.9rem;color:var(--text-secondary);line-height:1.45;display:flex;gap:8px}
+.role-card li::before{content:'>';color:var(--accent-light);font-weight:900;flex-shrink:0}
+.benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.benefit-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--accent-light);background:var(--accent-a12);font-size:1.25rem;flex-shrink:0}
+.benefit-card .small-label{font-family:var(--font-mono);font-size:.72rem;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.table-wrap{overflow-x:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{text-align:left;padding:12px 16px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);font-family:var(--font-heading)}
+td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:.9rem;color:var(--text-secondary);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--table-row-hover)}
+td:first-child{color:var(--text-primary);font-weight:700}
+.pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:var(--accent-a12);color:var(--accent-light)}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:920px){.matrix{grid-template-columns:1fr}}
+.list-card ul{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:9px}
+.list-card li{font-size:.91rem;color:var(--text-secondary);line-height:1.45;display:flex;gap:8px}
+.list-card li::before{content:'->';color:var(--accent-light);font-family:var(--font-mono);font-weight:800;flex-shrink:0}
+.callout{background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--slate-a12));border:1px solid var(--mint-a32);border-radius:var(--radius-lg);padding:34px;max-width:860px;margin:0 auto;text-align:center}
+.callout p{font-size:1.02rem;color:var(--text-secondary);line-height:1.7}
+.callout strong{color:var(--text-primary)}
+.note{font-size:.85rem;color:var(--text-dim);line-height:1.6}
+.source-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:920px){.source-grid{grid-template-columns:1fr}}
+.source-grid a{display:block;text-decoration:none;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;font-size:.84rem;transition:all .2s}
+.source-grid a:hover{color:var(--accent-light);border-color:var(--border-hover)}
+footer{border-top:1px solid var(--border);padding:44px 0;color:var(--text-dim);font-size:.85rem}
+footer .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+footer a{color:var(--text-secondary);text-decoration:none}
+footer a:hover{color:var(--accent-light)}
+footer .footer-links{display:flex;gap:22px;flex-wrap:wrap}
+.fade-in{opacity:0;transform:translateY(20px);transition:all .6s ease-out}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#theme-toggle svg.lucide{width:1.1rem;height:1.1rem}
+@media(max-width:600px){
+  .container{padding:0 16px}
+  .hero{padding:96px 0 58px}
+  section{padding:58px 0}
+  .card,.benefit-card{padding:22px}
+  .section-desc{font-size:.96rem}
+  .btn{width:100%;max-width:320px}
+  footer .footer-inner{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../" class="logo">Silver Bullet</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#summary">Summary</a></li>
+      <li><a href="#benefits">Benefits</a></li>
+      <li><a href="#governance">Governance</a></li>
+      <li><a href="#when">When To Use</a></li>
+      <li><a href="../compare/">Compare</a></li>
+    </ul>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0">
+        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span><span id="icon-moon"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container text-center">
+    <a href="../" class="back-link">&larr; Back to Silver Bullet</a>
+    <div class="section-label">Benefits Report</div>
+    <h1 class="section-title">Silver Bullet vs Plain GSD</h1>
+    <p class="section-desc">Plain GSD is the planning and execution engine. Silver Bullet is the orchestration, enforcement, traceability, review, DevOps, documentation, and release-governance layer around that engine.</p>
+    <div class="tag-row">
+      <span class="tag">v0.34.0</span>
+      <span class="tag">Dynamic workflow composition</span>
+      <span class="tag">Hook-enforced gates</span>
+      <span class="tag">Spec-to-PR traceability</span>
+    </div>
+  </div>
+</header>
+
+<section id="summary">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Executive Summary</div>
+      <h2 class="section-title">GSD Executes. Silver Bullet Enforces The Delivery System Around It.</h2>
+      <p class="section-desc">Silver Bullet does not replace GSD. The clean distinction is that GSD helps an agent do the work well, while Silver Bullet helps ensure the agent follows the whole software-delivery process before code, PRs, deploys, or releases happen.</p>
+    </div>
+
+    <div class="hero-split mt-6">
+      <div class="card role-card fade-in">
+        <div class="role-label">Plain GSD</div>
+        <strong>Planning And Execution Engine</strong>
+        <p>GSD owns the core project lifecycle: <code>.planning/</code> artifacts, roadmap and phase management, requirements, discussion, planning, wave-based execution, verification, review, shipping, and milestone completion.</p>
+        <ul>
+          <li>Breaks work into phases and tasks.</li>
+          <li>Executes with fresh agent context and atomic task commits.</li>
+          <li>Maintains project planning state and phase artifacts.</li>
+        </ul>
+      </div>
+      <div class="card role-card fade-in">
+        <div class="role-label">Silver Bullet + GSD</div>
+        <strong>Orchestration And Enforcement Layer</strong>
+        <p>Silver Bullet wraps GSD with task-shaped routing, cross-plugin sequencing, spec and UAT gates, artifact review, DevOps risk controls, docs governance, session supervision, and hook-enforced delivery gates.</p>
+        <ul>
+          <li>Chooses the right workflow chain for the task.</li>
+          <li>Blocks unsafe edits, PRs, deploys, and releases.</li>
+          <li>Preserves evidence across specs, plans, UAT, PRs, docs, and release state.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout mt-6 fade-in">
+      <p><strong>The strategic positioning:</strong> GSD is the engine. Silver Bullet is the enforced operating system around the engine. It solves a different problem: workflow compliance for agentic software delivery.</p>
+    </div>
+  </div>
+</section>
+
+<section id="benefits">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Main Benefits</div>
+      <h2 class="section-title">What Silver Bullet Adds Over Plain GSD</h2>
+      <p class="section-desc">These are the defensible SB-over-GSD benefits from the current codebase and documentation surfaces, excluding capabilities that GSD already owns.</p>
+    </div>
+
+    <div class="grid grid-3 mt-6">
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="shield-check"></i></div><h3>1. Enforcement Hooks</h3></div>
+        <p>SB records skill use, blocks code edits before planning, blocks direct planning-file edits, prevents state tampering, blocks red-CI pushes, and stops completion when required gates are missing.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="workflow"></i></div><h3>2. Dynamic Workflow Composition</h3></div>
+        <p>GSD has <code>gsd:do</code>; SB&rsquo;s value is composing a broader task-specific chain for feature, bugfix, UI, DevOps, research, release, or fast-path work.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="network"></i></div><h3>3. Cross-Plugin Orchestration</h3></div>
+        <p>SB sequences GSD, Superpowers, Engineering, Design, Product Management, DevOps enrichments, and SB-owned gates into one governed process.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="file-check-2"></i></div><h3>4. Spec And Acceptance Governance</h3></div>
+        <p><code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>, spec-floor checks, UAT gates, and PR traceability connect accepted requirements to delivery evidence.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="badge-check"></i></div><h3>5. Pre-Code Quality Gates</h3></div>
+        <p>Product work gets nine quality dimensions, including AI/LLM safety where applicable. DevOps work gets seven IaC-adapted dimensions before high-risk implementation.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="test-tube-2"></i></div><h3>6. Test Freshness Gate</h3></div>
+        <p><code>/verify-tests</code> runs configured commands, writes a session freshness marker, invalidates it after source edits, and blocks stale PR/deploy/release attempts.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="rocket"></i></div><h3>7. Release Governance</h3></div>
+        <p>SB adds release-gate architecture around GSD milestone completion. The full four-stage pre-release gate is currently proven for this Claude/Codex plugin project and should be generalized.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="server-cog"></i></div><h3>8. DevOps Safety</h3></div>
+        <p>Blast-radius ratings, incident paths, CAB hard stops, environment promotion, deploy checklists, rollback/runbook requirements, and IaC routing reduce production risk.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="lock-keyhole"></i></div><h3>9. State And Artifact Protection</h3></div>
+        <p>SB protects GSD-owned planning files, SB state markers, legacy bypass markers, instruction files, and third-party plugin surfaces from unsafe direct edits.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="git-merge"></i></div><h3>10. Traceability And Preservation</h3></div>
+        <p>Roadmap freshness, spec-session capture, PR traceability blocks, validation warnings, implementation links, and phase archives reduce artifact drift and data loss.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="clipboard-check"></i></div><h3>11. Artifact Review Governance</h3></div>
+        <p>SB reviews specs, requirements, design, roadmap, context, research, ingestion manifests, UAT, and cross-artifact consistency with audit trails and analytics.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="book-open-check"></i></div><h3>12. Knowledge And Lesson Capture</h3></div>
+        <p><code>/silver-add</code>, <code>/silver-rem</code>, <code>/silver-scan</code>, and <code>/silver-handoff</code> convert deferred items, lessons, knowledge, and session residue into durable memory.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="search-check"></i></div><h3>13. Session Forensics</h3></div>
+        <p>SB investigates enforcement failures, stalls, abandoned sessions, hook failures, wrong output, and task-level drift beyond GSD&rsquo;s planning-artifact forensics.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="radio-tower"></i></div><h3>14. Prompt And Stall Reinforcement</h3></div>
+        <p>UserPromptSubmit hooks, semantic compression, session logs, timeout sentinels, branch warnings, and anti-stall messages keep process state visible in long sessions.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="gauge"></i></div><h3>15. Compliance Visibility</h3></div>
+        <p>SB shows live workflow progress on tool use, including composed-flow progress or required-skill progress, so the missing next step is visible before finalization.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="zap"></i></div><h3>16. Safer Fast Path</h3></div>
+        <p><code>silver:fast</code> keeps small edits lightweight while preventing agents from directly arming legacy bypass markers or treating DevOps files as harmless text.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="users-round"></i></div><h3>17. Multi-Runtime Coordination</h3></div>
+        <p>Phase locks, runtime identities, heartbeats, stale-lock handling, and controlled delegation let multiple SB-bearing hosts share a worktree more safely.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="library"></i></div><h3>18. Documentation Governance</h3></div>
+        <p>Doc schemes, doc checklists, <code>silver:ensure-docs</code>, brownfield reconciliation, and doc freshness gates make durable documentation part of delivery.</p>
+      </div>
+      <div class="benefit-card fade-in">
+        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="ban"></i></div><h3>19. Non-Skippable Gates</h3></div>
+        <p>Security, quality, GSD verification, review, release, UAT/spec, ingestion review, and acceptance coverage gates are explicit policy boundaries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="governance">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Clean Boundary</div>
+      <h2 class="section-title">What Should Not Be Counted As A Silver Bullet Benefit</h2>
+      <p class="section-desc">Silver Bullet integrates GSD, but a clean comparison should not credit SB for capabilities GSD already owns.</p>
+    </div>
+
+    <div class="table-wrap mt-6 fade-in">
+      <table>
+        <thead>
+          <tr><th>Capability</th><th>Owner</th><th>Why It Is Not An SB-Over-GSD Benefit</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>.planning/</code> lifecycle</td><td><span class="pill">GSD</span></td><td>SB reads and gates around it; GSD writes and owns the core lifecycle artifacts.</td></tr>
+          <tr><td>Roadmap, phase, state, and project artifacts</td><td><span class="pill">GSD</span></td><td>SB protects and audits these files, but it does not replace their ownership.</td></tr>
+          <tr><td>Phase discussion, planning, execution, and verification</td><td><span class="pill">GSD</span></td><td>SB sequences these steps; GSD performs them.</td></tr>
+          <tr><td>Wave-based parallel execution</td><td><span class="pill">GSD</span></td><td>SB may invoke the execution path, but GSD supplies the mechanism.</td></tr>
+          <tr><td>Fresh agent execution context</td><td><span class="pill">GSD</span></td><td>This is GSD&rsquo;s core execution advantage, not a new SB capability.</td></tr>
+          <tr><td>Atomic per-task commits</td><td><span class="pill">GSD</span></td><td>SB permits intermediate commits through enforcement; GSD creates the atomic task commits.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap mt-6 fade-in">
+      <table>
+        <thead>
+          <tr><th>Dimension</th><th>Plain GSD</th><th>Silver Bullet + GSD</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Primary role</td><td>Planning and execution engine</td><td>Orchestration and enforcement layer around GSD</td></tr>
+          <tr><td>User entry point</td><td><code>gsd:*</code> commands and <code>gsd:do</code></td><td><code>/silver</code> classifies intent and composes the SB/GSD/plugin chain</td></tr>
+          <tr><td>Process discipline</td><td>Instructional and artifact-driven</td><td>Hook-enforced and state-tracked</td></tr>
+          <tr><td>Spec lifecycle</td><td>Requirements and plans live in GSD artifacts</td><td><code>SPEC.md</code>, ingestion, validation findings, UAT gates, and PR traceability</td></tr>
+          <tr><td>Artifact review</td><td>Review focused on GSD lifecycle work</td><td>General artifact-review framework across specs, design, roadmap, research, UAT, and cross-artifact sets</td></tr>
+          <tr><td>Delivery safety</td><td>Mostly operator discipline plus GSD workflow</td><td>Mechanical gates on edits, commits, PRs, deploys, releases, docs, CI, and tests</td></tr>
+          <tr><td>DevOps workflow</td><td>Can execute infrastructure tasks as project work</td><td>Blast radius, incident paths, IaC gates, promotion, deployment safeguards</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Operational Impact</div>
+      <h2 class="section-title">Who Benefits From The SB Layer</h2>
+      <p class="section-desc">The value is different for product owners, agents, maintainers, and infrastructure operators.</p>
+    </div>
+    <div class="grid grid-4 mt-6">
+      <div class="card list-card fade-in">
+        <h3>Users And Product Owners</h3>
+        <p>Ask at the task level and get traceable delivery evidence.</p>
+        <ul>
+          <li>Task-specific workflow composition</li>
+          <li>Spec, UAT, and PR traceability</li>
+          <li>Visible missing-step reporting</li>
+          <li>Release readiness confidence</li>
+        </ul>
+      </div>
+      <div class="card list-card fade-in">
+        <h3>Agents</h3>
+        <p>Get clearer process boundaries and ownership rules.</p>
+        <ul>
+          <li>Composed workflow files</li>
+          <li>Prompt reminders</li>
+          <li>Compliance status</li>
+          <li>Plugin dependency gates</li>
+        </ul>
+      </div>
+      <div class="card list-card fade-in">
+        <h3>Maintainers</h3>
+        <p>Get stronger audit trails and cleaner project surfaces.</p>
+        <ul>
+          <li>Docs governance</li>
+          <li>Cross-artifact reviews</li>
+          <li>Review analytics</li>
+          <li>Session forensics</li>
+        </ul>
+      </div>
+      <div class="card list-card fade-in">
+        <h3>DevOps Operators</h3>
+        <p>Get production-safety practices around GSD execution.</p>
+        <ul>
+          <li>Blast-radius assessment</li>
+          <li>Incident fast path</li>
+          <li>Environment promotion</li>
+          <li>Rollback and CAB gates</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="when">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Decision Guide</div>
+      <h2 class="section-title">When Plain GSD Is Enough, And When SB Adds Clear Value</h2>
+      <p class="section-desc">Silver Bullet is not "better GSD." It is a governance layer for projects where process drift, release risk, or traceability gaps matter.</p>
+    </div>
+
+    <div class="matrix mt-6">
+      <div class="card list-card fade-in">
+        <h3>Plain GSD May Be Enough When</h3>
+        <ul>
+          <li>The team already knows the GSD workflow well.</li>
+          <li>The task is contained inside normal GSD planning, execution, and verification.</li>
+          <li>The repo does not need hook-enforced compliance.</li>
+          <li>Review, docs, release, and CI gates can be enforced manually.</li>
+          <li>There is no DevOps production-risk component.</li>
+          <li>The work is exploratory or local-only and will not be shipped.</li>
+        </ul>
+      </div>
+      <div class="card list-card fade-in">
+        <h3>Silver Bullet Adds Clear Value When</h3>
+        <ul>
+          <li>The project ships user-facing software.</li>
+          <li>Multiple agents or long sessions are involved.</li>
+          <li>Skipped tests, review, or docs have caused risk before.</li>
+          <li>Requirements must trace from spec to plan, validation, UAT, PR, and implementation records.</li>
+          <li>Release quality, DevOps safety, docs freshness, or CI gates matter.</li>
+          <li>The host runtime supports enforcement hooks.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout mt-6 fade-in">
+      <p><strong>Important limitation:</strong> SB&rsquo;s strongest benefits depend on hook-capable runtimes. Without hooks such as <code>PreToolUse</code>, <code>PostToolUse</code>, <code>SessionStart</code>, <code>Stop</code>, and <code>UserPromptSubmit</code>, many hard gates become advisory.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Near-Term Follow-Ups</div>
+      <h2 class="section-title">Two Areas To Generalize Next</h2>
+      <p class="section-desc">The report identifies two important next steps for making SB&rsquo;s value broader and more visible in downstream projects.</p>
+    </div>
+    <div class="grid grid-2 mt-6">
+      <div class="card fade-in">
+        <h3>Generic Release Gate</h3>
+        <p>The four-stage pre-release quality gate is real for this Claude/Codex plugin project. The generic product claim should be release-gate architecture today, with the full four-stage flow generalized for downstream projects next.</p>
+      </div>
+      <div class="card fade-in">
+        <h3>Contextual User Guidance</h3>
+        <p>Static docs are not enough. SB should explain, during work, what is happening now, why the next gate matters, what evidence it produced, and the shortest safe recovery path when a gate blocks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Source Basis</div>
+      <h2 class="section-title">Report Inputs</h2>
+      <p class="section-desc">This page is based on the local report <code>docs/sb-benefits-over-plain-gsd.md</code>, which was derived from Silver Bullet documents, hooks, commands, skills, and the follow-up codebase gap analysis.</p>
+    </div>
+    <div class="source-grid mt-6">
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/README.md" target="_blank" rel="noopener">README.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/silver-bullet.md" target="_blank" rel="noopener">silver-bullet.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/ENFORCEMENT.md" target="_blank" rel="noopener">docs/ENFORCEMENT.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/composable-flows-contracts.md" target="_blank" rel="noopener">composable-flows-contracts.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/SDLC-MAP.md" target="_blank" rel="noopener">docs/SDLC-MAP.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/workflows/full-dev-cycle.md" target="_blank" rel="noopener">full-dev-cycle.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/workflows/devops-cycle.md" target="_blank" rel="noopener">devops-cycle.md</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/hooks/dev-cycle-check.sh" target="_blank" rel="noopener">hooks/dev-cycle-check.sh</a>
+      <a href="https://github.com/alo-exp/silver-bullet/blob/main/hooks/completion-audit.sh" target="_blank" rel="noopener">hooks/completion-audit.sh</a>
+    </div>
+    <p class="note mt-4 text-center">The page intentionally separates SB-owned benefits from GSD-owned capabilities so the comparison does not over-credit Silver Bullet for GSD&rsquo;s execution engine.</p>
+  </div>
+</section>
+
+<section style="padding:68px 0">
+  <div class="container text-center">
+    <div class="section-label">Bottom Line</div>
+    <h2 class="section-title">Silver Bullet Makes GSD-Backed Work Safer, More Traceable, And Harder To Ship Prematurely.</h2>
+    <p class="section-desc">The strongest claim is not that SB executes better than GSD. It is that SB makes GSD-backed work more governed, more auditable, and less dependent on the agent remembering every gate.</p>
+    <a href="../#install" class="btn btn-primary">Install Silver Bullet</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span></div>
+      <div style="font-size:.9rem;color:var(--text-secondary);text-align:center">Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
+      <div class="footer-links">
+        <a href="../">Home</a>
+        <a href="../help/">Help</a>
+        <a href="../compare/">Compare</a>
+        <a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('icon-sun').style.display = dark ? 'none' : '';
+  document.getElementById('icon-moon').style.display = dark ? '' : 'none';
+  localStorage.setItem('silver-bullet-theme', dark ? 'dark' : 'light');
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.getAttribute('data-theme') !== 'dark');
+}
+(function(){
+  const saved = localStorage.getItem('silver-bullet-theme');
+  applyTheme(saved ? saved === 'dark' : true);
+})();
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+lucide.createIcons();
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => document.querySelector('.nav-links').classList.remove('active'));
+});
+</script>
+</body>
+</html>
