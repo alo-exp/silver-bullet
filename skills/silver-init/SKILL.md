@@ -94,7 +94,7 @@ If the command fails (exit code non-zero):
 Output:
 > ❌ **jq is not installed.** Silver Bullet requires jq for JSON processing.
 
-Then ask the user directly:
+Then use AskUserQuestion:
 - Question: "Please install jq in a terminal, then come back and I'll continue.\n\n**macOS:** `brew install jq`\n**Linux:** `sudo apt install jq`\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed jq — continue"
@@ -111,7 +111,7 @@ Use the Glob tool to search for:
 ```
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
-If no files found, ask the user directly:
+If no files found, use AskUserQuestion:
 - Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -128,7 +128,7 @@ Use the Glob tool to search for Design plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, ask the user directly:
+If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
 - Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -147,7 +147,7 @@ Use the Glob tool to search for Engineering plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, ask the user directly:
+If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, use AskUserQuestion:
 - Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -163,7 +163,7 @@ Use the Bash tool to check if GSD is installed (checks both legacy and current i
 { test -f "$HOME/.claude/get-shit-done/workflows/new-project.md" || test -f "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
-If `NOT_FOUND`, ask the user directly:
+If `NOT_FOUND`, use AskUserQuestion:
 - Question: "❌ **GSD plugin is not installed.** GSD is a hard requirement — Silver Bullet wraps GSD's planning and execution commands and cannot function without it.\n\nPlease run this command in your terminal, then come back:\n\n```\nnpx get-shit-done-cc@latest\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed GSD — continue"
@@ -197,7 +197,7 @@ If any of these strings are found, output:
 >
 > These must be removed before Silver Bullet v2 can be installed.
 
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "Remove these incompatible v1 hook entries from .claude/settings.json?"
 - Options:
   - "A. Yes, remove them"
@@ -210,7 +210,7 @@ If user selects A, use the Edit tool to remove the offending hook entries from `
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
-If no file found, ask the user directly:
+If no file found, use AskUserQuestion:
 - Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional but recommended — it enables `silver:research` and multi-AI perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
 - Options:
   - "A. I'll install it now — pause and wait"
@@ -225,7 +225,7 @@ Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
 and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.codex/plugins/cache/*/product-management/skills/`
 
-If no directory found in any supported cache root, ask the user directly:
+If no directory found in any supported cache root, use AskUserQuestion:
 - Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -254,7 +254,7 @@ curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | gre
 
 Parse both as semver (MAJOR.MINOR.PATCH) and compare numerically.
 
-If installed < latest, ask the user directly:
+If installed < latest, use AskUserQuestion:
 - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
 - Options:
   - "A. Yes, update now"
@@ -278,7 +278,7 @@ npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
 
 Parse both as semver and compare numerically.
 
-If both versions are known and installed < latest, ask the user directly:
+If both versions are known and installed < latest, use AskUserQuestion:
 - Question: "GSD v{installed} is outdated (latest: v{latest}). Update now?"
 - Options:
   - "A. Yes, update now"
@@ -320,7 +320,7 @@ cat "$HOME/.claude/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[
 If installed version appears outdated compared to CHANGELOG, display:
 > MultAI v{installed} may not be the latest. To update: `/multai:update`
 
-No interactive user prompt needed — MultAI update is user-initiated only. Display the notice and continue.
+No AskUserQuestion needed — MultAI update is user-initiated only. Display the notice and continue.
 
 ---
 
@@ -337,7 +337,7 @@ git rev-parse --is-inside-work-tree 2>/dev/null && echo "GIT_REPO" || echo "NOT_
 
 If `GIT_REPO` → continue to step 2.1.
 
-If `NOT_GIT`, ask the user directly:
+If `NOT_GIT`, use AskUserQuestion:
 - Question: "This directory is not a git repository. How would you like to proceed?"
 - Options:
   - "A. Clone — provide an existing repo URL to clone here"
@@ -370,7 +370,7 @@ test -d ".planning" && echo "EXISTING" || echo "NEW"
 ```
 
 **If NEW project:**
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "No .planning/ directory found. How would you like to initialize this project?"
 - Options:
   - "A. New project — scaffold with GSD (creates ROADMAP.md, STATE.md, project structure)"
@@ -459,7 +459,7 @@ Detected:
   Source:   [pattern]
 ```
 
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "Do these detected values look right?"
 - Options:
   - "A. Yes, looks right"
@@ -477,7 +477,7 @@ test -f .claude/settings.local.json && jq -r '.permissions.defaultMode // "NOT_S
 
 If `NOT_SET` and the runtime/approval model is still ambiguous:
 
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "Silver Bullet works best with auto-approve permissions. Choose a permission mode:"
 - Options:
   - "A. auto (recommended) — auto-approves most tool calls, prompts only for protected paths"
@@ -486,7 +486,7 @@ Ask the user directly:
 
 If user selects B (bypassPermissions):
 
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "⚠️ Security confirmation: bypassPermissions disables all host runtime permission guardrails permanently for this project. Is this environment fully isolated (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files)?"
 - Options:
   - "A. Yes, environment is fully isolated — proceed with bypassPermissions"
@@ -509,7 +509,7 @@ Detect from the repo remote and hosting metadata first:
 - GitHub remote or GitHub-hosted repo → `"issue_tracker": "github"`
 - Local-only or non-GitHub repo → `"issue_tracker": "gsd"`
 
-Only ask the user directly if the detection is genuinely ambiguous:
+Only use AskUserQuestion if the detection is genuinely ambiguous:
 - Question: "Which project management system should Silver Bullet use when filing issues and backlog items?"
 - Options:
   - "A. GitHub Issues (this repo) — recommended for GitHub-hosted projects"
@@ -572,7 +572,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   - **User-owned** (heading exists only in the existing project instruction file, not in template): preserve unconditionally — no user prompt needed.
   - **New from template** (heading exists only in the template, not in existing project instruction file): add automatically — no conflict.
 
-  **3.1c-3 For each SB-owned section that differs**, ask the user directly with three options:
+  **3.1c-3 For each SB-owned section that differs**, use AskUserQuestion with three options:
 
   > Section: **{section-heading}**
   >
@@ -589,7 +589,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-4 Apply decisions in order:**
   - Keep: leave the existing section unchanged.
   - Replace: substitute the existing section content with the template version.
-  - Merge: display both versions in full. Ask the user directly: "Paste or describe your merged version for the **{section-heading}** section" with options "A. Use existing (same as Keep)  B. Use template (same as Replace)  C. I'll paste the merged text below". If C is selected, read the user's next free-form message as the merged content and write it as the section body.
+  - Merge: display both versions in full. Ask the user via AskUserQuestion: "Paste or describe your merged version for the **{section-heading}** section" with options "A. Use existing (same as Keep)  B. Use template (same as Replace)  C. I'll paste the merged text below". If C is selected, read the user's next free-form message as the merged content and write it as the section body.
 
   **3.1c-5 Append user-owned sections** (identified in step 3.1c-2) at the end of the resolved project instruction file, after all SB-owned sections. These sections are never removed.
 

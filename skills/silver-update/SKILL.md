@@ -107,7 +107,7 @@ Your project files (CLAUDE.md, silver-bullet.md, hooks, config) are never
 touched — only the active host's plugin cache and registry are updated.
 ```
 
-Ask the user directly:
+Use AskUserQuestion:
 - Question: "Proceed with update to vA.B.C?"
 - Options:
   - "A. Yes, update now" — install via marketplace and clean up stale entries

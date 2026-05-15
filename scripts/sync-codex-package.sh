@@ -60,6 +60,12 @@ for entry in "${PACKAGE_ENTRIES[@]}"; do
   ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
 done
 
+if [[ -d "${REPO_ROOT}/templates" ]]; then
+  rm -rf -- "${DEST_DIR}/templates"
+  mkdir -p -- "${DEST_DIR}/templates"
+  rsync -a --delete "${REPO_ROOT}/templates/" "${DEST_DIR}/templates/"
+fi
+
 PACKAGE_SKILLS_DIR="${DEST_DIR}/.generated-skills"
 rm -rf -- "$PACKAGE_SKILLS_DIR"
 mkdir -p -- "$PACKAGE_SKILLS_DIR"
@@ -93,6 +99,13 @@ for item in sorted(source_root.iterdir(), key=lambda p: p.name):
     elif item.is_file():
         shutil.copy2(item, dest)
 PY
+
+if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
+  "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"
+else
+  printf 'ERROR: codex sanitizer helper missing at %s\n' "${SCRIPT_DIR}/codex-sanitize-package.sh" >&2
+  exit 1
+fi
 
 ln -sfn ".generated-skills" "${DEST_DIR}/skills"
 

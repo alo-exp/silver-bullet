@@ -657,15 +657,20 @@ assert_not_symlink "SB hooks directory materialized" "$FAKE_SB_PACKAGE_ROOT/hook
 assert_file_exists "SB hooks config materialized" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_not_symlink "SB skills directory materialized" "$FAKE_SB_PACKAGE_ROOT/skills"
 assert_not_symlink "SB scripts directory materialized" "$FAKE_SB_PACKAGE_ROOT/scripts"
+assert_not_symlink "SB templates directory materialized" "$FAKE_SB_PACKAGE_ROOT/templates"
 assert_file_exists "SB workflows helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/workflows.sh"
 assert_file_exists "SB scan helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/silver-scan.sh"
+assert_file_exists "SB package sanitizer helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/codex-sanitize-package.sh"
 assert_file_exists "Current cache workflows helper synced" "$FAKE_CACHE_ROOT/scripts/workflows.sh"
 assert_file_exists "Current cache scan helper synced" "$FAKE_CACHE_ROOT/scripts/silver-scan.sh"
+assert_file_exists "Current cache package sanitizer helper synced" "$FAKE_CACHE_ROOT/scripts/codex-sanitize-package.sh"
 assert_no_async_true "SB hooks config normalized for Codex package" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_no_async_true "Current cache hooks config normalized for Codex package" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "Marketplace root SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_CACHE_ROOT"
 assert_command_succeeds "Marketplace and SB package hook surfaces are identical" python3 - "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" <<'PY'
 import json
 import pathlib

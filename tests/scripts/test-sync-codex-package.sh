@@ -48,11 +48,33 @@ assert_not_contains() {
   fi
 }
 
+assert_not_symlink() {
+  local desc="$1" path="$2"
+  if [[ ! -L "$path" ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — still a symlink: $path"
+    (( FAIL++ )) || true
+  fi
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/sync-codex-package.sh"
 PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
 
 bash "$SCRIPT" >/dev/null
+
+SOURCE_ASK_USER_FILES=(
+  skills/silver-update/SKILL.md
+  skills/silver-release/SKILL.md
+  skills/silver-bugfix/SKILL.md
+  skills/silver-fast/SKILL.md
+  skills/silver-init/SKILL.md
+  skills/silver-init/references/scaffold-steps.md
+  skills/silver-init/references/doc-migration.md
+  templates/silver-bullet.md.base
+)
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
 assert_file_exists "Silver Bullet skill router available" "$PACKAGE_ROOT/skills/silver/SKILL.md"
@@ -61,8 +83,10 @@ assert_file_exists "Silver Bullet ensure-docs skill available" "$PACKAGE_ROOT/sk
 assert_file_exists "Silver Bullet feature skill available" "$PACKAGE_ROOT/skills/silver-feature/SKILL.md"
 assert_file_exists "Silver Bullet handoff skill available" "$PACKAGE_ROOT/skills/silver-handoff/SKILL.md"
 assert_file_exists "Silver Bullet scan helper available" "$PACKAGE_ROOT/scripts/silver-scan.sh"
+assert_file_exists "Silver Bullet package sanitizer helper available" "$PACKAGE_ROOT/scripts/codex-sanitize-package.sh"
 assert_file_exists "Silver Bullet scan generated skill available" "$PACKAGE_ROOT/.generated-skills/silver-scan/SKILL.md"
 assert_file_exists "Stamped template present" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_not_symlink "Codex templates directory materialized" "$PACKAGE_ROOT/templates"
 assert_contains "Silver router skill has silver name" "name: silver" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_contains "Silver init skill uses silver prefix" "name: silver:init" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_contains "Silver ensure-docs skill uses silver prefix" "name: silver:ensure-docs" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"
@@ -79,6 +103,12 @@ assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE
 assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"
+
+for rel_path in "${SOURCE_ASK_USER_FILES[@]}"; do
+  assert_contains "Source retains AskUserQuestion in $rel_path" "AskUserQuestion" "$REPO_ROOT/$rel_path"
+done
+
+assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
 
 LEGACY_GSD_WRAPPERS=(
   gsd-brainstorm

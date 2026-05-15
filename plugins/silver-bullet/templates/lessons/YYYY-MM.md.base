@@ -1,0 +1,34 @@
+---
+period: {{YYYY-MM}}
+type: lessons
+categories: []
+---
+
+# Lessons Learned — {{YYYY-MM}}
+
+> Write each lesson as if explaining to someone who has never seen this project.
+> No project-specific file paths, feature names, requirement IDs, or entity references.
+> Add the relevant category to the frontmatter `categories` list.
+
+## domain:{area}
+
+> Business domain lessons — regulations, industry patterns, terminology, domain gotchas.
+
+## stack:{technology}
+
+> Language, framework, and tool-specific lessons.
+
+## practice:{area}
+
+> Software engineering practices — testing, review, architecture, security.
+
+## devops:{area}
+
+> CI, deployment, monitoring, infrastructure lessons.
+
+## design:{area}
+
+> UI, UX, accessibility pattern lessons.
+
+> To add: append `YYYY-MM-DD — <lesson>` under the relevant category.
+> Delete unused category sections before committing.
