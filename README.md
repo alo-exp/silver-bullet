@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.35.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.2)
+[![version](https://img.shields.io/badge/version-v0.35.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.3)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -338,8 +338,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.35.2",
-  "version": "0.35.2",
+  "config_version": "0.35.3",
+  "version": "0.35.3",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -518,10 +518,10 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.35.2`
-- Release: [v0.35.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.2)
+- Version: `0.35.3`
+- Release: [v0.35.3](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.3)
 - Notable changes:
-  - Codex live harness is isolated from host state and records scan progress reliably.
+  - Dogfood config is synchronized with the template again, including `gsd-scan` in tracked skills.
   - The release gate was re-run end to end, including the live e2e harness.
   - SB and Codex package surfaces remain synchronized after the patch release.
 
