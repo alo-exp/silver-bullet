@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.35.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.1)
+[![version](https://img.shields.io/badge/version-v0.35.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -338,8 +338,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.35.1",
-  "version": "0.35.1",
+  "config_version": "0.35.2",
+  "version": "0.35.2",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -518,15 +518,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.35.1`
-- Release: [v0.35.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.1)
+- Version: `0.35.2`
+- Release: [v0.35.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.2)
 - Notable changes:
-  - Codex/Kay live tests are isolated from the user's real Codex hook cache.
-  - SB hooks are no longer duplicated into user-level Codex hook config.
-  - Codex trust is seeded from the installed plugin hook manifest.
-  - `scripts/workflows.sh` is packaged for Codex installs and resolved by
-    composed workflow skills.
-  - Public content and docs now frame SB as an APO around SB+GSD.
+  - Codex live harness is isolated from host state and records scan progress reliably.
+  - The release gate was re-run end to end, including the live e2e harness.
+  - SB and Codex package surfaces remain synchronized after the patch release.
 
 ## License
 

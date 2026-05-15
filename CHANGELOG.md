@@ -4,6 +4,16 @@
 
 ---
 
+## [0.35.2] — 2026-05-15
+
+## Bug Fixes
+
+- Fix the Codex live harness so `gsd-scan` state recording and live e2e completion are reliable again.
+- Keep the isolated Codex bundle and host-facing SB release surfaces synchronized for the patch release.
+- Re-verify the repo with the full test suite and live harness before tagging the release.
+
+---
+
 ## [0.35.1] — 2026-05-15
 
 ## Bug Fixes
