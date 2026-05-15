@@ -152,7 +152,7 @@ When the user requests skipping any step:
 
 ## Step 0: Triage — Classify Failure Type
 
-Ask the user directly:
+Use AskUserQuestion:
 
 > What best describes this failure?
 >

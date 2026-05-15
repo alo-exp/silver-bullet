@@ -22,7 +22,7 @@ At the very start of any new session, perform these steps automatically:
    cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
-   Compare as semver. If installed < latest, use AskUserQuestion:
+   Compare as semver. If installed < latest, ask the user directly:
    - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
    If A: invoke `/silver:update` via the Skill tool, then continue.
@@ -33,7 +33,7 @@ At the very start of any new session, perform these steps automatically:
    cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
    npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
    ```
-   Compare as semver. If installed < latest, use AskUserQuestion:
+   Compare as semver. If installed < latest, ask the user directly:
    - Question: "GSD v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
    If A: invoke `/gsd-update` via the Skill tool, then continue.
@@ -57,7 +57,7 @@ At the very start of any new session, perform these steps automatically:
    ```bash
    cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
    ```
-   Compare to the latest entry in `~/.claude/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, use AskUserQuestion:
+   Compare to the latest entry in `~/.claude/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, ask the user directly:
    - Question: "MultAI v{installed} appears outdated. Update now?"
    - Options: "A. Yes, run /multai:update" / "B. Skip"
    If A: invoke `/multai:update` via the Skill tool, then continue.
@@ -659,7 +659,7 @@ Or for safer auto-approval (recommended for non-isolated environments):
 ```
 This is a host runtime platform setting, not a Silver Bullet setting.
 
-At the start of every session, before any work begins, use AskUserQuestion:
+At the start of every session, before any work begins, ask the user directly:
 - Question: "Run this session interactively or autonomously?"
 - Options:
   - "A. Interactive (default) — pause at decision points and phase gates"

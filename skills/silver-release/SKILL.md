@@ -200,7 +200,7 @@ ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | g
 
 Track iteration count (starts at 0).
 
-**Iteration gate:** If iteration count reaches 2 and gaps remain, do NOT start another iteration. Instead, present to the user directly:
+**Iteration gate:** If iteration count reaches 2 and gaps remain, do NOT start another iteration. Instead, present to user using AskUserQuestion:
 
 > Release gap limit reached (2 gap-closure iterations completed). Remaining gaps:
 > {list gaps from gsd-audit-milestone output}
@@ -233,7 +233,7 @@ Invoke `gsd-milestone-summary` via the Skill tool. Purpose: generate milestone n
 
 ## Step 5: PR Branch (ask user)
 
-Ask the user directly:
+Ask using AskUserQuestion:
 
 > Would you like a clean PR branch (strips .planning/ commits)?
 >

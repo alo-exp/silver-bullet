@@ -95,7 +95,7 @@ Scan the project instruction file for patterns that conflict with `silver-bullet
 4. **Workflow overrides**: regex `(override|replace|ignore).*(workflow|silver.bullet)` on directive-like lines (conflicts with SB Section 2)
 5. **Session mode overrides**: regex `(always|default|must).*(interactive|autonomous).*mode` on directive-like lines (conflicts with SB Section 4)
 
-For each match found, present it to the user interactively and ask directly:
+For each match found, present it to the user interactively using AskUserQuestion:
 - Question: "Potential conflict found in the project instruction file:\n  Line {N}: {matched text}\n  This may conflict with Silver Bullet's {section name}. Remove this line?"
 - Options:
   - "A. Yes, remove this line"
