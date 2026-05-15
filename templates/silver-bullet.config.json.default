@@ -109,6 +109,7 @@
       "gsd-execute-phase",
       "gsd-verify-work",
       "gsd-ship",
+      "gsd-scan",
       "gsd-code-review",
       "gsd-debug",
       "gsd-ui-phase",

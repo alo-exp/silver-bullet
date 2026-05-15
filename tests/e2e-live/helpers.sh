@@ -18,12 +18,12 @@ DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
 FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
 RUNTIME_DIR="${SB_ROOT}/tests/live/runtimes"
 LIB_DIR="${E2E_ROOT}/lib"
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
-INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
+SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 # shellcheck disable=SC2034 # Reserved for live-run budget enforcement.
 MAX_BUDGET="${SB_E2E_LIVE_BUDGET_USD:-10.00}"
 APP_PORT="${SB_E2E_LIVE_PORT:-3456}"
@@ -263,6 +263,7 @@ EOF
   git -C "$WORK_DIR" remote add origin "$REMOTE_DIR"
   git -C "$WORK_DIR" push -u origin feature/e2e-live >/dev/null 2>&1 || true
 
+  mkdir -p "$SB_TEST_DIR"
   BRANCH_FILE="${SB_TEST_DIR}/test-branch-e2e-live-$$"
   printf 'feature/e2e-live\n' > "$BRANCH_FILE"
   export SILVER_BULLET_BRANCH_FILE="$BRANCH_FILE"

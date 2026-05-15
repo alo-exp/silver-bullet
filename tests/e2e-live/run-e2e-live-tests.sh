@@ -102,15 +102,24 @@ for runtime in "${RUNTIMES[@]}"; do
       echo "ERROR: Kay/Codex CLI not found or not working"
       exit 1
     fi
-    if ! CODEX_BIN="$CODEX_BIN" "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
-      echo "ERROR: codex marketplace/bootstrap install failed"
-      exit 1
-    fi
   fi
 
   if ! run_dependency_preflight "$runtime"; then
-    echo "ERROR: dependency-access preflight failed for runtime: $runtime"
-    exit 1
+    if [[ "$runtime" == "codex" ]]; then
+      if ! CODEX_BIN="$CODEX_BIN" NPM_BIN="$(command -v npx 2>/dev/null || printf '/opt/homebrew/bin/npx')" \
+        "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
+        echo "ERROR: codex marketplace/bootstrap install failed"
+        exit 1
+      fi
+
+      if ! run_dependency_preflight "$runtime"; then
+        echo "ERROR: dependency-access preflight failed for runtime: $runtime after bootstrap"
+        exit 1
+      fi
+    else
+      echo "ERROR: dependency-access preflight failed for runtime: $runtime"
+      exit 1
+    fi
   fi
 
   for scenario in "${SCENARIOS[@]}"; do
