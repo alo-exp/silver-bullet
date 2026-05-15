@@ -330,6 +330,23 @@ sync_materialized_package_surface() {
   done
 }
 
+sanitize_codex_package_surface() {
+  local marketplace_root
+  local package_root
+
+  marketplace_root="$(codex_marketplace_root)"
+  package_root="${marketplace_root}/plugins/silver-bullet"
+
+  [[ -d "$package_root" ]] || return 0
+
+  if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
+    "${SCRIPT_DIR}/codex-sanitize-package.sh" "$package_root"
+  else
+    printf 'ERROR: codex sanitizer helper missing at %s\n' "${SCRIPT_DIR}/codex-sanitize-package.sh" >&2
+    exit 1
+  fi
+}
+
 sync_codex_cache_package_surface() {
   local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
@@ -1452,6 +1469,7 @@ sync_marketplace_package_surface
 sync_marketplace_package_snapshot
 materialize_silver_bullet_package
 sync_materialized_package_surface
+sanitize_codex_package_surface
 sync_codex_cache_package_surface
 rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
