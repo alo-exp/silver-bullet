@@ -37,6 +37,17 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local desc="$1" needle="$2" path="$3"
+  if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+    echo "FAIL: $desc — found [$needle] under $path"
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/sync-codex-package.sh"
 PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
@@ -63,6 +74,7 @@ assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD g
 assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-ui/SKILL.md"
 assert_contains "Silver bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
 assert_contains "Silver bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
+assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
