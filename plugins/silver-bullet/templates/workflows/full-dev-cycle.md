@@ -66,9 +66,9 @@ Ask:
 > - **Interactive** (default) -- I pause at decision points and phase gates
 > - **Autonomous** -- I drive start to finish, surface blockers at the end
 
-Write choice to `~/.claude/.silver-bullet/mode`:
+Write choice to `~/.codex/.silver-bullet/mode`:
 ```bash
-echo "interactive" > ~/.claude/.silver-bullet/mode   # or "autonomous"
+echo "interactive" > ~/.codex/.silver-bullet/mode   # or "autonomous"
 ```
 
 **If autonomous was chosen**, ask one follow-up before proceeding:
@@ -87,7 +87,7 @@ Write answers into the `## Pre-answers` section of the session log immediately. 
 `- Agent Teams: <value>`
 
 Omit any key the user left blank (default applies). Read pre-answers mid-session from the log
-at `~/.claude/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
+at `~/.codex/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
 Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
 
 **Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
@@ -120,7 +120,7 @@ Evaluate your project state and follow the matching path:
 | `.planning/PROJECT.md` exists AND has a completed milestone | `/gsd:new-milestone` | Loads previous context, gathers goals for the new milestone through questioning, optionally runs research, defines scoped requirements, and creates a fresh roadmap. Carries forward accumulated context. |
 
 **If it fails:**
-- `/gsd:new-project` errors on init: check that `node` is available and `~/.claude/get-shit-done/` is installed.
+- `/gsd:new-project` errors on init: check that `node` is available and `~/.codex/get-shit-done/` is installed.
 - `/gsd:map-codebase` produces incomplete output: re-run; mapper agents are idempotent.
 - `/gsd:next` cannot detect state: check `.planning/STATE.md` exists. If missing, `/gsd:resume-work` can reconstruct it from existing artifacts.
 
@@ -150,7 +150,7 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 **Host high tier reserved for:** design, review, and verification work.
 **Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-**What to expect:** No model choice prompt. Agents auto-select the correct model for the current host. Execution-tier agents handle execution, research, and documentation at high throughput; high-tier agents handle design, review, and verification; top-tier agents handle the deepest reasoning cases. The orchestrator (this session) always runs on the host execution tier.
+**What to expect:** No model choice prompt from Silver Bullet. Model selection is host-managed, and SB does not auto-route subagents. The orchestrator (this session) stays in the current host session.
 
 **Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders, or a file-producing step that produces no file). Log escalation as an autonomous decision.
 
@@ -167,8 +167,8 @@ phase's work -- without invoking any of them yet.
 designated points later in the workflow.
 
 Scan installed skills from two sources:
-1. `~/.claude/skills/` -- flat `.md` files
-2. `~/.claude/plugins/cache/` -- glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
+1. `~/.codex/skills/` -- flat `.md` files
+2. `~/.codex/plugins/cache/` -- glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
 
 Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
 current task description. Surface candidates:
@@ -487,10 +487,10 @@ of the project after this milestone's work.
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
   Host execution tier is the base rate; host high/top tiers are progressively more expensive.
-- Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
+- Complete the session log: read path from `~/.codex/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
   Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
-  Model, Virtual cost. If `~/.claude/.silver-bullet/session-log-path` is missing,
+  Model, Virtual cost. If `~/.codex/.silver-bullet/session-log-path` is missing,
   create `docs/sessions/<today>-manual.md` from the session log template.
 - Documentation agents writing to `docs/` run in the **main worktree only**
   (no `isolation: "worktree"`). Only implementation-touching agents use worktree isolation.
@@ -612,8 +612,8 @@ Produces: git tag, GitHub Release with structured notes.
 
 **Autonomous completion cleanup** (run after outputting structured summary):
 ```bash
-rm -f ~/.claude/.silver-bullet/timeout ~/.claude/.silver-bullet/sentinel-pid \
-      ~/.claude/.silver-bullet/session-start-time ~/.claude/.silver-bullet/timeout-warn-count
+rm -f ~/.codex/.silver-bullet/timeout ~/.codex/.silver-bullet/sentinel-pid \
+      ~/.codex/.silver-bullet/session-start-time ~/.codex/.silver-bullet/timeout-warn-count
 ```
 This clears the timeout sentinel so `timeout-check.sh` stops warning.
 

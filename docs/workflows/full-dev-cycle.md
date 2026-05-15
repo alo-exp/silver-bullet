@@ -150,7 +150,7 @@ Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 **Host high tier reserved for:** design, review, and verification work.
 **Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
 
-**What to expect:** No model choice prompt. Agents auto-select the correct model for the current host. Execution-tier agents handle execution, research, and documentation at high throughput; high-tier agents handle design, review, and verification; top-tier agents handle the deepest reasoning cases. The orchestrator (this session) always runs on the host execution tier.
+**What to expect:** No model choice prompt from Silver Bullet. Model selection is host-managed, and SB does not auto-route subagents. The orchestrator (this session) stays in the current host session.
 
 **Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders, or a file-producing step that produces no file). Log escalation as an autonomous decision.
 

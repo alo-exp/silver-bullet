@@ -87,13 +87,38 @@ sandbox_mode = "danger-full-access"
 [projects]
 EOF
 
+  # Mirror the installed Codex marketplace/config surface into the isolated
+  # home so live preflight can run without a fresh network-bound reinstall.
+  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" && ! -f "${HOME}/.codex/config.toml" ]]; then
+    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" "${HOME}/.codex/config.toml"
+  fi
+  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" && ! -f "${HOME}/.codex/plugins/installed_plugins.json" ]]; then
+    mkdir -p "${HOME}/.codex/plugins"
+    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" "${HOME}/.codex/plugins/installed_plugins.json"
+  fi
+  if [[ -d "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex" && ! -d "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex" ]]; then
+    mkdir -p "${HOME}/.codex/.tmp/marketplaces"
+    rsync -a "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex/" "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex/"
+  fi
+
+  # Silver:init still probes the GSD home using the historical ~/.codex path.
+  # The isolated runtime keeps the real install under ~/.claude, so mirror the
+  # entrypoint there to make the Codex live harness look like a native install.
+  if [[ ! -e "${HOME}/.codex/get-shit-done" ]]; then
+    if [[ -e "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" ]]; then
+      ln -sfn "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" "${HOME}/.codex/get-shit-done"
+    elif [[ -e "${HOME}/.claude/get-shit-done" ]]; then
+      ln -sfn "${HOME}/.claude/get-shit-done" "${HOME}/.codex/get-shit-done"
+    fi
+  fi
+
   seed_kay_codex_dependency_cache
 }
 
 seed_kay_codex_dependency_cache() {
   local original_cache="${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/cache"
   local isolated_cache="${HOME}/.codex/plugins/cache"
-  local spec src_root dst_root entry
+  local spec src_root dst_root entry alias_src alias_target alias_parent
   local required_plugins=(
     "superpowers-marketplace/superpowers"
     "get-shit-done-marketplace/gsd"
@@ -117,6 +142,77 @@ seed_kay_codex_dependency_cache() {
       mkdir -p "${dst_root}/$(basename "$entry")"
       rsync -a --delete "${entry}/" "${dst_root}/$(basename "$entry")/"
     done < <(find "$src_root" -mindepth 1 -maxdepth 1 -type d -print0)
+
+    if [[ -d "$dst_root" ]]; then
+      latest_version_dir="$(
+        find "$dst_root" -mindepth 1 -maxdepth 1 -type d ! -name current \
+          | sort -V \
+          | tail -n 1
+      )"
+      if [[ -n "$latest_version_dir" ]]; then
+        rm -rf "${dst_root}/current"
+        ln -sfn "$(basename "$latest_version_dir")" "${dst_root}/current"
+
+        case "$spec" in
+          "superpowers-marketplace/superpowers") plugin_id="superpowers@superpowers-marketplace" ;;
+          "get-shit-done-marketplace/gsd") plugin_id="gsd@get-shit-done-marketplace" ;;
+          "alo-labs-codex/engineering") plugin_id="engineering@alo-labs-codex" ;;
+          "alo-labs-codex/design") plugin_id="design@alo-labs-codex" ;;
+          "alo-labs-codex/product-management") plugin_id="product-management@alo-labs-codex" ;;
+          *) plugin_id="" ;;
+        esac
+        if [[ -n "$plugin_id" && -f "${HOME}/.codex/plugins/installed_plugins.json" ]]; then
+          python3 - "${HOME}/.codex/plugins/installed_plugins.json" "$plugin_id" "${dst_root}/current" "$(basename "$latest_version_dir")" <<'PY'
+import datetime
+import json
+import pathlib
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+plugin_id = sys.argv[2]
+install_path = sys.argv[3]
+version = sys.argv[4]
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+try:
+    data = json.loads(registry_path.read_text())
+except Exception:
+    raise SystemExit(0)
+
+entries = data.get("plugins", {}).get(plugin_id, [])
+if not entries:
+    raise SystemExit(0)
+
+changed = False
+for entry in entries:
+    if entry.get("installPath") != install_path or entry.get("version") != version:
+        entry["installPath"] = install_path
+        entry["version"] = version
+        entry["lastUpdated"] = now
+        changed = True
+
+if changed:
+    registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+        fi
+      fi
+    fi
+  done
+
+  # The live Codex runtime still probes a few legacy alias layouts directly in
+  # the cache tree. Seed the expected aliases so SB init can discover the
+  # upstream helpers without requiring a host-side re-install.
+  local alias_specs=(
+    "obra/superpowers:../superpowers-marketplace/superpowers"
+    "anthropics/knowledge-work-plugins:../alo-labs-codex"
+  )
+  for spec in "${alias_specs[@]}"; do
+    alias_src="${spec%%:*}"
+    alias_target="${spec#*:}"
+    alias_parent="${isolated_cache}/$(dirname "$alias_src")"
+    mkdir -p "$alias_parent"
+    rm -rf "${isolated_cache}/${alias_src}"
+    ln -sfn "$alias_target" "${isolated_cache}/${alias_src}"
   done
 }
 

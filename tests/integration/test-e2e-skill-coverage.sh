@@ -7,7 +7,7 @@ source "$(dirname "$0")/helpers/common.sh"
 echo "=== E2E: Skill Coverage (all tracked skills) ==="
 
 # Tracked skills from .silver-bullet.json all_tracked
-ALL_37_SKILLS=(
+ALL_38_SKILLS=(
   "silver-quality-gates" "silver-blast-radius" "devops-quality-gates" "devops-skill-router"
   "design-system" "ux-copy"
   "architecture" "system-design"
@@ -21,7 +21,7 @@ ALL_37_SKILLS=(
   "verification-before-completion"
   "test-driven-development" "tech-debt" "accessibility-review" "incident-response"
   "gsd-new-project" "gsd-new-milestone" "gsd-discuss-phase" "gsd-plan-phase"
-  "gsd-execute-phase" "gsd-verify-work" "gsd-ship" "gsd-debug"
+  "gsd-execute-phase" "gsd-verify-work" "gsd-ship" "gsd-scan" "gsd-debug"
   "gsd-ui-phase" "gsd-ui-review" "gsd-secure-phase"
 )
 
@@ -30,7 +30,7 @@ echo "--- Scenario 1: All tracked skills recorded ---"
 integration_setup
 write_full_config
 
-for skill in "${ALL_37_SKILLS[@]}"; do
+for skill in "${ALL_38_SKILLS[@]}"; do
   run_record_skill "$skill" >/dev/null
 done
 
@@ -39,7 +39,7 @@ recorded_count=$(wc -l < "$TMPSTATE" | tr -d ' ')
 # Keep this array in sync with .silver-bullet.json all_tracked.
 # Verify all tracked skills are present
 all_present=true
-for skill in "${ALL_37_SKILLS[@]}"; do
+for skill in "${ALL_38_SKILLS[@]}"; do
   if ! grep -qx "$skill" "$TMPSTATE" 2>/dev/null; then
     all_present=false
     printf 'FAIL: S1 — skill not recorded: %s\n' "$skill"

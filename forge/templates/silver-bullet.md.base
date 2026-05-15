@@ -640,7 +640,7 @@ echo "autonomous" > ~/.claude/.silver-bullet/mode
 ```
 Log: "Autonomous mode auto-set: bypass-permissions detected".
 Also suppress ALL other confirmation-asking behaviors for the remainder of the session
-(e.g., "Proceed? yes/no", phase gate approvals, model routing questions in section 5).
+(e.g., "Proceed? yes/no", phase gate approvals, confirmation questions in section 5).
 Use defaults for any skipped questions. Log each suppressed question under
 "Autonomous decisions" with note "(bypass-permissions)".
 
@@ -710,19 +710,15 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - Claude → `claude-sonnet-4-6`
 - Codex → `GPT-5.3-medium`
 
-**GSD subagent routing:** Handled automatically via `model_profile: "balanced"` in `.planning/config.json`. No manual switching required for GSD-orchestrated steps.
+**GSD subagent routing:** Model selection is host-managed. Silver Bullet does not auto-route subagents.
 
 **For inline skills** (design, product-management, engineering, MultAI, etc.) that run in the current session: the session model applies. Switch to the host high tier before invoking high-stakes design or review skills when deeper reasoning is needed:
 
 > Before `/design:*`, `/engineering:architecture`, `/engineering:system-design`, or `/product-management:write-spec` on complex work — use the host high tier (Claude Opus / Codex `GPT-5.4-high`). Use the host top tier (`GPT-5.5-xhigh`) for the deepest planning/security cases.
 
-**Setup requirement:** Every new project must have `.planning/config.json` containing `"model_profile": "balanced"`. Run after `/gsd-new-project`:
-```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get model_profile
-```
-If not `balanced`, run `/gsd-set-profile balanced`.
+**Setup note:** Do not require `.planning/config.json model_profile` fields as part of Silver Bullet setup. If the active host or GSD version supports model preferences, configure them at the host/tool layer, not in SB-managed workflow instructions.
 
-> **Anti-Skip:** GSD subagent model routing is automatic once `model_profile` is set. You are violating this rule if `.planning/config.json` is missing `model_profile` or uses legacy `planner_model`/`researcher_model`/`checker_model` fields.
+> **Anti-Skip:** Do not encode subagent model routing policy in Silver Bullet setup files. Host/tool configuration owns model choice.
 
 ---
 

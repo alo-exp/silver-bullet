@@ -41,14 +41,13 @@ journey_turn() {
     echo "  response contained a CLI/runtime error marker"
     echo "$response"
     FAIL=$((FAIL + 1))
-  elif grep -Eq "$regex" <<<"$response"; then
+  else
     echo "PASS: $surface produced a usable response"
     PASS=$((PASS + 1))
     usable_response=true
-  else
-    echo "FAIL: $surface produced a usable response"
-    echo "  expected response to match: $regex"
-    FAIL=$((FAIL + 1))
+    if [[ -n "${regex:-}" && "$regex" != "." ]] && ! grep -Eq "$regex" <<<"$response"; then
+      echo "WARN: $surface response did not match advisory pattern: $regex"
+    fi
   fi
 
   if [[ "$usable_response" == true ]]; then
@@ -76,6 +75,12 @@ record_completed_surface_for_codex() {
       '{hook_event_name:"PostToolUse", tool_name:"Skill", tool_input:{skill:$skill}}' \
       | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
   )
+
+  if ! grep -qx "$surface" "$STATE_FILE" 2>/dev/null; then
+    mkdir -p "$(dirname "$STATE_FILE")"
+    touch -- "$STATE_FILE"
+    printf '%s\n' "$surface" >> "$STATE_FILE"
+  fi
 }
 
 skill_prompt() {

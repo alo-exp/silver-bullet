@@ -254,9 +254,6 @@ PY
   fi
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
     codex_prompt="${codex_prompt}"$'\n\n'"$(codex_live_guard_context)"
-    if [[ -z "$codex_model" ]]; then
-      codex_model="${SB_LIVE_CODEX_MODEL:-gpt-5.4-mini}"
-    fi
   fi
   printf '%s' "$codex_prompt" > "$prompt_file"
   jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}' > "$prompt_seed_file"

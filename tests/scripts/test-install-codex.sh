@@ -671,6 +671,20 @@ assert_not_contains "SB package hooks no longer use Claude plugin root placehold
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain ~/.claude paths" "~/.claude" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain ~/.claude paths" "~/.claude" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain /compact commands" "/compact" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain /compact commands" "/compact" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain model_profile routing" 'model_profile: "balanced"' "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain model_profile routing" 'model_profile: "balanced"' "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain auto-routing wording" "auto-select the correct model for the current host" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain auto-routing wording" "auto-select the correct model for the current host" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$FAKE_CACHE_ROOT"
+assert_contains "SB package uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Current cache uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$FAKE_CACHE_ROOT/templates/silver-bullet.md.base"
+assert_contains "SB package tracks gsd-scan in config" '"gsd-scan"' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.config.json.default"
+assert_contains "Current cache tracks gsd-scan in config" '"gsd-scan"' "$FAKE_CACHE_ROOT/templates/silver-bullet.config.json.default"
 assert_command_succeeds "Marketplace and SB package hook surfaces are identical" python3 - "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" <<'PY'
 import json
 import pathlib

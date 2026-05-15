@@ -123,6 +123,12 @@ run_hook "silver:scan" >/dev/null
 assert_in_state "default SB route remains recordable when project config has partial all_tracked" "silver-scan"
 teardown
 
+# Test 2c: gsd-scan is recorded by the packaged defaults
+setup
+run_hook "gsd-scan" >/dev/null
+assert_in_state "gsd-scan recorded by default tracked list" "gsd-scan"
+teardown
+
 # Test 3: Namespace prefix stripped (e.g., superpowers:code-review → code-review)
 setup
 run_hook "superpowers:code-review" >/dev/null
