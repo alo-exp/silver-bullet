@@ -1,7 +1,6 @@
 {
   "project_name": "silver-bullet",
   "version": "0.7.2",
-  "model_profile": "balanced",
   "commit_docs": true,
   "research_enabled": true,
   "workflow": {
