@@ -276,6 +276,30 @@ rel_sec_line=$(grep -n "Invoke \`security\`" "$SREL" | head -1 | cut -d: -f1 || 
 check "silver-release: security before ship (line $rel_sec_line < $rel_ship_line)" \
   "$([[ "$rel_sec_line" -gt 0 && "$rel_ship_line" -gt 0 && "$rel_sec_line" -lt "$rel_ship_line" ]] && echo pass || echo fail)"
 
+market_sync_result=fail
+if python3 - "$SREL" <<'PY' >/dev/null 2>&1
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text()
+raise SystemExit(0 if "bash scripts/sync-marketplace-version.sh" in text else 1)
+PY
+then
+  market_sync_result=pass
+fi
+check "silver-release: marketplace sync helper is referenced in release contract" "$market_sync_result"
+
+market_commit_result=fail
+if python3 - "$SREL" <<'PY' >/dev/null 2>&1
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text()
+raise SystemExit(0 if "git add CHANGELOG.md README.md .claude-plugin/marketplace.json" in text else 1)
+PY
+then
+  market_commit_result=pass
+fi
+check "silver-release: marketplace manifest is committed in release contract" "$market_commit_result"
+
 # ===========================================================================
 # GROUP 4: Quality-gates dimension completeness
 # ===========================================================================

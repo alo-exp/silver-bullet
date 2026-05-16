@@ -190,17 +190,31 @@ If `README.md` has no version badge, skip this step silently.
 
 ---
 
-## Step 5c — Commit CHANGELOG and README
+## Step 5b.1 — Sync marketplace.json Version
 
-Commit the CHANGELOG and README changes before creating the tag:
+Run the marketplace sync helper so the in-repo marketplace manifest matches the new plugin version before tagging the release:
 
 ```bash
-git add CHANGELOG.md README.md
-git commit -m "chore(release): update CHANGELOG and README badge for <version>"
+bash scripts/sync-marketplace-version.sh
+```
+
+This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps the in-repo marketplace surface aligned with the tagged release.
+
+After the helper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`.
+
+---
+
+## Step 5c — Commit CHANGELOG, README, and Marketplace Manifest
+
+Commit the CHANGELOG, README, and marketplace manifest changes before creating the tag:
+
+```bash
+git add CHANGELOG.md README.md .claude-plugin/marketplace.json
+git commit -m "chore(release): update CHANGELOG, README badge, and marketplace for <version>"
 git push
 ```
 
-If neither file changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
+If none of the files changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 

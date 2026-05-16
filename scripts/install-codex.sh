@@ -365,7 +365,7 @@ sync_codex_cache_package_surface() {
 
   local cache_root="${HOME}/.codex/plugins/cache"
   local marketplace_package_root="${marketplace_root}/plugins/silver-bullet"
-  local package_root="${cache_root}/alo-labs-codex/silver-bullet"
+  local package_root="${cache_root}/alo-labs/silver-bullet"
   local package_version
   local version_dir
 
@@ -398,8 +398,8 @@ import sys
 registry_path = pathlib.Path(sys.argv[1])
 home = pathlib.Path.home()
 now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-plugin_id = "silver-bullet@alo-labs-codex"
-plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet"
+plugin_id = "silver-bullet@alo-labs"
+plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs" / "silver-bullet"
 
 if not plugin_root.exists():
     sys.exit(0)
@@ -663,7 +663,7 @@ candidate_files = [
 ]
 
 for cache_root in cache_roots:
-    package_root = cache_root / "alo-labs-codex" / "silver-bullet"
+    package_root = cache_root / "alo-labs" / "silver-bullet"
     if not package_root.exists():
         continue
     for version_dir in sorted((p for p in package_root.iterdir() if p.is_dir()), key=lambda p: p.name):
@@ -858,9 +858,14 @@ import sys
 
 registry_paths = [pathlib.Path(sys.argv[1])]
 config_paths = [pathlib.Path(sys.argv[2])]
-plugin_id = "silver-bullet@alo-labs-codex-local"
-plugin_header = f'[plugins."{plugin_id}"]'
-hooks_prefix = f'[hooks.state."{plugin_id}'
+legacy_plugin_ids = {
+    "silver-bullet@alo-labs-codex",
+    "silver-bullet@alo-labs-codex-local",
+}
+legacy_cache_roots = [
+    pathlib.Path.home() / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet",
+    pathlib.Path.home() / ".codex" / "plugins" / "cache" / "alo-labs-codex-local" / "silver-bullet",
+]
 
 for registry_path in registry_paths:
     if not registry_path.is_file():
@@ -868,8 +873,12 @@ for registry_path in registry_paths:
 
     data = json.loads(registry_path.read_text())
     plugins = data.get("plugins", {})
-    if plugin_id in plugins:
-        del plugins[plugin_id]
+    changed = False
+    for plugin_id in legacy_plugin_ids:
+        if plugin_id in plugins:
+            del plugins[plugin_id]
+            changed = True
+    if changed:
         registry_path.write_text(json.dumps(data, indent=2) + "\n")
 
 for config_path in config_paths:
@@ -886,7 +895,13 @@ for config_path in config_paths:
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        if stripped == plugin_header or stripped.startswith(hooks_prefix):
+        if any(stripped == f'[plugins."{plugin_id}"]' for plugin_id in legacy_plugin_ids):
+            changed = True
+            i += 1
+            while i < len(lines) and not lines[i].startswith('['):
+                i += 1
+            continue
+        if any(stripped.startswith(f'[hooks.state."{plugin_id}') for plugin_id in legacy_plugin_ids):
             changed = True
             i += 1
             while i < len(lines) and not lines[i].startswith('['):
@@ -901,12 +916,12 @@ for config_path in config_paths:
             new_text += '\n'
         config_path.write_text(new_text)
 
-cache_root = pathlib.Path.home() / ".codex" / "plugins" / "cache" / "alo-labs-codex-local" / "silver-bullet"
-if cache_root.exists():
-    if cache_root.is_dir() and not cache_root.is_symlink():
-        shutil.rmtree(cache_root)
-    else:
-        cache_root.unlink()
+for cache_root in legacy_cache_roots:
+    if cache_root.exists():
+        if cache_root.is_dir() and not cache_root.is_symlink():
+            shutil.rmtree(cache_root)
+        else:
+            cache_root.unlink()
 PY
 }
 
@@ -1028,7 +1043,7 @@ def installed_package_hooks_path():
     if registry_path.is_file():
         try:
             data = json.loads(registry_path.read_text())
-            entries = data.get("plugins", {}).get("silver-bullet@alo-labs-codex", [])
+            entries = data.get("plugins", {}).get("silver-bullet@alo-labs", [])
         except Exception:
             entries = []
         for entry in entries:
@@ -1038,7 +1053,7 @@ def installed_package_hooks_path():
                 return hooks_path
 
     return first_existing(
-        home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet" / "current" / "hooks" / "hooks.json",
+        home / ".codex" / "plugins" / "cache" / "alo-labs" / "silver-bullet" / "current" / "hooks" / "hooks.json",
         package_hooks_src,
     )
 
@@ -1048,7 +1063,7 @@ def hooks_data_for(path):
     return json.loads(path.read_text()).get("hooks", {})
 
 resolved_sources = {
-    "silver-bullet@alo-labs-codex:hooks/hooks.json": installed_package_hooks_path(),
+    "silver-bullet@alo-labs:hooks/hooks.json": installed_package_hooks_path(),
 }
 user_hooks_prefix = str(home / ".codex" / "hooks.json")
 if merge_user_hooks:
@@ -1499,13 +1514,13 @@ purge_legacy_silver_bullet_hooks_from_user_config
 
 SB_PROJECT_ROOT=""
 if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
-  ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+  ensure_plugin_enabled "silver-bullet@alo-labs"
   ensure_silver_bullet_registry_entry
   if [[ "$MERGE_USER_HOOKS" == "1" ]]; then
     merge_silver_bullet_hooks_into_user_config
   fi
 else
-  remove_plugin_enabled "silver-bullet@alo-labs-codex"
+  remove_plugin_enabled "silver-bullet@alo-labs"
   printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'
 fi
 
