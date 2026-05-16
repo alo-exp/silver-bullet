@@ -4,6 +4,23 @@
 
 ---
 
+## [0.36.0] — 2026-05-16
+
+## Bug Fixes
+
+- `fix(tests): make live auth-cache test self-contained` (`3115713`)
+- `fix(codex): align installer and live test paths` (`553e5ee`)
+
+## Chores
+
+- `chore(release): enforce marketplace sync` (`dc5ff0e`)
+
+## Other
+
+- `Sync planning state for agents reorg` (`9418e85`)
+
+---
+
 ## [0.35.4] — 2026-05-16
 
 ## Bug Fixes
