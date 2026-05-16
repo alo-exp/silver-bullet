@@ -62,11 +62,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [ ] **AGENT-01..02** — Generate `agents/claude` and `agents/codex` from canonical `skills/` sources while keeping `skills/` as the authoring tree and preserving compatibility aliases.
-- [ ] **AGENT-03** — Wire Codex/Claude installers and package surfaces to consume the generated agent bundles without silently falling back to stale `.generated-skills` layouts.
-- [ ] **AGENT-04** — Update docs, templates, and runtime notes to describe the new `agents/<agent>/...` layout clearly.
-- [ ] **AGENT-05** — Add tests for bundle generation, install/sync parity, generated naming, and compatibility behavior.
-- [ ] **AGENT-06** — Verify the reorg with focused tests, the full verification suite, and live e2e before release.
+No active milestone. The v0.35.4 agents-directory reorg is complete and documented below under Completed Milestone.
 
 ### Deferred
 
@@ -81,7 +77,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.35.4 Agents Directory Reorg
+## Completed Milestone: v0.35.4 Agents Directory Reorg (shipped 2026-05-16)
 
 **Goal:** Reorganize generated agent-specific skill bundles under `agents/<agent-name>/...`, keep `skills/` as the canonical source tree, and make Claude and Codex consume the correct runtime bundle without drift.
 
@@ -92,7 +88,7 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Documentation and tests updated to reflect the new agent layout and runtime-specific bundle paths
 - Comprehensive verification, including focused tests, the full suite, and live e2e smoke
 
-**Status:** planning; repo version remains v0.35.3 and this milestone targets the next patch release line (`v0.35.4`).
+**Status:** complete; repo version is now v0.35.4 and the generated agent bundles live under `agents/claude` and `agents/codex`.
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -125,8 +121,8 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.35.3
-- Open issues in scope: 0 current release-blocking issues; this milestone is the agents-directory reorg on the next patch line
+- Current version: v0.35.4
+- Open issues in scope: 0 current release-blocking issues; the agents-directory reorg is complete and release state is synchronized
 - Runtime targets: Claude and Codex agent bundles generated from the canonical `skills/` tree
 
 ## Constraints
@@ -170,4 +166,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 — v0.35.3 release line shipped; v0.35.4 Agents Directory Reorg started*
+*Last updated: 2026-05-16T13:01:53.000Z — v0.35.4 Agents Directory Reorg completed and release state synchronized*
