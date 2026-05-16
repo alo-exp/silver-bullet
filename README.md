@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.35.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.3)
+[![version](https://img.shields.io/badge/version-v0.35.4-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.4)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -338,8 +338,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.35.3",
-  "version": "0.35.3",
+  "config_version": "0.35.4",
+  "version": "0.35.4",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -455,6 +455,7 @@ SB_E2E_LIVE_RUNTIMES=codex bash tests/e2e-live/run-e2e-live-tests.sh
 ```
 
 Codex-compatible live tests use Kay `v0.9.3` and MiniMax M2.7 when configured.
+SB tests should not be run against the upstream `codex` binary directly.
 The harness isolates config roots so live tests do not mutate the user's normal
 Codex hook cache.
 
@@ -518,12 +519,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.35.3`
-- Release: [v0.35.3](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.3)
+- Version: `0.35.4`
+- Release: [v0.35.4](https://github.com/alo-exp/silver-bullet/releases/tag/v0.35.4)
 - Notable changes:
-  - Dogfood config is synchronized with the template again, including `gsd-scan` in tracked skills.
-  - The release gate was re-run end to end, including the live e2e harness.
-  - SB and Codex package surfaces remain synchronized after the patch release.
+  - Reorganized generated agent bundles under `agents/<agent-name>/...` while keeping the canonical skill content agent-agnostic.
+  - Hardened the Kay-backed live test path and fixed the live `gsd-scan` state recording gap in the full-surface e2e journey.
+  - Re-ran the full verification gate, including the live e2e harness, before cutting the patch release.
 
 ## License
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Isolated Kay-backed Codex runtime setup for live tests.
+# Isolated Kay-backed runtime setup for live tests.
 #
 # The Codex live suites need a hook-capable Codex-compatible runtime, but they
 # must not rewrite the user's real ~/.codex hook cache. Kay is the isolated
@@ -34,17 +34,21 @@ setup_kay_codex_isolation() {
       CODEX_BIN="$(command -v kay)"
       export CODEX_BIN
     else
-      CODEX_BIN="$(command -v codex 2>/dev/null || true)"
-      export CODEX_BIN
+      echo "ERROR: Kay CLI not found or not working in PATH" >&2
+      return 1
     fi
+  elif [[ "$(basename "$CODEX_BIN")" != "kay" ]]; then
+    echo "ERROR: SB live tests require Kay as the Codex-compatible runtime" >&2
+    return 1
   fi
 
+  export SB_LIVE_CODEX_RUNTIME="kay"
   export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"
   export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"
   export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${CODE_HOME}/sessions/index/catalog.jsonl}"
   export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${HOME}/.claude/.silver-bullet/codex-transcripts}"
   if [[ -z "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD+x}" ]]; then
-    export SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD="Isolated Kay/Codex live-test constraints:
+    export SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD="Isolated Kay live-test constraints:
 - Remain in the current Kay runtime for the whole turn.
 - Use only provider ${SB_LIVE_CODEX_MODEL_PROVIDER} and model ${SB_LIVE_CODEX_MODEL}; do not switch models.
 - Do not call agent, subagent, delegation, background-agent, or multi-agent tools.

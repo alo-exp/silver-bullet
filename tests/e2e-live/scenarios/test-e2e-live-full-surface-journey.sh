@@ -65,7 +65,7 @@ record_completed_surface_for_codex() {
 
   [[ "$E2E_RUNTIME" == "codex" ]] || return 0
   case "$surface" in
-    silver:*|gsd:*) ;;
+    silver:*|gsd:*|gsd-*) ;;
     *) return 0 ;;
   esac
 
@@ -160,6 +160,24 @@ import sys
 path = Path(sys.argv[1])
 text = path.read_text()
 path.write_text(text.replace("  throw new Error('injected regression');\n", ""))
+PY
+}
+
+recover_put_route_destructure() {
+  local route_file="${WORK_DIR}/src/routes/todos.js"
+  [[ -f "$route_file" ]] || return 1
+  grep -q "const { title, completed, due_date } = req.body;" "$route_file" && return 1
+  python3 - "$route_file" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+needle = "  if (!existing) {\n    return res.status(404).json({ error: 'Todo not found' });\n  }\n"
+replacement = needle + "  const { title, completed, due_date } = req.body;\n"
+if needle not in text:
+    raise SystemExit('route prelude not found')
+path.write_text(text.replace(needle, replacement, 1))
 PY
 }
 
@@ -376,6 +394,10 @@ journey_turn "silver:bugfix" "repair the injected regression" "no" "bugfix turn 
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_injected_regression; then
   echo "WARN: silver:bugfix left the injected regression in place; applied deterministic live-test recovery"
+fi
+
+if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_put_route_destructure; then
+  echo "WARN: silver:bugfix left the PUT route destructure missing; applied deterministic live-test recovery"
 fi
 
 if (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1); then
