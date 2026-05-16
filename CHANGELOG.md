@@ -4,6 +4,14 @@
 
 ---
 
+## [0.36.2] — 2026-05-17
+
+## Bug Fixes
+
+- `fix(live): stabilize Kay journey and archive transcript` (`e97f531`)
+
+---
+
 ## [0.36.1] — 2026-05-17
 
 ## Refactoring
