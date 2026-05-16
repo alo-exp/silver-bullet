@@ -7,6 +7,8 @@ against the todo app fixture. The journey starts with install UX, moves through
 discovery, feature delivery, defect repair, cleanup, and release prep, and
 captures any real dissatisfaction through `silver:add` with `todo-app` tagging.
 
+The Codex-compatible path is Kay-only and pinned to MiniMax M2.7.
+
 It is intentionally separate from `tests/live/run-live-tests.sh`:
 
 - `tests/live/run-live-tests.sh` proves hook/runtime behavior and release gating

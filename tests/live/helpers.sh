@@ -36,6 +36,8 @@ REAL_STATE="${HOME}/.claude/.silver-bullet/state"
 REAL_STATE_BACKUP="${HOME}/.claude/.silver-bullet/state.live-test-backup-${TEST_RUN_ID}"
 REAL_TRIVIAL="${HOME}/.claude/.silver-bullet/trivial"
 REAL_TRIVIAL_BACKUP="${HOME}/.claude/.silver-bullet/trivial.live-test-backup-${TEST_RUN_ID}"
+REAL_MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
+REAL_MCP_AUTH_CACHE_BACKUP="${HOME}/.claude/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 
 # Paths set by live_setup (kept for compatibility but assertions use REAL_STATE)
 WORK_DIR=""
@@ -64,6 +66,13 @@ live_setup() {
     rm -f "$REAL_TRIVIAL"
   fi
 
+  if [[ -f "$REAL_MCP_AUTH_CACHE" ]]; then
+    cp "$REAL_MCP_AUTH_CACHE" "$REAL_MCP_AUTH_CACHE_BACKUP"
+  else
+    rm -f "$REAL_MCP_AUTH_CACHE_BACKUP"
+  fi
+  printf '{}\n' > "$REAL_MCP_AUTH_CACHE"
+
   # Initialize git repo in workspace
   git -C "$WORK_DIR" init -q
   git -C "$WORK_DIR" config user.email "live-test@silver-bullet.test"
@@ -83,6 +92,27 @@ EOF
     mkdir -p "${WORK_DIR}/src"
     echo "// placeholder" > "${WORK_DIR}/src/index.js"
   fi
+
+  local disabled_mcpjson_servers_json="[]"
+  if [[ -f "$REAL_MCP_AUTH_CACHE" ]]; then
+    disabled_mcpjson_servers_json="$(jq -c 'keys' "$REAL_MCP_AUTH_CACHE" 2>/dev/null || printf '[]')"
+  fi
+
+  mkdir -p "${WORK_DIR}/.claude"
+  python3 - "${WORK_DIR}/.claude/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+path = Path(sys.argv[1])
+disabled = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+payload = {
+    "permissions": {"defaultMode": "auto"},
+    "enableAllProjectMcpServers": False,
+    "disabledMcpjsonServers": disabled,
+}
+path.write_text(json.dumps(payload, indent=2) + "\n")
+PY
 
   # Write .silver-bullet.json pointing to REAL state paths
   cat > "${WORK_DIR}/.silver-bullet.json" << EOJSON
@@ -145,6 +175,12 @@ live_teardown() {
 
   if [[ -f "$REAL_TRIVIAL_BACKUP" ]]; then
     mv "$REAL_TRIVIAL_BACKUP" "$REAL_TRIVIAL"
+  fi
+
+  if [[ -f "$REAL_MCP_AUTH_CACHE_BACKUP" ]]; then
+    mv "$REAL_MCP_AUTH_CACHE_BACKUP" "$REAL_MCP_AUTH_CACHE"
+  else
+    rm -f "$REAL_MCP_AUTH_CACHE"
   fi
 
   rm -f "${HOME}/.claude/.silver-bullet/config-cache-"*

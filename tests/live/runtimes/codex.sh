@@ -6,7 +6,24 @@ runtime_name() {
 }
 
 runtime_cli_path() {
-  printf '%s\n' "${CODEX_BIN:-$(command -v codex 2>/dev/null)}"
+  local cli
+
+  if [[ -n "${CODEX_BIN:-}" ]]; then
+    cli="$(command -v "$CODEX_BIN" 2>/dev/null || printf '%s' "$CODEX_BIN")"
+  else
+    cli="$(command -v kay 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$cli" ]]; then
+    printf 'ERROR: Kay CLI not found or not working in PATH\n' >&2
+    return 1
+  fi
+  if [[ "$(basename "$cli")" != "kay" ]]; then
+    printf 'ERROR: SB live tests require Kay as the Codex-compatible runtime\n' >&2
+    return 1
+  fi
+
+  printf '%s\n' "$cli"
 }
 
 codex_session_catalog_path() {
@@ -21,7 +38,7 @@ runtime_preflight() {
   local cli
   cli="$(runtime_cli_path)"
   if [[ -z "$cli" ]] || ! "$cli" --version >/dev/null 2>&1; then
-    printf 'ERROR: codex CLI not found or not working in PATH\n' >&2
+    printf 'ERROR: Kay CLI not found or not working in PATH\n' >&2
     return 1
   fi
 }

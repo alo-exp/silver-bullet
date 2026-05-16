@@ -1,80 +1,42 @@
-# Roadmap: Silver Bullet v0.33.1 Open Issue Burn-down
+# Roadmap: Silver Bullet v0.35.4 Agents Directory Reorg
 
-**Goal:** Close the 22 open GitHub issues in the Silver Bullet repo by fixing the remaining init/docs/hooks gaps, reconciling already-shipped backlog items, clearing the todo-app duplicate cluster, and then shipping `v0.33.1`.
+**Goal:** Reorganize generated agent-specific skill bundles under `agents/<agent-name>/...`, keep `skills/` as the canonical source tree, and make Claude and Codex consume the correct runtime bundles without drift.
 
-**Phase numbering:** Continues from Phase 86.
+**Phase numbering:** Continues from Phase 94.
 
 ---
 
 ## Phases
 
-### Phase 86: Runtime-Aware Bootstrap
+### Phase 95: Agent Bundle Renderer & Layout Scaffold
 
-**Requirements:** INIT-01..06
+**Requirements:** AGENT-01..02
 
-**Goal:** Make `silver:init` runtime-aware and brownfield-friendly so Codex, Claude, and GitHub-backed repos are detected correctly without manual correction.
+**Goal:** Add a shared renderer that generates `agents/claude` and `agents/codex` from the canonical `skills/` tree and normalizes skill naming consistently.
 
-**Issues targeted:** #144, #145, #146, #147, #148, #150
+### Phase 96: Installer and Package Wiring
 
-### Phase 87: Docs & Semantic Audit
+**Requirements:** AGENT-03..07
 
-**Requirements:** DOC-01
+**Goal:** Rewire Codex/Claude package surfaces and installers so the generated bundles are the runtime source of truth, with compatibility aliases only as compatibility aliases.
 
-**Goal:** Upgrade `silver:ensure-docs` from structural reconciliation to a semantic audit that compares live docs against current code, hooks, workflows, and runtime behavior.
+### Phase 97: Docs and Compatibility Notes
 
-**Issues targeted:** #151
+**Requirements:** AGENT-08
 
-### Phase 88: Hook Inspection Ergonomics
+**Goal:** Update repo docs, templates, and bundle comments to clearly describe the agent bundle layout and source/bundle contract.
 
-**Requirements:** HOOK-01
+### Phase 98: Tests and Verification Harness
 
-**Goal:** Allow read-only inspection of Silver Bullet enforcement hooks during maintenance and audits without weakening write protection.
+**Requirements:** AGENT-09
 
-**Issues targeted:** #149
+**Goal:** Add and update tests for bundle generation, sync/install parity, naming consistency, and runtime compatibility.
 
-### Phase 89: Backlog Reconciliation
+### Phase 99: Release v0.35.4
 
-**Requirements:** TRACK-01
+**Requirements:** AGENT-10
 
-**Goal:** Close or reconcile already-shipped backlog items, starting with the `silver-handoff` issue and any other stale items that are already implemented in the current repo.
-
-**Issues targeted:** #98
-
-### Phase 90: Todo-App Clear-Completed Burn-down
-
-**Requirements:** TRACK-02
-
-**Goal:** Implement or retarget the todo-app clear-completed work in the sibling fixture repo, then collapse the duplicate GitHub issue cluster so the backlog only retains the canonical work item.
-
-**Issues targeted:** #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
-
-### Phase 91: Release v0.33.1
-
-**Requirements:** REL-01..03
-
-**Goal:** Bump release-facing version surfaces, run CI and the pre-release quality gate until two consecutive passes are clean, and create/publish the `v0.33.1` GitHub Release with structured notes after all release-blocking phases, including Phase 92, are resolved.
-
-**Issues targeted:** release packaging for the completed burn-down
-
-### Phase 92: Dynamic Silver Router & Atomic Flow Composition Alignment
-
-**Requirements:** FLOW-01..07
-
-**Goal:** Reconcile `/silver` dynamic routing with the current SB, GSD, Superpowers, and Product Management skill catalogs; make composed flows as atomic as practical; revise flow contracts; and reinforce that SB enhances GSD without bypassing GSD's phase, testing, bugfix, and semver mechanisms.
-
-**Issues targeted:** local architecture/contract drift; closes local backlog item SB-B-1
-
-### Phase 93: Forge Port Parity Refresh for Current SB
-
-**Requirements:** FORGE-01..06
-
-**Goal:** Update the Forge port of SB-owned skills, hook-equivalent agents, installer surfaces, parity docs, and Forge test harnesses so Forge reflects the current Silver Bullet source version after the Codex-native and dynamic-flow updates.
-
-**Depends on:** Phase 92
-**Plans:** 1 plan
-
-Plans:
-- [x] 93-01 — Refresh Forge skills, hook-agents, docs, installer, and tests
+**Goal:** Bump release-facing version surfaces, run focused and full verification, execute live e2e smoke, and publish the `v0.35.4` release once the reorg is green.
 
 ---
 
@@ -82,22 +44,18 @@ Plans:
 
 | Phase | Requirements | Status | Notes |
 |-------|--------------|--------|-------|
-| 86. Runtime-Aware Bootstrap | INIT-01..06 | Pending | Core init/runtime issue cluster |
-| 87. Docs & Semantic Audit | DOC-01 | Pending | `silver:ensure-docs` scope gap |
-| 88. Hook Inspection Ergonomics | HOOK-01 | Pending | Read-only hook inspection |
-| 89. Backlog Reconciliation | TRACK-01 | Pending | Already-shipped issue closure |
-| 90. Todo-App Clear-Completed Burn-down | TRACK-02 | Pending | Sibling fixture + duplicate collapse |
-| 91. Release v0.33.1 | REL-01..03 | Pending | CI + pre-release gate + GitHub Release |
-| 92. Dynamic Silver Router & Atomic Flow Composition Alignment | FLOW-01..07 | Completed | Router, flow contracts, GSD alignment, and catalog drift resolved; full suite 2002/0 |
-| 93. Forge Port Parity Refresh for Current SB | FORGE-01..06 | Completed | Forge refreshed to 109 skills, 50 agents, 50 commands, 18 template files; full suite 2002/0 |
+| 95. Agent Bundle Renderer & Layout Scaffold | AGENT-01..02 | Pending | Generate `agents/claude` and `agents/codex` |
+| 96. Installer and Package Wiring | AGENT-03..07 | Pending | Codex/Claude installers, package surfaces, aliases |
+| 97. Docs and Compatibility Notes | AGENT-08 | Pending | Runtime/bundle layout docs |
+| 98. Tests and Verification Harness | AGENT-09 | Pending | Sync/install parity and naming tests |
+| 99. Release v0.35.4 | AGENT-10 | Pending | Full verification + live e2e + release |
 
 ## Coverage Validation
 
-- v1 requirements: 26/26 mapped
-- Milestone phases: 8
-- Open issues in scope: 22
+- v1 requirements: 10/10 mapped
+- Milestone phases: 5
+- Open issues in scope: 0
 - Unmapped requirements: 0 ✓
 
 ---
-*Roadmap defined: 2026-05-13*
-*Last updated: 2026-05-13 after Phase 92 completion*
+*Roadmap defined: 2026-05-16*

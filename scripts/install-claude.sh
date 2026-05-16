@@ -31,6 +31,7 @@ TARGET_PLUGINS=(
   "product-management@knowledge-work-plugins"
   "silver-bullet@alo-labs"
 )
+AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
   cat <<'USAGE'
@@ -124,6 +125,16 @@ ensure_marketplace_ready() {
   else
     "$CLAUDE_BIN" plugin marketplace update "$marketplace" >/dev/null
   fi
+}
+
+render_agent_bundle() {
+  local agent="$1"
+
+  mkdir -p "${REPO_ROOT}/agents"
+  python3 "$AGENT_RENDERER" render \
+    --agent "$agent" \
+    --source-root "${REPO_ROOT}/skills" \
+    --dest-root "${REPO_ROOT}/agents/${agent}"
 }
 
 uninstall_plugin_scope() {
@@ -298,26 +309,18 @@ sync_silver_bullet_hook_cache() {
 sync_silver_bullet_skill_cache() {
   local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
   local current_version_dir=""
+  local source_root="${REPO_ROOT}/agents/claude"
 
   [[ -d "$cache_root" ]] || return 0
   current_version_dir="$(find "$cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
   [[ -n "$current_version_dir" ]] || return 0
-  [[ -d "${current_version_dir}/skills" ]] || return 0
+  [[ -d "$source_root" ]] || return 0
 
-  python3 - "${current_version_dir}/skills" <<'PY'
-import pathlib
-import re
-import sys
-
-skills_root = pathlib.Path(sys.argv[1])
-name_re = re.compile(r'^(name:\s*)silver-([A-Za-z0-9_-]+)\s*$', re.MULTILINE)
-
-for skill_md in skills_root.rglob("SKILL.md"):
-    text = skill_md.read_text()
-    updated = name_re.sub(lambda m: f"{m.group(1)}silver:{m.group(2)}", text, count=1)
-    if updated != text:
-        skill_md.write_text(updated)
-PY
+  rm -rf "${current_version_dir}/skills"
+  rm -rf "${current_version_dir}/agents"
+  mkdir -p "${current_version_dir}/agents"
+  rsync -a --delete "${source_root}/" "${current_version_dir}/agents/claude/"
+  ln -sfn "agents/claude" "${current_version_dir}/skills"
 }
 
 ensure_github_https_rewrite() {
@@ -356,6 +359,8 @@ ensure_github_https_rewrite
 ensure_marketplace_ready "$SB_MARKETPLACE_NAME" "$CLAUDE_SB_MARKETPLACE_SOURCE" "$CLAUDE_SB_MARKETPLACE_PLUGIN"
 ensure_marketplace_ready "$CLAUDE_KW_MARKETPLACE_NAME" "$CLAUDE_KW_MARKETPLACE_SOURCE" "${CLAUDE_KW_MARKETPLACE_PLUGINS[@]}"
 ensure_marketplace_ready "$SUPERPOWERS_MARKETPLACE_NAME" "$SUPERPOWERS_MARKETPLACE_SOURCE" "$SUPERPOWERS_MARKETPLACE_PLUGIN"
+render_agent_bundle "claude"
+render_agent_bundle "codex"
 
 if [[ "$PURGE_LEGACY_PLUGINS" -eq 1 ]]; then
   purge_legacy_plugins

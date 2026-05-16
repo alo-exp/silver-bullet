@@ -28,7 +28,7 @@ echo "========================================"
 echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests invoke real Claude or Codex CLIs."
+echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed Codex-compatible runtime."
 echo "Estimated cost: \$0.10-\$0.60 per full run."
 echo ""
 
@@ -63,11 +63,11 @@ for runtime in "${RUNTIMES[@]}"; do
       source "$CODEX_ISOLATION_HELPER"
       setup_kay_codex_isolation
       if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
-        echo "ERROR: Kay/Codex CLI not found or not working"
+        echo "ERROR: Kay CLI not found or not working"
         exit 1
       fi
       if ! CODEX_BIN="$CODEX_BIN" "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
-        echo "ERROR: codex marketplace/bootstrap install failed"
+        echo "ERROR: Kay-backed marketplace/bootstrap install failed"
         exit 1
       fi
       ;;

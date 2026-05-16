@@ -62,10 +62,11 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 
 ### Active
 
-- [ ] **INIT-01..06** — Runtime-aware `silver:init` bootstrap, brownfield source detection, product-management cache detection, checklist reconciliation, and GSD-entrypoint fallback — Issues #144, #145, #146, #147, #148, #150
-- [ ] **DOC-01** — `silver:ensure-docs` performs a full semantic audit of governed docs, not just structural reconciliation — Issue #151
-- [ ] **HOOK-01** — Enforcement hooks allow read-only inspection of hook files while still blocking writes/modifications — Issue #149
-- [ ] **TRACK-01..02** — Reconcile already-implemented backlog items and collapse duplicate todo-app backlog items into the canonical feature/issue set — Issues #98, #106, #107, #111, #112, #122, #127, #135, #137, #138, #140, #141, #142, #143
+- [ ] **AGENT-01..02** — Generate `agents/claude` and `agents/codex` from canonical `skills/` sources while keeping `skills/` as the authoring tree and preserving compatibility aliases.
+- [ ] **AGENT-03** — Wire Codex/Claude installers and package surfaces to consume the generated agent bundles without silently falling back to stale `.generated-skills` layouts.
+- [ ] **AGENT-04** — Update docs, templates, and runtime notes to describe the new `agents/<agent>/...` layout clearly.
+- [ ] **AGENT-05** — Add tests for bundle generation, install/sync parity, generated naming, and compatibility behavior.
+- [ ] **AGENT-06** — Verify the reorg with focused tests, the full verification suite, and live e2e before release.
 
 ### Deferred
 
@@ -80,18 +81,18 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
 - Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
 
-## Current Milestone: v0.33.1 Open Issue Burn-down
+## Current Milestone: v0.35.4 Agents Directory Reorg
 
-**Goal:** Reduce the current 22 open GitHub issues to zero by fixing the Silver Bullet init/docs/hooks gaps, reconciling already-implemented backlog items, and closing the todo-app duplicate cluster once the fixture work lands.
+**Goal:** Reorganize generated agent-specific skill bundles under `agents/<agent-name>/...`, keep `skills/` as the canonical source tree, and make Claude and Codex consume the correct runtime bundle without drift.
 
 **Target features:**
 
-- Runtime-aware `silver:init` bootstrap for Codex and Claude, with brownfield source-pattern and project-metadata inference that matches the actual repo layout
-- `silver:ensure-docs` semantic auditing that verifies live docs against current code, hooks, workflows, and runtime behavior
-- Enforcement-hook ergonomics that allow read-only inspection while still blocking modification attempts
-- Backlog reconciliation for already-implemented items, plus the todo-app clear-completed cleanup and duplicate collapse path
+- Shared agent-bundle renderer that generates `agents/claude` and `agents/codex` from the canonical `skills/` tree
+- Codex package and Claude install flows wired to the generated agent bundles and compatibility aliases
+- Documentation and tests updated to reflect the new agent layout and runtime-specific bundle paths
+- Comprehensive verification, including focused tests, the full suite, and live e2e smoke
 
-**Status:** active planning; repo version is v0.33.0 and this milestone targets the next patch release line.
+**Status:** planning; repo version remains v0.35.3 and this milestone targets the next patch release line (`v0.35.4`).
 
 ## Completed Milestone: v0.28.0 Complete Forge Port — Silver Bullet + All Dependencies (shipped 2026-04-27)
 
@@ -124,9 +125,9 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
 - Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
 - Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.33.0
-- Open issues in scope: 22 total, clustered into Silver Bullet init/runtime fixes, docs/hook gaps, and the todo-app clear-completed backlog
-- A sibling `test-todo-app` checkout exists and is used by the live clear-completed scenario
+- Current version: v0.35.3
+- Open issues in scope: 0 current release-blocking issues; this milestone is the agents-directory reorg on the next patch line
+- Runtime targets: Claude and Codex agent bundles generated from the canonical `skills/` tree
 
 ## Constraints
 
@@ -169,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 — v0.33.0 release line shipped; v0.33.1 Open Issue Burn-down started*
+*Last updated: 2026-05-16 — v0.35.3 release line shipped; v0.35.4 Agents Directory Reorg started*

@@ -43,6 +43,8 @@ SESSION_INIT_FILE="${SB_TEST_DIR}/session-init"
 STATE_BACKUP="${SB_TEST_DIR}/state.e2e-live-backup-$$"
 TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.e2e-live-backup-$$"
 SESSION_INIT_BACKUP="${SB_TEST_DIR}/session-init.e2e-live-backup-$$"
+MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
+MCP_AUTH_CACHE_BACKUP="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
 
 PASS=0
 FAIL=0
@@ -109,6 +111,13 @@ backup_session_state() {
   else
     rm -f "$SESSION_INIT_BACKUP"
   fi
+
+  if [[ -f "$MCP_AUTH_CACHE" ]]; then
+    cp "$MCP_AUTH_CACHE" "$MCP_AUTH_CACHE_BACKUP"
+  else
+    rm -f "$MCP_AUTH_CACHE_BACKUP"
+  fi
+  printf '{}\n' > "$MCP_AUTH_CACHE"
 }
 
 restore_session_state() {
@@ -128,6 +137,12 @@ restore_session_state() {
     mv "$SESSION_INIT_BACKUP" "$SESSION_INIT_FILE"
   else
     rm -f "$SESSION_INIT_FILE"
+  fi
+
+  if [[ -f "$MCP_AUTH_CACHE_BACKUP" ]]; then
+    mv "$MCP_AUTH_CACHE_BACKUP" "$MCP_AUTH_CACHE"
+  else
+    rm -f "$MCP_AUTH_CACHE"
   fi
 }
 
@@ -217,20 +232,33 @@ EOF
 
 prepare_workspace() {
   local mode="${1:-baseline}"
+  local disabled_mcpjson_servers_json="[]"
 
+  if [[ -f "$MCP_AUTH_CACHE" ]]; then
+    disabled_mcpjson_servers_json="$(jq -c 'keys' "$MCP_AUTH_CACHE" 2>/dev/null || printf '[]')"
+  fi
+
+  backup_session_state
   WORK_DIR="$(mktemp -d)"
   APP_SERVER_LOG="${WORK_DIR}/server.log"
 
   rsync -a --exclude '.git' "${FIXTURE_DIR}/" "${WORK_DIR}/"
 
   mkdir -p "${WORK_DIR}/.claude"
-  cat > "${WORK_DIR}/.claude/settings.local.json" <<'EOF'
-{
-  "permissions": {
-    "defaultMode": "auto"
-  }
+  python3 - "${WORK_DIR}/.claude/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+path = Path(sys.argv[1])
+disabled = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+payload = {
+    "permissions": {"defaultMode": "auto"},
+    "enableAllProjectMcpServers": False,
+    "disabledMcpjsonServers": disabled,
 }
-EOF
+path.write_text(json.dumps(payload, indent=2) + "\n")
+PY
 
   if [[ "$mode" == "clean-sb" ]]; then
     rm -rf \
