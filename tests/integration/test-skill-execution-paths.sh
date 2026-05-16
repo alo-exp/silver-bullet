@@ -300,6 +300,18 @@ then
 fi
 check "silver-release: marketplace manifest is committed in release contract" "$market_commit_result"
 
+market_push_result=fail
+if python3 - "$SREL" <<'PY' >/dev/null 2>&1
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text()
+raise SystemExit(0 if "upstream marketplace repo" in text and "pushed" in text else 1)
+PY
+then
+  market_push_result=pass
+fi
+check "silver-release: upstream marketplace repo push is required in release contract" "$market_push_result"
+
 # ===========================================================================
 # GROUP 4: Quality-gates dimension completeness
 # ===========================================================================
