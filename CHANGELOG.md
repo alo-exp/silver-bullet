@@ -4,6 +4,19 @@
 
 ---
 
+## [0.36.1] — 2026-05-17
+
+## Refactoring
+
+- `refactor(live): move Kay harness to KAY_HOME` (`4c74a24`)
+
+## Bug Fixes
+
+- `fix(release): wait for CI before publish` (`21a363f`)
+- `fix(release): enforce marketplace repo push` (`370d43d`)
+
+---
+
 ## [0.36.0] — 2026-05-17
 
 ## Bug Fixes
