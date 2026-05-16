@@ -22,8 +22,8 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
-| **Live AI matrix** | Shared scenario suite across Claude and Codex runtime adapters | `tests/live/run-live-tests.sh` | 5-15 min per runtime |
-| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per runtime |
+| **Live AI matrix** | Shared scenario suite across Claude and Kay agent adapters | `tests/live/run-live-tests.sh` | 5-15 min per agent |
+| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per agent |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -37,7 +37,7 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | `verify-tests.sh` | Configured commands, stack fallback, marker write, failure path | **Covered** by `tests/hooks/test-verify-tests.sh` |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
-| Live Claude/Codex matrix | shared scenarios, runtime adapters, sequential runtime execution | 100% (`tests/live/run-live-tests.sh`) |
+| Live Claude/Kay matrix | shared scenarios, agent adapters, sequential agent execution | 100% (`tests/live/run-live-tests.sh`) |
 | Live todo-app E2E | single inline full-surface journey on the standalone sibling `test-todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
@@ -104,18 +104,18 @@ Not part of CI — run manually at roughly $0.10–$0.60 per full Claude+Codex m
 | `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
 | `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/lessons split |
 
-The suite invokes the real `claude` CLI or `codex` CLI with runtime adapters in
-`tests/live/runtimes/`. By default `tests/live/run-live-tests.sh` runs both runtimes
+The suite invokes the real `claude` CLI or Kay with agent adapters in
+`tests/live/agents/`. By default `tests/live/run-live-tests.sh` runs both agents
 sequentially; set `SB_LIVE_RUNTIMES=claude` or `SB_LIVE_RUNTIMES=codex` to narrow the
-matrix. Sequential execution matters because both runtimes touch the same Silver Bullet
+matrix. Sequential execution matters because both agents touch the same Silver Bullet
 state path under `~/.claude/.silver-bullet/`.
 
 The live todo-app E2E suite is separate. It uses the standalone sibling
 `test-todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
 inline full-surface journey that proves install UX, feature delivery,
-bugfixing, issue filing, cleanup, and release prep in one real runtime session.
+bugfixing, issue filing, cleanup, and release prep in one real agent session.
 That journey also verifies the installed command surface (`silver:init`,
-`silver:feature`, and the `silver` router) in the runtime cache, which is the
+`silver:feature`, and the `silver` router) in the agent cache, which is the
 closest reliable proxy we currently have for picker exposure in the
 Codex/Claude hosts. The journey additionally writes `inline-e2e-matrix` so the
 release gate can prove the end-user experience actually ran in this session.

@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
@@ -290,25 +289,19 @@ def source_hash(path: Path, text: str) -> str:
     return sha256_text(f"{stat.st_mtime_ns}:{sha256_text(text)}")
 
 
-def project_matches_catalog(row: dict[str, Any], root: Path) -> bool:
+def project_matches_source(row: dict[str, Any], root: Path) -> bool:
     root_real = str(root.resolve())
-    cwd_real = str(row.get("cwd_real") or "")
-    cwd_display = str(row.get("cwd_display") or "")
-    return cwd_real == root_real or cwd_display == root_real or cwd_real == str(root) or cwd_display == str(root)
-
-
-def project_matches_meta(meta: dict[str, Any], root: Path) -> bool:
-    root_real = str(root.resolve())
-    work_dir_real = str(meta.get("work_dir_real") or "")
-    work_dir = str(meta.get("work_dir") or "")
-    return work_dir_real == root_real or work_dir == str(root) or work_dir_real == str(root)
-
-
-def is_relevant_pointer(path: Path, root: Path) -> bool:
-    try:
-        return path.resolve().is_relative_to(root.resolve())
-    except Exception:
-        return False
+    root_text = str(root)
+    candidates = {
+        str(row.get("cwd_real") or "").strip(),
+        str(row.get("cwd_display") or "").strip(),
+        str(row.get("cwd") or "").strip(),
+        str(row.get("git_project_root") or "").strip(),
+        str(row.get("work_dir_real") or "").strip(),
+        str(row.get("work_dir") or "").strip(),
+        str(row.get("project_root") or "").strip(),
+    }
+    return root_real in candidates or root_text in candidates
 
 
 def discover_sources(root: Path) -> list[dict[str, Any]]:
@@ -348,47 +341,28 @@ def discover_sources(root: Path) -> list[dict[str, Any]]:
         for path in sorted(root.glob(pattern)):
             add("markdown-session", path)
 
-    catalog_path = Path(os.environ.get("CODEX_SESSION_CATALOG_PATH", str(Path.home() / ".code" / "sessions" / "index" / "catalog.jsonl")))
-    transcript_dir = Path(os.environ.get("CODEX_TRANSCRIPT_DIR", str(Path.home() / ".claude" / STATE_DIR / "codex-transcripts")))
+    catalog_path = Path.home() / ".code" / "sessions" / "index" / "catalog.jsonl"
 
     if catalog_path.is_file():
         for row in parse_jsonl(catalog_path):
-            if row.get("deleted") or not project_matches_catalog(row, root):
+            if row.get("deleted") or not project_matches_source(row, root):
                 continue
-            session_id = str(row.get("session_id") or "").strip()
             rollout_path = str(row.get("rollout_path") or "").strip()
             if rollout_path:
-                add("codex-transcript", Path(rollout_path), row)
-            if session_id:
-                add("codex-transcript", transcript_dir / f"{session_id}.jsonl", row)
+                rollout_candidate = Path(rollout_path)
+                if not rollout_candidate.is_absolute():
+                    rollout_candidate = Path.home() / ".code" / rollout_candidate
+                add("codex-transcript", rollout_candidate, row)
 
-    latest_meta = transcript_dir / "latest.meta.json"
-    if latest_meta.is_file():
-        try:
-            meta = load_json(latest_meta)
-        except Exception:
-            meta = {}
-        if isinstance(meta, dict) and project_matches_meta(meta, root):
-            add("codex-transcript", transcript_dir / "latest.jsonl", meta)
-            session_id = str(meta.get("session_id") or "").strip()
-            if session_id:
-                add("codex-transcript", transcript_dir / f"{session_id}.jsonl", meta)
-
-    for pointer in [
-        Path.home() / ".claude" / STATE_DIR / "session-log-path",
-        Path.home() / ".codex" / STATE_DIR / "session-log-path",
-    ]:
-        if not pointer.is_file():
-            continue
-        try:
-            raw = pointer.read_text(encoding="utf-8").strip()
-        except Exception:
-            continue
-        for line in raw.splitlines():
-            candidate = Path(line.strip())
-            if candidate.is_file() and is_relevant_pointer(candidate, root):
-                add("claude-session", candidate)
-                break
+    claude_projects_root = Path.home() / ".claude" / "projects"
+    if claude_projects_root.is_dir():
+        for transcript_path in sorted(claude_projects_root.rglob("*.jsonl")):
+            try:
+                rows = parse_jsonl(transcript_path)
+            except Exception:
+                continue
+            if any(project_matches_source(row, root) for row in rows):
+                add("claude-session", transcript_path)
 
     return sources
 
