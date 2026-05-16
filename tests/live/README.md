@@ -9,7 +9,7 @@ actually work when either agent triggers them via real tool usage.
 ## Prerequisites
 
 - `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
-- Kay `v0.9.3` available in `PATH` for Kay-agent runs
+- Kay `v0.9.6` available in `PATH` for Kay-agent runs
 - MiniMax credentials available through `MINIMAX_API_KEY` or the user's Kay config
 - Authenticated with valid credentials for the agent(s) you plan to run
 - `jq` installed (`brew install jq`)
@@ -68,9 +68,9 @@ Each agent run uses:
 - An isolated temp workspace directory (`mktemp -d`)
 - Isolated state files: `~/.claude/.silver-bullet/live-test-state-{PID}`
 - Isolated trivial files: `~/.claude/.silver-bullet/live-test-trivial-{PID}`
-- For Kay-agent runs, an isolated temporary `KAY_SB_TEST_HOME` root plus
-  `HOME`, `CODE_HOME`, and `CODEX_HOME` backed by Kay/MiniMax so the test
-  installer never rewrites the user's real `~/.codex` hook cache.
+- For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by
+  Kay/MiniMax so the test installer never rewrites the user's real
+  `~/.codex` hook cache.
 
 The matrix runs Claude and Kay sequentially so they do not clobber each other's
 shared SB state. All temp files are cleaned up after each scenario.
@@ -85,7 +85,7 @@ approves skipping further Claude live testing, run the matrix with
 
 The live harness keeps a small local archive of captured Kay transcripts under
 `tests/live/agents/kay/transcripts/` for rotation and debugging. The Kay live
-state itself lives under `${KAY_SB_TEST_HOME}/.kay/.silver-bullet/` inside the
+state itself lives under `${KAY_HOME}/.kay/.silver-bullet/` inside the
 isolated temp tree. That archive is separate from the official agent session
 stores that `silver-scan` reads.
 

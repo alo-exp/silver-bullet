@@ -21,11 +21,11 @@ LIB_DIR="${E2E_ROOT}/lib"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
-KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
+KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
 if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
-  SB_TEST_DIR="${KAY_SB_TEST_HOME}/.kay/.silver-bullet"
-  MCP_AUTH_CACHE="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.json"
-  MCP_AUTH_CACHE_BACKUP="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.e2e-live-backup-$$"
+  SB_TEST_DIR="${KAY_HOME}/.kay/.silver-bullet"
+  MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
+  MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.e2e-live-backup-$$"
 else
   SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
   MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
@@ -519,39 +519,42 @@ bootstrap_claude_dependencies() {
 
 codex_config_file() {
   local config_file
-  for config_file in "${HOME}/.codex/config.toml" "${HOME}/.codex/config.toml"; do
+  local home_root="${KAY_HOME:-$HOME}"
+  for config_file in "${home_root}/.codex/config.toml" "${home_root}/.codex/config.toml"; do
     if [[ -f "$config_file" ]]; then
       printf '%s\n' "$config_file"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.codex/config.toml"
+  printf '%s\n' "${home_root}/.codex/config.toml"
 }
 
 codex_marketplace_root() {
   local marketplace_root
+  local home_root="${KAY_HOME:-$HOME}"
   for marketplace_root in \
-    "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex" \
-    "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"; do
+    "${home_root}/.codex/.tmp/marketplaces/alo-labs-codex" \
+    "${home_root}/.codex/.tmp/marketplaces/alo-labs-codex"; do
     if [[ -d "$marketplace_root" ]]; then
       printf '%s\n' "$marketplace_root"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
+  printf '%s\n' "${home_root}/.codex/.tmp/marketplaces/alo-labs-codex"
 }
 
 codex_installed_plugins_file() {
   local registry_file
+  local home_root="${KAY_HOME:-$HOME}"
   for registry_file in \
-    "${HOME}/.codex/plugins/installed_plugins.json" \
-    "${HOME}/.codex/plugins/installed_plugins.json"; do
+    "${home_root}/.codex/plugins/installed_plugins.json" \
+    "${home_root}/.codex/plugins/installed_plugins.json"; do
     if [[ -f "$registry_file" ]]; then
       printf '%s\n' "$registry_file"
       return 0
     fi
   done
-  printf '%s\n' "${HOME}/.codex/plugins/installed_plugins.json"
+  printf '%s\n' "${home_root}/.codex/plugins/installed_plugins.json"
 }
 
 codex_plugin_registered() {
@@ -644,7 +647,7 @@ verify_runtime_dependency_access() {
       PASS=$((PASS + 1))
     fi
     local claude_cache_root latest_claude_cache
-    claude_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+    claude_cache_root="${KAY_HOME:-$HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
       assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver-init/SKILL.md"

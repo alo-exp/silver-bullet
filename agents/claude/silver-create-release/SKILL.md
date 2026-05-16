@@ -192,15 +192,15 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the marketplace sync helper so the in-repo marketplace manifest matches the new plugin version before tagging the release:
+Run the marketplace sync helper so the in-repo marketplace manifest and the upstream marketplace repo both match the new plugin version before tagging the release:
 
 ```bash
 bash scripts/sync-marketplace-version.sh
 ```
 
-This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps the in-repo marketplace surface aligned with the tagged release.
+This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the helper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`.
+After the helper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`, and the upstream marketplace repo must have the same version committed and pushed.
 
 ---
 
@@ -215,6 +215,8 @@ git push
 ```
 
 If none of the files changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
+
+If the marketplace sync helper reports that the upstream marketplace repo was updated, that push is part of the release gate and must succeed before the release tag is created.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
@@ -232,6 +234,18 @@ bash tests/live/run-live-tests.sh
 The matrix must complete successfully for both Claude and Codex in the current
 session. If either runtime fails, stop here and fix the underlying issue before
 continuing.
+
+## Step 6b — Wait for Release CI to Go Green
+
+Before creating the tag, verify the release commit itself is fully green:
+
+```bash
+bash scripts/verify-release-commit-ci.sh
+```
+
+This gate must pass before the release tag, GitHub Release, or any downstream
+release announcement can happen. If the release commit is still settling, wait
+until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
 
 ---
 

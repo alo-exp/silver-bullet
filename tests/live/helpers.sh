@@ -12,7 +12,7 @@ PASS=0
 FAIL=0
 TEST_RUN_ID="$$"
 LIVE_AGENT="${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}"
-KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
+KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
 
 AGENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/agents" && pwd)"
 case "$LIVE_AGENT" in
@@ -32,9 +32,9 @@ esac
 
 # The REAL state path that hooks always write to.
 if [[ "$LIVE_AGENT" == "kay" ]]; then
-  SB_TEST_DIR="${KAY_SB_TEST_HOME}/.kay/.silver-bullet"
-  REAL_MCP_AUTH_CACHE="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.json"
-  REAL_MCP_AUTH_CACHE_BACKUP="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
+  SB_TEST_DIR="${KAY_HOME}/.kay/.silver-bullet"
+  REAL_MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
+  REAL_MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 else
   SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
   REAL_MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"

@@ -3,7 +3,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/lib/kay-codex-isolation.sh"
 RUNTIMES=()
-RELEASE_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/release-live-matrix"
+RELEASE_LIVE_MATRIX_FILE=""
 full_matrix_requested=false
 if [[ -n "${SB_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
@@ -32,7 +32,9 @@ echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent."
 echo "Estimated cost: \$0.10-\$0.60 per full run."
 echo ""
 
-rm -f "$RELEASE_LIVE_MATRIX_FILE"
+if [[ -n "$RELEASE_LIVE_MATRIX_FILE" ]]; then
+  rm -f "$RELEASE_LIVE_MATRIX_FILE"
+fi
 
 TOTAL_FAIL=0
 
@@ -53,6 +55,7 @@ run_suite() {
 for runtime in "${RUNTIMES[@]}"; do
   case "$runtime" in
     claude)
+      RELEASE_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/release-live-matrix"
       if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
         echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
         exit 1
@@ -62,6 +65,7 @@ for runtime in "${RUNTIMES[@]}"; do
       # shellcheck source=tests/live/lib/kay-codex-isolation.sh
       source "$CODEX_ISOLATION_HELPER"
       setup_kay_codex_isolation
+      RELEASE_LIVE_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/release-live-matrix"
       if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
         echo "ERROR: Kay CLI not found or not working"
         exit 1
