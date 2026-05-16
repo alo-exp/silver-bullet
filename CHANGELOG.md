@@ -4,7 +4,7 @@
 
 ---
 
-## [0.36.0] — 2026-05-16
+## [0.36.0] — 2026-05-17
 
 ## Bug Fixes
 
@@ -17,7 +17,9 @@
 
 ## Other
 
+- `chore(release): prepare v0.36.0` (`491c010`)
 - `Sync planning state for agents reorg` (`9418e85`)
+- `refactor(live): move Kay harness to agents` (`7f0ee83`)
 
 ---
 
