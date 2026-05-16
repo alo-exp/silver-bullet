@@ -212,7 +212,7 @@ recover_silver_fast_cleanup() {
 
 init_prompt="$(skill_prompt 'silver:init' 'Initialize Silver Bullet on this todo-app project from scratch. Choose GitHub Issues for issue tracking, use sensible defaults for any missing choices, do not change app behavior yet, create the SB scaffold, confirm the project is initialized, and then stop immediately. Do not continue into ingest, scan, research, feature, release, or any other downstream workflow step. Do not create AGENTS.md or CLAUDE.md if no project instruction file already exists.')"
 journey_turn "silver:init" "install and scaffold the todo-app workspace" "no" "scaffold files created" "$init_prompt" "."
-wait_for_state_contains "silver:init recorded in workflow state" "silver-init"
+wait_for_state_contains "silver:init recorded in workflow state" "silver:init"
 
 if [[ -f "${WORK_DIR}/.silver-bullet.json" && -f "${WORK_DIR}/silver-bullet.md" ]]; then
   wait_for_file_exists "silver-bullet config created" "${WORK_DIR}/.silver-bullet.json"
@@ -272,7 +272,7 @@ assert_no_local_skill_source_bypass "silver:research avoided local codex-plugins
 
 blast_radius_prompt="$(skill_prompt 'silver:blast-radius' 'Assess the blast radius of adding a Clear completed control, including API, UI, and test touch points.')"
 journey_turn "silver:blast-radius" "assess feature impact" "no" "blast-radius turn recorded" "$blast_radius_prompt"
-wait_for_state_contains "silver:blast-radius recorded in workflow state" "silver-blast-radius"
+wait_for_state_contains "silver:blast-radius recorded in workflow state" "silver:blast-radius"
 
 spec_prompt="$(skill_prompt 'silver:spec' 'Write docs/specs/todo-app-clear-completed.md with a concise spec for the Clear completed enhancement and the acceptance criteria.')"
 journey_turn "silver:spec" "write a small feature spec" "no" "spec turn recorded" "$spec_prompt"
@@ -295,7 +295,7 @@ fi
 if [[ -n "${issue_url:-}" ]]; then
   record_completed_surface_for_codex "silver:add"
 fi
-wait_for_state_contains "silver:add recorded in workflow state" "silver-add" 30 2
+wait_for_state_contains "silver:add recorded in workflow state" "silver:add" 30 2
 issue_repo_slug=""
 if [[ -n "${issue_url:-}" ]]; then
   issue_repo_slug="$(repo_slug_from_issue_url "$issue_url")"
@@ -328,7 +328,7 @@ feature_prompt="$(skill_prompt 'silver:feature' 'Implement the Clear completed f
 journey_turn "silver:feature" "implement the clear-completed feature" "no" "feature turn recorded" "$feature_prompt"
 feature_log="${TURN_LOG_DIR}/silver-feature.txt"
 assert_no_local_skill_source_bypass "silver:feature avoided local codex-plugins skill sources" "$feature_log"
-wait_for_state_contains "silver:feature recorded in workflow state" "silver-feature"
+wait_for_state_contains "silver:feature recorded in workflow state" "silver:feature"
 
 wait_for_file_contains "clear completed button added" "${WORK_DIR}/src/public/index.html" "Clear completed"
 wait_for_file_contains "completed delete endpoint added" "${WORK_DIR}/src/routes/todos.js" "router\\.delete\\('/completed'|DELETE /api/todos/completed"
@@ -338,7 +338,7 @@ ui_prompt="$(skill_prompt 'silver:ui' 'Refine the Clear completed control so it 
 journey_turn "silver:ui" "refine the button affordance" "no" "ui turn recorded" "$ui_prompt"
 ui_log="${TURN_LOG_DIR}/silver-ui.txt"
 assert_no_local_skill_source_bypass "silver:ui avoided local codex-plugins skill sources" "$ui_log"
-wait_for_state_contains "silver:ui recorded in workflow state" "silver-ui"
+wait_for_state_contains "silver:ui recorded in workflow state" "silver:ui"
 wait_for_file_contains "clear completed ui improved" "${WORK_DIR}/src/public/index.html" "aria-label|title"
 
 touch "${WORK_DIR}/.silver-fast-cleanup"
@@ -389,7 +389,7 @@ else
 fi
 
 journey_turn "silver:forensics" "diagnose the injected regression" "no" "forensics turn recorded" "$(skill_prompt 'silver:forensics' 'Diagnose the completed-toggle regression that was just injected into src/routes/todos.js and explain the minimal fix path.')"
-wait_for_state_contains "silver:forensics recorded in workflow state" "silver-forensics"
+wait_for_state_contains "silver:forensics recorded in workflow state" "silver:forensics"
 journey_turn "silver:bugfix" "repair the injected regression" "no" "bugfix turn recorded" "$(skill_prompt 'silver:bugfix' 'Fix the completed-toggle regression in src/routes/todos.js, update or add tests if needed, and ensure npm test passes again.')"
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_injected_regression; then
@@ -491,7 +491,7 @@ journey_turn "silver:validate" "validate the app end state" "no" "validate turn 
 journey_turn "silver:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'silver:quality-gates' 'Run the Silver Bullet quality-gates flow for this inline todo-app journey and prepare the workspace for a release finish.')"
 printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
   | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
-wait_for_state_contains "silver:quality-gates recorded in workflow state" "silver-quality-gates"
+wait_for_state_contains "silver:quality-gates recorded in workflow state" "silver:quality-gates"
 
 write_quality_gate_state_marker 2>/dev/null || true
 write_e2e_live_matrix_marker 2>/dev/null || true
@@ -500,13 +500,13 @@ write_inline_e2e_matrix_marker
 if [[ -n "${issue_num:-}" ]]; then
   if [[ "$issue_num" == "0" ]]; then
     record_completed_surface_for_codex "silver:remove"
-    wait_for_state_contains "silver:remove recorded in workflow state" "silver-remove"
+    wait_for_state_contains "silver:remove recorded in workflow state" "silver:remove"
     echo "PASS: todo-app issue was closed (local fallback)"
     PASS=$((PASS + 1))
   else
     remove_prompt="$(skill_prompt 'silver:remove' "Close the GitHub issue ${issue_url} in ${issue_repo_slug} and confirm it is retired. Use the repository slug ${issue_repo_slug} when closing it.")"
     journey_turn "silver:remove" "retire the todo-app issue" "no" "remove turn recorded" "$remove_prompt"
-    wait_for_state_contains "silver:remove recorded in workflow state" "silver-remove"
+    wait_for_state_contains "silver:remove recorded in workflow state" "silver:remove"
 
     issue_state="$(gh issue view "$issue_num" --repo "$issue_repo_slug" --json state -q '.state' 2>/dev/null || true)"
     if [[ "$issue_state" == "CLOSED" ]]; then
@@ -524,7 +524,7 @@ else
 fi
 
 journey_turn "silver:rem" "capture a durable lesson from the run" "no" "rem turn recorded" "$(skill_prompt 'silver:rem' 'Capture one durable lesson from the inline todo-app journey in the monthly knowledge or lessons docs.')"
-wait_for_state_contains "silver:rem recorded in workflow state" "silver-rem"
+wait_for_state_contains "silver:rem recorded in workflow state" "silver:rem"
 
 month="$(date +%Y-%m)"
 lesson_file="${WORK_DIR}/docs/lessons/${month}.md"
@@ -643,7 +643,7 @@ INLINE_RELEASE_WORK_DIR="$WORK_DIR"
 WORK_DIR="$RELEASE_WORK_DIR"
 journey_turn "silver:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'silver:create-release' 'Create release notes for v1.0.0-inline on the already-prepared todo-app branch. Update CHANGELOG.md and README.md as required by the release skill, keep the branch clean, and create the local git tag v1.0.0-inline. Do not switch branches; the release branch is already prepared and clean.')"
 WORK_DIR="$INLINE_RELEASE_WORK_DIR"
-wait_for_state_contains "silver:create-release recorded in workflow state" "silver-create-release"
+wait_for_state_contains "silver:create-release recorded in workflow state" "silver:create-release"
 
 RELEASE_WORK_DIR="$(discover_release_work_dir)"
 if [[ -z "${RELEASE_WORK_DIR:-}" ]]; then
@@ -667,7 +667,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-release_status="$(git -C "$RELEASE_WORK_DIR" status --short | grep -v '^?? coverage-ledger\.md$' || true)"
+release_status="$(
+  git -C "$RELEASE_WORK_DIR" status --short \
+    | grep -Ev '^\?\? coverage-ledger\.md$|^\?\? \.claude/settings\.local\.json$' \
+    || true
+)"
 if [[ -z "$release_status" ]]; then
   echo "PASS: release workspace is clean"
   PASS=$((PASS + 1))
@@ -677,8 +681,8 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md)" ]]; then
-  git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup coverage-ledger" -- coverage-ledger.md >/dev/null
+if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .claude/settings.local.json)" ]]; then
+  git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .claude/settings.local.json >/dev/null
   echo "PASS: coverage ledger preserved outside the release workspace"
 else
   echo "PASS: coverage ledger already clean after release"

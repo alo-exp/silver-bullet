@@ -1,9 +1,10 @@
 {
-  "session_id": "1fa56620-bbfc-4dba-9591-4639e0a20f46",
-  "rollout_path": "sessions/2026/05/16/rollout-2026-05-16T19-22-53-1fa56620-bbfc-4dba-9591-4639e0a20f46.jsonl",
-  "created_at": "2026-05-16T09:22:53.585Z",
-  "captured_at": "2026-05-16T09:23:48.408Z",
-  "source": "isolated-kay-session-store",
-  "work_dir_real": "/private/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.KrhudSIL4T",
-  "work_dir": "/private/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.KrhudSIL4T"
+  "session_id": "",
+  "thread_id": "",
+  "rollout_path": "",
+  "created_at": "",
+  "captured_at": "2026-05-16T23:01:37Z",
+  "source": "/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//codex-live-transcript-ocRIan",
+  "work_dir": "/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.HwwLeWkU9x",
+  "work_dir_real": "/private/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.HwwLeWkU9x"
 }
