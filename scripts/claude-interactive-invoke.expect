@@ -98,6 +98,12 @@ expect {
     send -- "2\r"
     exp_continue
   }
+  -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
+    # Newer Claude builds ask for an explicit trust confirmation before the
+    # session starts. Pick the trust option so the live harness can continue.
+    send -- "1\r"
+    exp_continue
+  }
   -re {(?s)bypass.*permissions.*on} {
     # Main prompt is live and ready for input.
     exp_continue

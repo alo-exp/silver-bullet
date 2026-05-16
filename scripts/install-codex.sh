@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 PURGE_LEGACY_SKILLS=0
 MERGE_USER_HOOKS="${SB_CODEX_MERGE_USER_HOOKS:-0}"
 CODEX_BIN="${CODEX_BIN:-codex}"
@@ -30,6 +31,16 @@ resolve_codex_gsd_home() {
     return 0
   fi
   printf '%s\n' "${HOME}/.codex/get-shit-done"
+}
+
+render_agent_bundle() {
+  local agent="$1"
+
+  mkdir -p "${REPO_ROOT}/agents"
+  python3 "$AGENT_RENDERER" render \
+    --agent "$agent" \
+    --source-root "${REPO_ROOT}/skills" \
+    --dest-root "${REPO_ROOT}/agents/${agent}"
 }
 
 usage() {
@@ -193,7 +204,7 @@ PY
   }
 
   local dir
-  for dir in hooks skills templates docs commands scripts; do
+  for dir in agents hooks skills templates docs commands scripts; do
     if [[ -d "${REPO_ROOT}/${dir}" ]]; then
       local src_dir="${REPO_ROOT}/${dir}"
       local dst_dir="${marketplace_root}/${dir}"
@@ -262,7 +273,7 @@ materialize_silver_bullet_package() {
 
   # Codex's cache materialization can drop symlink-backed package entries.
   # Replace SB's symlinked top-level package surface with real files/dirs so
-  # hooks/hooks.json, skills/, templates/, and the rest survive install-time
+  # hooks/hooks.json, agents/, skills/, templates/, and the rest survive install-time
   # copying into the versioned cache.
   python3 - "$package_root" <<'PY'
 import pathlib
@@ -304,7 +315,7 @@ sync_materialized_package_surface() {
   [[ -d "$package_root" ]] || return 0
 
   local dir
-  for dir in hooks skills templates docs commands scripts; do
+  for dir in agents hooks skills templates docs commands scripts; do
     if [[ -d "${marketplace_root}/${dir}" ]]; then
       mkdir -p "${package_root}/${dir}"
       rsync -a --delete "${marketplace_root}/${dir}/" "${package_root}/${dir}/"
@@ -1465,6 +1476,8 @@ ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
 seed_marketplace_snapshot_if_missing
 refresh_marketplace "alo-labs-codex"
 purge_legacy_silver_bullet_codex_alias
+render_agent_bundle "claude"
+render_agent_bundle "codex"
 sync_marketplace_package_surface
 sync_marketplace_package_snapshot
 materialize_silver_bullet_package

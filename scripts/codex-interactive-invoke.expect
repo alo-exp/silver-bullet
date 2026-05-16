@@ -8,7 +8,7 @@ proc env_or_default {name default} {
 }
 
 set timeout [expr {int([env_or_default CODEX_INTERACTIVE_TIMEOUT 900])}]
-set cli [env_or_default CODEX_BIN [env_or_default CODEX_CLI [exec sh -lc {command -v codex}]]]
+set cli [env_or_default CODEX_BIN [env_or_default CODEX_CLI [exec sh -lc {command -v kay}]]]
 set work_dir [env_or_default CODEX_WORK_DIR ""]
 set prompt_file [env_or_default CODEX_PROMPT_FILE ""]
 set sandbox_mode [env_or_default CODEX_SANDBOX_MODE "danger-full-access"]
@@ -25,6 +25,10 @@ set quiet_timeout [expr {int([env_or_default CODEX_INTERACTIVE_QUIET_TIMEOUT 5])
 
 if {$work_dir eq "" || $prompt_file eq ""} {
   puts stderr "ERROR: CODEX_WORK_DIR and CODEX_PROMPT_FILE must be set"
+  exit 2
+}
+if {[file tail $cli] ne "kay"} {
+  puts stderr "ERROR: SB test launchers require Kay as the Codex-compatible runtime"
   exit 2
 }
 

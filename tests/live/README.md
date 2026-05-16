@@ -1,7 +1,7 @@
 # Silver Bullet Live AI E2E Tests
 
 These tests invoke the **real `claude` CLI** or a **Kay-backed Codex-compatible
-runtime** with the Silver Bullet plugin loaded and stored credentials. They verify that SB enforcement hooks
+runtime** with the Silver Bullet plugin loaded and stored credentials. The Codex-compatible path is Kay-only and pinned to MiniMax M2.7. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
 actually work when either runtime triggers them via real tool usage.
 
@@ -26,6 +26,11 @@ actually work when either runtime triggers them via real tool usage.
 Run the full matrix:
 ```bash
 bash tests/live/run-live-tests.sh
+```
+
+Run the Kay-only live suite wrapper:
+```bash
+bash scripts/run-sb-live-tests-kay.sh
 ```
 
 Run a single runtime to validate setup:

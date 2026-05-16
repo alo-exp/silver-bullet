@@ -4,6 +4,16 @@
 
 ---
 
+## [0.35.4] — 2026-05-16
+
+## Bug Fixes
+
+- Reorganize generated agent bundles under `agents/<agent-name>/...` so runtime-specific skill surfaces are generated from a shared canonical source.
+- Harden the Kay-backed live e2e harness, including `gsd-scan` state recording and deterministic recovery from the injected route regression.
+- Re-run the full verification gate, including the live e2e journey, before cutting the patch release.
+
+---
+
 ## [0.35.3] — 2026-05-15
 
 ## Bug Fixes

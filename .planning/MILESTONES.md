@@ -1,5 +1,22 @@
 # Milestones
 
+## v0.35.4 Agents Directory Reorg (Planned: 2026-05-16)
+
+**Type:** Patch release milestone (agent-bundle layout reorg, compatibility aliases, installer/surface sync, docs/tests refresh).
+
+**Goal:** Reorganize generated agent-specific skill bundles under `agents/<agent-name>/...`, keep `skills/` as the canonical source tree, and make Claude and Codex consume the appropriate runtime bundle without drifting apart.
+
+**Phases planned:** 95-99
+
+**Target issue clusters:**
+
+- Agent bundle generation and naming consistency: `agents/claude`, `agents/codex`, `silver:*` frontmatter normalization
+- Codex/Claude installer and package surface wiring: `skills/`, `agents/`, `.generated-skills` compatibility aliases
+- Docs/template refresh: bundle layout docs, installer references, runtime notes
+- Verification: package sync/install tests, live e2e smoke, release prep for `v0.35.4`
+
+**Status:** planning; bundle renderer and milestone reset are being prepared before implementation work begins.
+
 ## v0.33.1 Open Issue Burn-down (Planned: 2026-05-13)
 
 **Type:** Patch release milestone (init/runtime fixes, docs semantic audit, hook ergonomics, backlog reconciliation, release prep).
@@ -17,7 +34,7 @@
 - Router/composer contract drift: Phase 92 local architecture alignment, including local backlog item SB-B-1
 - Release prep: v0.33.1 versioning, CI, pre-release gate, GitHub Release
 
-**Status:** in progress; Phase 92 completed on 2026-05-13 to keep dynamic `/silver` flow composition and GSD alignment under milestone/semver management. Remaining phases continue the v0.33.1 issue burn-down and release prep.
+**Status:** superseded by v0.35.4; retained as historical context for the older issue burn-down and release prep stream.
 
 ## v0.31.1 Docs & State Sync (Shipped: 2026-05-06)
 
