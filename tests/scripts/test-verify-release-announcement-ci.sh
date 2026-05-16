@@ -130,6 +130,10 @@ assert_contains "workflow requests actions: read" "actions: read" "$(cat "$annou
 assert_contains "workflow waits for release CI" "Wait for release commit CI to settle" "$(cat "$announce_workflow")"
 assert_contains "workflow invokes release CI script" "verify-release-announcement-ci.sh" "$(cat "$announce_workflow")"
 
+wait_line=$(grep -n "Wait for release commit CI to settle" "$announce_workflow" | head -1 | cut -d: -f1 || echo 0)
+post_line=$(grep -n "Post to Google Chat" "$announce_workflow" | head -1 | cut -d: -f1 || echo 0)
+assert_contains "workflow posts after CI wait step" "pass" "$([[ "$wait_line" -gt 0 && "$post_line" -gt 0 && "$wait_line" -lt "$post_line" ]] && echo pass || echo fail)"
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
