@@ -29,6 +29,8 @@ assert_file_exists() {
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 ORIGINAL_HOME="$TMP/original-home"
 mkdir -p "$ORIGINAL_HOME/.claude"
 cat > "$ORIGINAL_HOME/.claude/mcp-needs-auth-cache.json" <<'EOF'
@@ -40,7 +42,7 @@ export SB_TEST_TODO_APP_ROOT="/Users/shafqat/projects/test-todo-app"
 export SB_E2E_LIVE_RUNTIME="claude"
 
 # shellcheck source=tests/e2e-live/helpers.sh
-source "/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/helpers.sh"
+source "${SCRIPT_DIR}/../e2e-live/helpers.sh"
 
 backup_session_state
 
