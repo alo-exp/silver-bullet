@@ -38,7 +38,9 @@ cat > "$ORIGINAL_HOME/.claude/mcp-needs-auth-cache.json" <<'EOF'
 EOF
 
 export HOME="$ORIGINAL_HOME"
-export SB_TEST_TODO_APP_ROOT="/Users/shafqat/projects/test-todo-app"
+TODO_APP_ROOT="$TMP/test-todo-app"
+mkdir -p "$TODO_APP_ROOT"
+export SB_TEST_TODO_APP_ROOT="$TODO_APP_ROOT"
 export SB_E2E_LIVE_RUNTIME="claude"
 
 # shellcheck source=tests/e2e-live/helpers.sh
