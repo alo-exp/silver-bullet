@@ -13,24 +13,25 @@ CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-lab
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
 SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
 GSD_MARKETPLACE_SOURCE="${GSD_MARKETPLACE_SOURCE:-https://github.com/gsd-build/get-shit-done.git}"
+CODEX_HOME_ROOT="${KAY_HOME:-${HOME}}"
 
 resolve_codex_config_file() {
-  local config_file="${HOME}/.codex/config.toml"
-  mkdir -p "${HOME}/.codex"
+  local config_file="${CODEX_HOME_ROOT}/.codex/config.toml"
+  mkdir -p "${CODEX_HOME_ROOT}/.codex"
   if [[ -f "$config_file" ]]; then
     printf '%s\n' "$config_file"
     return 0
   fi
-  printf '%s\n' "${HOME}/.codex/config.toml"
+  printf '%s\n' "${CODEX_HOME_ROOT}/.codex/config.toml"
 }
 
 resolve_codex_gsd_home() {
-  local gsd_home="${HOME}/.codex/get-shit-done"
+  local gsd_home="${CODEX_HOME_ROOT}/.codex/get-shit-done"
   if [[ -f "${gsd_home}/VERSION" ]]; then
     printf '%s\n' "$gsd_home"
     return 0
   fi
-  printf '%s\n' "${HOME}/.codex/get-shit-done"
+  printf '%s\n' "${CODEX_HOME_ROOT}/.codex/get-shit-done"
 }
 
 render_agent_bundle() {
@@ -363,7 +364,7 @@ sync_codex_cache_package_surface() {
   marketplace_root="$(codex_marketplace_root)"
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
-  local cache_root="${HOME}/.codex/plugins/cache"
+  local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"
   local marketplace_package_root="${marketplace_root}/plugins/silver-bullet"
   local package_root="${cache_root}/alo-labs-codex/silver-bullet"
   local package_version
@@ -385,7 +386,7 @@ sync_codex_cache_package_surface() {
 }
 
 ensure_silver_bullet_registry_entry() {
-  local registry_file="${HOME}/.codex/plugins/installed_plugins.json"
+  local registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
 
   python3 - "$registry_file" <<'PY'
 import datetime
@@ -451,7 +452,7 @@ PY
 }
 
 sync_codex_installed_plugin_registry_paths() {
-  local registry_file="${HOME}/.codex/plugins/installed_plugins.json"
+  local registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
   local updated_at
   local plugin_id
   local plugin_name
@@ -473,7 +474,7 @@ sync_codex_installed_plugin_registry_paths() {
     current_path=""
     stable_path=""
 
-    local cache_root="${HOME}/.codex/plugins/cache"
+    local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"
     if [[ -d "${cache_root}/${marketplace}/${plugin_name}" ]]; then
       current_path="$(find "${cache_root}/${marketplace}/${plugin_name}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     fi
@@ -506,7 +507,7 @@ target_path = current_path.resolve()
 for alias_path in alias_roots:
     refresh_alias(alias_path, target_path)
 PY
-      stable_path="${HOME}/.codex/plugins/cache/${marketplace}/${plugin_name}/current"
+      stable_path="${CODEX_HOME_ROOT}/.codex/plugins/cache/${marketplace}/${plugin_name}/current"
       updates+=("${plugin_id}=${stable_path}|${current_path##*/}")
     done < <(python3 - "$registry_file" <<'PY'
 import json
@@ -566,7 +567,7 @@ PY
 
 ensure_codex_dependency_registry_entries() {
   local registry_file
-  registry_file="${HOME}/.codex/plugins/installed_plugins.json"
+  registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
 
   python3 - "$registry_file" <<'PY'
 import datetime
@@ -647,7 +648,7 @@ normalize_codex_hook_async_flags() {
   local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
 
-  python3 - "$marketplace_root" "$HOME/.codex/plugins/cache" <<'PY'
+  python3 - "$marketplace_root" "${CODEX_HOME_ROOT}/.codex/plugins/cache" <<'PY'
 import json
 import pathlib
 import sys
@@ -850,7 +851,7 @@ PY
 }
 
 purge_legacy_silver_bullet_codex_alias() {
-  python3 - "${HOME}/.codex/plugins/installed_plugins.json" "${HOME}/.codex/config.toml" <<'PY'
+  python3 - "${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json" "${CODEX_HOME_ROOT}/.codex/config.toml" <<'PY'
 import json
 import pathlib
 import shutil
@@ -925,7 +926,7 @@ PY
 }
 
 purge_legacy_silver_bullet_hooks_from_user_config() {
-  python3 - "${HOME}/.codex/hooks.json" <<'PY'
+  python3 - "${CODEX_HOME_ROOT}/.codex/hooks.json" <<'PY'
 import json
 import pathlib
 import re
@@ -970,7 +971,7 @@ for raw_path in sys.argv[1:]:
         hooks_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 
-  python3 - "${HOME}/.codex/config.toml" <<'PY'
+  python3 - "${CODEX_HOME_ROOT}/.codex/config.toml" <<'PY'
 import pathlib
 import sys
 
@@ -1009,7 +1010,7 @@ seed_silver_bullet_hook_trust_state() {
   marketplace_root="$(codex_marketplace_root)"
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
-  python3 - "${marketplace_root}/plugins/silver-bullet" "${HOME}/.codex/config.toml" "$MERGE_USER_HOOKS" <<'PY'
+  python3 - "${marketplace_root}/plugins/silver-bullet" "${CODEX_HOME_ROOT}/.codex/config.toml" "$MERGE_USER_HOOKS" <<'PY'
 import hashlib
 import json
 import pathlib
@@ -1149,7 +1150,7 @@ merge_silver_bullet_hooks_into_user_config() {
 
   [[ -d "${package_root}/hooks" ]] || return 0
 
-  python3 - "$package_root" "${HOME}/.codex/hooks.json" <<'PY'
+  python3 - "$package_root" "${CODEX_HOME_ROOT}/.codex/hooks.json" <<'PY'
 import json
 import pathlib
 import re
@@ -1241,12 +1242,12 @@ PY
 }
 
 codex_marketplace_root() {
-  local marketplace_root="${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
+  local marketplace_root="${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
   if [[ -d "$marketplace_root" ]]; then
     printf '%s\n' "$marketplace_root"
     return 0
   fi
-  printf '%s\n' "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex"
+  printf '%s\n' "${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
 }
 
 find_silver_bullet_project_root() {
@@ -1299,7 +1300,7 @@ rewrite_codex_bundle_host_paths() {
 
   [[ -d "$package_root" ]] || return 0
 
-  python3 - "$marketplace_root" "$package_root" "${HOME}/.codex/plugins/cache" <<'PY'
+  python3 - "$marketplace_root" "$package_root" "${CODEX_HOME_ROOT}/.codex/plugins/cache" <<'PY'
 import json
 import pathlib
 import re
@@ -1551,7 +1552,7 @@ sync_silver_bullet_skill_cache
 scrub_legacy_silver_bullet_traces
 
 if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
-  LEGACY_SKILLS_HOME="${HOME}/.agents/skills"
+  LEGACY_SKILLS_HOME="${CODEX_HOME_ROOT}/.agents/skills"
   if [[ -d "${LEGACY_SKILLS_HOME}" ]]; then
     while IFS= read -r -d '' skill_dir; do
       skill_name="$(basename "${skill_dir}")"

@@ -2,9 +2,9 @@
 # Isolated Kay agent setup for live tests.
 #
 # The live suites need a hook-capable Kay-compatible agent, but they must not
-# rewrite the user's real ~/.codex hook cache. Kay is the isolated agent;
-# KAY_SB_TEST_HOME owns the temp tree and HOME/CODE_HOME are pointed inside it
-# before SB runs the installer or invokes the agent.
+# rewrite the user's real session or hook caches. Kay is the isolated agent;
+# KAY_HOME owns the temp tree and the live harness keeps the temp Kay state
+# rooted under ${KAY_HOME}/.kay/.
 
 set -euo pipefail
 
@@ -21,20 +21,12 @@ setup_kay_codex_isolation() {
   fi
 
   export SB_LIVE_ORIGINAL_HOME="${SB_LIVE_ORIGINAL_HOME:-$HOME}"
-  export SB_LIVE_ORIGINAL_CODE_HOME_SET="${CODE_HOME+x}"
-  export SB_LIVE_ORIGINAL_CODE_HOME="${CODE_HOME:-}"
-  export SB_LIVE_ORIGINAL_CODEX_HOME_SET="${CODEX_HOME+x}"
-  export SB_LIVE_ORIGINAL_CODEX_HOME="${CODEX_HOME:-}"
   export KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-$(mktemp -d "${TMPDIR:-/tmp}/sb-kay-test.XXXXXX")}"
-  export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$KAY_SB_TEST_HOME}"
-  export HOME="${KAY_SB_TEST_HOME}/home"
-  export CODE_HOME="${KAY_SB_TEST_HOME}/code-home"
-  export CODEX_HOME="${HOME}/.codex"
+  export KAY_HOME="${KAY_HOME:-$KAY_SB_TEST_HOME}"
+  export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$KAY_HOME}"
   export SB_LIVE_CODEX_ISOLATION_ACTIVE=1
 
-  mkdir -p "$HOME/.codex" "$CODE_HOME" "$KAY_SB_TEST_HOME/.kay/.silver-bullet"
-  rm -rf "$HOME/.claude"
-  ln -sfn "$KAY_SB_TEST_HOME/.kay" "$HOME/.claude"
+  mkdir -p "$KAY_HOME/.codex" "$KAY_HOME/.kay/.silver-bullet" "$KAY_HOME/.kay/sessions/index"
 
   if [[ -z "${CODEX_BIN:-}" ]]; then
     if command -v kay >/dev/null 2>&1; then
@@ -52,7 +44,7 @@ setup_kay_codex_isolation() {
   export SB_LIVE_KAY_AGENT="kay"
   export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"
   export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"
-  export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${CODE_HOME}/sessions/index/catalog.jsonl}"
+  export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME}/.kay/sessions/index/catalog.jsonl}"
   # Keep the live-test transcript archive local to the harness. silver-scan
   # reads the agent's official session stores directly instead.
   export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/kay/transcripts}"
@@ -91,7 +83,7 @@ PY
     fi
   fi
 
-  cat > "${CODE_HOME}/config.toml" <<EOF
+  cat > "${KAY_HOME}/.kay/config.toml" <<EOF
 model = "${SB_LIVE_CODEX_MODEL}"
 model_provider = "${SB_LIVE_CODEX_MODEL_PROVIDER}"
 approval_policy = "never"
@@ -101,27 +93,25 @@ sandbox_mode = "danger-full-access"
 EOF
 
   # Mirror the installed Codex marketplace/config surface into the isolated
-  # home so live preflight can run without a fresh network-bound reinstall.
-  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" && ! -f "${HOME}/.codex/config.toml" ]]; then
-    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" "${HOME}/.codex/config.toml"
+  # Kay home so live preflight can run without a fresh network-bound reinstall.
+  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" && ! -f "${KAY_HOME}/.codex/config.toml" ]]; then
+    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/config.toml" "${KAY_HOME}/.codex/config.toml"
   fi
-  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" && ! -f "${HOME}/.codex/plugins/installed_plugins.json" ]]; then
-    mkdir -p "${HOME}/.codex/plugins"
-    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" "${HOME}/.codex/plugins/installed_plugins.json"
+  if [[ -f "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" && ! -f "${KAY_HOME}/.codex/plugins/installed_plugins.json" ]]; then
+    mkdir -p "${KAY_HOME}/.codex/plugins"
+    cp -p "${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/installed_plugins.json" "${KAY_HOME}/.codex/plugins/installed_plugins.json"
   fi
-  if [[ -d "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex" && ! -d "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex" ]]; then
-    mkdir -p "${HOME}/.codex/.tmp/marketplaces"
-    rsync -a "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex/" "${HOME}/.codex/.tmp/marketplaces/alo-labs-codex/"
+  if [[ -d "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex" && ! -d "${KAY_HOME}/.codex/.tmp/marketplaces/alo-labs-codex" ]]; then
+    mkdir -p "${KAY_HOME}/.codex/.tmp/marketplaces"
+    rsync -a "${SB_LIVE_ORIGINAL_HOME}/.codex/.tmp/marketplaces/alo-labs-codex/" "${KAY_HOME}/.codex/.tmp/marketplaces/alo-labs-codex/"
   fi
 
   # Silver:init still probes the GSD home using the historical ~/.codex path.
-  # The isolated agent keeps the real install under ~/.claude, so mirror the
+  # The isolated agent keeps the real install under the Kay root, so mirror the
   # entrypoint there to make the Kay live harness look like a native install.
-  if [[ ! -e "${HOME}/.codex/get-shit-done" ]]; then
+  if [[ ! -e "${KAY_HOME}/.codex/get-shit-done" ]]; then
     if [[ -e "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" ]]; then
-      ln -sfn "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" "${HOME}/.codex/get-shit-done"
-    elif [[ -e "${HOME}/.claude/get-shit-done" ]]; then
-      ln -sfn "${HOME}/.claude/get-shit-done" "${HOME}/.codex/get-shit-done"
+      ln -sfn "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" "${KAY_HOME}/.codex/get-shit-done"
     fi
   fi
 
@@ -130,7 +120,7 @@ EOF
 
 seed_kay_codex_dependency_cache() {
   local original_cache="${SB_LIVE_ORIGINAL_HOME}/.codex/plugins/cache"
-  local isolated_cache="${HOME}/.codex/plugins/cache"
+  local isolated_cache="${KAY_HOME}/.codex/plugins/cache"
   local spec src_root dst_root entry alias_src alias_target alias_parent
   local required_plugins=(
     "superpowers-marketplace/superpowers"
@@ -174,8 +164,8 @@ seed_kay_codex_dependency_cache() {
           "alo-labs-codex/product-management") plugin_id="product-management@alo-labs-codex" ;;
           *) plugin_id="" ;;
         esac
-        if [[ -n "$plugin_id" && -f "${HOME}/.codex/plugins/installed_plugins.json" ]]; then
-          python3 - "${HOME}/.codex/plugins/installed_plugins.json" "$plugin_id" "${dst_root}/current" "$(basename "$latest_version_dir")" <<'PY'
+        if [[ -n "$plugin_id" && -f "${KAY_HOME}/.codex/plugins/installed_plugins.json" ]]; then
+          python3 - "${KAY_HOME}/.codex/plugins/installed_plugins.json" "$plugin_id" "${dst_root}/current" "$(basename "$latest_version_dir")" <<'PY'
 import datetime
 import json
 import pathlib
@@ -233,23 +223,9 @@ teardown_kay_codex_isolation() {
   if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" != "1" ]]; then
     return 0
   fi
-  if [[ -n "${SB_LIVE_ORIGINAL_HOME:-}" ]]; then
-    export HOME="$SB_LIVE_ORIGINAL_HOME"
-  fi
   if [[ "${SB_LIVE_KEEP_CODEX_ISOLATION:-0}" != "1" && -n "${SB_LIVE_CODEX_ISOLATION_DIR:-}" ]]; then
     rm -rf "$SB_LIVE_CODEX_ISOLATION_DIR"
   fi
-  if [[ -n "${SB_LIVE_ORIGINAL_CODE_HOME_SET:-}" ]]; then
-    export CODE_HOME="$SB_LIVE_ORIGINAL_CODE_HOME"
-  else
-    unset CODE_HOME
-  fi
-  if [[ -n "${SB_LIVE_ORIGINAL_CODEX_HOME_SET:-}" ]]; then
-    export CODEX_HOME="$SB_LIVE_ORIGINAL_CODEX_HOME"
-  else
-    unset CODEX_HOME
-  fi
-  unset SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR KAY_SB_TEST_HOME
-  unset SB_LIVE_ORIGINAL_CODE_HOME SB_LIVE_ORIGINAL_CODE_HOME_SET
-  unset SB_LIVE_ORIGINAL_CODEX_HOME SB_LIVE_ORIGINAL_CODEX_HOME_SET
+  unset SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR KAY_SB_TEST_HOME KAY_HOME
+  unset SB_LIVE_ORIGINAL_HOME SB_LIVE_ORIGINAL_HOME_SET
 }

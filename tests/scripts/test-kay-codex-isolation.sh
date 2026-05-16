@@ -57,7 +57,7 @@ EOF
 
 cat > "$FAKE_BIN" <<'EOF'
 #!/usr/bin/env bash
-printf 'kay 0.9.3\n'
+printf 'kay 0.9.6\n'
 EOF
 chmod +x "$FAKE_BIN"
 cat > "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md" <<'EOF'
@@ -67,25 +67,22 @@ name: verification-before-completion
 EOF
 
 export HOME="$ORIGINAL_HOME"
-export CODE_HOME="$TMP/original-code-home"
-export CODEX_HOME="$TMP/original-codex-home"
 export CODEX_BIN="$FAKE_BIN"
 unset MINIMAX_API_KEY SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR SB_LIVE_ORIGINAL_HOME
+unset KAY_HOME KAY_SB_TEST_HOME
 
 # shellcheck source=tests/live/lib/kay-codex-isolation.sh
 source "$REPO_ROOT/tests/live/lib/kay-codex-isolation.sh"
 setup_kay_codex_isolation
 
-assert_eq "KAY_SB_TEST_HOME is redirected to isolated test root" "$SB_LIVE_CODEX_ISOLATION_DIR" "$KAY_SB_TEST_HOME"
-assert_eq "HOME is redirected to isolated test home" "${KAY_SB_TEST_HOME}/home" "$HOME"
-assert_eq "CODE_HOME is redirected to isolated Kay config root" "${KAY_SB_TEST_HOME}/code-home" "$CODE_HOME"
-assert_eq "CODEX_HOME is redirected under isolated home" "${HOME}/.codex" "$CODEX_HOME"
+assert_eq "KAY_HOME is redirected to isolated test root" "$SB_LIVE_CODEX_ISOLATION_DIR" "$KAY_HOME"
+assert_eq "KAY_SB_TEST_HOME mirrors KAY_HOME" "$KAY_HOME" "$KAY_SB_TEST_HOME"
 assert_eq "MiniMax key is sourced from original Kay config" "test-minimax-key" "$MINIMAX_API_KEY"
 assert_eq "Kay/Codex binary is preserved" "$FAKE_BIN" "$CODEX_BIN"
-assert_file_contains "Isolated Kay config pins MiniMax provider" "$CODE_HOME/config.toml" 'model_provider = "minimax"'
-assert_file_contains "Isolated Kay config pins MiniMax M2.7" "$CODE_HOME/config.toml" 'model = "MiniMax-M2.7"'
-assert_file_exists "Isolated Kay cache copies dependency plugin versions" "$HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md"
-assert_file_exists "Isolated Kay state root exists under .kay" "${KAY_SB_TEST_HOME}/.kay/.silver-bullet"
+assert_file_contains "Isolated Kay config pins MiniMax provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "minimax"'
+assert_file_contains "Isolated Kay config pins MiniMax M2.7" "$KAY_HOME/.kay/config.toml" 'model = "MiniMax-M2.7"'
+assert_file_exists "Isolated Kay cache copies dependency plugin versions" "$KAY_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md"
+assert_file_exists "Isolated Kay state root exists under .kay" "$KAY_HOME/.kay/.silver-bullet"
 case "$SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD" in
   *"MiniMax-M2.7"*"Do not call agent"*"split argv array"*)
     echo "PASS: isolated Kay prompt guard constrains agents, model, and command arrays"
@@ -100,9 +97,13 @@ esac
 isolated_root="$SB_LIVE_CODEX_ISOLATION_DIR"
 teardown_kay_codex_isolation
 
-assert_eq "HOME restored after teardown" "$ORIGINAL_HOME" "$HOME"
-assert_eq "CODE_HOME restored after teardown" "$TMP/original-code-home" "$CODE_HOME"
-assert_eq "CODEX_HOME restored after teardown" "$TMP/original-codex-home" "$CODEX_HOME"
+if [[ -z "${KAY_HOME:-}" ]]; then
+  echo "PASS: KAY_HOME unset after teardown"
+  (( PASS++ )) || true
+else
+  echo "FAIL: KAY_HOME still set after teardown: $KAY_HOME"
+  (( FAIL++ )) || true
+fi
 if [[ -z "${KAY_SB_TEST_HOME:-}" ]]; then
   echo "PASS: KAY_SB_TEST_HOME unset after teardown"
   (( PASS++ )) || true

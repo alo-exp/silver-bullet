@@ -27,7 +27,7 @@ agent_cli_path() {
 }
 
 kay_session_catalog_path() {
-  printf '%s\n' "${CODEX_SESSION_CATALOG_PATH:-${HOME}/.code/sessions/index/catalog.jsonl}"
+  printf '%s\n' "${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME:-${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}}/.kay/sessions/index/catalog.jsonl}"
 }
 
 codex_transcript_dir() {
@@ -241,7 +241,7 @@ PY
 }
 
 kay_live_guard_context() {
-  local test_root="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
+  local test_root="${KAY_HOME:-${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}}"
   local state_file="${test_root}/.kay/.silver-bullet/state"
   local state_contents=""
 

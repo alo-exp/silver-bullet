@@ -39,6 +39,6 @@ Fast preflight:
 Each scenario starts from a fresh workspace copied from the standalone sibling `test-todo-app` repo and is
 cleaned up after completion.
 
-For Kay-agent runs, the suite creates an isolated temporary `HOME`,
-`CODE_HOME`, and `CODEX_HOME` before bootstrapping the SB Codex package. That
-keeps live E2E installs from changing the user's real `~/.codex` hook cache.
+For Kay-agent runs, the suite uses an isolated temporary `KAY_HOME` root
+before bootstrapping the SB Codex package. That keeps live E2E installs from
+changing the user's real `~/.codex` hook cache.

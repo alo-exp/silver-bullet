@@ -12,7 +12,7 @@ live_setup
 response=$(invoke_claude_permissive "Say hello. What is 2+2?")
 sleep 2
 # session-start hook fires and creates state directory
-assert_file_exists "S7: SB state directory exists" "${HOME}/.claude/.silver-bullet"
+assert_file_exists "S7: SB state directory exists" "$SB_TEST_DIR"
 assert_response_contains "S7: response contains a greeting or answer" "$response" "Hello|hello|hi|4|four|2\+2|answer"
 live_teardown
 

@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
-E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
-INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
+E2E_LIVE_MATRIX_FILE=""
+INLINE_E2E_MATRIX_FILE=""
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
 )
@@ -45,8 +45,12 @@ echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent ag
 echo "Estimated cost: higher than the hook matrix; keep runtimes narrow when iterating."
 echo ""
 
-rm -f "$E2E_LIVE_MATRIX_FILE"
-rm -f "$INLINE_E2E_MATRIX_FILE"
+if [[ -n "$E2E_LIVE_MATRIX_FILE" ]]; then
+  rm -f "$E2E_LIVE_MATRIX_FILE"
+fi
+if [[ -n "$INLINE_E2E_MATRIX_FILE" ]]; then
+  rm -f "$INLINE_E2E_MATRIX_FILE"
+fi
 
 TOTAL_FAIL=0
 TOTAL_PASS=0
@@ -90,6 +94,8 @@ for runtime in "${RUNTIMES[@]}"; do
   esac
 
   if [[ "$runtime" == "claude" ]]; then
+    E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
+    INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
     if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
       echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
       exit 1
@@ -98,6 +104,8 @@ for runtime in "${RUNTIMES[@]}"; do
     # shellcheck source=tests/live/lib/kay-codex-isolation.sh
     source "$CODEX_ISOLATION_HELPER"
     setup_kay_codex_isolation
+    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/e2e-live-matrix"
+    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: Kay CLI not found or not working"
       exit 1

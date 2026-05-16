@@ -239,9 +239,9 @@ The installer:
 - seeds Codex hook trust from the installed plugin manifest instead of
   duplicating SB hooks into the user's global hook cache
 
-For isolated Codex-compatible live testing, Kay `v0.9.3` plus MiniMax M2.7 is the
-tested path. The live harness creates temporary `HOME`, `CODE_HOME`, and
-`CODEX_HOME` roots so tests do not rewrite the user's real Codex hook cache.
+For isolated Codex-compatible live testing, Kay `v0.9.6` plus MiniMax M2.7 is the
+tested path. The live harness creates a temporary `KAY_HOME` root so tests do
+not rewrite the user's real Kay or Codex hook cache.
 
 ### Forge
 
@@ -454,7 +454,7 @@ SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
 SB_E2E_LIVE_RUNTIMES=codex bash tests/e2e-live/run-e2e-live-tests.sh
 ```
 
-Codex-compatible live tests use Kay `v0.9.3` and MiniMax M2.7 when configured.
+Codex-compatible live tests use Kay `v0.9.6` and MiniMax M2.7 when configured.
 SB tests should not be run against the upstream `codex` binary directly.
 The harness isolates config roots so live tests do not mutate the user's normal
 Codex hook cache.
