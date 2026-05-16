@@ -44,11 +44,11 @@ echo "=== Kay-only SB live test wrapper checks ==="
 assert_executable "wrapper is executable" "$WRAPPER"
 assert_file_contains "wrapper pins MiniMax provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"'
 assert_file_contains "wrapper pins MiniMax M2.7" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"'
-assert_file_contains "wrapper runs live runtime suite" "$WRAPPER" 'tests/live/run-live-tests.sh'
+assert_file_contains "wrapper runs live agent suite" "$WRAPPER" 'tests/live/run-live-tests.sh'
 assert_file_contains "wrapper runs todo-app suite" "$WRAPPER" 'tests/e2e-live/run-e2e-live-tests.sh'
 
 assert_file_not_contains "kay isolation helper does not fall back to codex" "$REPO_ROOT/tests/live/lib/kay-codex-isolation.sh" 'command -v codex'
-assert_file_not_contains "codex runtime adapter does not fall back to codex" "$REPO_ROOT/tests/live/runtimes/codex.sh" 'command -v codex'
+assert_file_not_contains "kay agent adapter does not fall back to codex" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'command -v codex'
 assert_file_not_contains "interactive launcher does not fall back to codex" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'command -v codex'
 
 echo

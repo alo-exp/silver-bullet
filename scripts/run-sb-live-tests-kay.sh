@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+export SB_LIVE_AGENT="${SB_LIVE_AGENT:-kay}"
+export SB_E2E_LIVE_AGENT="${SB_E2E_LIVE_AGENT:-kay}"
 export SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-codex}"
 export SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-codex}"
 export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"

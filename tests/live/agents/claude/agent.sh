@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Claude runtime adapter for live Silver Bullet tests.
+# Claude agent adapter for live Silver Bullet tests.
 
-runtime_name() {
+agent_name() {
   printf 'claude'
 }
 
-runtime_cli_path() {
+agent_cli_path() {
   printf '%s\n' "${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
 }
 
-runtime_preflight() {
+agent_preflight() {
   local cli
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   if ! "$cli" --version >/dev/null 2>&1; then
     printf 'ERROR: claude CLI not found or not working at %s\n' "$cli" >&2
     return 1
@@ -22,7 +22,7 @@ runtime_preflight() {
   fi
 }
 
-runtime_invoke() {
+agent_invoke() {
   local mode="$1"
   local prompt="$2"
   local cli
@@ -30,7 +30,7 @@ runtime_invoke() {
   local permission_mode
   local continue_flag
 
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
   : "${CLAUDE_PROMPT_COUNT:=0}"
   if [[ "$mode" == "permissive" ]]; then

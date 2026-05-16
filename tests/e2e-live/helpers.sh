@@ -3,9 +3,9 @@
 #
 # The suite runs Claude and Codex against an isolated copy of the standalone
 # sibling test-todo-app repo, then resets the workspace after each scenario.
-# The real SB state files under ~/.claude/.silver-bullet are backed up and
-# restored around each scenario so the suite can run repeatedly without
-# cross-talk.
+# The real SB state files are backed up and restored around each scenario so
+# the suite can run repeatedly without cross-talk. Claude keeps using
+# ~/.claude/.silver-bullet; Kay uses the temp-root .kay/.silver-bullet tree.
 
 set -euo pipefail
 
@@ -16,12 +16,21 @@ E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
 DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
 FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
-RUNTIME_DIR="${SB_ROOT}/tests/live/runtimes"
+AGENT_DIR="${SB_ROOT}/tests/live/agents"
 LIB_DIR="${E2E_ROOT}/lib"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
+if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
+  SB_TEST_DIR="${KAY_SB_TEST_HOME}/.kay/.silver-bullet"
+  MCP_AUTH_CACHE="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.json"
+  MCP_AUTH_CACHE_BACKUP="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.e2e-live-backup-$$"
+else
+  SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+  MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
+  MCP_AUTH_CACHE_BACKUP="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
+fi
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 # shellcheck disable=SC2034 # Reserved for live-run budget enforcement.
@@ -43,9 +52,6 @@ SESSION_INIT_FILE="${SB_TEST_DIR}/session-init"
 STATE_BACKUP="${SB_TEST_DIR}/state.e2e-live-backup-$$"
 TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.e2e-live-backup-$$"
 SESSION_INIT_BACKUP="${SB_TEST_DIR}/session-init.e2e-live-backup-$$"
-MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
-MCP_AUTH_CACHE_BACKUP="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
-
 PASS=0
 FAIL=0
 
@@ -70,15 +76,15 @@ CLAUDE_REQUIRED_PLUGINS=(
 
 case "$E2E_RUNTIME" in
   claude)
-    # shellcheck source=tests/live/runtimes/claude.sh
-    source "$RUNTIME_DIR/claude.sh"
+    # shellcheck source=tests/live/agents/claude/agent.sh
+    source "$AGENT_DIR/claude/agent.sh"
     ;;
-  codex)
-    # shellcheck source=tests/live/runtimes/codex.sh
-    source "$RUNTIME_DIR/codex.sh"
+  kay|codex)
+    # shellcheck source=tests/live/agents/kay/agent.sh
+    source "$AGENT_DIR/kay/agent.sh"
     ;;
   *)
-    printf 'ERROR: unsupported e2e live runtime: %s\n' "$E2E_RUNTIME" >&2
+    printf 'ERROR: unsupported e2e live agent: %s\n' "$E2E_RUNTIME" >&2
     exit 2
     ;;
 esac
@@ -180,7 +186,7 @@ write_dependency_access_preflight_marker() {
   [[ -n "$marker_file" ]] || return 0
   mkdir -p "$(dirname "$marker_file")"
   cat > "$marker_file" <<EOF
-runtime=${E2E_RUNTIME}
+agent=${E2E_RUNTIME}
 checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 }
@@ -219,7 +225,7 @@ PY
 }
 
 write_quality_gate_state_marker() {
-  local gate_file="${HOME}/.claude/.silver-bullet/quality-gate-state"
+  local gate_file="${SB_TEST_DIR}/quality-gate-state"
   mkdir -p "$(dirname "$gate_file")"
   cat > "$gate_file" <<'EOF'
 quality-gate-stage-1
@@ -312,7 +318,7 @@ PY
 
   rm -f "$SESSION_INIT_FILE"
 
-  runtime_preflight
+  agent_preflight
 
   if [[ -f "${WORK_DIR}/package-lock.json" || -f "${WORK_DIR}/package.json" ]]; then
     (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
@@ -413,7 +419,7 @@ run_prompt() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     claude_interactive_invoke permissive "$prompt"
   else
-    runtime_invoke permissive "$prompt"
+    agent_invoke permissive "$prompt"
   fi
 }
 
@@ -423,7 +429,7 @@ run_prompt_strict() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     claude_interactive_invoke default "$prompt"
   else
-    runtime_invoke default "$prompt"
+    agent_invoke default "$prompt"
   fi
 }
 
@@ -470,7 +476,7 @@ claude_plugin_installed() {
   local plugin_id="$1"
   local cli
 
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   (cd "$WORK_DIR" && "$cli" plugin list --json 2>/dev/null \
     | jq -e --arg id "$plugin_id" 'any(.[]?; .id == $id)' >/dev/null 2>&1)
 }
@@ -480,7 +486,7 @@ claude_plugin_installed_in_scope() {
   local scope="$2"
   local cli
 
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   (cd "$WORK_DIR" && "$cli" plugin list --json 2>/dev/null \
     | jq -e --arg id "$plugin_id" --arg scope "$scope" 'any(.[]?; .id == $id and .scope == $scope)' >/dev/null 2>&1)
 }

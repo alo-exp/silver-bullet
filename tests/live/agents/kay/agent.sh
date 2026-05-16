@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Codex runtime adapter for live Silver Bullet tests.
+# Kay agent adapter for live Silver Bullet tests.
 
-runtime_name() {
-  printf 'codex'
+agent_name() {
+  printf 'kay'
 }
 
-runtime_cli_path() {
+agent_cli_path() {
   local cli
 
   if [[ -n "${CODEX_BIN:-}" ]]; then
@@ -19,36 +19,68 @@ runtime_cli_path() {
     return 1
   fi
   if [[ "$(basename "$cli")" != "kay" ]]; then
-    printf 'ERROR: SB live tests require Kay as the Codex-compatible runtime\n' >&2
+    printf 'ERROR: SB live tests require Kay as the compatible agent\n' >&2
     return 1
   fi
 
   printf '%s\n' "$cli"
 }
 
-codex_session_catalog_path() {
+kay_session_catalog_path() {
   printf '%s\n' "${CODEX_SESSION_CATALOG_PATH:-${HOME}/.code/sessions/index/catalog.jsonl}"
 }
 
 codex_transcript_dir() {
-  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${SB_TEST_DIR:-${HOME}/.claude/.silver-bullet}/codex-transcripts}"
+  # Live-harness archive for captured Kay transcripts; separate from the
+  # agent's official session store used by silver-scan.
+  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/kay/transcripts}"
 }
 
-runtime_preflight() {
+agent_preflight() {
   local cli
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   if [[ -z "$cli" ]] || ! "$cli" --version >/dev/null 2>&1; then
     printf 'ERROR: Kay CLI not found or not working in PATH\n' >&2
     return 1
   fi
 }
 
-codex_resolve_session_archive() {
+kay_rotate_transcripts() {
+  local transcript_dir="$1"
+  local keep_archives="${2:-2}"
+
+  python3 - "$transcript_dir" "$keep_archives" <<'PY'
+import sys
+from pathlib import Path
+
+transcript_dir = Path(sys.argv[1])
+keep_archives = int(sys.argv[2])
+
+entries = []
+for path in transcript_dir.glob("*.jsonl"):
+    if path.name == "latest.jsonl":
+        continue
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        continue
+    entries.append((stat.st_mtime, path.name, path))
+
+entries.sort(key=lambda item: (item[0], item[1]), reverse=True)
+for _, _, path in entries[keep_archives:]:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+PY
+}
+
+kay_resolve_session_archive() {
   local started_at="$1"
   local work_dir="$2"
   local catalog_path
 
-  catalog_path="$(codex_session_catalog_path)"
+  catalog_path="$(kay_session_catalog_path)"
   python3 - "$catalog_path" "$started_at" "$work_dir" <<'PY'
 import json
 import sys
@@ -117,7 +149,7 @@ print(f"{session_id}\t{rollout_path}\t{created_at}")
 PY
 }
 
-codex_capture_transcript() {
+kay_capture_transcript() {
   local transcript_source_file="$1"
   local prompt_file="$2"
   local started_at="$3"
@@ -184,13 +216,14 @@ PY
 )"
 
   session_id="${thread_id:-}"
-  transcript_info="$(codex_resolve_session_archive "$started_at" "$work_dir_real" 2>/dev/null || true)"
+  transcript_info="$(kay_resolve_session_archive "$started_at" "$work_dir_real" 2>/dev/null || true)"
   if [[ -n "$transcript_info" ]]; then
     IFS=$'\t' read -r session_id rollout_path created_at <<<"$transcript_info"
   fi
   meta_dest="${transcript_dir}/latest.meta.json"
   if [[ -n "$session_id" ]]; then
     cp -f -- "$transcript_dest" "${transcript_dir}/${session_id}.jsonl"
+    kay_rotate_transcripts "$transcript_dir" 2
   fi
   jq -n \
     --arg session_id "$session_id" \
@@ -207,8 +240,9 @@ PY
   return 1
 }
 
-codex_live_guard_context() {
-  local state_file="${HOME}/.claude/.silver-bullet/state"
+kay_live_guard_context() {
+  local test_root="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
+  local state_file="${test_root}/.kay/.silver-bullet/state"
   local state_contents=""
 
   if [[ -f "$state_file" ]]; then
@@ -236,7 +270,7 @@ ${state_contents}
 EOF
 }
 
-runtime_invoke() {
+agent_invoke() {
   local mode="$1"
   local prompt="$2"
   local cli
@@ -248,11 +282,11 @@ runtime_invoke() {
   local transcript_started_at
   local transcript_file
   local transcript_path
-  local codex_prompt
-  local codex_model
-  local codex_model_provider
+  local kay_prompt
+  local kay_model
+  local kay_model_provider
 
-  cli="$(runtime_cli_path)"
+  cli="$(agent_cli_path)"
   tmpdir="${TMPDIR:-/tmp}"
   last_message_file="$(mktemp "${tmpdir}/codex-live-last-message-XXXXXX")"
   prompt_file="$(mktemp "${tmpdir}/codex-live-prompt-XXXXXX")"
@@ -263,16 +297,16 @@ from datetime import datetime, timezone
 print(datetime.now(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'))
 PY
 )"
-  codex_prompt="$prompt"
-  codex_model="${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}"
-  codex_model_provider="${CODEX_MODEL_PROVIDER:-${SB_LIVE_CODEX_MODEL_PROVIDER:-}}"
+  kay_prompt="$prompt"
+  kay_model="${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}"
+  kay_model_provider="${CODEX_MODEL_PROVIDER:-${SB_LIVE_CODEX_MODEL_PROVIDER:-}}"
   if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" == "1" && -n "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD:-}" ]]; then
-    codex_prompt="${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD}"$'\n\n'"${codex_prompt}"
+    kay_prompt="${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD}"$'\n\n'"${kay_prompt}"
   fi
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
-    codex_prompt="${codex_prompt}"$'\n\n'"$(codex_live_guard_context)"
+    kay_prompt="${kay_prompt}"$'\n\n'"$(kay_live_guard_context)"
   fi
-  printf '%s' "$codex_prompt" > "$prompt_file"
+  printf '%s' "$kay_prompt" > "$prompt_file"
   jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}' > "$prompt_seed_file"
   if [[ -x "${SB_ROOT}/hooks/record-requested-skill.sh" ]]; then
     printf '%s' "$(cat "$prompt_seed_file")" | bash "${SB_ROOT}/hooks/record-requested-skill.sh" >/dev/null 2>&1 || true
@@ -280,8 +314,8 @@ PY
 
   output=$(
     cd "$SB_ROOT" && \
-      CODEX_MODEL="$codex_model" \
-      CODEX_MODEL_PROVIDER="$codex_model_provider" \
+      CODEX_MODEL="$kay_model" \
+      CODEX_MODEL_PROVIDER="$kay_model_provider" \
       CODEX_BIN="$cli" \
       CODEX_WORK_DIR="$WORK_DIR" \
       CODEX_PROMPT_FILE="$prompt_file" \
@@ -298,8 +332,8 @@ PY
     output="${output}"$'\n'"$(cat "$last_message_file")"
     rm -f -- "$last_message_file"
   fi
-  if transcript_path="$(codex_capture_transcript "$transcript_file" "$prompt_file" "$transcript_started_at" "$WORK_DIR" 2>/dev/null || true)"; [[ -n "$transcript_path" ]]; then
-    output="${output}"$'\n'"[codex transcript archived at ${transcript_path}]"
+  if transcript_path="$(kay_capture_transcript "$transcript_file" "$prompt_file" "$transcript_started_at" "$WORK_DIR" 2>/dev/null || true)"; [[ -n "$transcript_path" ]]; then
+    output="${output}"$'\n'"[kay transcript archived at ${transcript_path}]"
   fi
   rm -f -- "$transcript_file"
   rm -f -- "$prompt_file"

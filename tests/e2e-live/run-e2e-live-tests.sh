@@ -41,7 +41,7 @@ echo "========================================"
 echo "  Silver Bullet Live Todo-App E2E Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed Codex-compatible runtime against the todo-app fixture."
+echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent against the todo-app fixture."
 echo "Estimated cost: higher than the hook matrix; keep runtimes narrow when iterating."
 echo ""
 
@@ -84,7 +84,7 @@ for runtime in "${RUNTIMES[@]}"; do
     claude|codex)
       ;;
     *)
-      echo "ERROR: unsupported runtime: $runtime"
+      echo "ERROR: unsupported agent: $runtime"
       exit 1
       ;;
   esac

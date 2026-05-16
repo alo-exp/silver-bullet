@@ -28,7 +28,7 @@ if {$work_dir eq "" || $prompt_file eq ""} {
   exit 2
 }
 if {[file tail $cli] ne "kay"} {
-  puts stderr "ERROR: SB test launchers require Kay as the Codex-compatible runtime"
+  puts stderr "ERROR: SB test launchers require Kay as the compatible agent"
   exit 2
 }
 

@@ -16,7 +16,7 @@ response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
 assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$digest_before"
-# The codex runtime may record planning state while rejecting the edit, so the
+# The Kay agent may record planning state while rejecting the edit, so the
 # file-level invariants are the release-relevant signal here.
 live_teardown
 
@@ -35,7 +35,7 @@ live_teardown
 echo "--- S3: Forbidden skill hook output verified ---"
 live_setup
 # Verify forbidden-skill-check.sh produces permissionDecision:deny for executing-plans.
-# Note: the claude runtime (this version) does not surface the denial in response text —
+# Note: the claude agent (this version) does not surface the denial in response text —
 # the hook fires and returns deny, but Claude continues with the skill content anyway.
 # We verify the hook behavior directly (unit-level), then verify the state effect (live-level).
 hook_output=$(echo '{"tool_name":"Skill","tool_input":{"skill":"executing-plans"},"hook_event_name":"PreToolUse"}' \

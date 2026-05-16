@@ -1,25 +1,26 @@
 # Silver Bullet Live AI E2E Tests
 
-These tests invoke the **real `claude` CLI** or a **Kay-backed Codex-compatible
-runtime** with the Silver Bullet plugin loaded and stored credentials. The Codex-compatible path is Kay-only and pinned to MiniMax M2.7. They verify that SB enforcement hooks
+These tests invoke the **real `claude` CLI** or a **Kay-backed agent**
+with the Silver Bullet plugin loaded and stored credentials. The Kay path is
+pinned to MiniMax M2.7. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
-actually work when either runtime triggers them via real tool usage.
+actually work when either agent triggers them via real tool usage.
 
 ## Prerequisites
 
 - `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
-- Kay `v0.9.3` available in `PATH` for Codex-compatible runs
+- Kay `v0.9.3` available in `PATH` for Kay-agent runs
 - MiniMax credentials available through `MINIMAX_API_KEY` or the user's Kay config
-- Authenticated with valid credentials for the runtime(s) you plan to run
+- Authenticated with valid credentials for the agent(s) you plan to run
 - `jq` installed (`brew install jq`)
 - Git available
 
 ## Cost Warning
 
-**Each full Claude+Codex matrix run costs approximately $0.10-$0.60.**
+**Each full Claude+Kay matrix run costs approximately $0.10-$0.60.**
 
-- One runtime only: roughly half that
-- Cheapest subset (skill recording only, one runtime): ~\$0.02-\$0.10
+- One agent only: roughly half that
+- Cheapest subset (skill recording only, one agent): ~\$0.02-\$0.10
 
 ## Running the Tests
 
@@ -33,12 +34,12 @@ Run the Kay-only live suite wrapper:
 bash scripts/run-sb-live-tests-kay.sh
 ```
 
-Run a single runtime to validate setup:
+Run a single agent to validate setup:
 ```bash
 bash tests/live/test-live-skill-recording.sh
 ```
 
-Limit the matrix to one runtime:
+Limit the matrix to one agent:
 ```bash
 SB_LIVE_RUNTIMES=claude bash tests/live/run-live-tests.sh
 SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
@@ -63,17 +64,17 @@ bash tests/live/test-live-full-scenario.sh
 
 ## Isolation
 
-Each runtime run uses:
+Each agent run uses:
 - An isolated temp workspace directory (`mktemp -d`)
 - Isolated state files: `~/.claude/.silver-bullet/live-test-state-{PID}`
 - Isolated trivial files: `~/.claude/.silver-bullet/live-test-trivial-{PID}`
-- For Codex-compatible runs, an isolated temporary `HOME`, `CODE_HOME`, and
-  `CODEX_HOME` backed by Kay/MiniMax so the test installer never rewrites the
-  user's real `~/.codex` hook cache.
+- For Kay-agent runs, an isolated temporary `KAY_SB_TEST_HOME` root plus
+  `HOME`, `CODE_HOME`, and `CODEX_HOME` backed by Kay/MiniMax so the test
+  installer never rewrites the user's real `~/.codex` hook cache.
 
-The matrix runs Claude and Codex sequentially so they do not clobber each other's
+The matrix runs Claude and Kay sequentially so they do not clobber each other's
 shared SB state. All temp files are cleaned up after each scenario.
-When the full Claude+Codex matrix passes, `run-live-tests.sh` writes the
+When the full Claude+Kay matrix passes, `run-live-tests.sh` writes the
 session-scoped `release-live-matrix` marker (`matrix=full-claude-codex`) that
 `completion-audit.sh` requires before `gh release create`.
 If Claude usage is exhausted for a release session and the user explicitly
@@ -81,6 +82,12 @@ approves skipping further Claude live testing, run the matrix with
 `SB_LIVE_RUNTIMES=codex` / `SB_E2E_LIVE_RUNTIMES=codex` and set
 `SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1` so the release gate accepts the
 `matrix=codex-only` markers for that session only.
+
+The live harness keeps a small local archive of captured Kay transcripts under
+`tests/live/agents/kay/transcripts/` for rotation and debugging. The Kay live
+state itself lives under `${KAY_SB_TEST_HOME}/.kay/.silver-bullet/` inside the
+isolated temp tree. That archive is separate from the official agent session
+stores that `silver-scan` reads.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
 matching `e2e-live-matrix` marker. That suite now runs one inline full-surface
