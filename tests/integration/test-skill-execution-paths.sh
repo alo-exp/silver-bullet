@@ -276,6 +276,11 @@ rel_sec_line=$(grep -n "Invoke \`security\`" "$SREL" | head -1 | cut -d: -f1 || 
 check "silver-release: security before ship (line $rel_sec_line < $rel_ship_line)" \
   "$([[ "$rel_sec_line" -gt 0 && "$rel_ship_line" -gt 0 && "$rel_sec_line" -lt "$rel_ship_line" ]] && echo pass || echo fail)"
 
+SCL="$SKILLS_DIR/silver-create-release/SKILL.md"
+rel_ci_gate_line=$(grep -n "verify-release-commit-ci.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: release CI gate is required before tagging (line $rel_ci_gate_line > 0)" \
+  "$([[ "$rel_ci_gate_line" -gt 0 ]] && echo pass || echo fail)"
+
 market_sync_result=fail
 if python3 - "$SREL" <<'PY' >/dev/null 2>&1
 from pathlib import Path
