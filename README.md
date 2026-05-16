@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.36.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.0)
+[![version](https://img.shields.io/badge/version-v0.36.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.1)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -519,12 +519,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.36.0`
-- Release: [v0.36.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.0)
+- Version: `0.36.1`
+- Release: [v0.36.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.1)
 - Notable changes:
-  - Reorganized generated agent bundles under `agents/<agent-name>/...` while keeping the canonical skill content agent-agnostic.
-  - Hardened the Kay-backed live test path and fixed the live `gsd-scan` state recording gap in the full-surface e2e journey.
-  - Re-ran the full verification gate, including the live e2e harness, before cutting the patch release.
+  - Moved the Kay-backed live harness onto `KAY_HOME` so isolated runs no longer depend on `HOME` or `CODE_HOME`.
+  - Kept the release path strict with pre-publish CI gating and enforced upstream marketplace sync.
+  - Re-ran the full verification gate before cutting the release.
 
 ## License
 
