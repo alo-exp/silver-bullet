@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.36.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.1)
+[![version](https://img.shields.io/badge/version-v0.36.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -519,10 +519,10 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.36.1`
-- Release: [v0.36.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.1)
+- Version: `0.36.2`
+- Release: [v0.36.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.2)
 - Notable changes:
-  - Moved the Kay-backed live harness onto `KAY_HOME` so isolated runs no longer depend on `HOME` or `CODE_HOME`.
+  - Stabilized the Kay live journey and preserved its transcript archive for release provenance.
   - Kept the release path strict with pre-publish CI gating and enforced upstream marketplace sync.
   - Re-ran the full verification gate before cutting the release.
 
