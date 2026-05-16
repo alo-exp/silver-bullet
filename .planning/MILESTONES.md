@@ -1,6 +1,6 @@
 # Milestones
 
-## v0.35.4 Agents Directory Reorg (Planned: 2026-05-16)
+## v0.35.4 Agents Directory Reorg (Shipped: 2026-05-16)
 
 **Type:** Patch release milestone (agent-bundle layout reorg, compatibility aliases, installer/surface sync, docs/tests refresh).
 
@@ -15,7 +15,7 @@
 - Docs/template refresh: bundle layout docs, installer references, runtime notes
 - Verification: package sync/install tests, live e2e smoke, release prep for `v0.35.4`
 
-**Status:** planning; bundle renderer and milestone reset are being prepared before implementation work begins.
+**Status:** complete; bundle renderer, generated agent layouts, installer wiring, docs, tests, and live e2e verification all landed for v0.35.4.
 
 ## v0.33.1 Open Issue Burn-down (Planned: 2026-05-13)
 
