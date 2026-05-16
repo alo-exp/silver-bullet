@@ -235,6 +235,18 @@ The matrix must complete successfully for both Claude and Codex in the current
 session. If either runtime fails, stop here and fix the underlying issue before
 continuing.
 
+## Step 6b — Wait for Release CI to Go Green
+
+Before creating the tag, verify the release commit itself is fully green:
+
+```bash
+bash scripts/verify-release-commit-ci.sh
+```
+
+This gate must pass before the release tag, GitHub Release, or any downstream
+release announcement can happen. If the release commit is still settling, wait
+until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
+
 ---
 
 ## Step 7 — Create Tag and Publish
