@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for live AI E2E tests
+# Shared helpers for live AI agent tests
 # These tests invoke real claude CLI with stored credentials.
 # Each invocation costs ~$0.01-0.05.
 
@@ -11,33 +11,39 @@ MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
 TEST_RUN_ID="$$"
-LIVE_RUNTIME="${SB_LIVE_RUNTIME:-claude}"
+LIVE_AGENT="${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}"
+KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}"
 
-RUNTIME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/runtimes" && pwd)"
-case "$LIVE_RUNTIME" in
+AGENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/agents" && pwd)"
+case "$LIVE_AGENT" in
   claude)
-    # shellcheck source=tests/live/runtimes/claude.sh
-    source "$RUNTIME_DIR/claude.sh"
+    # shellcheck source=tests/live/agents/claude/agent.sh
+    source "$AGENT_DIR/claude/agent.sh"
     ;;
-  codex)
-    # shellcheck source=tests/live/runtimes/codex.sh
-    source "$RUNTIME_DIR/codex.sh"
+  kay|codex)
+    # shellcheck source=tests/live/agents/kay/agent.sh
+    source "$AGENT_DIR/kay/agent.sh"
     ;;
   *)
-    printf 'ERROR: unsupported live runtime: %s\n' "$LIVE_RUNTIME" >&2
+    printf 'ERROR: unsupported live agent: %s\n' "$LIVE_AGENT" >&2
     exit 2
     ;;
 esac
 
-# The REAL state path that hooks always write to (Claude does not pass
-# SILVER_BULLET_STATE_FILE env var to hook subprocesses, so hooks always use
-# the default path regardless of env var override).
-REAL_STATE="${HOME}/.claude/.silver-bullet/state"
-REAL_STATE_BACKUP="${HOME}/.claude/.silver-bullet/state.live-test-backup-${TEST_RUN_ID}"
-REAL_TRIVIAL="${HOME}/.claude/.silver-bullet/trivial"
-REAL_TRIVIAL_BACKUP="${HOME}/.claude/.silver-bullet/trivial.live-test-backup-${TEST_RUN_ID}"
-REAL_MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
-REAL_MCP_AUTH_CACHE_BACKUP="${HOME}/.claude/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
+# The REAL state path that hooks always write to.
+if [[ "$LIVE_AGENT" == "kay" ]]; then
+  SB_TEST_DIR="${KAY_SB_TEST_HOME}/.kay/.silver-bullet"
+  REAL_MCP_AUTH_CACHE="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.json"
+  REAL_MCP_AUTH_CACHE_BACKUP="${KAY_SB_TEST_HOME}/.kay/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
+else
+  SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+  REAL_MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
+  REAL_MCP_AUTH_CACHE_BACKUP="${HOME}/.claude/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
+fi
+REAL_STATE="${SB_TEST_DIR}/state"
+REAL_STATE_BACKUP="${SB_TEST_DIR}/state.live-test-backup-${TEST_RUN_ID}"
+REAL_TRIVIAL="${SB_TEST_DIR}/trivial"
+REAL_TRIVIAL_BACKUP="${SB_TEST_DIR}/trivial.live-test-backup-${TEST_RUN_ID}"
 
 # Paths set by live_setup (kept for compatibility but assertions use REAL_STATE)
 WORK_DIR=""
@@ -45,7 +51,7 @@ TMPSTATE=""
 TMPTRIVIAL=""
 
 live_setup() {
-  runtime_preflight
+  agent_preflight
   # Reset per-scenario Claude session state so fresh workspaces do not
   # accidentally inherit `--continue` from a previous live setup.
   CLAUDE_PROMPT_COUNT=0
@@ -55,7 +61,7 @@ live_setup() {
   TMPTRIVIAL="$REAL_TRIVIAL"
 
   # Backup and clear the real state file so each test starts clean
-  mkdir -p "${HOME}/.claude/.silver-bullet"
+  mkdir -p "$SB_TEST_DIR"
   if [[ -f "$REAL_STATE" ]]; then
     cp "$REAL_STATE" "$REAL_STATE_BACKUP"
   fi
@@ -131,7 +137,7 @@ EOJSON
   git -C "$WORK_DIR" add -A
   git -C "$WORK_DIR" commit -q -m "setup"
 
-  if [[ "$LIVE_RUNTIME" == "codex" && "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
+  if [[ "$LIVE_AGENT" == "kay" && "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
     cat > "$WORK_DIR/AGENTS.md" <<'EOF'
 # Silver Bullet Live Test Override
 
@@ -183,14 +189,14 @@ live_teardown() {
     rm -f "$REAL_MCP_AUTH_CACHE"
   fi
 
-  rm -f "${HOME}/.claude/.silver-bullet/config-cache-"*
+  rm -f "${SB_TEST_DIR}/config-cache-"*
 }
 
 # invoke_claude: default invocation — hook denials (permissionDecision:deny) are enforced.
 # Use this for enforcement tests (S1, S2, S3, S4) where blocking behavior must be observed.
 invoke_claude() {
   local prompt="$1"
-  runtime_invoke default "$prompt"
+  agent_invoke default "$prompt"
 }
 
 # invoke_claude_permissive: bypasses file-read permission prompts.
@@ -199,7 +205,7 @@ invoke_claude() {
 # for enforcement tests.
 invoke_claude_permissive() {
   local prompt="$1"
-  runtime_invoke permissive "$prompt"
+  agent_invoke permissive "$prompt"
 }
 
 assert_response_contains() {

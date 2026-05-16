@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Isolated Kay-backed runtime setup for live tests.
+# Isolated Kay agent setup for live tests.
 #
-# The Codex live suites need a hook-capable Codex-compatible runtime, but they
-# must not rewrite the user's real ~/.codex hook cache. Kay is the isolated
-# runtime; HOME/CODE_HOME are moved into a temporary tree before SB runs the
-# Codex installer or invokes the runtime.
+# The live suites need a hook-capable Kay-compatible agent, but they must not
+# rewrite the user's real ~/.codex hook cache. Kay is the isolated agent;
+# KAY_SB_TEST_HOME owns the temp tree and HOME/CODE_HOME are pointed inside it
+# before SB runs the installer or invokes the agent.
 
 set -euo pipefail
+
+if [[ -z "${SB_ROOT:-}" ]]; then
+  SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+fi
 
 setup_kay_codex_isolation() {
   if [[ "${SB_LIVE_CODEX_ISOLATED:-1}" != "1" ]]; then
@@ -21,13 +25,16 @@ setup_kay_codex_isolation() {
   export SB_LIVE_ORIGINAL_CODE_HOME="${CODE_HOME:-}"
   export SB_LIVE_ORIGINAL_CODEX_HOME_SET="${CODEX_HOME+x}"
   export SB_LIVE_ORIGINAL_CODEX_HOME="${CODEX_HOME:-}"
-  export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/sb-kay-codex.XXXXXX")}"
-  export HOME="${SB_LIVE_CODEX_ISOLATION_DIR}/home"
-  export CODE_HOME="${SB_LIVE_CODEX_ISOLATION_DIR}/code-home"
+  export KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-$(mktemp -d "${TMPDIR:-/tmp}/sb-kay-test.XXXXXX")}"
+  export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$KAY_SB_TEST_HOME}"
+  export HOME="${KAY_SB_TEST_HOME}/home"
+  export CODE_HOME="${KAY_SB_TEST_HOME}/code-home"
   export CODEX_HOME="${HOME}/.codex"
   export SB_LIVE_CODEX_ISOLATION_ACTIVE=1
 
-  mkdir -p "$HOME/.codex" "$HOME/.claude/.silver-bullet" "$CODE_HOME"
+  mkdir -p "$HOME/.codex" "$CODE_HOME" "$KAY_SB_TEST_HOME/.kay/.silver-bullet"
+  rm -rf "$HOME/.claude"
+  ln -sfn "$KAY_SB_TEST_HOME/.kay" "$HOME/.claude"
 
   if [[ -z "${CODEX_BIN:-}" ]]; then
     if command -v kay >/dev/null 2>&1; then
@@ -38,18 +45,20 @@ setup_kay_codex_isolation() {
       return 1
     fi
   elif [[ "$(basename "$CODEX_BIN")" != "kay" ]]; then
-    echo "ERROR: SB live tests require Kay as the Codex-compatible runtime" >&2
+    echo "ERROR: SB live tests require Kay as the compatible agent" >&2
     return 1
   fi
 
-  export SB_LIVE_CODEX_RUNTIME="kay"
+  export SB_LIVE_KAY_AGENT="kay"
   export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"
   export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"
   export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${CODE_HOME}/sessions/index/catalog.jsonl}"
-  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${HOME}/.claude/.silver-bullet/codex-transcripts}"
+  # Keep the live-test transcript archive local to the harness. silver-scan
+  # reads the agent's official session stores directly instead.
+  export CODEX_TRANSCRIPT_DIR="${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/kay/transcripts}"
   if [[ -z "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD+x}" ]]; then
     export SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD="Isolated Kay live-test constraints:
-- Remain in the current Kay runtime for the whole turn.
+- Remain in the current Kay agent for the whole turn.
 - Use only provider ${SB_LIVE_CODEX_MODEL_PROVIDER} and model ${SB_LIVE_CODEX_MODEL}; do not switch models.
 - Do not call agent, subagent, delegation, background-agent, or multi-agent tools.
 - When calling exec_command, pass a split argv array such as [\"cat\", \"file\"]. Do not pass shell commands as one string; use [\"bash\", \"-lc\", \"...\"] only when shell syntax is required."
@@ -106,8 +115,8 @@ EOF
   fi
 
   # Silver:init still probes the GSD home using the historical ~/.codex path.
-  # The isolated runtime keeps the real install under ~/.claude, so mirror the
-  # entrypoint there to make the Codex live harness look like a native install.
+  # The isolated agent keeps the real install under ~/.claude, so mirror the
+  # entrypoint there to make the Kay live harness look like a native install.
   if [[ ! -e "${HOME}/.codex/get-shit-done" ]]; then
     if [[ -e "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" ]]; then
       ln -sfn "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" "${HOME}/.codex/get-shit-done"
@@ -203,7 +212,7 @@ PY
     fi
   done
 
-  # The live Codex runtime still probes a few legacy alias layouts directly in
+  # The live Kay agent still probes a few legacy alias layouts directly in
   # the cache tree. Seed the expected aliases so SB init can discover the
   # upstream helpers without requiring a host-side re-install.
   local alias_specs=(
@@ -240,7 +249,7 @@ teardown_kay_codex_isolation() {
   else
     unset CODEX_HOME
   fi
-  unset SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR
+  unset SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR KAY_SB_TEST_HOME
   unset SB_LIVE_ORIGINAL_CODE_HOME SB_LIVE_ORIGINAL_CODE_HOME_SET
   unset SB_LIVE_ORIGINAL_CODEX_HOME SB_LIVE_ORIGINAL_CODEX_HOME_SET
 }

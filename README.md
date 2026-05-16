@@ -175,7 +175,7 @@ guidance, but hard blocks depend on host support.
 |---------|--------|-------|
 | Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
 | Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
-| Kay | Tested Codex-compatible runtime | Used for isolated Codex live testing with MiniMax M2.7 |
+| Kay | Tested agent for isolated live testing | Used for isolated Kay live testing with MiniMax M2.7 |
 | Forge | Port available | Uses Forge skills, slash commands, and hook-equivalent custom agents |
 
 Silver Bullet's Codex package intentionally contains only SB-owned surfaces:

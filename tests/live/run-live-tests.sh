@@ -28,7 +28,7 @@ echo "========================================"
 echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed Codex-compatible runtime."
+echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent."
 echo "Estimated cost: \$0.10-\$0.60 per full run."
 echo ""
 
@@ -72,7 +72,7 @@ for runtime in "${RUNTIMES[@]}"; do
       fi
       ;;
     *)
-      echo "ERROR: unsupported runtime: $runtime"
+    echo "ERROR: unsupported agent: $runtime"
       exit 1
       ;;
   esac

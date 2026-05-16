@@ -38,7 +38,7 @@ journey_turn() {
     FAIL=$((FAIL + 1))
   elif grep -Eq "$error_regex" <<<"$response"; then
     echo "FAIL: $surface produced a usable response"
-    echo "  response contained a CLI/runtime error marker"
+    echo "  response contained a CLI/agent error marker"
     echo "$response"
     FAIL=$((FAIL + 1))
   else
@@ -192,7 +192,7 @@ ensure_monthly_note_exists() {
   cat > "$lesson_file" <<EOF
 # Lessons - ${month}
 
-- Inline live journeys need deterministic recovery when a runtime loses a turn after tool-call failures.
+- Inline live journeys need deterministic recovery when an agent loses a turn after tool-call failures.
 EOF
 }
 
