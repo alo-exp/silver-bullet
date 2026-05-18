@@ -4,6 +4,15 @@
 
 ---
 
+## [0.37.0] — 2026-05-19
+
+## Highlights
+
+- Silver Bullet now intercepts non-trivial SDLC intent, composes clarify and GSD handoffs around it, and keeps the orchestration boundary inside SB rather than ad hoc freestyle work.
+- `silver:clarify` now behaves as a merged clarification front-end that absorbs Product Management framing and Superpowers brainstorming, then hands milestone creation to GSD when appropriate.
+- Session logs now carry an `## Active Intent Ledger` section, and the request/completion hooks keep that ledger in sync even when skill state is already present from earlier runs.
+- Release-prep docs, help surfaces, and month-level knowledge/lessons were updated to reflect the new orchestration model.
+
 ## [0.36.2] — 2026-05-17
 
 ## Bug Fixes

@@ -41,9 +41,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► FEATURE WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► FEATURE WORKFLOW
 
 Feature: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
@@ -87,13 +85,10 @@ FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) 
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                    │
-├──────────────────────────────────────────────────┤
-│ Flows: BOOTSTRAP → ORIENT → PLAN → ...           │
-│ Skipped: SPECIFY — SPEC.md exists                │
-│ Phase loop: Phases {start}-{end} (from ROADMAP)  │
-└──────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: BOOTSTRAP → ORIENT → PLAN → ...
+Skipped: SPECIFY — SPEC.md exists
+Phase loop: Phases {start}-{end} (from ROADMAP)
 Approve composition? [Y/n]
 ```
 

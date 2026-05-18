@@ -14,11 +14,14 @@ FAIL=0
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+TMPLOG_PATH_FILE="${SB_TEST_DIR}/session-log-path-${TEST_RUN_ID}"
+SESSION_LOG_FILE=""
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
+  SESSION_LOG_FILE="${TMPDIR_TEST}/docs/sessions/test-state-${TEST_RUN_ID}.md"
   rm -f "$TMPSTATE"  # clean slate per test
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
@@ -32,15 +35,33 @@ EOF
     "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","silver-blast-radius","devops-quality-gates","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
-}
+  }
 EOF
+  mkdir -p "$(dirname "$SESSION_LOG_FILE")"
+  cat > "$SESSION_LOG_FILE" <<'EOF'
+# Session Log — test
+
+## Active Intent Ledger
+
+- Request [2026-05-19 00:00:00Z]
+  > test request
+  - [ ] silver-quality-gates
+
+## Agent Teams dispatched
+
+(none)
+EOF
+  printf '%s\n' "$SESSION_LOG_FILE" > "$TMPLOG_PATH_FILE"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_SESSION_LOG_PATH_FILE="$TMPLOG_PATH_FILE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  rm -f "$TMPLOG_PATH_FILE"
+  SESSION_LOG_FILE=""
 }
 
 # Always clean up on exit
@@ -94,6 +115,18 @@ assert_count() {
   fi
 }
 
+assert_in_session_log() {
+  local label="$1"
+  local needle="$2"
+  if grep -qF "$needle" "$SESSION_LOG_FILE" 2>/dev/null; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$needle' not found in session log: $(cat "$SESSION_LOG_FILE" 2>/dev/null || echo '(empty)')"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 echo "=== record-skill.sh tests ==="
 
@@ -102,6 +135,7 @@ echo "--- Group 1: Basic recording ---"
 setup
 run_hook "silver-quality-gates" >/dev/null
 assert_in_state "silver-quality-gates recorded after invocation" "silver-quality-gates"
+assert_in_session_log "session log marks silver-quality-gates completed" "  - [x] silver-quality-gates"
 teardown
 
 # Test 1b: Bootstrap silver:init is recorded even before project config exists
@@ -188,6 +222,14 @@ echo "code-review" > "$TMPSTATE"
 run_hook "silver-quality-gates" >/dev/null
 assert_in_state "existing skill (code-review) preserved" "code-review"
 assert_in_state "new skill (silver-quality-gates) added" "silver-quality-gates"
+teardown
+
+# Test 9b: Existing state still closes the active ledger entry
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+run_hook "silver-quality-gates" >/dev/null
+assert_count "existing state remains deduped" "silver-quality-gates" 1
+assert_in_session_log "existing state still marks session ledger completed" "  - [x] silver-quality-gates"
 teardown
 
 # Test 10: silver-blast-radius and devops-quality-gates are recorded (devops skills)

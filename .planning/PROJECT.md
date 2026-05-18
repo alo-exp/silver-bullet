@@ -2,11 +2,11 @@
 
 ## What This Is
 
-Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Silver Bullet combines GSD, Superpowers, Engineering, and Design plugins into enforced workflows with 12 layers of compliance, guiding users from idea to deployed software without requiring any prior knowledge of the underlying tools.
+Silver Bullet is the handholding orchestrator and process enforcer for AI-native software engineering and DevOps. It intercepts non-trivial SDLC intent, composes context-tailored workflows from SB and helper skills, and keeps Claude and Codex out of freestyle ad hoc execution. The user should be guided from the first message through clarification, planning, execution, verification, and release without needing to know the underlying toolchain.
 
 ## Core Value
 
-Single enforced workflow that eliminates the gap between "what AI should do" and "what AI actually does" — 12 compliance layers, zero single-point-of-bypass, complete user hand-holding from start to finish.
+A single enforced SDLC workflow that turns intent into the right composed process, with no ad hoc technical work and no forgotten user requests.
 
 ## Requirements
 
@@ -59,10 +59,11 @@ Single enforced workflow that eliminates the gap between "what AI should do" and
 - ✓ AGENTS.md.template + AGENTS.project.template + PARITY.md + PARITY-REPORT.md as glue layer — v0.28.0
 - ✓ forge/scripts/smoke-test.sh structural validator (21+ assertions, 21/21 + 23/23 PASS) — v0.28.0
 - ✓ Forge runtime invocation verified: hook-agents return correct BLOCK/ALLOW outputs — v0.28.0
+- ✓ v0.37.0 SDLC interception and workflow enforcement — 11 requirements, 6 phases, release line shipped 2026-05-19
 
 ### Active
 
-No active milestone. The v0.35.4 agents-directory reorg is complete and documented below under Completed Milestone.
+No active milestone. The v0.37.0 SDLC interception and workflow enforcement milestone is complete and documented below.
 
 ### Deferred
 
@@ -71,11 +72,31 @@ No active milestone. The v0.35.4 agents-directory reorg is complete and document
 
 ### Out of Scope
 
-- Replacing GSD's execution engine — GSD owns execution, SB orchestrates
-- Admin/utility GSD commands (gsd-manager, gsd-settings, gsd-stats, gsd-note, etc.) — accessible but not guided
-- Modifying third-party plugin files — §8 boundary enforced
-- Building custom integrations for external tools — use Claude Desktop MCP connectors / CLIs
-- Nomadic Care-specific naming conventions or file structures — SB provides generic patterns
+- Q&A, trivial instructions, and explicitly non-SDLC requests stay direct - SB should not force workflow ceremony onto them.
+- Replacing GSD's execution engine - GSD still owns execution, SB orchestrates and enforces.
+- Admin/utility GSD commands - accessible but not guided.
+- Modifying third-party plugin files - plugin boundary remains off-limits.
+- Building custom integrations for external tools - use available connectors and CLIs instead.
+- Freestyle SDLC work - must go through a composed workflow first.
+
+## Completed Milestone: v0.37.0 SDLC Interception And Workflow Enforcement (shipped 2026-05-19)
+
+**Goal:** Implement the full SB vision as a handholding orchestrator and process enforcer that intercepts non-trivial SDLC intent, composes the right workflow, and keeps Claude and Codex aligned under the same flow contract.
+
+**Shipped:** 6 phases (100-105), 11 requirements satisfied. Clarify now absorbs PM and Superpowers brainstorming non-redundantly, SB owns the clarify-to-`gsd:new-milestone` handoff, the active-intent ledger is retained in session logs, and the AUI/master-loop/autonomy path keeps the user journey natural.
+
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0
+
+**Target features:**
+
+- Intercept SDLC intent from the first user message and route non-trivial work into dynamically composed workflows.
+- Make `silver:clarify` preserve Product Management brainstorming and Superpowers brainstorming non-redundantly, then blend the result with GSD discussion into a decision-ready handoff.
+- Let SB itself hand off from clarification to `gsd:new-milestone` when milestone bootstrap is the right next step.
+- Provide an AUI that hides GSD mechanics and keeps SB as the master agentic loop across the whole SDLC.
+- Front-load user information capture so autonomous work is maximized and only crucial decisions are surfaced to the user.
+- Keep long-running context, intent tracking, and completion verification strict enough that user intent does not get dropped.
+
+**Status:** complete; release state synchronized.
 
 ## Completed Milestone: v0.35.4 Agents Directory Reorg (shipped 2026-05-16)
 
@@ -116,37 +137,30 @@ No active milestone. The v0.35.4 agents-directory reorg is complete and document
 
 ## Context
 
-- Stack: Bash (18 hook scripts, lib helpers), Markdown (62 skills), JSON (config, hooks manifest), HTML (help site)
-- Repository: https://github.com/alo-exp/silver-bullet.git
-- GSD version: 1.32.0 (~60 commands, wave-based parallel execution)
-- Superpowers version: 5.0.5 (14 skills — code review, TDD, debugging, branch mgmt)
-- Engineering/Design: Anthropic knowledge-work-plugins (6+6 skills)
-- Current version: v0.35.4
-- Open issues in scope: 0 current release-blocking issues; the agents-directory reorg is complete and release state is synchronized
-- Runtime targets: Claude and Codex agent bundles generated from the canonical `skills/` tree
+- Current version: v0.37.0 release line shipped.
+- Canonical SB sources live in `silver-bullet.md`, `docs/composable-flows-contracts.md`, and the `skills/silver/*` tree.
+- GSD still owns lifecycle execution, while SB sits on top as the orchestration and enforcement layer.
+- `silver:clarify` now absorbs the Product Management and Superpowers brainstorming flows non-redundantly.
+- `gsd:discuss-phase` still does not auto-read `.planning/CLARIFY.md`, so the milestone bootstrap handoff remains an SB-owned orchestration concern.
+- This milestone closes the orchestration gap across Claude and Codex without replacing GSD or rewriting the plugin ecosystem.
 
 ## Constraints
 
-- **Plugin boundary**: Must not modify GSD/Superpowers/Engineering/Design plugin files (§8)
-- **Enforcement integrity**: All 11 enforcement layers must remain functional during and after restructuring
-- **Template parity**: docs/workflows/ must always match templates/workflows/
-- **Backward compatibility**: Existing .silver-bullet.json configs must continue to work
+- **SDLC scope**: Intercept by user intent, not by file type alone - Q&A and trivial requests stay direct.
+- **Execution ownership**: GSD remains the execution engine; SB orchestrates and enforces the workflow path.
+- **Plugin boundary**: Do not modify third-party plugin source files.
+- **Cross-runtime parity**: Claude and Codex must follow the same logical workflow contract even if their hooks differ.
+- **Intent retention**: The orchestrator must preserve long-running context and verify completion before claiming success.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| silver-bullet.md.base is single source for enforcement §0-9 | One template, no drift | ✓ Good |
-| CLAUDE.md.base reduced to minimal scaffold | User owns CLAUDE.md, SB owns silver-bullet.md | ✓ Good |
-| Update mode overwrites silver-bullet.md without confirmation | SB-owned file | ✓ Good |
-| GSD owns execution, SB owns orchestration + enforcement | Clean separation of concerns | ✓ Good |
-| Forensics: evolve (GSD-aware routing), don't remove | SB forensics handles session-level issues GSD doesn't | — Pending |
-| 20 GSD commands guided, ~40 unguided | Core SDLC + select utilities only | — Pending |
-| UUID token file for sentinel TOCTOU (BUG-05) | Platform-independent; eliminates locale-sensitive lstart | ✓ Good |
-| tmpfile+mv replaces sed -i '' (BUG-04) | POSIX-portable on macOS and Linux/CI | ✓ Good |
-| Content injection guards in 3 hooks (SENTINEL H-1/H-2/H-3) | Allowlist regex + jq encoding; SENTINEL v2.3 CLEAR | ✓ Good |
-| CI jq assertions for required_deploy/all_tracked (CI-02) | Automation catches skill list drift on every PR | ✓ Good |
-| Tag placed last in release workflow (REL-01) | Archival commits must precede the tag | ✓ Good |
+| SB owns the clarify-to-new-milestone handoff | Milestone bootstrap should be part of the orchestration contract, not a manual restart step | ✓ Good |
+| `silver:clarify` must preserve PM and Superpowers brainstorming as distinct non-overlapping subflows | Prevents losing either skill's unique strengths while removing redundant prompts | ✓ Good |
+| SB must present an AUI and hide GSD mechanics | The user experience should feel like one natural SDLC journey, not exposed tool plumbing | ✓ Good |
+| Helper skills are opportunistic but bounded by flow contracts | Lets SB leverage Product Management, Engineering, Design, and Superpowers without drifting into ad hoc work | ✓ Good |
+| Completion requires verification before acceptance | SB must confirm the SE or coding agent actually finished the requested intent | ✓ Good |
 
 ## Evolution
 
@@ -166,4 +180,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16T13:01:53.000Z — v0.35.4 Agents Directory Reorg completed and release state synchronized*
+*Last updated: 2026-05-19 — v0.37.0 milestone completed and release state synchronized*

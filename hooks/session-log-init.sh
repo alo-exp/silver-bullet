@@ -129,6 +129,10 @@ if [[ -n "$existing" ]]; then
     _insert_before "$existing" "## Agent Teams dispatched" \
       "## Skill gap check (post-plan)" "(filled after plan is written)"
   fi
+  if ! grep -q "^## Active Intent Ledger$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Active Intent Ledger" "(filled during the session as active requests are intercepted)"
+  fi
   if ! grep -q "^## Items Filed$" "$existing" 2>/dev/null; then
     _insert_before "$existing" "## Knowledge & Lessons additions" \
       "## Items Filed" "(none)"
@@ -230,6 +234,10 @@ cat > "$log_file" << LOGEOF
 ## Skill gap check (post-plan)
 
 (filled after plan is written)
+
+## Active Intent Ledger
+
+(filled during the session as active requests are intercepted)
 
 ## Agent Teams dispatched
 

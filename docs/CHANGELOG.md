@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-05-19 — v0.37.0-sdlc-interception-ledger
+**What**: Extended Silver Bullet's orchestration contract for v0.37.0 with merged clarify behavior, SB-owned milestone bootstrap, a live active-intent ledger in session logs, and release-prep docs that keep the user-facing workflow aligned with the new SDLC interception model.
+**Commits**: —
+**Skills run**: silver:clarify, silver:init, silver:feature, verification-before-completion
+**Virtual cost**: ~$0.40 (high complexity — hooks, docs, tests, and package sync)
+**KNOWLEDGE.md**: updated (intent ledger coupling, request/completion consistency, release-prep orchestration)
+**Lessons**: updated (request/completion coupling, dedup-safe ledger updates)
+
 ## 2026-05-14 — sb-gsd-alignment
 **What**: Re-aligned Silver Bullet around GSD as the lifecycle authority, making SB the Agentic Process Orchestrator that composes pre-execution quality checks, GSD execution, and final delivery gates without blocking implementation on post-execution markers.
 **Commits**: —

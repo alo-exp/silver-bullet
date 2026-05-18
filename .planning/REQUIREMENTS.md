@@ -1,63 +1,75 @@
-# Requirements: Silver Bullet v0.35.4 Agents Directory Reorg
+# Requirements: Silver Bullet v0.37.0 SDLC Interception And Workflow Enforcement
 
-**Defined:** 2026-05-16
-**Core Value:** Keep Silver Bullet's canonical source skills agent-agnostic while generating stable runtime-specific bundles for Claude and Codex.
-
----
+**Defined:** 2026-05-19
+**Core Value:** A single enforced SDLC workflow that turns intent into the right composed process, with no ad hoc technical work and no forgotten user requests.
 
 ## v1 Requirements
 
-### Agent Bundle Layout
+### SDLC Interception
 
-- [x] **AGENT-01**: The canonical skill source tree remains `skills/`, and generated agent bundles are emitted under `agents/claude/` and `agents/codex/` from that source tree.
-- [x] **AGENT-02**: Generated bundles normalize skill naming consistently so the runtime picker sees `silver:*` names in both agent outputs.
-- [x] **AGENT-03**: The Codex bundle is sanitized for Codex-safe interaction semantics without reintroducing Claude-only runtime assumptions.
-- [x] **AGENT-04**: The Claude bundle preserves Claude-native behavior while still being generated from the same canonical source.
+- [x] **ORCH-01**: Silver Bullet intercepts non-trivial SDLC intent and routes it into a context-tailored composed workflow instead of allowing ad hoc execution. — **Satisfied** Phase 100
+- [x] **ORCH-02**: Silver Bullet leaves Q&A, trivial instructions, and explicitly non-SDLC requests direct, without forcing workflow orchestration. — **Satisfied** Phase 100
 
-### Installer / Package Wiring
+### Clarify Composition
 
-- [x] **AGENT-05**: Codex package sync/install surfaces consume the generated `agents/codex` bundle and retain compatibility aliases only as aliases, not as the source of truth.
-- [x] **AGENT-06**: Claude install materializes `agents/claude` in the installed cache and keeps the `skills` entrypoint functional.
-- [x] **AGENT-07**: Package surface copying includes `agents/` so the generated bundles are present in the repo snapshot and installed caches.
+- [x] **ORCH-03**: `silver:clarify` preserves the problem exploration, solution ideation, assumption testing, and strategy exploration behaviors from `product-management:product-brainstorming`. — **Satisfied** Phase 101
+- [x] **ORCH-04**: `silver:clarify` preserves the frame/diverge/provoke/converge/capture behaviors from `superpowers:brainstorming` and does not duplicate the PM brainstorming steps when both apply. — **Satisfied** Phase 101
+- [x] **ORCH-05**: `silver:clarify` composes the preserved Product Management and Superpowers brainstorming behaviors with GSD discussion into one decision-ready brief. — **Satisfied** Phase 101
 
-### Documentation / Tests / Verification
+### SB-Owned Handoff
 
-- [x] **AGENT-08**: Repository docs and bundle comments clearly explain the canonical source tree vs. generated `agents/<agent>/` bundles.
-- [x] **AGENT-09**: Tests cover bundle generation, install/sync parity, generated naming, alias compatibility, and both runtime surfaces.
-- [x] **AGENT-10**: Verification includes the focused installer/sync tests, the full suite, and live e2e smoke before release.
+- [x] **ORCH-06**: When clarification shows that the next step is milestone creation, SB itself hands off to `gsd:new-milestone` and seeds milestone bootstrap from the clarification brief without requiring the user to restart the process manually. — **Satisfied** Phase 102
+
+### Context Retention
+
+- [x] **ORCH-08**: SB maintains long-running context across the session, tracks every requested item, and prevents omissions while orchestration is in progress. — **Satisfied** Phase 103
+
+### Completion Verification
+
+- [x] **ORCH-09**: Before the work is considered complete, SB verifies that the SE or coding agent's claims match actual completion and autonomously dispatches any missing follow-up work needed to satisfy the original intent. — **Satisfied** Phase 104
+
+### AUI and Autonomy
+
+- [x] **ORCH-10**: SB provides an AUI that hides GSD complexity and presents a high-level, natural SDLC journey to the user. — **Satisfied** Phase 105
+- [x] **ORCH-11**: SB remains the master agentic loop, monitors both the SE agent and coding agent, intervenes when necessary, and keeps work moving when one agent returns but the next step is still unattended. — **Satisfied** Phase 105
+- [x] **ORCH-12**: SB front-loads user information capture so autonomous work is maximized, and asks the user only when a crucial decision cannot be made safely on their behalf. — **Satisfied** Phase 105
 
 ## v2 Requirements
 
-None yet. This milestone is focused on the agent-bundle layout reorg, not a broader workflow redesign.
+None yet. The current milestone is focused on the core orchestration and enforcement vision.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Rewriting all skill bodies to be fully runtime-neutral in one pass | The reorg is about layout and generation first; body-level neutralization can be phased without blocking the new bundle architecture |
-| Introducing a new third-party agent family | The milestone targets Claude and Codex first, with the layout designed so future agents can be added later |
-| Changing the SB/GSD semver contract | This milestone should stay on the current patch line and not reopen the execution/lifecycle architecture |
+| Q&A, trivial instructions, and explicitly non-SDLC requests being forced through workflow orchestration | These should remain direct and low-friction |
+| Replacing GSD's execution engine | GSD owns execution; SB orchestrates and enforces |
+| Modifying third-party plugin source files | Plugin boundary remains off-limits |
+| Freestyle ad hoc SDLC work | Must go through a composed workflow first |
+| One-off custom integrations outside the installed helper skill and connector ecosystem | Not part of this milestone |
+| Codex helper-skill discoverability parity for Product Management and Engineering | Not required for v0.37.0 milestone scope |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AGENT-01 | Phase 95 | Complete |
-| AGENT-02 | Phase 95 | Complete |
-| AGENT-03 | Phase 96 | Complete |
-| AGENT-04 | Phase 96 | Complete |
-| AGENT-05 | Phase 96 | Complete |
-| AGENT-06 | Phase 96 | Complete |
-| AGENT-07 | Phase 97 | Complete |
-| AGENT-08 | Phase 97 | Complete |
-| AGENT-09 | Phase 98 | Complete |
-| AGENT-10 | Phase 99 | Complete |
+| ORCH-01 | Phase 100 | Satisfied |
+| ORCH-02 | Phase 100 | Satisfied |
+| ORCH-03 | Phase 101 | Satisfied |
+| ORCH-04 | Phase 101 | Satisfied |
+| ORCH-05 | Phase 101 | Satisfied |
+| ORCH-06 | Phase 102 | Satisfied |
+| ORCH-08 | Phase 103 | Satisfied |
+| ORCH-09 | Phase 104 | Satisfied |
+| ORCH-10 | Phase 105 | Satisfied |
+| ORCH-11 | Phase 105 | Satisfied |
+| ORCH-12 | Phase 105 | Satisfied |
 
 **Coverage:**
-- v1 requirements: 10 total
-- Mapped to phases: 10
-- Unmapped: 0 ✓
+- v1 requirements: 11 total
+- Mapped to phases: 11
+- Unmapped: 0
 
 ---
-*Requirements defined: 2026-05-16*
-*Last updated: 2026-05-16 after v0.35.4 milestone start*
+*Requirements defined: 2026-05-19*
+*Last updated: 2026-05-19 after v0.37.0 milestone closeout*

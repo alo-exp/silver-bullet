@@ -22,6 +22,10 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
   # shellcheck source=lib/skill-discovery.sh
   source "$_lib_dir/skill-discovery.sh"
 fi
+if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
+  # shellcheck source=lib/session-ledger.sh
+  source "$_lib_dir/session-ledger.sh"
+fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
@@ -147,6 +151,7 @@ fi
 debug_record_skill
 
 recorded_any=false
+completed_skills_to_mark=()
 
 for raw in "${skills_to_record[@]}"; do
   loaded_only=false
@@ -194,6 +199,8 @@ for raw in "${skills_to_record[@]}"; do
     continue
   fi
 
+  completed_skills_to_mark+=("$skill")
+
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
   # SEC-02: refuse to write through a symlink at STATE_FILE
@@ -204,6 +211,12 @@ for raw in "${skills_to_record[@]}"; do
     recorded_any=true
   fi
 done
+
+if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
+  for skill in "${completed_skills_to_mark[@]}"; do
+    sb_session_ledger_mark_completed "$skill" || true
+  done
+fi
 
 if [[ "$recorded_any" == true ]]; then
   printf '{"hookSpecificOutput":{"message":"✅ Skill recorded"}}'
