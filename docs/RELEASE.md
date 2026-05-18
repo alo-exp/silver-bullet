@@ -36,8 +36,11 @@ git tag vX.Y.Z
 gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
 ```
 
-`completion-audit.sh` blocks `gh release create` until all `required_deploy` skills,
-all 4 quality gate stage markers, and the live matrix markers are present.
+Before the tag is created, the release commit must already be green. The
+`silver:create-release` skill waits for `bash scripts/verify-release-commit-ci.sh`
+and only then proceeds to `git tag` / `gh release create`. `completion-audit.sh`
+blocks `gh release create` until all `required_deploy` skills, all 4 quality gate
+stage markers, and the live matrix markers are present.
 Run `tests/live/run-live-tests.sh` and `tests/e2e-live/run-e2e-live-tests.sh`
 successfully in the current session before creating the release tag. The
 todo-app suite is now one inline full-surface journey and also writes an
@@ -51,7 +54,7 @@ for that release session only.
 
 ### 5. Post-Release
 
-- Verify CI green on the release tag
+- Verify CI remained green on the release commit before the tag was created
 - Confirm plugin cache update works via `/silver:update`
 - Update site if needed (Stage 3 should have covered this)
 - Run `scripts/install-codex.sh --purge-legacy-skills` if the release touched

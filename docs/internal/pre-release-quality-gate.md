@@ -163,6 +163,10 @@ run successfully in the current session:
 4. Let each runner create its session-scoped marker
 
 `hooks/completion-audit.sh` blocks release creation until both markers exist.
+Before the tag is created, run `bash scripts/verify-release-commit-ci.sh` and
+wait for the release commit's `CI` and `Secret Scan` runs to complete
+successfully. The release must not be published while that commit is still
+running or failing.
 
 If Claude usage is exhausted for the release session and the user explicitly
 approves skipping further Claude live testing, run both live suites with
