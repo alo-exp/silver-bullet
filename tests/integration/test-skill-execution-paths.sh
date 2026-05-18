@@ -281,6 +281,22 @@ rel_ci_gate_line=$(grep -n "verify-release-commit-ci.sh" "$SCL" | head -1 | cut 
 check "silver-create-release: release CI gate is required before tagging (line $rel_ci_gate_line > 0)" \
   "$([[ "$rel_ci_gate_line" -gt 0 ]] && echo pass || echo fail)"
 
+rel_allow_sync_line=$(grep -n "bash scripts/sync-marketplace-version.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: marketplace sync helper is allowed (line $rel_allow_sync_line > 0)" \
+  "$([[ "$rel_allow_sync_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_allow_live_line=$(grep -n "bash tests/live/run-live-tests.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: live matrix command is allowed (line $rel_allow_live_line > 0)" \
+  "$([[ "$rel_allow_live_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_allow_ci_line=$(grep -n "bash scripts/verify-release-commit-ci.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: release CI wait script is allowed (line $rel_allow_ci_line > 0)" \
+  "$([[ "$rel_allow_ci_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_allow_git_add_line=$(grep -n "git add CHANGELOG.md README.md .claude-plugin/marketplace.json" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: marketplace manifest is staged by the allowed git add command (line $rel_allow_git_add_line > 0)" \
+  "$([[ "$rel_allow_git_add_line" -gt 0 ]] && echo pass || echo fail)"
+
 market_sync_result=fail
 if python3 - "$SREL" <<'PY' >/dev/null 2>&1
 from pathlib import Path
