@@ -23,9 +23,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► SPEC ELICITATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► SPEC ELICITATION
 
 Feature: {$ARGUMENTS or "(not specified)"}
 Mode:    {greenfield | augment — detected in Step 0}
@@ -258,9 +256,7 @@ Replace `[feature-slug]` with a kebab-case version of the feature name from Step
 Display a closing banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SPEC ELICITATION COMPLETE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPEC ELICITATION COMPLETE
 
 Feature:         {feature name}
 Spec version:    {spec-version}

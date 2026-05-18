@@ -23,9 +23,7 @@ SB fast-path with 3-tier routing. Classifies work autonomously and routes to the
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► FAST PATH
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► FAST PATH
 
 Change: {$ARGUMENTS or "(not specified)"}
 ```
@@ -72,9 +70,7 @@ After gsd-fast completes, run scope expansion check (Step 4).
 If scope remained ≤3 files, display completion banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► FAST PATH COMPLETE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► FAST PATH COMPLETE
 
 Change: {$ARGUMENTS}
 Files modified: {count} (confirmed ≤3)
@@ -151,14 +147,11 @@ After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the c
 Escalation is **autonomous** — no direct user interaction needed. Display escalation banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- FAST PATH ESCALATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FAST PATH ESCALATION
 
 Reason: Scope expanded from {original tier} to {new tier}
 Files affected: {count}
 Routing to: {gsd-quick|silver:feature}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 Then invoke the target workflow. On escalation to silver:feature, pass the updated scope description so /silver can classify appropriately.

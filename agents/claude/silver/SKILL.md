@@ -82,7 +82,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; GSD debug/plan/execute/verify plus TDD |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | UI-specific composition |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Infra/DevOps composition |
-| "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation |
+| "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing + Superpowers brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only |
@@ -158,9 +158,7 @@ If the consequence is not material, choose the safer higher-rigor route and stat
 Before invoking the chosen skill, always display:
 
 ```text
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► ROUTING
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► ROUTING
 
 Input:      {first 80 chars of user input}
 Routing to: {chosen skill}

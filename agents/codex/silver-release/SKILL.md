@@ -27,9 +27,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► RELEASE WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► RELEASE WORKFLOW
 
 Release: {$ARGUMENTS or "(version not specified)"}
 ```
@@ -67,12 +65,9 @@ Short chain — release produces a versioned milestone artifact, not implementat
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                                │
-├──────────────────────────────────────────────────────────────┤
-│ Flows: QUALITY GATE → DOCUMENT → RELEASE                     │
-│ Skipped: DESIGN HANDOFF — no UI phases detected              │
-└──────────────────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: QUALITY GATE → DOCUMENT → RELEASE
+Skipped: DESIGN HANDOFF — no UI phases detected
 Approve composition? [Y/n]
 ```
 
@@ -341,14 +336,11 @@ If `items_filed` is empty:
 
 Output:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
 No items were recorded during this milestone via /silver:add or /silver:rem.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 If `items_filed` is non-empty, separate items by prefix:
@@ -357,9 +349,7 @@ If `items_filed` is non-empty, separate items by prefix:
 
 Output a formatted summary:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MILESTONE {MILESTONE} — POST-RELEASE ITEMS SUMMARY
 
 Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 
@@ -370,5 +360,4 @@ Knowledge & Lessons recorded via /silver:rem:
 {list of [knowledge]/[lessons] lines, or "(none)"}
 
 Total: {N} issues/backlog items, {M} knowledge/lessons entries
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

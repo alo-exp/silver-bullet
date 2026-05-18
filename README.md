@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.36.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.2)
+[![version](https://img.shields.io/badge/version-v0.37.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -338,8 +338,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.36.0",
-  "version": "0.36.0",
+  "config_version": "0.37.0",
+  "version": "0.37.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -519,12 +519,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.36.2`
-- Release: [v0.36.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.36.2)
+- Version: `0.37.0`
+- Release: [v0.37.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0)
 - Notable changes:
-  - Stabilized the Kay live journey and preserved its transcript archive for release provenance.
-  - Kept the release path strict with pre-publish CI gating and enforced upstream marketplace sync.
-  - Re-ran the full verification gate before cutting the release.
+  - Clarify now absorbs Product Management framing and Superpowers brainstorming into one stand-alone handoff layer.
+  - Silver Bullet now keeps a live Active Intent Ledger in session logs and closes out completed branches even across resumed sessions.
+  - The release prep flow now includes full verification, marketplace version sync, and updated knowledge/lessons capture for the new orchestration model.
 
 ## License
 

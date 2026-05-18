@@ -11,17 +11,22 @@ FAIL=0
 SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+TMPSTATE=""
+TMPLOG_PATH_FILE="${SB_TEST_DIR}/session-log-path-${TEST_RUN_ID}"
+SESSION_LOG_FILE=""
 
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}.requested" 2>/dev/null || true
+  rm -f "$TMPLOG_PATH_FILE" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}"
+  SESSION_LOG_FILE="${TMPDIR_TEST}/docs/sessions/requested-skill-${TEST_RUN_ID}.md"
   rm -f "$TMPSTATE" "${TMPSTATE}.requested"
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
@@ -30,14 +35,30 @@ EOF
 {
   "project": { "name": "test" },
   "state": { "state_file": "${TMPSTATE}" }
-}
+  }
 EOF
+  mkdir -p "$(dirname "$SESSION_LOG_FILE")"
+  cat > "$SESSION_LOG_FILE" <<'EOF'
+# Session Log — test
+
+## Active Intent Ledger
+
+(filled during the session as active requests are intercepted)
+
+## Agent Teams dispatched
+
+(none)
+EOF
+  printf '%s\n' "$SESSION_LOG_FILE" > "$TMPLOG_PATH_FILE"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_SESSION_LOG_PATH_FILE="$TMPLOG_PATH_FILE"
 }
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE" "${TMPSTATE}.requested"
+  rm -f "$TMPLOG_PATH_FILE"
+  SESSION_LOG_FILE=""
 }
 
 run_hook() {
@@ -95,6 +116,18 @@ assert_not_in_requested() {
   fi
 }
 
+assert_in_session_log() {
+  local label="$1"
+  local needle="$2"
+  if grep -qF "$needle" "$SESSION_LOG_FILE" 2>/dev/null; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$needle' not found in session log: $(cat "$SESSION_LOG_FILE" 2>/dev/null || echo '(empty)')"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 echo "=== record-requested-skill.sh tests ==="
 
 setup
@@ -102,6 +135,9 @@ run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entry
 assert_in_requested "silver:scan request recorded as requested, not completed" "silver-scan"
 assert_in_requested "gsd:plan-phase request recorded as requested, not completed" "gsd-plan-phase"
 assert_not_in_state "silver:scan is not recorded as completed" "silver-scan"
+assert_in_session_log "session ledger records the request block" "## Active Intent Ledger"
+assert_in_session_log "session ledger records silver-scan as active" "  - [ ] silver-scan"
+assert_in_session_log "session ledger records gsd-plan-phase as active" "  - [ ] gsd-plan-phase"
 teardown
 
 setup

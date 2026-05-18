@@ -64,13 +64,6 @@ If `.planning/` does not exist, create:
 
 ```
 .planning/
-├── PROJECT.md     — project context (template stamped here)
-├── STATE.md       — current execution state
-├── ROADMAP.md     — phase roadmap (initially empty)
-├── MILESTONES.md  — completed milestones (initially empty)
-├── REQUIREMENTS.md — milestone requirements (initially empty)
-├── config.json    — required-skill lists, paths, options
-└── phases/        — per-phase directories created on demand
 ```
 
 Use the templates available in the global SB skill set under `~/forge/silver-bullet/templates/` (or fetch from `https://raw.githubusercontent.com/alo-exp/silver-bullet/main/templates/`).

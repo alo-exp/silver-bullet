@@ -45,9 +45,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► UI WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► UI WORKFLOW
 
 UI work: {$ARGUMENTS or "(not specified)"}
 Mode:    {interactive | autonomous — from §10e or session selection}
@@ -88,12 +86,9 @@ Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — t
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                                        │
-├──────────────────────────────────────────────────────────────────────┤
-│ Flows: ORIENT → DESIGN CONTRACT → PLAN → EXECUTE → UI QUALITY → ...  │
-│ Skipped: BOOTSTRAP — .planning/ exists                               │
-└──────────────────────────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: ORIENT → DESIGN CONTRACT → PLAN → EXECUTE → UI QUALITY → ...
+Skipped: BOOTSTRAP — .planning/ exists
 Approve composition? [Y/n]
 ```
 

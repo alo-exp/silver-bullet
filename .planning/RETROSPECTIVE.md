@@ -1,5 +1,41 @@
 # Silver Bullet — Retrospectives
 
+## v0.37.0 SDLC Interception And Workflow Enforcement (2026-05-19)
+
+**Shipped:** 2026-05-19 | **Phases:** 100-105 | **Requirements:** 11/11
+
+### What Went Well
+
+- The intent-ledger plumbing kept requested work visible in live session logs and survived session resume paths.
+- `silver:clarify` was able to absorb the Product Management and Superpowers brainstorming behaviors non-redundantly without losing the decision-ready output.
+- The release-prep and verification path stayed clean: the full suite reran successfully, and the release surfaces were brought back into sync before tagging.
+
+### What Was Hard
+
+- The milestone closeout had to be completed manually in this repo because the local environment does not expose a direct `gsd-complete-milestone` shell wrapper.
+- Several version surfaces had to be aligned together (`package.json`, config templates, README, marketplace metadata, changelog) to keep the release consistent.
+- The orchestration vision spans hooks, skills, docs, and release metadata at once, so it is easy for a narrow fix to leave a stale surface behind.
+
+### What To Do Differently
+
+- Add a dedicated milestone-closeout helper so future release-only milestones do not require manual state reconciliation.
+- Keep release-facing version surfaces as a single patch set instead of touching them in separate passes.
+- Continue treating long-running intent tracking as a first-class artifact, not just a session convenience.
+
+### Tech Debt Deferred
+
+- Codex helper-skill discoverability parity for Product Management and Engineering remains out of scope for v0.37.0.
+- A true runtime-level host interception layer still depends on app/runtime hooks outside this repo.
+
+### Metrics
+
+| Metric | Value |
+|--------|-------|
+| Phases | 6/6 |
+| Requirements | 11/11 |
+| Tests | 2,135 passed, 0 failed |
+| Release line | v0.37.0 |
+
 ## v0.25.0 Issue Capture & Retrospective Scan (2026-04-24)
 
 **Shipped:** 2026-04-24 | **Phases:** 49-54 | **Plans:** 11 | **Requirements:** 24/24

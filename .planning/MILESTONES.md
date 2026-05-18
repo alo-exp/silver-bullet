@@ -1,5 +1,35 @@
 # Milestones
 
+## v0.37.0 SDLC Interception And Workflow Enforcement (Shipped: 2026-05-19)
+
+**Type:** Orchestration milestone (clarify/front-end enforcement, intent retention, autonomous progress)
+
+**Goal:** Implement the full Silver Bullet vision as a handholding orchestrator and process enforcer that intercepts non-trivial SDLC intent, composes the right workflow, and keeps Claude and Codex aligned under the same flow contract.
+
+**Phases planned:** 100-105
+
+**Target issue clusters:**
+
+- SDLC interception and routing: `ORCH-01`, `ORCH-02`
+- Clarify composition stack: `ORCH-03`, `ORCH-04`, `ORCH-05`
+- SB-owned milestone bootstrap: `ORCH-06`
+- Long-running context and intent retention: `ORCH-08`
+- Completion verification and redispatch: `ORCH-09`
+- AUI / master loop / autonomous progress: `ORCH-10`, `ORCH-11`, `ORCH-12`
+
+**Status:** complete; release line is live and planning state synchronized.
+
+**Shipped:** all 11 requirements satisfied across 6 phases (100-105).
+
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0
+
+**Completed work:**
+
+- `silver:clarify` now acts as the merged PM + Superpowers clarification front-end.
+- SB owns the clarification-to-`gsd:new-milestone` handoff.
+- The session log now carries a live `Active Intent Ledger`, including backfill for resumed sessions.
+- The release-prep path now aligns package/version surfaces, docs, tests, and marketplace metadata with `v0.37.0`.
+
 ## v0.35.4 Agents Directory Reorg (Shipped: 2026-05-16)
 
 **Type:** Patch release milestone (agent-bundle layout reorg, compatibility aliases, installer/surface sync, docs/tests refresh).

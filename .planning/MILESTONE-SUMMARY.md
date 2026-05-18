@@ -1,104 +1,76 @@
-# Milestone Summary: v0.9.0 — SB Orchestrated Dev Workflows
+# Milestone Summary: v0.37.0 — SDLC Interception And Workflow Enforcement
 
-**Released:** 2026-04-08
-**Milestone:** GSD-Mainstay Retrofitting + Orchestrated Dev Workflows
+**Generated:** 2026-05-19
+**Status:** Released
+**Purpose:** Milestone closeout and release narrative
 
 ---
 
-## What v0.9.0 Delivered
+## What v0.37.0 Delivered
 
-v0.9.0 transforms Silver Bullet from a passive enforcement layer into a complete **orchestration system** for software development. Every common dev task now has a pre-built, opinionated workflow that chains GSD, Superpowers, MultAI, and SB quality gates into a single invocable skill.
+v0.37.0 turns Silver Bullet into the SDLC handholding orchestrator and process enforcer the project vision called for. It intercepts non-trivial SDLC intent, keeps `silver:clarify` as the merged Product Management + Superpowers front-end, bootstraps milestone creation from SB itself, retains long-running intent across the session, and keeps the user experience centered on a natural AUI rather than exposed GSD mechanics.
 
 ### Core Theme: Orchestration-First
 
-The central bet of v0.9.0: developers should not need to remember which tools to chain or in what order. Each `/silver:*` workflow encapsulates the full decision tree — from task intake through delivery — so Claude can execute an entire development cycle with a single skill invocation.
+The central bet of v0.37.0 is that users should not need to know which workflow or helper skill to invoke. SB should inspect intent, clarify gray areas one at a time, and keep work moving under a composed flow contract until the session is truly complete.
 
 ---
 
-## Phases Completed: 6–10
+## Phases Completed: 100–105
 
 | Phase | Name | Outcome |
 |-------|------|---------|
-| Phase 6 | Enforcement Hardening | All 16 adversarial audit gaps closed (F-01 through F-20) |
-| Phase 7 | Orchestration Skill Files | 7 named workflow skills delivered |
-| Phase 8 | Enforcement Test Harness | 191 tests, 12/12 hooks covered, 3 test suites |
-| Phase 9 | silver:init Upgrades | MultAI/Engineering/PM plugin checks, project-type detection, GSD state delegation |
-| Phase 10 | Router + Preferences | /silver router 17+ routes, §10 user workflow preferences, §2h workflows section |
+| Phase 100 | SDLC Interception Boundary | Intercepts SDLC-relevant text, host cues, and pasted artifacts; leaves Q&A/trivial requests direct |
+| Phase 101 | Clarify Composition Stack | `silver:clarify` absorbs PM brainstorming + Superpowers brainstorming non-redundantly |
+| Phase 102 | SB-Owned Milestone Bootstrap | SB hands off to `gsd:new-milestone` when milestone creation is the correct next step |
+| Phase 103 | Long-Running Context And Intent Retention | Nested intent ledger persists in-session and across planning artifacts |
+| Phase 104 | Completion Verification And Redispatch | SB verifies actual work product before marking completion and re-dispatches gaps |
+| Phase 105 | AUI, Master Loop, And Autonomous Progress | SB asks for autonomy per session, hides GSD mechanics, and keeps the user journey natural |
 
 ---
 
 ## Key Deliverables
 
-### 7 Orchestration Skill Files
+### Orchestration and clarification
 
-| Skill | Purpose |
-|-------|---------|
-| `/silver:feature` | Full 17-step feature dev: intel → brainstorm → testing-strategy → writing-plans → execute → review → ship |
-| `/silver:bugfix` | Triage-first: 3 investigation paths (known/unknown/failed-workflow) → TDD regression-first |
-| `/silver:ui` | UI-specific: gsd-ui-phase + gsd-ui-review (6-pillar visual audit) |
-| `/silver:devops` | IaC path: blast-radius → devops-skill-router → 7-dim quality gates, no TDD |
-| `/silver:research` | MultAI-powered: 3 research paths → .planning/research/ → handoff |
-| `/silver:release` | Milestone publish: gap-closure loop → docs → GitHub release → complete |
-| `/silver:fast` | Trivial bypass: complexity triage gate, STOP on scope expansion |
+| Area | Outcome |
+|------|---------|
+| SDLC interception | Broad intent detection for freeform text plus attached/pasted artifacts that point at SDLC work |
+| Clarify front-end | `silver:clarify` becomes the merged PM + Superpowers reasoning layer, with PM framing visible only when relevant |
+| Milestone bootstrap | Clarify can hand SB-ready milestone context to `gsd:new-milestone` without making the user restart manually |
+| Intent tracking | Session logs now carry an `Active Intent Ledger` section and request/completion tracking backfills resumed sessions |
+| Completion control | SB verifies actual delivered work before closing items and redispatches missing work when needed |
+| AUI and autonomy | SB keeps the user facing journey high-level, asks for autonomy once per session, and continues aggressively when safe |
 
-### Enforcement Test Harness
+### Release-prep and verification
 
-- 191 automated integration tests across 6 test files
-- 12/12 hooks covered by the coverage matrix
-- Unified test runner: `bash tests/run-all-tests.sh`
-- Hook coverage matrix: verifies no hook is untested
-
-### /silver Router Expansion
-
-- 17+ routes covering all common intents
-- Complexity triage (trivial → fast path, non-trivial → full workflow)
-- Ship disambiguation (what does "ship this" mean in context?)
-- Conflict resolution when multiple workflows apply
-
-### silver-bullet.md Schema Updates
-
-- §2h: SB Orchestrated Workflows enforcement section
-- §10: User Workflow Preferences schema (10a session mode, 10b review depth, 10c autonomy level, 10d quality gate verbosity, 10e research depth)
-- §0: MultAI update check alongside GSD/Superpowers in session startup
-
-### silver:init Upgrades
-
-- MultAI plugin check at initialization
-- Anthropic Engineering plugin check
-- PM plugin check
-- Project-type detection (app vs DevOps/infrastructure)
-- GSD autonomous mode note in setup output
-
-### GSD State Delegation
-
-- SB reads `.planning/STATE.md` instead of maintaining its own state file
-- Eliminates state divergence between SB and GSD
+- 2,135 automated tests passed, 0 failed
+- Full test suite rerun completed in the release session
+- Version surfaces aligned to `v0.37.0`
+- Marketplace manifest and release docs aligned with the new release line
 
 ---
 
-## Enforcement Gaps Closed
+## Verification
 
-All 16 gaps from the adversarial enforcement audit closed:
-- F-01: Review loop pass markers (review-loop-pass-1, review-loop-pass-2)
-- F-02 through F-20: PreToolUse blocking, stage falsification prevention, quality gate stage ordering, branch mismatch, plugin cache write blocking, scripting language bypass, tamper regex generalization, destructive command warning, `gh pr merge` delivery gate, completion-audit double-JSON bug, state JSON injection
-
----
-
-## Deferred Work: v0.10.0
-
-**Phases 1–5** from the original roadmap were assessed and deferred. These phases covered workflow file rewrites and documentation that were superseded by the v0.9.0 orchestration approach. They remain valid work but are lower priority now that the orchestration layer exists.
-
-Planned for v0.10.0:
-- Workflow file rewrites (full-dev-cycle.md, devops-cycle.md rewritten for orchestration-native patterns)
-- Documentation site updates to reflect orchestration model
-- Any remaining Phase 1–5 items not addressed by Phases 6–10
+- Full suite: PASS
+- Hook coverage: 28/28 hooks covered
+- Live harness checks: PASS
+- Release-prep docs: synced
 
 ---
 
 ## Metrics
 
-- Tests: 191 (up from 183 at v0.11.0 entry)
-- Hook coverage: 12/12 (100%)
-- New skills: 7 orchestration workflows
-- Router routes: 17+
-- Enforcement gaps closed: 16
+- Phases: 6/6
+- Requirements: 11/11
+- Tests: 2,135 passed, 0 failed
+- Release line: `v0.37.0`
+
+---
+
+## Notes for the Next Milestone
+
+- Keep the `silver:clarify` merge logic and the SB-owned bootstrap path synchronized with the router contract.
+- Preserve the active-intent ledger across future workflow changes.
+- Extend the host interception layer only if the runtime supports it without degrading direct Q&A or trivial requests.

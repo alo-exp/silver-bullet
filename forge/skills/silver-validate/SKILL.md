@@ -23,9 +23,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► VALIDATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► VALIDATE
 ```
 
 ## Step-Skip Protocol
@@ -229,9 +227,7 @@ Consider whether implicit assumptions exist that should be made explicit.
 
 Display all BLOCK findings prominently:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- VALIDATION BLOCKED — {B} BLOCK FINDING(S)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VALIDATION BLOCKED — {B} BLOCK FINDING(S)
 
 {list all BLOCK findings with full FINDING format}
 ```
@@ -250,9 +246,7 @@ Do NOT allow proceeding to Step 6 while BLOCK findings exist. If user selects C,
 
 Display findings summary:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- VALIDATION ADVISORY — {W} WARN, {I} INFO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VALIDATION ADVISORY — {W} WARN, {I} INFO
 
 {list WARN findings}
 {list INFO findings}
@@ -272,9 +266,7 @@ Only proceed to Step 6 when user selects A.
 
 Display:
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- VALIDATION CLEAN — ZERO FINDINGS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VALIDATION CLEAN — ZERO FINDINGS
 
 All acceptance criteria are covered. No unresolved assumptions or open questions.
 ```
@@ -347,9 +339,7 @@ No findings — all acceptance criteria covered, no unresolved assumptions or op
 Display final summary:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- VALIDATION COMPLETE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VALIDATION COMPLETE
 
   Findings: {B} BLOCK, {W} WARN, {I} INFO
   Assumptions surfaced: {N}

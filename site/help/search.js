@@ -71,7 +71,7 @@ var IDX = [
     "url": "/help/concepts/routing-logic.html",
     "anchor": "complexity-triage",
     "title": "Complexity triage",
-    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed."
+    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify merges PM framing and Superpowers brainstorming before handing off."
   },
   {
     "page": "Core Concepts",
@@ -93,6 +93,13 @@ var IDX = [
     "anchor": "overview",
     "title": "Documentation scheme",
     "text": "Silver Bullet uses a bounded docs scheme with ARCHITECTURE.md, TESTING.md, doc-scheme.md/json, task checklist, CHANGELOG, monthly docs/knowledge and docs/lessons, specs, workflows, and sessions."
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/index.html",
+    "anchor": "session-log",
+    "title": "Session Log Format",
+    "text": "Session logs now include an Active Intent Ledger section that records live requested branches and marks completions as they land, keeping long-running orchestration state visible."
   },
   {
     "page": "Core Concepts",
