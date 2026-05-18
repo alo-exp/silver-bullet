@@ -30,9 +30,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► DEVOPS WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► DEVOPS WORKFLOW
 
 Change: {$ARGUMENTS or "(not specified)"}
 Mode:   {interactive | autonomous — from §10e or session selection}
@@ -71,12 +69,9 @@ Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLO
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                                │
-├──────────────────────────────────────────────────────────────┤
-│ Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP      │
-│ Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra    │
-└──────────────────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP
+Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra
 Approve composition? [Y/n]
 ```
 

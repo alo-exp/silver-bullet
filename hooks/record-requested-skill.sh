@@ -17,6 +17,8 @@ trap 'exit 0' ERR
 
 umask 0077
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
@@ -62,6 +64,11 @@ case "$STATE_FILE" in
   *) STATE_FILE="${SB_STATE_DIR}/state" ;;
 esac
 
+if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
+  # shellcheck source=lib/session-ledger.sh
+  source "$_lib_dir/session-ledger.sh"
+fi
+
 # ── Extract requested route(s) from prompt ──────────────────────────────────
 #
 # We record two kinds of markers:
@@ -73,6 +80,7 @@ esac
 # prompt text cannot satisfy workflow gates.
 
 skills=()
+ledger_skills=()
 
 backtick_regex="\`[^\`]+\`"
 
@@ -119,11 +127,16 @@ for raw in "${skills[@]}"; do
     gsd-*) ;;
     *) continue ;;
   esac
+  ledger_skills+=("$skill")
 
   # No duplicates.
   if ! grep -qx "$skill" "$REQUESTED_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >>"$REQUESTED_FILE" 2>/dev/null || true
   fi
 done
+
+if declare -F sb_session_ledger_append_request >/dev/null 2>&1; then
+  sb_session_ledger_append_request "$prompt" "${ledger_skills[@]}" || true
+fi
 
 exit 0

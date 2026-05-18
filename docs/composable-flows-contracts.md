@@ -2,7 +2,7 @@
 
 This is the canonical contract reference for `/silver` dynamic composition.
 
-SB composes flows. GSD owns the project lifecycle. Any semver-relevant change must pass through GSD milestone/phase management, planning, execution, verification, and release gates.
+SB composes flows. GSD owns the project lifecycle. Any semver-relevant change must pass through GSD milestone/phase management, planning, execution, verification, and release gates. FLOW 2's `silver:clarify` is the merged clarification front-end: it absorbs PM framing and Superpowers brainstorming non-redundantly before any GSD handoff.
 
 ## Naming And Availability
 
@@ -25,7 +25,7 @@ Each workflow composes from these 18 atomic flows:
 |------|------|---------------|---------|
 | FLOW 0 | BOOTSTRAP | GSD | Project/milestone setup |
 | FLOW 1 | ORIENT | GSD/SB | Codebase and project-state orientation |
-| FLOW 2 | CLARIFY | SB | Problem framing and scope boundaries |
+| FLOW 2 | CLARIFY | SB | Problem framing, scope boundaries, and a decision-ready brief |
 | FLOW 3 | DECIDE | SB/GSD | Architecture, product, or technical choice |
 | FLOW 4 | SPECIFY | SB/Product Management | SPEC.md and REQUIREMENTS.md creation/refinement |
 | FLOW 5 | PLAN | GSD | Phase discussion, assumptions, dependency analysis, and plans |
@@ -88,8 +88,8 @@ Every flow contract contains these required fields:
 |-------|-------|
 | Prerequisites | FLOW 1 complete for project work; none for pure ideation |
 | Trigger | Fuzzy intent, unclear scope, complex work, new idea, user uncertainty |
-| Steps | 1. `silver:clarify` (Always) · 2. `superpowers:brainstorming` (As-needed, creative exploration) · 3. `product-management:synthesize-research` (As-needed, prior research exists) · 4. `product-management:competitive-brief` (As-needed, market/competitive context needed) |
-| Produces | Scope summary, assumptions, boundaries, decision-ready brief |
+| Steps | 1. `silver:clarify` (Always, merged PM framing + Superpowers brainstorming absorbed internally) · 2. `product-management:synthesize-research` (As-needed, prior research exists) · 3. `product-management:competitive-brief` (As-needed, market/competitive context needed) |
+| Produces | Scope summary, assumptions, boundaries, PM framing when relevant, decision-ready brief |
 | Review Cycle | None |
 | GSD Impact | None directly; handoff feeds GSD discussion/planning |
 | Exit Condition | Scope and next lifecycle route are explicit |

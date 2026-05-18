@@ -23,9 +23,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► BUGFIX WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► BUGFIX WORKFLOW
 
 Symptom: {$ARGUMENTS or "(not specified)"}
 ```
@@ -61,12 +59,9 @@ Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOT
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                                │
-├──────────────────────────────────────────────────────────────┤
-│ Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP │
-│ Skipped: BOOTSTRAP — .planning/ exists                       │
-└──────────────────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP
+Skipped: BOOTSTRAP — .planning/ exists
 Approve composition? [Y/n]
 ```
 

@@ -38,9 +38,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► RESEARCH WORKFLOW
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► RESEARCH WORKFLOW
 
 Question: {$ARGUMENTS or "(not specified)"}
 ```
@@ -76,12 +74,9 @@ No per-phase loop — research is a single-pass engagement that hands off to the
 Display the composition proposal to the user:
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│ SILVER BULLET ► FLOW COMPOSED                                    │
-├──────────────────────────────────────────────────────────────────┤
-│ Flows: CLARIFY → DECIDE → SPECIFY (if needed)                    │
-│ Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only  │
-└──────────────────────────────────────────────────────────────────┘
+SILVER BULLET ► FLOW COMPOSED
+Flows: CLARIFY → DECIDE → SPECIFY (if needed)
+Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only
 Approve composition? [Y/n]
 ```
 

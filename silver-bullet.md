@@ -233,10 +233,8 @@ At every workflow transition (the transitions listed in the Hand-Holding table a
 display a progress banner BEFORE the transition narration:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- PROGRESS: Phase {N} of {total} — {phase_name}
+PROGRESS: Phase {N} of {total} — {phase_name}
  Plan {M} of {plans_in_phase} | Overall: {percent}% complete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 Values come from STATE.md (`progress.*`) and ROADMAP.md (phase name, plan count).
@@ -265,11 +263,9 @@ do NOT ask questions or pause, but DO output structured commentary at each major
 
 **At phase completion:**
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- PHASE {N} COMPLETE — {phase_name}
+PHASE {N} COMPLETE — {phase_name}
  {completed_phases}/{total_phases} phases done | {percent}%
  Next: {next_phase_name or "FINALIZE + SHIP"}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 This commentary replaces the silence of autonomous mode with structured narration
@@ -292,8 +288,10 @@ skill, or SB skill.
 - Messages that are already slash commands (start with `/`)
 - Simple yes/no confirmations or clarifications in an ongoing workflow
 - Pure questions with no action intent ("what is X?", "explain Y")
-- Replies/continuations while an active skill is already running
+- Replies/continuations while an active skill is already running, unless they introduce new action intent or SDLC-relevant context
 - Single-word or trivial acknowledgements ("ok", "thanks", "got it")
+
+If a reply or attached/pasted artifact introduces new action intent while a workflow is already running, SB must intercept it and re-route through `/silver` instead of treating it as a passive continuation.
 
 **Process:**
 1. Receive bare instruction
@@ -315,7 +313,7 @@ GSD remains the lifecycle authority. SB may route, compose, review, and gate, bu
 
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
-| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify → gsd-discuss-phase |
+| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify (merged PM framing + Superpowers brainstorming) → GSD handoff |
 | `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | gsd-scan → silver:clarify/decide → GSD plan/execute/verify |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | gsd-scan → silver:clarify/decide → gsd-ui-phase |

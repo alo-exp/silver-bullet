@@ -23,9 +23,7 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- SILVER BULLET ► INGEST
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SILVER BULLET ► INGEST
 
 Ticket:  {$ARGUMENTS or "(not specified)"}
 Mode:    {artifact-ingest | cross-repo-fetch — detected in Step 0}
@@ -456,9 +454,7 @@ If in cross-repo-fetch mode, only `.planning/SPEC.main.md` and `.planning/INGEST
 Display closing banner:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- INGESTION COMPLETE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INGESTION COMPLETE
 
 Source:       {JIRA key / source-url / manual}
 Artifacts:    {N} attempted, {S} succeeded, {F} failed
