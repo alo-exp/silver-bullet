@@ -12,6 +12,13 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so the prompt reminder follows the host root.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 # jq is required — exit silently if missing (don't slow down prompts with warnings)
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -35,7 +42,7 @@ done
 [[ -z "$config_file" ]] && exit 0
 
 # ── Read config values (single jq call for speed) ────────────────────────────
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
@@ -54,13 +61,13 @@ required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
-# Security: validate paths stay within ~/.claude/
+# Security: validate paths stay within the host runtime state root
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) state_file="${SB_STATE_DIR}/state" ;;
 esac
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 

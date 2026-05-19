@@ -295,6 +295,11 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 SCRIPT="$REPO_ROOT/scripts/install-codex.sh"
 HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
@@ -344,7 +349,7 @@ EOF
 sb_prefix="silver"
 sb_suffix="bullet"
 legacy_sb_name="${sb_prefix}-${sb_suffix}"
-legacy_claude_root="${HOME}/.claude"
+legacy_claude_root="${SB_RUNTIME_HOME_ROOT}"
 legacy_plugins_root="${legacy_claude_root}/plugins"
 legacy_cache_root="${legacy_plugins_root}/cache"
 legacy_vendor_root="${legacy_cache_root}/alo-labs"
@@ -358,7 +363,7 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/shafqat/.claude/hooks/gsd-check-update.js\""
+            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/gsd-check-update.js\""
           },
           {
             "type": "command",
@@ -373,7 +378,7 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/shafqat/.claude/hooks/gsd-context-monitor.js\""
+            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/gsd-context-monitor.js\""
           },
           {
             "type": "command",
@@ -671,8 +676,8 @@ assert_not_contains "SB package hooks no longer use Claude plugin root placehold
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_CACHE_ROOT"
-assert_not_contains "SB package does not contain ~/.claude paths" "~/.claude" "$FAKE_SB_PACKAGE_ROOT"
-assert_not_contains "Current cache package does not contain ~/.claude paths" "~/.claude" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain /compact commands" "/compact" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain /compact commands" "/compact" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain model_profile routing" 'model_profile: "balanced"' "$FAKE_SB_PACKAGE_ROOT"

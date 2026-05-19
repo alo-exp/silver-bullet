@@ -177,7 +177,7 @@ The counter resets to 0 on any file write/edit or decision log event. It also re
 After the model routing prompt and before `/gsd:discuss-phase`, the active runtime:
 
 1. Reads `all_tracked` from `.silver-bullet.json`
-2. Scans **both** `~/.claude/skills/` (flat `.md` files) **and** `~/.claude/plugins/cache/` (subdirectory-based: assumed layout `<publisher>/<plugin>/<version>/skills/<skill-name>/SKILL.md` — glob `*/*/*/skills/*/SKILL.md`; observed from `superpowers-marketplace/superpowers/5.0.5/skills/brainstorming/SKILL.md`; falls back gracefully if no matches) for skills not already in `all_tracked` — these are "untracked" skills worth surfacing
+2. Scans **both** `${SB_RUNTIME_HOME_ROOT}/skills/` (flat `.md` files) **and** `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (subdirectory-based: assumed layout `<publisher>/<plugin>/<version>/skills/<skill-name>/SKILL.md` — glob `*/*/*/skills/*/SKILL.md`; observed from `superpowers-marketplace/superpowers/5.0.5/skills/brainstorming/SKILL.md`; falls back gracefully if no matches) for skills not already in `all_tracked` — these are "untracked" skills worth surfacing
 3. Cross-references the combined list (tracked + untracked) against the current task description
 4. Surfaces a short candidate list:
    > Skills that may apply to this task: `/security` — auth changes; `/system-design` — new service boundary
@@ -237,7 +237,7 @@ After Step 5 (`/gsd:plan-phase`) produces `.planning/{phase}-PLAN.md`, the activ
 - **Second terminal opened mid-autonomous-session**: `session-log-init.sh` re-triggers. Step 4 (cleanup) kills the old sentinel. Step 5 (dedup path) detects `mode=autonomous` from the existing log, re-launches a fresh sentinel (with new PID file and session-start-time), appends a note to `$existing` under `## Autonomous decisions`, and exits. Timeout supervision is preserved with a fresh 10-minute window. Warn-count is reset by step 4 cleanup — accepted, as the new sentinel represents a fresh supervision window.
 - **Non-macOS environment**: `timeout-check.sh` emits a `uname` guard; exits 0 on Linux (stat syntax incompatibility). No stale-flag check is performed — accepted limitation.
 - **Skill scan returns empty**: Discovery step logs "Skill discovery: no candidates surfaced" and continues.
-- **`~/.claude/plugins/cache/` absent**: Skip silently; scan only `~/.claude/skills/`.
+- **`${SB_RUNTIME_HOME_ROOT}/plugins/cache/` absent**: Skip silently; scan only `${SB_RUNTIME_HOME_ROOT}/skills/`.
 
 ---
 

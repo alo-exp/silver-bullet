@@ -49,7 +49,7 @@ The v0.30.0 milestone is a bug-fix milestone for the existing Silver Bullet enfo
 ### Privilege Inventory
 
 No new capabilities. Existing capabilities preserved:
-- File system access: `~/.claude/.silver-bullet/state`, `~/.claude/.silver-bullet/branch`, `~/.claude/.silver-bullet/trivial`, validated to stay within `~/.claude/`.
+- File system access: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`, `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`, `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`, validated to stay within `${SB_RUNTIME_HOME_ROOT}/`.
 - Git operations: read-only `git rev-parse`, `git status`, `git config`.
 - jq config-file reads.
 - `hooks/lib/nofollow-guard.sh` symlink-write protection preserved.
@@ -62,7 +62,7 @@ No new capabilities. Existing capabilities preserved:
 
 ### Adversarial Hypotheses
 
-1. **Malicious project config weakens HOOK-14:** A repo's `.silver-bullet.json` with `transient_path_ignore_patterns: [".*"]` whitelists every porcelain row, defeating HOOK-14's enforcement. Threat actor: repo committer with write access to `.silver-bullet.json`. Existing threat: same actor can edit `.silver-bullet.json` to lower `required_planning`/`required_deploy` lists, or set `state.trivial_file` outside `~/.claude/`. The transient-pattern bypass adds nothing the actor doesn't already have.
+1. **Malicious project config weakens HOOK-14:** A repo's `.silver-bullet.json` with `transient_path_ignore_patterns: [".*"]` whitelists every porcelain row, defeating HOOK-14's enforcement. Threat actor: repo committer with write access to `.silver-bullet.json`. Existing threat: same actor can edit `.silver-bullet.json` to lower `required_planning`/`required_deploy` lists, or set `state.trivial_file` outside `${SB_RUNTIME_HOME_ROOT}/`. The transient-pattern bypass adds nothing the actor doesn't already have.
 2. **Malicious SessionStart stdin payload:** A hostile process with stdin write access to a Claude Code SessionStart could inject `{"source":"compact"}` to suppress state mutations on a `clear`-intended session. Threat actor: requires arbitrary stdin control of Claude Code's hook subprocess, which already implies full process control. Out of scope.
 3. **Empty-branch state preservation as DoS:** With #87 Bug 3 fixed, an attacker controlling `git rev-parse --abbrev-ref HEAD` output (e.g., via PATH manipulation) could force empty `current_branch` to keep stale state preserved. Threat actor: requires PATH manipulation, again implying full process control. Out of scope.
 
@@ -98,7 +98,7 @@ No new external URLs, webhooks, email, telemetry. All hook output stays local (`
 **FINDING-9.1** — `hooks/stop-check.sh:172`: project-supplied `transient_path_ignore_patterns` are joined with `|` via `jq` and concatenated into an awk ERE without shape validation. A user pattern containing literal `|` will split into two patterns; a pattern containing `(` or `)` may unbalance the regex. **Confidence:** CONFIRMED — concrete code path. **CVSS Base:** 4.0. **Severity floor:** none applicable. **Disposition:** captured in backlog issue #90; threat actor needs `.silver-bullet.json` write access which already implies broader control. **Remediation (deferred):** validate each pattern matches `^[^|()]+$` or document escaping requirements; cap total ERE length.
 
 ### FINDING-10 (Persistence & Backdoor Installation) — `NO`
-Verified: no new writes to `~/.bashrc`, `~/.zshrc`, `~/.profile`, `~/.ssh/`, `crontab`, `systemd`, `launchd`, `.git/hooks/`, `package.json` `postinstall`, no `nohup`/`disown`/`screen`/`tmux`/`at`/`batch`. The new branch-file write at `~/.claude/.silver-bullet/branch` is an existing path under the user-scoped state dir, not a persistence vector.
+Verified: no new writes to `~/.bashrc`, `~/.zshrc`, `~/.profile`, `~/.ssh/`, `crontab`, `systemd`, `launchd`, `.git/hooks/`, `package.json` `postinstall`, no `nohup`/`disown`/`screen`/`tmux`/`at`/`batch`. The new branch-file write at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch` is an existing path under the user-scoped state dir, not a persistence vector.
 
 ## Step 2b — PoC Safety Gate
 

@@ -1,7 +1,15 @@
 # shellcheck shell=bash
 # Silver Bullet — refuse writes that would traverse a symlink (SEC-02).
 # Sourced by every hook that creates, replaces, or appends to a state file
-# under ~/.claude/.silver-bullet/.
+# under the active host runtime state directory.
+#
+# Load runtime-specific paths so hooks can choose the correct host root.
+
+_sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_sb_runtime_paths_dir/runtime-paths.sh"
+fi
 #
 # Usage:
 #   source "${_lib_dir}/nofollow-guard.sh"

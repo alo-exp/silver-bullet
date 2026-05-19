@@ -7,7 +7,7 @@
 
 - [x] MH1: README.md "Trivial-Session Bypass" section present — lifecycle, escape hatch, which hooks
 - [x] MH2: docs/ARCHITECTURE.md "Trivial-Session Bypass" subsection present — numbered lifecycle, security note
-- [x] MH3: Both docs include `touch ~/.claude/.silver-bullet/trivial` escape hatch command
+- [x] MH3: Both docs include `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` escape hatch command
 - [x] MH4: Escape hatch noted as terminal-only (not through Claude) — intentional enforcement boundary
 
 ## Verdict

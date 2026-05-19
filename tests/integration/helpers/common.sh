@@ -3,7 +3,11 @@
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 HOOKS_DIR="${REPO_ROOT}/hooks"
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+fi
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 PASS=0
@@ -11,7 +15,7 @@ FAIL=0
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state"
+QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 LEGACY_CI_TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
 LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
@@ -46,7 +50,7 @@ EOF
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   # Mock branch file so session-start sees "feature/test" without touching
-  # the live ~/.claude/.silver-bullet/branch file.
+  # the live host runtime branch file.
   TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   printf 'feature/test' > "$TMPBRANCH"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"

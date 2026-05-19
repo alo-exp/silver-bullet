@@ -10,9 +10,9 @@ Lightweight alternative to `/gsd-map-codebase` — spawns one mapper agent inste
 </objective>
 
 <execution_context>
-@~/.claude/get-shit-done/workflows/scan.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/scan.md
 </execution_context>
 
 <process>
-Execute the scan workflow from @~/.claude/get-shit-done/workflows/scan.md end-to-end.
+Execute the scan workflow from @${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/scan.md end-to-end.
 </process>

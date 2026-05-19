@@ -7,27 +7,27 @@ key-files:
   modified:
     - site/index.html
   not-committed:
-    - ~/.claude/agents/gsd-planner.md
-    - ~/.claude/agents/gsd-verifier.md
-    - ~/.claude/agents/gsd-security-auditor.md
-    - ~/.claude/agents/gsd-ui-checker.md
-    - ~/.claude/agents/gsd-assumptions-analyzer.md
-    - ~/.claude/agents/gsd-integration-checker.md
-    - ~/.claude/agents/gsd-executor.md
-    - ~/.claude/agents/gsd-phase-researcher.md
-    - ~/.claude/agents/gsd-doc-writer.md
-    - ~/.claude/agents/gsd-doc-verifier.md
-    - ~/.claude/agents/gsd-codebase-mapper.md
-    - ~/.claude/agents/gsd-roadmapper.md
-    - ~/.claude/agents/gsd-research-synthesizer.md
-    - ~/.claude/agents/gsd-project-researcher.md
-    - ~/.claude/agents/gsd-ui-researcher.md
-    - ~/.claude/agents/gsd-user-profiler.md
-    - ~/.claude/agents/gsd-nyquist-auditor.md
-    - ~/.claude/agents/gsd-debugger.md
-    - ~/.claude/agents/gsd-advisor-researcher.md
-    - ~/.claude/agents/gsd-plan-checker.md
-    - ~/.claude/skills/quality-gates/SKILL.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-planner.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-verifier.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-security-auditor.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-checker.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-assumptions-analyzer.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-integration-checker.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-executor.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-phase-researcher.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-writer.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-verifier.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-codebase-mapper.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-roadmapper.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-research-synthesizer.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-project-researcher.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-researcher.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-user-profiler.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-nyquist-auditor.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-debugger.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-advisor-researcher.md
+    - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-plan-checker.md
+    - ${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md
 decisions:
   - Opus for planning/verification/security/analysis agents (6 agents) to maximize reasoning depth
   - Sonnet for execution/research/documentation/testing agents (14 agents) for high-throughput efficiency
@@ -48,7 +48,7 @@ metrics:
 
 ### Task 1: Add model directives to all GSD agent files and SKILL.md
 
-Updated 20 agent files in `~/.claude/agents/` with `model:` field in YAML frontmatter, inserted after `description:` and before `tools:`.
+Updated 20 agent files in `${SB_RUNTIME_HOME_ROOT}/agents/` with `model:` field in YAML frontmatter, inserted after `description:` and before `tools:`.
 
 **Opus agents (6):** gsd-planner, gsd-verifier, gsd-security-auditor, gsd-ui-checker, gsd-assumptions-analyzer, gsd-integration-checker
 

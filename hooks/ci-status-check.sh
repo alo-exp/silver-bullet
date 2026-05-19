@@ -5,6 +5,13 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so the CI override and trivial files follow the host.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 # PreToolUse + PostToolUse hook (matcher: Bash)
 # Checks last completed CI run status before/after git push and deploy commands.
 # BLOCKING on failure — outputs decision:block and instructs immediate /gsd:debug.
@@ -66,7 +73,7 @@ done
 # ── CI-red override bypass ────────────────────────────────────────────────────
 # Separate from trivial-session bypass — allows commits when CI is red so the
 # user can push a fix. Uses a dedicated flag to avoid semantic conflation (#31).
-_sb_state_dir="${HOME}/.claude/.silver-bullet"
+_sb_state_dir="${SB_RUNTIME_STATE_DIR}"
 _ci_override_file="${_sb_state_dir}/ci-red-override"
 # Default trivial path — used by backward compat check (always hardcoded
 # because that check specifically detects old-style usage of the default path).
@@ -84,7 +91,7 @@ fi
 # trivial-bypass helper exits 0 silently, which would swallow this notice.
 # Remove this block in v0.25.
 if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
-  printf '{"hookSpecificOutput":{"message":"[deprecation] ~/.claude/.silver-bullet/trivial used as CI-red override. This flag moved to ci-red-override in v0.23.6 and will stop working in v0.25. See silver-bullet#31."}}'
+  printf '{"hookSpecificOutput":{"message":"[deprecation] host-runtime/.silver-bullet/trivial used as CI-red override. This flag moved to ci-red-override in v0.23.6 and will stop working in v0.25. See silver-bullet#31."}}'
   exit 0
 fi
 
@@ -152,7 +159,7 @@ Then: gh run view <run-id> --log-failed
 If you need to push a CI fix, one of the following auto-bypasses the block:
   • Prefix your commit message with 'fix(ci):' or 'ci:' (or add [ci-fix])
   • Ensure your diff touches .github/workflows/, tests/, or package.json
-  • Or create the override file: touch ~/.claude/.silver-bullet/ci-red-override"
+  • Or create the override file: touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
 
   # PostToolUse/git commit: warn only — the commit already happened; emitting
   # decision:block here confuses the model about whether the commit succeeded and

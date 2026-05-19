@@ -11,6 +11,18 @@ MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
 TEST_RUN_ID="$$"
+
+if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
+  case "${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}" in
+    kay|codex) SILVER_BULLET_RUNTIME="codex" ;;
+    *) SILVER_BULLET_RUNTIME="claude" ;;
+  esac
+fi
+if [[ -f "$SB_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$SB_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
 LIVE_AGENT="${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}"
 KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
 
@@ -36,9 +48,9 @@ if [[ "$LIVE_AGENT" == "kay" ]]; then
   REAL_MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
   REAL_MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 else
-  SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
-  REAL_MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
-  REAL_MCP_AUTH_CACHE_BACKUP="${HOME}/.claude/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
+  SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+  REAL_MCP_AUTH_CACHE="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json"
+  REAL_MCP_AUTH_CACHE_BACKUP="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 fi
 REAL_STATE="${SB_TEST_DIR}/state"
 REAL_STATE_BACKUP="${SB_TEST_DIR}/state.live-test-backup-${TEST_RUN_ID}"

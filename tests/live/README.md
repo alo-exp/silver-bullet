@@ -66,8 +66,8 @@ bash tests/live/test-live-full-scenario.sh
 
 Each agent run uses:
 - An isolated temp workspace directory (`mktemp -d`)
-- Isolated state files: `~/.claude/.silver-bullet/live-test-state-{PID}`
-- Isolated trivial files: `~/.claude/.silver-bullet/live-test-trivial-{PID}`
+- Isolated state files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-state-{PID}`
+- Isolated trivial files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-trivial-{PID}`
 - For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by
   Kay/MiniMax so the test installer never rewrites the user's real
   `~/.codex` hook cache.

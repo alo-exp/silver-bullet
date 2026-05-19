@@ -4,22 +4,27 @@
 # Hermetic: each test creates a temp git repo, copies the Phase 70 helper
 # into it, sets SB_PHASE_LOCK_FILE so the helper writes to a temp lock
 # file (not the dev's real `.planning/.phase-locks.json`), and writes
-# manifest files only under `~/.claude/.silver-bullet/claimed-phases-*`
+# manifest files only under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/claimed-phases-*`
 # named with $TEST_RUN_ID so concurrent test runs don't collide.
 #
-# Does NOT modify ~/.claude/.silver-bullet/state, ~/.claude/.silver-bullet/branch,
-# or ~/.claude/.silver-bullet/trivial.
+# Does NOT modify ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state, ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch,
+# or ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial.
 
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 HOOK="$REPO_ROOT/hooks/phase-lock-claim.sh"
 HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
 
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
@@ -93,10 +98,10 @@ manifest="${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt"
 [[ -f "$manifest" ]] && grep -qx '099' "$manifest" \
   && ok "T3: manifest contains 099" \
   || nope "T3: manifest" "missing or wrong content"
-if jq -e '."099".agent_runtime == "claude"' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
-  ok "T3: lock file owns by runtime=claude"
+if jq -e --arg runtime "$SB_RUNTIME_NAME" '."099".agent_runtime == $runtime' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
+  ok "T3: lock file records current runtime"
 else
-  nope "T3: lock file" "no claude entry for 099"
+  nope "T3: lock file" "no ${SB_RUNTIME_NAME} entry for 099"
 fi
 
 # ── Test 4: idempotent re-claim (no duplicate manifest line) ────────────────

@@ -16,11 +16,11 @@ Routes to the resume-project workflow which handles:
   </objective>
 
 <execution_context>
-@~/.claude/get-shit-done/workflows/resume-project.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/resume-project.md
 </execution_context>
 
 <process>
-**Follow the resume-project workflow** from `@~/.claude/get-shit-done/workflows/resume-project.md`.
+**Follow the resume-project workflow** from `@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/resume-project.md`.
 
 The workflow handles all resumption logic including:
 

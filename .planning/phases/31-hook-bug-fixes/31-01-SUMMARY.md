@@ -61,7 +61,7 @@ Replaced two independent grep checks (state path anywhere + write op anywhere) w
 ```bash
 grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/(state|branch|trivial|mode)'
 ```
-The `[^<]*` bridge allows matching from write operator to state path, but stops at `<` (heredoc delimiters). Commands like `cat > /tmp/foo << 'EOF'\n~/.claude/.silver-bullet/state\nEOF` no longer false-positive because the `<` in `<<` breaks the bridge. Direct writes (`echo >>`, `printf >`, `tee`) still match correctly.
+The `[^<]*` bridge allows matching from write operator to state path, but stops at `<` (heredoc delimiters). Commands like `cat > /tmp/foo << 'EOF'\n${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\nEOF` no longer false-positive because the `<` in `<<` breaks the bridge. Direct writes (`echo >>`, `printf >`, `tee`) still match correctly.
 
 Added Tests 17/17b/17c: heredoc body pass, direct write block, tee block.
 
@@ -70,7 +70,7 @@ Added Tests 17/17b/17c: heredoc body pass, direct write block, tee block.
 Appended escape instruction to the CI failure block message:
 ```
 If you need to commit a CI fix: recreate the bypass file in your terminal (not in Claude):
-  touch ~/.claude/.silver-bullet/trivial
+  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial
 This re-enables commits for the current session so you can push your fix.
 ```
 Both `failure` and `cancelled` conclusions show this instruction. No logic changes.
@@ -83,7 +83,7 @@ Added Group 4 tests (Tests 6-7) for both failure and cancelled conclusions.
 
 **1. [Rule 1 - Bug] Fixed test isolation bug in test-ci-status-check.sh teardown**
 - **Found during:** Task 3 test execution (Tests 6 and 7 returned empty output)
-- **Issue:** `teardown()` removed `trivial-test-${TEST_RUN_ID}` but NOT `$TRIVIAL_FILE` (`~/.claude/.silver-bullet/trivial`). Test 5 (trivial bypass) created `$TRIVIAL_FILE`, and `teardown` left it in place, causing the trivial bypass to fire silently in subsequent tests.
+- **Issue:** `teardown()` removed `trivial-test-${TEST_RUN_ID}` but NOT `$TRIVIAL_FILE` (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`). Test 5 (trivial bypass) created `$TRIVIAL_FILE`, and `teardown` left it in place, causing the trivial bypass to fire silently in subsequent tests.
 - **Fix:** Added `"$TRIVIAL_FILE"` to `teardown`'s `rm -f` call — consistent with `cleanup_all` which already removed it on EXIT.
 - **Files modified:** tests/hooks/test-ci-status-check.sh
 - **Commit:** 8c0ceb4 (included with Task 3 changes)
@@ -100,7 +100,7 @@ Acceptance criteria verified:
 - `grep -c 'grep -qvE' hooks/uat-gate.sh` → 1
 - `grep -c 'grep -cvE' hooks/uat-gate.sh` → 1
 - `grep -c 'HOOK-01' tests/hooks/test-uat-gate.sh` → 4
-- `grep -c 'touch ~/.claude/.silver-bullet/trivial' hooks/ci-status-check.sh` → 1
+- `grep -c 'touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial' hooks/ci-status-check.sh` → 1
 - `grep -c 'recreate the bypass file' hooks/ci-status-check.sh` → 1
 - `grep -c 'HOOK-03' tests/hooks/test-ci-status-check.sh` → 3
 

@@ -11,7 +11,7 @@ Output: Test files committed with message `test(phase-{N}): add unit and E2E tes
 </objective>
 
 <execution_context>
-@~/.claude/get-shit-done/workflows/add-tests.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/add-tests.md
 </execution_context>
 
 <context>
@@ -22,6 +22,6 @@ Phase: $ARGUMENTS
 </context>
 
 <process>
-Execute the add-tests workflow from @~/.claude/get-shit-done/workflows/add-tests.md end-to-end.
+Execute the add-tests workflow from @${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/add-tests.md end-to-end.
 Preserve all workflow gates (classification approval, test plan approval, RED-GREEN verification, gap reporting).
 </process>

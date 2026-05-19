@@ -6,14 +6,14 @@ PASS=0
 FAIL=0
 
 # Ensure state directory exists
-mkdir -p "${HOME}/.claude/.silver-bullet"
+mkdir -p "${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 
 # Helpers
-write_mode() { echo "$1" > "${HOME}/.claude/.silver-bullet/mode"; }
-write_start_time() { date +%s > "${HOME}/.claude/.silver-bullet/session-start-time"; }
+write_mode() { echo "$1" > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"; }
+write_start_time() { date +%s > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-start-time"; }
 cleanup_tmp() {
-  rm -f "${HOME}/.claude/.silver-bullet/mode" "${HOME}/.claude/.silver-bullet/session-start-time" \
-        "${HOME}/.claude/.silver-bullet/timeout" "${HOME}/.claude/.silver-bullet/timeout-warn-count" \
+  rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode" "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-start-time" \
+        "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout" "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count" \
         "/tmp/.sb-test-timeout-flag-$$"
 }
 
@@ -30,7 +30,7 @@ write_mode "autonomous"
 write_start_time
 sleep 1  # ensure flag mtime >= session-start-time
 touch /tmp/.sb-test-timeout-flag-$$
-rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
+rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
 out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
 if printf '%s' "$out" | grep -q "Autonomous session"; then
   PASS=$((PASS + 1))
@@ -86,7 +86,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   touch /tmp/.sb-test-timeout-flag-$$
   sleep 1
   write_start_time  # session started AFTER flag was written → flag is stale
-  rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
+  rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if [[ -z "$out" ]]; then
     PASS=$((PASS + 1))
@@ -107,10 +107,10 @@ if [[ "$(uname)" == "Darwin" ]]; then
   write_start_time
   sleep 1
   touch /tmp/.sb-test-timeout-flag-$$
-  rm -f "${HOME}/.claude/.silver-bullet/timeout-warn-count"
+  rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
   # Pre-populate warn-count=4 with mtime BEFORE session-start-time (stale)
-  echo "4" > "${HOME}/.claude/.silver-bullet/timeout-warn-count"
-  touch -t 202001010000 "${HOME}/.claude/.silver-bullet/timeout-warn-count"
+  echo "4" > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
+  touch -t 202001010000 "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
   out=$(run_hook "/tmp/.sb-test-timeout-flag-$$")
   if printf '%s' "$out" | grep -q "Autonomous session"; then
     PASS=$((PASS + 1))
@@ -124,7 +124,7 @@ else
 fi
 
 # ── Tier 2: Call-count based anti-stall tests ────────────────────────────────
-SB_DIR="${HOME}/.claude/.silver-bullet"
+SB_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 T2_STATE_FILE="/tmp/.sb-t2-state-test-$$"
 
 cleanup_tier2() {

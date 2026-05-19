@@ -143,7 +143,7 @@ SB's stop-check hook has a strict invocation model: it fires on the `Stop` event
 
 **Prevention:**
 - Post-release summary is NOT a stop-hook concern. Implement it as an explicit step in `silver-create-release/SKILL.md` — the final step before the skill concludes. The skill reads the current session's state file for all `silver-add` invocations recorded during the milestone and formats them as a summary.
-- The state file (`~/.claude/.silver-bullet/<project>/state`) must record each `silver-add` call with its ID and title, not just that the skill was called. This requires a small change to `record-skill.sh` (or a new `record-filing.sh` helper) to append filing metadata.
+- The state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/<project>/state`) must record each `silver-add` call with its ID and title, not just that the skill was called. This requires a small change to `record-skill.sh` (or a new `record-filing.sh` helper) to append filing metadata.
 - The summary step in `silver-create-release` must be non-blocking: if no items were filed, print "No items filed this milestone." and continue. Never let an empty summary prevent the release from completing.
 
 **Phase to address:** Post-release summary phase AND the silver-add implementation phase (state recording must be in place before the summary can read it). These two features are tightly coupled.

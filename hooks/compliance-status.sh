@@ -27,6 +27,10 @@ else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
   sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 # jq is required — silent exit if missing (session-start already warned visibly)
 command -v jq >/dev/null 2>&1 || exit 0
@@ -34,7 +38,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 debug_hook_events() {
   [[ "${SILVER_BULLET_DEBUG_HOOK_EVENTS:-0}" == "1" ]] || return 0
   local payload="$1"
-  local dbg_dir="${HOME}/.claude/.silver-bullet"
+  local dbg_dir="${SB_RUNTIME_STATE_DIR}"
   mkdir -p "$dbg_dir" 2>/dev/null || true
   local dbg_file="${dbg_dir}/hook-events.debug.log"
   local hook_event tool_name
@@ -69,7 +73,7 @@ fi
 config_file=""
 
 if [[ -n "$pwd_hash" ]]; then
-  cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
+  cache_file="${SB_RUNTIME_STATE_DIR}/config-cache-${pwd_hash}"
 
   # Check cache
   if [[ -f "$cache_file" ]]; then
@@ -107,12 +111,12 @@ if [[ -z "$config_file" ]]; then
 
   # Cache result (only when config was actually found)
   if [[ -n "${pwd_hash:-}" && -n "$config_file" ]]; then
-    cache_file="${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}"
+    cache_file="${SB_RUNTIME_STATE_DIR}/config-cache-${pwd_hash}"
     _cm=$(stat -f '%m' "$config_file" 2>/dev/null || true)
     if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm=$(stat -c '%Y' "$config_file" 2>/dev/null || true); fi
     if [[ ! "$_cm" =~ ^[0-9]+$ ]]; then _cm="0"; fi
     config_mtime="$_cm"
-    _tmp=$(mktemp "${HOME}/.claude/.silver-bullet/config-cache-XXXXXX")
+    _tmp=$(mktemp "${SB_RUNTIME_STATE_DIR}/config-cache-XXXXXX")
     printf '%s\n%s' "$config_file" "$config_mtime" > "$_tmp"
     mv -f "$_tmp" "$cache_file" || rm -f -- "$_tmp"
   fi
@@ -123,7 +127,7 @@ fi
 
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
-  (.state.state_file // "~/.claude/.silver-bullet/state"),
+  (.state.state_file // env.SB_RUNTIME_STATE_DIR + "/state"),
   ((.skills.required_planning // ["silver-quality-gates"]) | join(" ")),
   (.project.active_workflow // "full-dev-cycle")
 ] | join("\n")' "$config_file")
@@ -139,14 +143,14 @@ active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 # Env var override
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
-# Security: validate state file path stays within ~/.claude/ (SB-002/SB-003)
+# Security: validate state file path stays within the host runtime state root
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
-  *) state_file="${HOME}/.claude/.silver-bullet/state" ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
+  *) state_file="${SB_RUNTIME_STATE_DIR}/state" ;;
 esac
 
 # Read session mode (default: interactive if missing)
-mode_file="${HOME}/.claude/.silver-bullet/mode"
+mode_file="${SB_RUNTIME_STATE_DIR}/mode"
 if [[ -f "$mode_file" ]]; then
   mode=$(cat "$mode_file" 2>/dev/null || echo "interactive")
   mode="${mode:-interactive}"

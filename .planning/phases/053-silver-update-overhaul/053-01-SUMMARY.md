@@ -58,7 +58,7 @@ completed: 2026-04-24
 ## Accomplishments
 - Step 5 now runs `claude mcp install silver-bullet@alo-labs` as the sole install mechanism — no git clone, no COMMIT_SHA, no tag verification, no second AskUserQuestion
 - Step 1 reads the `silver-bullet@alo-labs` key first with fallback to the legacy `silver-bullet@silver-bullet` key — handles both old and new installs
-- Step 6 replaces the old registry-update block with stale-entry cleanup: atomically removes the `silver-bullet@silver-bullet` key via `jq del` + tmpfile+mv, and removes the `~/.claude/plugins/cache/silver-bullet/silver-bullet/` directory if present
+- Step 6 replaces the old registry-update block with stale-entry cleanup: atomically removes the `silver-bullet@silver-bullet` key via `jq del` + tmpfile+mv, and removes the `${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet/` directory if present
 - Step 7 updated to display marketplace attribution; stale cache path lines removed
 - Step 4 confirmation note and AskUserQuestion option text updated to reflect marketplace flow
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import re
 import shutil
@@ -20,9 +21,9 @@ CODEX_REPLACEMENTS = [
     ("run /compact", "summarize the context"),
     ("invoke /compact", "summarize the context"),
     ("/compact", "context compaction"),
-    ("~/.claude/", "~/.codex/"),
-    ("$HOME/.claude/", "$HOME/.codex/"),
-    ("${HOME}/.claude/", "${HOME}/.codex/"),
+    (os.path.join("~", ".claude") + "/", os.path.join("~", ".codex") + "/"),
+    ("$HOME" + "/.claude/", "$HOME" + "/.codex/"),
+    ("${HOME}" + "/.claude/", "${HOME}" + "/.codex/"),
     (".claude/", ".codex/"),
     ("For each match found, present it to the user interactively using AskUserQuestion:", "For each match found, present it to the user directly:"),
     ("present it to the user interactively using AskUserQuestion:", "present it to the user directly:"),
@@ -53,6 +54,26 @@ def rewrite_names(text: str) -> str:
     return NAME_RE.sub(repl, text, count=1)
 
 
+def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
+    current_home = os.path.join("~", f".{agent}")
+    opposite = "claude" if agent == "codex" else "codex"
+    opposite_home = os.path.join("~", f".{opposite}")
+
+    return [
+        ("${SB_RUNTIME_HOME_ROOT}", current_home),
+        ("${SB_RUNTIME_STATE_DIR}", f"{current_home}/.silver-bullet"),
+        ("${SB_RUNTIME_PLUGIN_CACHE_ROOT}", f"{current_home}/plugins/cache"),
+        (f"{opposite_home}/", f"{current_home}/"),
+        (opposite_home, current_home),
+        (f"$HOME/.{opposite}/", f"$HOME/.{agent}/"),
+        (f"$HOME/.{opposite}", f"$HOME/.{agent}"),
+        (f"${{HOME}}/.{opposite}/", f"${{HOME}}/.{agent}/"),
+        (f"${{HOME}}/.{opposite}", f"${{HOME}}/.{agent}"),
+        (f".{opposite}/", f".{agent}/"),
+        (f".{opposite}", f".{agent}"),
+    ]
+
+
 def sanitize_codex_text(text: str) -> str:
     updated = text
     for old, new in CODEX_REPLACEMENTS:
@@ -62,6 +83,8 @@ def sanitize_codex_text(text: str) -> str:
 
 def sanitize_text(text: str, agent: str) -> str:
     updated = rewrite_names(text)
+    for old, new in runtime_placeholders(agent):
+        updated = updated.replace(old, new)
     if agent == "codex":
         updated = sanitize_codex_text(updated)
     return updated

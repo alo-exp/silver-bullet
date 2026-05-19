@@ -19,6 +19,11 @@ umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 
+if [[ -n "$_lib_dir" && -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
@@ -47,7 +52,7 @@ while true; do
 done
 
 # ── Resolve state file path ─────────────────────────────────────────────────
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-}"
@@ -58,9 +63,9 @@ if [[ -z "$STATE_FILE" ]]; then
 fi
 STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 
-# Security: keep SB state inside ~/.claude/
+# Security: keep SB state inside the host runtime state root
 case "$STATE_FILE" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) STATE_FILE="${SB_STATE_DIR}/state" ;;
 esac
 

@@ -9,9 +9,9 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-# Tests use unique names under ~/.claude/.silver-bullet/ and clean up on exit.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+# Tests use unique names under ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ and clean up on exit.
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 TMPLOG_PATH_FILE="${SB_TEST_DIR}/session-log-path-${TEST_RUN_ID}"

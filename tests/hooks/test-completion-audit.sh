@@ -9,14 +9,14 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
-QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state-${TEST_RUN_ID}"
+QUALITY_GATE_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state-${TEST_RUN_ID}"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
 

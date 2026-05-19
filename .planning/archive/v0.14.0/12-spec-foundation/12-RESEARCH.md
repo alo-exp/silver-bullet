@@ -596,7 +596,7 @@ No network dependencies, no npm packages, no new runtimes.
 2. **Plugin skill name verification**
    - What we know: ELIC-06 requires orchestrating product-management:write-spec, design:user-research, design:design-critique
    - What's unclear: exact namespace:skill-name format for these skills in the installed plugin
-   - Recommendation: First task in Plan Wave 1 should be `ls ~/.claude/plugins/cache/` and read plugin SKILL index to confirm exact names before writing silver-spec SKILL.md.
+   - Recommendation: First task in Plan Wave 1 should be `ls ${SB_RUNTIME_HOME_ROOT}/plugins/cache/` and read plugin SKILL index to confirm exact names before writing silver-spec SKILL.md.
 
 3. **gsd-quick existence**
    - What we know: FLOR-02 references "gsd-fast and gsd-quick" — but only silver-fast was found in the SB skills directory. gsd-quick may be a GSD command not a SB skill.

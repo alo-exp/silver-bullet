@@ -29,7 +29,7 @@ status: issues_found
 
 This phase delivers three enforcement-gap fixes: `stop-check.sh` tightens the transient-path ignore-pattern validation (issue #90), `planning-file-guard.sh` is a new hook blocking direct edits to GSD-managed planning artifacts (issue #93), and `ci-status-check.sh` adds a `git rev-parse "@{u}"` guard before the Option A path-diff CI-fix bypass (issue #95). `hooks.json` extends the planning-file-guard matcher to include `MultiEdit`.
 
-Two blockers were found. The CR-01 fix for issue #90 is incomplete: `printf '\n' | grep -qE ".*"` returns exit 1, so `.*` (and any pattern using `*`-quantifiers) passes validation and can silently nullify all stop-check enforcement. Separately, the override-file test in `test-planning-file-guard.sh` creates the live `~/.claude/.silver-bullet/planning-edit-override` file without crash-safe cleanup, which can disable the planning-file-guard in real sessions if the test is interrupted.
+Two blockers were found. The CR-01 fix for issue #90 is incomplete: `printf '\n' | grep -qE ".*"` returns exit 1, so `.*` (and any pattern using `*`-quantifiers) passes validation and can silently nullify all stop-check enforcement. Separately, the override-file test in `test-planning-file-guard.sh` creates the live `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override` file without crash-safe cleanup, which can disable the planning-file-guard in real sessions if the test is interrupted.
 
 ---
 
@@ -79,7 +79,7 @@ out=$(run_hook_edit ...)
 assert_passes ...
 rm -f "${SB_TEST_DIR}/planning-edit-override"   # line 126 — only runs if no crash
 ```
-The EXIT trap never removes this file. If the test is killed between lines 123 and 126, `~/.claude/.silver-bullet/planning-edit-override` is left behind. Any subsequent Silver Bullet session will silently allow direct edits to all protected planning files (ROADMAP.md, STATE.md, etc.) until the file is manually removed.
+The EXIT trap never removes this file. If the test is killed between lines 123 and 126, `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override` is left behind. Any subsequent Silver Bullet session will silently allow direct edits to all protected planning files (ROADMAP.md, STATE.md, etc.) until the file is manually removed.
 
 `$OVERRIDE_FILE` with the PID-suffix is also never actually written to or used in a test — it is dead code.
 
@@ -122,7 +122,7 @@ printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs
 
 ---
 
-### WR-02: `planning-file-guard.sh` `trivial_file` path lacks `~/.claude/` prefix validation
+### WR-02: `planning-file-guard.sh` `trivial_file` path lacks `${SB_RUNTIME_HOME_ROOT}/` prefix validation
 
 **File:** `hooks/planning-file-guard.sh:79-85`
 
@@ -137,10 +137,10 @@ Without this guard, a `.silver-bullet.json` with `"state": {"trivial_file": "/tm
 
 **Fix:** Add path validation after line 80:
 ```bash
-# Security: validate trivial path stays within ~/.claude/ (mirrors stop-check.sh SB-002)
+# Security: validate trivial path stays within ${SB_RUNTIME_HOME_ROOT}/ (mirrors stop-check.sh SB-002)
 case "$_trivial_file" in
   "$HOME"/.claude/*) ;;
-  *) _trivial_file="${HOME}/.claude/.silver-bullet/trivial" ;;
+  *) _trivial_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial" ;;
 esac
 ```
 

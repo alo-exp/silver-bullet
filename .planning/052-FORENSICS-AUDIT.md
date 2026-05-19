@@ -3,7 +3,7 @@
 **Audit date:** 2026-04-24
 **Auditor:** Claude (automated)
 **Subject:** skills/silver-forensics/SKILL.md
-**Reference:** ~/.claude/skills/gsd-forensics/SKILL.md + ~/.claude/get-shit-done/workflows/forensics.md
+**Reference:** ${SB_RUNTIME_HOME_ROOT}/skills/gsd-forensics/SKILL.md + ${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/forensics.md
 **Requirement:** FORN-01
 
 ---
@@ -44,7 +44,7 @@ These three paths correspond to dedicated investigation sections: Path 1 (Sessio
 **silver-forensics:** Step 2b specifies four parallel quick-scan items:
 1. Most recent session log in `<project-root>/docs/sessions/` — glob `docs/sessions/*.md`, sort by name descending, take first
 2. `git log --oneline -10`
-3. Presence of `~/.claude/.silver-bullet/timeout` (was sentinel triggered?)
+3. Presence of `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout` (was sentinel triggered?)
 4. `.planning/` directory — any incomplete phase markers
 
 **gsd-forensics:** The forensics.md workflow Step 2 specifies five sub-steps with more granular commands:

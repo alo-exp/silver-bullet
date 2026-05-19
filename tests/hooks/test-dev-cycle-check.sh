@@ -11,8 +11,8 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
@@ -329,11 +329,11 @@ out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exc
 assert_passes "trivial file bypass works" "$out"
 teardown
 
-# Test 13: Plugin cache boundary — blocks edits to ~/.claude/plugins/cache
+# Test 13: Plugin cache boundary — blocks edits to ${SB_RUNTIME_HOME_ROOT}/plugins/cache
 echo "--- Group 6: Plugin boundary ---"
 setup
 # Simulate a path within the plugin cache
-PLUGIN_PATH="${HOME}/.claude/plugins/cache/test-plugin/skill/SKILL.md"
+PLUGIN_PATH="${SB_RUNTIME_HOME_ROOT}/plugins/cache/test-plugin/skill/SKILL.md"
 out=$(run_hook_edit "PreToolUse" "$PLUGIN_PATH" "old" "new")
 assert_blocks "plugin cache edit is blocked (§8 boundary)" "$out"
 assert_contains "boundary block mentions THIRD-PARTY PLUGIN" "$out" "THIRD-PARTY PLUGIN BOUNDARY"
@@ -395,75 +395,75 @@ teardown
 echo "--- Group 8: State tamper detection ---"
 setup
 # Test 16: General write to state file is blocked
-out=$(run_hook_bash "PreToolUse" "echo 'fake-skill' >> ~/.claude/.silver-bullet/state")
+out=$(run_hook_bash "PreToolUse" "echo 'fake-skill' >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state")
 assert_blocks "tamper: arbitrary state write is blocked" "$out"
 teardown
 
 # Test 17: Heredoc body containing state path should NOT be blocked (HOOK-02 regression)
 setup
 out=$(run_hook_bash "PreToolUse" "cat > /tmp/instructions.md << 'EOF'
-To reset state, remove ~/.claude/.silver-bullet/state
+To reset state, remove ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state
 EOF")
 assert_passes "tamper: heredoc body with state path is NOT blocked (HOOK-02)" "$out"
 teardown
 
 # Test 17b: Direct write to state path is STILL blocked after HOOK-02 fix
 setup
-out=$(run_hook_bash "PreToolUse" "printf 'fake' > ~/.claude/.silver-bullet/state")
+out=$(run_hook_bash "PreToolUse" "printf 'fake' > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state")
 assert_blocks "tamper: direct write to state path is still blocked (HOOK-02)" "$out"
 teardown
 
 # Test 17c: tee to state file is STILL blocked (BUG-03: only state is guarded, not trivial/branch)
 setup
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ~/.claude/.silver-bullet/state")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state")
 assert_blocks "tamper: tee to state file is still blocked (BUG-03)" "$out"
 teardown
 
 # Test 17d: tee to trivial file is now ALLOWED (BUG-03 fix — trivial is not state-managed)
 setup
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ~/.claude/.silver-bullet/trivial")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial")
 assert_passes "tamper: tee to trivial file is allowed (BUG-03 fix)" "$out"
 teardown
 
 # Test 17e: git commit mentioning state path in -m is NOT blocked (QA-05)
 setup
-out=$(run_hook_bash "PreToolUse" "git commit -m \"fix: removes >> ~/.claude/.silver-bullet/state pattern from docs\"")
+out=$(run_hook_bash "PreToolUse" "git commit -m \"fix: removes >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state pattern from docs\"")
 assert_passes "tamper: git commit -m with state path in message is NOT blocked (QA-05)" "$out"
 teardown
 
 # Test 17f: gh issue create mentioning state path in --body is NOT blocked (QA-05)
 setup
-out=$(run_hook_bash "PreToolUse" "gh issue create --title 'test' --body 'writes to > ~/.claude/.silver-bullet/state'")
+out=$(run_hook_bash "PreToolUse" "gh issue create --title 'test' --body 'writes to > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state'")
 assert_passes "tamper: gh issue create with state path in body is NOT blocked (QA-05)" "$out"
 teardown
 
 # Test 17g: state path inside a quoted non-redirect argument is NOT blocked (quote-literal exemption)
 setup
-out=$(run_hook_bash "PreToolUse" "echo \"path is ~/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo \"path is ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_passes "tamper: state path in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
 teardown
 
 # Test 17g2: same as 17g but with $HOME-expanded path (real session form)
 setup
-out=$(run_hook_bash "PreToolUse" "echo \"path is ${HOME}/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo \"path is ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_passes "tamper: expanded-path in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
 teardown
 
 # Test 17h: tee with quoted state path IS still blocked (exemption abuse — redirect target)
 setup
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"~/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_blocks "tamper: tee with quoted state path is still blocked (exemption abuse)" "$out"
 teardown
 
 # Test 17h2: same as 17h but with $HOME-expanded path (real session form)
 setup
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${HOME}/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_blocks "tamper: tee with expanded quoted state path is still blocked (exemption abuse)" "$out"
 teardown
 
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
 # Use expanded $HOME path so the plugin_cache grep actually fires in the hook
-PLUGIN_CACHE_PATH="${HOME}/.claude/plugins/cache"
+PLUGIN_CACHE_PATH="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 echo "--- Group 9: F-07 execution vs write (plugin binary) ---"
 
 # Test 18: Running a plugin binary with node should be ALLOWED (execution, not write)
@@ -503,10 +503,10 @@ assert_blocks "F-07: cp into plugin cache is still blocked" "$out"
 teardown
 
 # Tests 23-27: Hooks self-protection — execution vs write (fallback path, no CLAUDE_PLUGIN_ROOT)
-# After Bug 2 fix: fallback only blocks paths inside ${HOME}/.claude/ (the installed plugin
+# After Bug 2 fix: fallback only blocks paths inside ${SB_RUNTIME_HOME_ROOT}/ (the installed plugin
 # location). Use the real installed plugin hooks path for write-blocking tests.
 echo "--- Group 10: Hooks self-protection execution vs write ---"
-SB_INSTALLED_HOOKS="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet/hooks"
+SB_INSTALLED_HOOKS="${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/hooks"
 
 # Test 23: node execution of something in installed hooks dir should be ALLOWED (no write op)
 setup
@@ -514,7 +514,7 @@ out=$(run_hook_bash "PreToolUse" "node ${SB_INSTALLED_HOOKS}/some-util.js --chec
 assert_passes "hooks-protect: node execution in installed hooks dir is allowed" "$out"
 teardown
 
-# Test 24: node with redirect into installed hooks dir should be BLOCKED (write under ~/.claude/)
+# Test 24: node with redirect into installed hooks dir should be BLOCKED (write under ${SB_RUNTIME_HOME_ROOT}/)
 setup
 out=$(run_hook_bash "PreToolUse" "node ${SB_INSTALLED_HOOKS}/build.js > ${SB_INSTALLED_HOOKS}/out.js")
 assert_blocks "hooks-protect: node with redirect into installed hooks dir is blocked" "$out"
@@ -532,7 +532,7 @@ out=$(run_hook_bash "PreToolUse" "ruby ${SB_INSTALLED_HOOKS}/util.rb --check")
 assert_passes "hooks-protect: ruby execution in installed hooks dir is allowed" "$out"
 teardown
 
-# Test 27: cp into installed hooks dir should be BLOCKED (write under ~/.claude/)
+# Test 27: cp into installed hooks dir should be BLOCKED (write under ${SB_RUNTIME_HOME_ROOT}/)
 setup
 out=$(run_hook_bash "PreToolUse" "cp /tmp/evil.sh ${SB_INSTALLED_HOOKS}/dev-cycle-check.sh")
 assert_blocks "hooks-protect: cp into installed hooks dir is still blocked" "$out"
@@ -544,22 +544,22 @@ out=$(run_hook_bash "PreToolUse" "sed -n '1,5p' ${SB_INSTALLED_HOOKS}/dev-cycle-
 assert_passes "hooks-protect: read-only sed inspection in installed hooks dir is allowed" "$out"
 teardown
 
-# Bug 2 regression: source repo hooks/ (outside ~/.claude/) must NOT be falsely blocked.
+# Bug 2 regression: source repo hooks/ (outside ${SB_RUNTIME_HOME_ROOT}/) must NOT be falsely blocked.
 # Before the fix the fallback used /silver-bullet[^/]*/hooks/ which caught both the
 # installed plugin AND the source repo, preventing legitimate hook edits in dev.
 echo "--- Group 11: Bug 2 regression — source repo hooks/ not falsely blocked ---"
 SB_SOURCE_HOOKS_DIR="$(dirname "$HOOK")"  # absolute path to this repo's hooks/ dir
 
-# Test 28: cp to source repo hooks/ is NOT blocked (path outside ~/.claude/)
+# Test 28: cp to source repo hooks/ is NOT blocked (path outside ${SB_RUNTIME_HOME_ROOT}/)
 setup
 out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.sh ${SB_SOURCE_HOOKS_DIR}/dev-cycle-check.sh")
-assert_passes "Bug2: cp into source repo hooks/ not blocked (not under ~/.claude/)" "$out"
+assert_passes "Bug2: cp into source repo hooks/ not blocked (not under ${SB_RUNTIME_HOME_ROOT}/)" "$out"
 teardown
 
-# Test 29: Edit to source repo hooks/ file is NOT blocked (path outside ~/.claude/)
+# Test 29: Edit to source repo hooks/ file is NOT blocked (path outside ${SB_RUNTIME_HOME_ROOT}/)
 setup
 out=$(run_hook_edit "PreToolUse" "${SB_SOURCE_HOOKS_DIR}/dev-cycle-check.sh" "old content long enough to pass threshold" "new content long enough to pass threshold too")
-assert_passes "Bug2: Edit to source repo hooks/ not blocked (not under ~/.claude/)" "$out"
+assert_passes "Bug2: Edit to source repo hooks/ not blocked (not under ${SB_RUNTIME_HOME_ROOT}/)" "$out"
 teardown
 
 # ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──

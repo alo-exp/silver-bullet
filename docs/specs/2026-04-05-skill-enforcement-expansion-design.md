@@ -149,7 +149,7 @@ Agent skips /test-driven-development and runs git commit
 ## Testing
 
 Verify after implementation:
-1. `cat ~/.claude/.silver-bullet/state` — confirm new skills appear when invoked
+1. `cat ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` — confirm new skills appear when invoked
 2. Attempt `git commit` without invoking TDD or tech-debt → completion-audit should block
 3. Invoke `/test-driven-development` → commit → should pass
 4. UI phase: confirm accessibility-review appears in DISCUSS conditional

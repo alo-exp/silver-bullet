@@ -17,7 +17,7 @@
 Both `silver-bullet.md §5.1` (line 22) and `templates/silver-bullet.md.base §5.1` (line 22) now read:
 
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 The jq path uses `.plugins[<key>][0].version` which matches the structure that `silver-update` Step 6a's cleanup code deletes (top-level key, but the `.plugins` nesting is consistent with how the registry stores per-plugin arrays). The alo-labs key is tried first; the legacy key is the fallback; `"unknown"` is the final fallback. This is correct: after `silver-update` removes the legacy key and installs under alo-labs, the first branch resolves the installed version correctly.
@@ -137,7 +137,7 @@ Step 6b (lines 155–162) now contains:
 if [[ -z "$HOME" ]]; then
   echo "WARNING: HOME is unset — skipping stale cache cleanup."
 else
-  STALE_CACHE="${HOME}/.claude/plugins/cache/silver-bullet/silver-bullet"
+  STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
   if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
     rm -rf "$STALE_CACHE"
   fi

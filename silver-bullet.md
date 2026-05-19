@@ -19,7 +19,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.1 Silver Bullet**
    ```bash
-   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, use AskUserQuestion:
@@ -30,7 +30,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.2 GSD**
    ```bash
-   cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+   cat "${SB_RUNTIME_HOME_ROOT}/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
    npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
    ```
    Compare as semver. If installed < latest, use AskUserQuestion:
@@ -41,7 +41,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.3 Plugins (informational)**
    ```bash
-   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '
      .plugins | to_entries[] |
      select(.key | test("^(superpowers|design|engineering)@")) |
      "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -55,9 +55,9 @@ At the very start of any new session, perform these steps automatically:
 
    **5.4 MultAI**
    ```bash
-   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
    ```
-   Compare to the latest entry in `~/.claude/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, use AskUserQuestion:
+   Compare to the latest entry in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, use AskUserQuestion:
    - Question: "MultAI v{installed} appears outdated. Update now?"
    - Options: "A. Yes, run /multai:update" / "B. Skip"
    If A: invoke `/multai:update` via the Skill tool, then continue.
@@ -215,12 +215,12 @@ state — never from the SB state file.
 1. `.planning/STATE.md` — parse YAML front matter for `current_plan`, `status`, `stopped_at`, `progress.total_phases`, `progress.completed_phases`, `progress.total_plans`, `progress.completed_plans`, `progress.percent`
 2. `.planning/ROADMAP.md` — identify current phase name, its goal, and how many plans it contains
 
-**SB state file (`~/.claude/.silver-bullet/state`) is ONLY for:**
+**SB state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) is ONLY for:**
 - Skill invocation markers (recorded by `record-skill.sh`)
-- Session mode (`~/.claude/.silver-bullet/mode`)
-- Session init sentinel (`~/.claude/.silver-bullet/session-init`)
+- Session mode (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`)
+- Session init sentinel (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init`)
 
-**SB quality-gate file (`~/.claude/.silver-bullet/quality-gate-state`) is ONLY for:**
+**SB quality-gate file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`) is ONLY for:**
 - Quality gate stage markers (`quality-gate-stage-1` through `quality-gate-stage-4`)
 - Full-test-suite rerun marker (`full-test-suite-rerun`)
 
@@ -248,7 +248,7 @@ narrate at each plan boundary:
 
 ### 2f. Autonomous Commentary
 
-In autonomous mode (when `~/.claude/.silver-bullet/mode` contains `autonomous`),
+In autonomous mode (when `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` contains `autonomous`),
 do NOT ask questions or pause, but DO output structured commentary at each major step:
 
 **Before each GSD command invocation:**
@@ -637,7 +637,7 @@ at the workflow level.
 user confirmation prompts), skip the interactive/autonomous question entirely.
 Auto-set autonomous mode immediately:
 ```bash
-echo "autonomous" > ~/.claude/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 Log: "Autonomous mode auto-set: bypass-permissions detected".
 Also suppress ALL other confirmation-asking behaviors for the remainder of the session
@@ -668,12 +668,12 @@ At the start of every session, before any work begins, use AskUserQuestion:
 
 Write the choice:
 ```bash
-echo "interactive" > ~/.claude/.silver-bullet/mode
+echo "interactive" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 # or
-echo "autonomous" > ~/.claude/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 
-**Fallback**: if `~/.claude/.silver-bullet/mode` is unreadable at any point, default to interactive
+**Fallback**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` is unreadable at any point, default to interactive
 and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**
@@ -692,7 +692,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - On completion: output structured summary (phases done, autonomous decisions, blockers queued,
   agents dispatched, commits made, virtual cost)
 
-> **Anti-Skip:** You are violating this rule if the mode file (~/.claude/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
+> **Anti-Skip:** You are violating this rule if the mode file (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
 
 ---
 
@@ -778,7 +778,7 @@ stop, notify the user, and offer remediation in this order:
 3. Switch to a different workflow or stop
 
 You MUST NOT:
-- Edit any file under `~/.claude/plugins/cache/` (third-party plugin caches)
+- Edit any file under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (third-party plugin caches)
 - Modify a Superpowers, Engineering, Design, or GSD skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
@@ -813,7 +813,7 @@ Run the SB-required review stack in sequence, then fix all issues. Repeat until 
    You need BOTH: (a) run the actual verification commands, AND (b) invoke the skill so
    `record-skill.sh` tracks it. If you ran tests/CI/checks but did not invoke the skill,
    you have NOT completed this step. Do NOT record the stage marker until BOTH are done.
-7. Record stage completion: `echo "quality-gate-stage-1" >> ~/.claude/.silver-bullet/quality-gate-state`
+7. Record stage completion: `echo "quality-gate-stage-1" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 
 ### Stage 2 — Big-Picture Consistency Audit
 
@@ -824,12 +824,12 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
    - Skills (all SKILL.md files — obsolete references, redundant work, contradictions)
    - Hooks + config (.sh files, hooks.json, .silver-bullet.json, templates)
    - Help site + README (HTML pages, search.js, README.md — step counts, paths, versions) **+ New-Feature Documentation Inventory:** for each workflow, skill, enforcement layer, or major feature added in this release, verify: (a) a dedicated help page exists under `site/help/`, (b) the page is linked from `site/help/index.html` or the appropriate section hub, (c) the page appears in `site/help/reference/index.html` or the relevant concept page. Missing pages = this dimension fails and Stage 2 loops.
-   - Cross-plugin consistency (read 100% of skill content from all 4 dependency plugins — GSD: ~/.claude/get-shit-done/ workflows/references/templates; Superpowers: ~/.claude/plugins/cache/*/superpowers/*/skills/*/SKILL.md; Engineering: ~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md; Design: ~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md — check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet instructions and upstream plugin skills)
+   - Cross-plugin consistency (read 100% of skill content from all 4 dependency plugins — GSD: ${SB_RUNTIME_HOME_ROOT}/get-shit-done/ workflows/references/templates; Superpowers: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/superpowers/*/skills/*/SKILL.md; Engineering: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md; Design: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md — check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet instructions and upstream plugin skills)
 2. Fix all genuine issues found
 3. **Loop**: repeat until two consecutive audit passes find zero issues
 4. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
-5. Record stage completion: `echo "quality-gate-stage-2" >> ~/.claude/.silver-bullet/quality-gate-state`
+5. Record stage completion: `echo "quality-gate-stage-2" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 
 ### Stage 3 — Public-Facing Content Refresh
 
@@ -857,7 +857,7 @@ Verify and update all user-visible surfaces to reflect the current state.
 5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
 6. Push and confirm CI green
-7. Record stage completion: `echo "quality-gate-stage-3" >> ~/.claude/.silver-bullet/quality-gate-state`
+7. Record stage completion: `echo "quality-gate-stage-3" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 
 ### Stage 4 — Security Audit (SENTINEL)
 
@@ -869,7 +869,7 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 4. **Loop**: repeat until two consecutive audit passes find zero issues
 5. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.
    Do NOT record the stage marker without invoking this skill first.
-6. Record stage completion: `echo "quality-gate-stage-4" >> ~/.claude/.silver-bullet/quality-gate-state`
+6. Record stage completion: `echo "quality-gate-stage-4" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 
 ## Mandatory Full Test Suite Rerun
 
@@ -877,7 +877,7 @@ After all four stages pass in the current session, rerun the full test suite
 before release finalization:
 
 1. Run `bash tests/run-all-tests.sh`
-2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.silver-bullet/quality-gate-state`
+2. Record the rerun marker: `echo "full-test-suite-rerun" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 3. Do not invoke `/silver-create-release` until the rerun marker is present
 
 `hooks/completion-audit.sh` blocks release creation until the SB quality-gate file
@@ -887,7 +887,7 @@ contains the four stage markers plus `full-test-suite-rerun`.
 
 The completion audit hook (`hooks/completion-audit.sh`) blocks `gh release create`
 until all required workflow skills AND quality gate markers are recorded in the
-SB quality-gate file (`~/.claude/.silver-bullet/quality-gate-state`). Required markers:
+SB quality-gate file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`). Required markers:
 - Stage 1: `quality-gate-stage-1` (recorded per instructions above)
 - Stage 2: `quality-gate-stage-2` (recorded per instructions above)
 - Stage 3: `quality-gate-stage-3` (recorded per instructions above)

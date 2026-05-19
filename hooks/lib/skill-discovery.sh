@@ -9,11 +9,17 @@
 #
 # The default search order is intentionally broad but cheap:
 #   1. Installed Silver Bullet plugin skills (repo/plugin root or CLAUDE_PLUGIN_ROOT)
-#   2. User skill roots under ~/.claude/ and ~/.agents/
+#   2. User skill roots under the active host runtime and ~/.agents/
 #   3. Claude plugin caches for upstream dependency plugins
 #
 # Tests may override the search roots with SILVER_BULLET_SKILL_ROOTS as a
 # colon-separated list of root directories to search instead of the defaults.
+
+_sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_sb_runtime_paths_dir/runtime-paths.sh"
+fi
 
 sb_skill_discovery_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sb_skill_discovery_repo_root="$(cd "$sb_skill_discovery_script_dir/../.." && pwd)"
@@ -34,13 +40,9 @@ sb_skill_is_installed() {
   else
     search_roots=(
       "$repo_root"
-      # Codex installs dependency skills under ~/.codex/skills/* and caches plugins
-      # (including SB itself) under ~/.codex/plugins/cache/**/skills/*.
-      "$HOME/.codex"
-      "$HOME/.claude"
+      # Host-specific runtime root.
+      "${SB_RUNTIME_HOME_ROOT}"
       "$HOME/.agents"
-      "$HOME/.codex/plugins/cache"
-      "$HOME/.claude/plugins/cache"
     )
   fi
 

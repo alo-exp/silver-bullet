@@ -110,7 +110,7 @@ Silver Bullet is an agentic plugin. It declares and uses the following tool cate
 
 | Combination Present | Risk Level | Assessment |
 |---|---|---|
-| `shell` + `fileWrite` | HIGH | Hooks write to `~/.claude/.silver-bullet/` state files and `docs/sessions/` session logs. Scope is validated to `~/.claude/` prefix. |
+| `shell` + `fileWrite` | HIGH | Hooks write to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` state files and `docs/sessions/` session logs. Scope is validated to `${SB_RUNTIME_HOME_ROOT}/` prefix. |
 | `shell` + `fileRead` | MEDIUM | semantic-compress.sh reads source files for context. Constrained by src_pattern config. |
 | `network` + `fileRead` + `fileWrite` | MEDIUM | silver-ingest uses MCP connectors (not raw network) to fetch JIRA/Figma data and writes to `.planning/`. Network scope is delegated to MCP connector configuration, not controlled by SB directly. |
 
@@ -119,7 +119,7 @@ Silver Bullet is an agentic plugin. It declares and uses the following tool cate
 **Tool-Specific Findings:**
 
 - Hook scripts universally set `umask 0077` (user-only permissions) — good practice.
-- State file paths are validated to stay within `~/.claude/` prefix — prevents path traversal.
+- State file paths are validated to stay within `${SB_RUNTIME_HOME_ROOT}/` prefix — prevents path traversal.
 - Symlink rejection on trivial_file and mode_file — prevents symlink attacks.
 - No tool name mislabeling detected.
 - Tool description content does not contain injection patterns.
@@ -135,7 +135,7 @@ Silver Bullet is an agentic plugin. It declares and uses the following tool cate
 ### Skill Intent
 
 Silver Bullet is a process orchestrator plugin for Claude Code. It enforces a multi-stage SDLC workflow by:
-1. Tracking skill invocations in a state file (`~/.claude/.silver-bullet/state`)
+1. Tracking skill invocations in a state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`)
 2. Blocking code edits, commits, PRs, and deployments until required workflow steps complete
 3. Providing 26+ orchestrator skills that chain GSD (execution), Superpowers (craft), and quality gate sub-skills
 4. Running bash hook scripts on every tool invocation to enforce process compliance
@@ -155,8 +155,8 @@ The trust boundary is: SB trusts its own hooks.json configuration and the Claude
 
 ### Privilege Inventory
 
-- **File system read:** Source files (via src_pattern), `.planning/` directory, `docs/`, `~/.claude/.silver-bullet/` state directory
-- **File system write:** `~/.claude/.silver-bullet/` (state, mode, session-start-time, branch, call-count, etc.), `docs/sessions/` (session logs), `.planning/SPEC.md` (PR traceability), `.planning/.context-cache/` (semantic compression)
+- **File system read:** Source files (via src_pattern), `.planning/` directory, `docs/`, `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` state directory
+- **File system write:** `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` (state, mode, session-start-time, branch, call-count, etc.), `docs/sessions/` (session logs), `.planning/SPEC.md` (PR traceability), `.planning/.context-cache/` (semantic compression)
 - **Shell execution:** All hooks execute shell commands including `git`, `jq`, `grep`, `awk`, `find`, `kill`
 - **Process management:** `session-log-init.sh` spawns a background sentinel process via `disown`
 - **Git operations:** `pr-traceability.sh` runs `git add` + `git commit`; completion-audit reads `git rev-parse`
@@ -186,7 +186,7 @@ An attacker who controls SPEC.md could craft a `spec-version` or `jira-id` field
 The `src_pattern` is validated against `^/[a-zA-Z0-9/_.|()-]*/?$` which is reasonably restrictive. However, `src_exclude_pattern` is used directly as a regex in `grep -qE`, allowing a malicious config to inject a ReDoS pattern. Mitigation: length-limited to 200 chars.
 
 **H3: State file manipulation → workflow enforcement bypass**
-Despite `dev-cycle-check.sh` blocking direct writes to `~/.claude/.silver-bullet/state`, the whitelist for quality-gate-stage appends could be exploited by crafting a command that matches the whitelist regex but includes additional content. The regex anchors (`^` and `$`) and the exact pattern matching make this difficult but worth verifying.
+Despite `dev-cycle-check.sh` blocking direct writes to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`, the whitelist for quality-gate-stage appends could be exploited by crafting a command that matches the whitelist regex but includes additional content. The regex anchors (`^` and `$`) and the exact pattern matching make this difficult but worth verifying.
 
 </recon_notes>
 
@@ -332,15 +332,15 @@ Step 0 found no encoded content in any target file. No Base64, hex, URL encoding
 │                 .sh runs git add/commit.                      │
 │ Confidence    : CONFIRMED — hooks have shell + fileWrite     │
 │                 capability. Path validation constrains scope  │
-│                 to ~/.claude/ prefix.                         │
+│                 to ${SB_RUNTIME_HOME_ROOT}/ prefix.                         │
 │ Attack Vector : 1. Attacker gains write access to             │
 │                    .silver-bullet.json                        │
-│                 2. Sets state_file to path outside ~/.claude/  │
+│                 2. Sets state_file to path outside ${SB_RUNTIME_HOME_ROOT}/  │
 │                 3. Hooks validate and reject — falling back   │
 │                    to default path                            │
 │ PoC Payload   : [SAFE_POC] Set state_file in config to       │
 │                 "[SENSITIVE_PATH]" — hook rejects and uses    │
-│                 default ~/.claude/.silver-bullet/state        │
+│                 default ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state        │
 │ Impact        : LIMITED — path validation prevents arbitrary  │
 │                 file writes. Background process writes only   │
 │                 "TIMEOUT" string to a known path.             │
@@ -526,7 +526,7 @@ No skills claim false authority, credentials, or official status. Skills accurat
 │                 3. timeout-check.sh reads this flag           │
 │ PoC Payload   : N/A — this is a design feature, not exploit  │
 │ Impact        : LIMITED — the background process only writes  │
-│                 "TIMEOUT" to ~/.claude/.silver-bullet/timeout │
+│                 "TIMEOUT" to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout │
 │                 It does not perform network calls, read       │
 │                 sensitive files, or escalate privileges.      │
 │                 The PID is tracked and killed on re-init.     │
@@ -814,7 +814,7 @@ ACTION: ADVISORY — add config flag to make auto-commit opt-in:
 
 **Overall security posture:** Acceptable with conditions
 
-Silver Bullet demonstrates mature security engineering with defense-in-depth patterns: path validation constraining file operations to `~/.claude/`, symlink rejection on state files, branch name sanitization, self-protection hooks preventing modification of enforcement mechanisms, state tamper prevention, and umask 0077 on all created files. The highest-risk finding (FINDING-10.1 — background sentinel process) is a documented design feature with bounded impact (writes only "TIMEOUT" to a known path). The most actionable improvement is FINDING-9.1 (output encoding in PR traceability), which has a concrete, low-risk fix.
+Silver Bullet demonstrates mature security engineering with defense-in-depth patterns: path validation constraining file operations to `${SB_RUNTIME_HOME_ROOT}/`, symlink rejection on state files, branch name sanitization, self-protection hooks preventing modification of enforcement mechanisms, state tamper prevention, and umask 0077 on all created files. The highest-risk finding (FINDING-10.1 — background sentinel process) is a documented design feature with bounded impact (writes only "TIMEOUT" to a known path). The most actionable improvement is FINDING-9.1 (output encoding in PR traceability), which has a concrete, low-risk fix.
 
 **Deployment recommendation:** Deploy with mitigations — apply the FINDING-9.1 and FINDING-3.1 patches before deployment. FINDING-10.1 and FINDING-8.1 are advisory improvements for future releases.
 
@@ -822,7 +822,7 @@ Silver Bullet demonstrates mature security engineering with defense-in-depth pat
 
 #### 8b-i. Severity calibration
 
-**FINDING-5.1 (HIGH, 7.0):** Could a reasonable reviewer rate this lower? YES — the actual exploitability is LOW because path validation constrains all file writes to `~/.claude/`, umask prevents world-readable files, and symlink rejection prevents indirection attacks. However, the severity floor for tool-scope escalation (7.0) applies. The floor is correctly enforced.
+**FINDING-5.1 (HIGH, 7.0):** Could a reasonable reviewer rate this lower? YES — the actual exploitability is LOW because path validation constrains all file writes to `${SB_RUNTIME_HOME_ROOT}/`, umask prevents world-readable files, and symlink rejection prevents indirection attacks. However, the severity floor for tool-scope escalation (7.0) applies. The floor is correctly enforced.
 
 **FINDING-10.1 (HIGH, 7.0):** Could a reasonable reviewer rate this lower? YES — the background process is a benign sleep+echo pattern, not a backdoor. It writes only the string "TIMEOUT" to a known path. PID cleanup is performed on re-init. However, the severity floor for persistence (8.0, rounded to 7.0 for the benign variant) applies. The floor enforcement is correct but the calibrated score (5.0) more accurately reflects the real risk.
 
@@ -948,7 +948,7 @@ See SENTINEL v2.3 specification for the standard finding template format.
 
 - **Silver Bullet (SB):** Claude Code plugin functioning as an Agentic Process Orchestrator
 - **Hook:** Bash script triggered by Claude Code on tool invocations (PreToolUse/PostToolUse/SessionStart/Stop)
-- **State file:** `~/.claude/.silver-bullet/state` — tracks which workflow skills have been invoked
+- **State file:** `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` — tracks which workflow skills have been invoked
 - **SKILL.md:** Markdown file defining a skill's instructions, executed by Claude Code as prompt context
 - **GSD:** "Get Shit Done" — execution engine providing plan/execute/verify lifecycle
 - **MCP Connector:** Model Context Protocol server providing authenticated access to external services

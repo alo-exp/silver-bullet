@@ -10,6 +10,13 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so the guard follows the host runtime.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
@@ -38,12 +45,12 @@ config_file=""
 config_file=$(resolve_repo_config 2>/dev/null || true)
 [[ -n "$config_file" ]] || exit 0
 
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
 trivial_file=$(jq -r --arg dt "$sb_default_trivial" '.state.trivial_file // $dt' "$config_file" 2>/dev/null || printf '%s' "$sb_default_trivial")
 trivial_file="${trivial_file/#\~/$HOME}"
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) trivial_file="${sb_default_trivial}" ;;
 esac
 [[ -L "$trivial_file" ]] && trivial_file="${sb_default_trivial}"

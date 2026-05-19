@@ -60,6 +60,11 @@ assert_not_symlink() {
 }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 SCRIPT="$REPO_ROOT/scripts/sync-codex-package.sh"
 PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
 
@@ -104,13 +109,13 @@ assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-p
 assert_contains "Silver bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
 assert_contains "Silver bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$PACKAGE_ROOT/skills/silver-bugfix/SKILL.md"
 assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
-assert_not_contains "Codex package does not contain ~/.claude paths" "~/.claude" "$PACKAGE_ROOT"
+assert_not_contains "Codex package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain /compact commands" "/compact" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain model_profile routing" 'model_profile: "balanced"' "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain auto-routing wording" "auto-select the correct model for the current host" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$PACKAGE_ROOT"
 assert_contains "Codex package uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
-assert_contains "Codex package uses ~/.codex plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Codex package uses ~/.codex plugin cache paths" '~/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Codex package tracks gsd-scan in config" '"gsd-scan"' "$PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/tdd/SKILL.md"

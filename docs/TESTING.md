@@ -48,7 +48,7 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 
 - Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
 - The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
-- On success, the skill writes `~/.claude/.silver-bullet/verify-tests-state`
+- On success, the skill writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`
 - `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
 
 ## Phase 2 — New Test Requirements
@@ -108,7 +108,7 @@ The suite invokes the real `claude` CLI or Kay with agent adapters in
 `tests/live/agents/`. By default `tests/live/run-live-tests.sh` runs both agents
 sequentially; set `SB_LIVE_RUNTIMES=claude` or `SB_LIVE_RUNTIMES=codex` to narrow the
 matrix. Sequential execution matters because both agents touch the same Silver Bullet
-state path under `~/.claude/.silver-bullet/`.
+state path under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
 
 The live todo-app E2E suite is separate. It uses the standalone sibling
 `test-todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one

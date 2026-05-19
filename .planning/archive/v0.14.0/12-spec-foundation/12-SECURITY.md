@@ -55,7 +55,7 @@ auditor: gsd-secure-phase
 |-----------|----------|-------------|---------------------|----------|
 | T-14-01 | Tampering | accept | CLOSED | Accepted — VALIDATION.md is informational and regenerated on each validate run. |
 | T-14-02 | Denial of Service | mitigate | CLOSED | skills/silver-validate/SKILL.md Step 0 checks file existence before parsing; missing SPEC.md produces single FINDING [BLOCK] VAL-000 and exits. No hang path. |
-| T-14-03 | Tampering | mitigate | **OPEN** | `umask 0077` is present in hooks/spec-session-record.sh:9. However, the plan states "path validated to stay within ~/.claude/" — no path validation is implemented. The spec-session path is hardcoded (`${HOME}/.claude/.silver-bullet/spec-session`) which prevents traversal in practice, but the declared mitigation (explicit path validation) is not present in code. Gap is minor at ASVS L1; hardcoded path provides equivalent protection. |
+| T-14-03 | Tampering | mitigate | **OPEN** | `umask 0077` is present in hooks/spec-session-record.sh:9. However, the plan states "path validated to stay within ${SB_RUNTIME_HOME_ROOT}/" — no path validation is implemented. The spec-session path is hardcoded (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session`) which prevents traversal in practice, but the declared mitigation (explicit path validation) is not present in code. Gap is minor at ASVS L1; hardcoded path provides equivalent protection. |
 | T-14-04 | Information Disclosure | accept | CLOSED | Accepted — spec metadata (version, JIRA ID) is intentionally public in PR description. |
 | T-14-05 | Tampering | mitigate | CLOSED | hooks/pr-traceability.sh reads existing PR body first (line 57: `existing_body=$(...)`), then appends traceability block. Uses `--body-file` not `--body` (line 79). Never overwrites. |
 | T-14-06 | Tampering | accept | CLOSED | Accepted — UAT is a process gate; falsifying results is self-defeating. |
@@ -68,7 +68,7 @@ auditor: gsd-secure-phase
 
 | Threat ID | Category | Gap Description | Files Searched | Severity at ASVS L1 |
 |-----------|----------|-----------------|----------------|---------------------|
-| T-14-03 | Tampering | Plan declares "path validated to stay within ~/.claude/" but no explicit path validation code exists in spec-session-record.sh. Path is hardcoded, which provides equivalent traversal protection, but the declared control is absent. | hooks/spec-session-record.sh (lines 33-36) | Low — hardcoded path is functionally equivalent; no exploitable gap at L1 |
+| T-14-03 | Tampering | Plan declares "path validated to stay within ${SB_RUNTIME_HOME_ROOT}/" but no explicit path validation code exists in spec-session-record.sh. Path is hardcoded, which provides equivalent traversal protection, but the declared control is absent. | hooks/spec-session-record.sh (lines 33-36) | Low — hardcoded path is functionally equivalent; no exploitable gap at L1 |
 
 ---
 

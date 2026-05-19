@@ -97,7 +97,7 @@ case "$LIVE_RUNTIME" in
 #
 # The suite runs Claude and Codex against an isolated copy of the standalone
 # sibling test-todo-app repo, then resets the workspace after each scenario.
-# The real SB state files under ~/.claude/.silver-bullet are backed up and
+# The real SB state files under ${SB_RUNTIME_HOME_ROOT}/.silver-bullet are backed up and
 # restored around each scenario so the suite can run repeatedly without
 # cross-talk.
 
@@ -111,7 +111,7 @@ SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
 FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app}"
 RUNTIME_DIR="${SB_ROOT}/tests/live/runtimes"
 LIB_DIR="${E2E_ROOT}/lib"
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 [2026-05-10T08:09:05] exec "sed -n '1,240p' tests/e2e-live/README.md" in /Users/shafqat/projects/silver-bullet/repo
 [2026-05-10T08:09:05] "sed -n '1,240p' tests/e2e-live/README.md" succeeded in 327ms:
 # Silver Bullet Live Todo-App E2E Suite
@@ -249,7 +249,7 @@ assert_exists() {
 - [docs/TESTING.md](/Users/shafqat/projects/silver-bullet/repo/docs/TESTING.md#L1) still describes the live todo-app E2E suite as running against `tests/test-app/`, including the coverage table and explanatory text.
 - [tests/e2e-smoke-test.md](/Users/shafqat/projects/silver-bullet/repo/tests/e2e-smoke-test.md#L1) is still a user-facing protocol for `tests/test-app/` and should be updated anywhere it teaches setup, CWD, or cleanup.
 - [tests/live/README.md](/Users/shafqat/projects/silver-bullet/repo/tests/live/README.md#L1) is part of the requested live-doc surface and should be checked for any fixture-path assumptions.
-- [\.claude/launch.json](/Users/shafqat/projects/silver-bullet/repo/.claude/launch.json#L1) still points the “Test App (Express)” config at `tests/test-app`; if anyone uses this launch profile during verification, it will keep resolving the old fixture.
+- [\.claude/launch.json](${SB_RUNTIME_HOME_ROOT}/launch.json#L1) still points the “Test App (Express)” config at `tests/test-app`; if anyone uses this launch profile during verification, it will keep resolving the old fixture.
 
 **Likely affected tests**
 - [tests/e2e-live/test-e2e-live-suite.sh](/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh#L1) asserts the suite layout and will catch missing or renamed helper/scenario files.

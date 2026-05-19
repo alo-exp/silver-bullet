@@ -18,14 +18,14 @@ integration_setup
 write_default_config
 
 # Set autonomous mode (the closest analog to bypass-permissions at hook layer)
-echo "autonomous" > "${HOME}/.claude/.silver-bullet/mode"
+echo "autonomous" > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 
 # Without planning skills, dev-cycle-check must still block even in autonomous mode
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.1: dev-cycle-check blocks in autonomous mode (no bypass at hook layer)" "$out"
 
 # Clean up mode file
-rm -f "${HOME}/.claude/.silver-bullet/mode"
+rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 integration_teardown
 
 # ── S2: Cross-session skill accumulation ──────────────────────────────────────
@@ -190,7 +190,7 @@ write_default_config
 
 run_session_start >/dev/null 2>&1 || true
 
-SB_DIR="${HOME}/.claude/.silver-bullet"
+SB_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 if [[ -d "$SB_DIR" ]]; then
   PASS=$((PASS+1)); printf 'PASS: S6.1: SB_STATE_DIR exists after session-start\n'
 else

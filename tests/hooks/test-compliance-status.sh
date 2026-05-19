@@ -9,8 +9,8 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
@@ -169,11 +169,11 @@ echo "--- Test 8: Autonomous mode shown in output ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-printf 'autonomous' > "${HOME}/.claude/.silver-bullet/mode"
+printf 'autonomous' > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 out=$(run_hook)
 assert_contains "autonomous mode file -> output shows autonomous" "$out" "autonomous"
 # Restore mode
-printf 'interactive' > "${HOME}/.claude/.silver-bullet/mode"
+printf 'interactive' > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 teardown
 
 # Test 9: Invalid mode value in mode file -> defaults to interactive (injection safety)
@@ -181,11 +181,11 @@ echo "--- Test 9: Invalid mode value defaults to interactive ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-printf 'INVALID_MODE; rm -rf /' > "${HOME}/.claude/.silver-bullet/mode"
+printf 'INVALID_MODE; rm -rf /' > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 out=$(run_hook)
 assert_contains "invalid mode -> defaults to interactive" "$out" "interactive"
 assert_not_contains "invalid mode -> does not echo attack string" "$out" "rm -rf"
-printf 'interactive' > "${HOME}/.claude/.silver-bullet/mode"
+printf 'interactive' > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 teardown
 
 # Test 10: Total step count reflects state file line count

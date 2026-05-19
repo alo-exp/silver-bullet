@@ -131,7 +131,7 @@ before reaching Claude's execution.
 | Async | No |
 
 **What it does:** Fires at session start and after `/compact` or `/clear`. Reads the
-current git branch and compares it to the branch stored in `~/.claude/.silver-bullet/branch`.
+current git branch and compares it to the branch stored in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`.
 If the branch has changed, it resets the state file so skills from the previous branch
 do not carry over. Also injects "superpowers" context for autonomous mode sessions.
 
@@ -170,7 +170,7 @@ skills are recorded in the state file before allowing source file edits.
 
 #### 4.2a Plugin boundary protection
 
-Blocks any Edit/Write/Bash targeting `~/.claude/plugins/cache/`. The runtime must never
+Blocks any Edit/Write/Bash targeting `${SB_RUNTIME_HOME_ROOT}/plugins/cache/`. The runtime must never
 modify upstream plugin files.
 
 **Block message:** "THIRD-PARTY PLUGIN BOUNDARY VIOLATION"
@@ -191,7 +191,7 @@ disable process compliance. If you need to reconfigure, use /silver:init."
 
 #### 4.2c State file tamper prevention (SB-008)
 
-Blocks direct Edit/Write targeting `~/.claude/.silver-bullet/` and Bash write commands
+Blocks direct Edit/Write targeting `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` and Bash write commands
 targeting `state`, `branch`, or `trivial` files within that directory. Whitelist: Bash
 commands matching `quality-gate-stage-[1-4]` (legitimate §9 stage recording).
 
@@ -281,7 +281,7 @@ top of a broken CI.
 | Async | No |
 
 **What it does:** Appends the invoked skill name to the state file
-(`~/.claude/.silver-bullet/state`) on every successful Skill tool use. This is the
+(`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) on every successful Skill tool use. This is the
 primary mechanism that tracks workflow progress.
 
 **Output format:** Writes one line (skill name) to state file. Emits informational JSON
@@ -480,11 +480,11 @@ context state, the enforcement model survives context window limits.
 
 ---
 
-### 4.13 State file (~/.claude/.silver-bullet/state)
+### 4.13 State file (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state)
 
 | Attribute | Value |
 |-----------|-------|
-| Path | `~/.claude/.silver-bullet/state` (configurable) |
+| Path | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` (configurable) |
 | Format | One skill name per line |
 
 **What it does:** The single source of truth for workflow progress within a session and
@@ -495,16 +495,16 @@ prevention in `dev-cycle-check.sh` blocks direct writes).
 **Branch scoping:** `session-start` resets the state file on branch change, so skills
 from one branch do not carry over to another.
 
-**Security:** Path validated to stay within `~/.claude/` by every hook that reads it
+**Security:** Path validated to stay within `${SB_RUNTIME_HOME_ROOT}/` by every hook that reads it
 (SB-002/SB-003). Symlinks rejected for trivial file.
 
 ---
 
-### 4.14 Trivial bypass (~/.claude/.silver-bullet/trivial)
+### 4.14 Trivial bypass (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial)
 
 | Attribute | Value |
 |-----------|-------|
-| Path | `~/.claude/.silver-bullet/trivial` (configurable, legacy compatibility marker) |
+| Path | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` (configurable, legacy compatibility marker) |
 | Format | Regular file; retained only for backward compatibility |
 
 **What it does:** In older sessions, the legacy trivial marker could short-circuit some
@@ -522,7 +522,7 @@ historical references continue to read cleanly.
 ### 4.15 Branch-scoped state (session-start reset)
 
 **What it does:** When `session-start` detects that the current git branch differs from
-the branch stored in `~/.claude/.silver-bullet/branch`, it deletes the state file
+the branch stored in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`, it deletes the state file
 (clearing all recorded skills) and writes the new branch name. This ensures Claude
 starts the full workflow from scratch on each branch.
 
@@ -605,8 +605,8 @@ techniques that are insufficient on their own:
 | `project.active_workflow` | string | `full-dev-cycle` | Sets skill lists for intermediate and final delivery checks |
 | `skills.required_planning` | string[] | `["silver-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"]` | Skills required before any source edit (Stage A gate) |
 | `skills.required_deploy` | string[] | (12-skill default list) | Skills required before PR/deploy/release commands and before Stop hook allows completion |
-| `state.state_file` | string | `~/.claude/.silver-bullet/state` | Path to the skill recording state file |
-| `state.trivial_file` | string | `~/.claude/.silver-bullet/trivial` | Path to the trivial bypass marker file |
+| `state.state_file` | string | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Path to the skill recording state file |
+| `state.trivial_file` | string | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Path to the trivial bypass marker file |
 | `compactPrompt` | string | (verbatim preservation instruction) | Instruction to `/compact` compaction LLM to preserve enforcement rules |
 
 ### State File Format

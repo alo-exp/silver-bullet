@@ -3,16 +3,22 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 # PostToolUse hook (matcher: Bash)
-# Fires when Claude writes the session mode to ~/.claude/.silver-bullet/mode.
+# Fires when the host runtime writes the session mode to its state root mode file.
 # Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
-# ~/.claude/.silver-bullet/session-log-path so the documentation step can fill it in.
+# the host runtime session-log-path so the documentation step can fill it in.
 # In autonomous mode: also launches a 10-minute background sentinel.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# Source symlink-write guard (SEC-02)
+# Source runtime path selector so the state root follows the host runtime.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
+# Source symlink-write guard (SEC-02)
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   # shellcheck source=lib/nofollow-guard.sh
   source "$_lib_dir/nofollow-guard.sh"
@@ -22,7 +28,7 @@ else
 fi
 
 # User-scoped state directory (avoids world-readable /tmp/)
-SB_DIR="${HOME}/.claude/.silver-bullet"
+SB_DIR="${SB_RUNTIME_STATE_DIR}"
 
 # Validate test overrides (defense-in-depth: reject non-numeric sleep values)
 if [[ -n "${SENTINEL_SLEEP_OVERRIDE:-}" ]] && ! [[ "$SENTINEL_SLEEP_OVERRIDE" =~ ^[0-9]+$ ]]; then
@@ -147,9 +153,9 @@ if [[ -n "$existing" ]]; then
     # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
     # This spawns a background subshell that sleeps for at most SENTINEL_SLEEP_OVERRIDE
     # seconds (default: 600), then writes the literal string "TIMEOUT" to
-    # ~/.claude/.silver-bullet/timeout. The process:
+    # <host runtime>/.silver-bullet/timeout. The process:
     #   (1) is fully deterministic — cannot be influenced by external input;
-    #   (2) is scoped only to the user-owned ~/.claude/.silver-bullet/ directory;
+    #   (2) is scoped only to the user-owned host runtime state directory;
     #   (3) auto-terminates after at most 600 seconds with no side effects beyond
     #       writing the timeout marker.
     # This is an intentional bounded timeout guard for autonomous session enforcement.
@@ -271,7 +277,7 @@ date +%s > "$SB_DIR"/session-start-time
 # --- Step 8: Launch sentinel (autonomous mode only) ---
 # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
 # Deterministic bounded process: sleeps max 600s, writes "TIMEOUT" to user-owned
-# ~/.claude/.silver-bullet/timeout, then auto-terminates. Cannot be influenced by
+# the host runtime timeout marker, then auto-terminates. Cannot be influenced by
 # external input. PID tracked in sentinel-pid; kill called on lock failure.
 if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/timeout
