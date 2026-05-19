@@ -197,7 +197,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -lc 'source \"${CLAUDE_PLUGIN_ROOT}/hooks/lib/runtime-paths.sh\"; rm -f -- \"${SB_RUNTIME_STATE_DIR}/trivial\"'",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
             "async": false,
             "timeout": 5
           }

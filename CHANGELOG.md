@@ -6,6 +6,7 @@
 
 - `fix(release): harden CI gate before tagging` (`f4de5bd`)
 - `fix(live): initialize runtime paths for the Claude/Codex live matrix`
+- `fix(ci): replace inline trivial-file cleanup with a validator-friendly hook script`
 
 ## Chores
 
