@@ -8,6 +8,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Seed Silver Bullet runtime env
+        run: |
+          export SILVER_BULLET_RUNTIME=codex
+          source hooks/lib/runtime-paths.sh
+          {
+            echo "SILVER_BULLET_RUNTIME=$SILVER_BULLET_RUNTIME"
+            echo "SB_RUNTIME_NAME=$SB_RUNTIME_NAME"
+            echo "SB_RUNTIME_HOME_ROOT=$SB_RUNTIME_HOME_ROOT"
+            echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR"
+            echo "SB_RUNTIME_PLUGIN_CACHE_ROOT=$SB_RUNTIME_PLUGIN_CACHE_ROOT"
+          } >> "$GITHUB_ENV"
+
       - name: Validate JSON files
         run: |
           for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
