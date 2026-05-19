@@ -7,6 +7,13 @@ set -euo pipefail
 
 umask 0077
 
+# Source runtime path selector so the freshness marker follows the host runtime.
+_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd 2>/dev/null)" || _repo_root=""
+if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$_repo_root/hooks/lib/runtime-paths.sh"
+fi
+
 find_repo_root() {
   local start="${1:-$PWD}"
   while true; do
@@ -23,10 +30,10 @@ find_repo_root() {
 }
 
 resolve_marker_file() {
-  local default="${HOME}/.claude/.silver-bullet/verify-tests-state"
+  local default="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
   local candidate="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$default}"
   case "$candidate" in
-    "$HOME"/.claude/*) printf '%s' "$candidate" ;;
+    "${SB_RUNTIME_HOME_ROOT}"/.silver-bullet/*) printf '%s' "$candidate" ;;
     *) printf '%s' "$default" ;;
   esac
 }

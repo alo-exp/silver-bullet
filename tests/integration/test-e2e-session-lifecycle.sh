@@ -23,14 +23,14 @@ integration_setup
 write_default_config
 
 # Write a stored branch name that differs from current
-echo "some-other-branch" > "${HOME}/.claude/.silver-bullet/branch"
+echo "some-other-branch" > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch"
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 # The hook emits a warning then continues — not a block for the mismatch itself.
 # It will be blocked by Stage A (no planning), which means a block IS expected.
 assert_blocked "S2.1: dev-cycle-check runs (Stage A block still fires after branch warning)" "$out"
 
 # Clean up branch file
-rm -f "${HOME}/.claude/.silver-bullet/branch"
+rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch"
 
 integration_teardown
 

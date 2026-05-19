@@ -28,7 +28,7 @@ All three components depend on Phase 12 (SPEC.md format and template) and Phase 
 | VALD-03 | BLOCK severity prevents gsd-plan-phase from proceeding | silver-validate is invoked BEFORE gsd-plan-phase in silver-feature Step 2.7; user must resolve before continuing |
 | VALD-04 | WARN severity surfaced in PR description as deferred items | pr-traceability.sh reads validation findings log or SPEC.md WARNs when populating PR description |
 | VALD-05 | Re-surfaces all [ASSUMPTION: ...] blocks from SPEC.md at implementation start | silver-validate reads SPEC.md, collects all ASSUMPTION blocks, prints them as awareness list |
-| TRAC-01 | Session record captures spec-id, spec-version, JIRA ref at session start | New hook or extension to session-start fires at session start and reads SPEC.md frontmatter; writes to `~/.claude/.silver-bullet/spec-session` |
+| TRAC-01 | Session record captures spec-id, spec-version, JIRA ref at session start | New hook or extension to session-start fires at session start and reads SPEC.md frontmatter; writes to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session` |
 | TRAC-02 | pr-traceability.sh hook on gsd-ship: auto-populates PR description | PostToolUse on Bash matcher, detects gsd-ship in command, reads spec-session record + gh pr view output |
 | TRAC-03 | PR traceability is machine-generated — no developer annotation | Entirely automated from session record and SPEC.md frontmatter |
 | TRAC-04 | SPEC.md Implementations section updated post-merge with PR URL + commit range | pr-traceability.sh (PostToolUse) appends to `## Implementations` section after PR is created/merged |
@@ -146,7 +146,7 @@ Source: [VERIFIED: completion-audit.sh, stop-check.sh]
 ### State File Pattern
 
 ```bash
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 state_file="${SB_STATE_DIR}/state"
 ```
 
@@ -217,7 +217,7 @@ FINDING [BLOCK] VAL-001: Acceptance criterion "system must handle concurrent req
 
 **What writes it:** A new lightweight hook or extension to the `session-start` hook. The cleanest approach (confirmed by examining session-start) is a separate file `hooks/spec-session-record.sh` that runs on `SessionStart` — or alternatively, extend `session-start` itself.
 
-**IMPORTANT constraint from session-start inspection:** The session-start hook already does branch-scoped state reset at lines 38-48. The spec-session record should survive branch resets if the SPEC.md is unchanged. Best approach: separate file `~/.claude/.silver-bullet/spec-session` that is only written (not reset) at session start.
+**IMPORTANT constraint from session-start inspection:** The session-start hook already does branch-scoped state reset at lines 38-48. The spec-session record should survive branch resets if the SPEC.md is unchanged. Best approach: separate file `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session` that is only written (not reset) at session start.
 
 **Logic:**
 
@@ -229,7 +229,7 @@ spec_id=$(grep -m1 '^jira-id:' "$SPEC" | awk '{print $2}' | tr -d '"')
 spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}')
 jira_id="$spec_id"
 
-spec_session_file="${HOME}/.claude/.silver-bullet/spec-session"
+spec_session_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session"
 printf 'spec-version=%s\njira-id=%s\n' "$spec_version" "$jira_id" > "$spec_session_file"
 ```
 
@@ -254,7 +254,7 @@ printf 'spec-version=%s\njira-id=%s\n' "$spec_version" "$jira_id" > "$spec_sessi
 if ! printf '%s' "$cmd" | grep -qE '\bgsd-ship\b'; then exit 0; fi
 
 # 2. Read spec-session record
-spec_session_file="${HOME}/.claude/.silver-bullet/spec-session"
+spec_session_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session"
 [[ ! -f "$spec_session_file" ]] && exit 0  # no spec session — silent
 
 spec_version=$(grep '^spec-version=' "$spec_session_file" | cut -d= -f2)
@@ -481,7 +481,7 @@ Required additions to silver-bullet.md.base:
 |---------|-------------|-------------|-----|
 | PR URL extraction | Custom git log parsing | `gh pr view --json url --jq '.url'` | gh CLI already required, handles all auth cases |
 | SPEC.md frontmatter parsing | Custom YAML parser | `grep -m1 '^spec-version:'` + `awk '{print $2}'` | SPEC.md uses simple line-based YAML — full parser is overkill |
-| Session record storage | Custom database or JSON | Plain text key=value file in `~/.claude/.silver-bullet/` | Consistent with state file pattern in all existing hooks |
+| Session record storage | Custom database or JSON | Plain text key=value file in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | Consistent with state file pattern in all existing hooks |
 | UAT checklist from ACs | Complex extraction logic | Simple grep of `## Acceptance Criteria` section + line-by-line iteration | SPEC.md format is predictable after Phase 12 |
 | JSON escaping in hooks | String concatenation | `jq -Rs '.'` pipe | Used in all existing hooks |
 
@@ -606,7 +606,7 @@ ${traceability_block}"
 Phase 14 is not a rename/refactor phase. No runtime state inventory applies.
 
 New runtime state created by Phase 14:
-- `~/.claude/.silver-bullet/spec-session` — written at session start, read by pr-traceability.sh
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session` — written at session start, read by pr-traceability.sh
 - `.planning/VALIDATION.md` — written by silver-validate, read by pr-traceability.sh
 - `.planning/UAT.md` — written by silver-feature Step 17 pre-step, read by uat-gate.sh
 
@@ -668,7 +668,7 @@ Phase 14 deliverables are bash scripts and SKILL.md files. Validation is manual-
 |---------|------|------------|
 | Path traversal in SPEC.md path | TRAC-01/pr-traceability.sh reads `.planning/SPEC.md` — if config overrides path, could escape | Validate SPEC path stays within project root (same pattern as SB-002/003 in stop-check.sh) |
 | Injection via SPEC.md content | spec-version or jira-id used in git commit messages | Sanitize with `tr -d '"'` and validate alphanumeric+hyphen before embedding in commands |
-| Symlink attack on spec-session file | `~/.claude/.silver-bullet/spec-session` | Reject symlinks before write (same pattern as trivial_file in completion-audit.sh line 135) |
+| Symlink attack on spec-session file | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session` | Reject symlinks before write (same pattern as trivial_file in completion-audit.sh line 135) |
 
 ---
 

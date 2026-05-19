@@ -15,6 +15,10 @@ else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
   sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 # PostToolUse hook (matcher: .*, async: false)
 # Two-tier anti-stall protection in autonomous mode:
@@ -27,7 +31,7 @@ fi
 cat > /dev/null
 
 # User-scoped state directory
-SB_DIR="${HOME}/.claude/.silver-bullet"
+SB_DIR="${SB_RUNTIME_STATE_DIR}"
 
 # Mode gate: only act in autonomous mode
 mode_file="$SB_DIR/mode"

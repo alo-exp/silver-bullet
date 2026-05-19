@@ -8,6 +8,15 @@
 # This helper enforces per-task checklist completeness based on the JSON contract.
 # It is used by stop-check.sh (task completion gate) and completion-audit.sh
 # (delivery gate).
+#
+# Runtime paths are host-specific; source the selector so state directories
+# resolve to the active host runtime root.
+
+_sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_sb_runtime_paths_dir/runtime-paths.sh"
+fi
 
 sb_doc_scheme__mtime_epoch() {
   local path="$1"
@@ -175,7 +184,7 @@ sb_doc_scheme_gate_enforce() {
 
   session_start_file="${session_start_file/#\~/$HOME}"
   case "$session_start_file" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) session_start_file="${state_dir}/session-start-time" ;;
   esac
   session_start=$(cat "$session_start_file" 2>/dev/null || true)

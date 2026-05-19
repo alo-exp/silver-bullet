@@ -5,7 +5,7 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ pr-traceability: hoo
 # PostToolUse hook (matcher: Bash)
 # After `gh pr create` runs, appends spec traceability block to the PR description
 # and updates SPEC.md Implementations section with the PR URL.
-# Reads session context from ~/.claude/.silver-bullet/spec-session (written at session start).
+# Reads session context from the host runtime state root (written at session start).
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -18,6 +18,10 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
   sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
 fi
 
 # jq is required for JSON parsing
@@ -45,7 +49,7 @@ if ! printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
 fi
 
 # Read spec-session file — if missing, no spec session, exit silently
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 spec_session_file="${SB_STATE_DIR}/spec-session"
 
 if [[ ! -f "$spec_session_file" ]]; then

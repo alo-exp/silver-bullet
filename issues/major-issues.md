@@ -122,15 +122,15 @@ Every critical hook has error handling that exits 0 on any unexpected error:
 
 **Severity: High** | **Goals affected: 3, 9**
 
-The state file at `~/.claude/.silver-bullet/state` is a plain text file with one skill name per line. Any bash command can satisfy all enforcement:
+The state file at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` is a plain text file with one skill name per line. Any bash command can satisfy all enforcement:
 
 ```bash
-echo "quality-gates" >> ~/.claude/.silver-bullet/state
+echo "quality-gates" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state
 ```
 
 No HMAC, no signature, no tamper detection. Claude could rationalize writing directly to the state file to "fix" a "stuck" workflow.
 
-**Status:** [x] Resolved 2026-04-06 — `dev-cycle-check.sh` (PreToolUse for Edit/Write/Bash) now includes tamper prevention: (1) any Edit/Write tool targeting `~/.claude/.silver-bullet/*` is hard-blocked with a message directing users to reset via terminal, not Claude; (2) Bash commands that write to state/branch/trivial via `>>`, `>`, or `tee` are blocked. Note: HMAC-level cryptographic integrity is not implemented — determined bypasses via `sed -i` or Python remain possible, but the most common rationalization path (Bash echo/printf redirect) is blocked.
+**Status:** [x] Resolved 2026-04-06 — `dev-cycle-check.sh` (PreToolUse for Edit/Write/Bash) now includes tamper prevention: (1) any Edit/Write tool targeting `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/*` is hard-blocked with a message directing users to reset via terminal, not Claude; (2) Bash commands that write to state/branch/trivial via `>>`, `>`, or `tee` are blocked. Note: HMAC-level cryptographic integrity is not implemented — determined bypasses via `sed -i` or Python remain possible, but the most common rationalization path (Bash echo/printf redirect) is blocked.
 
 ---
 
@@ -160,7 +160,7 @@ Hooks check presence/absence of skills, never sequence. The workflow documents s
 
 `session-start` resets only `quality-gate-stage-*` and `gsd-*` markers but **preserves all skill recordings**. Skills from Session 1 satisfy enforcement checks in Session 2 for a completely different feature/branch.
 
-**Status:** [x] Resolved 2026-04-06 — `hooks/session-start` now stores current git branch in `~/.claude/.silver-bullet/branch`. On session start: branch changed → full state reset (rm state file, update branch file); same branch → only session-specific markers cleared (quality-gate-stage-* and gsd-*). Skill recordings now correctly scoped to one branch/feature.
+**Status:** [x] Resolved 2026-04-06 — `hooks/session-start` now stores current git branch in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`. On session start: branch changed → full state reset (rm state file, update branch file); same branch → only session-specific markers cleared (quality-gate-stage-* and gsd-*). Skill recordings now correctly scoped to one branch/feature.
 
 ---
 

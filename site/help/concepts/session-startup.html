@@ -180,7 +180,7 @@ footer a:hover{color:var(--accent-light)}
       <p>This boundary prevents prompt injection through project documentation. Even if a <code>docs/</code> file contains text that looks like a command, the runtime ignores it as an instruction source.</p>
 
       <h2 id="step3">Step 3 — Initialize Session State</h2>
-      <p>The session log hook creates or reuses the current session log path under <code>~/.claude/.silver-bullet/session-log-path</code>. Mode, requested-skill tracking, timeout sentinels, and other hook state are made available so later enforcement checks can report concrete missing steps instead of relying on memory.</p>
+      <p>The session log hook creates or reuses the current session log path under <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>. Mode, requested-skill tracking, timeout sentinels, and other hook state are made available so later enforcement checks can report concrete missing steps instead of relying on memory.</p>
       <p>Hosts may compact context when appropriate, but compaction is not Silver Bullet's model-routing mechanism and should not be treated as a required model switch.</p>
 
       <h2 id="step4">Step 4 — Check Active Workflow State</h2>
@@ -202,7 +202,7 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="update-card">
         <h4>5.2 GSD <span class="badge badge-auto">auto-offer</span></h4>
-        <p>Reads the installed GSD version from <code>~/.claude/get-shit-done/VERSION</code> and checks npm for the latest <code>get-shit-done-cc</code> version. If installed &lt; latest:</p>
+        <p>Reads the installed GSD version from <code>${SB_RUNTIME_HOME_ROOT}/get-shit-done/VERSION</code> and checks npm for the latest <code>get-shit-done-cc</code> version. If installed &lt; latest:</p>
         <p><em>"GSD v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
         <div class="update-options">
           <span class="update-opt opt-a">A. Yes, update now</span>

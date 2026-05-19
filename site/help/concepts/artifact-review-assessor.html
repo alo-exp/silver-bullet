@@ -219,7 +219,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Assessor triages findings</strong> — <code>artifact-review-assessor</code> reads the findings and assigns MUST-FIX / NICE-TO-HAVE / DISMISS to each.</li>
         <li><strong>Fix MUST-FIX items</strong> — the author addresses all MUST-FIX findings. NICE-TO-HAVE items are optional. DISMISS items are ignored.</li>
         <li><strong>Reviewer re-checks</strong> — the reviewer runs again on the updated artifact. If no MUST-FIX findings remain, this counts as one clean pass.</li>
-        <li><strong>2-pass enforcement</strong> — the cycle repeats until two consecutive clean passes are recorded. State is tracked per artifact using SHA256-keyed JSON in <code>~/.claude/.silver-bullet/review-state/</code>.</li>
+        <li><strong>2-pass enforcement</strong> — the cycle repeats until two consecutive clean passes are recorded. State is tracked per artifact using SHA256-keyed JSON in <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/review-state/</code>.</li>
       </ol>
 
       <div class="callout callout-tip">

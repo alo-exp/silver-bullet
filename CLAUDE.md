@@ -14,7 +14,7 @@ Silver Bullet is a host-aware plugin — an agentic process orchestrator that en
 - **Git repo**: https://github.com/alo-exp/silver-bullet.git
 - **Runtime prerequisite**: `jq` (all hooks fail-open with a visible warning when absent)
 
-> **Development rule**: All code edits go to **source files in this repo** (`hooks/`, `scripts/`, `skills/`, `templates/`, `tests/`, `.github/`, etc.). Never modify the installed plugin cache at the host's plugin cache path (for example `~/.claude/plugins/cache/alo-labs/silver-bullet/*/` or the equivalent Codex cache path) — that is a read-only build artifact. Source changes here are what gets released and installed.
+> **Development rule**: All code edits go to **source files in this repo** (`hooks/`, `scripts/`, `skills/`, `templates/`, `tests/`, `.github/`, etc.). Never modify the installed plugin cache at the host's plugin cache path (for example `${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/*/` or the equivalent Codex cache path) — that is a read-only build artifact. Source changes here are what gets released and installed.
 
 ---
 
@@ -109,13 +109,13 @@ The required-skill list has a **single source of truth**: `templates/silver-bull
 
 ### State Machine
 
-Skill invocations are recorded to `~/.claude/.silver-bullet/state` by `record-skill.sh` after each `PostToolUse/Skill` event. The state is:
-- **Branch-scoped**: wiped when `git branch` changes between sessions (tracked via `~/.claude/.silver-bullet/branch`)
-- **Trivial bypass**: if `~/.claude/.silver-bullet/trivial` file exists (real file, not symlink), all enforcement gates exit 0 — used for typo/config-only sessions; auto-created at SessionStart, removed on first Write/Edit
+Skill invocations are recorded to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` by `record-skill.sh` after each `PostToolUse/Skill` event. The state is:
+- **Branch-scoped**: wiped when `git branch` changes between sessions (tracked via `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`)
+- **Trivial bypass**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` file exists (real file, not symlink), all enforcement gates exit 0 — used for typo/config-only sessions; auto-created at SessionStart, removed on first Write/Edit
 
 **Test env-var overrides** (mirrors the `SILVER_BULLET_STATE_FILE` pattern):
-- `SILVER_BULLET_STATE_FILE` — overrides the default state file path (`~/.claude/.silver-bullet/state`); must remain under `~/.claude/`
-- `SILVER_BULLET_BRANCH_FILE` — overrides the branch-tracking file path (`~/.claude/.silver-bullet/branch`); must remain under `~/.claude/`. Used by integration tests (`tests/integration/helpers/common.sh`) to supply a per-test mock branch file so `session-start` does not read or mutate the live branch file during test runs.
+- `SILVER_BULLET_STATE_FILE` — overrides the default state file path (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`); must remain under `${SB_RUNTIME_HOME_ROOT}/`
+- `SILVER_BULLET_BRANCH_FILE` — overrides the branch-tracking file path (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`); must remain under `${SB_RUNTIME_HOME_ROOT}/`. Used by integration tests (`tests/integration/helpers/common.sh`) to supply a per-test mock branch file so `session-start` does not read or mutate the live branch file during test runs.
 
 ### Shared Libraries (`hooks/lib/`)
 
@@ -151,7 +151,7 @@ These call into GSD (`gsd-*`) and Superpowers (`superpowers:*`) skills — Silve
 ### Tests
 
 Tests use a consistent pattern:
-- Each test creates a temp directory with a real `git init`, writes a `.silver-bullet.json` config, and sets `SILVER_BULLET_STATE_FILE` to a path under `~/.claude/` (path validation in hooks rejects anything outside `~/.claude/`)
+- Each test creates a temp directory with a real `git init`, writes a `.silver-bullet.json` config, and sets `SILVER_BULLET_STATE_FILE` to a path under `${SB_RUNTIME_HOME_ROOT}/` (path validation in hooks rejects anything outside `${SB_RUNTIME_HOME_ROOT}/`)
 - Hook scripts are invoked by piping JSON via stdin (matching the host hook protocol)
 - Results are parsed from `Results: N passed, M failed` lines
 
@@ -163,5 +163,5 @@ Tests use a consistent pattern:
 - **ERR trap pattern** — every hook has `trap 'exit 0' ERR` so unexpected failures don't block the active runtime
 - **No hardcoded skill literals in hooks** — only `hooks/lib/required-skills.sh` reads the canonical list from `templates/silver-bullet.config.json.default`
 - **Config is authoritative** — when `.silver-bullet.json` has `required_deploy`, it overrides the default; hooks never append extra mandatory skills on top
-- **Plugin boundary** — `dev-cycle-check.sh` hard-blocks any Edit/Write targeting `~/.claude/plugins/cache/**` (§8 enforcement)
-- **State files must be under `~/.claude/`** — `session-start` and `completion-audit.sh` reject `SILVER_BULLET_STATE_FILE` paths outside this prefix
+- **Plugin boundary** — `dev-cycle-check.sh` hard-blocks any Edit/Write targeting `${SB_RUNTIME_HOME_ROOT}/plugins/cache/**` (§8 enforcement)
+- **State files must be under `${SB_RUNTIME_HOME_ROOT}/`** — `session-start` and `completion-audit.sh` reject `SILVER_BULLET_STATE_FILE` paths outside this prefix

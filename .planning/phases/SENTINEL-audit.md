@@ -2,7 +2,7 @@
 ## Silver Bullet Claude Code Plugin
 **Audit Date:** 2026-04-25
 **Auditor:** SENTINEL v2.3 (automated adversarial review)
-**Target:** `/Users/shafqat/Documents/Projects/silver-bullet/.claude/worktrees/fervent-buck-630f6b/`
+**Target:** `${SB_RUNTIME_HOME_ROOT}/worktrees/fervent-buck-630f6b/`
 **Scope:** hooks/*.sh, hooks/lib/*.sh, skills/silver-add|silver-remove|silver-rem|silver-scan|silver-create-release|silver-release|silver-init|silver-feature/SKILL.md, config files
 
 ---
@@ -19,7 +19,7 @@ Silver Bullet demonstrates a mature security posture with multiple defense-in-de
 
 **Previous audits detected:** Yes. Phase directories `34-security-p0-remediation` and `35-stage-4-security-hardening` confirm prior SENTINEL findings were addressed. This audit builds on those.
 
-**Active config:** `.silver-bullet.json` v0.25.0, `full-dev-cycle` workflow, `issue_tracker=gsd`, state file at `~/.claude/.silver-bullet/state`.
+**Active config:** `.silver-bullet.json` v0.25.0, `full-dev-cycle` workflow, `issue_tracker=gsd`, state file at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`.
 
 **Attack surface summary:**
 - 18 hook scripts + 4 lib scripts (primary attack surface)
@@ -36,13 +36,13 @@ Silver Bullet demonstrates a mature security posture with multiple defense-in-de
 | ID | Threat | Vector | Mitigated? |
 |----|--------|--------|------------|
 | T-01 | JSON injection via hook stdin | Malicious `.tool_input.command` field | YES — jq -r with validated output |
-| T-02 | Path traversal via config fields | `.silver-bullet.json` `src_pattern` or `state_file` | YES — regex validation + `~/.claude/` prefix check |
+| T-02 | Path traversal via config fields | `.silver-bullet.json` `src_pattern` or `state_file` | YES — regex validation + `${SB_RUNTIME_HOME_ROOT}/` prefix check |
 | T-03 | Prompt injection via project files | Session logs / SPEC.md injected into context | PARTIAL — SENTINEL boundary present; see FINDING-1 |
 | T-04 | Symlink attacks on state files | Attacker pre-creates symlink at state path | YES — nofollow-guard.sh sourced in all writers |
-| T-05 | State file tampering (bypass enforcement) | Direct write to `~/.claude/.silver-bullet/state` | YES — dev-cycle-check.sh blocks this |
-| T-06 | Plugin cache manipulation | Edit/Write/Bash targeting `~/.claude/plugins/cache/**` | YES — hard-blocked in dev-cycle-check.sh |
+| T-05 | State file tampering (bypass enforcement) | Direct write to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | YES — dev-cycle-check.sh blocks this |
+| T-06 | Plugin cache manipulation | Edit/Write/Bash targeting `${SB_RUNTIME_HOME_ROOT}/plugins/cache/**` | YES — hard-blocked in dev-cycle-check.sh |
 | T-07 | Namespace bypass on forbidden skills | `outer:inner:executing-plans` | YES — greedy strip loop in forbidden-skill-check.sh |
-| T-08 | Trivial-bypass via symlink | Symlink at `~/.claude/.silver-bullet/trivial` | YES — `! -L` check on trivial file |
+| T-08 | Trivial-bypass via symlink | Symlink at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | YES — `! -L` check on trivial file |
 | T-09 | ReDoS via user-controlled regex | `src_exclude_pattern` field in config | YES — 200-char cap + character allowlist |
 | T-10 | Sentinel PID recycling | Kill wrong process by reused PID | YES — UUID token + lock file pattern |
 | T-11 | Hook self-modification | Edit/Write/Bash targeting hooks directory | YES — CLAUDE_PLUGIN_ROOT and pattern check |
@@ -233,7 +233,7 @@ cat > "$log_file" << LOGEOF
 LOGEOF
 ```
 
-`mode` is read from `~/.claude/.silver-bullet/mode` and validated against the allowlist `interactive|autonomous` (lines 166-169). This is correctly handled. However, the log file is created with heredoc expansion, and `${today}` is from `date` output, `${mode}` is validated — so there is no injection risk here.
+`mode` is read from `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` and validated against the allowlist `interactive|autonomous` (lines 166-169). This is correctly handled. However, the log file is created with heredoc expansion, and `${today}` is from `date` output, `${mode}` is validated — so there is no injection risk here.
 
 The concern is the subsequent awk-based section insertion (lines 99-128) where `_insert_before` uses an awk script that reads a `mode` variable extracted from the **existing log file** content (line 93-95):
 
@@ -332,13 +332,13 @@ formatted="- \`${safe_subject}\` (${hash})"
 **Classification:** CWE-330 (Use of Insufficiently Random Values)
 
 **Description:**
-The config cache file is stored at `${HOME}/.claude/.silver-bullet/config-cache-${pwd_hash}` where `pwd_hash` is an md5 hash of `$PWD`. On a multi-user system, two users working in the same directory path (e.g., `/tmp/project`) would derive the same cache filename. Since the cache is stored under `~/.claude/` (user-scoped), this is not exploitable in single-user developer environments.
+The config cache file is stored at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/config-cache-${pwd_hash}` where `pwd_hash` is an md5 hash of `$PWD`. On a multi-user system, two users working in the same directory path (e.g., `/tmp/project`) would derive the same cache filename. Since the cache is stored under `${SB_RUNTIME_HOME_ROOT}/` (user-scoped), this is not exploitable in single-user developer environments.
 
-More practically: the cache file stores the config path and its mtime. An attacker who can write to `~/.claude/.silver-bullet/` can pre-plant a cache entry pointing to a malicious `.silver-bullet.json`. However, this requires write access to the user's home directory, which implies full system compromise.
+More practically: the cache file stores the config path and its mtime. An attacker who can write to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` can pre-plant a cache entry pointing to a malicious `.silver-bullet.json`. However, this requires write access to the user's home directory, which implies full system compromise.
 
 **Impact:** Theoretical on developer workstations. Not exploitable in practice without prior system compromise.
 
-**Recommendation:** No immediate action required. The `~/.claude/` path constraint provides sufficient isolation.
+**Recommendation:** No immediate action required. The `${SB_RUNTIME_HOME_ROOT}/` path constraint provides sufficient isolation.
 
 **Status:** INFORMATIONAL
 
@@ -460,7 +460,7 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 
 1. **Inconsistent validation of file-derived strings** (see FINDING-H-1, H-2, H-3): Three hooks extract strings from markdown/YAML files and use them in output without applying the validation patterns established in pr-traceability.sh. This is an inconsistency in defensive posture.
 
-2. **UserPromptSubmit hook reads WORKFLOW.md content without bound** (prompt-reminder.sh lines 151-163): `last_path` and `next_path` are extracted from WORKFLOW.md via `grep` and `sed` and injected into `additionalContext`. These values are not validated against an allowlist. A crafted WORKFLOW.md with a long or special-character "Last-flow:" line could pollute the context. Mitigated by the `~/.claude/` path constraint — WORKFLOW.md is in the project directory, not the state directory.
+2. **UserPromptSubmit hook reads WORKFLOW.md content without bound** (prompt-reminder.sh lines 151-163): `last_path` and `next_path` are extracted from WORKFLOW.md via `grep` and `sed` and injected into `additionalContext`. These values are not validated against an allowlist. A crafted WORKFLOW.md with a long or special-character "Last-flow:" line could pollute the context. Mitigated by the `${SB_RUNTIME_HOME_ROOT}/` path constraint — WORKFLOW.md is in the project directory, not the state directory.
 
 3. **core-rules.md injection path**: prompt-reminder.sh reads `core-rules.md` from the plugin directory and injects its full content into every prompt. The path traversal defense checks `resolved_rules != "${script_dir}/"*`. This is correctly implemented. However, the _content_ of core-rules.md is not sanitized before injection — if an attacker modifies the plugin directory, they control what is injected into every user prompt. This is noted in the code comment as an acknowledged risk for single-user developer systems.
 
@@ -538,7 +538,7 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 
 - `src_pattern` uses multi-pattern format (`/hooks/|/skills/|/templates/`) — validated against character allowlist in dev-cycle-check.sh.
 - `src_exclude_pattern` is the default safe value.
-- `state_file` points to `~/.claude/.silver-bullet/state` — within the required prefix.
+- `state_file` points to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` — within the required prefix.
 - `forbidden` array is empty — no custom forbidden skills configured.
 - `_notifications_comment` correctly instructs not to commit webhook URLs.
 - No `verify_commands` array — this is acceptable.
@@ -557,8 +557,8 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 ### hooks.json
 
 - All hook commands use `"${CLAUDE_PLUGIN_ROOT}/hooks/<script>"` pattern with double-quoting — protects against spaces in paths.
-- The trivial-file creation hook (lines 20-26) uses inline shell: `umask 0077 && mkdir -p ~/.claude/.silver-bullet && { [ -L ~/.claude/.silver-bullet/trivial ] && rm -f -- ~/.claude/.silver-bullet/trivial; touch -- ~/.claude/.silver-bullet/trivial; }` — correctly handles symlink removal before touch.
-- The trivial-file removal hook (lines 134-137) uses `rm -f -- ~/.claude/.silver-bullet/trivial` — safe, uses `--` to prevent flag injection.
+- The trivial-file creation hook (lines 20-26) uses inline shell: `umask 0077 && mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet && { [ -L ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial ] && rm -f -- ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial; touch -- ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial; }` — correctly handles symlink removal before touch.
+- The trivial-file removal hook (lines 134-137) uses `rm -f -- ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` — safe, uses `--` to prevent flag injection.
 - async: true is used only for compliance-status.sh (informational, non-blocking) — correct.
 - Timeouts are appropriate: 30s for CI checks (which invoke gh CLI), 15s for audit hooks, 10s for simpler hooks.
 
@@ -572,8 +572,8 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 
 | Attack Vector | Blocked By | Verified |
 |--------------|-----------|---------|
-| Edit tool to ~/.claude/.silver-bullet/state | dev-cycle-check.sh lines 127-135 | YES |
-| Write tool to ~/.claude/.silver-bullet/state | dev-cycle-check.sh lines 127-135 | YES |
+| Edit tool to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state | dev-cycle-check.sh lines 127-135 | YES |
+| Write tool to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state | dev-cycle-check.sh lines 127-135 | YES |
 | Bash redirect to ~/.silver-bullet/state | dev-cycle-check.sh lines 168-176 | YES |
 | Bash tee to state file | dev-cycle-check.sh lines 148-165 (quote-exempt logic) | YES |
 | git commit -m mentioning state path | dev-cycle-check.sh line 166 (git/gh exemption) | YES |
@@ -583,10 +583,10 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 
 | Attack Vector | Blocked By | Verified |
 |--------------|-----------|---------|
-| Edit/Write to ~/.claude/plugins/cache/** | dev-cycle-check.sh lines 59-70 | YES |
+| Edit/Write to ${SB_RUNTIME_HOME_ROOT}/plugins/cache/** | dev-cycle-check.sh lines 59-70 | YES |
 | Bash write ops to plugin cache | dev-cycle-check.sh lines 71-77 | YES |
 | Bash write to SB hooks dir (with CLAUDE_PLUGIN_ROOT) | dev-cycle-check.sh lines 87-99 | YES |
-| Bash write to ~/.claude/*/hooks/ (without CLAUDE_PLUGIN_ROOT) | dev-cycle-check.sh lines 111-115 | YES |
+| Bash write to ${SB_RUNTIME_HOME_ROOT}/*/hooks/ (without CLAUDE_PLUGIN_ROOT) | dev-cycle-check.sh lines 111-115 | YES |
 
 ### Enforcement Gate Coverage
 

@@ -91,8 +91,8 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "~/.claude/.silver-bullet/state",
-    "trivial_file": "~/.claude/.silver-bullet/trivial"
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
   },
   "issue_tracker": "gsd",
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",

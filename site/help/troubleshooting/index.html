@@ -158,7 +158,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"Permission denied" on hook scripts</h4>
         <p class="ic-cause"><strong>Cause:</strong> Hook shell scripts lost their executable permission, often after a git clone on certain filesystems.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>chmod +x hooks/*.sh hooks/session-start</code> from the plugin cache directory (usually <code>~/.claude/plugins/cache/alo-exp/silver-bullet/hooks/</code>).</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>chmod +x hooks/*.sh hooks/session-start</code> from the plugin cache directory (usually <code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-exp/silver-bullet/hooks/</code>).</p>
       </div>
 
       <div class="issue-card">
@@ -169,8 +169,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="issue-card">
         <h4>Compliance status shows wrong progress</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>~/.claude/.silver-bullet/state</code> may be stale from a previous session.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm ~/.claude/.silver-bullet/state</code>. It will be recreated on the next skill invocation.</p>
+        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state</code> may be stale from a previous session.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state</code>. It will be recreated on the next skill invocation.</p>
       </div>
 
       <div class="divider"></div>
@@ -205,7 +205,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Skill discovery:</strong> At the start of each workflow phase, Silver Bullet scans <code>~/.claude/skills/</code> and <code>~/.claude/plugins/cache/</code> to find all available skills. If a skill was recently installed, start a new session for it to be discovered.</div>
+        <div class="callout-body"><strong>Skill discovery:</strong> At the start of each workflow phase, Silver Bullet scans <code>${SB_RUNTIME_HOME_ROOT}/skills/</code> and <code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> to find all available skills. If a skill was recently installed, start a new session for it to be discovered.</div>
       </div>
 
       <div class="divider"></div>

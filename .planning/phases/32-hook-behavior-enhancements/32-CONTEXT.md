@@ -38,8 +38,8 @@ This goes at line ~102, immediately after `state_contents` is populated. If no s
 
 ### HOOK-05: gsd-read-guard advisory noise reduction
 
-**File:** `~/.claude/hooks/gsd-read-guard.js` (GSD system hook, user-installed)
-**Note:** This is a GSD system-level hook but lives in the user's `~/.claude/hooks/` directory, not in the plugin cache. Modification is acceptable.
+**File:** `${SB_RUNTIME_HOME_ROOT}/hooks/gsd-read-guard.js` (GSD system hook, user-installed)
+**Note:** This is a GSD system-level hook but lives in the user's `${SB_RUNTIME_HOME_ROOT}/hooks/` directory, not in the plugin cache. Modification is acceptable.
 
 **Current bug:** The hook fires the advisory on EVERY Edit/Write to an existing file, even when the same file was just edited moments ago. The `CLAUDE_SESSION_ID` env var check (designed to skip Claude Code) is not working in all Claude Code environments.
 
@@ -81,7 +81,7 @@ try { fs.writeFileSync(trackFile, '1'); } catch {}
 
 ### Files to Modify
 - `hooks/stop-check.sh` — line ~101-102: add `[[ -z "$state_contents" ]] && exit 0` after state file read
-- `~/.claude/hooks/gsd-read-guard.js` — replace per-invocation advisory with PPID-scoped deduplication
+- `${SB_RUNTIME_HOME_ROOT}/hooks/gsd-read-guard.js` — replace per-invocation advisory with PPID-scoped deduplication
 
 ### Existing Test Files
 - `tests/hooks/test-stop-check.sh` — 5 test groups exist; add Group 6 for HOOK-04

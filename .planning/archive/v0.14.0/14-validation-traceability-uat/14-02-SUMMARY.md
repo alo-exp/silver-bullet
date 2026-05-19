@@ -39,7 +39,7 @@ Machine-generated PR-to-spec traceability via SessionStart hook capturing SPEC.m
 **hooks/spec-session-record.sh** (SessionStart):
 - Fires on session startup/clear/compact
 - Reads `spec-version` and `jira-id` from `.planning/SPEC.md` frontmatter
-- Writes `~/.claude/.silver-bullet/spec-session` with key=value pairs
+- Writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session` with key=value pairs
 - Exits silently if SPEC.md absent — no blocking
 - Emits advisory: "Spec session: SPEC.md v{version}, JIRA: {id}"
 

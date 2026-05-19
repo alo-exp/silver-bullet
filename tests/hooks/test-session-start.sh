@@ -10,13 +10,13 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 # Use temp files for state and branch so tests never touch the live session state.
 # Both SILVER_BULLET_STATE_FILE and SILVER_BULLET_BRANCH_FILE are honoured by
-# session-start via env-var overrides with ~/.claude/ path validation.
+# session-start via env-var overrides with ${SB_RUNTIME_HOME_ROOT}/ path validation.
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
 TMPTRIVIAL="${SB_TEST_DIR}/trivial"   # trivial still uses default path (config-driven tests below)
@@ -42,7 +42,7 @@ trap cleanup_all EXIT
 run_hook() {
   # session-start does NOT read stdin — run directly; override PWD via a temp git repo.
   # Branch and state files are both isolated via env overrides so tests never touch
-  # the live ~/.claude/.silver-bullet/ branch or state files.
+  # the live ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ branch or state files.
   # Use || true: hook may exit non-zero when optional plugins (design) are absent,
   # but we test effects (state file mutations, output content) not the exit code.
   local workdir="${1:-$HOOK_WORKDIR}"
@@ -388,9 +388,9 @@ rm -f "$TMPBRANCH"
 
 # ── Security guard fallback test ─────────────────────────────────────────────
 
-# Test 9: SILVER_BULLET_STATE_FILE pointing outside ~/.claude/ falls back to default state file
+# Test 9: SILVER_BULLET_STATE_FILE pointing outside ${SB_RUNTIME_HOME_ROOT}/ falls back to default state file
 # The security guard (SB-002/SB-003) rejects invalid paths and silently uses the default.
-echo "--- Test 9: Invalid SILVER_BULLET_STATE_FILE outside ~/.claude/ falls back to default ---"
+echo "--- Test 9: Invalid SILVER_BULLET_STATE_FILE outside ${SB_RUNTIME_HOME_ROOT}/ falls back to default ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
@@ -404,11 +404,11 @@ rm -f "$REAL_STATE_FILE" 2>/dev/null || true
   bash "$HOOK" 2>/dev/null ) || true
 # The hook must NOT write to the invalid outside path
 if [[ -f "$OUTSIDE_PATH" ]]; then
-  echo "  FAIL: hook wrote to path outside ~/.claude/ — security guard bypassed"
+  echo "  FAIL: hook wrote to path outside ${SB_RUNTIME_HOME_ROOT}/ — security guard bypassed"
   FAIL=$((FAIL + 1))
   rm -f "$OUTSIDE_PATH"
 else
-  echo "  PASS: invalid path outside ~/.claude/ was rejected — not written"
+  echo "  PASS: invalid path outside ${SB_RUNTIME_HOME_ROOT}/ was rejected — not written"
   PASS=$((PASS + 1))
 fi
 rm -rf "$HOOK_WORKDIR"

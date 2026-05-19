@@ -127,7 +127,7 @@ fi
 
 **File:** `skills/silver-update/SKILL.md:157`
 
-**Issue:** The stale cache removal in Step 6b constructs `STALE_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet"` and then runs `rm -rf "$STALE_CACHE"` if the directory exists. While the path is hardcoded (not user-input derived), there are two concerns:
+**Issue:** The stale cache removal in Step 6b constructs `STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"` and then runs `rm -rf "$STALE_CACHE"` if the directory exists. While the path is hardcoded (not user-input derived), there are two concerns:
 
 1. If `$HOME` is set to an unexpected value (e.g., via environment manipulation in a compromised shell), `rm -rf` operates on a user-controlled path.
 2. The `-d` check does not verify it is NOT a symlink before recursive deletion — if `$STALE_CACHE` is a symlink pointing elsewhere, `rm -rf` will follow into the symlink target on some Unix variants (though macOS `rm -rf` on a symlink removes the symlink itself, not the target, so this is lower risk on the intended platform).
@@ -137,7 +137,7 @@ The bigger concern is that there is no check that `$HOME` resolves to a reasonab
 **Fix:** Add a sanity check before the rm:
 
 ```bash
-STALE_CACHE="${HOME}/.claude/plugins/cache/silver-bullet/silver-bullet"
+STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
 # Verify path is under $HOME and is not a symlink before removing
 if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" ]] && \
    [[ "$STALE_CACHE" == "${HOME}/"* ]]; then

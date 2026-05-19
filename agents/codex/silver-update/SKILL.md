@@ -142,7 +142,7 @@ After the marketplace install succeeds, clean up any residual legacy installatio
 Check whether `installed_plugins.json` contains the legacy `silver-bullet@silver-bullet` key. If it does, remove it atomically:
 
 ```bash
-REG="$HOME/.codex/plugins/installed_plugins.json"
+REG="~/.codex/plugins/installed_plugins.json"
 if jq -e '.plugins["silver-bullet@silver-bullet"]' "$REG" > /dev/null 2>&1; then
   TMP="$(mktemp "${REG}.XXXXXX")"
   jq 'del(.plugins["silver-bullet@silver-bullet"])' "$REG" > "$TMP" && mv "$TMP" "$REG"
@@ -157,7 +157,7 @@ Check whether `~/.codex/plugins/cache/silver-bullet/silver-bullet/` exists. If i
 if [[ -z "$HOME" ]]; then
   echo "WARNING: HOME is unset — skipping stale cache cleanup."
 else
-  STALE_CACHE="${HOME}/.codex/plugins/cache/silver-bullet/silver-bullet"
+  STALE_CACHE="~/.codex/plugins/cache/silver-bullet/silver-bullet"
   if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
     rm -rf "$STALE_CACHE"
   fi

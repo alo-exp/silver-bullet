@@ -17,7 +17,7 @@ Turn domain rubric ingredients into measurable, tooled evaluation criteria. Writ
 </role>
 
 <required_reading>
-Read `$HOME/.claude/get-shit-done/references/ai-evals.md` before planning. This is your evaluation framework.
+Read `${SB_RUNTIME_HOME_ROOT}/get-shit-done/references/ai-evals.md` before planning. This is your evaluation framework.
 </required_reading>
 
 <input>

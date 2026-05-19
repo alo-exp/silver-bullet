@@ -136,8 +136,8 @@
   "issue_tracker": "gsd",
   "release": {
     "profile": "generic",
-    "require_plugin_runtime_matrix": false,
-    "require_pre_release_quality_gate": false,
+    "require_plugin_runtime_matrix": true,
+    "require_pre_release_quality_gate": true,
     "quality_gate_state_file": "~/.codex/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",

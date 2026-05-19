@@ -160,7 +160,7 @@ If B: STOP.
 
 Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
 ```bash
-{ test -f "$HOME/.codex/get-shit-done/workflows/new-project.md" || test -f "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.codex/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
+{ test -f "~/.codex/get-shit-done/workflows/new-project.md" || test -f "~/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "~/.codex/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND`, ask the user directly:
@@ -244,7 +244,7 @@ Run this phase only after all Phase 1 presence checks pass. For each dependency,
 
 Read installed version:
 ```bash
-cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 Check latest version:
@@ -268,7 +268,7 @@ If version check fails (curl error, missing file, or either version is "unknown"
 
 Read installed version:
 ```bash
-cat "$HOME/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+cat "~/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
 ```
 
 Check latest version:
@@ -293,7 +293,7 @@ If either version is "unknown": output "Could not determine GSD version. Continu
 Read installed versions from `~/.codex/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
-cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
+cat "~/.codex/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
   select(.key | test("^(superpowers|design|engineering)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -309,12 +309,12 @@ No automated update skill exists for these plugins. If the user wants to update 
 
 Read installed version:
 ```bash
-cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
 ```
 
 Check latest:
 ```bash
-cat "$HOME/.codex/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
+cat "~/.codex/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
 ```
 
 If installed version appears outdated compared to CHANGELOG, display:

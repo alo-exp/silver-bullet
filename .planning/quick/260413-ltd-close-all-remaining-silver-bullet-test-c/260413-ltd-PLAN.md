@@ -67,7 +67,7 @@ Output: 6 new/extended test files covering all identified gaps.
   <action>
 Create tests/hooks/test-ensure-model-routing.sh following the pattern from test-session-start.sh (PASS/FAIL counters, assert helpers, cleanup trap).
 
-Setup: Create a temp AGENTS_DIR with mock gsd-*.md files (gsd-planner.md, gsd-security-auditor.md, gsd-executor.md) containing YAML frontmatter (--- delimiters) but NO "model:" line. Override AGENTS_DIR and SB_STATE_DIR env vars (the script reads from $HOME/.claude/agents — create a temp dir and symlink or override). Since the script uses hardcoded $HOME paths, create the test fixtures at a temp location and use a wrapper that patches HOME to a temp dir for isolation.
+Setup: Create a temp AGENTS_DIR with mock gsd-*.md files (gsd-planner.md, gsd-security-auditor.md, gsd-executor.md) containing YAML frontmatter (--- delimiters) but NO "model:" line. Override AGENTS_DIR and SB_STATE_DIR env vars (the script reads from ${SB_RUNTIME_HOME_ROOT}/agents — create a temp dir and symlink or override). Since the script uses hardcoded $HOME paths, create the test fixtures at a temp location and use a wrapper that patches HOME to a temp dir for isolation.
 
 Test scenarios (6 minimum):
 
@@ -77,7 +77,7 @@ Test scenarios (6 minimum):
 
 3. **Path traversal rejected**: Create a symlink gsd-evil.md -> /tmp/evil-target.md in AGENTS_DIR. Run the hook (with canary stale). Verify /tmp/evil-target.md was NOT modified. (Note: the script checks resolved path stays within AGENTS_DIR, so a symlink pointing outside should be skipped.)
 
-4. **~/.claude/agents/ missing -> silent exit**: Set HOME to a temp dir with no .claude/agents/ directory. Run the hook. Verify exit 0, no errors, no output.
+4. **${SB_RUNTIME_HOME_ROOT}/agents/ missing -> silent exit**: Set HOME to a temp dir with no .claude/agents/ directory. Run the hook. Verify exit 0, no errors, no output.
 
 5. **Existing model: line replaced not duplicated**: Create gsd-planner.md with "model: haiku" in frontmatter. Run hook (canary is stale because it says haiku not opus). Verify file has exactly one "model:" line and it says "model: opus".
 
@@ -372,9 +372,9 @@ Add these Tier 2 test scenarios:
 
 For each test: cleanup state files, write mode=autonomous, session-start-time, call-count, last-progress-call. Also write last-state-mtime to a value so state-mtime check doesn't reset progress. The state file (SB_DIR/state) must either not exist or have mtime matching last-state-mtime to avoid progress reset.
 
-Important: The hook reads from $HOME/.claude/.silver-bullet/ (SB_DIR). Override by setting HOME to a temp dir OR by writing directly to the real SB_DIR (with backup/restore). Follow the existing test pattern which writes directly to SB_DIR.
+Important: The hook reads from ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ (SB_DIR). Override by setting HOME to a temp dir OR by writing directly to the real SB_DIR (with backup/restore). Follow the existing test pattern which writes directly to SB_DIR.
 
-Actually, looking at the existing test more carefully: it uses TIMEOUT_FLAG_OVERRIDE env var and writes directly to ~/.claude/.silver-bullet/. For Tier 2, there is no env var override — the hook reads from hardcoded SB_DIR. So write the files directly to ~/.claude/.silver-bullet/ with cleanup.
+Actually, looking at the existing test more carefully: it uses TIMEOUT_FLAG_OVERRIDE env var and writes directly to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/. For Tier 2, there is no env var override — the hook reads from hardcoded SB_DIR. So write the files directly to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ with cleanup.
 
 The hook also needs the state file mtime tracking. To avoid the progress-reset code from triggering: either don't create a state file at all (current_state_mtime = 0, which means it won't be > last_state_mtime=0, so no reset) OR set last-state-mtime to match. Simplest: don't create a state file.
 
@@ -382,7 +382,7 @@ The hook also needs the state file mtime tracking. To avoid the progress-reset c
 
 Source helpers/common.sh. Use integration_setup/teardown pattern.
 
-**S1: bypass-permissions detection**: Write "autonomous" to ~/.claude/.silver-bullet/mode. The bypass-permissions detection is in full-dev-cycle.md Step 0 docs — it's a conceptual workflow step, not a hook. Look at what hooks actually detect bypass-permissions. Check dev-cycle-check.sh or session-start for bypass detection. If no hook directly tests for this, test that when mode=autonomous is set, the prompt-reminder or session-start output reflects autonomous mode. Actually, re-reading the constraints: "write bypass-permissions flag, verify dev-cycle-check emits 'BYPASS DETECTED' or similar". Check dev-cycle-check.sh for bypass-permissions detection logic.
+**S1: bypass-permissions detection**: Write "autonomous" to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode. The bypass-permissions detection is in full-dev-cycle.md Step 0 docs — it's a conceptual workflow step, not a hook. Look at what hooks actually detect bypass-permissions. Check dev-cycle-check.sh or session-start for bypass detection. If no hook directly tests for this, test that when mode=autonomous is set, the prompt-reminder or session-start output reflects autonomous mode. Actually, re-reading the constraints: "write bypass-permissions flag, verify dev-cycle-check emits 'BYPASS DETECTED' or similar". Check dev-cycle-check.sh for bypass-permissions detection logic.
 
 Read dev-cycle-check.sh first (within the task execution) to find bypass-permissions detection. If the hook doesn't have this feature, document what IS tested and adapt the scenario to test something meaningful about the autonomous/bypass flow.
 
@@ -390,11 +390,11 @@ Read dev-cycle-check.sh first (within the task execution) to find bypass-permiss
 
 **S3: Post-review execution gate**: Record skills up through receiving-code-review. Run run_completion_audit for "gh pr create" — should be blocked (missing finalization skills). Record verification-before-completion. Still blocked (other finalization skills missing). This tests the ordering requirement.
 
-**S4: Model routing integration**: Run ensure-model-routing.sh in integration context. Create mock agents dir at $HOME/.claude/agents/ (backup real if exists), run hook, verify model lines written. Restore backup. If Task A's approach of overriding HOME works better, use that pattern.
+**S4: Model routing integration**: Run ensure-model-routing.sh in integration context. Create mock agents dir at ${SB_RUNTIME_HOME_ROOT}/agents/ (backup real if exists), run hook, verify model lines written. Restore backup. If Task A's approach of overriding HOME works better, use that pattern.
 
 **S5: DevOps transition detection**: Write config with active_workflow=devops-cycle. Run stop-check. Verify output references devops required skills (devops-quality-gates or similar).
 
-**S6: Skill discovery session log**: Run session-start via run_session_start. Verify session log path file exists at ~/.claude/.silver-bullet/session-log-path OR that session-log-init creates a log file when triggered.
+**S6: Skill discovery session log**: Run session-start via run_session_start. Verify session log path file exists at ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path OR that session-log-init creates a log file when triggered.
 
 Make both files executable (chmod +x).
 

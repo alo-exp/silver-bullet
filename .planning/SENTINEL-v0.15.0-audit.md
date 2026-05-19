@@ -132,13 +132,13 @@ The broader pattern — hooks making automated git commits — is an intentional
 
 ---
 
-### FINDING-07 — State files written to ~/.claude/.silver-bullet (persistence mechanism)
+### FINDING-07 — State files written to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet (persistence mechanism)
 
 **Severity: INFORMATIONAL**
 **Files:** `hooks/spec-session-record.sh` line 33-37, `skills/artifact-reviewer/rules/review-loop.md` Section 2
 **Status: Intentional by design**
 
-Both the spec-session hook and the review-loop state mechanism write files to `~/.claude/.silver-bullet/`. These files persist across sessions. This is a legitimate persistence mechanism for resumability, but in the OWASP LLM Top 10 context (LLM08), any automated write to a home-directory location warrants documentation.
+Both the spec-session hook and the review-loop state mechanism write files to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`. These files persist across sessions. This is a legitimate persistence mechanism for resumability, but in the OWASP LLM Top 10 context (LLM08), any automated write to a home-directory location warrants documentation.
 
 The state files do not write to shell startup files, cron directories, or any executable path. The review-state JSON files contain only round counts and timestamps — no code or credentials. The spec-session file contains only spec-version and jira-id strings (both validated in pr-traceability.sh before use).
 

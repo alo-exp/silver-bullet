@@ -8,7 +8,7 @@ tasks: 2
 
 ## Task 1: Update model-profiles.cjs
 
-**Files:** `~/.claude/get-shit-done/bin/lib/model-profiles.cjs`
+**Files:** `${SB_RUNTIME_HOME_ROOT}/get-shit-done/bin/lib/model-profiles.cjs`
 **Action:** Add missing agents and update balanced profile assignments
 
 ### Missing agents to add:
@@ -48,9 +48,9 @@ tasks: 2
 - gsd-research-synthesizer → haiku
 - gsd-assumptions-analyzer → haiku [NEW]
 
-**Verify:** Run `node ~/.claude/get-shit-done/bin/gsd-tools.cjs resolve-model gsd-code-reviewer --raw` and confirm it returns expected model.
+**Verify:** Run `node ${SB_RUNTIME_HOME_ROOT}/get-shit-done/bin/gsd-tools.cjs resolve-model gsd-code-reviewer --raw` and confirm it returns expected model.
 
 ## Task 2: Update model-profiles.md reference doc
 
-**Files:** `~/.claude/get-shit-done/references/model-profiles.md`
+**Files:** `${SB_RUNTIME_HOME_ROOT}/get-shit-done/references/model-profiles.md`
 **Action:** Sync the profile table with the updated model-profiles.cjs, add missing agents, update balanced column values.

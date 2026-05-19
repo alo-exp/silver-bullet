@@ -9,7 +9,7 @@ LIB="${REPO_ROOT}/hooks/lib/nofollow-guard.sh"
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 

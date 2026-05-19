@@ -34,7 +34,7 @@ Two independent `silver-*` workflows running concurrently. Example: `silver-feat
 **Trigger signals** (what causes the composer to propose parallel execution):
 - User input contains conjunctions: "and also", "while also", "in parallel with", "at the same time as"
 - User explicitly names two independent features or bugs in a single invocation
-- MultAI is available (`~/.claude/.silver-bullet/mode` contains `multi-ai` or equivalent)
+- MultAI is available (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` contains `multi-ai` or equivalent)
 - The two work items affect disjoint file sets (detectable via planning artifacts)
 
 **Example input** → parallel routing:

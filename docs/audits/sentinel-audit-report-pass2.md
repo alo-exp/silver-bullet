@@ -118,7 +118,7 @@ The prohibition on writing to §10 without confirmation is also reinforced in th
 The cancel path after the second AskUserQuestion states:
 > *remove `$NEW_CACHE` and exit without modifying the registry*
 
-This is correct. However, the `rm -rf "$NEW_CACHE"` command is implied, not explicitly shown. A malformed `$NEW_CACHE` (e.g., if version parsing returns empty) could result in `rm -rf ~/.claude/plugins/cache/silver-bullet/silver-bullet/` which would be destructive. The skill does not validate that `$NEW_CACHE` is non-empty before the removal. This is a **new Low finding** (see F-NEW-01).
+This is correct. However, the `rm -rf "$NEW_CACHE"` command is implied, not explicitly shown. A malformed `$NEW_CACHE` (e.g., if version parsing returns empty) could result in `rm -rf ${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet/` which would be destructive. The skill does not validate that `$NEW_CACHE` is non-empty before the removal. This is a **new Low finding** (see F-NEW-01).
 
 ### 3.2 UNTRUSTED DATA Label Inconsistency
 

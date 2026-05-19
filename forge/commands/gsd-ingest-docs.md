@@ -17,10 +17,10 @@ Auto-synthesizes most conflicts using the precedence rule `ADR > SPEC > PRD > DO
 </objective>
 
 <execution_context>
-@~/.claude/get-shit-done/workflows/ingest-docs.md
-@~/.claude/get-shit-done/references/ui-brand.md
-@~/.claude/get-shit-done/references/gate-prompts.md
-@~/.claude/get-shit-done/references/doc-conflict-engine.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/ingest-docs.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/references/ui-brand.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/references/gate-prompts.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/references/doc-conflict-engine.md
 </execution_context>
 
 <context>

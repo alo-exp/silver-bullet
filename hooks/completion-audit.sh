@@ -143,12 +143,12 @@ done
 [[ -z "$config_file" ]] && exit 0
 
 # ── Read config values ────────────────────────────────────────────────────────
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 state_file="${SB_STATE_DIR}/state"
 trivial_file="${SB_STATE_DIR}/trivial"
-quality_gate_state_file="${HOME}/.claude/.silver-bullet/quality-gate-state"
-verify_tests_state_file="${HOME}/.claude/.silver-bullet/verify-tests-state"
+quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state"
+verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 required_planning_cfg=""
 required_deploy_cfg=""
 required_planning_devops_cfg=""
@@ -190,22 +190,22 @@ quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_
 # Env var override for the test execution gate file
 verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
-# Security: validate paths stay within ~/.claude/ (SB-002/SB-003)
+# Security: validate paths stay within the host runtime state root (SB-002/SB-003)
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) state_file="${SB_STATE_DIR}/state" ;;
 esac
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 case "$quality_gate_state_file" in
-  "$HOME"/.claude/*) ;;
-  *) quality_gate_state_file="${HOME}/.claude/.silver-bullet/quality-gate-state" ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
+  *) quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state" ;;
 esac
 case "$verify_tests_state_file" in
-  "$HOME"/.claude/*) ;;
-  *) verify_tests_state_file="${HOME}/.claude/.silver-bullet/verify-tests-state" ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
+  *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
 esac
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
@@ -532,9 +532,9 @@ project_root="$(dirname "$config_file")"
 run_workflow_strict_gate "$project_root"
 run_doc_scheme_delivery_gate "$project_root"
 
-release_live_matrix_file="${HOME}/.claude/.silver-bullet/release-live-matrix"
-e2e_live_matrix_file="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
-inline_e2e_matrix_file="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
+release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
+e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
+inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
   if [[ "$release_require_plugin_runtime_matrix" == "true" || "${SB_REQUIRE_PLUGIN_RELEASE_MATRIX:-0}" == "1" ]]; then
     release_matrix_value=""
@@ -555,7 +555,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in ~/.claude/.silver-bullet/inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
       exit 0
     fi
   fi

@@ -13,11 +13,11 @@ Silver Bullet has passed 5 SENTINEL audit cycles across v0.7.0, v0.8.0, and v0.1
 |--------|-----------|-------|
 | Prompt injection via CLAUDE.md | Hook scripts fire on every tool call — instructions can't override hooks | Hooks |
 | Skill skip (bypass enforcement) | `completion-audit.sh` blocks git operations if required skills missing from state | Hook gate |
-| State file tampering | `~/.claude/.silver-bullet/state` is append-only; session-start clears stale markers | State mgmt |
+| State file tampering | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` is append-only; session-start clears stale markers | State mgmt |
 | Hook bypass via direct file edit | `dev-cycle-check.sh` blocks Edit/Write/Bash if planning phase incomplete | Pre-tool gate |
 | Trivial-mode abuse | Trivial flag requires explicit user confirmation; auto-cleared on session start | UX gate |
 | Cross-plugin conflict | SB never modifies third-party plugin files; additive enforcement only | Design principle |
-| Stale quality gate markers | Session-start hook clears `~/.claude/.silver-bullet/quality-gate-state` | Session lifecycle |
+| Stale quality gate markers | Session-start hook clears `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Session lifecycle |
 
 ### Hardening History
 

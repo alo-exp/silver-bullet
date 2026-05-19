@@ -42,7 +42,7 @@ Review loop must produce two consecutive clean passes. Run the audit skill twice
 4. If second pass is also clean: two consecutive clean passes confirmed — proceed
 
 **Do NOT write to state files directly.** The tamper-detection hook blocks any Bash command
-that writes to `~/.claude/.silver-bullet/state` or adjacent files. State is recorded automatically
+that writes to the host runtime state root or adjacent files. State is recorded automatically
 when skills are invoked via the Skill tool.
 
 The two-consecutive-pass requirement is a workflow discipline, not a state file marker.

@@ -17,12 +17,12 @@ This audit catalogs every code path in `hooks/stop-check.sh` and `hooks/completi
 
 | # | Path / line | Trigger | Escape hatch | Status |
 |---|---|---|---|---|
-| 1 | Required-skills missing branch (~L338) | `state` file missing one or more skills in `required_planning` | Invoke the missing skill, or `~/.claude/.silver-bullet/trivial` for trivial sessions | ✅ Working as intended |
+| 1 | Required-skills missing branch (~L338) | `state` file missing one or more skills in `required_planning` | Invoke the missing skill, or `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` for trivial sessions | ✅ Working as intended |
 | 2 | Required-skills missing on `main` | Same, with on-main filter for `finishing-a-development-branch` | Same as #1 | ✅ |
 | 3 | Pre-v0.30.0: full `required_deploy` enforcement | Stop hook applied milestone-ship list (deploy-checklist, create-release, etc.) at every conversation end | Manually invoke 8+ skills or set trivial flag | ✅ **Fixed in v0.30.0 #85** — Stop now applies `required_planning` floor only |
 | 4 | Pre-v0.30.0: HOOK-14 over-catch on transient ignored files | `.claude/scheduled_tasks.lock`, `.claude/settings.local.json`, `.superpowers/**`, `REVIEW.md` made `tree_clean=false` | None — loop indefinitely | ✅ **Fixed in v0.30.0 #88** — transient-path allowlist with config override |
 | 5 | Cross-branch stale state guard (~L257) | `branch` file does not match current branch | Hook fail-opens (no block) — this is intended | ✅ Designed correctly |
-| 6 | Branch-file absent + dirty tree (Test 16) | Cannot validate branch scope, defaults to enforcement | Manually create branch file with `echo "$(git rev-parse --abbrev-ref HEAD)" > ~/.claude/.silver-bullet/branch` | ✅ Documented |
+| 6 | Branch-file absent + dirty tree (Test 16) | Cannot validate branch scope, defaults to enforcement | Manually create branch file with `echo "$(git rev-parse --abbrev-ref HEAD)" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch` | ✅ Documented |
 | 7 | Composed-workflow strict gate via SB_WORKFLOW_ID | (Not in stop-check; see completion-audit below) | n/a | n/a |
 
 ## completion-audit.sh — block paths

@@ -35,7 +35,7 @@ Legend: `P` pass · `F` fail · `W` warn · `N` n/a.
 | 13 | plugin-structure §Critical rules | Only create dirs used | P | No empty component dirs |
 | 14 | plugin-structure §Directory Structure | Naming convention: kebab-case for dirs and files | P | All 41 skill dirs kebab-case; all hook scripts kebab-case |
 | 15 | plugin-structure §Portable Paths | Use `${CLAUDE_PLUGIN_ROOT}` in manifest/hook commands; never hardcode | P | 22 uses in `hooks/hooks.json`; no hardcoded `/Users/` paths in hook refs |
-| 16 | plugin-structure §Never use | No `~/` shortcuts in intra-plugin path references | W | `hooks/hooks.json:8,133` uses `~/.claude/.silver-bullet/...` for state (outside plugin dir — intended state location, not intra-plugin code ref). Safe, but document as state-file convention. |
+| 16 | plugin-structure §Never use | No `~/` shortcuts in intra-plugin path references | W | `hooks/hooks.json:8,133` uses `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/...` for state (outside plugin dir — intended state location, not intra-plugin code ref). Safe, but document as state-file convention. |
 | 17 | plugin-structure §Auto-discovery | Skills auto-discover from `skills/<name>/SKILL.md` | P | All 41 skills comply |
 
 ### Hook development
@@ -51,7 +51,7 @@ Legend: `P` pass · `F` fail · `W` warn · `N` n/a.
 | 24 | hook-development §Timeouts | Appropriate timeouts set | P | All 20 entries have `timeout` (5-30s) |
 | 25 | hook-development §Security §Input Validation | `set -euo pipefail` in hook scripts | P | All 19 hook scripts set `-euo pipefail` (only `ensure-model-routing.sh` lacks it — but it is not registered in hooks.json) |
 | 26 | hook-development §Security §Quote variables | Quote all bash variables | P | Spot-check: `completion-audit.sh`, `stop-check.sh` quote `"$HOME"`, `"$file_path"` consistently (SEC-02 guard lib enforces) |
-| 27 | hook-development §Path Safety | Reject path traversal / sanity-check paths | P | `hooks/lib/nofollow-guard.sh` (`sb_guard_nofollow`), and state-path validation in `compliance-status.sh:113-115`, `prompt-reminder.sh:58-65` (reject outside `$HOME/.claude/`) |
+| 27 | hook-development §Path Safety | Reject path traversal / sanity-check paths | P | `hooks/lib/nofollow-guard.sh` (`sb_guard_nofollow`), and state-path validation in `compliance-status.sh:113-115`, `prompt-reminder.sh:58-65` (reject outside `${SB_RUNTIME_HOME_ROOT}/`) |
 | 28 | hook-development §Exit Codes | Hook exit codes used deliberately (0 success, 2 blocking) | P | Blocking hooks use JSON `decision:"block"` + exit 0 (phase-archive ERR trap); non-blocking exit 0 |
 | 29 | hook-development §Best Practices §fail-open robustness | Unexpected failures should not block Claude | W | Project invariant says "every hook has `trap 'exit 0' ERR`". Missing ERR trap in: `completion-audit.sh`, `forbidden-skill-check.sh`, `prompt-reminder.sh`, `roadmap-freshness.sh`, `stop-check.sh`, `timeout-check.sh` (6 of 19). Combined with `set -e` these hooks could exit non-zero on unhandled errors. Not a plugin-dev hard rule, but violates the plugin's own documented invariant and the "Don't create long-running / state-breaking hooks" guidance. |
 | 30 | hook-development §Security §Don't log secrets | No secrets logged | P | No credential patterns found |
@@ -249,7 +249,7 @@ Third independent audit pass. All 9 authority docs (plugin-structure, skill-deve
 
 - Manifest: `jq empty .claude-plugin/plugin.json` passes. Required `name` + recommended `version/description/author` present; `hooks` path is `./hooks/hooks.json` (relative, `./`-prefixed).
 - Hooks.json: `jq empty hooks/hooks.json` passes. Wrapper key `hooks` present. All 24 hook blocks include `matcher` (SessionStart: `startup|clear|compact`, Stop/Sub/UserPromptSubmit: `.*`, tool-specific matchers elsewhere). All 24 entries use `type: "command"` with explicit `timeout` (5–30s).
-- All 18 `${CLAUDE_PLUGIN_ROOT}/hooks/<script>` refs in hooks.json resolve to existing `+x` files (inline `umask 0077 && mkdir -p ~/.claude/.silver-bullet/...` one-liners are intentional trivial-bypass setup, not file refs).
+- All 18 `${CLAUDE_PLUGIN_ROOT}/hooks/<script>` refs in hooks.json resolve to existing `+x` files (inline `umask 0077 && mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/...` one-liners are intentional trivial-bypass setup, not file refs).
 - Bash syntax: `bash -n` on all 17 `hooks/*.sh` + 2 `hooks/lib/*.sh` → zero errors.
 - `set -euo pipefail` present in all 17 hook scripts (verified one-by-one).
 - `ERR` trap present in all 17 hook scripts — prior Grep for literal `trap 'exit 0' ERR` missed 3 files (`phase-archive.sh`, `pr-traceability.sh`, `uat-gate.sh`) because their traps emit a custom JSON message before `exit 0`. All three still end in `exit 0' ERR` → fail-open contract intact. Correcting prior report: there are **17 hook scripts + 2 lib files**, not 19 hooks.

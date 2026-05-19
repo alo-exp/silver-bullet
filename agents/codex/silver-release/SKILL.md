@@ -100,9 +100,9 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
+      "~/.codex/plugins/cache/alo-labs/silver-bullet/current" \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
+      "~/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break
@@ -281,10 +281,10 @@ This step is required before the final release tag because the release commit mu
 
 Invoke `silver:create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
 
-The release commit also stages `.claude-plugin/marketplace.json` so the marketplace entry ships with the release version, and the marketplace sync helper must already have committed and pushed the upstream marketplace repo bump:
+The release commit also stages `.codex-plugin/marketplace.json` so the marketplace entry ships with the release version, and the marketplace sync helper must already have committed and pushed the upstream marketplace repo bump:
 
 ```bash
-git add CHANGELOG.md README.md .claude-plugin/marketplace.json
+git add CHANGELOG.md README.md .codex-plugin/marketplace.json
 ```
 
 > **Why last?** Creating the tag before milestone archival causes the archival commits to appear after the tag, requiring an immediate patch release. The tag must be the final commit in the release.

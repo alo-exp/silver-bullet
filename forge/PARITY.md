@@ -6,7 +6,7 @@ This document maps every Silver Bullet capability on Claude Desktop to its equiv
 
 | Capability | Claude Desktop SB | Forge SB |
 |---|---|---|
-| Skill format | `~/.claude/skills/<name>/SKILL.md` (YAML frontmatter `name`/`description`) | `~/forge/skills/<name>/SKILL.md` — same format, no conversion |
+| Skill format | `${SB_RUNTIME_HOME_ROOT}/skills/<name>/SKILL.md` (YAML frontmatter `name`/`description`) | `~/forge/skills/<name>/SKILL.md` — same format, no conversion |
 | Skill auto-loading | At session start | At session start (per `forgecode.dev/docs/skills`) |
 | Plugin installation | `/plugin install <repo>` | `bash forge-sb-install.sh` (idempotent) |
 | Hook system | `settings.json` hooks fire on events (PreToolUse, PostToolUse, Stop, etc.) | **No hooks.** Hook gates are replaced with custom agents the main agent invokes as tools at the gating moment. |
@@ -101,7 +101,7 @@ Format identical; copied with no content changes except for Forge host adaptatio
 Current SB-owned Forge surface includes the current doc governance and session continuation skills (`silver-ensure-docs`, `silver-handoff`) plus the refreshed `silver` dynamic router and composable-flow contracts.
 
 ### Superpowers skills (14) — copied from cache
-Sourced from `~/.claude/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/`.
+Sourced from `${SB_RUNTIME_HOME_ROOT}/plugins/cache/superpowers-marketplace/superpowers/<v>/skills/`.
 
 ### Anthropic knowledge-work-plugins skills (33) — namespaced
 Sourced from `https://github.com/anthropics/knowledge-work-plugins`. Namespaced with `<plugin>-` prefix to avoid collisions:

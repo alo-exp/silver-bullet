@@ -85,7 +85,7 @@ Two `echo` statements inside the state-mtime-reset block are at column 0 instead
 
 ### IN-02 — `hooks/ci-status-check.sh` hardcoded trivial path
 
-The backward-compat deprecation check (lines 60, 67) uses `"${HOME}/.claude/.silver-bullet/trivial"` directly rather than reading from config. This is intentional: the block is a tombstone for v0.23.6 users migrating to `ci-red-override`, and it precedes the `sb_trivial_bypass` call. The `sb_trivial_bypass` call at line 78 uses no argument, which correctly defaults to `${HOME}/.claude/.silver-bullet/trivial` — matching the default in `trivial-bypass.sh`. No functional mismatch. Classification remains INFO.
+The backward-compat deprecation check (lines 60, 67) uses `"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"` directly rather than reading from config. This is intentional: the block is a tombstone for v0.23.6 users migrating to `ci-red-override`, and it precedes the `sb_trivial_bypass` call. The `sb_trivial_bypass` call at line 78 uses no argument, which correctly defaults to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` — matching the default in `trivial-bypass.sh`. No functional mismatch. Classification remains INFO.
 
 ### IN-03 — `silver-brainstorm-idea` in `.silver-bullet.json` all_tracked but absent from template
 

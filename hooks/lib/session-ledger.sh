@@ -1,7 +1,16 @@
 # shellcheck shell=bash
 # Silver Bullet — session intent ledger helpers.
+#
+# Runtime paths are host-specific; source the selector so sessions store
+# the ledger under the active host runtime root.
 
-sb_session_ledger_state_dir="${HOME}/.claude/.silver-bullet"
+_sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_sb_runtime_paths_dir/runtime-paths.sh"
+fi
+
+sb_session_ledger_state_dir="${SB_RUNTIME_STATE_DIR}"
 sb_session_ledger_anchor="## Agent Teams dispatched"
 sb_session_ledger_placeholder="(filled during the session as active requests are intercepted)"
 

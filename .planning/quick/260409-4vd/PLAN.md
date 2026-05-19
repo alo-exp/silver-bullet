@@ -16,7 +16,7 @@ nonzero hook exit causes Claude to reject the plugin entirely. Two complementary
    failure silently exits 0 instead of surfacing a nonzero.
 2. Restore `"hooks": "./hooks/hooks.json"` to plugin.json so hooks are registered from the
    marketplace plugin itself.
-3. Enhance `silver:init` to also merge hook entries into `~/.claude/settings.json` (user-
+3. Enhance `silver:init` to also merge hook entries into `${SB_RUNTIME_HOME_ROOT}/settings.json` (user-
    scoped global registration), giving users hooks even if marketplace hooks are stripped.
 4. Bump version to 0.13.2 and document both fixes in CHANGELOG.md.
 
@@ -157,7 +157,7 @@ grep -l 'trap.*exit 0.*ERR\|trap.*ERR.*exit 0' \
 
 # Confirm plugin.json now has the hooks field and no skills field
 jq '{"hooks":.hooks, "has_skills":(.skills != null)}' \
-  /Users/shafqat/Documents/Projects/silver-bullet/.claude-plugin/plugin.json
+  ${SB_RUNTIME_HOME_ROOT}-plugin/plugin.json
 # Expected: {"hooks":"./hooks/hooks.json","has_skills":false}
 
 # Smoke-test each hardened hook parses without error
@@ -210,7 +210,7 @@ EOF
 
 ---
 
-## Task 2 — Enhance silver:init to register hooks into ~/.claude/settings.json
+## Task 2 — Enhance silver:init to register hooks into ${SB_RUNTIME_HOME_ROOT}/settings.json
 
 **File modified:** `skills/silver-init/SKILL.md`
 
@@ -225,10 +225,10 @@ of step 3.7 and the opening of step 3.8:
 ---
 
 ```
-#### 3.7.5 Register SB hooks in ~/.claude/settings.json
+#### 3.7.5 Register SB hooks in ${SB_RUNTIME_HOME_ROOT}/settings.json
 
 This step merges the Silver Bullet hook entries from `hooks/hooks.json` into the user's
-global `~/.claude/settings.json` so hooks are active even in projects that install SB
+global `${SB_RUNTIME_HOME_ROOT}/settings.json` so hooks are active even in projects that install SB
 without the marketplace (e.g. manual installs or workspace clones).
 
 **Resolve the plugin install path:**
@@ -236,7 +236,7 @@ without the marketplace (e.g. manual installs or workspace clones).
 ```bash
 INSTALL_PATH=$(python3 -c "
 import json, os, sys
-reg = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+reg = os.path.expanduser('${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json')
 with open(reg) as f:
     data = json.load(f)
 plugins = data.get('plugins', {})
@@ -262,7 +262,7 @@ import json, os, sys
 
 install_path = sys.argv[1]
 hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
-settings_path = os.path.expanduser('~/.claude/settings.json')
+settings_path = os.path.expanduser('${SB_RUNTIME_HOME_ROOT}/settings.json')
 
 # Load source hooks.json
 with open(hooks_src) as f:
@@ -323,13 +323,13 @@ with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
 
-print('SB hooks registered in ~/.claude/settings.json')
+print('SB hooks registered in ${SB_RUNTIME_HOME_ROOT}/settings.json')
 PYEOF
 ```
 
 If the script exits nonzero (e.g., hooks.json not readable, settings.json not writable),
 display a warning but do NOT stop init:
-> ⚠️  Could not auto-register hooks in ~/.claude/settings.json. Run `/silver:init` again
+> ⚠️  Could not auto-register hooks in ${SB_RUNTIME_HOME_ROOT}/settings.json. Run `/silver:init` again
 > after installation completes, or add hooks manually from `hooks/hooks.json`.
 
 This step is idempotent: running `/silver:init` again will not add duplicate hook entries.
@@ -343,7 +343,7 @@ For **update mode** (Phase 3, "Update mode" path): also add a call to step 3.7.5
 steps 5 ("Run conflict detection") and 6 ("Output: Silver Bullet updated..."). Insert:
 
 ```
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `~/.claude/settings.json`.
+5a. Run step 3.7.5 to re-register or refresh SB hooks in `${SB_RUNTIME_HOME_ROOT}/settings.json`.
 ```
 
 ### Verify Task 2
@@ -361,11 +361,11 @@ Expected: line for `3.7.5` appears before the line for `3.8`.
 cd /Users/shafqat/Documents/Projects/silver-bullet
 git add skills/silver-init/SKILL.md
 git commit -m "$(cat <<'EOF'
-feat(silver:init): register SB hooks into ~/.claude/settings.json
+feat(silver:init): register SB hooks into ${SB_RUNTIME_HOME_ROOT}/settings.json
 
 Add Phase 3 step 3.7.5: after scaffolding, silver:init now merges the
 Silver Bullet hook entries from hooks/hooks.json into the user's global
-~/.claude/settings.json. Hook commands are registered with the actual
+${SB_RUNTIME_HOME_ROOT}/settings.json. Hook commands are registered with the actual
 install path substituted for ${CLAUDE_PLUGIN_ROOT}. Merge is idempotent
 — no duplicate entries are added on re-run.
 
@@ -416,7 +416,7 @@ Insert the following block immediately after the `## [Unreleased]` line in `CHAN
 
 ### Added
 - `silver:init` Phase 3 step 3.7.5: after project scaffolding, merges SB
-  hook entries from `hooks/hooks.json` into `~/.claude/settings.json` using
+  hook entries from `hooks/hooks.json` into `${SB_RUNTIME_HOME_ROOT}/settings.json` using
   `python3`. Hook commands are registered with the actual install path
   substituted for `${CLAUDE_PLUGIN_ROOT}`. Idempotent — re-running init
   does not add duplicate entries. Also runs during update mode (step 5a).
@@ -427,11 +427,11 @@ Insert the following block immediately after the `## [Unreleased]` line in `CHAN
 
 ```bash
 # Confirm version
-jq -r '.version' /Users/shafqat/Documents/Projects/silver-bullet/.claude-plugin/plugin.json
+jq -r '.version' ${SB_RUNTIME_HOME_ROOT}-plugin/plugin.json
 # Expected: 0.13.2
 
 # Confirm hooks field still present
-jq -r '.hooks' /Users/shafqat/Documents/Projects/silver-bullet/.claude-plugin/plugin.json
+jq -r '.hooks' ${SB_RUNTIME_HOME_ROOT}-plugin/plugin.json
 # Expected: ./hooks/hooks.json
 
 # Confirm CHANGELOG has the new entry

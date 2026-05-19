@@ -181,7 +181,7 @@ echo "$call_count" > "$call_count_file"   # line 76 — missing indent
 
 **File:** `hooks/ci-status-check.sh:78`
 
-**Issue:** `sb_trivial_bypass` is called with no argument, so it uses the hardcoded default path `~/.claude/.silver-bullet/trivial`. The script resolves the config-file–driven trivial path in `_trivial_file` (line 60) and checks it for the deprecation warning, but the `sb_trivial_bypass` call at line 78 ignores that resolved path. If a project configures a custom `state.trivial_file` in `.silver-bullet.json`, the CI gate would not honor it via the shared helper. This is consistent with all other SB hooks that also default the bypass, but it is a latent inconsistency.
+**Issue:** `sb_trivial_bypass` is called with no argument, so it uses the hardcoded default path `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`. The script resolves the config-file–driven trivial path in `_trivial_file` (line 60) and checks it for the deprecation warning, but the `sb_trivial_bypass` call at line 78 ignores that resolved path. If a project configures a custom `state.trivial_file` in `.silver-bullet.json`, the CI gate would not honor it via the shared helper. This is consistent with all other SB hooks that also default the bypass, but it is a latent inconsistency.
 
 **Fix (low priority):** Pass the resolved trivial path explicitly:
 

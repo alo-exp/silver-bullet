@@ -47,8 +47,8 @@ Output: 6 files in tests/live/ — helpers, 3 test files, README, runner script.
 </objective>
 
 <execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/execute-plan.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/templates/summary.md
 </execution_context>
 
 <context>
@@ -79,7 +79,7 @@ Create `tests/live/helpers.sh` with these shared utilities:
 
 **`live_setup()` function:**
 1. Create temp workspace: `WORK_DIR=$(mktemp -d)`
-2. Create temp state paths: `TMPSTATE="${HOME}/.claude/.silver-bullet/live-test-state-${TEST_RUN_ID}"`, `TMPTRIVIAL="${HOME}/.claude/.silver-bullet/live-test-trivial-${TEST_RUN_ID}"`
+2. Create temp state paths: `TMPSTATE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-state-${TEST_RUN_ID}"`, `TMPTRIVIAL="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-trivial-${TEST_RUN_ID}"`
 3. Remove any leftover temp state files
 4. `git init` in WORK_DIR, set user.email/name, create initial commit
 5. `git checkout -b feature/live-test`
@@ -103,7 +103,7 @@ Create `tests/live/helpers.sh` with these shared utilities:
 **`live_teardown()` function:**
 1. `rm -rf "$WORK_DIR"`
 2. `rm -f "$TMPSTATE" "$TMPTRIVIAL"`
-3. Remove any config cache files: `rm -f "${HOME}/.claude/.silver-bullet/config-cache-"*`
+3. Remove any config cache files: `rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/config-cache-"*`
 
 **`invoke_claude(prompt)` function:**
 Invoke claude headlessly and capture output:
@@ -269,7 +269,7 @@ live_setup
 response=$(invoke_claude "Initialize a Silver Bullet session for this project. This is a new session.")
 sleep 2
 # session-start hook fires and creates state directory
-assert_file_exists "S7: SB state directory exists" "${HOME}/.claude/.silver-bullet"
+assert_file_exists "S7: SB state directory exists" "${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 assert_response_contains "S7: response acknowledges session or Silver Bullet" "$response" "Silver Bullet\|session\|initialized\|workflow"
 live_teardown
 

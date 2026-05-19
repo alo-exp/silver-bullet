@@ -3,6 +3,17 @@
 # Usage: bash tests/run-all-tests.sh
 set -euo pipefail
 
+# Default to Codex for the source-repo test harness; individual Claude runtime
+# checks can override this before invoking the runner.
+: "${SILVER_BULLET_RUNTIME:=codex}"
+export SILVER_BULLET_RUNTIME
+
+_repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$_repo_root/hooks/lib/runtime-paths.sh"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOTAL_PASS=0
 TOTAL_FAIL=0

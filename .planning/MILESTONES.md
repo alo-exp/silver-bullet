@@ -158,7 +158,7 @@
 
 **Key accomplishments:**
 
-- Added SessionStart hook to create `~/.claude/.silver-bullet/trivial` — every session starts trivial (skill gate bypassed)
+- Added SessionStart hook to create `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` — every session starts trivial (skill gate bypassed)
 - Added PostToolUse Write|Edit|MultiEdit hook to remove trivial file — gate re-arms automatically when files are modified
 - Fixed CI `verify-references` step to skip inline shell commands (non-plugin-path commands like mkdir/touch/rm)
 - Stop-check and ci-status-check skill gates now only fire in sessions where files were actually changed

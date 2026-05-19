@@ -23,7 +23,7 @@ overrides_applied: 0
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | UPD-01: Install uses `claude mcp install silver-bullet@alo-labs`; no `git clone` anywhere; Step 1 reads `alo-labs` key first with fallback to `silver-bullet@silver-bullet`; version check (Steps 1-3) and changelog confirmation (Step 4) happen before install (Step 5); exactly one `AskUserQuestion` | VERIFIED | See evidence below |
-| 2 | UPD-02: After successful install, Step 6 atomically removes `silver-bullet@silver-bullet` registry key via `jq del` + tmpfile+mv, and removes `~/.claude/plugins/cache/silver-bullet/silver-bullet/` while explicitly protecting `alo-labs/` | VERIFIED | See evidence below |
+| 2 | UPD-02: After successful install, Step 6 atomically removes `silver-bullet@silver-bullet` registry key via `jq del` + tmpfile+mv, and removes `${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet/` while explicitly protecting `alo-labs/` | VERIFIED | See evidence below |
 
 **Score:** 2/2 truths verified
 
@@ -47,7 +47,7 @@ PASS.
 
 **`silver-bullet@alo-labs` key read first in Step 1 (line 15):**
 ```
-Read ~/.claude/plugins/installed_plugins.json. Try the `silver-bullet@alo-labs` key
+Read ${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json. Try the `silver-bullet@alo-labs` key
 first; if absent, fall back to the `silver-bullet@silver-bullet` key (legacy installation)
 ```
 PASS — primary key is `alo-labs`, fallback is `silver-bullet`.
@@ -80,7 +80,7 @@ PASS — 1 match total.
 
 **`jq del` atomic removal of `silver-bullet@silver-bullet` registry key (lines 144-147):**
 ```bash
-REG="$HOME/.claude/plugins/installed_plugins.json"
+REG="${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json"
 if jq -e '."silver-bullet@silver-bullet"' "$REG" > /dev/null 2>&1; then
   TMP="$(mktemp "${REG}.XXXXXX")"
   jq 'del(."silver-bullet@silver-bullet")' "$REG" > "$TMP" && mv "$TMP" "$REG"
@@ -90,7 +90,7 @@ PASS — tmpfile+mv pattern confirmed; `del(."silver-bullet@silver-bullet")` at 
 
 **Stale cache removal via `STALE_CACHE` variable (lines 155-157):**
 ```bash
-STALE_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet"
+STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
 if [[ -d "$STALE_CACHE" ]]; then
   rm -rf "$STALE_CACHE"
 fi
@@ -99,7 +99,7 @@ PASS — targets `silver-bullet/silver-bullet/` only.
 
 **`alo-labs/` cache explicitly protected (line 161):**
 ```
-Do NOT remove ~/.claude/plugins/cache/silver-bullet/alo-labs/ — that is the newly installed version.
+Do NOT remove ${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/alo-labs/ — that is the newly installed version.
 ```
 PASS.
 
@@ -152,7 +152,7 @@ Both UPD-01 and UPD-02 are fully satisfied in `skills/silver-update/SKILL.md`. T
 - Reads the `silver-bullet@alo-labs` registry key first (with `silver-bullet@silver-bullet` fallback) in Step 1.
 - Performs version check (Steps 1-3) and changelog confirmation with `AskUserQuestion` (Step 4) before the install step (Step 5).
 - Atomically removes the stale `silver-bullet@silver-bullet` registry key using `jq del` + tmpfile+mv in Step 6.
-- Removes the stale cache at `~/.claude/plugins/cache/silver-bullet/silver-bullet/` while explicitly protecting `alo-labs/`.
+- Removes the stale cache at `${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet/` while explicitly protecting `alo-labs/`.
 
 ---
 

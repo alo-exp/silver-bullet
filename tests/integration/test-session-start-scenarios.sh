@@ -3,7 +3,7 @@
 # Tests branch change state reset, same-branch marker cleanup, trivial file removal, core-rules injection
 #
 # NOTE: session-start reads state/branch via SILVER_BULLET_STATE_FILE and SILVER_BULLET_BRANCH_FILE
-# env var overrides (set by integration_setup in helpers/common.sh). No live ~/.claude/ files are
+# env var overrides (set by integration_setup in helpers/common.sh). No live ${SB_RUNTIME_HOME_ROOT}/ files are
 # touched during these tests; save_real_state/restore_real_state are no longer needed.
 set -euo pipefail
 

@@ -4,11 +4,11 @@ HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/ci-status-check.sh"
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
-# The hook hardcodes trivial_file to ${HOME}/.claude/.silver-bullet/trivial
+# The hook hardcodes trivial_file to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial
 TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
 CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
 
@@ -127,13 +127,13 @@ teardown
 echo "--- Group 4: Escape instruction in CI failure message ---"
 setup
 out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"failure"}')
-assert_contains "HOOK-03: CI failure message includes ci-red-override escape instruction" "$out" "touch ~/.claude/.silver-bullet/ci-red-override"
+assert_contains "HOOK-03: CI failure message includes ci-red-override escape instruction" "$out" "touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
 teardown
 
 # Test 7: CI cancelled message also includes ci-red-override escape instruction
 setup
 out=$(run_hook "git commit -m test" '{"status":"completed","conclusion":"cancelled"}')
-assert_contains "HOOK-03: CI cancelled message includes ci-red-override escape instruction" "$out" "touch ~/.claude/.silver-bullet/ci-red-override"
+assert_contains "HOOK-03: CI cancelled message includes ci-red-override escape instruction" "$out" "touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
 teardown
 
 # Test 8: trivial file as CI-red override emits deprecation warning (backward compat)

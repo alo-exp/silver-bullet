@@ -35,7 +35,7 @@ The bracket-notation `.plugins["silver-bullet@silver-bullet"]` is valid jq synta
 if [[ -z "$HOME" ]]; then
   echo "WARNING: HOME is unset — skipping stale cache cleanup."
 else
-  STALE_CACHE="${HOME}/.claude/plugins/cache/silver-bullet/silver-bullet"
+  STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
   if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
     rm -rf "$STALE_CACHE"
   fi
@@ -52,7 +52,7 @@ Three guards are present: (1) unset `$HOME` → skip with warning, (2) symlink g
 ### Fix 7 — Template §5.1 alo-labs key check
 **CORRECT.** Line 22 of the template reads:
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 Checks `alo-labs` first (post-marketplace install), falls back to legacy `silver-bullet@silver-bullet` key. Consistent with silver-update Step 1 which uses the same fallback pattern.
 

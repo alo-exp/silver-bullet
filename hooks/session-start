@@ -19,6 +19,13 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so the hook follows the active host runtime.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 # Read stdin (best-effort) to extract `source`. Fail-soft on missing jq or
 # malformed JSON: default to "startup" so behavior matches pre-fix path.
 sb_session_source="startup"
@@ -49,9 +56,9 @@ else
 fi
 
 # Ensure user-scoped state directory exists
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
-QUALITY_GATE_FILE="${HOME}/.claude/.silver-bullet/quality-gate-state"
+QUALITY_GATE_FILE="${SB_STATE_DIR}/quality-gate-state"
 
 # Fresh init / exec-mode prompt replay.
 #
@@ -123,32 +130,32 @@ verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 # Env var override — allows tests to redirect state writes to a temp file
 # without touching the live session state (same pattern as completion-audit.sh)
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
-# Security: validate path stays within ~/.claude/
+# Security: validate path stays within the host runtime state root
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) state_file="${SB_STATE_DIR}/state" ;;
 esac
 
 # Env var override for branch file — allows tests to mock branch without
-# touching the live ~/.claude/.silver-bullet/branch file.
+# touching the live host runtime branch file.
 branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
-# Security: validate path stays within ~/.claude/
+# Security: validate path stays within the host runtime state root
 case "$branch_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) branch_file="${SB_STATE_DIR}/branch" ;;
 esac
 
 # Env var override for the pre-release gate file.
 quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
 case "$quality_gate_state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) quality_gate_state_file="${QUALITY_GATE_FILE}" ;;
 esac
 
 # Env var override for the test execution gate file.
 verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 case "$verify_tests_state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
 esac
 
@@ -218,10 +225,10 @@ if command -v jq >/dev/null 2>&1; then
     search_dir=$(dirname "$search_dir")
   done
 fi
-# Security (SB-002/SB-003): validate trivial_file stays within ~/.claude/ before deletion
+# Security (SB-002/SB-003): validate trivial_file stays within the host runtime before deletion
 # Prevents path traversal via malicious .silver-bullet.json; reject symlinks too
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
@@ -240,15 +247,25 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # Locate Design plugin design-system SKILL.md
-design_file=$(ls ~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md 2>/dev/null | head -1 || true)
-[[ -z "${design_file:-}" ]] && design_file=$(ls ~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md 2>/dev/null | head -1 || true)
+plugin_cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
+design_file=""
+shopt -s nullglob
+for candidate in \
+  "$plugin_cache_root"/*/design/*/skills/design-system/SKILL.md \
+  "$plugin_cache_root"/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md; do
+  if [[ -f "$candidate" ]]; then
+    design_file="$candidate"
+    break
+  fi
+done
+shopt -u nullglob
 if [[ -n "${design_file:-}" ]]; then
   _design_resolved="$(cd "$(dirname "$design_file")" 2>/dev/null && pwd)/$(basename "$design_file")" || design_file=""
-  [[ "${_design_resolved:-}" == "${HOME}/.claude/plugins/cache/"* ]] || design_file=""
+  [[ "${_design_resolved:-}" == "${plugin_cache_root%/}/"* ]] || design_file=""
 fi
 
 # Locate SB core-rules.md (rules file installed alongside this hook)
-# This is the SB equivalent of ~/.claude/core-values.yml — re-injected every session
+# This is the SB equivalent of the host runtime core-values file — re-injected every session
 # so enforcement rules survive context compaction.
 # Security: co-located with hooks; plugin-dir write access implies hook modification
 # access anyway. Path traversal defense: verify file resolves within plugin directory.

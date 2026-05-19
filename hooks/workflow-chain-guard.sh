@@ -14,6 +14,13 @@ trap 'exit 0' ERR
 
 umask 0077
 
+# Source runtime path selector for the state ledger fallback.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
@@ -102,14 +109,14 @@ if [[ -f "$repo_root/.silver-bullet.json" ]]; then
   config_file="$repo_root/.silver-bullet.json"
 fi
 
-state_file="${SILVER_BULLET_STATE_FILE:-${HOME}/.claude/.silver-bullet/state}"
+state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
 if [[ -n "$config_file" ]]; then
   cfg_state="$(jq -r '.state.state_file // ""' "$config_file" 2>/dev/null || true)"
   [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
 fi
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
-  *) state_file="${HOME}/.claude/.silver-bullet/state" ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
+  *) state_file="${SB_RUNTIME_STATE_DIR}/state" ;;
 esac
 
 missing_markers=()

@@ -24,11 +24,14 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git tag -s` (create signed tag)
-- `git add CHANGELOG.md README.md` (stage release doc updates — Step 5c)
+- `git add CHANGELOG.md README.md .codex-plugin/marketplace.json` (stage release doc + marketplace updates — Step 5c)
 - `git commit` (commit CHANGELOG + badge updates — Step 5c)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
+- `bash scripts/sync-marketplace-version.sh` (sync marketplace manifests before tagging — Step 5b.1)
+- `bash tests/live/run-live-tests.sh` (run the shared live matrix before tagging — Step 6)
+- `bash scripts/verify-release-commit-ci.sh` (wait for release commit CI to go green before tagging — Step 6b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
 - `curl` (POST Google Chat notification webhook — only when `SB_GCHAT_WEBHOOK` is set)
@@ -200,7 +203,7 @@ bash scripts/sync-marketplace-version.sh
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the helper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`, and the upstream marketplace repo must have the same version committed and pushed.
+After the helper runs, the version in `.codex-plugin/marketplace.json` must match `.codex-plugin/plugin.json`, and the upstream marketplace repo must have the same version committed and pushed.
 
 ---
 
@@ -209,7 +212,7 @@ After the helper runs, the version in `.claude-plugin/marketplace.json` must mat
 Commit the CHANGELOG, README, and marketplace manifest changes before creating the tag:
 
 ```bash
-git add CHANGELOG.md README.md .claude-plugin/marketplace.json
+git add CHANGELOG.md README.md .codex-plugin/marketplace.json
 git commit -m "chore(release): update CHANGELOG, README badge, and marketplace for <version>"
 git push
 ```
@@ -219,6 +222,12 @@ If none of the files changed (e.g. CHANGELOG already had this entry and no badge
 If the marketplace sync helper reports that the upstream marketplace repo was updated, that push is part of the release gate and must succeed before the release tag is created.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
+
+The four-stage pre-release quality gate from `docs/internal/pre-release-quality-gate.md`
+is a hard prerequisite for any release work. Do not proceed to the live matrix,
+CI wait, tag, or GitHub Release until the current session has recorded
+`quality-gate-stage-1` through `quality-gate-stage-4` and `full-test-suite-rerun`
+in the configured quality-gate file.
 
 ---
 

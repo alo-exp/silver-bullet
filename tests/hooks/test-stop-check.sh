@@ -9,8 +9,8 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
@@ -73,7 +73,7 @@ EOF
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   # Branch file: supply a test-local file matching the test's git branch so
   # branch-scope validation in stop-check.sh uses controlled input, not the
-  # live ~/.claude/.silver-bullet/branch file from the user's current session.
+  # live ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch file from the user's current session.
   TMPBRANCH_FILE="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   printf 'feature/test\n' > "$TMPBRANCH_FILE"
   export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH_FILE"

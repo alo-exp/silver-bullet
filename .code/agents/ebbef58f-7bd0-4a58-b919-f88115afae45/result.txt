@@ -165,7 +165,7 @@ tests/e2e-live/helpers.sh:17:DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.."
 #
 # The suite runs Claude and Codex against an isolated copy of the standalone
 # sibling test-todo-app repo, then resets the workspace after each scenario.
-# The real SB state files under ~/.claude/.silver-bullet are backed up and
+# The real SB state files under ${SB_RUNTIME_HOME_ROOT}/.silver-bullet are backed up and
 # restored around each scenario so the suite can run repeatedly without
 # cross-talk.
 
@@ -190,8 +190,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
-E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
-INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
+E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/e2e-live-matrix"
+INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
 )

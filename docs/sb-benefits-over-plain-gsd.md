@@ -394,7 +394,7 @@ SB's guard layer blocks direct edits to GSD-managed planning artifacts and relat
 - REQUIREMENTS.md
 - phase plans
 - other `.planning/` lifecycle files
-- SB state markers under `~/.claude/.silver-bullet`
+- SB state markers under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet`
 - legacy trivial bypass markers
 
 The guard forces the user or agent to use the owning workflow or skill instead.

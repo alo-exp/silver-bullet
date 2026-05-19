@@ -132,7 +132,7 @@ kill %1
 
 ```bash
 # Check state file has all required skills
-cat ~/.claude/.silver-bullet/state | sort -u
+cat ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state | sort -u
 ```
 
 **Required skills in state file:**

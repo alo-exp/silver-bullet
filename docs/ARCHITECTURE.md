@@ -17,7 +17,7 @@ is synchronized from the repo root. Third-party plugins that do not publish Code
 represented by thin wrappers in the shared `alo-labs/codex-plugins` marketplace, which fetches
 upstream content at install time instead of vendoring it here.
 
-No server, no database — all state lives in flat files under `~/.claude/.silver-bullet/`.
+No server, no database — all state lives in flat files under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
 
 ## Core Components
 
@@ -33,8 +33,8 @@ No server, no database — all state lives in flat files under `~/.claude/.silve
 | Shared Codex marketplace | `https://github.com/alo-labs/codex-plugins` | Thin wrappers for third-party plugins that lack native Codex packaging |
 | Live runtime matrix | `tests/live/` | Shared Claude/Codex E2E harness with runtime adapters |
 | Config | `.silver-bullet.json` | Project-level list of tracked/required skills |
-| State file | `~/.claude/.silver-bullet/state` | Flat file recording invoked skills in this session |
-| Trivial flag | `~/.claude/.silver-bullet/trivial` | Legacy compatibility marker. Codex agents should route trivial work through `/silver:fast` instead of using the touch-file bypass. |
+| State file | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Flat file recording invoked skills in this session |
+| Trivial flag | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy compatibility marker. Codex agents should route trivial work through `/silver:fast` instead of using the touch-file bypass. |
 
 ### Key hooks
 
@@ -49,8 +49,8 @@ No server, no database — all state lives in flat files under `~/.claude/.silve
 | `ci-status-check.sh` | PostToolUse (Bash) | Warns on commit/push if CI is failing |
 | `prompt-reminder.sh` | UserPromptSubmit | Re-injects missing skills list before every user message and surfaces current workflow context |
 | `stop-check.sh` | Stop / SubagentStop | Requires `required_planning` skills (planning floor) before session ends. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands |
-| *(hooks.json entry)* | SessionStart | Clears any stale `~/.claude/.silver-bullet/trivial` marker at session start; does not auto-create it |
-| *(hooks.json entry)* | PostToolUse (Write\|Edit\|MultiEdit) | Clears `~/.claude/.silver-bullet/trivial` when files are modified |
+| *(hooks.json entry)* | SessionStart | Clears any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker at session start; does not auto-create it |
+| *(hooks.json entry)* | PostToolUse (Write\|Edit\|MultiEdit) | Clears `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` when files are modified |
 
 ### Fast Path
 

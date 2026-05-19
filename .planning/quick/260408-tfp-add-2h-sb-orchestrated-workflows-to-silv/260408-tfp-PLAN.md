@@ -31,7 +31,7 @@ Output: Both files updated identically with the new §2h section.
 </objective>
 
 <execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/execute-plan.md
 </execution_context>
 
 <context>

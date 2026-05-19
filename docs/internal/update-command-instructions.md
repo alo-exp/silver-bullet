@@ -11,7 +11,7 @@ Follow this guide exactly when implementing the skill.
 `/plugin:update` updates any plugin installed via Claude Code's plugin system. It:
 
 1. Resolves which plugin to update (from argument or by prompting)
-2. Reads the installed version from `~/.claude/plugins/installed_plugins.json`
+2. Reads the installed version from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json`
 3. Resolves the GitHub repository URL from the plugin's own `package.json` in the cache
 4. Fetches the latest release from GitHub
 5. Compares versions; exits early if already up to date
@@ -37,7 +37,7 @@ description: "Update any installed Claude Code plugin: check for a new release, 
 
 ## Registry structure
 
-The plugin registry is at `~/.claude/plugins/installed_plugins.json`. Its shape:
+The plugin registry is at `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json`. Its shape:
 
 ```json
 {
@@ -46,7 +46,7 @@ The plugin registry is at `~/.claude/plugins/installed_plugins.json`. Its shape:
     "<plugin-name>@<registry-name>": [
       {
         "scope": "user",
-        "installPath": "/Users/<user>/.claude/plugins/cache/<registry-name>/<plugin-name>/<version>",
+        "installPath": "${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registry-name>/<plugin-name>/<version>",
         "version": "1.2.3",
         "installedAt": "2026-01-01T00:00:00.000Z",
         "lastUpdated": "2026-01-01T00:00:00.000Z",
@@ -59,9 +59,9 @@ The plugin registry is at `~/.claude/plugins/installed_plugins.json`. Its shape:
 
 Key facts:
 - The registry key is `<plugin-name>@<registry-name>` (e.g. `silver-bullet@silver-bullet`).
-- `installPath` encodes the pattern: `~/.claude/plugins/cache/<registry-name>/<plugin-name>/<version>`.
+- `installPath` encodes the pattern: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registry-name>/<plugin-name>/<version>`.
 - The new cache path for an update is the same pattern with the new version:
-  `~/.claude/plugins/cache/<registry-name>/<plugin-name>/<new-version>`.
+  `${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registry-name>/<plugin-name>/<new-version>`.
 - The `plugins` value is an array; always read/write `[0]` (the first and only entry).
 
 ---
@@ -236,7 +236,7 @@ Construct the new cache path by replacing the version segment in the existing
 expects absolute paths (e.g. `/Users/alice/...`), never `~`-prefixed paths:
 
 ```bash
-NEW_CACHE="$HOME/.claude/plugins/cache/<registryName>/<pluginName>/<latestVersion>"
+NEW_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registryName>/<pluginName>/<latestVersion>"
 ```
 
 Clone:
@@ -266,7 +266,7 @@ git -C "$NEW_CACHE" rev-parse HEAD
 
 ### Step 8 — Update the plugin registry
 
-Read `~/.claude/plugins/installed_plugins.json`. Update only the matching
+Read `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json`. Update only the matching
 `registryKey` entry at index `[0]`:
 
 | Field | New value |
@@ -279,7 +279,7 @@ Read `~/.claude/plugins/installed_plugins.json`. Update only the matching
 Preserve all other fields (`scope`, `installedAt`, etc.) unchanged.
 Preserve all other registry entries unchanged.
 
-Write the updated JSON back to `~/.claude/plugins/installed_plugins.json`.
+Write the updated JSON back to `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json`.
 
 **Do NOT delete the old cache directory.** The old version remains at its original
 `installPath` untouched. This allows manual rollback by reverting the registry entry.
@@ -294,8 +294,8 @@ Only the `installPath` pointer in the registry changes — no files are removed.
 
 ⚠️  Restart Claude Desktop to pick up the new skills and hooks.
 
-Old cache: ~/.claude/plugins/cache/<registryName>/<pluginName>/<installed>
-New cache: ~/.claude/plugins/cache/<registryName>/<pluginName>/<latest>
+Old cache: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registryName>/<pluginName>/<installed>
+New cache: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registryName>/<pluginName>/<latest>
 
 [View full changelog](https://github.com/<org>/<repo>/blob/main/CHANGELOG.md)
 ```

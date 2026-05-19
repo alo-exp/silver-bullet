@@ -10,7 +10,7 @@
 # Why a declared catalog rather than pure filesystem scan: the upstream
 # plugins (engineering, design, product-management, superpowers, gsd,
 # multai, episodic-memory, context7-plugin) are resolved by the Claude
-# runtime — their SKILL.md files may live outside ~/.claude/plugins in
+# runtime — their SKILL.md files may live outside ${SB_RUNTIME_HOME_ROOT}/plugins in
 # CI/fresh-clone environments. We pin the set of expected external skills
 # explicitly so CI can run deterministically.
 #

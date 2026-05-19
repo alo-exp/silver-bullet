@@ -785,8 +785,8 @@ After the `MODEL ROUTING (once per session)` block and before `### DISCUSS`, ins
 ### SKILL DISCOVERY (once per task, before DISCUSS)
 
 Scan installed skills from two sources:
-1. `~/.claude/skills/` — flat `.md` files
-2. `~/.claude/plugins/cache/` — glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
+1. `${SB_RUNTIME_HOME_ROOT}/skills/` — flat `.md` files
+2. `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` — glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
 
 Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
 current task description. Surface candidates:

@@ -92,7 +92,7 @@ printf '%s' "$cmd" | grep -q "autonomous" && mode="autonomous"
 
 **FC-1-C: `compliance-status.sh` embeds unvalidated `mode` in JSON output via `%s` (CONFIRMED — medium)**
 
-`hooks/compliance-status.sh` reads the mode from `~/.claude/.silver-bullet/mode` without any allowlist validation (lines 92–96). The raw mode value is then interpolated into the `$msg` string (line 186), which is passed to `printf '{"hookSpecificOutput":{"message":"%s"}}' "$msg"` (line 192). If the mode file contains a double-quote character (`"`), the JSON output is malformed or extended beyond the intended string. An attacker with write access to `~/.claude/.silver-bullet/mode` could inject JSON metacharacters.
+`hooks/compliance-status.sh` reads the mode from `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` without any allowlist validation (lines 92–96). The raw mode value is then interpolated into the `$msg` string (line 186), which is passed to `printf '{"hookSpecificOutput":{"message":"%s"}}' "$msg"` (line 192). If the mode file contains a double-quote character (`"`), the JSON output is malformed or extended beyond the intended string. An attacker with write access to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` could inject JSON metacharacters.
 
 *Artifact:*
 ```bash
@@ -105,7 +105,7 @@ printf '{"hookSpecificOutput":{"message":"%s"}}' "$msg"
 
 *CVSS 3.1 estimate:* AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N — **4.4 (Medium)**
 
-*Notes:* The mode file is written by Claude Code itself per workflow instructions, and the directory is user-scoped (`~/.claude/.silver-bullet/`). A local attacker with user-level access could pre-seed the file. The JSON injection produces malformed hook output; it does not execute code. This does not reach Critical/High threshold.
+*Notes:* The mode file is written by Claude Code itself per workflow instructions, and the directory is user-scoped (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`). A local attacker with user-level access could pre-seed the file. The JSON injection produces malformed hook output; it does not execute code. This does not reach Critical/High threshold.
 
 ---
 
@@ -206,7 +206,7 @@ fi
 
 ---
 
-**FC-5-B: `dev-cycle-check.sh` trivial_file path not validated within `~/.claude/` (CONFIRMED — medium)**
+**FC-5-B: `dev-cycle-check.sh` trivial_file path not validated within `${SB_RUNTIME_HOME_ROOT}/` (CONFIRMED — medium)**
 
 The `trivial_file` path in `dev-cycle-check.sh` is read from config (line 97-98) but there is no `case "$trivial_file" in "$HOME"/.claude/*)` validation guard, unlike the `state_file` which is validated (lines 105-108). A maliciously crafted `.silver-bullet.json` with `state.trivial_file` set to an arbitrary path (e.g., `/tmp/x`) could point the trivial check to a file outside the intended directory.
 
@@ -240,7 +240,7 @@ rm -f "$STATE_FILE" "$TRIVIAL_FILE"
 
 **FC-5-D: `record-skill.sh` state file write does not reject symlinks (CONFIRMED — low)**
 
-`hooks/record-skill.sh` performs `touch "$STATE_FILE"` and `printf '%s\n' "$skill" >> "$STATE_FILE"` without checking if `STATE_FILE` is a symlink. With path validation in place (state file must be under `~/.claude/`), a symlink within `~/.claude/` pointing elsewhere within `~/.claude/` could redirect skill records to the wrong file. Impact is limited to self-sabotage within the state directory.
+`hooks/record-skill.sh` performs `touch "$STATE_FILE"` and `printf '%s\n' "$skill" >> "$STATE_FILE"` without checking if `STATE_FILE` is a symlink. With path validation in place (state file must be under `${SB_RUNTIME_HOME_ROOT}/`), a symlink within `${SB_RUNTIME_HOME_ROOT}/` pointing elsewhere within `${SB_RUNTIME_HOME_ROOT}/` could redirect skill records to the wrong file. Impact is limited to self-sabotage within the state directory.
 
 *CVSS 3.1 estimate:* AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N — **2.5 (Low)**
 
@@ -319,7 +319,7 @@ All hook commands in `hooks/hooks.json` use `"${CLAUDE_PLUGIN_ROOT}/hooks/<scrip
 
 **FC-10-B: Workflow docs instruct writing session mode to `mode` file — no sanitization of mode string (CONFIRMED — low)**
 
-Both workflow docs and `silver-bullet.md` instruct Claude to write either `"interactive"` or `"autonomous"` to `~/.claude/.silver-bullet/mode`. Claude follows these instructions, and the mode file is trusted by multiple hooks. If a future skill or workflow instruction incorrectly writes a different value (containing quotes, newlines, or JSON metacharacters), `compliance-status.sh` line 192 would produce malformed JSON output. The current controlled set of instructions limits this to the two safe strings, but there is no validation at the read site.
+Both workflow docs and `silver-bullet.md` instruct Claude to write either `"interactive"` or `"autonomous"` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`. Claude follows these instructions, and the mode file is trusted by multiple hooks. If a future skill or workflow instruction incorrectly writes a different value (containing quotes, newlines, or JSON metacharacters), `compliance-status.sh` line 192 would produce malformed JSON output. The current controlled set of instructions limits this to the two safe strings, but there is no validation at the read site.
 
 *CVSS 3.1 estimate:* AV:L/AC:H/PR:H/UI:N/S:U/C:N/I:L/A:N — **1.9 (Informational)**
 
@@ -446,7 +446,7 @@ if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
 
 **Change:** After line 98 (`[[ -n "$cfg_trivial" ]] && trivial_file="${cfg_trivial/#\~/$HOME}"`), add:
 ```bash
-# Security: validate trivial file path stays within ~/.claude/ (SB-002/SB-003)
+# Security: validate trivial file path stays within ${SB_RUNTIME_HOME_ROOT}/ (SB-002/SB-003)
 case "$trivial_file" in
   "$HOME"/.claude/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
@@ -526,7 +526,7 @@ FC-1-A: The raw `content=$(cat "$f")` path is genuinely present in `scripts/sema
 FC-2 (credentials): Exhaustive scan via grep across all hooks, skills, scripts, and config files found no hardcoded tokens/keys/passwords. PASS confirmed. FC-4 (exfiltration): All network calls go through `gh` CLI for user-initiated actions only. No silent beaconing found. PASS confirmed. FC-7 (command injection): All user-controlled strings enter via jq parsing (JSON-safe) and are passed to `printf '%s'` with proper quoting, not to `eval` or `sh -c`. PASS confirmed. ✓
 
 **SC-6: Re-examine FC-8 (CLAUDE_PLUGIN_ROOT) — is Medium the right severity?**
-The attack requires ability to set environment variables for the Claude Code process. In standard desktop/laptop usage, this means local user privilege (already has ~/.claude/ access). In CI/CD, environment variable injection is a known attack class. Severity floor for tool escalation is ≥7.0; however FC-8 requires both HIGH attack complexity AND HIGH privilege for the impact to materialize via the plugin specifically. CVSS 6.6 (Medium) is appropriate because prerequisites are stringent. Confirmed Medium, not High. ✓
+The attack requires ability to set environment variables for the Claude Code process. In standard desktop/laptop usage, this means local user privilege (already has ${SB_RUNTIME_HOME_ROOT}/ access). In CI/CD, environment variable injection is a known attack class. Severity floor for tool escalation is ≥7.0; however FC-8 requires both HIGH attack complexity AND HIGH privilege for the impact to materialize via the plugin specifically. CVSS 6.6 (Medium) is appropriate because prerequisites are stringent. Confirmed Medium, not High. ✓
 
 **SC-7: Verify no injection pattern in the plugin files themselves that would hijack the SENTINEL audit process.**
 All SENTINEL boundary instructions are in this report file. No skill file, hook, or workflow doc contains instructions directing Claude to skip, falsify, or abbreviate a security audit. The forensics and create-release skills contain "UNTRUSTED DATA" warnings that are consistent with, not contrary to, SENTINEL's framework. The `silver:init` skill conflict detection checks for workflow override patterns. No adversarial self-modifying behavior detected. ✓

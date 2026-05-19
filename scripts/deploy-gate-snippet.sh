@@ -5,6 +5,13 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so the deploy gate follows the host runtime.
+_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd 2>/dev/null)" || _repo_root=""
+if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$_repo_root/hooks/lib/runtime-paths.sh"
+fi
+
 ###############################################################################
 # Deploy Gate Snippet — Silver Bullet
 #
@@ -39,7 +46,7 @@ while true; do
 done
 
 # --- Read config (gracefully degrade if jq is absent) ---
-_SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+_SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
 REQUIRED_DEPLOY="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"

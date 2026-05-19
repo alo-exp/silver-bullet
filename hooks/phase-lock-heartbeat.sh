@@ -3,13 +3,13 @@
 #
 # PostToolUse hook fired on Edit | Write | MultiEdit | Bash. For every phase
 # in the session-claim manifest, calls
-# `.planning/scripts/phase-lock.sh heartbeat <phase> claude` to refresh the
+# `.planning/scripts/phase-lock.sh heartbeat <phase> <runtime>` to refresh the
 # lock's `last_heartbeat_at` so the lock doesn't expire under the stale-TTL
 # steal rule. Throttled to once per 5 minutes per phase via mtime on
-# `~/.claude/.silver-bullet/heartbeat-<phase>`.
+# `<host runtime>/.silver-bullet/heartbeat-<phase>`.
 #
 # Project invariants: trap 'exit 0' ERR; jq required (warn-and-fail-open);
-# SB_PHASE_LOCK_INHERITED=true short-circuits; state files under ~/.claude/.
+# SB_PHASE_LOCK_INHERITED=true short-circuits; state files under the host runtime root.
 
 set -euo pipefail
 trap 'exit 0' ERR
@@ -33,6 +33,10 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
 else
   sb_safe_write() { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 # ── Helper-exists check (graceful degrade) ──────────────────────────────────
 helper="$PWD/.planning/scripts/phase-lock.sh"
@@ -44,10 +48,10 @@ raw_session_id=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [[ -z "$raw_session_id" ]] && raw_session_id="$(date +%s)-$$"
 session_id=$(printf '%s' "${raw_session_id}" | tr -c 'A-Za-z0-9_-' '_')
 
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 manifest="${SB_STATE_DIR}/claimed-phases-${session_id}.txt"
 case "$manifest" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) exit 0 ;;
 esac
 
@@ -64,7 +68,7 @@ while IFS= read -r phase || [[ -n "$phase" ]]; do
 
   throttle="${SB_STATE_DIR}/heartbeat-${phase}"
   case "$throttle" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) continue ;;
   esac
 
@@ -81,7 +85,7 @@ while IFS= read -r phase || [[ -n "$phase" ]]; do
   # hb_rc is read.
   trap - ERR
   set +e
-  "$helper" heartbeat "$phase" "claude" >/dev/null 2>&1
+  "$helper" heartbeat "$phase" "${SB_RUNTIME_NAME}" >/dev/null 2>&1
   hb_rc=$?
   set -e
   trap 'exit 0' ERR

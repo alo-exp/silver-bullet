@@ -298,7 +298,7 @@ Extend the completion-audit test suite so a release is blocked unless the new
 inline journey marker exists. Use a concrete marker path such as:
 
 ```bash
-INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
+INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
 ```
 
 Add a test that asserts:

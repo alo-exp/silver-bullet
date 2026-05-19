@@ -90,7 +90,7 @@ Each test MUST pipe properly formatted JSON to the real hook script via stdin an
 
 **test-spec-session-record.sh** (SessionStart, hooks/spec-session-record.sh):
 - Test 1: No .planning/SPEC.md — exits silently (no output or empty)
-- Test 2: SPEC.md with "spec-version: 1.2.0" and "jira-id: PROJ-42" — writes spec-session file to ~/.claude/.silver-bullet/spec-session with correct values, output contains "v1.2.0" and "PROJ-42"
+- Test 2: SPEC.md with "spec-version: 1.2.0" and "jira-id: PROJ-42" — writes spec-session file to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session with correct values, output contains "v1.2.0" and "PROJ-42"
 - Test 3: SPEC.md with spec-version but no jira-id — writes spec-session with jira-id= empty, output contains "n/a"
 - Test 4: SPEC.md with neither field — writes spec-session, output contains "unknown"
 - Setup must: create TMPDIR_TEST, pipe SessionStart JSON. Cleanup must remove spec-session file.
@@ -110,7 +110,7 @@ Each test MUST pipe properly formatted JSON to the real hook script via stdin an
 - Test 2: `gh pr create` without spec-session file — exits silently (no crash)
 - Test 3: `gh pr create` with spec-session file but no gh CLI available — outputs "gh CLI not found" advisory
 - For tests 2-3: Temporarily override PATH to remove gh. The hook does heavy gh CLI interaction (pr view, pr edit) so we can only test the early-exit paths without mocking gh. This is sufficient — the hook's early guards are the testable surface.
-- Setup must: create TMPDIR_TEST, create ~/.claude/.silver-bullet/spec-session with test values.
+- Setup must: create TMPDIR_TEST, create ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session with test values.
 
 All test files must be executable (chmod +x) and follow the exact output format: "Results: N passed, M failed" on the last line.
   </action>

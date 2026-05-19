@@ -59,7 +59,7 @@ DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates code-review re
 ### CR-02: test-ci-status-check.sh Tests 6 and 7 assert the old escape instruction
 
 **File:** `tests/hooks/test-ci-status-check.sh:117` and `tests/hooks/test-ci-status-check.sh:123`
-**Issue:** After commit `5f8b0d6`, the CI failure message in `ci-status-check.sh` now instructs the user to `touch ~/.claude/.silver-bullet/ci-red-override`. Tests 6 and 7 still assert `touch ~/.claude/.silver-bullet/trivial`, which is the old, now-deprecated path. These tests will pass for now only because the production hook still outputs both paths in different contexts (the failure message mentions `ci-red-override`; the trivial backward-compat branch outputs `trivial` again). But Test 6 actually sends a CI-failure payload that triggers the primary block path, which now says `ci-red-override` — meaning these tests are asserting a string that is NOT present in the current block output. They are effectively FAILING right now if run against the current hook.
+**Issue:** After commit `5f8b0d6`, the CI failure message in `ci-status-check.sh` now instructs the user to `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override`. Tests 6 and 7 still assert `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`, which is the old, now-deprecated path. These tests will pass for now only because the production hook still outputs both paths in different contexts (the failure message mentions `ci-red-override`; the trivial backward-compat branch outputs `trivial` again). But Test 6 actually sends a CI-failure payload that triggers the primary block path, which now says `ci-red-override` — meaning these tests are asserting a string that is NOT present in the current block output. They are effectively FAILING right now if run against the current hook.
 
 **Verify:**
 ```bash
@@ -68,11 +68,11 @@ bash tests/hooks/test-ci-status-check.sh
 
 The hook's block message at line 116 of `ci-status-check.sh` reads:
 ```
-touch ~/.claude/.silver-bullet/ci-red-override
+touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override
 ```
 Tests 6 and 7 grep for:
 ```
-touch ~/.claude/.silver-bullet/trivial
+touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial
 ```
 That substring no longer appears in the primary block path. Both test assertions will fail.
 
@@ -80,9 +80,9 @@ That substring no longer appears in the primary block path. Both test assertions
 ```bash
 # tests/hooks/test-ci-status-check.sh line 117 and 123
 # Change:
-assert_contains "..." "$out" "touch ~/.claude/.silver-bullet/trivial"
+assert_contains "..." "$out" "touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
 # To:
-assert_contains "..." "$out" "touch ~/.claude/.silver-bullet/ci-red-override"
+assert_contains "..." "$out" "touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override"
 ```
 
 Also add a new test covering the `ci-red-override` file bypass:
@@ -135,7 +135,7 @@ assert_passes "gh pr merge passes with all required skills (review-loop-pass mar
 ### WR-01: test-dev-cycle-check.sh has zero coverage of the ci-red-override path
 
 **File:** `tests/hooks/test-dev-cycle-check.sh` (entire file)
-**Issue:** Commit `5f8b0d6` introduced `~/.claude/.silver-bullet/ci-red-override` as a separate bypass flag in `ci-status-check.sh`. Neither `test-dev-cycle-check.sh` nor `test-ci-status-check.sh` tests the new bypass flag. `test-ci-status-check.sh` Tests 5 tests the old `trivial` bypass, but no test verifies that `ci-red-override` (the new canonical flag) actually bypasses the CI gate. This leaves the primary documented escape hatch for users entirely untested.
+**Issue:** Commit `5f8b0d6` introduced `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` as a separate bypass flag in `ci-status-check.sh`. Neither `test-dev-cycle-check.sh` nor `test-ci-status-check.sh` tests the new bypass flag. `test-ci-status-check.sh` Tests 5 tests the old `trivial` bypass, but no test verifies that `ci-red-override` (the new canonical flag) actually bypasses the CI gate. This leaves the primary documented escape hatch for users entirely untested.
 
 **Fix:** Add to `tests/hooks/test-ci-status-check.sh`:
 ```bash
@@ -243,7 +243,7 @@ Update the passing state blocks in Tests 2 and 5 to include the full 12-skill se
 ### IN-03: core-rules.md still documents review-loop-pass markers as required
 
 **File:** `hooks/core-rules.md:35-38`
-**Issue:** After commit `7d2653b`, `core-rules.md` still contains instructions to `echo "review-loop-pass-1" >> ~/.claude/.silver-bullet/state` after each clean review pass. This documentation contradicts the fix: (1) the tamper-detection hook blocks that echo command, and (2) the markers were removed from `required_deploy`. Any agent following `core-rules.md` instructions will encounter a STATE TAMPER BLOCKED error, which is confusing. This is a source file issue (not a test issue), included here because no other review covers it and it directly affects test-session behavior.
+**Issue:** After commit `7d2653b`, `core-rules.md` still contains instructions to `echo "review-loop-pass-1" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` after each clean review pass. This documentation contradicts the fix: (1) the tamper-detection hook blocks that echo command, and (2) the markers were removed from `required_deploy`. Any agent following `core-rules.md` instructions will encounter a STATE TAMPER BLOCKED error, which is confusing. This is a source file issue (not a test issue), included here because no other review covers it and it directly affects test-session behavior.
 
 **Fix:** Remove the review-loop-pass marker instructions from `hooks/core-rules.md` lines 35-38.
 

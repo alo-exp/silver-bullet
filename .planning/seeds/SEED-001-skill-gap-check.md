@@ -15,9 +15,9 @@ trigger_when:
 
 ## Idea
 
-When a downstream project's `.silver-bullet.json` lists a `required_planning` or `required_deploy` skill that isn't installed in the user's `~/.claude/plugins/cache/`, the SB Stop hook today produces an opaque "missing skill X" message. The user has to figure out where X comes from (GSD? Superpowers? a sibling SB plugin?) and how to install it.
+When a downstream project's `.silver-bullet.json` lists a `required_planning` or `required_deploy` skill that isn't installed in the user's `${SB_RUNTIME_HOME_ROOT}/plugins/cache/`, the SB Stop hook today produces an opaque "missing skill X" message. The user has to figure out where X comes from (GSD? Superpowers? a sibling SB plugin?) and how to install it.
 
-A Skill Gap Check would: at SessionStart, walk the required-skills list, probe `~/.claude/plugins/cache/*/*/skills/<skill>/SKILL.md` (and the dynamic skill list emitted by Claude Code), and for each missing skill render a one-shot "/install" portal — exact `claude plugin install <slug>` command, plus the skill's owning plugin marketplace entry.
+A Skill Gap Check would: at SessionStart, walk the required-skills list, probe `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/*/skills/<skill>/SKILL.md` (and the dynamic skill list emitted by Claude Code), and for each missing skill render a one-shot "/install" portal — exact `claude plugin install <slug>` command, plus the skill's owning plugin marketplace entry.
 
 ## Why This Matters
 

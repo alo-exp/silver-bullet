@@ -75,34 +75,34 @@ The current code happens to be correct in practice (the sentinel sleep process d
 
 **File:** `tests/hooks/test-dev-cycle-check.sh:338`
 
-**Issue:** Test 17h passes the command string `echo 'x' | tee "~/.claude/.silver-bullet/state"` to `run_hook_bash`. The tilde `~` is inside double quotes in the outer shell invocation at line 337:
+**Issue:** Test 17h passes the command string `echo 'x' | tee "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"` to `run_hook_bash`. The tilde `~` is inside double quotes in the outer shell invocation at line 337:
 
 ```bash
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"~/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 ```
 
-Inside double quotes, `~` is NOT expanded by bash. The literal string `~/.claude/.silver-bullet/state` is passed to the hook. The hook's `_state_redirect_dquote` pattern is:
+Inside double quotes, `~` is NOT expanded by bash. The literal string `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` is passed to the hook. The hook's `_state_redirect_dquote` pattern is:
 
 ```
 (>>|[[:space:]]>[^>&=]|\btee\b)[^"]*"[^"]*\.claude/[^/]+/state
 ```
 
-This pattern matches `~/.claude/.silver-bullet/state` because it doesn't require `$HOME` — it only checks for `\.claude/`. So the veto fires and the test passes correctly.
+This pattern matches `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` because it doesn't require `$HOME` — it only checks for `\.claude/`. So the veto fires and the test passes correctly.
 
-However, in a real Claude session, the command would contain the expanded `$HOME` path (e.g., `/Users/alice/.claude/.silver-bullet/state`) because the shell expands `~` before passing it to the hook. Tests 17e and 17f use the unexpanded `~` form and pass for the same reason. This inconsistency means the tests exercise the hook's regex against `~`-prefixed paths but not against fully-expanded `$HOME` paths. If someone refactored the hook's patterns to only match absolute paths (e.g., adding a `^/` anchor), tests 17g and 17h would still pass (against `~`) while the real use-case (absolute path) would silently regress.
+However, in a real Claude session, the command would contain the expanded `$HOME` path (e.g., `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) because the shell expands `~` before passing it to the hook. Tests 17e and 17f use the unexpanded `~` form and pass for the same reason. This inconsistency means the tests exercise the hook's regex against `~`-prefixed paths but not against fully-expanded `$HOME` paths. If someone refactored the hook's patterns to only match absolute paths (e.g., adding a `^/` anchor), tests 17g and 17h would still pass (against `~`) while the real use-case (absolute path) would silently regress.
 
 **Fix:** Add a parallel assertion using the expanded path to verify coverage of real-session behavior:
 
 ```bash
 # Test 17g-expanded: same assertion with $HOME-expanded path
 setup
-out=$(run_hook_bash "PreToolUse" "echo \"path is ${HOME}/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo \"path is ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_passes "tamper: state path (expanded) in quoted echo argument is NOT blocked (quote-literal exemption)" "$out"
 teardown
 
 # Test 17h-expanded: tee with expanded quoted state path IS still blocked
 setup
-out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${HOME}/.claude/.silver-bullet/state\"")
+out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state\"")
 assert_blocks "tamper: tee with expanded quoted state path is still blocked" "$out"
 teardown
 ```

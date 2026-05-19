@@ -9,8 +9,14 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# Source symlink-write guard (SEC-02)
+# Source runtime path selector so the spec-session file lands in the host root.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
+# Source symlink-write guard (SEC-02)
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   # shellcheck source=lib/nofollow-guard.sh
   source "$_lib_dir/nofollow-guard.sh"
@@ -50,7 +56,7 @@ if ! printf '%s' "${jira_id:-}" | grep -qE '^[A-Z][A-Z0-9_]*-[0-9]+$'; then
 fi
 
 # Write spec-session file (empty values are fine — do not block)
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 spec_session_file="${SB_STATE_DIR}/spec-session"
 

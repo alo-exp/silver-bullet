@@ -23,7 +23,7 @@ Requirements: REF-01, CI-01, CI-02
 - Callers invoke `sb_trivial_bypass` where the inline guard was previously
 
 ### SessionStart Umask
-- Update `hooks/hooks.json` SessionStart command: `umask 0077 && mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial`
+- Update `hooks/hooks.json` SessionStart command: `umask 0077 && mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet && touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`
 
 ### CI Version Drift Warning
 - Add to `.github/workflows/ci.yml` a non-blocking step that compares `jq -r '.version' .claude-plugin/plugin.json` against `git describe --tags --abbrev=0`
@@ -49,7 +49,7 @@ Requirements: REF-01, CI-01, CI-02
 - Silver Bullet hook scripts use `umask 0077` at the top of each script
 - Trivial-bypass guard pattern (from both scripts):
   ```bash
-  SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+  SB_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
   trivial_file="${SB_STATE_DIR}/trivial"
   if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
     exit 0

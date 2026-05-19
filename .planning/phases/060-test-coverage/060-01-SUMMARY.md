@@ -19,8 +19,8 @@ Added two missing test coverage items to the Silver Bullet test suite.
 **TST-01 (tests/hooks/test-session-log-init.sh):** Expanded Test 8 ("Autonomous mode launches sentinel") to also assert that the `sentinel-lock-<uuid>` file is created alongside `sentinel-pid` after an autonomous mode sentinel launch. The UUID is extracted from the sentinel-pid content (the `pid:uuid` format). The cleanup block now also removes `sentinel-lock-*` files. This exercises the sentinel lock mechanism introduced by the UUID-based sentinel cleanup changes.
 
 **TST-02 (tests/hooks/test-dev-cycle-check.sh):** Added Tests 17g and 17h exercising the quote-literal exemption logic in `hooks/dev-cycle-check.sh` (lines 150–158):
-- **Test 17g**: `echo "path is ~/.claude/.silver-bullet/state"` — state path inside a double-quoted non-redirect argument → `assert_passes` (exemption fires correctly)
-- **Test 17h**: `echo 'x' | tee "~/.claude/.silver-bullet/state"` — state path IS the tee redirect target even though quoted → `assert_blocks` (exemption abuse correctly caught)
+- **Test 17g**: `echo "path is ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"` — state path inside a double-quoted non-redirect argument → `assert_passes` (exemption fires correctly)
+- **Test 17h**: `echo 'x' | tee "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"` — state path IS the tee redirect target even though quoted → `assert_blocks` (exemption abuse correctly caught)
 
 ## Key Files
 

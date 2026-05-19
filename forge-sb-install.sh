@@ -21,7 +21,7 @@ PROJECT_ONLY=false
 GLOBAL_ONLY=false
 SKIP_KW=false
 FORGE_HOME="${FORGE_HOME:-$HOME/forge}"
-GSD_BIN_DIR="${GSD_BIN_DIR:-$HOME/.claude/get-shit-done/bin}"
+GSD_BIN_DIR="${GSD_BIN_DIR:-${SB_RUNTIME_HOME_ROOT}/get-shit-done/bin}"
 
 # Detect run mode (curl | bash vs local script)
 _bs="${BASH_SOURCE[0]:-}"

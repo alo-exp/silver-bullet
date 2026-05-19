@@ -64,8 +64,8 @@ User Workflow Preferences renumbered from §10 → §9 in the base template. All
 
 | File | Change |
 |------|--------|
-| `~/.claude/skills/silver-brainstorm-idea/SKILL.md` | NEW — idea-to-milestone orchestrator |
-| `~/.claude/skills/silver/SKILL.md` | Added brainstorm-idea routing row, conflict resolution entry, Step 3 menu option |
+| `${SB_RUNTIME_HOME_ROOT}/skills/silver-brainstorm-idea/SKILL.md` | NEW — idea-to-milestone orchestrator |
+| `${SB_RUNTIME_HOME_ROOT}/skills/silver/SKILL.md` | Added brainstorm-idea routing row, conflict resolution entry, Step 3 menu option |
 | `.silver-bullet.json` | Added `silver-brainstorm-idea` to `all_tracked` |
 | `silver-bullet.md` | §2h: seven→eight, new workflow row |
 | `templates/silver-bullet.md.base` | Removed §9 Pre-Release Quality Gate, renumbered §10→§9, removed quality-gate-stage bullet |

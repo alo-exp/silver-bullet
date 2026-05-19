@@ -20,8 +20,8 @@ overrides_applied: 0
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 1 | Test 8 in test-session-log-init.sh asserts `-f "${SB_TEST_DIR}/sentinel-lock-${_sentinel_uuid}"` exists after autonomous sentinel launch | VERIFIED | Line 248: `elif [[ -f "${SB_TEST_DIR}/sentinel-lock-${_sentinel_uuid}" ]]; then`. UUID extracted on line 243, guard on line 245 ensures new pid:uuid format, cleanup glob on line 258. |
-| 2 | test-dev-cycle-check.sh Test 17g asserts echo with quoted state path is NOT blocked (exemption fires) | VERIFIED | Lines 329-333: comment labels it "Test 17g", uses `echo "path is ~/.claude/.silver-bullet/state"`, asserted with `assert_passes`. String "quote-literal exemption" appears in both the comment and the assert label. |
-| 3 | test-dev-cycle-check.sh Test 17h asserts tee with quoted state path IS blocked (exemption abuse caught) | VERIFIED | Lines 341-345: comment labels it "Test 17h", uses `echo 'x' \| tee "~/.claude/.silver-bullet/state"`, asserted with `assert_blocks`. |
+| 2 | test-dev-cycle-check.sh Test 17g asserts echo with quoted state path is NOT blocked (exemption fires) | VERIFIED | Lines 329-333: comment labels it "Test 17g", uses `echo "path is ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"`, asserted with `assert_passes`. String "quote-literal exemption" appears in both the comment and the assert label. |
+| 3 | test-dev-cycle-check.sh Test 17h asserts tee with quoted state path IS blocked (exemption abuse caught) | VERIFIED | Lines 341-345: comment labels it "Test 17h", uses `echo 'x' \| tee "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"`, asserted with `assert_blocks`. |
 
 **Score:** 3/3 truths verified
 

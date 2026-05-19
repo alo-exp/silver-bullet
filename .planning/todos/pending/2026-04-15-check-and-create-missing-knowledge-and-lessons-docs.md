@@ -25,7 +25,7 @@ whether they should live at `docs/`, `.planning/`, or elsewhere per GSD conventi
 ## Solution
 
 1. Check GSD conventions for KNOWLEDGE.md and LESSONS.md paths
-   (`~/.claude/get-shit-done/workflows/` for any reference to these files)
+   (`${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/` for any reference to these files)
 2. Check git history for any deleted KNOWLEDGE.md: `git log --all --full-history -- docs/KNOWLEDGE.md`
 3. If file was deleted: restore from history
 4. If file never existed: create `docs/KNOWLEDGE.md` populated with content from

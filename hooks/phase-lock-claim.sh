@@ -3,9 +3,9 @@
 #
 # PreToolUse hook fired on Edit | Write | MultiEdit. When the tool's
 # `tool_input.file_path` resolves under `.planning/phases/<NNN>/`, calls
-# `.planning/scripts/phase-lock.sh claim <NNN> claude "<intent>"` and on
+# `.planning/scripts/phase-lock.sh claim <NNN> <runtime> "<intent>"` and on
 # success appends `<NNN>` to the session-claim manifest at
-# `~/.claude/.silver-bullet/claimed-phases-<session>.txt` so the
+# `<host runtime>/.silver-bullet/claimed-phases-<session>.txt` so the
 # Stop/SubagentStop release hook can release everything this session
 # claimed during its lifetime.
 #
@@ -17,11 +17,11 @@
 #   exit-2 from PreToolUse as a hard block.
 #
 # Project invariants honored:
-# - `trap 'exit 0' ERR` so unexpected failures never block Claude.
+# - `trap 'exit 0' ERR` so unexpected failures never block the session.
 # - jq required; warn-and-fail-open if missing.
 # - `SB_PHASE_LOCK_INHERITED=true` short-circuits to exit 0 (delegated
 #   subagents inherit their parent's lock; they must not double-claim).
-# - State files validated to stay under `${HOME}/.claude/`.
+# - State files validated to stay under the host runtime root.
 # - Symlink writes refused via `hooks/lib/nofollow-guard.sh`.
 
 set -euo pipefail
@@ -52,6 +52,10 @@ if [[ -f "$_lib_dir/nofollow-guard.sh" ]]; then
 else
   sb_safe_write() { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 # ── Read stdin JSON ──────────────────────────────────────────────────────────
 input=$(cat)
@@ -78,13 +82,13 @@ raw_session_id=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [[ -z "$raw_session_id" ]] && raw_session_id="$(date +%s)-$$"
 session_id=$(printf '%s' "${raw_session_id}" | tr -c 'A-Za-z0-9_-' '_')
 
-# ── Compute manifest path + validate stays under ~/.claude/ ─────────────────
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+# ── Compute manifest path + validate stays under the host runtime root ──────
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 manifest="${SB_STATE_DIR}/claimed-phases-${session_id}.txt"
 case "$manifest" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *)
-    printf '{"hookSpecificOutput":{"message":"⚠️ phase-lock-claim.sh: manifest path escaped ~/.claude/ — skipping"}}\n'
+    printf '{"hookSpecificOutput":{"message":"⚠️ phase-lock-claim.sh: manifest path escaped the host runtime state root — skipping"}}\n'
     exit 0
     ;;
 esac
@@ -104,7 +108,7 @@ fi
 # before helper_rc is read. Re-arm the trap after the call.
 trap - ERR
 set +e
-helper_stderr=$("$helper" claim "$phase" "claude" "$intent" 2>&1 >/dev/null)
+helper_stderr=$("$helper" claim "$phase" "${SB_RUNTIME_NAME}" "$intent" 2>&1 >/dev/null)
 helper_rc=$?
 set -e
 trap 'exit 0' ERR

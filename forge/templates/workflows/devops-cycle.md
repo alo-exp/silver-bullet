@@ -62,9 +62,9 @@ Ask:
 > - **Interactive** (default) -- I pause at decision points and phase gates
 > - **Autonomous** -- I drive start to finish, surface blockers at the end
 
-Write choice to `~/.claude/.silver-bullet/mode`:
+Write choice to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`:
 ```bash
-echo "interactive" > ~/.claude/.silver-bullet/mode   # or "autonomous"
+echo "interactive" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode   # or "autonomous"
 ```
 
 **If autonomous was chosen**, ask one follow-up before proceeding:
@@ -81,7 +81,7 @@ Write answers into the `## Pre-answers` section of the session log immediately. 
 `- Agent Teams: <value>`
 
 Omit any key the user left blank (default applies). Read pre-answers mid-session from the log
-at `~/.claude/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
+at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
 Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
 
 **Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
@@ -220,8 +220,8 @@ before proceeding.
 task to surface relevant capabilities before work begins.
 
 Scan installed skills from two sources:
-1. `~/.claude/skills/` -- flat `.md` files
-2. `~/.claude/plugins/cache/` -- glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
+1. `${SB_RUNTIME_HOME_ROOT}/skills/` -- flat `.md` files
+2. `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` -- glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
 
 Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
 current task description. Surface candidates:
@@ -601,10 +601,10 @@ Minimum required files:
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
   Host execution tier is the base rate; host high/top tiers are progressively more expensive.
-- Complete the session log: read path from `~/.claude/.silver-bullet/session-log-path`,
+- Complete the session log: read path from `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
   Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
-  Model, Virtual cost. If `~/.claude/.silver-bullet/session-log-path` is missing,
+  Model, Virtual cost. If `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path` is missing,
   create `docs/sessions/<today>-manual.md` from the session log template.
 - Documentation agents writing to `docs/` run in the **main worktree only**
   (no `isolation: "worktree"`). Only implementation-touching agents use worktree isolation.
@@ -712,8 +712,8 @@ Check that `gh` CLI is authenticated and the PR has been merged.
 
 **Autonomous completion cleanup** (run after outputting structured summary):
 ```bash
-rm -f ~/.claude/.silver-bullet/timeout ~/.claude/.silver-bullet/sentinel-pid \
-      ~/.claude/.silver-bullet/session-start-time ~/.claude/.silver-bullet/timeout-warn-count
+rm -f ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/sentinel-pid \
+      ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-start-time ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count
 ```
 This clears the timeout sentinel so `timeout-check.sh` stops warning.
 

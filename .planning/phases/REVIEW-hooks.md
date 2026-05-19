@@ -61,12 +61,12 @@ Six warnings cover: non-atomic cache writes in `compliance-status.sh`, an indent
 ### CR-01: Backward-compat deprecation block in ci-status-check.sh is unreachable
 
 **File:** `hooks/ci-status-check.sh:73-78`
-**Issue:** `sb_trivial_bypass` is called at line 61 with no argument, defaulting to `${HOME}/.claude/.silver-bullet/trivial`. Its implementation calls `exit 0` immediately if that file exists as a real file. Therefore, control never reaches the backward-compat block at lines 73–78 that is supposed to emit the deprecation warning. Users who rely on the `trivial` file as a CI-red override will continue to be silently bypassed, receiving no deprecation notice, and will be surprised by the hard break planned for v0.25.
+**Issue:** `sb_trivial_bypass` is called at line 61 with no argument, defaulting to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`. Its implementation calls `exit 0` immediately if that file exists as a real file. Therefore, control never reaches the backward-compat block at lines 73–78 that is supposed to emit the deprecation warning. Users who rely on the `trivial` file as a CI-red override will continue to be silently bypassed, receiving no deprecation notice, and will be surprised by the hard break planned for v0.25.
 
 `sb_trivial_bypass` source (`lib/trivial-bypass.sh:5-10`):
 ```bash
 sb_trivial_bypass() {
-  local trivial_path="${1:-${HOME}/.claude/.silver-bullet/trivial}"
+  local trivial_path="${1:-${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial}"
   if [[ -f "$trivial_path" && ! -L "$trivial_path" ]]; then
     exit 0   # <-- script exits here, before lines 73-78 are reached
   fi
@@ -79,7 +79,7 @@ The intent was: (1) trivial bypass exits, (2) backward-compat block shows deprec
 
 ```bash
 # ── CI-red override bypass ──────────────────────────────────────────────
-_sb_state_dir="${HOME}/.claude/.silver-bullet"
+_sb_state_dir="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 _ci_override_file="${_sb_state_dir}/ci-red-override"
 _trivial_file="${_sb_state_dir}/trivial"
 

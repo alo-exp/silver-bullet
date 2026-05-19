@@ -104,14 +104,14 @@ The `! -L "$trivial_file"` guard is present. This matches the pattern already in
 
 ---
 
-### P-4 — FC-5-B: trivial_file path validation within ~/.claude/ in dev-cycle-check.sh
+### P-4 — FC-5-B: trivial_file path validation within ${SB_RUNTIME_HOME_ROOT}/ in dev-cycle-check.sh
 
 **Expected:** `case "$trivial_file" in "$HOME"/.claude/*)` guard after trivial_file assignment.
 
 **Evidence found** (`hooks/dev-cycle-check.sh`, lines 114–118):
 
 ```bash
-# Security: validate trivial file path stays within ~/.claude/ (SB-002/SB-003)
+# Security: validate trivial file path stays within ${SB_RUNTIME_HOME_ROOT}/ (SB-002/SB-003)
 case "$trivial_file" in
   "$HOME"/.claude/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;

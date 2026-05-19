@@ -139,7 +139,7 @@ This is low severity because the hook already has `sb_guard_nofollow` for writes
 
 Step 6b:
 ```bash
-STALE_CACHE="$HOME/.claude/plugins/cache/silver-bullet/silver-bullet"
+STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
 if [[ -d "$STALE_CACHE" ]]; then
   rm -rf "$STALE_CACHE"
 fi
@@ -457,7 +457,7 @@ No actionable fix beyond documentation — hardcoded retry durations are accepta
 
 Section 5.1:
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 `silver-update` Step 1 reads the `silver-bullet@alo-labs` key first and falls back to `silver-bullet@silver-bullet`. But `silver-bullet.md` §5.1 only checks the legacy key. After a marketplace update (via `silver-update`), the legacy key is deleted — `§5.1` would then always report `"unknown"` version and prompt an update loop.

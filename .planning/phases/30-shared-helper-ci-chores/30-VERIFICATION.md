@@ -22,7 +22,7 @@ overrides_applied: 0
 | 1 | hooks/lib/trivial-bypass.sh exists with an sb_trivial_bypass function that checks for the trivial file and exits 0 if found | VERIFIED | File exists, is executable, contains `sb_trivial_bypass()` function with `-f` + `! -L` check and `exit 0` |
 | 2 | stop-check.sh sources hooks/lib/trivial-bypass.sh and calls sb_trivial_bypass instead of inlining the trivial-bypass guard | VERIFIED | Line 83: `source "$_lib_dir/trivial-bypass.sh"`, line 84: `sb_trivial_bypass "$trivial_file"`; no inline `if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]` guard remains |
 | 3 | ci-status-check.sh sources hooks/lib/trivial-bypass.sh and calls sb_trivial_bypass instead of inlining the trivial-bypass guard | VERIFIED | Line 60: `source "$_lib_dir/trivial-bypass.sh"`, line 61: `sb_trivial_bypass` (no arg, uses default); old `SB_STATE_DIR`/`trivial_file` variable assignments removed; no inline guard remains |
-| 4 | The SessionStart hook command in hooks.json starts with umask 0077 | VERIFIED | `jq -r '.hooks.SessionStart[0].hooks[0].command'` returns `umask 0077 && mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial` |
+| 4 | The SessionStart hook command in hooks.json starts with umask 0077 | VERIFIED | `jq -r '.hooks.SessionStart[0].hooks[0].command'` returns `umask 0077 && mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet && touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` |
 | 5 | CI emits a warning when plugin.json version does not match the latest git tag, without failing the build | VERIFIED | Step "Check plugin.json version vs latest git tag" at line 16 of ci.yml has `continue-on-error: true`, uses `jq -r '.version'` extraction, `git describe --tags --abbrev=0`, strips `v` prefix, emits `::warning::` annotation on mismatch, exits 0 when no tags exist |
 
 **Score:** 5/5 truths verified
@@ -31,7 +31,7 @@ overrides_applied: 0
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `hooks/lib/trivial-bypass.sh` | Shared trivial-bypass guard function | VERIFIED | 11 lines, contains `sb_trivial_bypass()`, executable, accepts optional path arg defaulting to `${HOME}/.claude/.silver-bullet/trivial` |
+| `hooks/lib/trivial-bypass.sh` | Shared trivial-bypass guard function | VERIFIED | 11 lines, contains `sb_trivial_bypass()`, executable, accepts optional path arg defaulting to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` |
 | `hooks/hooks.json` | SessionStart command with umask 0077 | VERIFIED | Valid JSON, SessionStart command prepended with `umask 0077 &&` |
 | `.github/workflows/ci.yml` | Non-blocking version-drift warning step | VERIFIED | New step inserted after "Validate JSON files" and before "Check hook executability", has `continue-on-error: true` |
 

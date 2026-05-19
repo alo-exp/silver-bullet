@@ -5,7 +5,7 @@
 # sibling test-todo-app repo, then resets the workspace after each scenario.
 # The real SB state files are backed up and restored around each scenario so
 # the suite can run repeatedly without cross-talk. Claude keeps using
-# ~/.claude/.silver-bullet; Kay uses the temp-root .kay/.silver-bullet tree.
+# the active host runtime state root; Kay uses the temp-root .kay/.silver-bullet tree.
 
 set -euo pipefail
 
@@ -22,13 +22,21 @@ CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
 KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
+case "$E2E_RUNTIME" in
+  claude) export SILVER_BULLET_RUNTIME=claude ;;
+  kay|codex) export SILVER_BULLET_RUNTIME=codex ;;
+esac
+if [[ -f "${SB_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+fi
 if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
   SB_TEST_DIR="${KAY_HOME}/.kay/.silver-bullet"
   MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
   MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.e2e-live-backup-$$"
 else
-  SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
-  MCP_AUTH_CACHE="${HOME}/.claude/mcp-needs-auth-cache.json"
+  SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
+  MCP_AUTH_CACHE="${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json"
   MCP_AUTH_CACHE_BACKUP="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
 fi
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"

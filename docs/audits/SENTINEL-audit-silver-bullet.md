@@ -10,7 +10,7 @@
 ---
 
 > **Remediation Status from Prior Audit (2026-04-04):**
-> - FINDING-5.1 (world-readable `/tmp/` state files): **REMEDIATED** — all state migrated to `~/.claude/.silver-bullet/` with `umask 0077`.
+> - FINDING-5.1 (world-readable `/tmp/` state files): **REMEDIATED** — all state migrated to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` with `umask 0077`.
 > - FINDING-5.2 (silent jq bypass): **PARTIALLY REMEDIATED** — session-start and enforcement hooks now emit visible warnings; however, `prompt-reminder.sh` still exits silently on missing jq (by design, documented as intentional). This is acceptable.
 > - FINDING-10.1 (orphan sentinel): **PARTIALLY REMEDIATED** — old sentinel is now killed at Step 4 before creating a new one. EXIT trap not added (non-blocking informational residual).
 > - All other prior findings remain open or unchanged from prior audit.
@@ -124,7 +124,7 @@ Silver Bullet skills do not declare MCP tools directly. Hooks execute shell comm
 | Component | Capabilities | Risk |
 |-----------|-------------|------|
 | `prompt-reminder.sh` | fileRead (core-rules.md, state, config) + prompt context injection | MEDIUM — injects file content into every prompt |
-| `session-log-init.sh` (sentinel) | process spawn, file write to `~/.claude/` | LOW — legitimate use, scoped to user dir |
+| `session-log-init.sh` (sentinel) | process spawn, file write to `${SB_RUNTIME_HOME_ROOT}/` | LOW — legitimate use, scoped to user dir |
 | `stop-check.sh` | fileRead + git exec + JSON block output | LOW — read-only, well-validated |
 | `forbidden-skill-check.sh` | stdin parse + block output | LOW — see FINDING-NEW-1 for bypass |
 
@@ -143,13 +143,13 @@ Silver Bullet enforces a prescribed multi-step software engineering workflow. Ho
 
 ### Attack Surface Map
 
-1. **State files in `~/.claude/.silver-bullet/`** — user-owned, 0077 umask. Mitigated vs prior audit.
+1. **State files in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`** — user-owned, 0077 umask. Mitigated vs prior audit.
 2. **Environment variable overrides** — `SILVER_BULLET_STATE_FILE`, `GH_STATUS_OVERRIDE`, `SENTINEL_SLEEP_OVERRIDE`, `PROJECT_ROOT_OVERRIDE`, `SESSION_LOG_TEST_DIR`, `CLAUDE_PLUGIN_ROOT` — accept arbitrary values.
 3. **`.silver-bullet.json` config** — read by hooks via `jq`. If malformed or malicious, affects `required_deploy_cfg`, `active_workflow`, `src_pattern`, `forbidden` list, `trivial_file`, `state_file` values.
 4. **`core-rules.md`** — read by `prompt-reminder.sh` and `session-start` and injected verbatim into additionalContext on every prompt. No integrity check.
 5. **Skill name from stdin** — `forbidden-skill-check.sh` reads `tool_input.skill` and applies namespace stripping via `sed`. Double-namespace bypass is possible.
 6. **Session log files** — created by `session-log-init.sh` in `docs/sessions/`. The `_insert_before` awk function reads and rewrites existing log files. Content is static template but existing log content is re-read.
-7. **Sentinel process** — background `sleep` process writes "TIMEOUT" to `~/.claude/.silver-bullet/timeout`. PID stored and killed on next session start.
+7. **Sentinel process** — background `sleep` process writes "TIMEOUT" to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout`. PID stored and killed on next session start.
 
 ### Trust Chain
 
@@ -211,7 +211,7 @@ No API keys, tokens, passwords, or private key markers in any new or existing ho
 
 **Applicability:** YES — prior findings remediated; 1 new finding
 
-**FINDING-5.1 (REMEDIATED):** State files moved from `/tmp/` to `~/.claude/.silver-bullet/` with `umask 0077`. All hooks use `umask 0077` at the top. Path validation (`case "$state_file" in "$HOME"/.claude/*`) present in `stop-check.sh`, `prompt-reminder.sh`, `completion-audit.sh`, `dev-cycle-check.sh`. Symlink rejection present on bypass files (`-f "$trivial_file" && ! -L "$trivial_file"`). **CLOSED.**
+**FINDING-5.1 (REMEDIATED):** State files moved from `/tmp/` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` with `umask 0077`. All hooks use `umask 0077` at the top. Path validation (`case "$state_file" in "$HOME"/.claude/*`) present in `stop-check.sh`, `prompt-reminder.sh`, `completion-audit.sh`, `dev-cycle-check.sh`. Symlink rejection present on bypass files (`-f "$trivial_file" && ! -L "$trivial_file"`). **CLOSED.**
 
 **FINDING-5.2 (REMEDIATED):** `session-start` now emits a visible blocking warning when jq is missing. `stop-check.sh`, `completion-audit.sh`, `forbidden-skill-check.sh` all emit visible warnings on jq absence. `prompt-reminder.sh` exits silently — documented as intentional (speed requirement for UserPromptSubmit hooks). **CLOSED** (prompt-reminder silent exit is acceptable).
 
@@ -372,7 +372,7 @@ This is a correct improvement. The orphan risk is significantly reduced. Residua
 │                 present in both hooks                        │
 │ Attack Vector : 1. Attacker gains write access to Silver     │
 │                 Bullet plugin install directory              │
-│                 (~/.claude/plugins/cache/*/silver-bullet/)  │
+│                 (${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/silver-bullet/)  │
 │                 2. Replaces hooks/core-rules.md with         │
 │                 malicious instruction content                │
 │                 3. On every subsequent user prompt in every  │
@@ -436,7 +436,7 @@ Semantic enablement check: No PoC enables end-to-end exploitation if copy-pasted
 | FINDING-9.1 | CONFIRMED | `skills/create-release/SKILL.md:79` | OPEN |
 | FINDING-9.2 | LOW CONFIDENCE | `hooks/session-log-init.sh` — `printf '%s'` with unescaped `basename` | OPEN (Low) |
 | FINDING-7.1 | CONFIRMED | `.claude-plugin/marketplace.json:7` — `@^1.30.0` | OPEN |
-| FINDING-5.1 | REMEDIATED | State files in `/tmp/` → moved to `~/.claude/.silver-bullet/` | CLOSED |
+| FINDING-5.1 | REMEDIATED | State files in `/tmp/` → moved to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | CLOSED |
 | FINDING-5.2 | REMEDIATED | Silent jq bypass → visible warnings added | CLOSED |
 | FINDING-10.1 | PARTIALLY REMEDIATED | Sentinel orphan → old PID killed on new session | DOWNGRADED to Info |
 

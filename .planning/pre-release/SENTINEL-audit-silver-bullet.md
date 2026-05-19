@@ -79,7 +79,7 @@ The one `base64 -d` occurrence (silver-ingest, retrieving a remote SPEC.md via t
 if [[ -z "$HOME" ]]; then
   echo "WARNING: HOME is unset — skipping stale cache cleanup."
 else
-  STALE_CACHE="${HOME}/.claude/plugins/cache/silver-bullet/silver-bullet"
+  STALE_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet"
   if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
     rm -rf "$STALE_CACHE"
   fi
@@ -93,7 +93,7 @@ Three guards are present:
 
 **Assessment:** The guards are sufficient for the documented threat (symlink attack against the stale cache path). The path is entirely hardcoded; it is not derived from user input, the fetched version string, or any external source. An attacker cannot control `STALE_CACHE` without first having write access to the shell environment or the running Claude session, which constitutes full system compromise. The guards are judged **sufficient** for the intended deployment context (single-user developer system).
 
-**Residual theoretical gap:** If HOME itself can be set to a short value and an attacker creates the exact path `$HOME/.claude/plugins/cache/silver-bullet/silver-bullet` as a real directory pointing to sensitive content, the guards still hold (path prefix passes, non-symlink passes). There is no TOCTOU window here because the path is constructed from a controlled string, not from any resolved symlink. No exploitation path exists without prior compromise.
+**Residual theoretical gap:** If HOME itself can be set to a short value and an attacker creates the exact path `${SB_RUNTIME_HOME_ROOT}/plugins/cache/silver-bullet/silver-bullet` as a real directory pointing to sensitive content, the guards still hold (path prefix passes, non-symlink passes). There is no TOCTOU window here because the path is constructed from a controlled string, not from any resolved symlink. No exploitation path exists without prior compromise.
 
 **silver-scan grep commands:**
 
@@ -109,7 +109,7 @@ Three guards are present:
 
 **SKILL.md files:** No API keys, tokens, webhook URLs, or credentials are hardcoded in any audited skill file. The `silver-create-release` skill reads `$SB_GCHAT_WEBHOOK` from the environment at runtime, explicitly blocking the legacy config-field pattern.
 
-**Hook scripts:** No credential references appear in any hook. The `session-start` hook reads only plugin cache paths and the core-rules.md file, with path validation against `${HOME}/.claude/plugins/cache/`. The `prompt-reminder.sh` hook reads `.silver-bullet.json` config but only for state/trivial file paths and skill lists — no credential fields are consumed.
+**Hook scripts:** No credential references appear in any hook. The `session-start` hook reads only plugin cache paths and the core-rules.md file, with path validation against `${SB_RUNTIME_HOME_ROOT}/plugins/cache/`. The `prompt-reminder.sh` hook reads `.silver-bullet.json` config but only for state/trivial file paths and skill lists — no credential fields are consumed.
 
 **Sensitive file path references:** No skill reads `~/.ssh/`, `~/.aws/`, `.env`, or equivalent credential store paths. No hook reads credential paths.
 
@@ -278,23 +278,23 @@ No `grep` without `-F`/`--fixed-strings` is used where the pattern comes from un
 **Rating: CLEAN**
 
 **hooks/session-start:** Writes to:
-- `~/.claude/.silver-bullet/state` (gsd-* markers cleared)
-- `~/.claude/.silver-bullet/branch` (current branch name)
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` (gsd-* markers cleared)
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch` (current branch name)
 - Injects skill content (Superpowers, Design plugin SKILL.md, core-rules.md) into `additionalContext` — this is the documented function of the SessionStart hook, not persistence.
 
-No writes to cron, startup files (`~/.zshrc`, `~/.bashrc`, `~/.profile`), SSH config, or any location outside `~/.claude/`.
+No writes to cron, startup files (`~/.zshrc`, `~/.bashrc`, `~/.profile`), SSH config, or any location outside `${SB_RUNTIME_HOME_ROOT}/`.
 
 **hooks/session-log-init.sh:** Writes to:
 - `docs/sessions/<date>-<timestamp>.md` (session skeleton)
-- `~/.claude/.silver-bullet/session-log-path` (path pointer)
-- `~/.claude/.silver-bullet/sentinel-pid` (background timeout sentinel PID)
-- `~/.claude/.silver-bullet/session-start-time`
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path` (path pointer)
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/sentinel-pid` (background timeout sentinel PID)
+- `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-start-time`
 
-The sentinel is a `sleep 600 && echo "TIMEOUT" > ~/.claude/.silver-bullet/timeout` background process — a benign timeout mechanism, not a backdoor. PID recycling protection is implemented (pid:start-time format, ps verification before kill).
+The sentinel is a `sleep 600 && echo "TIMEOUT" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout` background process — a benign timeout mechanism, not a backdoor. PID recycling protection is implemented (pid:start-time format, ps verification before kill).
 
 **silver-add/silver-rem writes:** Limited to `docs/issues/`, `docs/knowledge/`, `docs/sessions/`, and `.silver-bullet.json` (project board cache via atomic jq+tmpfile+mv). No persistent locations outside the project directory.
 
-**dev-cycle-check.sh hooks self-protection:** The hook actively blocks writes to `~/.claude/` hook directories and the Silver Bullet plugin cache, preventing self-modification that could install backdoors.
+**dev-cycle-check.sh hooks self-protection:** The hook actively blocks writes to `${SB_RUNTIME_HOME_ROOT}/` hook directories and the Silver Bullet plugin cache, preventing self-modification that could install backdoors.
 
 ---
 
@@ -403,9 +403,9 @@ for line in sys.stdin:
 
 ### Self-Challenge: Does the session-log-init.sh sentinel present a persistence risk?
 
-**Challenge:** The sentinel writes `TIMEOUT` to `~/.claude/.silver-bullet/timeout` after 600 seconds. Could this be abused?
+**Challenge:** The sentinel writes `TIMEOUT` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout` after 600 seconds. Could this be abused?
 
-**Assessment:** The sentinel is a benign background `sleep` process that writes a single word to a file in the Silver Bullet state directory. The timeout file is read only by Silver Bullet's own hooks to detect autonomous session timeout. Writing arbitrary content to this file path requires write access to `~/.claude/`, which constitutes local filesystem compromise. The TOCTOU protection (pid:start-time verification before kill) is well-implemented. **No persistence risk.**
+**Assessment:** The sentinel is a benign background `sleep` process that writes a single word to a file in the Silver Bullet state directory. The timeout file is read only by Silver Bullet's own hooks to detect autonomous session timeout. Writing arbitrary content to this file path requires write access to `${SB_RUNTIME_HOME_ROOT}/`, which constitutes local filesystem compromise. The TOCTOU protection (pid:start-time verification before kill) is well-implemented. **No persistence risk.**
 
 ### Self-Challenge: Is the silver-add jq body construction actually safe?
 

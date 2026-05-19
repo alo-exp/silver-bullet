@@ -9,7 +9,7 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
@@ -53,7 +53,7 @@ run_hook() {
   )
 }
 
-MODE_CMD_JSON='{"tool_name":"Bash","tool_input":{"command":"echo x > ~/.claude/.silver-bullet/mode"}}'
+MODE_CMD_JSON='{"tool_name":"Bash","tool_input":{"command":"echo x > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"}}'
 UNRELATED_JSON='{"tool_name":"Bash","tool_input":{"command":"git status"}}'
 
 assert_valid_json() {
@@ -235,7 +235,7 @@ echo "--- Test 8: Autonomous mode launches sentinel ---"
 setup
 printf 'autonomous' > "${SB_TEST_DIR}/mode"
 rm -f "${SB_TEST_DIR}/sentinel-pid"
-AUT_JSON='{"tool_name":"Bash","tool_input":{"command":"echo autonomous > ~/.claude/.silver-bullet/mode"}}'
+AUT_JSON='{"tool_name":"Bash","tool_input":{"command":"echo autonomous > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"}}'
 (
   export PROJECT_ROOT_OVERRIDE="$TMPDIR_TEST"
   export SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR"

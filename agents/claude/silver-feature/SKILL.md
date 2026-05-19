@@ -130,10 +130,10 @@ if [[ -x scripts/workflows.sh ]]; then
 else
   SB_WORKFLOWS_BIN="$(
     for root in \
-      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
+      "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet/current" \
+      "~/.claude/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet"/* \
+      "~/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break

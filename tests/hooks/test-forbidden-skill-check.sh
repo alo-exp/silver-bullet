@@ -9,8 +9,8 @@ PASS=0
 FAIL=0
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
-# State files MUST be within ~/.claude/ due to security path validation in hooks.
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+# State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 

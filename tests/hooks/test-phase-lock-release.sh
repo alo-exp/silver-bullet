@@ -4,13 +4,18 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 HOOK="$REPO_ROOT/hooks/phase-lock-release.sh"
 HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
 
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 MANIFEST="${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt"
@@ -70,9 +75,9 @@ teardown
 # ── T3: release each manifest entry, manifest deleted ──────────────────────
 echo "--- T3: manifest with two entries → both released, manifest deleted ---"
 setup
-# Claim 099 + 098 as claude
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 claude "test" >/dev/null 2>&1
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 claude "test" >/dev/null 2>&1
+# Claim 099 + 098 using the current SB runtime
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf '099\n098\n' > "$MANIFEST"
 printf '{"hook_event_name":"Stop","session_id":"test-%s"}' "$TEST_RUN_ID" \
   | bash "$HOOK" >/dev/null 2>&1
@@ -88,22 +93,22 @@ fi
 teardown
 
 # ── T4: non-owner does not abort the loop ──────────────────────────────────
-echo "--- T4: 099 owned by forge, 098 by claude → continues, 098 released, manifest deleted ---"
+echo "--- T4: 099 owned by forge, 098 by current runtime → continues, 098 released, manifest deleted ---"
 setup
 bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 forge  "owned-by-forge"  >/dev/null 2>&1
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 claude "owned-by-claude" >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 "$SB_RUNTIME_NAME" "owned-by-runtime" >/dev/null 2>&1
 printf '099\n098\n' > "$MANIFEST"
 out=$(printf '{"hook_event_name":"Stop","session_id":"test-%s"}' "$TEST_RUN_ID" \
   | bash "$HOOK" 2>&1)
 rc=$?
 [[ "$rc" == "0" ]] && ok "T4: exit 0 (Stop must NEVER block)" || nope "T4: exit 0" "rc=$rc"
 if jq -e '."098" == null' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
-  ok "T4: 098 released (claude owned it)"
+  ok "T4: 098 released (current runtime owned it)"
 else
   nope "T4: 098 release" "still in lock file"
 fi
 if jq -e '."099".agent_runtime == "forge"' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
-  ok "T4: 099 still owned by forge (claude could not release)"
+  ok "T4: 099 still owned by forge (current runtime could not release)"
 else
   nope "T4: 099 forge ownership" "$(cat "$SB_PHASE_LOCK_FILE")"
 fi

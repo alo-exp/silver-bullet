@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0)
+[![version](https://img.shields.io/badge/version-v0.37.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.1)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -290,7 +290,7 @@ It will:
 - copy workflow docs into `docs/workflows/`
 - scaffold the documentation scheme and durable knowledge/lessons folders
 - initialize or connect GSD planning artifacts
-- set up enforcement state paths under `~/.claude/.silver-bullet/`
+- set up enforcement state paths under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`
 
 After that, use `/silver` for normal work.
 
@@ -372,14 +372,14 @@ Minimal shape:
     ]
   },
   "state": {
-    "state_file": "~/.claude/.silver-bullet/state",
-    "trivial_file": "~/.claude/.silver-bullet/trivial"
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
   },
   "release": {
     "profile": "generic",
-    "require_plugin_runtime_matrix": false,
-    "require_pre_release_quality_gate": false,
-    "quality_gate_state_file": "~/.claude/.silver-bullet/quality-gate-state"
+    "require_plugin_runtime_matrix": true,
+    "require_pre_release_quality_gate": true,
+    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
   }
 }
 ```
@@ -396,12 +396,12 @@ Important fields:
 | `skills.required_deploy` | Final delivery floor for PR/deploy/release |
 | `skills.all_tracked` | Canonical list of skill markers hooks record |
 | `devops_plugins` | Optional DevOps plugin availability detected by init |
-| `release.require_plugin_runtime_matrix` | Opt-in live runtime release gate for plugin projects |
-| `release.require_pre_release_quality_gate` | Opt-in 4-stage pre-release quality gate |
+| `release.require_plugin_runtime_matrix` | Mandatory live runtime release gate for plugin projects |
+| `release.require_pre_release_quality_gate` | Mandatory 4-stage pre-release quality gate |
 | `semantic_compression` | TF-IDF context compression settings for large files |
 
 Downstream projects normally use the generic release profile. This repository
-opts into plugin-runtime live matrices and the 4-stage pre-release gate because
+requires plugin-runtime live matrices and the 4-stage pre-release gate because
 Silver Bullet itself is a Claude/Codex plugin.
 
 ## Documentation Governance
@@ -513,14 +513,14 @@ runtime state are not treated as plugin package content.
 | Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` both exist in the project root |
 | Too many files trigger enforcement | Adjust `project.src_pattern` and `project.src_exclude_pattern` |
 | YAML/JSON edits are unexpectedly gated | In `devops-cycle`, YAML/JSON/TOML are infrastructure code and intentionally gated |
-| CI is red and you need to push a fix | Commit normally; for push use the explicit CI override marker only when fixing CI: `touch ~/.claude/.silver-bullet/ci-red-override` |
+| CI is red and you need to push a fix | Commit normally; for push use the explicit CI override marker only when fixing CI: `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` |
 | Want to refresh templates | Re-run `/silver:init`; it detects existing config and preserves project-owned content |
 | Want to start fresh | Remove `.silver-bullet.json` and `silver-bullet.md`, then rerun `/silver:init` |
 
 ## Current Release
 
-- Version: `0.37.0`
-- Release: [v0.37.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.0)
+- Version: `0.37.1`
+- Release: [v0.37.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.1)
 - Notable changes:
   - Clarify now absorbs Product Management framing and Superpowers brainstorming into one stand-alone handoff layer.
   - Silver Bullet now keeps a live Active Intent Ledger in session logs and closes out completed branches even across resumed sessions.

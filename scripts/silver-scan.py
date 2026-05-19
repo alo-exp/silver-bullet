@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -354,15 +355,21 @@ def discover_sources(root: Path) -> list[dict[str, Any]]:
                     rollout_candidate = Path.home() / ".code" / rollout_candidate
                 add("codex-transcript", rollout_candidate, row)
 
-    claude_projects_root = Path.home() / ".claude" / "projects"
-    if claude_projects_root.is_dir():
-        for transcript_path in sorted(claude_projects_root.rglob("*.jsonl")):
+    runtime_name = (
+        os.environ.get("SILVER_BULLET_RUNTIME")
+        or os.environ.get("SB_RUNTIME_NAME")
+        or ("codex" if (os.environ.get("CODEX_CI") or os.environ.get("CODEX_THREAD_ID") or os.environ.get("CODEX_INTERNAL_ORIGINATOR_OVERRIDE")) else "claude")
+    )
+    runtime_home_root = Path(os.environ.get("SB_RUNTIME_HOME_ROOT", str(Path.home() / f".{runtime_name}")))
+    runtime_projects_root = runtime_home_root / "projects"
+    if runtime_projects_root.is_dir():
+        for transcript_path in sorted(runtime_projects_root.rglob("*.jsonl")):
             try:
                 rows = parse_jsonl(transcript_path)
             except Exception:
                 continue
             if any(project_matches_source(row, root) for row in rows):
-                add("claude-session", transcript_path)
+                add(f"{runtime_name}-session", transcript_path)
 
     return sources
 

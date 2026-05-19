@@ -8,27 +8,27 @@ files_modified:
   # SB repo (committed)
   - site/index.html
   # User-level config (not in SB repo, not committed to SB)
-  - ~/.claude/agents/gsd-planner.md
-  - ~/.claude/agents/gsd-verifier.md
-  - ~/.claude/agents/gsd-security-auditor.md
-  - ~/.claude/agents/gsd-ui-checker.md
-  - ~/.claude/agents/gsd-assumptions-analyzer.md
-  - ~/.claude/agents/gsd-integration-checker.md
-  - ~/.claude/agents/gsd-executor.md
-  - ~/.claude/agents/gsd-phase-researcher.md
-  - ~/.claude/agents/gsd-doc-writer.md
-  - ~/.claude/agents/gsd-doc-verifier.md
-  - ~/.claude/agents/gsd-codebase-mapper.md
-  - ~/.claude/agents/gsd-roadmapper.md
-  - ~/.claude/agents/gsd-research-synthesizer.md
-  - ~/.claude/agents/gsd-project-researcher.md
-  - ~/.claude/agents/gsd-ui-researcher.md
-  - ~/.claude/agents/gsd-user-profiler.md
-  - ~/.claude/agents/gsd-nyquist-auditor.md
-  - ~/.claude/agents/gsd-debugger.md
-  - ~/.claude/agents/gsd-advisor-researcher.md
-  - ~/.claude/agents/gsd-plan-checker.md
-  - ~/.claude/skills/quality-gates/SKILL.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-planner.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-verifier.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-security-auditor.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-checker.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-assumptions-analyzer.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-integration-checker.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-executor.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-phase-researcher.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-writer.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-verifier.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-codebase-mapper.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-roadmapper.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-research-synthesizer.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-project-researcher.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-researcher.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-user-profiler.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-nyquist-auditor.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-debugger.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-advisor-researcher.md
+  - ${SB_RUNTIME_HOME_ROOT}/agents/gsd-plan-checker.md
+  - ${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md
 autonomous: true
 must_haves:
   truths:
@@ -39,13 +39,13 @@ must_haves:
     - "The SB website highlights automatic model switching as a feature"
     - "All SB repo tests pass"
   artifacts:
-    - path: "~/.claude/agents/gsd-planner.md"
+    - path: "${SB_RUNTIME_HOME_ROOT}/agents/gsd-planner.md"
       provides: "model: opus directive"
       contains: "model: opus"
-    - path: "~/.claude/agents/gsd-executor.md"
+    - path: "${SB_RUNTIME_HOME_ROOT}/agents/gsd-executor.md"
       provides: "model: sonnet directive"
       contains: "model: sonnet"
-    - path: "~/.claude/skills/quality-gates/SKILL.md"
+    - path: "${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md"
       provides: "Model recommendation advisory"
       contains: "Recommended model"
     - path: "site/index.html"
@@ -66,14 +66,14 @@ Output: Updated agent YAML files, updated SKILL.md, updated website, passing tes
 </objective>
 
 <execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/execute-plan.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/templates/summary.md
 </execution_context>
 
 <context>
 @.planning/STATE.md
 @site/index.html
-@~/.claude/skills/quality-gates/SKILL.md
+@${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md
 </context>
 
 <tasks>
@@ -81,30 +81,30 @@ Output: Updated agent YAML files, updated SKILL.md, updated website, passing tes
 <task type="auto">
   <name>Task 1: Add model directives to all GSD agent files and SKILL.md</name>
   <files>
-    ~/.claude/agents/gsd-planner.md
-    ~/.claude/agents/gsd-verifier.md
-    ~/.claude/agents/gsd-security-auditor.md
-    ~/.claude/agents/gsd-ui-checker.md
-    ~/.claude/agents/gsd-assumptions-analyzer.md
-    ~/.claude/agents/gsd-integration-checker.md
-    ~/.claude/agents/gsd-executor.md
-    ~/.claude/agents/gsd-phase-researcher.md
-    ~/.claude/agents/gsd-doc-writer.md
-    ~/.claude/agents/gsd-doc-verifier.md
-    ~/.claude/agents/gsd-codebase-mapper.md
-    ~/.claude/agents/gsd-roadmapper.md
-    ~/.claude/agents/gsd-research-synthesizer.md
-    ~/.claude/agents/gsd-project-researcher.md
-    ~/.claude/agents/gsd-ui-researcher.md
-    ~/.claude/agents/gsd-user-profiler.md
-    ~/.claude/agents/gsd-nyquist-auditor.md
-    ~/.claude/agents/gsd-debugger.md
-    ~/.claude/agents/gsd-advisor-researcher.md
-    ~/.claude/agents/gsd-plan-checker.md
-    ~/.claude/skills/quality-gates/SKILL.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-planner.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-verifier.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-security-auditor.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-checker.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-assumptions-analyzer.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-integration-checker.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-executor.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-phase-researcher.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-writer.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-doc-verifier.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-codebase-mapper.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-roadmapper.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-research-synthesizer.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-project-researcher.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-researcher.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-user-profiler.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-nyquist-auditor.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-debugger.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-advisor-researcher.md
+    ${SB_RUNTIME_HOME_ROOT}/agents/gsd-plan-checker.md
+    ${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md
   </files>
   <action>
-For each agent file in `~/.claude/agents/`, use the Edit tool to insert a `model:` line
+For each agent file in `${SB_RUNTIME_HOME_ROOT}/agents/`, use the Edit tool to insert a `model:` line
 into the YAML frontmatter. The line goes AFTER the `description:` field (or after `tools:`
 if description is multiline — place it after the last metadata field before the closing `---`).
 
@@ -161,7 +161,7 @@ color: yellow
 ---
 ```
 
-**Then update `~/.claude/skills/quality-gates/SKILL.md`:**
+**Then update `${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md`:**
 Insert the following line after line 5 (the description line in frontmatter, before `---`):
 
 Actually — the advisory goes OUTSIDE the frontmatter, after the closing `---` of the
@@ -178,16 +178,16 @@ Add a blank line before and after the blockquote for readability.
     <automated>
 echo "=== Checking Opus agents ===" && \
 for f in gsd-planner gsd-verifier gsd-security-auditor gsd-ui-checker gsd-assumptions-analyzer gsd-integration-checker; do \
-  grep -q "model: opus" ~/.claude/agents/${f}.md && echo "OK: $f" || echo "FAIL: $f"; \
+  grep -q "model: opus" ${SB_RUNTIME_HOME_ROOT}/agents/${f}.md && echo "OK: $f" || echo "FAIL: $f"; \
 done && \
 echo "=== Checking Sonnet agents ===" && \
 for f in gsd-executor gsd-phase-researcher gsd-doc-writer gsd-doc-verifier gsd-codebase-mapper gsd-roadmapper gsd-research-synthesizer gsd-project-researcher gsd-ui-researcher gsd-user-profiler gsd-nyquist-auditor gsd-debugger gsd-advisor-researcher gsd-plan-checker; do \
-  grep -q "model: sonnet" ~/.claude/agents/${f}.md && echo "OK: $f" || echo "FAIL: $f"; \
+  grep -q "model: sonnet" ${SB_RUNTIME_HOME_ROOT}/agents/${f}.md && echo "OK: $f" || echo "FAIL: $f"; \
 done && \
 echo "=== Checking SKILL.md ===" && \
-grep -q "Recommended model" ~/.claude/skills/quality-gates/SKILL.md && echo "OK: SKILL.md" || echo "FAIL: SKILL.md" && \
+grep -q "Recommended model" ${SB_RUNTIME_HOME_ROOT}/skills/quality-gates/SKILL.md && echo "OK: SKILL.md" || echo "FAIL: SKILL.md" && \
 echo "=== Checking gsd-ui-auditor is unchanged ===" && \
-grep -q "model:" ~/.claude/agents/gsd-ui-auditor.md && echo "FAIL: ui-auditor should NOT have model" || echo "OK: ui-auditor unchanged"
+grep -q "model:" ${SB_RUNTIME_HOME_ROOT}/agents/gsd-ui-auditor.md && echo "FAIL: ui-auditor should NOT have model" || echo "OK: ui-auditor unchanged"
     </automated>
   </verify>
   <done>
@@ -296,7 +296,7 @@ All content uses existing CSS classes — no new styles.
    git commit -m "feat: automatic model switching -- route agents to optimal model tier"
    ```
 
-   The agent file changes (~/.claude/agents/) are user-level config changes NOT tracked by
+   The agent file changes (${SB_RUNTIME_HOME_ROOT}/agents/) are user-level config changes NOT tracked by
    the SB repo. They do not get committed. The SKILL.md change is also outside the repo.
 
    Only site/index.html is in the SB repo and gets committed.

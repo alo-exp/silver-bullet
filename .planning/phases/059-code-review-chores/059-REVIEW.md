@@ -40,7 +40,7 @@ One info-level finding: the `sed 's/[[:space:]]*$//'` strip in `silver-create-re
 
 **File:** `hooks/session-start:81-84` and `tests/hooks/test-session-start.sh:333-336`
 
-**Issue:** The CHR-03 change removes the `quality-gate-stage-` sed pattern on the grounds that "quality-gate-stage-* markers are no longer written to state." However, `silver-bullet.md` still contains explicit instructions for Claude to write these markers (lines 797, 813, 841, 853 each end with `echo "quality-gate-stage-N" >> ~/.claude/.silver-bullet/state`), documents them as required for release in the Pre-Release Gate Enforcement section (lines 858-868), and line 877 states `completion-audit.sh` will block release without them.
+**Issue:** The CHR-03 change removes the `quality-gate-stage-` sed pattern on the grounds that "quality-gate-stage-* markers are no longer written to state." However, `silver-bullet.md` still contains explicit instructions for Claude to write these markers (lines 797, 813, 841, 853 each end with `echo "quality-gate-stage-N" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`), documents them as required for release in the Pre-Release Gate Enforcement section (lines 858-868), and line 877 states `completion-audit.sh` will block release without them.
 
 No hook or skill writes these markers automatically — they are written manually by Claude following `silver-bullet.md` instructions. The plan describes them as "no longer written to state" but that is only true for automated/hook writes, not for Claude-executed manual steps.
 
@@ -51,7 +51,7 @@ Additionally, `silver-bullet.md` lines 865-868 document session-reset behavior a
 **Fix:** Two options depending on intent:
 
 Option A — if quality-gate-stage-* markers are truly obsolete and should stop being written:
-- Remove the four `echo "quality-gate-stage-N" >> ~/.claude/.silver-bullet/state` instructions from `silver-bullet.md` (lines 797, 813, 841, 853)
+- Remove the four `echo "quality-gate-stage-N" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` instructions from `silver-bullet.md` (lines 797, 813, 841, 853)
 - Remove the Pre-Release Gate Enforcement section's marker requirements (lines 858-868) or update them to reflect that the gate is enforced purely through skill invocation checks
 - Update Test 5 comment to match Test 10's framing
 

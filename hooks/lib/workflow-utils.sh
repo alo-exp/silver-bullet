@@ -12,6 +12,15 @@
 # prevents Phase Iterations (`| 01 | ...`) and Autonomous Decisions tables
 # from inflating the counts when present in the same workflow file.
 #
+# Load runtime-specific paths so downstream hooks can target the correct host
+# state root without hardcoding it.
+
+_sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_sb_runtime_paths_dir/runtime-paths.sh"
+fi
+#
 # Usage: source this file, then call count_flow_log_rows <file>
 
 # _flow_log_section <file>

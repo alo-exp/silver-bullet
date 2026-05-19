@@ -56,7 +56,7 @@ metrics:
 
 ### REF-01: Shared trivial-bypass helper
 
-`hooks/lib/trivial-bypass.sh` is a new sourced library defining `sb_trivial_bypass()`. The function accepts an optional path argument (defaulting to `${HOME}/.claude/.silver-bullet/trivial`) and exits 0 if the trivial file exists and is not a symlink — matching the previously inlined guard exactly.
+`hooks/lib/trivial-bypass.sh` is a new sourced library defining `sb_trivial_bypass()`. The function accepts an optional path argument (defaulting to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`) and exits 0 if the trivial file exists and is not a symlink — matching the previously inlined guard exactly.
 
 - `hooks/stop-check.sh` now resolves `_lib_dir` before the trivial-bypass section (moved from its original location at line 100), sources the helper, and calls `sb_trivial_bypass "$trivial_file"` (passing the config-resolved path).
 - `hooks/ci-status-check.sh` sources the helper and calls `sb_trivial_bypass` with no argument, using the default path — matching its previous hardcoded behaviour. The now-unused `SB_STATE_DIR` and `trivial_file` variable assignments were removed along with the inline guard.
@@ -64,7 +64,7 @@ metrics:
 ### CI-01: SessionStart umask
 
 The first SessionStart command in `hooks/hooks.json` now reads:
-`"umask 0077 && mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial"`
+`"umask 0077 && mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet && touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"`
 
 This aligns the trivial-file creation with the `umask 0077` convention used by all other Silver Bullet hook scripts, ensuring the file is created owner-only from session start.
 
