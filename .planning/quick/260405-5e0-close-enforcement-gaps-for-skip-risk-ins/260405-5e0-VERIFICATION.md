@@ -48,7 +48,7 @@ score: 6/6 must-haves verified
 | From | To | Via | Status | Details |
 |------|----|-----|--------|---------|
 | `templates/silver-bullet.md.base` | `hooks/dev-cycle-check.sh` | anti-skip text references hook behavior | VERIFIED | Line 92: "dev-cycle-check.sh will block you" in §3 Anti-Skip block |
-| `hooks/compliance-status.sh` | `~/.claude/.silver-bullet/mode` | reads mode file | VERIFIED | Lines 91-97: `mode_file="${HOME}/.claude/.silver-bullet/mode"` read with interactive fallback |
+| `hooks/compliance-status.sh` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` | reads mode file | VERIFIED | Lines 91-97: `mode_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"` read with interactive fallback |
 
 ---
 

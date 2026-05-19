@@ -11,7 +11,7 @@ Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, opt
 </objective>
 
 <execution_context>
-@~/.claude/get-shit-done/workflows/milestone-summary.md
+@${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/milestone-summary.md
 </execution_context>
 
 <context>
@@ -29,7 +29,7 @@ Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, opt
 </context>
 
 <process>
-Read and execute the milestone-summary workflow from @~/.claude/get-shit-done/workflows/milestone-summary.md end-to-end.
+Read and execute the milestone-summary workflow from @${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/milestone-summary.md end-to-end.
 </process>
 
 <success_criteria>

@@ -197,7 +197,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "rm -f -- ~/.claude/.silver-bullet/trivial",
+            "command": "bash -lc 'source \"${CLAUDE_PLUGIN_ROOT}/hooks/lib/runtime-paths.sh\"; rm -f -- \"${SB_RUNTIME_STATE_DIR}/trivial\"'",
             "async": false,
             "timeout": 5
           }

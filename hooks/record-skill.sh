@@ -26,6 +26,10 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
   # shellcheck source=lib/session-ledger.sh
   source "$_lib_dir/session-ledger.sh"
 fi
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
@@ -79,7 +83,7 @@ fi
 
 debug_record_skill() {
   [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
-  local dbg_dir="${HOME}/.claude/.silver-bullet"
+  local dbg_dir="${SB_RUNTIME_STATE_DIR}"
   mkdir -p "$dbg_dir" 2>/dev/null || true
   local dbg_file="${dbg_dir}/record-skill.debug.log"
   {
@@ -107,7 +111,7 @@ while true; do
 done
 
 # --- State file (env var override first, then config, then default) ---
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-}"
 if [[ -z "$STATE_FILE" && -n "$config_file" ]]; then
@@ -117,9 +121,9 @@ if [[ -z "$STATE_FILE" && -n "$config_file" ]]; then
 fi
 STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 
-# Security: validate state file path stays within ~/.claude/ (SB-002/SB-003)
+# Security: validate state file path stays within the host runtime state root (SB-002/SB-003)
 case "$STATE_FILE" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) STATE_FILE="${SB_STATE_DIR}/state" ;;
 esac
 

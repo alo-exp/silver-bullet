@@ -106,12 +106,18 @@ function findToolsPath() {
   if (process.env.GSD_TOOLS_PATH) candidates.push(process.env.GSD_TOOLS_PATH);
   if (process.env.GSD_HOME) candidates.push(path.join(process.env.GSD_HOME, 'bin', 'gsd-tools.cjs'));
 
+  const runtimeName = process.env.SILVER_BULLET_RUNTIME
+    || process.env.SB_RUNTIME_NAME
+    || ((process.env.CODEX_CI || process.env.CODEX_THREAD_ID || process.env.CODEX_INTERNAL_ORIGINATOR_OVERRIDE) ? 'codex' : 'claude');
+  const runtimeHomeRoot = process.env.SB_RUNTIME_HOME_ROOT
+    || path.join(os.homedir(), `.${runtimeName}`);
+
   const selfDir = path.dirname(fs.realpathSync(__filename));
   candidates.push(
     path.join(selfDir, 'gsd-tools.cjs'),
     path.join(selfDir, 'gsd-tools'),
-    path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools.cjs'),
-    path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools'),
+    path.join(runtimeHomeRoot, 'get-shit-done', 'bin', 'gsd-tools.cjs'),
+    path.join(runtimeHomeRoot, 'get-shit-done', 'bin', 'gsd-tools'),
     path.join(os.homedir(), '.kilo', 'get-shit-done', 'bin', 'gsd-tools.cjs'),
     path.join(os.homedir(), '.kilo', 'get-shit-done', 'bin', 'gsd-tools')
   );

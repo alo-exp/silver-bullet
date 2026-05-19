@@ -29,7 +29,7 @@ Claude installs must not depend on Codex paths or Codex env.
 
 Rules of thumb:
 
-- A Codex bundle should not require `~/.claude` to exist.
+- A Codex bundle should not require `${SB_RUNTIME_HOME_ROOT}` to exist.
 - A Codex bundle should target lowercase `~/.codex` only. Treat `~/.Codex` as a legacy migration artifact, not an active install target.
 - A Claude bundle should not require `~/.codex` to exist.
 - Cross-host references may appear in docs or tests, but not in the live install surface unless they are explicitly host-specific and rewritten during install.

@@ -17,8 +17,8 @@ trigger_when:
 
 The reporter's session shows Claude Code re-prompting for permissions every session even after Bypass Permissions is selected. Possible causes:
 
-1. Claude Code platform issue with how `permissions.defaultMode` persists in `~/.claude/settings.json` (most likely, per current evidence)
-2. SB's SessionStart hook clobbering the `permissions` block — but a code audit shows `hooks/session-start` only writes to `~/.claude/.silver-bullet/` paths, never to `~/.claude/settings.json`
+1. Claude Code platform issue with how `permissions.defaultMode` persists in `${SB_RUNTIME_HOME_ROOT}/settings.json` (most likely, per current evidence)
+2. SB's SessionStart hook clobbering the `permissions` block — but a code audit shows `hooks/session-start` only writes to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` paths, never to `${SB_RUNTIME_HOME_ROOT}/settings.json`
 3. A stale per-project `.claude/settings.local.json` overriding the user-level setting
 
 ## Why This Matters
@@ -33,14 +33,14 @@ If SB is the cause, this is a P0 UX bug. Current evidence points to upstream Cla
 
 ## Implementation Sketch (when triggered)
 
-1. Capture the user's `~/.claude/settings.json` and `<project>/.claude/settings.local.json` before and after a fresh Claude Code launch with Bypass Permissions selected.
+1. Capture the user's `${SB_RUNTIME_HOME_ROOT}/settings.json` and `<project>/.claude/settings.local.json` before and after a fresh Claude Code launch with Bypass Permissions selected.
 2. Run `hooks/session-start` and verify it does not mutate either file (already audited, expected to confirm).
 3. If SB is innocent: file upstream against Claude Code with the captured trace.
-4. If SB is the cause: write a regression test that asserts SB never writes to `~/.claude/settings.json`.
+4. If SB is the cause: write a regression test that asserts SB never writes to `${SB_RUNTIME_HOME_ROOT}/settings.json`.
 
 ## Why Deferred
 
-The issue lacks a captured trace. Without one, the investigation devolves to "watch for it next time it happens." A SB code audit (hooks/session-start writes only to `~/.claude/.silver-bullet/`) suggests this is an upstream platform issue, not a SB bug. Deferring until either a trace lands or upstream documents the persistence semantics.
+The issue lacks a captured trace. Without one, the investigation devolves to "watch for it next time it happens." A SB code audit (hooks/session-start writes only to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`) suggests this is an upstream platform issue, not a SB bug. Deferring until either a trace lands or upstream documents the persistence semantics.
 
 ## References
 

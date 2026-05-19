@@ -21,16 +21,16 @@ Out of scope:
 
 ### New hook scripts
 1. `hooks/phase-lock-claim.sh` — fired as `PreToolUse` on `Edit` / `Write` / `MultiEdit` whose target path resolves under `.planning/phases/<NNN>/`. Determines `<NNN>` from the path, calls `.planning/scripts/phase-lock.sh claim <NNN> claude "<intent>"`. On conflict (helper exit 2), exits 2 with a clear stderr block-message identifying the current owner — Claude Code interprets exit-2 from PreToolUse as a block.
-2. `hooks/phase-lock-heartbeat.sh` — fired as `PostToolUse` on `Edit` / `Write` / `MultiEdit` / `Bash`. Resolves the active phase(s) via the session-claim manifest (see HOOK-03). Throttled to once per 5 minutes per phase via touch+mtime check on `~/.claude/.silver-bullet/heartbeat-<NNN>` (real file, not symlink). Uses `sb_safe_write` from `hooks/lib/nofollow-guard.sh`.
-3. `hooks/phase-lock-release.sh` — fired as `Stop` and `SubagentStop`. Reads `~/.claude/.silver-bullet/claimed-phases-<session>.txt`, calls `phase-lock.sh release <NNN> claude` for each entry, deletes the manifest on success.
+2. `hooks/phase-lock-heartbeat.sh` — fired as `PostToolUse` on `Edit` / `Write` / `MultiEdit` / `Bash`. Resolves the active phase(s) via the session-claim manifest (see HOOK-03). Throttled to once per 5 minutes per phase via touch+mtime check on `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/heartbeat-<NNN>` (real file, not symlink). Uses `sb_safe_write` from `hooks/lib/nofollow-guard.sh`.
+3. `hooks/phase-lock-release.sh` — fired as `Stop` and `SubagentStop`. Reads `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/claimed-phases-<session>.txt`, calls `phase-lock.sh release <NNN> claude` for each entry, deletes the manifest on success.
 
 ### Session-claim manifest
-- File: `~/.claude/.silver-bullet/claimed-phases-<session>.txt`
+- File: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/claimed-phases-<session>.txt`
 - `<session>` = Claude Code session id; if unavailable, fall back to a timestamp+pid combo (`$(date +%s)-$$`).
 - One line per claimed phase number (zero-padded, e.g. `070`).
 - `phase-lock-claim.sh` appends to the manifest after a successful claim (de-duplicated).
 - `phase-lock-release.sh` reads it on Stop/SubagentStop and releases each entry.
-- Path validation: must remain under `~/.claude/` — reject anything else (mirrors existing `SILVER_BULLET_STATE_FILE` policy).
+- Path validation: must remain under `${SB_RUNTIME_HOME_ROOT}/` — reject anything else (mirrors existing `SILVER_BULLET_STATE_FILE` policy).
 
 ### `SB_PHASE_LOCK_INHERITED` semantics in hooks
 - All three hook scripts check `[[ "${SB_PHASE_LOCK_INHERITED:-}" == "true" ]]` at the very top, after the standard `trap 'exit 0' ERR` line. If set, exit 0 immediately with no side effects. This is the session-level kill-switch for delegated subagents (Phase 73 will set this env var when spawning a sibling runtime).
@@ -43,7 +43,7 @@ Out of scope:
 - Used by `phase-lock-claim.sh` to extract the phase from a tool's `tool_input.file_path`.
 
 ### Heartbeat throttle
-- File: `~/.claude/.silver-bullet/heartbeat-<NNN>`
+- File: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/heartbeat-<NNN>`
 - If file exists and `now - mtime < 300 s` → exit 0 (skip heartbeat).
 - Otherwise: call `phase-lock.sh heartbeat <NNN> claude`; on success `touch` the throttle file via `sb_safe_write`.
 - Throttle file is per-phase, not per-session, because heartbeats are about lock liveness regardless of session.
@@ -72,7 +72,7 @@ Each new hook entry is its own object in the matcher's `hooks[]` array — do no
 - This is **informational only** — do NOT change exit codes; the existing skill-completion gate is the only blocking criterion. Lock ownership is orthogonal.
 
 ### Session-init heartbeat throttle dir
-- `session-start` creates `~/.claude/.silver-bullet/` if missing (already does for `state` and `branch`). No new logic needed beyond ensuring the dir exists when heartbeat hook fires.
+- `session-start` creates `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` if missing (already does for `state` and `branch`). No new logic needed beyond ensuring the dir exists when heartbeat hook fires.
 
 ### Tests
 - `tests/hooks/test-phase-lock-claim.sh` — claim-on-edit, conflict-blocks-edit-via-exit-2, manifest-appended, SB_PHASE_LOCK_INHERITED-bypass.
@@ -108,7 +108,7 @@ Each new hook entry is its own object in the matcher's `hooks[]` array — do no
 - `tests/run-all-tests.sh` — runner
 
 ### Project invariants
-- `CLAUDE.md` — jq required, ERR trap (`trap 'exit 0' ERR`), state files under `~/.claude/`, plugin boundary
+- `CLAUDE.md` — jq required, ERR trap (`trap 'exit 0' ERR`), state files under `${SB_RUNTIME_HOME_ROOT}/`, plugin boundary
 
 </canonical_refs>
 

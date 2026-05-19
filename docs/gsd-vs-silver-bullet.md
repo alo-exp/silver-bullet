@@ -46,7 +46,7 @@ SB is the **make sure it actually happens** layer. It doesn't generate the plan 
 | `.planning/PROJECT.md` | Read, not written by SB. SB's `silver:init` does NOT clobber. |
 | `.planning/ROADMAP.md` | Read, not written by SB. Used by `silver:release` to scope what's shipping. |
 | `.planning/REQUIREMENTS.md` | Read, not written by SB. |
-| `.planning/STATE.md` | Read, not written by SB. SB's own state is at `~/.claude/.silver-bullet/state` — it is per-user, branch-scoped, and ephemeral, not a replacement for STATE.md. |
+| `.planning/STATE.md` | Read, not written by SB. SB's own state is at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` — it is per-user, branch-scoped, and ephemeral, not a replacement for STATE.md. |
 | `.planning/MILESTONES.md` | Updated by GSD; SB's `silver:release` cross-checks the latest entry against the release-tag version. |
 | `.planning/phases/<N>/PLAN.md` | Read, not written by SB. |
 | `.planning/phases/<N>/REVIEW.md` | Used by `gsd-code-review-fix` and SB's `silver:release` Stage 1. |
@@ -60,7 +60,7 @@ GSD owns persistent project memory; SB owns runtime enforcement and ephemeral se
 There are **two** state files involved when you run a GSD-driven SB-enforced workflow:
 
 1. **`.planning/STATE.md`** — written by GSD. Project-scoped, persistent, committed to the repo. Tracks current phase, plan progress, milestone status. Survives `/clear`, `/compact`, and machine restarts.
-2. **`~/.claude/.silver-bullet/state`** — written by SB hooks. User-scoped (lives outside the repo), branch-scoped, ephemeral. Tracks which skills have been invoked in the current session for enforcement-gate purposes. Reset on branch change, on `/clear`, and on `startup` events. Never commits to a repo.
+2. **`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`** — written by SB hooks. User-scoped (lives outside the repo), branch-scoped, ephemeral. Tracks which skills have been invoked in the current session for enforcement-gate purposes. Reset on branch change, on `/clear`, and on `startup` events. Never commits to a repo.
 
 These two files do not duplicate each other. GSD's STATE.md tracks project phase progress, while SB's state records which required skills the user has invoked in the current session. Both pieces of information are needed; neither replaces the other.
 

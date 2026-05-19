@@ -20,14 +20,14 @@ The fix wires the existing (but previously unused) trivial-bypass mechanism in `
 
 | Hook event | Matcher | Command | Effect |
 |------------|---------|---------|--------|
-| `SessionStart` | (none — fires always) | `mkdir -p ~/.claude/.silver-bullet && touch ~/.claude/.silver-bullet/trivial` | Every session starts as trivial (bypass active) |
-| `PostToolUse` | `Write\|Edit\|MultiEdit` | `rm -f ~/.claude/.silver-bullet/trivial` | First file modification clears trivial flag |
+| `SessionStart` | (none — fires always) | `mkdir -p ${SB_RUNTIME_HOME_ROOT}/.silver-bullet && touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Every session starts as trivial (bypass active) |
+| `PostToolUse` | `Write\|Edit\|MultiEdit` | `rm -f ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | First file modification clears trivial flag |
 
 ### How it works
 
 `stop-check.sh` already contained this bypass check (unchanged):
 ```bash
-trivial_file="$HOME/.claude/.silver-bullet/trivial"
+trivial_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
 if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0   # skill gate skipped
 fi
@@ -37,7 +37,7 @@ Previously nothing created `trivial`. Now `SessionStart` creates it, and any Wri
 
 ### Security properties preserved
 
-- `stop-check.sh` validates path containment (`case "$trivial_file" in "$HOME/.claude/"*)`) — symlinks are rejected
+- `stop-check.sh` validates path containment (`case "$trivial_file" in "${SB_RUNTIME_HOME_ROOT}/"*)`) — symlinks are rejected
 - The hook commands are hardcoded strings — no user input reaches the shell
 - No changes to `stop-check.sh` itself; the bypass logic was already reviewed and secured
 

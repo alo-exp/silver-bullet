@@ -50,10 +50,10 @@ backup_session_state
 
 backup_file="${SB_TEST_DIR}/mcp-needs-auth-cache.e2e-live-backup-$$"
 assert_file_exists "auth cache backup created" "$backup_file"
-assert_eq "auth cache cleared for live run" "{}" "$(tr -d '\n\r\t ' < "$HOME/.claude/mcp-needs-auth-cache.json")"
+assert_eq "auth cache cleared for live run" "{}" "$(tr -d '\n\r\t ' < "${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json")"
 
 restore_session_state
-assert_eq "auth cache restored after teardown" '{"plugin:test:server":{"timestamp":123}}' "$(tr -d '\n\r\t ' < "$HOME/.claude/mcp-needs-auth-cache.json")"
+assert_eq "auth cache restored after teardown" '{"plugin:test:server":{"timestamp":123}}' "$(tr -d '\n\r\t ' < "${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json")"
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

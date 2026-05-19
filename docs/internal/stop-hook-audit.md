@@ -74,7 +74,7 @@ globally.
 
 | Attribute | Value |
 |-----------|-------|
-| Trigger condition | Trivial file (`~/.claude/.silver-bullet/trivial`) exists and is a regular file (not a symlink) |
+| Trigger condition | Trivial file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial`) exists and is a regular file (not a symlink) |
 | Hook lines | 103–107 (via `lib/trivial-bypass.sh`) |
 | Test coverage | Test 4 |
 | Severity | MEDIUM — bypasses enforcement for the whole session |
@@ -82,7 +82,7 @@ globally.
 
 **Reproduction steps:**
 
-1. Create `~/.claude/.silver-bullet/trivial` (regular file).
+1. Create `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` (regular file).
 2. Send a Stop event with skills missing from state.
 3. Hook exits 0 via `sb_trivial_bypass`.
 
@@ -222,7 +222,7 @@ changes against a pruned upstream. This is the `HOOK-06 / #17` hardening.
 
 **Reproduction steps:**
 
-1. Delete or empty the state file (`~/.claude/.silver-bullet/state`).
+1. Delete or empty the state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`).
 2. Send a Stop event.
 3. Hook exits 0 — non-dev session detected.
 
@@ -238,7 +238,7 @@ any Claude session that happened to fire the Stop hook.
 
 | Attribute | Value |
 |-----------|-------|
-| Trigger condition | The branch name stored in `~/.claude/.silver-bullet/branch` differs from the current git branch |
+| Trigger condition | The branch name stored in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch` differs from the current git branch |
 | Hook lines | 200–219 |
 | Test coverage | Test 14 |
 | Severity | MEDIUM — can fail-open for cross-worktree contamination |
@@ -247,7 +247,7 @@ any Claude session that happened to fire the Stop hook.
 **Reproduction steps:**
 
 1. Set the branch file to a different branch:
-   `printf 'phase/10-other-project\n' > ~/.claude/.silver-bullet/branch`
+   `printf 'phase/10-other-project\n' > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`
 2. Run from a repo on `feature/test`.
 3. Send a Stop event with skills missing.
 4. Hook exits 0 — stale state treated as not applicable to current branch.
@@ -328,7 +328,7 @@ intentional; both lists contain the same deploy, review, and verification skills
 
 1. Inspect `templates/silver-bullet.config.json.default` → `skills.required_deploy`.
 2. For each skill name, search for a matching `SKILL.md`:
-   `find ~/.claude/plugins/cache -name "SKILL.md" | xargs grep -l "^name: <skill>"`
+   `find ${SB_RUNTIME_HOME_ROOT}/plugins/cache -name "SKILL.md" | xargs grep -l "^name: <skill>"`
 3. Skills with no matching `SKILL.md` are phantom entries. They can never be recorded
    in the state file and will always appear as "missing" in the skills check.
 4. Invoke all real skills, then trigger a Stop event — phantom skills still block.

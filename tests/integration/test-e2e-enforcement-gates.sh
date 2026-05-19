@@ -173,7 +173,7 @@ write_default_config
 # All skills so the only block is the plugin boundary check
 write_all_skills
 
-plugin_path="$HOME/.claude/plugins/cache/test-plugin/src/index.js"
+plugin_path="${SB_RUNTIME_HOME_ROOT}/plugins/cache/test-plugin/src/index.js"
 out=$(run_dev_cycle_edit "PreToolUse" "$plugin_path")
 assert_blocked "S10.1: edit blocked targeting plugin cache" "$out"
 assert_contains "S10.2: mentions THIRD-PARTY PLUGIN BOUNDARY" "$out" "THIRD-PARTY PLUGIN BOUNDARY"

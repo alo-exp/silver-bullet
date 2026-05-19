@@ -60,7 +60,7 @@ done
 [[ -z "$config_file" ]] && exit 0
 
 # ── Read config values ────────────────────────────────────────────────────────
-SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR"
 
 sb_default_state="${SB_STATE_DIR}/state"
@@ -85,13 +85,13 @@ required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
-# Security: validate paths stay within ~/.claude/ (SB-002/SB-003)
+# Security: validate paths stay within the host runtime state root (SB-002/SB-003)
 case "$state_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) state_file="${SB_STATE_DIR}/state" ;;
 esac
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 
@@ -165,7 +165,7 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [[ -n "$porcelain" ]]; then
     # Built-in transient-artifact patterns (extended-grep, anchored to
     # status-line shape `XX path`).
-    sb_transient_re='(\.claude/scheduled_tasks\.lock|\.claude/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)'
+    sb_transient_re="(\.${SB_RUNTIME_NAME}/scheduled_tasks\.lock|\.${SB_RUNTIME_NAME}/settings\.local\.json|\.superpowers/|\.planning/workflows/|REVIEW\.md)"
     # Project-configured additional patterns (newline-separated, ERE-escaped
     # by the user). Resolved via .silver-bullet.json walk-up.
     sb_cfg_search="$PWD"
@@ -432,9 +432,9 @@ run_doc_scheme_task_gate() {
 # block legitimate work on a different branch with another branch's skill history.
 # Fail-open by design: stale cross-branch state should never block the current branch.
 sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
-# Security: validate path stays within ~/.claude/ (mirrors session-start pattern)
+# Security: validate path stays within the host runtime state root (mirrors session-start pattern)
 case "$sb_branch_file" in
-  "$HOME"/.claude/*) ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
   *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
 esac
 stored_state_branch=""

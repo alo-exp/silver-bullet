@@ -11,7 +11,7 @@ Added step 5 to `## 0. Session Startup` in both `silver-bullet.md` and `template
 
 **Step 5.1 — Silver Bullet:** reads installed version from `installed_plugins.json`, checks latest from GitHub releases API, offers A/B AskUserQuestion to run `/silver:update` or skip. Graceful fallback on offline/error.
 
-**Step 5.2 — GSD:** reads `~/.claude/get-shit-done/VERSION`, checks latest via `npm view get-shit-done-cc version`, offers A/B AskUserQuestion to run `/gsd-update` or skip. Graceful fallback on unknown version.
+**Step 5.2 — GSD:** reads `${SB_RUNTIME_HOME_ROOT}/get-shit-done/VERSION`, checks latest via `npm view get-shit-done-cc version`, offers A/B AskUserQuestion to run `/gsd-update` or skip. Graceful fallback on unknown version.
 
 **Step 5.3 — Plugins (informational):** reads Superpowers/Design/Engineering installed versions from plugin registry, displays them, provides manual `/plugin install` update instructions. No prompt — proceeds immediately.
 

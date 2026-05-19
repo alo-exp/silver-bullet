@@ -52,8 +52,8 @@ One new warning-level logic issue was introduced by the I2 fix. Two pre-existing
 
 **File:** `hooks/dev-cycle-check.sh:150-158`
 **Issue:** The two exemption `if` blocks are independent and can only set `_quote_exempt=true`, never back to `false`. Consider a command that simultaneously:
-- Contains the state path in a double-quoted non-redirect context (e.g., `--message "state path: ~/.claude/.silver-bullet/state"`), AND
-- Contains the state path as a single-quoted redirect target (e.g., `tee '~/.claude/.silver-bullet/state'`)
+- Contains the state path in a double-quoted non-redirect context (e.g., `--message "state path: ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"`), AND
+- Contains the state path as a single-quoted redirect target (e.g., `tee '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state'`)
 
 In this case:
 1. First `if` block fires: `_state_in_dquote` matches + `_state_redirect_dquote` does NOT match → `_quote_exempt=true`

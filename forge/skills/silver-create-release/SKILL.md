@@ -204,6 +204,12 @@ If neither file changed (e.g. CHANGELOG already had this entry and no badge exis
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
+The four-stage pre-release quality gate from `docs/internal/pre-release-quality-gate.md`
+is a hard prerequisite for any release work. Do not proceed to the live matrix,
+CI wait, tag, or GitHub Release until the current session has recorded
+`quality-gate-stage-1` through `quality-gate-stage-4` and `full-test-suite-rerun`
+in the configured quality-gate file.
+
 ---
 
 ## Step 6 — Run Shared Live Matrix

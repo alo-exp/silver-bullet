@@ -129,7 +129,7 @@ Out of scope for Phase 70 (handled in later phases):
 - `templates/silver-bullet.config.json.default` — where the new `multi_agent` section lives
 
 ### Plugin invariants
-- `CLAUDE.md` — repo invariants: jq required, `trap 'exit 0' ERR` pattern, state files under `~/.claude/` (does NOT apply here — `.phase-locks.json` is project-local, not user-state)
+- `CLAUDE.md` — repo invariants: jq required, `trap 'exit 0' ERR` pattern, state files under `${SB_RUNTIME_HOME_ROOT}/` (does NOT apply here — `.phase-locks.json` is project-local, not user-state)
 - `silver-bullet.md` — runtime contract
 
 </canonical_refs>

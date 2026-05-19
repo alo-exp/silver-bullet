@@ -130,14 +130,14 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "~/.claude/.silver-bullet/state",
-    "trivial_file": "~/.claude/.silver-bullet/trivial"
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
   },
   "release": {
     "profile": "silver-bullet-plugin",
     "require_plugin_runtime_matrix": true,
     "require_pre_release_quality_gate": true,
-    "quality_gate_state_file": "~/.claude/.silver-bullet/quality-gate-state"
+    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
   },
   "_notifications_comment": "Google Chat webhook is now read from the $SB_GCHAT_WEBHOOK env var (see skills/silver-create-release/SKILL.md). Do NOT commit webhook URLs to this file.",
   "semantic_compression": {

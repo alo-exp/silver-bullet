@@ -112,7 +112,7 @@ write_default_config
 # Use SESSION_LOG_TEST_DIR to redirect session logs away from real docs/sessions
 SESSION_LOG_DIR=$(mktemp -d)
 out=$(PROJECT_ROOT_OVERRIDE="$TMPDIR_TEST" SESSION_LOG_TEST_DIR="$SESSION_LOG_DIR" \
-      run_session_log_init "printf interactive > ~/.claude/.silver-bullet/mode")
+      run_session_log_init "printf interactive > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode")
 # session-log-init should run without error and produce some output (session log path or similar)
 if [[ $? -eq 0 ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S6.1: session-log-init runs without error on .silver-bullet/mode command\n'

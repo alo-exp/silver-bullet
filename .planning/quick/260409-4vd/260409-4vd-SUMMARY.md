@@ -10,7 +10,7 @@
    trap, preventing first-install failures from causing Claude to reject the plugin.
 2. Restored `"hooks": "./hooks/hooks.json"` to `.claude-plugin/plugin.json` for automatic
    marketplace hook registration.
-3. Enhanced `silver:init` step 3.7.5 to merge SB hook entries into `~/.claude/settings.json`
+3. Enhanced `silver:init` step 3.7.5 to merge SB hook entries into `${SB_RUNTIME_HOME_ROOT}/settings.json`
    with idempotent path substitution.
 4. Bumped version to v0.13.2 with CHANGELOG entry.
 

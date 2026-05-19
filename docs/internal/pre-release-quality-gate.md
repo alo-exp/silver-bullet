@@ -79,10 +79,10 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
    - **Hooks + config**: .sh files, hooks.json, .silver-bullet.json, templates
    - **Help site + README**: HTML pages, search.js, README.md — step counts, paths, versions
    - **Cross-plugin consistency**: read 100% of skill content from all 4 dependency plugins —
-     GSD: `~/.claude/get-shit-done/` workflows/references/templates;
-     Superpowers: `~/.claude/plugins/cache/*/superpowers/*/skills/*/SKILL.md`;
-     Engineering: `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md`;
-     Design: `~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md` —
+     GSD: `${SB_RUNTIME_HOME_ROOT}/get-shit-done/` workflows/references/templates;
+     Superpowers: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/superpowers/*/skills/*/SKILL.md`;
+     Engineering: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md`;
+     Design: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md` —
      check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet
      instructions and upstream plugin skills
 2. Fix all genuine issues found
@@ -126,7 +126,7 @@ After all four stages pass in the current session, rerun the full test suite
 before release finalization:
 
 1. Run `/verify-tests`
-2. Record the rerun marker: `echo "full-test-suite-rerun" >> ~/.claude/.silver-bullet/quality-gate-state`
+2. Record the rerun marker: `echo "full-test-suite-rerun" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
 3. Do not invoke `/silver-release` until both the rerun marker and the `/verify-tests` freshness marker are present
 
 `hooks/completion-audit.sh` blocks release creation until the quality-gate file
@@ -139,9 +139,9 @@ contains the four stage markers plus `full-test-suite-rerun`, and the
 
 Each stage is enforced via the mandatory `/superpowers:verification-before-completion`
 skill invocation. When invoked, it is recorded in the state file
-(`~/.claude/.silver-bullet/state`); `hooks/completion-audit.sh` tracks required skill
+(`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`); `hooks/completion-audit.sh` tracks required skill
 invocations to gate `gh release create`. The stage completion markers and the
-full-suite rerun marker live in `~/.claude/.silver-bullet/quality-gate-state`.
+full-suite rerun marker live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`.
 
 **Session reset:** The `session-start` hook clears the Silver Bullet quality-gate file at
 the beginning of every session. Each release cycle must earn its own gate pass in

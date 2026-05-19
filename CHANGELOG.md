@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.37.1] — 2026-05-19
+
+## Bug Fixes
+
+- `fix(release): harden CI gate before tagging` (`f4de5bd`)
+- `fix(live): initialize runtime paths for the Claude/Codex live matrix`
+
+## Chores
+
+- `chore(release): prepare v0.37.1`
+
+---
+
 ## [Unreleased]
 
 ---
@@ -700,7 +713,7 @@ bash silver-bullet/forge-sb-install.sh
 
 ### Hooks — dev-cycle-check.sh
 
-- **DC-01**: The fallback self-protection pattern `/silver-bullet[^/]*/hooks/` (used when `CLAUDE_PLUGIN_ROOT` is unset) also matched the silver-bullet source repo's own `hooks/` directory, blocking legitimate hook edits during development. Restricted the fallback to paths provably inside `${HOME}/.claude/` (the installed plugin location only).
+- **DC-01**: The fallback self-protection pattern `/silver-bullet[^/]*/hooks/` (used when `CLAUDE_PLUGIN_ROOT` is unset) also matched the silver-bullet source repo's own `hooks/` directory, blocking legitimate hook edits during development. Restricted the fallback to paths provably inside `${SB_RUNTIME_HOME_ROOT}/` (the installed plugin location only).
 
 ## [0.23.8] — 2026-04-20
 
@@ -757,7 +770,7 @@ bash silver-bullet/forge-sb-install.sh
 - **UPD-02**: Replaced fragile `curl | grep | sed` tag parse with `jq -r '.tag_name' | sed 's/^v//'` (jq is already a project prerequisite).
 - **UPD-03**: Bound `$LATEST`, `$NEW_CACHE`, `$COMMIT_SHA`, `$NOW` as real shell variables. Removed unquoted/unresolved `<latest-version>` placeholders from executable commands.
 - **UPD-04**: Atomic registry write — `mktemp` + `mv` with a concrete `jq --arg` expression that updates `version`, `installPath`, `lastUpdated`, `gitCommitSha`. Prevents mid-write corruption.
-- **UPD-05**: Cancel-path `rm -rf` guarded by `$HOME/.claude/plugins/cache/` prefix match.
+- **UPD-05**: Cancel-path `rm -rf` guarded by `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` prefix match.
 
 ### silver-migrate
 - **MIG-01**: Description updated with explicit `/silver:migrate` trigger + pre-v0.20.0 context.
@@ -1083,7 +1096,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 
 ### Added
 - `silver:init` Phase 3 step 3.7.5: after project scaffolding, merges SB
-  hook entries from `hooks/hooks.json` into `~/.claude/settings.json` using
+  hook entries from `hooks/hooks.json` into `${SB_RUNTIME_HOME_ROOT}/settings.json` using
   `python3`. Hook commands are registered with the actual install path
   substituted for `${CLAUDE_PLUGIN_ROOT}`. Idempotent — re-running init
   does not add duplicate entries. Also runs during update mode (step 5a).
@@ -1096,7 +1109,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 - docs/workflows/full-dev-cycle.md MODEL ROUTING section updated to match; removed manual prompt flow
 
 ### Added
-- `hooks/ensure-model-routing.sh` — self-healing session-start hook that reapplies `model:` directives to all 24 GSD agent files if a GSD update wipes them. Canary-guarded (~2ms no-op when correct, <50ms when patching). Bash 3.2 compatible. Audit trail written to `~/.claude/.silver-bullet/model-routing-patch.log`.
+- `hooks/ensure-model-routing.sh` — self-healing session-start hook that reapplies `model:` directives to all 24 GSD agent files if a GSD update wipes them. Canary-guarded (~2ms no-op when correct, <50ms when patching). Bash 3.2 compatible. Audit trail written to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/model-routing-patch.log`.
 
 ### Fixed
 - All "8 dimensions" references updated to "9 dimensions" across site/index.html (3 occurrences), site/help/index.html, site/help/dev-workflow/index.html, site/help/search.js (3 occurrences), and docs/workflows/full-dev-cycle.md (4 occurrences total)
@@ -1196,7 +1209,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 - PreToolUse → PostToolUse in landing page HARD STOP gate description
 - Broken relative link in compare page footer (help/ → ../help/)
 - Stale /tmp/ references in help reference page, search index, and silver:init skill
-- Test files updated from /tmp/.silver-bullet-* to ~/.claude/.silver-bullet/ paths
+- Test files updated from /tmp/.silver-bullet-* to ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ paths
 - session-log-init sentinel subshell fully detached from pipeline (fixes test hangs)
 - session-log-init grep pattern updated to match new mode file path
 - SENTINEL audit doc updated: 8→7 layers, post-remediation note added

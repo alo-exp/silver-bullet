@@ -32,7 +32,7 @@ Single combined pattern requires write operator (`>>`, `>`, `tee`) to appear bef
 **HOOK-03** (`hooks/ci-status-check.sh` lines 99-101):
 ```
 If you need to commit a CI fix: recreate the bypass file in your terminal (not in Claude):
-  touch ~/.claude/.silver-bullet/trivial
+  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial
 This re-enables commits for the current session so you can push your fix.
 ```
 Escape instruction present in CI failure block message.

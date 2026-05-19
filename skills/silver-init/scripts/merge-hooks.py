@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Idempotently merge Silver Bullet hooks from hooks.json into ~/.claude/settings.json.
+Idempotently merge Silver Bullet hooks from hooks.json into the host runtime settings.json.
 Purges stale SB hook entries from previous installs before registering new ones.
 Usage: python3 merge_hooks.py <sb_install_path>
 """
@@ -8,7 +8,7 @@ import json, os, pathlib, re, shutil, sys
 
 install_path = sys.argv[1]
 hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
-settings_path = os.path.expanduser('~/.claude/settings.json')
+settings_path = os.path.join(os.path.expanduser('~'), '.claude', 'settings.json')
 
 
 def stable_install_path(raw_install_path):
@@ -108,4 +108,4 @@ with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
 
-print('SB hooks registered in ~/.claude/settings.json')
+print('SB hooks registered in the host runtime settings.json')

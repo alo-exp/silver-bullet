@@ -12,11 +12,18 @@ trap 'exit 0' ERR
 # and VERIFICATION.md. SB may own separate spec/quality artifacts, but it does
 # not directly mutate GSD lifecycle artifacts.
 #
-# Bypass: create ~/.claude/.silver-bullet/planning-edit-override (file, not symlink)
+# Bypass: create <host runtime>/.silver-bullet/planning-edit-override (file, not symlink)
 # or set env var SB_ALLOW_PLANNING_EDITS=1 before starting Claude Code.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
+
+# Source runtime path selector so the override/trivial files follow the host.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -92,7 +99,7 @@ if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
 fi
 
 # ── Bypass: file-based override (consistent with ci-red-override pattern) ─────
-_override="${HOME}/.claude/.silver-bullet/planning-edit-override"
+_override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
 if [[ -f "$_override" && ! -L "$_override" ]]; then
   _msg="⚠️  planning-file-guard: override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
   printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
@@ -101,13 +108,13 @@ fi
 
 # ── Trivial bypass (sourced from shared helper — REF-01) ─────────────────────
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
-_trivial_file="${HOME}/.claude/.silver-bullet/trivial"
+_trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
 _cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
 [[ -n "$_cfg_trivial" ]] && _trivial_file="${_cfg_trivial/#\~/$HOME}"
-# Security: validate trivial path stays within ~/.claude/ (mirrors stop-check.sh SB-002)
+# Security: validate trivial path stays within the host runtime state root (mirrors stop-check.sh SB-002)
 case "$_trivial_file" in
-  "$HOME"/.claude/*) ;;
-  *) _trivial_file="${HOME}/.claude/.silver-bullet/trivial" ;;
+  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
+  *) _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial" ;;
 esac
 if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
@@ -162,7 +169,7 @@ GSD-managed planning artifacts must be modified only through their owning skills
 ${skill_hint}
 
 To bypass for a one-off doc fix:
-  touch ~/.claude/.silver-bullet/planning-edit-override
+  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override
 Remove the file when done."
 
 json_msg=$(printf '%s' "$msg" | jq -Rs '.')

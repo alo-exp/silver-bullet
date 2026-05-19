@@ -160,7 +160,7 @@ If B: STOP.
 
 Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
 ```bash
-{ test -f "$HOME/.claude/get-shit-done/workflows/new-project.md" || test -f "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
+{ test -f "~/.claude/get-shit-done/workflows/new-project.md" || test -f "~/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "~/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND`, use AskUserQuestion:
@@ -223,7 +223,7 @@ If B: continue without stopping.
 
 Use the Glob tool to search for:
 `~/.claude/plugins/cache/product-management/skills/`
-and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.codex/plugins/cache/*/product-management/skills/`
+and Codex cache roots such as `~/.claude/plugins/cache/*/product-management/skills/` and `~/.claude/plugins/cache/*/product-management/skills/`
 
 If no directory found in any supported cache root, use AskUserQuestion:
 - Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
@@ -244,7 +244,7 @@ Run this phase only after all Phase 1 presence checks pass. For each dependency,
 
 Read installed version:
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "~/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 Check latest version:
@@ -268,7 +268,7 @@ If version check fails (curl error, missing file, or either version is "unknown"
 
 Read installed version:
 ```bash
-cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+cat "~/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
 ```
 
 Check latest version:
@@ -293,7 +293,7 @@ If either version is "unknown": output "Could not determine GSD version. Continu
 Read installed versions from `~/.claude/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
+cat "~/.claude/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
   select(.key | test("^(superpowers|design|engineering)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -309,12 +309,12 @@ No automated update skill exists for these plugins. If the user wants to update 
 
 Read installed version:
 ```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+cat "~/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
 ```
 
 Check latest:
 ```bash
-cat "$HOME/.claude/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
+cat "~/.claude/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
 ```
 
 If installed version appears outdated compared to CHANGELOG, display:

@@ -80,7 +80,7 @@ _phase_lock_peek_on_exit() {
   else
     local _peek_runtime _peek_owner_id
     _peek_runtime=$(printf '%s' "$_peek_owner_json" | jq -r '.agent_runtime // ""' 2>/dev/null || echo '')
-    if [[ "$_peek_runtime" != "claude" ]]; then
+    if [[ "$_peek_runtime" != "${SB_RUNTIME_NAME}" ]]; then
       _peek_owner_id=$(printf '%s' "$_peek_owner_json" | jq -r '.owner_id // "?"' 2>/dev/null || echo '?')
       printf 'WARN: phase %s is currently locked by %s — proceeding anyway\n' \
         "$_peek_phase" "$_peek_owner_id" >&2

@@ -9,7 +9,7 @@
 | `PostToolUse` hook | AGENTS.md "After every action" section | Applied globally |
 | `SessionStart` hook | AGENTS.md "On Session Start" section | Runs at session init |
 | Plugin MANIFEST.json | `forge-sb-install.sh` bootstrap script | Manual install |
-| `~/.claudeplugins.json` | `~/forge/AGENTS.md` + `~/forge/skills/` | Global user config |
+| `${SB_RUNTIME_HOME_ROOT}plugins.json` | `~/forge/AGENTS.md` + `~/forge/skills/` | Global user config |
 | Project `.claudeplugins.json` | `.forge/skills/` + project `AGENTS.md` | Per-project config |
 | `silver-bullet.md §10` preferences | AGENTS.md standing instructions | Baked in, not per-session |
 | Episodic memory MCP | Session logs + AGENTS.md mentoring loop | Manual extraction |

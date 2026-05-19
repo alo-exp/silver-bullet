@@ -605,7 +605,7 @@ Minimum required files:
   Host execution tier is the base rate; host high/top tiers are progressively more expensive.
 - Complete the session log: read path from `~/.codex/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
-  Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
+  Active Intent Ledger, Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
   Model, Virtual cost. If `~/.codex/.silver-bullet/session-log-path` is missing,
   create `docs/sessions/<today>-manual.md` from the session log template.
 - Documentation agents writing to `docs/` run in the **main worktree only**

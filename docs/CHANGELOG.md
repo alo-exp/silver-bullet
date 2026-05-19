@@ -74,7 +74,7 @@
 **KNOWLEDGE.md**: updated (skills added to project)
 
 ## 2026-04-16 — trivial-session-bypass
-**What**: Added trivial-session bypass to stop-check — SessionStart creates ~/.claude/.silver-bullet/trivial, PostToolUse Write/Edit/MultiEdit removes it; skill gate only fires when files were actually modified.
+**What**: Added trivial-session bypass to stop-check — SessionStart creates ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial, PostToolUse Write/Edit/MultiEdit removes it; skill gate only fires when files were actually modified.
 **Commits**: 7848b92
 **Skills run**: silver-quality-gates, security, gsd-docs-update, silver-release
 **Virtual cost**: ~$0.15 (Sonnet, low complexity)

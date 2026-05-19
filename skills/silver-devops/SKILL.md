@@ -102,9 +102,9 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current" \
+      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current" \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
+      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break

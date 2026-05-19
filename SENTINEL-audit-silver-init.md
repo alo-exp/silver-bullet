@@ -88,11 +88,11 @@ The skill does not declare tool definitions in YAML/JSON format. Instead, it **i
 
 | Tool | Usage | Risk |
 |------|-------|------|
-| **Bash** | 12+ invocations: `test -f`, `command -v`, `basename`, `git remote`, `ls -d`, `mkdir -p`, `git add`, `git commit`, `touch`, `ls ~/.claude/...` | HIGH — shell access |
+| **Bash** | 12+ invocations: `test -f`, `command -v`, `basename`, `git remote`, `ls -d`, `mkdir -p`, `git add`, `git commit`, `touch`, `ls ${SB_RUNTIME_HOME_ROOT}/...` | HIGH — shell access |
 | **Read** | Read project files (README.md, CLAUDE.md, package.json, etc.) and plugin templates | LOW — read-only |
 | **Write** | Write CLAUDE.md, .silver-bullet.json, 4 placeholder docs | MEDIUM — filesystem writes |
 | **Edit** | Edit `.claude/settings.json` to remove v1 hooks | LOW — scoped edit |
-| **Glob** | Search for plugin skill files in `~/.claude/plugins/cache/` | LOW — read-only |
+| **Glob** | Search for plugin skill files in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` | LOW — read-only |
 | **Skill** | Invoke `/compact`, `/using-superpowers`, `/design:design-system`, `/engineering:documentation` | LOW — delegates to other skills |
 
 **Permission Combination Analysis:**
@@ -115,7 +115,7 @@ The skill does not declare tool definitions in YAML/JSON format. Instead, it **i
 
 ### Skill Intent
 
-The skill initializes Silver Bullet enforcement for a user's project. It is a **setup wizard** — run once per project (or re-run for template refresh). Its trust boundary is the user's local project directory plus the plugin's cache directory under `~/.claude/`. It reads project metadata, writes configuration files, and makes a git commit.
+The skill initializes Silver Bullet enforcement for a user's project. It is a **setup wizard** — run once per project (or re-run for template refresh). Its trust boundary is the user's local project directory plus the plugin's cache directory under `${SB_RUNTIME_HOME_ROOT}/`. It reads project metadata, writes configuration files, and makes a git commit.
 
 ### Attack Surface Map
 
@@ -123,14 +123,14 @@ External inputs to this skill:
 1. **User text input** — project name confirmation (Phase 2.5), project type selection (Phase 2.6), CLAUDE.md choice (Phase 3.1), update confirmation (Phase 3 update mode)
 2. **Project manifest files** — `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `pom.xml`, `build.gradle` (read for name/stack detection)
 3. **Git remote URL** — `git remote get-url origin` output
-4. **Plugin cache directory** — `~/.claude/plugins/cache/*/...` (globbed for dependency detection)
+4. **Plugin cache directory** — `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/...` (globbed for dependency detection)
 5. **Existing `.claude/settings.json`** — read for v1 incompatibility check
 6. **Existing `.silver-bullet.json`** — read for update mode
 7. **Template files** — `CLAUDE.md.base`, `silver-bullet.config.json.default` (from plugin root)
 
 ### Privilege Inventory
 
-- **File system read**: Project root files, `~/.claude/` directory, docs/ directory
+- **File system read**: Project root files, `${SB_RUNTIME_HOME_ROOT}/` directory, docs/ directory
 - **File system write**: CLAUDE.md, .silver-bullet.json, docs/ directory (4 placeholder files), docs/workflows/ (1-2 workflow files)
 - **Shell execution**: `test`, `command`, `basename`, `git`, `ls`, `mkdir`, `touch` — all via Bash tool
 - **Git operations**: `git add`, `git commit` — modifies repository history
@@ -271,7 +271,7 @@ Crypto miner detection: No mining patterns found.
 
 **Applicability:** NO — No API keys, tokens, passwords, or credential patterns found in any file.
 
-Credential file targeting: The skill reads `~/.claude/plugins/cache/` and `~/.claude/commands/` (Phase 1.2-1.5, Phase 2.7) — these are plugin directories, not credential files. It also reads `.claude/settings.json` (Phase 1.6) — this is a settings file, not a credential file. No reads target `~/.ssh/`, `~/.aws/`, `~/.gnupg/`, `~/.npmrc`, or other credential-storing paths.
+Credential file targeting: The skill reads `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` and `${SB_RUNTIME_HOME_ROOT}/commands/` (Phase 1.2-1.5, Phase 2.7) — these are plugin directories, not credential files. It also reads `.claude/settings.json` (Phase 1.6) — this is a settings file, not a credential file. No reads target `~/.ssh/`, `~/.aws/`, `~/.gnupg/`, `~/.npmrc`, or other credential-storing paths.
 
 Justification: All file reads target project files, plugin cache directories, and project configuration. No credential paths accessed.
 

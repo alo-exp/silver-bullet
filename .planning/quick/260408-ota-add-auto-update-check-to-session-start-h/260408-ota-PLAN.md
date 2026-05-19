@@ -51,7 +51,7 @@ The new step reads:
 
    **5.1 Silver Bullet**
    ```bash
-   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, use AskUserQuestion:
@@ -62,7 +62,7 @@ The new step reads:
 
    **5.2 GSD**
    ```bash
-   cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+   cat "${SB_RUNTIME_HOME_ROOT}/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
    npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
    ```
    Compare as semver. If installed < latest, use AskUserQuestion:
@@ -73,7 +73,7 @@ The new step reads:
 
    **5.3 Plugins (informational)**
    ```bash
-   cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '
      .plugins | to_entries[] |
      select(.key | test("^(superpowers|design|engineering)@")) |
      "\(.key | split("@")[0]): v\(.value[0].version)"

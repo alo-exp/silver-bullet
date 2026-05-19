@@ -61,8 +61,8 @@ Redesign silver-fast from a 2-tier system (trivial → gsd-fast, everything else
 - `skills/silver/SKILL.md` — Router with silver:fast routing entry
 
 ### GSD Skills
-- `$HOME/.claude/skills/gsd-quick/SKILL.md` — gsd-quick with flag documentation
-- `$HOME/.claude/skills/gsd-fast/SKILL.md` — gsd-fast execution
+- `${SB_RUNTIME_HOME_ROOT}/skills/gsd-quick/SKILL.md` — gsd-quick with flag documentation
+- `${SB_RUNTIME_HOME_ROOT}/skills/gsd-fast/SKILL.md` — gsd-fast execution
 
 ### Prior Phase Context
 - `.planning/phases/25-composer-redesign/25-CONTEXT.md` — Composition Proposal pattern (D-03: router unchanged)
@@ -83,7 +83,7 @@ Redesign silver-fast from a 2-tier system (trivial → gsd-fast, everything else
 
 ### Integration Points
 - /silver router routes to silver:fast based on complexity triage — this routing is unchanged
-- gsd-quick is a GSD skill at $HOME/.claude/skills/gsd-quick/ — invoked via Skill tool
+- gsd-quick is a GSD skill at ${SB_RUNTIME_HOME_ROOT}/skills/gsd-quick/ — invoked via Skill tool
 - silver-feature is invoked via Skill tool on complex escalation
 
 </code_context>

@@ -108,7 +108,7 @@ The following specific areas requested for R3 verification pass with no findings
 **`hooks/dev-cycle-check.sh` — quote-exemption + veto + redirect-target patterns:**
 - The three-block logic (dquote exemption → squote exemption → veto override) is correct.
 - The veto at lines 162–164 correctly resets `_quote_exempt=false` when the state path appears as a redirect target in EITHER quote style, defeating mixed-quote bypass scenarios (verified with live test).
-- Unquoted redirect commands (`echo data > ~/.claude/.silver-bullet/state`) are caught by the main pattern at line 168 independently of the quote-exemption logic.
+- Unquoted redirect commands (`echo data > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) are caught by the main pattern at line 168 independently of the quote-exemption logic.
 - The `\\.` double-escape in `_state_in_squote` and `_state_redirect_squote` (double-quoted Bash variables) correctly produces a single-backslash literal dot in the regex, matching `.claude` correctly.
 
 **`hooks/session-log-init.sh` — disown-after-lock + sentinel cleanup:**

@@ -2,6 +2,15 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/lib/kay-codex-isolation.sh"
+
+if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
+  SILVER_BULLET_RUNTIME="claude"
+fi
+if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
+fi
+
 RUNTIMES=()
 RELEASE_LIVE_MATRIX_FILE=""
 full_matrix_requested=false
@@ -55,13 +64,23 @@ run_suite() {
 for runtime in "${RUNTIMES[@]}"; do
   case "$runtime" in
     claude)
-      RELEASE_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/release-live-matrix"
+      SILVER_BULLET_RUNTIME="claude"
+      if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
+        # shellcheck source=hooks/lib/runtime-paths.sh
+        source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
+      fi
+      RELEASE_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/release-live-matrix"
       if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
         echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
         exit 1
       fi
       ;;
     codex)
+      SILVER_BULLET_RUNTIME="codex"
+      if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
+        # shellcheck source=hooks/lib/runtime-paths.sh
+        source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
+      fi
       # shellcheck source=tests/live/lib/kay-codex-isolation.sh
       source "$CODEX_ISOLATION_HELPER"
       setup_kay_codex_isolation

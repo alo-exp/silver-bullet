@@ -569,8 +569,8 @@ footer a:hover{color:var(--accent-light)}
   },
   <span class="key">"release"</span>: {
     <span class="key">"profile"</span>: <span class="str">"generic"</span>,
-    <span class="key">"require_plugin_runtime_matrix"</span>: <span class="val">false</span>,
-    <span class="key">"require_pre_release_quality_gate"</span>: <span class="val">false</span>
+    <span class="key">"require_plugin_runtime_matrix"</span>: <span class="val">true</span>,
+    <span class="key">"require_pre_release_quality_gate"</span>: <span class="val">true</span>
   },
   <span class="key">"devops_plugins"</span>: {
     <span class="key">"hashicorp"</span>: <span class="val">false</span>,
@@ -580,8 +580,8 @@ footer a:hover{color:var(--accent-light)}
     <span class="key">"wshobson"</span>: <span class="val">false</span>
   },
   <span class="key">"state"</span>: {
-    <span class="key">"state_file"</span>: <span class="str">"~/.claude/.silver-bullet/state"</span>,
-    <span class="key">"trivial_file"</span>: <span class="str">"~/.claude/.silver-bullet/trivial"</span>
+    <span class="key">"state_file"</span>: <span class="str">"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"</span>,
+    <span class="key">"trivial_file"</span>: <span class="str">"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"</span>
   }
 }</div>
 
@@ -591,7 +591,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SESSION LOG -->
       <h2 id="session-log">Session Log Format</h2>
-      <p>A session log is created at the start of every session at <code>docs/sessions/YYYY-MM-DD-{task-slug}.md</code>. The path is written to <code>~/.claude/.silver-bullet/session-log-path</code> for hooks to access.</p>
+      <p>A session log is created at the start of every session at <code>docs/sessions/YYYY-MM-DD-{task-slug}.md</code>. The path is written to <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code> for hooks to access.</p>
 
       <div class="code-block"><span class="comment"># Session: {task-slug}</span>
 
@@ -706,17 +706,17 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
       <div class="divider"></div>
 
       <!-- TEMP FILES -->
-      <h2 id="temp-files">State Files (~/.claude/.silver-bullet/)</h2>
-      <p>These files live in <code>~/.claude/.silver-bullet/</code> with restricted permissions (0700). They store session state for hooks.</p>
+      <h2 id="temp-files">State Files (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/)</h2>
+      <p>These files live in <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/</code> with restricted permissions (0700). They store session state for hooks.</p>
 
       <table class="ref-table">
         <thead><tr><th>File</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>~/.claude/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
-          <tr><td>~/.claude/.silver-bullet/session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
-          <tr><td>~/.claude/.silver-bullet/trivial</td><td>Legacy compatibility marker. Codex agents should route trivial work through <code>/silver:fast</code> instead.</td></tr>
-          <tr><td>~/.claude/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
-          <tr><td>~/.claude/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial</td><td>Legacy compatibility marker. Codex agents should route trivial work through <code>/silver:fast</code> instead.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
         </tbody>
       </table>
 

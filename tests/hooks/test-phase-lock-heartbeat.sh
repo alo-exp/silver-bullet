@@ -4,13 +4,18 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 HOOK="$REPO_ROOT/hooks/phase-lock-heartbeat.sh"
 HELPER_SRC="$REPO_ROOT/.planning/scripts/phase-lock.sh"
 
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${HOME}/.claude/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 MANIFEST="${SB_TEST_DIR}/claimed-phases-test-${TEST_RUN_ID}.txt"
@@ -66,8 +71,8 @@ teardown
 # ── T3: heartbeat fires when throttle stale ─────────────────────────────────
 echo "--- T3: throttle stale (missing) → helper called, throttle refreshed ---"
 setup
-# Claim 099 as claude via helper directly
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 claude "test" >/dev/null 2>&1
+# Claim 099 using the current SB runtime via helper directly
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf '099\n' > "$MANIFEST"
 rm -f "$THROTTLE"  # explicitly stale = absent
 hb_before=$(jq -r '."099".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
@@ -82,13 +87,13 @@ hb_after=$(jq -r '."099".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
   && ok "T3: lock last_heartbeat_at advanced" \
   || nope "T3: heartbeat advance" "before=$hb_before after=$hb_after"
 # release
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 claude >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 "$SB_RUNTIME_NAME" >/dev/null 2>&1
 teardown
 
 # ── T4: heartbeat throttled when fresh ──────────────────────────────────────
 echo "--- T4: throttle fresh (mtime within 300s) → helper NOT called ---"
 setup
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 claude "test" >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 "$SB_RUNTIME_NAME" "test" >/dev/null 2>&1
 printf '099\n' > "$MANIFEST"
 touch "$THROTTLE"  # fresh mtime
 hb_before=$(jq -r '."099".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
@@ -100,13 +105,13 @@ hb_after=$(jq -r '."099".last_heartbeat_at' "$SB_PHASE_LOCK_FILE")
 [[ "$hb_after" == "$hb_before" ]] \
   && ok "T4: lock last_heartbeat_at UNCHANGED (helper not called)" \
   || nope "T4: throttled call" "lock advanced — throttle didn't suppress"
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 claude >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 "$SB_RUNTIME_NAME" >/dev/null 2>&1
 teardown
 
 # ── T5: helper not-owned does not block ─────────────────────────────────────
-echo "--- T5: manifest entry not owned by claude → warn but exit 0 ---"
+echo "--- T5: manifest entry not owned by current runtime → warn but exit 0 ---"
 setup
-# Have forge claim 098 — manifest says we (claude) want to heartbeat 098 but don't own it
+# Have forge claim 098 — manifest says we want to heartbeat 098 but don't own it
 bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 forge "owned-by-forge" >/dev/null 2>&1
 printf '098\n' > "$MANIFEST"
 rm -f "${SB_TEST_DIR}/heartbeat-098"

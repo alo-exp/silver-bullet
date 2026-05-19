@@ -5,14 +5,21 @@ trap 'exit 0' ERR
 
 # Debug hook to dump Codex/Claude hook payloads for local troubleshooting.
 # Enabled only when the flag file exists:
-#   ~/.claude/.silver-bullet/debug-dump
+#   <host runtime>/.silver-bullet/debug-dump
 #
 # Writes JSON payload lines to:
-#   ~/.claude/.silver-bullet/hook-dump.jsonl
+#   <host runtime>/.silver-bullet/hook-dump.jsonl
 
 umask 0077
 
-DBG_DIR="${HOME}/.claude/.silver-bullet"
+# Source runtime path selector so the debug dump follows the host runtime.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
+DBG_DIR="${SB_RUNTIME_STATE_DIR}"
 DBG_FLAG="${DBG_DIR}/debug-dump"
 DBG_OUT="${DBG_DIR}/hook-dump.jsonl"
 

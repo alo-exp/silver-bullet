@@ -41,7 +41,7 @@ Use whichever is cleaner. The key constraint: the check must pass when FAIL appe
 ### HOOK-02: dev-cycle-check state-tamper false-positive (heredoc content)
 
 **File:** `hooks/dev-cycle-check.sh`
-**Current bug (lines 139-148):** Two separate grep checks — one for the state path appearing anywhere in the command, one for a write operator appearing anywhere in the command. A command with `cat > /tmp/foo << 'EOF'...~/.claude/.silver-bullet...EOF` triggers both independently.
+**Current bug (lines 139-148):** Two separate grep checks — one for the state path appearing anywhere in the command, one for a write operator appearing anywhere in the command. A command with `cat > /tmp/foo << 'EOF'...${SB_RUNTIME_HOME_ROOT}/.silver-bullet...EOF` triggers both independently.
 
 **Fix:** Combine into a single pattern requiring the write operator to appear BEFORE (not after a heredoc delimiter) the state path in the command. This ensures the state path is the write DESTINATION, not just content:
 
@@ -75,7 +75,7 @@ Invoke /gsd:debug now to investigate...
 **Updated block message:** Append to the existing message:
 ```
 If you need to commit a CI fix: recreate the bypass file in your terminal (not in Claude):
-  touch ~/.claude/.silver-bullet/trivial
+  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial
 This re-enables commits for the current session so you can push your fix.
 ```
 

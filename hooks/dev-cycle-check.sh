@@ -77,7 +77,7 @@ main() {
   tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
-  plugin_cache="${HOME}/.claude/plugins/cache"
+  plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
   if [[ -n "$file_path" ]] && [[ "$file_path" == "$plugin_cache"/* ]]; then
     msg="🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION — You are attempting to edit a file inside the plugin cache:
 $(basename "$file_path")
@@ -126,16 +126,16 @@ See CLAUDE.md §8 for details."
   fi
 
   # Fallback: detect hooks path by pattern if CLAUDE_PLUGIN_ROOT unavailable.
-  # IMPORTANT: Only block paths that are provably inside ${HOME}/.claude/ (the installed
+  # IMPORTANT: Only block paths that are provably inside the host runtime root (the installed
   # plugin location). Do NOT use a repo-name pattern — that would also match the silver-
   # bullet source repo's own hooks/ directory and prevent legitimate source edits.
   if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
-    if [[ -n "$file_path" ]] && [[ "$file_path" == "${HOME}/.claude/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
+    if [[ -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
-    if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE "${HOME}/.claude/[^ ]*/hooks/" && \
+    if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
@@ -148,7 +148,9 @@ See CLAUDE.md §8 for details."
   # Security note: if state/config files are unreadable, we emit a WARNING (not a
   # block) — blocking on unreadable state would lock users out. The outer
   # trap 'exit 0' ERR provides graceful degradation for all unexpected failures.
-  SB_STATE_DIR_EARLY="${HOME}/.claude/.silver-bullet"
+  SB_STATE_DIR_EARLY="${SB_RUNTIME_STATE_DIR}"
+  _runtime_root_regex=$(printf '%s' "${SB_RUNTIME_HOME_ROOT}" | sed 's/[[][\\.^$*+?(){}|]/\\&/g')
+  _state_dir_regex=$(printf '%s' "${SB_RUNTIME_STATE_DIR}" | sed 's/[[][\\.^$*+?(){}|]/\\&/g')
 
   if [[ -n "$file_path" ]]; then
     # Edit/Write targeting the state directory → hard block
@@ -158,47 +160,23 @@ See CLAUDE.md §8 for details."
 Skills are recorded automatically when invoked via the Skill tool. Modifying state files directly bypasses workflow enforcement.
 
 To reset the workflow state, remove the file from your terminal (not from Claude):
-  rm ~/.claude/.silver-bullet/state"
+      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
       exit 0
     fi
   elif [[ -n "$command_str" ]]; then
-    # Bash write to .silver-bullet/state -> block (branch and trivial are NOT state-managed)
-    # QA-05: match only the first line (prevents heredoc body false-positives) and skip
-    # git/gh commands entirely — those never write to state files but may mention the state
-    # path in -m / --body string arguments, causing false-positive blocks (issue #36).
-    # Also skip when the path appears only inside a quoted non-redirect argument (not a real
-    # redirect). The redirect-target patterns below prevent the exemption from firing when the
-    # quoted path IS the target of a redirect operator (e.g. tee "~/.claude/.../state").
+    # Bash write to the state file -> block. Plain mentions in git/gh message
+    # strings are allowed; only real redirections / tee writes are blocked.
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
-    _state_in_dquote='"[^"]*\.claude/[^/]+/state[^"]*"'
-    _state_in_squote="'[^']*\\.claude/[^/]+/state[^']*'"
-    _state_redirect_dquote='(>>|[[:space:]]>[^>&=]|\btee\b)[^"]*"[^"]*\.claude/[^/]+/state'
-    _state_redirect_squote="(>>|[[:space:]]>[^>&=]|\btee\b)[^']*'[^']*\\.claude/[^/]+/state"
-    _quote_exempt=false
-    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_dquote" && \
-       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote"; then
-      _quote_exempt=true
-    fi
-    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_in_squote" && \
-       ! printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
-      _quote_exempt=true
-    fi
-    # Veto: if the state path is a redirect target in ANY quote style, never exempt —
-    # prevents a mixed-quote-style bypass where the two independent if blocks above
-    # could set _quote_exempt=true from one context while the other is a redirect target.
-    if printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_dquote" || \
-       printf '%s' "$cmd_first_line_tamper" | grep -qE "$_state_redirect_squote"; then
-      _quote_exempt=false
-    fi
+    state_path="${SB_STATE_DIR_EARLY}/state"
     if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
-       ! $_quote_exempt && \
-       printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)[^<]*\.claude/[^/]+/state\b'; then
+       printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
+       printf '%s' "$cmd_first_line_tamper" | grep -qF "$state_path"; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
 Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
 
 To reset workflow state intentionally, run in your terminal:
-  rm ~/.claude/.silver-bullet/state"
+      rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
       exit 0
     fi
   fi
@@ -226,7 +204,7 @@ To reset workflow state intentionally, run in your terminal:
   src_exclude_pattern='__tests__|\.test\.'
   required_planning=""   # resolved below after reading active_workflow
   active_workflow="full-dev-cycle"
-  SB_STATE_DIR="${HOME}/.claude/.silver-bullet"
+  SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
   state_file="${SB_STATE_DIR}/state"
   trivial_file="${SB_STATE_DIR}/trivial"
   verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
@@ -298,26 +276,26 @@ To reset workflow state intentionally, run in your terminal:
   state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
   verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
-  # Security: validate state file path stays within ~/.claude/ (SB-002/SB-003)
+  # Security: validate state file path stays within the host runtime state root (SB-002/SB-003)
   case "$state_file" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) state_file="${SB_STATE_DIR}/state" ;;
   esac
   case "$verify_tests_state_file" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
   esac
 
-  # Security: validate trivial file path stays within ~/.claude/ (SB-002/SB-003)
+  # Security: validate trivial file path stays within the host runtime state root (SB-002/SB-003)
   case "$trivial_file" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) trivial_file="${SB_STATE_DIR}/trivial" ;;
   esac
 
   # --- Mid-session branch mismatch warning (F-09) ---
   sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
   case "$sb_branch_file" in
-    "$HOME"/.claude/*) ;;
+    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
     *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
   esac
   if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
@@ -333,7 +311,7 @@ To reset workflow state intentionally, run in your terminal:
   # --- Destructive command warning (F-04) ---
   if [[ -n "$command_str" ]] && [[ ! -f "$trivial_file" || -L "$trivial_file" ]]; then
     if printf '%s' "$command_str" | grep -qE '\b(rm|mv)\b' && \
-       ! printf '%s' "$command_str" | grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.claude/)"; then
+       ! printf '%s' "$command_str" | grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.${SB_RUNTIME_NAME}/)"; then
       printf '{"hookSpecificOutput":{"message":"Warning: Destructive command detected (rm/mv on project files). Verify this is intentional before proceeding."}}'
       # Warning only -- do not block
     fi

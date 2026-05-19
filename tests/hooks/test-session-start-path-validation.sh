@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests for the path validation logic in hooks/session-start
-# Tests that sp_file is cleared when the resolved path is outside ~/.claude/plugins/cache/
+# Tests that sp_file is cleared when the resolved path is outside ${SB_RUNTIME_HOME_ROOT}/plugins/cache/
 #
 # NOTE: These tests reproduce the validation snippet inline rather than invoking
 # hooks/session-start directly (which requires live plugin cache paths and a full
@@ -17,7 +17,7 @@ echo "=== session-start path validation tests ==="
 # The validation snippet from hooks/session-start (lines 88-91):
 #   if [[ -n "${sp_file:-}" ]]; then
 #     _sp_resolved="$(cd "$(dirname "$sp_file")" 2>/dev/null && pwd)/$(basename "$sp_file")" || sp_file=""
-#     [[ "${_sp_resolved:-}" == "${HOME}/.claude/plugins/cache/"* ]] || sp_file=""
+#     [[ "${_sp_resolved:-}" == "${SB_RUNTIME_HOME_ROOT}/plugins/cache/"* ]] || sp_file=""
 #   fi
 
 validate_sp_file() {
@@ -25,15 +25,15 @@ validate_sp_file() {
   local _sp_resolved=""
   if [[ -n "${sp_file:-}" ]]; then
     _sp_resolved="$(cd "$(dirname "$sp_file")" 2>/dev/null && pwd)/$(basename "$sp_file")" || sp_file=""
-    [[ "${_sp_resolved:-}" == "${HOME}/.claude/plugins/cache/"* ]] || sp_file=""
+    [[ "${_sp_resolved:-}" == "${SB_RUNTIME_HOME_ROOT}/plugins/cache/"* ]] || sp_file=""
   fi
   printf '%s' "${sp_file:-}"
 }
 
-# ── Test 1: Valid path inside ~/.claude/plugins/cache/ is accepted ────────────
+# ── Test 1: Valid path inside ${SB_RUNTIME_HOME_ROOT}/plugins/cache/ is accepted ────────────
 echo "--- Test 1: Valid path inside plugins/cache/ accepted ---"
 
-CACHE_DIR="${HOME}/.claude/plugins/cache"
+CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 # Create a temp SKILL.md inside the cache dir for this test
 TEST_PLUGIN_DIR="${CACHE_DIR}/test-validation-$$"
 mkdir -p "$TEST_PLUGIN_DIR"
@@ -73,7 +73,7 @@ rm -f "$EVIL_FILE"
 echo "--- Test 3: Path traversal attempt rejected ---"
 
 # Construct a traversal path that starts inside cache but escapes via ../
-CACHE_DIR="${HOME}/.claude/plugins/cache"
+CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 mkdir -p "$CACHE_DIR"
 # Create a file in /tmp to traverse to
 TRAVERSAL_TARGET="/tmp/traversal-target-$$.md"

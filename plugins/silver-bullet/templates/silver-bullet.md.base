@@ -19,7 +19,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.1 Silver Bullet**
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, ask the user directly:
@@ -30,7 +30,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.2 GSD**
    ```bash
-   cat "$HOME/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+   cat "~/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
    npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
    ```
    Compare as semver. If installed < latest, ask the user directly:
@@ -41,7 +41,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.3 Plugins (informational)**
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
+   cat "~/.codex/plugins/installed_plugins.json" | jq -r '
      .plugins | to_entries[] |
      select(.key | test("^(superpowers|design|engineering)@")) |
      "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -55,7 +55,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.4 MultAI**
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+   cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
    ```
    Compare to the latest entry in `~/.codex/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, ask the user directly:
    - Question: "MultAI v{installed} appears outdated. Update now?"

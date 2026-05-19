@@ -72,9 +72,9 @@ release_url=$(gh release create "$VERSION" \
 ### WR-03: silver-init checks for the Engineering plugin twice (Phase 1.4 and Phase 1.8)
 
 **File:** `skills/silver-init/SKILL.md:140` and `skills/silver-init/SKILL.md:213`
-**Issue:** Phase 1.4 ("Engineering plugin") and Phase 1.8 ("Anthropic Engineering plugin") check for the same plugin with the same glob paths (the second check adds `~/.claude/plugins/cache/engineering/skills/` which is subsumed by Phase 1.4's `*/engineering/*/skills/documentation/SKILL.md` glob when the cache layout matches). Both failures trigger the same AskUserQuestion with the same install command. A user who installs the plugin after Phase 1.4's prompt will hit a duplicate install prompt at Phase 1.8, causing confusion.
+**Issue:** Phase 1.4 ("Engineering plugin") and Phase 1.8 ("Anthropic Engineering plugin") check for the same plugin with the same glob paths (the second check adds `${SB_RUNTIME_HOME_ROOT}/plugins/cache/engineering/skills/` which is subsumed by Phase 1.4's `*/engineering/*/skills/documentation/SKILL.md` glob when the cache layout matches). Both failures trigger the same AskUserQuestion with the same install command. A user who installs the plugin after Phase 1.4's prompt will hit a duplicate install prompt at Phase 1.8, causing confusion.
 
-**Fix:** Remove Phase 1.8 entirely. If the intent is to detect a flat `engineering/` layout in the cache (without a version subdirectory), expand Phase 1.4's glob to also match `~/.claude/plugins/cache/engineering/skills/documentation/SKILL.md`. The Engineering plugin presence check should be consolidated into a single phase.
+**Fix:** Remove Phase 1.8 entirely. If the intent is to detect a flat `engineering/` layout in the cache (without a version subdirectory), expand Phase 1.4's glob to also match `${SB_RUNTIME_HOME_ROOT}/plugins/cache/engineering/skills/documentation/SKILL.md`. The Engineering plugin presence check should be consolidated into a single phase.
 
 ---
 

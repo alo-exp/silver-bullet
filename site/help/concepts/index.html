@@ -192,8 +192,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>How Skills Are Stored</h3>
       <p>Skills live in two locations:</p>
       <ul>
-        <li><code>~/.claude/skills/</code> — flat <code>.md</code> files, one per skill</li>
-        <li><code>~/.claude/plugins/cache/</code> — structured as <code>publisher/plugin/version/skills/skill-name/SKILL.md</code></li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — flat <code>.md</code> files, one per skill</li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> — structured as <code>publisher/plugin/version/skills/skill-name/SKILL.md</code></li>
       </ul>
 
       <h3>How Skills Are Invoked</h3>
@@ -361,7 +361,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </div>
       </div>
 
-      <p>The mode is written to <code>~/.claude/.silver-bullet/mode</code> and read by hooks throughout the session. If the file is missing or unreadable at any point, the system defaults to <strong>Interactive</strong>.</p>
+      <p>The mode is written to <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode</code> and read by hooks throughout the session. If the file is missing or unreadable at any point, the system defaults to <strong>Interactive</strong>.</p>
 
       <h3>Autonomous Mode Safeguards</h3>
       <p>Even in autonomous mode, Silver Bullet has stall-detection to prevent infinite loops. Two independent tiers run in parallel:</p>
@@ -525,7 +525,7 @@ docs/
       </div>
 
       <h3>2-Consecutive-Clean-Pass Enforcement</h3>
-      <p>Every artifact must pass two consecutive clean review rounds before it is approved. State is tracked per artifact in <code>~/.claude/.silver-bullet/review-state/</code> as JSON keyed by an 8-character SHA256 of the artifact&rsquo;s absolute path. A new finding in any round resets the consecutive-pass counter.</p>
+      <p>Every artifact must pass two consecutive clean review rounds before it is approved. State is tracked per artifact in <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/review-state/</code> as JSON keyed by an 8-character SHA256 of the artifact&rsquo;s absolute path. A new finding in any round resets the consecutive-pass counter.</p>
 
       <h3>Configurable Review Depth</h3>
       <p>Each artifact type can be configured for <strong>deep</strong>, <strong>standard</strong>, or <strong>quick</strong> review depth in <code>.planning/config.json</code>. Standard is the default and is backward-compatible. Deep adds additional structural and consistency checks. Quick reduces the check set for low-risk or time-sensitive reviews.</p>

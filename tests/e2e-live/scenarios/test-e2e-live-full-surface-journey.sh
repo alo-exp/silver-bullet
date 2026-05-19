@@ -99,7 +99,7 @@ resolve_silver_skill_path() {
     fi
   else
     local claude_cache_root latest_claude_cache
-    claude_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+    claude_cache_root="${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -f "$latest_claude_cache/skills/silver/SKILL.md" ]]; then
       printf '%s\n' "$latest_claude_cache/skills/silver/SKILL.md"

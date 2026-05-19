@@ -46,7 +46,7 @@ human_verification:
 |----------|----------|--------|---------|
 | `skills/silver-validate/SKILL.md` | Pre-build gap analysis skill | VERIFIED | 361 lines; Steps 0-7 substantive; machine-readable FINDING format; BLOCK gate; VALIDATION.md output; commit c2cc713 |
 | `skills/silver-feature/SKILL.md` | Step 2.7 + Step 17.0 wiring | VERIFIED | Step 2.7 at line 101 invokes silver:validate and halts on BLOCK; Step 17.0 at line 227 generates UAT.md from SPEC.md AC; commit 49fdc5c |
-| `hooks/spec-session-record.sh` | SessionStart hook captures spec-id, spec-version, jira-id | VERIFIED | 44 lines; reads SPEC.md frontmatter; writes ~/.claude/.silver-bullet/spec-session; umask 0077; emits advisory JSON; commit a4a0a76 |
+| `hooks/spec-session-record.sh` | SessionStart hook captures spec-id, spec-version, jira-id | VERIFIED | 44 lines; reads SPEC.md frontmatter; writes ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session; umask 0077; emits advisory JSON; commit a4a0a76 |
 | `hooks/pr-traceability.sh` | PostToolUse/Bash hook auto-populates PR description + SPEC.md Implementations | WIRED WITH DEFECTS | 100 lines; correct trigger logic; traceability block construction and gh pr edit present; SPEC.md awk insert present; 3 gh calls hardcode /opt/homebrew/bin/gh (WR-01); heredoc expands warn_items without sanitization (CR-01); awk has no one-time insert guard (WR-04); commit a4a0a76 |
 | `hooks/uat-gate.sh` | PreToolUse/Skill hook hard-blocks gsd-complete-milestone | VERIFIED | 71 lines; Skill matcher; 4 ordered checks with permissionDecision:deny; skill name extracted via jq from stdin (secure); commit 82a1b68 |
 | `hooks/hooks.json` | All 3 new hooks registered | VERIFIED | spec-session-record.sh in SessionStart; pr-traceability.sh in PostToolUse/Bash; uat-gate.sh in PreToolUse/Skill after forbidden-skill-check.sh; commits 2827485, 82a1b68 |
@@ -59,7 +59,7 @@ human_verification:
 |------|----|-----|--------|---------|
 | silver-feature Step 2.7 | silver-validate skill | `Skill tool invocation` | WIRED | Line 105: "Invoke `silver:validate` via the Skill tool" |
 | silver-feature Step 17.0 | UAT.md | Write tool | WIRED | Line 236: "Write `.planning/UAT.md` using the Write tool" |
-| spec-session-record.sh | ~/.claude/.silver-bullet/spec-session | file write | WIRED | Line 37: printf writes key=value pairs to spec-session file |
+| spec-session-record.sh | ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session | file write | WIRED | Line 37: printf writes key=value pairs to spec-session file |
 | pr-traceability.sh | spec-session file | grep/cut read | WIRED | Lines 39-40: reads spec-version and jira-id from spec-session |
 | pr-traceability.sh | VALIDATION.md | grep FINDING [WARN] | WIRED | Lines 44-46: reads warn_items from VALIDATION.md |
 | pr-traceability.sh | GitHub PR description | gh pr edit --body-file | WIRED (with risk) | Lines 79: append-only via tmpfile; blocked by hardcoded gh path on non-Homebrew systems |
@@ -73,7 +73,7 @@ human_verification:
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 |----------|--------------|--------|--------------------|--------|
-| pr-traceability.sh | spec_version, jira_id | ~/.claude/.silver-bullet/spec-session (written by spec-session-record.sh) | Yes — read from SPEC.md frontmatter at session start | FLOWING |
+| pr-traceability.sh | spec_version, jira_id | ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/spec-session (written by spec-session-record.sh) | Yes — read from SPEC.md frontmatter at session start | FLOWING |
 | pr-traceability.sh | warn_items | .planning/VALIDATION.md grep | Yes — written by silver-validate Step 6 | FLOWING (unsanitized — CR-01) |
 | uat-gate.sh | uat_version, spec_version | UAT.md + SPEC.md frontmatter grep | Yes — reads live files | FLOWING |
 

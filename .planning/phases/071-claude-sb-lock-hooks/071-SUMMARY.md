@@ -32,7 +32,7 @@
 ## Requirements satisfied
 
 - **HOOK-01** — PreToolUse hook on Edit/Write/MultiEdit claims via helper, exits 2 with stderr block-message on conflict naming current owner.
-- **HOOK-02** — PostToolUse heartbeat hook iterates session manifest, throttled to once per 5 min per phase via mtime on `~/.claude/.silver-bullet/heartbeat-<NNN>`.
+- **HOOK-02** — PostToolUse heartbeat hook iterates session manifest, throttled to once per 5 min per phase via mtime on `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/heartbeat-<NNN>`.
 - **HOOK-03** — Stop/SubagentStop release hook walks session manifest, releases each phase via helper, deletes manifest. Continues clearing entries even when individual releases fail (non-owner).
 - **HOOK-04** — `hooks/hooks.json` registers all three hooks; `completion-audit.sh` and `stop-check.sh` emit a non-blocking stderr WARN via EXIT-trap helper when the phase resolved from `$PWD` has no active lock or is owned by a non-claude runtime.
 

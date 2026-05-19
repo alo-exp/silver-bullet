@@ -94,8 +94,8 @@ for runtime in "${RUNTIMES[@]}"; do
   esac
 
   if [[ "$runtime" == "claude" ]]; then
-    E2E_LIVE_MATRIX_FILE="${HOME}/.claude/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${HOME}/.claude/.silver-bullet/inline-e2e-matrix"
+    E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/e2e-live-matrix"
+    INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
     if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
       echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
       exit 1
