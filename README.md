@@ -522,8 +522,9 @@ runtime state are not treated as plugin package content.
 - Version: `0.37.1`
 - Release: [v0.37.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.1)
 - Notable changes:
-  - Clarify now absorbs Product Management framing and Superpowers brainstorming into one stand-alone handoff layer.
-  - Silver Bullet now keeps a live Active Intent Ledger in session logs and closes out completed branches even across resumed sessions.
+  - Release tagging now waits for CI green and the mandatory pre-release QA gate before publishing.
+  - The live harness and direct hook-test workflow now seed SB runtime paths dynamically for Claude and Codex.
+  - The trivial-file cleanup path is now a real hook script, which keeps `hooks.json` validator-friendly.
   - The release prep flow now includes full verification, marketplace version sync, and updated knowledge/lessons capture for the new orchestration model.
 
 ## License
