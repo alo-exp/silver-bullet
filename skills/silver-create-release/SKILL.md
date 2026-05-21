@@ -24,17 +24,17 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git tag -s` (create signed tag)
-- `git add CHANGELOG.md README.md .claude-plugin/marketplace.json` (stage release doc + marketplace updates — Step 5c)
+- `git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json` (stage release doc + marketplace updates — Step 5c)
 - `git commit` (commit CHANGELOG + badge updates — Step 5c)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
-- `bash scripts/sync-marketplace-version.sh` (sync marketplace manifests before tagging — Step 5b.1)
-- `bash tests/live/run-live-tests.sh` (run the shared live matrix before tagging — Step 6)
+- `bash scripts/sync-release-marketplace-versions.sh` (sync Claude + Codex marketplace manifests before tagging — Step 5b.1)
+- `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
 - `bash scripts/verify-release-commit-ci.sh` (wait for release commit CI to go green before tagging — Step 6b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
-- `curl` (POST Google Chat notification webhook — only when `SB_GCHAT_WEBHOOK` is set)
+- `bash scripts/post-release-refresh.sh` (cleanly uninstall and freshly reinstall SB after release — Step 7.6)
 - Shell commands listed in `.silver-bullet.json` `verify_commands[]` (Step 0 readiness
   check — user-controlled config, not untrusted input)
 
@@ -195,15 +195,15 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the marketplace sync helper so the in-repo marketplace manifest and the upstream marketplace repo both match the new plugin version before tagging the release:
+Run the release marketplace sync wrapper so the Claude and Codex marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
 
 ```bash
-bash scripts/sync-marketplace-version.sh
+bash scripts/sync-release-marketplace-versions.sh "$VERSION"
 ```
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the helper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`, and the upstream marketplace repo must have the same version committed and pushed.
+After the wrapper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`, the version in `plugins/silver-bullet/.codex-plugin/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
 
 ---
 
@@ -212,14 +212,14 @@ After the helper runs, the version in `.claude-plugin/marketplace.json` must mat
 Commit the CHANGELOG, README, and marketplace manifest changes before creating the tag:
 
 ```bash
-git add CHANGELOG.md README.md .claude-plugin/marketplace.json
-git commit -m "chore(release): update CHANGELOG, README badge, and marketplace for <version>"
+git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json
+git commit -m "chore(release): update CHANGELOG, README badge, and marketplaces for <version>"
 git push
 ```
 
 If none of the files changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
 
-If the marketplace sync helper reports that the upstream marketplace repo was updated, that push is part of the release gate and must succeed before the release tag is created.
+If the release marketplace sync wrapper reports that either upstream marketplace repo was updated, those pushes are part of the release gate and must succeed before the release tag is created.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
@@ -233,11 +233,12 @@ in the configured quality-gate file.
 
 ## Step 6 — Run Shared Live Matrix
 
-Before creating the release tag, run the shared live matrix so the current
-session earns the release-live-matrix marker used by `completion-audit.sh`:
+Before creating the release tag, run the repo-configured live matrix wrapper so
+the current session earns the release-live-matrix marker used by
+`completion-audit.sh`:
 
 ```bash
-bash tests/live/run-live-tests.sh
+bash scripts/run-release-live-matrix.sh
 ```
 
 The matrix must complete successfully for both Claude and Codex in the current
@@ -308,53 +309,25 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
 5. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
 
-6. **Send Google Chat notification** (if webhook env var configured):
+6. **Mandatory post-release steps**:
 
-   Read the webhook URL from the `SB_GCHAT_WEBHOOK` environment variable:
-   ```
-   webhook="${SB_GCHAT_WEBHOOK:-}"
-   ```
+   The published GitHub Release must trigger `.github/workflows/announce-release.yml`,
+   which waits for the release commit CI to settle and posts the release card into
+   the `silver-bullet-updates` Google Chat thread. If that workflow does not
+   succeed, the release is not complete.
 
-   **Security — do not commit webhook URLs.** The webhook contains an API key
-   and token that grant POST access to the Ālo labs chat space. It must live in
-   the shell environment (e.g. `~/.zshrc`, `~/.bashrc`, or a secret manager),
-   never in `.silver-bullet.json` or any other tracked file. The legacy
-   `notifications.google_chat_webhook` config field is no longer read.
-
-   If `$webhook` is non-empty, validate the webhook domain before POSTing (security:
-   reject non-allowlisted destinations to prevent exfiltration if the env var is
-   manipulated):
+   Immediately after publication, run the clean reinstall wrapper:
    ```bash
-   case "$webhook" in
-     https://chat.googleapis.com/*) ;;   # allowlisted
-     *)
-       printf 'WARNING: SB_GCHAT_WEBHOOK domain not in allowlist — skipping notification.\n'
-       webhook=""
-       ;;
-   esac
+   bash scripts/post-release-refresh.sh
    ```
 
-   If `$webhook` is still non-empty after domain validation, POST the release
-   notification. First derive `$summary` from the release notes body — take the
-   first non-empty `##` heading from `$RELEASE_NOTES_BODY`. Then build the JSON
-   payload with `jq` to prevent injection from crafted version strings or release notes:
-   ```
-   summary=$(printf '%s' "$RELEASE_NOTES_BODY" | grep -m1 '^## ' | sed 's/^## //')
-   [[ -z "$summary" ]] && summary="Release published"
-   jq -n --arg v "$VERSION" --arg t "$summary" --arg url "$release_url" \
-     '{text: "🚀 *\($v)* released\n\($t)\n\($url)"}' \
-     | curl -s -X POST "$webhook" \
-         -H "Content-Type: application/json" \
-         --data-binary @-
-   ```
+   The wrapper performs a clean uninstall + fresh reinstall cycle for both host
+   runtimes by calling:
+   - `scripts/install-claude.sh --purge-legacy-plugins`
+   - `scripts/install-codex.sh --purge-legacy-skills`
 
-   - `$VERSION` — the version tag (e.g. `v0.20.2`)
-   - `$summary` — derived above: first `##` heading from the release notes body
-   - `$release_url` — the GitHub release URL returned by `gh release create`
-
-   If `$SB_GCHAT_WEBHOOK` is unset or empty, skip silently — notification is optional.
-   If the `curl` call fails, warn but do not fail the release:
-   > "⚠️ Google Chat notification failed. Release was created successfully."
+   Do not mark the release complete until both the announcement workflow and the
+   refresh wrapper have succeeded.
 
 ---
 

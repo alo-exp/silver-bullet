@@ -5,7 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 PURGE_LEGACY_SKILLS=0
-MERGE_USER_HOOKS="${SB_CODEX_MERGE_USER_HOOKS:-0}"
+# Merge Silver Bullet hooks into the active Codex user config when a real
+# Silver Bullet project root is present. Allow an explicit opt-out for special
+# cases, but default to the enforced install behavior.
+MERGE_USER_HOOKS="${SB_CODEX_MERGE_USER_HOOKS:-1}"
 CODEX_BIN="${CODEX_BIN:-codex}"
 NPM_BIN="${NPM_BIN:-npx}"
 GSD_INSTALL_CMD="${GSD_INSTALL_CMD:-${NPM_BIN} get-shit-done-cc@latest}"
