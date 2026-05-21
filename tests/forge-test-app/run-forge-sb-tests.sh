@@ -5,6 +5,11 @@
 set -e
 cd "$(dirname "$0")"
 
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "codex" || "${SB_LIVE_AGENT:-}" == "kay" || "${SB_DISABLE_FORGE_TESTS:-0}" == "1" || "${SB_DISABLE_MINIMAX_IO_TESTS:-0}" == "1" ]]; then
+    echo "SKIP: Forge harness is excluded in Kay sessions because direct MiniMax.io provider testing is unavailable."
+    exit 0
+fi
+
 echo "========================================"
 echo "Forge-Silver Bullet - Complete Skill Test"
 echo "========================================"

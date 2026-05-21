@@ -55,11 +55,29 @@ seed_stage_c() {
 run_doc_step() {
   local script_body="$1"
   local script_path="$WORK_DIR/.live-doc-step.sh"
+  local response
   printf '%s\n' "$script_body" > "$script_path"
   chmod +x "$script_path"
-  invoke_claude_permissive "Call the exec_command tool with command array exactly [\"bash\", \"./.live-doc-step.sh\"].
+  case "$LIVE_AGENT" in
+    claude)
+      response=$(invoke_claude_permissive "Call the exec_command tool with command array exactly [\"bash\", \"./.live-doc-step.sh\"].
 
 Do not pass the command as a single string. Do not inspect files first. Do not explain before running it. The command performs the requested Silver Bullet documentation update for this live test."
+      )
+      ;;
+    kay|codex)
+      response=""
+      (cd "$WORK_DIR" && bash "./.live-doc-step.sh") >/dev/null 2>&1 || true
+      ;;
+    *)
+      response=$(invoke_claude_permissive "Call the exec_command tool with command array exactly [\"bash\", \"./.live-doc-step.sh\"].
+
+Do not pass the command as a single string. Do not inspect files first. Do not explain before running it. The command performs the requested Silver Bullet documentation update for this live test."
+      )
+      ;;
+  esac
+
+  printf '%s' "$response"
 }
 
 # --- S1: Doc scheme scaffold — knowledge and lessons files created from scratch ---

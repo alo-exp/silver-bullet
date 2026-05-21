@@ -42,7 +42,7 @@ setup_kay_codex_isolation() {
   fi
 
   export SB_LIVE_KAY_AGENT="kay"
-  export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"
+  export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
   export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"
   export CODEX_SESSION_CATALOG_PATH="${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME}/.kay/sessions/index/catalog.jsonl}"
   # Keep the live-test transcript archive local to the harness. silver-scan
@@ -56,32 +56,83 @@ setup_kay_codex_isolation() {
 - When calling exec_command, pass a split argv array such as [\"cat\", \"file\"]. Do not pass shell commands as one string; use [\"bash\", \"-lc\", \"...\"] only when shell syntax is required."
   fi
 
-  if [[ -z "${MINIMAX_API_KEY:-}" && -f "${SB_LIVE_ORIGINAL_HOME}/.kay/kay.toml" ]]; then
-    MINIMAX_API_KEY="$(
-      python3 - "${SB_LIVE_ORIGINAL_HOME}/.kay/kay.toml" <<'PY'
-import pathlib
-import re
+  source_kay_provider_api_key() {
+    local provider="$1"
+    local env_var="$2"
+    local api_key=""
+    local auth_json="${SB_LIVE_ORIGINAL_HOME}/.kay/auth.json"
+    local kay_toml="${SB_LIVE_ORIGINAL_HOME}/.kay/kay.toml"
+
+    if [[ -n "${!env_var:-}" ]]; then
+      return 0
+    fi
+
+    if [[ -f "$auth_json" ]]; then
+      api_key="$(
+        python3 - "$provider" "$auth_json" <<'PY'
+import json
 import sys
+from pathlib import Path
+
+provider = sys.argv[1]
+path = Path(sys.argv[2])
+
+try:
+    data = json.loads(path.read_text())
+except Exception:
+    raise SystemExit(0)
+
+print(data.get("provider_credentials", {}).get(provider, {}).get("api_key", ""))
+PY
+      )"
+    fi
+
+    if [[ -z "$api_key" && -f "$kay_toml" ]]; then
+      api_key="$(
+        python3 - "$provider" "$kay_toml" <<'PY'
+import pathlib
+import sys
+
 try:
     import tomllib
 except ModuleNotFoundError:
     tomllib = None
 
-text = pathlib.Path(sys.argv[1]).read_text()
+provider = sys.argv[1]
+path = pathlib.Path(sys.argv[2])
+text = path.read_text()
+
+key = ""
 if tomllib is not None:
-    data = tomllib.loads(text)
-    key = data.get("provider", {}).get("minimax", {}).get("api_key", "")
-else:
-    match = re.search(r'^api_key\s*=\s*"([^"]+)"', text, re.M)
-    key = match.group(1) if match else ""
-if key:
-    print(key)
+    try:
+        data = tomllib.loads(text)
+    except Exception:
+        data = {}
+    key = data.get("provider", {}).get(provider, {}).get("api_key", "")
+
+print(key)
 PY
-    )"
-    if [[ -n "$MINIMAX_API_KEY" ]]; then
-      export MINIMAX_API_KEY
+      )"
     fi
-  fi
+
+    if [[ -n "$api_key" ]]; then
+      printf -v "$env_var" '%s' "$api_key"
+      export "$env_var"
+    fi
+  }
+
+  case "$SB_LIVE_CODEX_MODEL_PROVIDER" in
+    minimax)
+      source_kay_provider_api_key "minimax" "MINIMAX_API_KEY"
+      ;;
+    opencode-go)
+      source_kay_provider_api_key "opencode-go" "OPENCODE_GO_API_KEY"
+      unset MINIMAX_API_KEY
+      ;;
+    *)
+      source_kay_provider_api_key "$SB_LIVE_CODEX_MODEL_PROVIDER" "OPENCODE_GO_API_KEY"
+      ;;
+  esac
 
   cat > "${KAY_HOME}/.kay/config.toml" <<EOF
 model = "${SB_LIVE_CODEX_MODEL}"

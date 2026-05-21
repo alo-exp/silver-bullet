@@ -46,13 +46,14 @@ FAKE_BIN="$TMP/bin/kay"
 mkdir -p "$ORIGINAL_HOME/.kay" "$(dirname "$FAKE_BIN")"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion"
 
-cat > "$ORIGINAL_HOME/.kay/kay.toml" <<'EOF'
-[provider]
-default_model = "MiniMax-M2.1"
-
-[provider.minimax]
-api_key = "test-minimax-key"
-endpoint = "https://api.minimax.io/v1/text/chatcompletion_v2"
+cat > "$ORIGINAL_HOME/.kay/auth.json" <<'EOF'
+{
+  "provider_credentials": {
+    "opencode-go": {
+      "api_key": "test-opencode-go-key"
+    }
+  }
+}
 EOF
 
 cat > "$FAKE_BIN" <<'EOF'
@@ -68,7 +69,7 @@ EOF
 
 export HOME="$ORIGINAL_HOME"
 export CODEX_BIN="$FAKE_BIN"
-unset MINIMAX_API_KEY SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR SB_LIVE_ORIGINAL_HOME
+unset MINIMAX_API_KEY OPENCODE_GO_API_KEY SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR SB_LIVE_ORIGINAL_HOME
 unset KAY_HOME KAY_SB_TEST_HOME
 
 # shellcheck source=tests/live/lib/kay-codex-isolation.sh
@@ -77,15 +78,16 @@ setup_kay_codex_isolation
 
 assert_eq "KAY_HOME is redirected to isolated test root" "$SB_LIVE_CODEX_ISOLATION_DIR" "$KAY_HOME"
 assert_eq "KAY_SB_TEST_HOME mirrors KAY_HOME" "$KAY_HOME" "$KAY_SB_TEST_HOME"
-assert_eq "MiniMax key is sourced from original Kay config" "test-minimax-key" "$MINIMAX_API_KEY"
+assert_eq "OpenCode-Go key is sourced from original Kay auth" "test-opencode-go-key" "$OPENCODE_GO_API_KEY"
+assert_eq "MiniMax key stays unset for Kay OCG runs" "" "${MINIMAX_API_KEY:-}"
 assert_eq "Kay/Codex binary is preserved" "$FAKE_BIN" "$CODEX_BIN"
-assert_file_contains "Isolated Kay config pins MiniMax provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "minimax"'
+assert_file_contains "Isolated Kay config pins OpenCode-Go provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "opencode-go"'
 assert_file_contains "Isolated Kay config pins MiniMax M2.7" "$KAY_HOME/.kay/config.toml" 'model = "MiniMax-M2.7"'
 assert_file_exists "Isolated Kay cache copies dependency plugin versions" "$KAY_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md"
 assert_file_exists "Isolated Kay state root exists under .kay" "$KAY_HOME/.kay/.silver-bullet"
 case "$SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD" in
-  *"MiniMax-M2.7"*"Do not call agent"*"split argv array"*)
-    echo "PASS: isolated Kay prompt guard constrains agents, model, and command arrays"
+  *"opencode-go"*"MiniMax-M2.7"*"Do not call agent"*"split argv array"*)
+    echo "PASS: isolated Kay prompt guard constrains provider, model, agents, and command arrays"
     (( PASS++ )) || true
     ;;
   *)

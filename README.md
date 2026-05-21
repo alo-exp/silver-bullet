@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.1)
+[![version](https://img.shields.io/badge/version-v0.37.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -175,7 +175,7 @@ guidance, but hard blocks depend on host support.
 |---------|--------|-------|
 | Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
 | Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
-| Kay | Tested agent for isolated live testing | Used for isolated Kay live testing with MiniMax M2.7 |
+| Kay | Tested agent for isolated live testing | Used for isolated live testing via the `opencode-go` provider path |
 | Forge | Port available | Uses Forge skills, slash commands, and hook-equivalent custom agents |
 
 Silver Bullet's Codex package intentionally contains only SB-owned surfaces:
@@ -239,9 +239,10 @@ The installer:
 - seeds Codex hook trust from the installed plugin manifest instead of
   duplicating SB hooks into the user's global hook cache
 
-For isolated Codex-compatible live testing, Kay `v0.9.6` plus MiniMax M2.7 is the
-tested path. The live harness creates a temporary `KAY_HOME` root so tests do
-not rewrite the user's real Kay or Codex hook cache.
+For isolated Codex-compatible live testing, Kay `v0.9.6` plus the
+`opencode-go` provider path is the tested route. The live harness creates a
+temporary `KAY_HOME` root so tests do not rewrite the user's real Kay or Codex
+hook cache.
 
 ### Forge
 
@@ -454,7 +455,8 @@ SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
 SB_E2E_LIVE_RUNTIMES=codex bash tests/e2e-live/run-e2e-live-tests.sh
 ```
 
-Codex-compatible live tests use Kay `v0.9.6` and MiniMax M2.7 when configured.
+Codex-compatible live tests use Kay `v0.9.6` and the `opencode-go` provider
+path when configured.
 SB tests should not be run against the upstream `codex` binary directly.
 The harness isolates config roots so live tests do not mutate the user's normal
 Codex hook cache.
@@ -519,8 +521,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.1`
-- Release: [v0.37.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.1)
+- Version: `0.37.2`
+- Release: [v0.37.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.2)
 - Notable changes:
   - Release tagging now waits for CI green and the mandatory pre-release QA gate before publishing.
   - The live harness and direct hook-test workflow now seed SB runtime paths dynamically for Claude and Codex.

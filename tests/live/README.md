@@ -1,8 +1,9 @@
 # Silver Bullet Live AI E2E Tests
 
 These tests invoke the **real `claude` CLI** or a **Kay-backed agent**
-with the Silver Bullet plugin loaded and stored credentials. The Kay path is
-pinned to MiniMax M2.7. They verify that SB enforcement hooks
+with the Silver Bullet plugin loaded and stored credentials. The Kay path uses
+Kay's `opencode-go` provider credentials and keeps the `MiniMax-M2.7` model
+pin for isolated live testing. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
 actually work when either agent triggers them via real tool usage.
 
@@ -10,7 +11,8 @@ actually work when either agent triggers them via real tool usage.
 
 - `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
 - Kay `v0.9.6` available in `PATH` for Kay-agent runs
-- MiniMax credentials available through `MINIMAX_API_KEY` or the user's Kay config
+- Kay `v0.9.6` available in `PATH` for Kay-agent runs
+- `opencode-go` credentials available through the user's Kay config
 - Authenticated with valid credentials for the agent(s) you plan to run
 - `jq` installed (`brew install jq`)
 - Git available
@@ -68,9 +70,9 @@ Each agent run uses:
 - An isolated temp workspace directory (`mktemp -d`)
 - Isolated state files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-state-{PID}`
 - Isolated trivial files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-trivial-{PID}`
-- For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by
-  Kay/MiniMax so the test installer never rewrites the user's real
-  `~/.codex` hook cache.
+- For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by Kay's
+  `opencode-go` provider path so the test installer never rewrites the user's
+  real `~/.codex` hook cache.
 
 The matrix runs Claude and Kay sequentially so they do not clobber each other's
 shared SB state. All temp files are cleaned up after each scenario.

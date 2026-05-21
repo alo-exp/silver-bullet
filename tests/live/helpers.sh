@@ -91,6 +91,12 @@ live_setup() {
   fi
   printf '{}\n' > "$REAL_MCP_AUTH_CACHE"
 
+  if [[ "$LIVE_AGENT" == "kay" ]]; then
+    local session_catalog_path="${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME}/.kay/sessions/index/catalog.jsonl}"
+    mkdir -p "$(dirname "$session_catalog_path")"
+    : > "$session_catalog_path"
+  fi
+
   # Initialize git repo in workspace
   git -C "$WORK_DIR" init -q
   git -C "$WORK_DIR" config user.email "live-test@silver-bullet.test"

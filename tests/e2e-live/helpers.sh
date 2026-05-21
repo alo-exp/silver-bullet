@@ -132,6 +132,12 @@ backup_session_state() {
     rm -f "$MCP_AUTH_CACHE_BACKUP"
   fi
   printf '{}\n' > "$MCP_AUTH_CACHE"
+
+  if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
+    local session_catalog_path="${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME}/.kay/sessions/index/catalog.jsonl}"
+    mkdir -p "$(dirname "$session_catalog_path")"
+    : > "$session_catalog_path"
+  fi
 }
 
 restore_session_state() {
