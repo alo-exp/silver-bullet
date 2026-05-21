@@ -271,20 +271,20 @@ Invoke `gsd-complete-milestone` via the Skill tool. Purpose: archive milestone a
 
 **Only after Step 8 (`gsd-complete-milestone`) commits are on the branch:**
 
-First sync the marketplace manifest version so the in-repo marketplace surface and the upstream marketplace repo are both ready for tagging:
+First sync the marketplace version surfaces so the Claude and Codex marketplace repos are both ready for tagging:
 
 ```bash
-bash scripts/sync-marketplace-version.sh
+bash scripts/sync-release-marketplace-versions.sh
 ```
 
-This step is required before the final release tag because the release commit must carry the marketplace manifest version that matches the new plugin version and the upstream marketplace repo must be pushed at the same version.
+This step is required before the final release tag because the release commit must carry the marketplace manifest versions that match the new plugin version and both upstream marketplace repos must be pushed at the same version.
 
 Invoke `silver:create-release` via the Skill tool. Purpose: SB-owned release creation — updates CHANGELOG.md and README version badge, commits those changes, creates the version tag, and publishes the GitHub Release. Tag is placed LAST so it captures all archival commits.
 
-The release commit also stages `.codex-plugin/marketplace.json` so the marketplace entry ships with the release version, and the marketplace sync helper must already have committed and pushed the upstream marketplace repo bump:
+The release commit also stages `.codex-plugin/marketplace.json` and `plugins/silver-bullet/.codex-plugin/plugin.json` so both marketplace entries ship with the release version, and the marketplace sync wrapper must already have committed and pushed both upstream marketplace repo bumps:
 
 ```bash
-git add CHANGELOG.md README.md .codex-plugin/marketplace.json
+git add CHANGELOG.md README.md .codex-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json
 ```
 
 > **Why last?** Creating the tag before milestone archival causes the archival commits to appear after the tag, requiring an immediate patch release. The tag must be the final commit in the release.

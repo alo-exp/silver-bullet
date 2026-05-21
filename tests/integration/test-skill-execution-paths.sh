@@ -281,45 +281,57 @@ rel_ci_gate_line=$(grep -n "verify-release-commit-ci.sh" "$SCL" | head -1 | cut 
 check "silver-create-release: release CI gate is required before tagging (line $rel_ci_gate_line > 0)" \
   "$([[ "$rel_ci_gate_line" -gt 0 ]] && echo pass || echo fail)"
 
-rel_allow_sync_line=$(grep -n "bash scripts/sync-marketplace-version.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
-check "silver-create-release: marketplace sync helper is allowed (line $rel_allow_sync_line > 0)" \
+rel_allow_sync_line=$(grep -n "bash scripts/sync-release-marketplace-versions.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: marketplace sync wrapper is allowed (line $rel_allow_sync_line > 0)" \
   "$([[ "$rel_allow_sync_line" -gt 0 ]] && echo pass || echo fail)"
 
-rel_allow_live_line=$(grep -n "bash tests/live/run-live-tests.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
-check "silver-create-release: live matrix command is allowed (line $rel_allow_live_line > 0)" \
+rel_allow_live_line=$(grep -n "bash scripts/run-release-live-matrix.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: release matrix wrapper is allowed (line $rel_allow_live_line > 0)" \
   "$([[ "$rel_allow_live_line" -gt 0 ]] && echo pass || echo fail)"
 
 rel_allow_ci_line=$(grep -n "bash scripts/verify-release-commit-ci.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
 check "silver-create-release: release CI wait script is allowed (line $rel_allow_ci_line > 0)" \
   "$([[ "$rel_allow_ci_line" -gt 0 ]] && echo pass || echo fail)"
 
-rel_allow_git_add_line=$(grep -n "git add CHANGELOG.md README.md .claude-plugin/marketplace.json" "$SCL" | head -1 | cut -d: -f1 || echo 0)
-check "silver-create-release: marketplace manifest is staged by the allowed git add command (line $rel_allow_git_add_line > 0)" \
+rel_allow_refresh_line=$(grep -n "bash scripts/post-release-refresh.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: post-release refresh wrapper is allowed (line $rel_allow_refresh_line > 0)" \
+  "$([[ "$rel_allow_refresh_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_allow_git_add_line=$(grep -n "git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: marketplace manifests are staged by the allowed git add command (line $rel_allow_git_add_line > 0)" \
   "$([[ "$rel_allow_git_add_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_announce_line=$(grep -n ".github/workflows/announce-release.yml" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: release announcement workflow is mandatory (line $rel_announce_line > 0)" \
+  "$([[ "$rel_announce_line" -gt 0 ]] && echo pass || echo fail)"
+
+rel_optional_gchat_line=$(grep -n "notification is optional" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+check "silver-create-release: Google Chat notification is no longer optional" \
+  "$([[ "$rel_optional_gchat_line" -eq 0 ]] && echo pass || echo fail)"
 
 market_sync_result=fail
 if python3 - "$SREL" <<'PY' >/dev/null 2>&1
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text()
-raise SystemExit(0 if "bash scripts/sync-marketplace-version.sh" in text else 1)
+raise SystemExit(0 if "bash scripts/sync-release-marketplace-versions.sh" in text else 1)
 PY
 then
   market_sync_result=pass
 fi
-check "silver-release: marketplace sync helper is referenced in release contract" "$market_sync_result"
+check "silver-release: marketplace sync wrapper is referenced in release contract" "$market_sync_result"
 
 market_commit_result=fail
 if python3 - "$SREL" <<'PY' >/dev/null 2>&1
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text()
-raise SystemExit(0 if "git add CHANGELOG.md README.md .claude-plugin/marketplace.json" in text else 1)
+raise SystemExit(0 if "git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json" in text else 1)
 PY
 then
   market_commit_result=pass
 fi
-check "silver-release: marketplace manifest is committed in release contract" "$market_commit_result"
+check "silver-release: marketplace manifests are committed in release contract" "$market_commit_result"
 
 market_push_result=fail
 if python3 - "$SREL" <<'PY' >/dev/null 2>&1

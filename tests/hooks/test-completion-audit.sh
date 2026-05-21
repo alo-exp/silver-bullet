@@ -409,7 +409,7 @@ rm -f "$RELEASE_LIVE_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without shared live matrix marker" "$out"
 assert_contains "release block mentions live matrix gate" "$out" "plugin-runtime release matrix"
-assert_contains "release block mentions run-live-tests" "$out" "tests/live/run-live-tests.sh"
+assert_contains "release block mentions release matrix wrapper" "$out" "scripts/run-release-live-matrix.sh"
 teardown
 
 # Test 11: gh release create blocked until inline todo-app journey runs

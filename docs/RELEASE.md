@@ -41,8 +41,9 @@ Before the tag is created, the release commit must already be green. The
 and only then proceeds to `git tag` / `gh release create`. `completion-audit.sh`
 blocks `gh release create` until all `required_deploy` skills, all 4 quality gate
 stage markers, and the live matrix markers are present.
-Run `tests/live/run-live-tests.sh` and `tests/e2e-live/run-e2e-live-tests.sh`
-successfully in the current session before creating the release tag. The
+Run `bash scripts/run-release-live-matrix.sh` and
+`tests/e2e-live/run-e2e-live-tests.sh` successfully in the current session
+before creating the release tag. The
 todo-app suite is now one inline full-surface journey and also writes an
 `inline-e2e-matrix` marker so the end-user plugin bootstrap path and the
 follow-on development flow are both proven before release.
@@ -54,17 +55,24 @@ for that release session only.
 
 ### 5. Post-Release
 
-- Verify CI remained green on the release commit before the tag was created
-- Confirm plugin cache update works via `/silver:update`
-- Update site if needed (Stage 3 should have covered this)
-- Run `scripts/install-codex.sh --purge-legacy-skills` if the release touched
-  Codex packaging or runtime behavior.
-- Run the shared live matrix (`tests/live/run-live-tests.sh`) before every
-  release tag so both Claude and Codex paths are proven in the current session.
-- Run the live todo-app E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) before
-  every release tag so the full product workflow is proven in the current session.
-- Keep the shared `alo-labs/codex-plugins` marketplace aligned with the SB package
-  boundary whenever third-party wrappers change.
+Release closure is mandatory only after the following have succeeded:
+
+- The published GitHub Release triggers `.github/workflows/announce-release.yml`
+  and that workflow posts the release card into the `silver-bullet-updates`
+  Google Chat thread.
+- The reusable announcement prompt for other Ālo Labs plugins lives in
+  `docs/internal/google-chat-release-announcement-prompt.md`.
+- `bash scripts/post-release-refresh.sh` runs successfully and performs the clean
+  uninstall + fresh reinstall cycle for both host runtimes:
+  - Claude via `scripts/install-claude.sh --purge-legacy-plugins`
+  - Codex via `scripts/install-codex.sh --purge-legacy-skills`
+- Verify CI remained green on the release commit before the tag was created.
+- Confirm plugin cache update works via `/silver:update`.
+- Update site if needed (Stage 3 should have covered this).
+- Keep the shared `alo-labs/claude-plugins` and `alo-labs/codex-plugins`
+  marketplaces aligned with the SB package boundary whenever versioned wrappers
+  change. Use `scripts/sync-release-marketplace-versions.sh` during release
+  preparation so both repos stay in lockstep with the tagged release.
 
 ## Plugin Update Mechanism
 

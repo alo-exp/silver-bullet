@@ -154,10 +154,11 @@ the current session.
 
 ## Live Matrix Release Gate
 
-Before `gh release create` or `/silver-create-release`, both live suites must
-run successfully in the current session:
+Before `gh release create` or `/silver-create-release`, the release live matrix
+wrapper and the todo-app live E2E suite must run successfully in the current
+session:
 
-1. Run `tests/live/run-live-tests.sh`
+1. Run `bash scripts/run-release-live-matrix.sh`
 2. Run `tests/e2e-live/run-e2e-live-tests.sh`
 3. Confirm both Claude and Codex pass in each suite
 4. Let each runner create its session-scoped marker
@@ -169,11 +170,12 @@ successfully. The release must not be published while that commit is still
 running or failing.
 
 If Claude usage is exhausted for the release session and the user explicitly
-approves skipping further Claude live testing, run both live suites with
-`SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, then set
-`SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1` before `/silver-release`. In that case the
-two runners write `matrix=codex-only` markers and the completion audit accepts
-them for that release session only.
+approves skipping further Claude live testing, run both suites with
+`SB_RELEASE_LIVE_MATRIX_CMD` (or the repo-local release matrix override),
+`SB_E2E_LIVE_RUNTIMES=codex`, then set `SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1`
+before `/silver-release`. In that case the two runners write
+`matrix=codex-only` markers and the completion audit accepts them for that
+release session only.
 
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface
