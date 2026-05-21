@@ -31,6 +31,14 @@ The `/silver-create-release` skill orchestrates:
 2. Version-surface updates
 3. Git tag (`vX.Y.Z`)
 4. `gh release create` with structured notes (features, fixes, breaking changes)
+5. Post-release announcement to the `silver-bullet-updates` Google Chat thread
+   plus a clean reinstall refresh across Claude and Codex via
+   `scripts/post-release-refresh.sh`
+
+The version-surface update step is mandatory and must update both marketplace
+repositories together through `scripts/sync-release-marketplace-versions.sh`
+before the tag is created. The release commit must carry both marketplace
+manifest updates, not just the Claude entry.
 
 ### Breaking change policy
 

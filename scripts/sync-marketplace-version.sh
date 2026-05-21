@@ -6,7 +6,7 @@
 #   - The upstream marketplace repo (defaults to alo-labs/claude-plugins),
 #     then commits and pushes the version bump there
 #
-# Usage: scripts/sync-marketplace-version.sh
+# Usage: scripts/sync-marketplace-version.sh [version]
 #
 # Exit 0 = versions already in sync or successfully synced
 # Exit 1 = jq unavailable or JSON malformed
@@ -19,10 +19,20 @@ plugin_json="$repo_root/.claude-plugin/plugin.json"
 marketplace_json="$repo_root/.claude-plugin/marketplace.json"
 marketplace_repo_url="${MARKETPLACE_REPO_URL:-https://github.com/alo-labs/claude-plugins.git}"
 marketplace_repo_root="${MARKETPLACE_REPO_ROOT:-}"
+requested_version="${1:-}"
 
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
-plugin_v=$(jq -r '.version' "$plugin_json")
+current_plugin_v=$(jq -r '.version' "$plugin_json")
+if [[ -n "$requested_version" ]]; then
+  plugin_v="${requested_version#v}"
+  if [[ "$current_plugin_v" != "$plugin_v" ]]; then
+    echo "ERROR: $plugin_json is $current_plugin_v but the release version is $plugin_v. Bump the plugin manifest first." >&2
+    exit 1
+  fi
+else
+  plugin_v="$current_plugin_v"
+fi
 market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace_json")
 
 if [[ "$plugin_v" == "$market_v" ]]; then

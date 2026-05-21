@@ -555,7 +555,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run tests/live/run-live-tests.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run both suites with SB_LIVE_RUNTIMES=codex and SB_E2E_LIVE_RUNTIMES=codex, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run the configured release live matrix override with Codex-only execution, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
       exit 0
     fi
   fi

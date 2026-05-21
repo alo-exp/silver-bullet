@@ -214,11 +214,12 @@ in the configured quality-gate file.
 
 ## Step 6 — Run Shared Live Matrix
 
-Before creating the release tag, run the shared live matrix so the current
-session earns the release-live-matrix marker used by `completion-audit.sh`:
+Before creating the release tag, run the repo-configured live matrix wrapper so
+the current session earns the release-live-matrix marker used by
+`completion-audit.sh`:
 
 ```bash
-bash tests/live/run-live-tests.sh
+bash scripts/run-release-live-matrix.sh
 ```
 
 The matrix must complete successfully for both Claude and Codex in the current
