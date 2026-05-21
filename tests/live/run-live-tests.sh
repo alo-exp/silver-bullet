@@ -100,10 +100,10 @@ for runtime in "${RUNTIMES[@]}"; do
       ;;
   esac
 
+  run_suite "$runtime" "Doc Scheme" "$SCRIPT_DIR/test-live-doc-scheme.sh"
   run_suite "$runtime" "Enforcement" "$SCRIPT_DIR/test-live-enforcement.sh"
   run_suite "$runtime" "Skill Recording" "$SCRIPT_DIR/test-live-skill-recording.sh"
   run_suite "$runtime" "Full Scenario" "$SCRIPT_DIR/test-live-full-scenario.sh"
-  run_suite "$runtime" "Doc Scheme" "$SCRIPT_DIR/test-live-doc-scheme.sh"
 
   if [[ "$runtime" == "codex" ]]; then
     teardown_kay_codex_isolation

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.37.2] — 2026-05-21
+
+## Bug Fixes
+
+- `fix(live): route Kay live tests through opencode-go and keep MiniMax-M2.7 isolated`
+- `fix(tests): skip direct MiniMax.io and Forge harness runs in Kay sessions`
+- `fix(e2e): record completed surfaces in the inline full-surface journey`
+
+## Docs
+
+- `docs(readme): align live-test docs with the Kay opencode-go provider path`
+
+## Chores
+
+- `chore(release): prepare v0.37.2`
+
+---
+
 ## [0.37.1] — 2026-05-19
 
 ## Bug Fixes

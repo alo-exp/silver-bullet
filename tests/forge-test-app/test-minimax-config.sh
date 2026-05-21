@@ -2,6 +2,11 @@
 # MiniMax API max_tokens configuration test
 # Verifies that max_tokens is properly set
 
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "codex" || "${SB_LIVE_AGENT:-}" == "kay" || "${SB_DISABLE_FORGE_TESTS:-0}" == "1" || "${SB_DISABLE_MINIMAX_IO_TESTS:-0}" == "1" ]]; then
+    echo "SKIP: direct MiniMax.io provider tests are excluded in Kay sessions."
+    exit 0
+fi
+
 cd /Users/shafqat/Documents/Projects/silver-bullet/tests/forge-test-app
 
 echo "=============================================="
