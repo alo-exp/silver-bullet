@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.2)
+[![version](https://img.shields.io/badge/version-v0.37.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.3)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -499,7 +499,7 @@ tests/                            Unit, integration, live, and E2E harnesses
 .planning/                        GSD project lifecycle artifacts for this repo
 ```
 
-The Codex package symlinks source-owned assets into `plugins/silver-bullet/`.
+The Codex package mostly symlinks source-owned assets into `plugins/silver-bullet/`, but materializes the picker-facing `skills/` tree as real files.
 Project-instance artifacts such as `.planning/`, `.claude/`, `.forge/`, and
 runtime state are not treated as plugin package content.
 
@@ -521,13 +521,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.2`
-- Release: [v0.37.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.2)
+- Version: `0.37.3`
+- Release: [v0.37.3](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.3)
 - Notable changes:
-  - Release tagging now waits for CI green and the mandatory pre-release QA gate before publishing.
-  - The live harness and direct hook-test workflow now seed SB runtime paths dynamically for Claude and Codex.
-  - The trivial-file cleanup path is now a real hook script, which keeps `hooks.json` validator-friendly.
-  - The release prep flow now includes full verification, marketplace version sync, and updated knowledge/lessons capture for the new orchestration model.
+  - The picker-facing Codex `skills/` tree is now materialized as real files after a clean reinstall, which keeps `/skills` discovery reliable.
+  - The Codex install and sync tests now assert that the packaged skills surface is not a symlink chain.
+  - The release prep flow keeps the package metadata, README release surface, and marketplace manifests aligned with the patch release.
 
 ## License
 

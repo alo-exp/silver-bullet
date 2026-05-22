@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.3] — 2026-05-22
+
+## Bug Fixes
+
+- `fix(codex): materialize the picker-facing skills tree as real files`
+- `fix(tests): assert the Codex skills surface is not a symlink`
+
+## Docs
+
+- `docs(readme): reflect the materialized Codex skills tree`
+
+## Chores
+
+- `chore(release): prepare v0.37.3`
+
+---
+
 ## [0.37.2] — 2026-05-21
 
 ## Bug Fixes
