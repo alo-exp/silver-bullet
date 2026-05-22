@@ -27,7 +27,7 @@ Update `package.json` version field.
 
 ### 3. Changelog
 
-Update `docs/CHANGELOG.md` with features, fixes, and breaking changes.
+Update the root `CHANGELOG.md` with features, fixes, and breaking changes. `docs/CHANGELOG.md` is the task log and is not the release notes surface.
 
 ### 4. Tag and Release
 
