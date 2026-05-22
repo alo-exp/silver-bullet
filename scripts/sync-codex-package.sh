@@ -72,7 +72,13 @@ if [[ -d "${REPO_ROOT}/templates" ]]; then
 fi
 
 ln -sfn "agents/codex" "${DEST_DIR}/.generated-skills"
-ln -sfn ".generated-skills" "${DEST_DIR}/skills"
+
+# The Codex picker needs a real skills tree, not a symlink chain. Keep the
+# internal generated alias for compatibility, but materialize the picker-facing
+# `skills/` directory as actual files so host-side discovery is reliable.
+rm -rf -- "${DEST_DIR}/skills"
+mkdir -p -- "${DEST_DIR}/skills"
+rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skills/"
 
 if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
   "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"
