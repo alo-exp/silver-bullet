@@ -23,6 +23,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
@@ -40,8 +44,20 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
-# Extract command from Bash tool input
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+# Extract command from shell-like tool input
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+fi
+if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+  sb_tool_is_shell_like "$tool_name" || exit 0
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  cmd="$(sb_tool_command_string "$input")"
+else
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+fi
 
 # Only trigger on actual `gh pr create` commands
 if ! printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then

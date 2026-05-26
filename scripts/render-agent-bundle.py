@@ -81,16 +81,20 @@ def sanitize_codex_text(text: str) -> str:
     return updated
 
 
-def sanitize_text(text: str, agent: str) -> str:
+def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = rewrite_names(text)
-    for old, new in runtime_placeholders(agent):
-        updated = updated.replace(old, new)
+    if not preserve_runtime_placeholders:
+        for old, new in runtime_placeholders(agent):
+            updated = updated.replace(old, new)
     if agent == "codex":
         updated = sanitize_codex_text(updated)
     return updated
 
 
 def rewrite_file(path: pathlib.Path, agent: str) -> bool:
+    if path.name == "runtime-paths.sh" and "hooks" in path.parts:
+        return False
+
     try:
         text = path.read_text()
     except UnicodeDecodeError:
@@ -98,7 +102,8 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
     except Exception:
         return False
 
-    updated = sanitize_text(text, agent)
+    preserve_runtime_placeholders = "hooks" in path.parts
+    updated = sanitize_text(text, agent, preserve_runtime_placeholders=preserve_runtime_placeholders)
     if updated == text:
         return False
 

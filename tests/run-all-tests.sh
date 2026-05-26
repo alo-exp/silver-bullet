@@ -3,10 +3,21 @@
 # Usage: bash tests/run-all-tests.sh
 set -euo pipefail
 
-# Default to Codex for the source-repo test harness; individual Claude runtime
-# checks can override this before invoking the runner.
+# Default to Codex runtime state paths for the source-repo test harness; live
+# and E2E verification now run through isolated Kay by default.
 : "${SILVER_BULLET_RUNTIME:=codex}"
 export SILVER_BULLET_RUNTIME
+
+export SB_LIVE_AGENT="${SB_LIVE_AGENT:-kay}"
+export SB_E2E_LIVE_AGENT="${SB_E2E_LIVE_AGENT:-kay}"
+export SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-kay}"
+export SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-kay}"
+export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
+export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
+export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
+export CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-}}"
+export SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-1}"
+export SB_DISABLE_FORGE_TESTS="${SB_DISABLE_FORGE_TESTS:-1}"
 
 _repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then

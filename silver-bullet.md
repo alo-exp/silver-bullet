@@ -43,7 +43,7 @@ At the very start of any new session, perform these steps automatically:
    ```bash
    cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '
      .plugins | to_entries[] |
-     select(.key | test("^(superpowers|design|engineering)@")) |
+     select(.key | test("^(superpowers|design|engineering|product-management)@")) |
      "\(.key | split("@")[0]): v\(.value[0].version)"
    ' 2>/dev/null || echo "Could not read plugin registry"
    ```
@@ -51,17 +51,17 @@ At the very start of any new session, perform these steps automatically:
    > To update Superpowers: `/plugin install obra/superpowers`
    > To update Design: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
    > To update Engineering: `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`
+   > To update Product Management: `/plugin install anthropics/knowledge-work-plugins/tree/main/product-management`
    Proceed immediately after displaying — no prompt required.
 
-   **5.4 MultAI**
+   **5.4 MultAI (optional, only if installed)**
    ```bash
    cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
    ```
-   Compare to the latest entry in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/CHANGELOG.md`. If installed version is outdated, use AskUserQuestion:
-   - Question: "MultAI v{installed} appears outdated. Update now?"
-   - Options: "A. Yes, run /multai:update" / "B. Skip"
-   If A: invoke `/multai:update` via the Skill tool, then continue.
-   If B or check fails (file missing/unknown): output "Skipping MultAI update." and continue.
+   MultAI is optional. `silver:research` works without it and only uses it when the user explicitly asks for multi-AI perspectives in the current task.
+   Compare to the latest entry in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/CHANGELOG.md` only when a version is installed. If installed version is outdated, display:
+   - "MultAI v{installed} appears outdated. Update manually with `/multai:update` if you plan to use optional multi-AI perspectives in this session."
+   If the plugin is missing or the version is unknown: output "MultAI not installed. Optional; skipping." and continue.
 
 > **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip /compact. Evidence: no Read tool calls for docs/ files in session start.
 
@@ -318,7 +318,7 @@ GSD remains the lifecycle authority. SB may route, compose, review, and gate, bu
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | gsd-scan → silver:clarify/decide → gsd-ui-phase |
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | gsd-scan → silver:blast-radius → devops-skill-router |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → silver:research/optional multi-AI → decision handoff |
+| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → direct research (default), optional multi-AI only when user-requested → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 (trivial) → gsd-fast, Tier 2 (medium) → gsd-quick with flags, Tier 3 (complex) → escalate to silver-feature |
 
@@ -349,7 +349,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 |------|------|---------|
 | FLOW 0 | BOOTSTRAP | Project setup — PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
 | FLOW 1 | ORIENT | Codebase intelligence — gsd-intel, gsd-scan, gsd-map-codebase |
-| FLOW 2 | CLARIFY | Discovery and framing — silver:clarify, MultAI research |
+| FLOW 2 | CLARIFY | Discovery and framing — silver:clarify, optional multi-AI research only when explicitly requested |
 | FLOW 3 | DECIDE | Option synthesis — silver:clarify |
 | FLOW 4 | SPECIFY | Spec creation — silver-ingest, write-spec, silver-spec, silver-validate |
 | FLOW 5 | PLAN | Phase planning — discuss-phase, writing-plans, gsd-plan-phase |
@@ -824,7 +824,7 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
    - Skills (all SKILL.md files — obsolete references, redundant work, contradictions)
    - Hooks + config (.sh files, hooks.json, .silver-bullet.json, templates)
    - Help site + README (HTML pages, search.js, README.md — step counts, paths, versions) **+ New-Feature Documentation Inventory:** for each workflow, skill, enforcement layer, or major feature added in this release, verify: (a) a dedicated help page exists under `site/help/`, (b) the page is linked from `site/help/index.html` or the appropriate section hub, (c) the page appears in `site/help/reference/index.html` or the relevant concept page. Missing pages = this dimension fails and Stage 2 loops.
-   - Cross-plugin consistency (read 100% of skill content from all 4 dependency plugins — GSD: ${SB_RUNTIME_HOME_ROOT}/get-shit-done/ workflows/references/templates; Superpowers: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/superpowers/*/skills/*/SKILL.md; Engineering: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md; Design: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md — check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet instructions and upstream plugin skills)
+   - Cross-plugin consistency (read 100% of skill content from all 5 dependency plugins — GSD: ${SB_RUNTIME_HOME_ROOT}/get-shit-done/ workflows/references/templates; Superpowers: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/superpowers/*/skills/*/SKILL.md; Engineering: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md; Design: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md; Product Management: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/product-management/skills/*/SKILL.md — check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet instructions and upstream plugin skills)
 2. Fix all genuine issues found
 3. **Loop**: repeat until two consecutive audit passes find zero issues
 4. **MANDATORY — invoke `/superpowers:verification-before-completion`** via the Skill tool.

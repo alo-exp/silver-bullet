@@ -1,32 +1,29 @@
 # Silver Bullet Live AI E2E Tests
 
-These tests invoke the **real `claude` CLI** or a **Kay-backed agent**
-with the Silver Bullet plugin loaded and stored credentials. The Kay path uses
-Kay's `opencode-go` provider credentials and keeps the `MiniMax-M2.7` model
-pin for isolated live testing. They verify that SB enforcement hooks
+These tests invoke the **real Kay-backed agent** with the Silver Bullet plugin
+loaded and stored credentials. The standard path uses Kay's `opencode-go`
+provider credentials with `deepseek-v4-flash` and low reasoning for isolated
+live testing. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
-actually work when either agent triggers them via real tool usage.
+actually work when the live agent triggers them via real tool usage.
 
 ## Prerequisites
 
-- `claude` CLI installed at `/Users/shafqat/.local/bin/claude`
-- Kay `v0.9.6` available in `PATH` for Kay-agent runs
 - Kay `v0.9.6` available in `PATH` for Kay-agent runs
 - `opencode-go` credentials available through the user's Kay config
-- Authenticated with valid credentials for the agent(s) you plan to run
+- Authenticated with valid credentials for the Kay profile you plan to run
 - `jq` installed (`brew install jq`)
 - Git available
 
 ## Cost Warning
 
-**Each full Claude+Kay matrix run costs approximately $0.10-$0.60.**
+**Each Kay live run has real model/API cost.**
 
-- One agent only: roughly half that
-- Cheapest subset (skill recording only, one agent): ~\$0.02-\$0.10
+- Cheapest subset (skill recording only): ~\$0.02-\$0.10
 
 ## Running the Tests
 
-Run the full matrix:
+Run the default Kay-only suite:
 ```bash
 bash tests/live/run-live-tests.sh
 ```
@@ -39,12 +36,6 @@ bash scripts/run-sb-live-tests-kay.sh
 Run a single agent to validate setup:
 ```bash
 bash tests/live/test-live-skill-recording.sh
-```
-
-Limit the matrix to one agent:
-```bash
-SB_LIVE_RUNTIMES=claude bash tests/live/run-live-tests.sh
-SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
 ```
 
 Run individual scenario files:
@@ -73,17 +64,23 @@ Each agent run uses:
 - For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by Kay's
   `opencode-go` provider path so the test installer never rewrites the user's
   real `~/.codex` hook cache.
+- Native Codex isolated runs use Codex's supported
+  `--dangerously-bypass-hook-trust` flag and auto-accept the one-time hook
+  review inside the temporary isolated home only, so the live harness tests
+  actual hook delivery without depending on forged private trust hashes or
+  touching the user's real trust state.
+- Kay isolated runs auto-accept the one-time hook review inside the temporary
+  isolated home only, so the persisted trust state stays local to that temp
+  tree and never touches the user's real config.
 
-The matrix runs Claude and Kay sequentially so they do not clobber each other's
-shared SB state. All temp files are cleaned up after each scenario.
-When the full Claude+Kay matrix passes, `run-live-tests.sh` writes the
-session-scoped `release-live-matrix` marker (`matrix=full-claude-codex`) that
+The matrix can run multiple adapters sequentially for ad hoc diagnostics, but
+the standard release/reliability path is Kay only. All temp files are cleaned
+up after each scenario.
+When the Kay-only matrix passes, `run-live-tests.sh` writes the
+session-scoped `release-live-matrix` marker (`matrix=codex-only`) that
 `completion-audit.sh` requires before `gh release create`.
-If Claude usage is exhausted for a release session and the user explicitly
-approves skipping further Claude live testing, run the matrix with
-`SB_LIVE_RUNTIMES=codex` / `SB_E2E_LIVE_RUNTIMES=codex` and set
-`SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1` so the release gate accepts the
-`matrix=codex-only` markers for that session only.
+Those `matrix=codex-only` markers are now the standard release prerequisite
+because the release gate is defined on the Kay Codex-compatible path.
 
 The live harness keeps a small local archive of captured Kay transcripts under
 `tests/live/agents/kay/transcripts/` for rotation and debugging. The Kay live

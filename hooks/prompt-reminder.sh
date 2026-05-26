@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Fail-open: on any unexpected error, exit 0 silently — never block user prompts.
-trap 'exit 0' ERR
+
+emit_noop_json() {
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
+}
+
+finish_noop() {
+  emit_noop_json
+  exit 0
+}
+
+# Fail-open: on any unexpected error, return a valid no-op payload so Codex
+# keeps accepting the prompt without surfacing hook parse errors.
+trap 'finish_noop' ERR
 
 # UserPromptSubmit hook
 # Fires before every user prompt is processed.
@@ -19,8 +30,8 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   source "$_lib_dir/runtime-paths.sh"
 fi
 
-# jq is required — exit silently if missing (don't slow down prompts with warnings)
-command -v jq >/dev/null 2>&1 || exit 0
+# jq is required — return a no-op payload if missing.
+command -v jq >/dev/null 2>&1 || finish_noop
 
 # DO NOT read stdin — UserPromptSubmit hooks must not block on stdin for speed.
 
@@ -38,8 +49,8 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 
-# No config → project not set up with Silver Bullet — silent exit
-[[ -z "$config_file" ]] && exit 0
+# No config → project not set up with Silver Bullet — return a no-op payload
+[[ -z "$config_file" ]] && finish_noop
 
 # ── Read config values (single jq call for speed) ────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
@@ -62,18 +73,16 @@ required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
 # Security: validate paths stay within the host runtime state root
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_STATE_DIR}/state" ;;
-esac
-case "$trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) trivial_file="${SB_STATE_DIR}/trivial" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
 if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
-  exit 0
+  finish_noop
 fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
@@ -196,6 +205,6 @@ else
   msg="$skill_status"
 fi
 
-printf '{"hookSpecificOutput":{"additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
+printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0

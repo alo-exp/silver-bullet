@@ -25,6 +25,10 @@ fi
 
 LIVE_AGENT="${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}"
 KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
+if [[ "$LIVE_AGENT" == "kay" && -f "$SB_ROOT/tests/live/lib/kay-codex-isolation.sh" ]]; then
+  # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+  source "$SB_ROOT/tests/live/lib/kay-codex-isolation.sh"
+fi
 
 AGENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/agents" && pwd)"
 case "$LIVE_AGENT" in
@@ -32,7 +36,11 @@ case "$LIVE_AGENT" in
     # shellcheck source=tests/live/agents/claude/agent.sh
     source "$AGENT_DIR/claude/agent.sh"
     ;;
-  kay|codex)
+  codex)
+    # shellcheck source=tests/live/agents/codex/agent.sh
+    source "$AGENT_DIR/codex/agent.sh"
+    ;;
+  kay)
     # shellcheck source=tests/live/agents/kay/agent.sh
     source "$AGENT_DIR/kay/agent.sh"
     ;;
@@ -44,7 +52,7 @@ esac
 
 # The REAL state path that hooks always write to.
 if [[ "$LIVE_AGENT" == "kay" ]]; then
-  SB_TEST_DIR="${KAY_HOME}/.kay/.silver-bullet"
+  SB_TEST_DIR="${KAY_HOME}/.codex/.silver-bullet"
   REAL_MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
   REAL_MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.live-test-backup-${TEST_RUN_ID}"
 else
@@ -108,6 +116,54 @@ EOF
   git -C "$WORK_DIR" add .gitkeep
   git -C "$WORK_DIR" commit -q -m "init"
   git -C "$WORK_DIR" checkout -q -b feature/live-test
+
+  if [[ "$LIVE_AGENT" == "kay" ]]; then
+    python3 - "${KAY_HOME}/.kay/config.toml" "$WORK_DIR" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+workspace = pathlib.Path(sys.argv[2]).resolve()
+text = config_path.read_text() if config_path.is_file() else ""
+header = f'[projects."{workspace}"]'
+lines = text.splitlines()
+out = []
+index = 0
+found = False
+
+while index < len(lines):
+    line = lines[index]
+    if line == header:
+        found = True
+        out.append(line)
+        index += 1
+        trust_written = False
+        while index < len(lines) and not lines[index].startswith("["):
+            current = lines[index]
+            if current.startswith("trust_level = "):
+                if not trust_written:
+                    out.append('trust_level = "trusted"')
+                    trust_written = True
+            else:
+                out.append(current)
+            index += 1
+        if not trust_written:
+            out.append('trust_level = "trusted"')
+        continue
+    out.append(line)
+    index += 1
+
+if not found:
+    if out and out[-1] != "":
+        out.append("")
+    out.extend([header, 'trust_level = "trusted"'])
+
+config_path.write_text("\n".join(out).rstrip("\n") + "\n")
+PY
+    if declare -F kay_register_silver_bullet_project_hooks >/dev/null 2>&1; then
+      kay_register_silver_bullet_project_hooks "$WORK_DIR"
+    fi
+  fi
 
   # Copy todo-app src into workspace from the sibling fixture repo when available.
   if [[ -d "${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}/src" ]]; then
@@ -356,6 +412,26 @@ assert_file_not_modified() {
     FAIL=$((FAIL + 1))
     printf 'FAIL: %s\n  (file contents changed unexpectedly)\n' "$label"
   fi
+}
+
+assert_file_changed() {
+  local label="$1" filepath="$2" digest_before="$3"
+  local digest_after
+  digest_after=$(capture_digest "$filepath")
+  if [[ -z "$digest_before" ]]; then
+    if [[ -n "$digest_after" ]]; then
+      PASS=$((PASS + 1))
+      printf 'PASS: %s\n' "$label"
+      return 0
+    fi
+  elif [[ "$digest_after" != "$digest_before" ]]; then
+    PASS=$((PASS + 1))
+    printf 'PASS: %s\n' "$label"
+    return 0
+  fi
+
+  FAIL=$((FAIL + 1))
+  printf 'FAIL: %s\n  (file contents did not change as expected)\n' "$label"
 }
 
 seed_state() {

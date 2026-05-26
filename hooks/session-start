@@ -131,33 +131,29 @@ verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 # without touching the live session state (same pattern as completion-audit.sh)
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 # Security: validate path stays within the host runtime state root
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_STATE_DIR}/state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
 
 # Env var override for branch file — allows tests to mock branch without
 # touching the live host runtime branch file.
 branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
 # Security: validate path stays within the host runtime state root
-case "$branch_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) branch_file="${SB_STATE_DIR}/branch" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$branch_file"; then
+  branch_file="${SB_STATE_DIR}/branch"
+fi
 
 # Env var override for the pre-release gate file.
 quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
-case "$quality_gate_state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) quality_gate_state_file="${QUALITY_GATE_FILE}" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$quality_gate_state_file"; then
+  quality_gate_state_file="${QUALITY_GATE_FILE}"
+fi
 
 # Env var override for the test execution gate file.
 verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
-case "$verify_tests_state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
+  verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+fi
 
 # Detect current git branch (safe: validates characters, falls back to empty)
 current_branch=""
@@ -227,10 +223,9 @@ if command -v jq >/dev/null 2>&1; then
 fi
 # Security (SB-002/SB-003): validate trivial_file stays within the host runtime before deletion
 # Prevents path traversal via malicious .silver-bullet.json; reject symlinks too
-case "$trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) trivial_file="${SB_STATE_DIR}/trivial" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
 rm -f -- "$trivial_file" 2>/dev/null
 rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null

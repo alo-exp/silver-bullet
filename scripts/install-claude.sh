@@ -4,10 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PURGE_LEGACY_PLUGINS=0
+PUBLIC_RELEASE_ONLY=0
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
 CLAUDE_GIT_HTTPS_REWRITE="${CLAUDE_GIT_HTTPS_REWRITE:-1}"
 SB_MARKETPLACE_NAME="${SB_MARKETPLACE_NAME:-alo-labs}"
 CLAUDE_SB_MARKETPLACE_SOURCE="${CLAUDE_SB_MARKETPLACE_SOURCE:-$REPO_ROOT}"
+CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE="${CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/claude-plugins.git}"
 CLAUDE_SB_MARKETPLACE_PLUGIN="${CLAUDE_SB_MARKETPLACE_PLUGIN:-silver-bullet}"
 CLAUDE_KW_MARKETPLACE_SOURCE="${CLAUDE_KW_MARKETPLACE_SOURCE:-https://github.com/anthropics/knowledge-work-plugins}"
 CLAUDE_KW_MARKETPLACE_NAME="${CLAUDE_KW_MARKETPLACE_NAME:-knowledge-work-plugins}"
@@ -35,7 +37,7 @@ AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/install-claude.sh [--purge-legacy-plugins]
+Usage: scripts/install-claude.sh [--purge-legacy-plugins] [--public-release]
 
 Registers the Claude knowledge-work marketplaces, refreshes the Silver Bullet
 plugin set, and optionally removes the legacy alias installs previously used
@@ -43,6 +45,7 @@ for Claude.
 
 Options:
   --purge-legacy-plugins  Remove old alias plugin installs from Claude before reinstalling
+  --public-release        Refresh from the published marketplace instead of the local checkout
 USAGE
 }
 
@@ -341,6 +344,7 @@ ensure_github_https_rewrite() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --purge-legacy-plugins) PURGE_LEGACY_PLUGINS=1; shift ;;
+    --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
       printf 'Unknown argument: %s\n' "$1" >&2
@@ -355,12 +359,18 @@ if [[ -z "$CLAUDE_BIN" ]] || [[ ! -x "$CLAUDE_BIN" ]]; then
   exit 1
 fi
 
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
+  CLAUDE_SB_MARKETPLACE_SOURCE="$CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE"
+fi
+
 ensure_github_https_rewrite
 ensure_marketplace_ready "$SB_MARKETPLACE_NAME" "$CLAUDE_SB_MARKETPLACE_SOURCE" "$CLAUDE_SB_MARKETPLACE_PLUGIN"
 ensure_marketplace_ready "$CLAUDE_KW_MARKETPLACE_NAME" "$CLAUDE_KW_MARKETPLACE_SOURCE" "${CLAUDE_KW_MARKETPLACE_PLUGINS[@]}"
 ensure_marketplace_ready "$SUPERPOWERS_MARKETPLACE_NAME" "$SUPERPOWERS_MARKETPLACE_SOURCE" "$SUPERPOWERS_MARKETPLACE_PLUGIN"
-render_agent_bundle "claude"
-render_agent_bundle "codex"
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
+  render_agent_bundle "claude"
+  render_agent_bundle "codex"
+fi
 
 if [[ "$PURGE_LEGACY_PLUGINS" -eq 1 ]]; then
   purge_legacy_plugins
@@ -370,13 +380,19 @@ for plugin_id in "${TARGET_PLUGINS[@]}"; do
   refresh_plugin_install "$plugin_id"
 done
 
-sync_silver_bullet_hook_cache
 refresh_silver_bullet_install_alias
-sync_silver_bullet_skill_cache
 sync_silver_bullet_settings_paths
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
+  sync_silver_bullet_hook_cache
+  sync_silver_bullet_skill_cache
+fi
 
 ensure_legacy_skill_alias "product-management" "knowledge-work-plugins" "product-management"
 ensure_legacy_skill_alias "engineering" "knowledge-work-plugins" "engineering"
 ensure_legacy_skill_alias "design" "knowledge-work-plugins" "design"
 
-printf 'Claude marketplaces registered from %s\n' "$REPO_ROOT"
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
+  printf 'Claude marketplace refreshed from public source %s\n' "$CLAUDE_SB_MARKETPLACE_SOURCE"
+else
+  printf 'Claude marketplaces registered from %s\n' "$REPO_ROOT"
+fi

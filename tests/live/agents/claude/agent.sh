@@ -46,7 +46,7 @@ agent_invoke() {
     {
       local args=(
         --print
-        --model "${CLAUDE_MODEL:-sonnet}"
+        --model "${CLAUDE_MODEL:-haiku}"
         --effort "${CLAUDE_EFFORT:-low}"
         --permission-mode "$permission_mode"
         --verbose

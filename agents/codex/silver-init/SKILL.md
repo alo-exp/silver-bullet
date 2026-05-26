@@ -112,7 +112,7 @@ Use the Glob tool to search for:
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
 If no files found, ask the user directly:
-- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
+- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -129,7 +129,7 @@ Use the Glob tool to search for Design plugin skills in these paths:
 Expand `~` to the user's home directory.
 
 If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, ask the user directly:
-- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
+- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -148,7 +148,7 @@ Use the Glob tool to search for Engineering plugin skills in these paths:
 Expand `~` to the user's home directory.
 
 If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, ask the user directly:
-- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
+- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -164,7 +164,7 @@ Use the Bash tool to check if GSD is installed (checks both legacy and current i
 ```
 
 If `NOT_FOUND`, ask the user directly:
-- Question: "❌ **GSD plugin is not installed.** GSD is a hard requirement — Silver Bullet wraps GSD's planning and execution commands and cannot function without it.\n\nPlease run this command in your terminal, then come back:\n\n```\nnpx get-shit-done-cc@latest\n```\n\nReady to continue?"
+- Question: "❌ **GSD plugin is not installed.** GSD is a hard requirement — Silver Bullet wraps GSD's planning and execution commands and cannot function without it.\n\nPlease run this command in your terminal to repair or reinstall it, then come back:\n\n```\nnpx get-shit-done-cc@latest\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed GSD — continue"
   - "B. Stop for now"
@@ -211,7 +211,7 @@ Use the Glob tool to search for:
 `~/.codex/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
 If no file found, ask the user directly:
-- Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional but recommended — it enables `silver:research` and multi-AI perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
+- Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional — Silver Bullet research works without it. Install it only if you want optional multi-AI / second-opinion perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
 - Options:
   - "A. I'll install it now — pause and wait"
   - "B. Skip it and continue without"
@@ -222,11 +222,13 @@ If B: continue without stopping.
 ### 1.9 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
-`~/.codex/plugins/cache/product-management/skills/`
-and Codex cache roots such as `~/.codex/plugins/cache/*/product-management/skills/` and `~/.codex/plugins/cache/*/product-management/skills/`
+`~/.codex/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
+and `~/.codex/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
+and `~/.codex/plugins/cache/*/product-management/skills/`
+in supported Codex cache roots
 
 If no directory found in any supported cache root, ask the user directly:
-- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
+- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
   - "B. Stop for now"
@@ -288,14 +290,14 @@ If user selects A: invoke `/gsd-update` via the Skill tool. After it completes, 
 If user selects B: output "Skipping GSD update." and proceed.
 If either version is "unknown": output "Could not determine GSD version. Continuing..." and proceed.
 
-### 1.5.3 Check Superpowers / Design / Engineering plugin versions
+### 1.5.3 Check Superpowers / Design / Engineering / Product Management plugin versions
 
 Read installed versions from `~/.codex/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
 cat "~/.codex/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
-  select(.key | test("^(superpowers|design|engineering)@")) |
+  select(.key | test("^(superpowers|design|engineering|product-management)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
 ' 2>/dev/null || echo "Could not read plugin registry"
 ```
@@ -304,6 +306,7 @@ No automated update skill exists for these plugins. If the user wants to update 
 > To update Superpowers: `/plugin install obra/superpowers`
 > To update Design: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
 > To update Engineering: `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`
+> To update Product Management: `/plugin install anthropics/knowledge-work-plugins/tree/main/product-management`
 
 ### 1.5.4 Check MultAI version
 
@@ -318,7 +321,7 @@ cat "~/.codex/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | h
 ```
 
 If installed version appears outdated compared to CHANGELOG, display:
-> MultAI v{installed} may not be the latest. To update: `/multai:update`
+> MultAI v{installed} may not be the latest. It is optional and only used for explicit multi-AI research requests. To update: `/multai:update`
 
 No interactive user prompt needed — MultAI update is user-initiated only. Display the notice and continue.
 
@@ -605,7 +608,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
-- **3.8 Activate plugins**: invoke `superpowers:using-superpowers`. GSD (`/gsd:*`) and Design (`/design:*`) are available as slash commands — no activation needed.
+- **3.8 Activate plugins**: invoke `superpowers:using-superpowers`. GSD, Engineering, Design, and Product Management are available through their normal skill routes — no activation needed.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 
 ## Additional Resources

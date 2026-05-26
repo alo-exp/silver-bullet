@@ -17,6 +17,11 @@ fi
 
 # Read JSON from stdin
 input=$(cat)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 # Detect hook event type (PreToolUse vs PostToolUse)
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"')
@@ -36,13 +41,24 @@ emit_block() {
 # Extract command/skill intent from tool input. For Bash, only inspect the
 # first shell command token from the first line; never match heredoc bodies,
 # comments, prose, or read-only paths that merely contain a skill name.
-tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+fi
 cmd=""
 skill=""
 if [[ "$tool_name" == "Skill" ]]; then
   skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
 else
-  raw_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+  if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+    sb_tool_is_shell_like "$tool_name" || exit 0
+  fi
+  if declare -f sb_tool_command_string >/dev/null 2>&1; then
+    raw_cmd="$(sb_tool_command_string "$input")"
+  else
+    raw_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+  fi
   [[ -z "$raw_cmd" ]] && exit 0
   cmd_first_line=$(printf '%s' "$raw_cmd" | sed -n '1p')
   # Strip leading env assignments and common shell wrappers.

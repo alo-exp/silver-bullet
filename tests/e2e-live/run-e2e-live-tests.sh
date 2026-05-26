@@ -2,12 +2,25 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
+CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/codex-cli-isolation.sh"
+KAY_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
+CODEX_HOOK_TRANSPLANT_HELPER="${SCRIPT_DIR}/../live/lib/codex-hook-transplant.sh"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+fi
+if [[ -f "$CODEX_HOOK_TRANSPLANT_HELPER" ]]; then
+  # shellcheck source=tests/live/lib/codex-hook-transplant.sh
+  source "$CODEX_HOOK_TRANSPLANT_HELPER"
+fi
 SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
+HOOK_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/hook-delivery-preflight.sh"
 E2E_LIVE_MATRIX_FILE=""
 INLINE_E2E_MATRIX_FILE=""
 SCENARIOS=(
+  "${SCENARIO_DIR}/test-e2e-live-hook-failures.sh"
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
 )
 RUNTIMES=()
@@ -17,8 +30,12 @@ if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
   RUNTIMES=(${SB_E2E_LIVE_RUNTIMES})
 else
-  RUNTIMES=(claude codex)
+  RUNTIMES=(kay)
 fi
+
+export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
+export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
+export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
 
 if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_claude=false
@@ -41,8 +58,8 @@ echo "========================================"
 echo "  Silver Bullet Live Todo-App E2E Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent against the todo-app fixture."
-echo "Estimated cost: higher than the hook matrix; keep runtimes narrow when iterating."
+echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the todo-app fixture."
+echo "Default provider/model: ${SB_LIVE_CODEX_MODEL_PROVIDER} / ${SB_LIVE_CODEX_MODEL} (${SB_LIVE_CODEX_REASONING_EFFORT})."
 echo ""
 
 if [[ -n "$E2E_LIVE_MATRIX_FILE" ]]; then
@@ -83,9 +100,23 @@ run_dependency_preflight() {
   fi
 }
 
+run_hook_preflight() {
+  local runtime="$1"
+  local marker_file
+
+  marker_file="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-hook-preflight-${runtime}.XXXXXX")"
+  export E2E_LIVE_HOOK_PREFLIGHT_FILE="$marker_file"
+
+  if ! SB_E2E_LIVE_RUNTIME="$runtime" bash "$HOOK_PREFLIGHT_SCRIPT"; then
+    rm -f "$marker_file"
+    unset E2E_LIVE_HOOK_PREFLIGHT_FILE
+    return 1
+  fi
+}
+
 for runtime in "${RUNTIMES[@]}"; do
   case "$runtime" in
-    claude|codex)
+    claude|codex|kay)
       ;;
     *)
       echo "ERROR: unsupported agent: $runtime"
@@ -100,34 +131,52 @@ for runtime in "${RUNTIMES[@]}"; do
       echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
       exit 1
     fi
+  elif [[ "$runtime" == "codex" ]]; then
+    # shellcheck source=tests/live/lib/codex-cli-isolation.sh
+    source "$CODEX_ISOLATION_HELPER"
+    setup_codex_cli_isolation
+    E2E_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/e2e-live-matrix"
+    INLINE_E2E_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/inline-e2e-matrix"
+    if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
+      echo "ERROR: native Codex CLI not found or not working"
+      exit 1
+    fi
+    if ! sync_install_generated_codex_user_hooks "$HOME" "codex"; then
+      echo "ERROR: codex hook-surface refresh failed"
+      exit 1
+    fi
   else
     # shellcheck source=tests/live/lib/kay-codex-isolation.sh
-    source "$CODEX_ISOLATION_HELPER"
+    source "$KAY_ISOLATION_HELPER"
     setup_kay_codex_isolation
-    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/inline-e2e-matrix"
+    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/e2e-live-matrix"
+    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: Kay CLI not found or not working"
+      exit 1
+    fi
+    if ! sync_install_generated_codex_user_hooks "$KAY_HOME" "kay"; then
+      echo "ERROR: kay hook-surface refresh failed"
       exit 1
     fi
   fi
 
   if ! run_dependency_preflight "$runtime"; then
-    if [[ "$runtime" == "codex" ]]; then
-      if ! CODEX_BIN="$CODEX_BIN" NPM_BIN="$(command -v npx 2>/dev/null || printf '/opt/homebrew/bin/npx')" \
-        "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
-        echo "ERROR: Kay-backed marketplace/bootstrap install failed"
-        exit 1
-      fi
-
+    if [[ "$runtime" != "claude" ]]; then
       if ! run_dependency_preflight "$runtime"; then
-        echo "ERROR: dependency-access preflight failed for runtime: $runtime after bootstrap"
+        echo "ERROR: dependency-access preflight failed for runtime: $runtime after hook-surface refresh"
         exit 1
       fi
     else
       echo "ERROR: dependency-access preflight failed for runtime: $runtime"
       exit 1
     fi
+  fi
+
+  if ! run_hook_preflight "$runtime"; then
+    echo "ERROR: hook-delivery preflight failed for runtime: $runtime"
+    echo "ERROR: live E2E cannot establish Silver Bullet hook enforcement for this runtime."
+    exit 1
   fi
 
   for scenario in "${SCENARIOS[@]}"; do
@@ -139,8 +188,14 @@ for runtime in "${RUNTIMES[@]}"; do
     rm -f "$E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE"
     unset E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE
   fi
+  if [[ -n "${E2E_LIVE_HOOK_PREFLIGHT_FILE:-}" ]]; then
+    rm -f "$E2E_LIVE_HOOK_PREFLIGHT_FILE"
+    unset E2E_LIVE_HOOK_PREFLIGHT_FILE
+  fi
 
   if [[ "$runtime" == "codex" ]]; then
+    teardown_codex_cli_isolation
+  elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
 done
@@ -154,7 +209,7 @@ else
   marker=""
   if [[ "$full_matrix_requested" == true ]]; then
     marker="full-claude-codex"
-  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "codex" ]]; then
+  elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
     marker="codex-only"
   fi
 

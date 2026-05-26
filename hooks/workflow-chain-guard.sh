@@ -20,6 +20,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
+  # shellcheck source=lib/hook-audit.sh
+  source "$_lib_dir/hook-audit.sh"
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -49,6 +53,7 @@ emit_block() {
   local reason="$1"
   local json_reason
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  sb_hook_audit_record "workflow-chain-guard" "PreToolUse" "deny" "$reason" "${workflow_file:-}"
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
@@ -114,10 +119,9 @@ if [[ -n "$config_file" ]]; then
   cfg_state="$(jq -r '.state.state_file // ""' "$config_file" 2>/dev/null || true)"
   [[ -n "$cfg_state" ]] && state_file="${cfg_state/#\~/$HOME}"
 fi
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_RUNTIME_STATE_DIR}/state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_RUNTIME_STATE_DIR}/state"
+fi
 
 missing_markers=()
 for marker in "${required_markers[@]}"; do

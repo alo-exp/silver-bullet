@@ -8,6 +8,12 @@ HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/prompt-reminder.sh"
 PASS=0
 FAIL=0
 
+RUNTIME_PATHS_SH="$(cd "$(dirname "$0")/../.." && pwd)/hooks/lib/runtime-paths.sh"
+if [[ -f "$RUNTIME_PATHS_SH" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$RUNTIME_PATHS_SH"
+fi
+
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
@@ -99,15 +105,27 @@ assert_empty() {
   fi
 }
 
+assert_noop_json() {
+  local label="$1"
+  local output="$2"
+  if printf '%s' "$output" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit" and ((.hookSpecificOutput | keys) == ["hookEventName"])' >/dev/null 2>&1; then
+    echo "  PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $label — expected no-op hook JSON, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 echo "=== prompt-reminder.sh tests ==="
 
-# Test 1: No config file -> exit 0, no output
+# Test 1: No config file -> exit 0, no-op JSON
 echo "--- Test 1: No config file ---"
 setup
-# No .silver-bullet.json in dir -> silent exit
+# No .silver-bullet.json in dir -> no-op JSON for Codex UserPromptSubmit
 out=$(run_hook)
-assert_empty "no config file -> silent exit, no output" "$out"
+assert_noop_json "no config file -> valid no-op hook JSON" "$out"
 teardown
 
 # Test 2: All skills complete -> output contains "all required skills complete"
@@ -145,7 +163,7 @@ assert_contains "missing skills -> output contains 'of' count" "$out" "of"
 assert_contains "missing skills -> output contains 'complete'" "$out" "complete"
 teardown
 
-# Test 5: Trivial file present -> exit 0, no output
+# Test 5: Trivial file present -> exit 0, no-op JSON
 echo "--- Test 5: Trivial bypass ---"
 setup
 write_cfg
@@ -154,7 +172,7 @@ rm -f "$TMPSTATE"
 # Create trivial file (not a symlink)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook)
-assert_empty "trivial file present -> silent exit, no output" "$out"
+assert_noop_json "trivial file present -> valid no-op hook JSON" "$out"
 teardown
 
 # Test 6: Main branch -> finishing-a-development-branch NOT in missing (TD-02)

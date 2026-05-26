@@ -24,6 +24,14 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so standalone Codex/Kay hook processes do not
+# depend on host-provided SB_RUNTIME_* environment variables.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
 # jq is required — warn visibly if missing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
@@ -86,17 +94,15 @@ required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
 # Security: validate paths stay within the host runtime state root (SB-002/SB-003)
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_STATE_DIR}/state" ;;
-esac
-case "$trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) trivial_file="${SB_STATE_DIR}/trivial" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
 
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
-lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
 
 # shellcheck source=lib/skill-discovery.sh
 if [[ -f "$lib_dir/skill-discovery.sh" ]]; then
@@ -433,10 +439,9 @@ run_doc_scheme_task_gate() {
 # Fail-open by design: stale cross-branch state should never block the current branch.
 sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
 # Security: validate path stays within the host runtime state root (mirrors session-start pattern)
-case "$sb_branch_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$sb_branch_file"; then
+  sb_branch_file="${SB_STATE_DIR}/branch"
+fi
 stored_state_branch=""
 if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
   stored_state_branch=$(head -1 "$sb_branch_file" 2>/dev/null | tr -d '\n' || true)

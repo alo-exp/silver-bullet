@@ -17,6 +17,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 # Source symlink-write guard (SEC-02)
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
@@ -38,7 +42,19 @@ fi
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""') || true
+fi
+if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+  sb_tool_is_shell_like "$tool_name" || exit 0
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  cmd="$(sb_tool_command_string "$input")"
+else
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
+fi
 [[ -z "$cmd" ]] && exit 0
 
 # Only fire when command touches the session mode file

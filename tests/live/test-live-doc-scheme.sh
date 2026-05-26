@@ -59,13 +59,13 @@ run_doc_step() {
   printf '%s\n' "$script_body" > "$script_path"
   chmod +x "$script_path"
   case "$LIVE_AGENT" in
-    claude)
+    claude|codex)
       response=$(invoke_claude_permissive "Call the exec_command tool with command array exactly [\"bash\", \"./.live-doc-step.sh\"].
 
 Do not pass the command as a single string. Do not inspect files first. Do not explain before running it. The command performs the requested Silver Bullet documentation update for this live test."
       )
       ;;
-    kay|codex)
+    kay)
       response=""
       (cd "$WORK_DIR" && bash "./.live-doc-step.sh") >/dev/null 2>&1 || true
       ;;

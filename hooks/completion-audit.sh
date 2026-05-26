@@ -65,6 +65,21 @@ fi
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+# Source runtime path selector so standalone Codex/Kay hook processes do not
+# depend on host-provided SB_RUNTIME_* environment variables.
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
+  # shellcheck source=lib/hook-audit.sh
+  source "$_lib_dir/hook-audit.sh"
+fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
+
 # jq is required — warn visibly if missing
 if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
@@ -82,6 +97,7 @@ emit_block() {
   local reason="$1"
   local json_reason
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  sb_hook_audit_record "completion-audit" "$hook_event" "deny" "$reason" "${cmd:-}"
   if [[ "$hook_event" == "PreToolUse" ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
   else
@@ -90,7 +106,19 @@ emit_block() {
 }
 
 # Extract the command being run
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+fi
+if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+  sb_tool_is_shell_like "$tool_name" || exit 0
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  cmd="$(sb_tool_command_string "$input")"
+else
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+fi
 [[ -z "$cmd" ]] && exit 0
 
 # ── Classify the command ──────────────────────────────────────────────────────
@@ -191,22 +219,18 @@ quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_
 verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
 # Security: validate paths stay within the host runtime state root (SB-002/SB-003)
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_STATE_DIR}/state" ;;
-esac
-case "$trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) trivial_file="${SB_STATE_DIR}/trivial" ;;
-esac
-case "$quality_gate_state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state" ;;
-esac
-case "$verify_tests_state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
+if ! sb_runtime_path_is_state_scoped "$quality_gate_state_file"; then
+  quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state"
+fi
+if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
+  verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+fi
 
 # ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
 if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
@@ -552,10 +576,10 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
 
     if [[ "$release_matrix_value" == 'matrix=full-claude-codex' && "$e2e_matrix_value" == 'matrix=full-claude-codex' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" && "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+    elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
     else
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB/Claude/Codex plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. If Claude usage is exhausted for this release, run the configured release live matrix override with Codex-only execution, set SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1, and retry.' )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Kay/OpenCode Go/DeepSeek V4 Flash low configuration, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
       exit 0
     fi
   fi

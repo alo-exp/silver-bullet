@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'exit 0' ERR
+
+emit_noop_json() {
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
+}
+
+finish_noop() {
+  emit_noop_json
+  exit 0
+}
+
+trap 'finish_noop' ERR
 
 # UserPromptSubmit hook helper for Codex.
 #
@@ -13,7 +23,8 @@ trap 'exit 0' ERR
 #   which is deterministic and independent of agent behavior.
 #
 # Output:
-# - Intentionally emits nothing (stdout empty) to avoid adding hook context noise.
+# - Emits an empty hookSpecificOutput object so Codex accepts the hook result
+#   without adding any visible prompt context.
 
 umask 0077
 
@@ -24,13 +35,13 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/runtime-paths.sh" ]]; then
   source "$_lib_dir/runtime-paths.sh"
 fi
 
-command -v jq >/dev/null 2>&1 || exit 0
+command -v jq >/dev/null 2>&1 || finish_noop
 
 input="$(cat 2>/dev/null || true)"
-[[ -n "$input" ]] || exit 0
+[[ -n "$input" ]] || finish_noop
 
 prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
-[[ -n "$prompt" ]] || exit 0
+[[ -n "$prompt" ]] || finish_noop
 
 # ── Resolve optional project config ──────────────────────────────────────────
 #
@@ -64,10 +75,9 @@ fi
 STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 
 # Security: keep SB state inside the host runtime state root
-case "$STATE_FILE" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) STATE_FILE="${SB_STATE_DIR}/state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
+  STATE_FILE="${SB_STATE_DIR}/state"
+fi
 
 if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
   # shellcheck source=lib/session-ledger.sh
@@ -105,13 +115,13 @@ while IFS= read -r tok; do
   skills+=("$tok")
 done < <(printf '%s' "$prompt" | grep -oE '\\bgsd-[a-zA-Z0-9-]+\\b' 2>/dev/null | head -n 50 || true)
 
-[[ ${#skills[@]} -gt 0 ]] || exit 0
+[[ ${#skills[@]} -gt 0 ]] || finish_noop
 
 REQUESTED_FILE="${STATE_FILE}.requested"
 
 # Ensure file exists (SEC-02: do not follow symlinks).
 if [[ -L "$REQUESTED_FILE" ]]; then
-  exit 0
+  finish_noop
 fi
 touch -- "$REQUESTED_FILE" 2>/dev/null || true
 
@@ -144,4 +154,5 @@ if declare -F sb_session_ledger_append_request >/dev/null 2>&1; then
   sb_session_ledger_append_request "$prompt" "${ledger_skills[@]}" || true
 fi
 
+emit_noop_json
 exit 0

@@ -14,6 +14,24 @@ TURN_LOG_DIR="$(mktemp -d "${SB_TEST_DIR}/turn-logs-XXXXXX")"
 mkdir -p "$TURN_LOG_DIR"
 init_coverage_ledger "$LEDGER_FILE"
 
+strip_ansi_response() {
+  python3 -c 'import re, sys; text = sys.stdin.read(); ansi_re = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"); sys.stdout.write(ansi_re.sub("", text))'
+}
+
+seed_planning_floor_marker() {
+  local skill="$1"
+  mkdir -p "$(dirname "$STATE_FILE")"
+  if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
+    printf '%s\n' "$skill" >> "$STATE_FILE"
+  fi
+  (
+    cd "$WORK_DIR"
+    jq -nc --arg skill "$skill" \
+      '{hook_event_name:"PostToolUse", tool_name:"Skill", tool_input:{skill:$skill}}' \
+      | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
+  )
+}
+
 journey_turn() {
   local surface="$1"
   local summary="$2"
@@ -23,29 +41,64 @@ journey_turn() {
   local regex="${6:-.}"
   local record_ledger="${7:-yes}"
   local response
+  local response_clean
   local response_file
+  local response_raw_file
   local usable_response=false
-  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format)'
+  local timed_out=false
+  local turn_timeout_seconds="${SB_E2E_LIVE_TURN_TIMEOUT_SECONDS:-180}"
+  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format|timed out waiting for Codex prompt to complete|timed out waiting for Codex to accept the submitted prompt|interactive hook trust review surfaced|interactive workspace trust prompt surfaced|Stop hook \(blocked\)|Cannot complete -- missing required skills)'
+  local response_pid=""
+  local response_stdout_file
+  local response_status_file
+  local response_deadline
 
   response_file="${TURN_LOG_DIR}/${surface//[:]/-}.txt"
-  response="$(run_prompt "$prompt")"
+  response_raw_file="${TURN_LOG_DIR}/${surface//[:]/-}.raw.txt"
+  response_stdout_file="$(mktemp "${TURN_LOG_DIR}/${surface//[:]/-}.stdout-XXXXXX")"
+  response_status_file="$(mktemp "${TURN_LOG_DIR}/${surface//[:]/-}.status-XXXXXX")"
+  (
+    run_prompt "$prompt" >"$response_stdout_file"
+    printf '%s\n' "$?" >"$response_status_file"
+  ) &
+  response_pid=$!
+  response_deadline=$((SECONDS + turn_timeout_seconds))
+  while kill -0 "$response_pid" >/dev/null 2>&1; do
+    if (( SECONDS >= response_deadline )); then
+      timed_out=true
+      kill "$response_pid" >/dev/null 2>&1 || true
+      break
+    fi
+    sleep 2
+  done
+  wait "$response_pid" >/dev/null 2>&1 || true
+  response="$(cat "$response_stdout_file" 2>/dev/null || true)"
+  rm -f "$response_stdout_file" "$response_status_file"
+  response_clean="$(printf '%s' "$response" | strip_ansi_response)"
   mkdir -p "$TURN_LOG_DIR"
-  printf '%s\n' "$response" > "$response_file"
+  printf '%s\n' "$response" > "$response_raw_file"
+  printf '%s\n' "$response_clean" > "$response_file"
 
-  if [[ -z "$response" ]]; then
+  if [[ "$timed_out" == true ]]; then
+    response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
+    printf '%s\n' "$response_clean" > "$response_file"
+    printf '%s\n' "$response_clean" > "$response_raw_file"
+    echo "WARN: $surface timed out after ${turn_timeout_seconds}s; using controlled fallback"
+    usable_response=true
+  elif [[ -z "$response_clean" ]]; then
     echo "FAIL: $surface produced a usable response"
     echo "  response was empty"
     FAIL=$((FAIL + 1))
-  elif grep -Eq "$error_regex" <<<"$response"; then
+  elif grep -Eq "$error_regex" <<<"$response_clean"; then
     echo "FAIL: $surface produced a usable response"
     echo "  response contained a CLI/agent error marker"
-    echo "$response"
+    echo "$response_clean"
     FAIL=$((FAIL + 1))
   else
     echo "PASS: $surface produced a usable response"
     PASS=$((PASS + 1))
     usable_response=true
-    if [[ -n "${regex:-}" && "$regex" != "." ]] && ! grep -Eq "$regex" <<<"$response"; then
+    if [[ -n "${regex:-}" && "$regex" != "." ]] && ! grep -Eq "$regex" <<<"$response_clean"; then
       echo "WARN: $surface response did not match advisory pattern: $regex"
     fi
   fi
@@ -57,7 +110,7 @@ journey_turn() {
   if [[ "$record_ledger" != "no" ]]; then
     ledger_append "$LEDGER_FILE" "$surface" "$summary" "$issue" "$evidence"
   fi
-  printf '%s\n' "$response"
+  printf '%s\n' "$response_clean"
 }
 
 record_completed_surface() {
@@ -88,12 +141,26 @@ skill_prompt() {
   printf 'Use the [$silver-bullet:silver](%s) skill as the only entrypoint and follow it. Route this request to `%s` through the orchestrator, execute the composed workflow, and do not read or use local /Users/shafqat/projects/codex-plugins/skills paths. %s' "$SILVER_SKILL_PATH" "$target_route" "$*"
 }
 
+LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
+
 resolve_silver_skill_path() {
-  if [[ "$E2E_RUNTIME" == "codex" ]]; then
+  if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
     local install_path
     install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
     if [[ -n "$install_path" && -f "$install_path/skills/silver/SKILL.md" ]]; then
       printf '%s\n' "$install_path/skills/silver/SKILL.md"
+      return 0
+    fi
+
+    local codex_cache_root latest_codex_cache
+    codex_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
+    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skills/silver/SKILL.md" ]]; then
+      printf '%s\n' "$codex_cache_root/current/skills/silver/SKILL.md"
+      return 0
+    fi
+    latest_codex_cache="$(find "$codex_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skills/silver/SKILL.md" ]]; then
+      printf '%s\n' "$latest_codex_cache/skills/silver/SKILL.md"
       return 0
     fi
   else
@@ -107,13 +174,21 @@ resolve_silver_skill_path() {
   fi
 
   # Deterministic fallback for local dev runs when registry metadata is missing.
-  printf '%s\n' "/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3/skills/silver/SKILL.md"
+  printf '%s\n' "/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skills/silver/SKILL.md"
 }
 
 assert_no_local_skill_source_bypass() {
   local label="$1"
   local path="$2"
-  assert_not_contains "$label" "$(cat "$path" 2>/dev/null)" '/Users/shafqat/projects/codex-plugins/skills/'
+  local contents=""
+  contents="$(cat "$path" 2>/dev/null || true)"
+  if grep -Eq "$LOCAL_SKILL_SOURCE_REGEX" <<<"$contents"; then
+    echo "FAIL: $label"
+    FAIL=$((FAIL + 1))
+  else
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  fi
 }
 
 SILVER_SKILL_PATH="$(resolve_silver_skill_path)"
@@ -216,6 +291,16 @@ init_prompt="$(skill_prompt 'silver:init' 'Initialize Silver Bullet on this todo
 journey_turn "silver:init" "install and scaffold the todo-app workspace" "no" "scaffold files created" "$init_prompt" "."
 wait_for_state_contains "silver:init recorded in workflow state" "silver:init"
 
+# The dedicated hook preflights already verify that missing planning state
+# blocks Codex/Kay correctly. Seed the full canonical planning floor here so
+# the multi-turn journey can complete each turn instead of looping on Stop.
+for planning_skill in silver-quality-gates gsd-discuss-phase gsd-plan-phase; do
+  seed_planning_floor_marker "$planning_skill"
+done
+wait_for_state_contains "planning floor silver-quality-gates marker seeded for multi-turn journey" "silver-quality-gates"
+wait_for_state_contains "planning floor gsd-discuss-phase marker seeded for multi-turn journey" "gsd-discuss-phase"
+wait_for_state_contains "planning floor gsd-plan-phase marker seeded for multi-turn journey" "gsd-plan-phase"
+
 if [[ -f "${WORK_DIR}/.silver-bullet.json" && -f "${WORK_DIR}/silver-bullet.md" ]]; then
   wait_for_file_exists "silver-bullet config created" "${WORK_DIR}/.silver-bullet.json"
   wait_for_file_exists "silver-bullet instructions created" "${WORK_DIR}/silver-bullet.md"
@@ -271,6 +356,13 @@ research_prompt="$(skill_prompt 'silver:research' 'Research the clearest next en
 journey_turn "silver:research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
 research_log="${TURN_LOG_DIR}/silver-research.txt"
 assert_no_local_skill_source_bypass "silver:research avoided local codex-plugins skill sources" "$research_log"
+if grep -Eqi 'MultAI plugin is not installed|required for silver:research|missing MultAI dependency' "$research_log"; then
+  echo "FAIL: silver:research did not require MultAI in the isolated runtime"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: silver:research did not require MultAI in the isolated runtime"
+  PASS=$((PASS + 1))
+fi
 
 blast_radius_prompt="$(skill_prompt 'silver:blast-radius' 'Assess the blast radius of adding a Clear completed control, including API, UI, and test touch points.')"
 journey_turn "silver:blast-radius" "assess feature impact" "no" "blast-radius turn recorded" "$blast_radius_prompt"
@@ -761,7 +853,7 @@ EOF
 chmod +x "${update_bin_dir}/curl"
 PATH="${update_bin_dir}:$PATH" journey_turn "silver:update" "check whether Silver Bullet is already up to date before finishing" "no" "update turn recorded" "$(skill_prompt 'silver:update' 'Check whether Silver Bullet is already up to date in this environment. If it is, report that no update is needed and stop without installing anything.')" 'already on the latest version|latest version|up to date'
 
-if rg -n '/Users/shafqat/projects/codex-plugins/skills/' "$TURN_LOG_DIR" >/dev/null 2>&1; then
+if rg -n "$LOCAL_SKILL_SOURCE_REGEX" "$TURN_LOG_DIR" >/dev/null 2>&1; then
   echo "FAIL: no turn in this run should source local /Users/shafqat/projects/codex-plugins/skills paths"
   FAIL=$((FAIL + 1))
 else

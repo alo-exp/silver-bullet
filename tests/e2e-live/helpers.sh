@@ -5,7 +5,7 @@
 # sibling test-todo-app repo, then resets the workspace after each scenario.
 # The real SB state files are backed up and restored around each scenario so
 # the suite can run repeatedly without cross-talk. Claude keeps using
-# the active host runtime state root; Kay uses the temp-root .kay/.silver-bullet tree.
+# the active host runtime state root; Kay uses the temp-root .codex/.silver-bullet tree.
 
 set -euo pipefail
 
@@ -19,6 +19,7 @@ FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
 AGENT_DIR="${SB_ROOT}/tests/live/agents"
 LIB_DIR="${E2E_ROOT}/lib"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
+CODEX_HOOK_TRANSPLANT_HELPER="${SB_ROOT}/tests/live/lib/codex-hook-transplant.sh"
 
 E2E_RUNTIME="${SB_E2E_LIVE_RUNTIME:-${SB_LIVE_RUNTIME:-claude}}"
 KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
@@ -30,8 +31,20 @@ if [[ -f "${SB_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
 fi
-if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
-  SB_TEST_DIR="${KAY_HOME}/.kay/.silver-bullet"
+if [[ -f "${SB_ROOT}/hooks/lib/skill-discovery.sh" ]]; then
+  # shellcheck source=hooks/lib/skill-discovery.sh
+  source "${SB_ROOT}/hooks/lib/skill-discovery.sh"
+fi
+if [[ -f "$CODEX_HOOK_TRANSPLANT_HELPER" ]]; then
+  # shellcheck source=tests/live/lib/codex-hook-transplant.sh
+  source "$CODEX_HOOK_TRANSPLANT_HELPER"
+fi
+if [[ "$E2E_RUNTIME" == "kay" && -f "${SB_ROOT}/tests/live/lib/kay-codex-isolation.sh" ]]; then
+  # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+  source "${SB_ROOT}/tests/live/lib/kay-codex-isolation.sh"
+fi
+if [[ "$E2E_RUNTIME" == "kay" ]]; then
+  SB_TEST_DIR="${KAY_HOME}/.codex/.silver-bullet"
   MCP_AUTH_CACHE="${KAY_HOME}/.kay/mcp-needs-auth-cache.json"
   MCP_AUTH_CACHE_BACKUP="${KAY_HOME}/.kay/mcp-needs-auth-cache.e2e-live-backup-$$"
 else
@@ -41,6 +54,7 @@ else
 fi
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+HOOK_AUDIT_FILE="${SB_TEST_DIR}/hook-audit.jsonl"
 # shellcheck disable=SC2034 # Reserved for live-run budget enforcement.
 MAX_BUDGET="${SB_E2E_LIVE_BUDGET_USD:-10.00}"
 APP_PORT="${SB_E2E_LIVE_PORT:-3456}"
@@ -53,7 +67,6 @@ APP_SERVER_PID=""
 APP_SERVER_LOG=""
 BRANCH_FILE=""
 CLAUDE_PROMPT_COUNT=0
-CLAUDE_INTERACTIVE_INVOKE="${SB_ROOT}/scripts/claude-interactive-invoke.expect"
 STATE_FILE="${SB_TEST_DIR}/state"
 TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
 SESSION_INIT_FILE="${SB_TEST_DIR}/session-init"
@@ -87,7 +100,11 @@ case "$E2E_RUNTIME" in
     # shellcheck source=tests/live/agents/claude/agent.sh
     source "$AGENT_DIR/claude/agent.sh"
     ;;
-  kay|codex)
+  codex)
+    # shellcheck source=tests/live/agents/codex/agent.sh
+    source "$AGENT_DIR/codex/agent.sh"
+    ;;
+  kay)
     # shellcheck source=tests/live/agents/kay/agent.sh
     source "$AGENT_DIR/kay/agent.sh"
     ;;
@@ -133,7 +150,7 @@ backup_session_state() {
   fi
   printf '{}\n' > "$MCP_AUTH_CACHE"
 
-  if [[ "$E2E_RUNTIME" == "kay" || "$E2E_RUNTIME" == "codex" ]]; then
+  if [[ "$E2E_RUNTIME" == "kay" ]]; then
     local session_catalog_path="${CODEX_SESSION_CATALOG_PATH:-${KAY_HOME}/.kay/sessions/index/catalog.jsonl}"
     mkdir -p "$(dirname "$session_catalog_path")"
     : > "$session_catalog_path"
@@ -166,6 +183,24 @@ restore_session_state() {
   fi
 }
 
+enable_hook_audit() {
+  mkdir -p "$SB_TEST_DIR"
+  rm -f "$HOOK_AUDIT_FILE"
+  export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
+  if [[ "$E2E_RUNTIME" == "kay" && -n "${WORK_DIR:-}" ]] && declare -F kay_register_silver_bullet_project_hooks >/dev/null 2>&1; then
+    kay_register_silver_bullet_project_hooks "$WORK_DIR"
+  fi
+}
+
+disable_hook_audit() {
+  rm -f "$HOOK_AUDIT_FILE"
+  unset SILVER_BULLET_HOOK_AUDIT_LOG
+}
+
+clear_hook_audit_log() {
+  rm -f "$HOOK_AUDIT_FILE"
+}
+
 write_inline_e2e_matrix_marker() {
   mkdir -p "$SB_TEST_DIR"
   cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
@@ -176,7 +211,7 @@ EOF
 write_e2e_live_matrix_marker() {
   mkdir -p "$SB_TEST_DIR"
   local marker="full-claude-codex"
-  if [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" ]]; then
+  if [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" || "${SB_E2E_LIVE_RUNTIMES:-}" == "kay" ]]; then
     marker="codex-only"
   fi
   cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
@@ -203,6 +238,48 @@ write_dependency_access_preflight_marker() {
 agent=${E2E_RUNTIME}
 checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
+}
+
+hook_delivery_preflight_file() {
+  printf '%s\n' "${E2E_LIVE_HOOK_PREFLIGHT_FILE:-}"
+}
+
+hook_delivery_preflight_ready() {
+  local marker_file
+  marker_file="$(hook_delivery_preflight_file)"
+  [[ -n "$marker_file" && -f "$marker_file" ]]
+}
+
+write_hook_delivery_preflight_marker() {
+  local marker_file
+  marker_file="$(hook_delivery_preflight_file)"
+  [[ -n "$marker_file" ]] || return 0
+  mkdir -p "$(dirname "$marker_file")"
+  cat > "$marker_file" <<EOF
+agent=${E2E_RUNTIME}
+checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+}
+
+emit_hook_delivery_diagnostic() {
+  local transcript_dir=""
+  local transcript_file=""
+
+  if declare -F agent_transcript_dir >/dev/null 2>&1; then
+    transcript_dir="$(agent_transcript_dir 2>/dev/null || true)"
+  fi
+  if [[ -n "$transcript_dir" ]]; then
+    transcript_file="${transcript_dir}/latest.jsonl"
+  fi
+
+  if [[ "$E2E_RUNTIME" != "claude" ]]; then
+    if [[ -n "$transcript_file" && -f "$transcript_file" ]]; then
+      echo "  latest ${E2E_RUNTIME} transcript tool events:"
+      rg -n 'exec_command_begin|tool_call_begin|tool_call|permissionDecision|decision' "$transcript_file" | sed -n '1,10p' || true
+    else
+      echo "  no ${E2E_RUNTIME} transcript captured at: ${transcript_file:-<unknown>}"
+    fi
+  fi
 }
 
 clear_inline_e2e_matrix_marker() {
@@ -248,6 +325,87 @@ quality-gate-stage-3
 quality-gate-stage-4
 full-test-suite-rerun
 EOF
+}
+
+workspace_trust_config_files() {
+  case "$E2E_RUNTIME" in
+    codex)
+      codex_config_file
+      ;;
+    kay)
+      kay_active_config_file
+      codex_config_file
+      ;;
+  esac | awk 'NF && !seen[$0]++'
+}
+
+trust_runtime_workspace() {
+  [[ "$E2E_RUNTIME" == "claude" ]] && return 0
+
+  local config_file
+  while IFS= read -r config_file; do
+    [[ -n "$config_file" ]] || continue
+    mkdir -p "$(dirname "$config_file")"
+    python3 - "$config_file" "$WORK_DIR" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+workspace = pathlib.Path(sys.argv[2])
+text = config_path.read_text() if config_path.is_file() else ""
+
+project_paths = []
+for candidate in (workspace, workspace.resolve()):
+    candidate_str = str(candidate)
+    if candidate_str not in project_paths:
+        project_paths.append(candidate_str)
+
+def upsert_project_trust(lines, project_path):
+    header = f'[projects."{project_path}"]'
+    out = []
+    found = False
+    index = 0
+
+    while index < len(lines):
+        line = lines[index]
+        if line == header:
+            found = True
+            out.append(line)
+            index += 1
+            trust_written = False
+            while index < len(lines) and not lines[index].startswith("["):
+                current = lines[index]
+                if current.startswith("trust_level = "):
+                    if not trust_written:
+                        out.append('trust_level = "trusted"')
+                        trust_written = True
+                else:
+                    out.append(current)
+                index += 1
+            if not trust_written:
+                out.append('trust_level = "trusted"')
+            continue
+        out.append(line)
+        index += 1
+
+    if not found:
+        if out and out[-1] != "":
+            out.append("")
+        out.extend([header, 'trust_level = "trusted"'])
+
+    return out
+
+lines = text.splitlines()
+for project_path in project_paths:
+    lines = upsert_project_trust(lines, project_path)
+
+config_path.write_text("\n".join(lines).rstrip("\n") + "\n")
+PY
+  done < <(workspace_trust_config_files)
+
+  if [[ "$E2E_RUNTIME" == "kay" ]] && declare -F kay_register_silver_bullet_project_hooks >/dev/null 2>&1; then
+    kay_register_silver_bullet_project_hooks "$WORK_DIR"
+  fi
 }
 
 prepare_workspace() {
@@ -305,6 +463,7 @@ PY
   git -C "$WORK_DIR" add -A
   git -C "$WORK_DIR" commit -q -m "initial: todo app baseline" 2>/dev/null || true
   git -C "$WORK_DIR" checkout -q -b feature/e2e-live 2>/dev/null || true
+  trust_runtime_workspace
 
   REMOTE_DIR="$(mktemp -d "${WORK_DIR%/*}/remote.XXXXXX")"
   git -C "$WORK_DIR" init -q --bare "$REMOTE_DIR"
@@ -368,10 +527,12 @@ cleanup_workspace() {
 
   rm -rf "${SB_TEST_DIR}"/turn-logs-* 2>/dev/null || true
   rm -f "${SB_TEST_DIR}"/dependency-access-preflight-* 2>/dev/null || true
+  rm -f "$HOOK_AUDIT_FILE" 2>/dev/null || true
   if [[ -n "${BRANCH_FILE:-}" ]]; then
     rm -f "$BRANCH_FILE"
   fi
   unset SILVER_BULLET_BRANCH_FILE
+  unset SILVER_BULLET_HOOK_AUDIT_LOG
   restore_session_state
 }
 
@@ -430,60 +591,20 @@ seed_workspace_requested_skills() {
 run_prompt() {
   local prompt="$1"
   seed_workspace_requested_skills "$prompt"
-  if [[ "$E2E_RUNTIME" == "claude" ]]; then
-    claude_interactive_invoke permissive "$prompt"
-  else
-    agent_invoke permissive "$prompt"
-  fi
+  agent_invoke permissive "$prompt"
 }
 
 run_prompt_strict() {
   local prompt="$1"
   seed_workspace_requested_skills "$prompt"
-  if [[ "$E2E_RUNTIME" == "claude" ]]; then
-    claude_interactive_invoke default "$prompt"
-  else
-    agent_invoke default "$prompt"
-  fi
+  agent_invoke default "$prompt"
 }
 
-claude_interactive_invoke() {
-  local mode="$1"
-  local prompt="$2"
-  local prompt_file
-  local permission_mode
-  local continue_flag
-  local output
+runtime_hook_probe_prefix() {
+  cat <<'EOF'
+This is a Silver Bullet runtime hook probe. You must attempt the requested shell command with the Bash or exec_command tool. Do not satisfy the request by refusing, describing, or manually editing files. External Silver Bullet hooks are responsible for allowing or denying the command. Stop after the tool attempt or hook denial.
 
-  prompt_file="$(mktemp "${WORK_DIR}/claude-prompt.XXXXXX")"
-  printf '%s' "$prompt" > "$prompt_file"
-
-  permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
-  if [[ "$mode" == "permissive" ]]; then
-    permission_mode="acceptEdits"
-  fi
-
-  continue_flag=0
-  if [[ "${CLAUDE_PROMPT_COUNT:-0}" -gt 0 ]]; then
-    continue_flag=1
-  fi
-
-  output=$(
-    cd "$WORK_DIR" && \
-      CLAUDE_WORK_DIR="$WORK_DIR" \
-      CLAUDE_PROMPT_FILE="$prompt_file" \
-      CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
-      CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
-      CLAUDE_PERMISSION_MODE="$permission_mode" \
-      CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-600}" \
-      CLAUDE_CONTINUE="$continue_flag" \
-      expect "$CLAUDE_INTERACTIVE_INVOKE"
-  ) || true
-
-  rm -f "$prompt_file"
-  printf '%s' "$output"
-
-  CLAUDE_PROMPT_COUNT=$((CLAUDE_PROMPT_COUNT + 1))
+EOF
 }
 
 claude_plugin_installed() {
@@ -531,9 +652,19 @@ bootstrap_claude_dependencies() {
   "$CLAUDE_INSTALL_SCRIPT" --purge-legacy-plugins >/dev/null
 }
 
+runtime_codex_home_root() {
+  if [[ "$E2E_RUNTIME" == "kay" ]]; then
+    printf '%s\n' "${KAY_HOME:-$HOME}"
+  else
+    printf '%s\n' "$HOME"
+  fi
+}
+
 codex_config_file() {
   local config_file
-  local home_root="${KAY_HOME:-$HOME}"
+  local home_root
+
+  home_root="$(runtime_codex_home_root)"
   for config_file in "${home_root}/.codex/config.toml" "${home_root}/.codex/config.toml"; do
     if [[ -f "$config_file" ]]; then
       printf '%s\n' "$config_file"
@@ -543,9 +674,18 @@ codex_config_file() {
   printf '%s\n' "${home_root}/.codex/config.toml"
 }
 
+kay_active_config_file() {
+  local home_root
+
+  home_root="$(runtime_codex_home_root)"
+  printf '%s\n' "${home_root}/.kay/config.toml"
+}
+
 codex_marketplace_root() {
   local marketplace_root
-  local home_root="${KAY_HOME:-$HOME}"
+  local home_root
+
+  home_root="$(runtime_codex_home_root)"
   for marketplace_root in \
     "${home_root}/.codex/.tmp/marketplaces/alo-labs-codex" \
     "${home_root}/.codex/.tmp/marketplaces/alo-labs-codex"; do
@@ -559,7 +699,9 @@ codex_marketplace_root() {
 
 codex_installed_plugins_file() {
   local registry_file
-  local home_root="${KAY_HOME:-$HOME}"
+  local home_root
+
+  home_root="$(runtime_codex_home_root)"
   for registry_file in \
     "${home_root}/.codex/plugins/installed_plugins.json" \
     "${home_root}/.codex/plugins/installed_plugins.json"; do
@@ -569,6 +711,35 @@ codex_installed_plugins_file() {
     fi
   done
   printf '%s\n' "${home_root}/.codex/plugins/installed_plugins.json"
+}
+
+codex_plugin_install_path_matches() {
+  local plugin_id="$1"
+  local expected_path="$2"
+  local registry_file
+
+  registry_file="$(codex_installed_plugins_file)"
+  python3 - "$registry_file" "$plugin_id" "$expected_path" <<'PY'
+import json
+import pathlib
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+plugin_id = sys.argv[2]
+expected = sys.argv[3]
+
+try:
+    data = json.loads(registry_path.read_text())
+except Exception:
+    raise SystemExit(1)
+
+entries = data.get("plugins", {}).get(plugin_id, [])
+for entry in entries:
+    if entry.get("installPath") == expected:
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
 }
 
 codex_plugin_registered() {
@@ -638,11 +809,63 @@ codex_plugin_surface_exists_any() {
   return 1
 }
 
+codex_plugin_surface_file_contains_any() {
+  local plugin_id="$1"
+  local surface="$2"
+  shift 2
+  local needle
+  local install_path
+
+  install_path="$(codex_plugin_install_path "$plugin_id")"
+  [[ -n "$install_path" && -f "$install_path/$surface" ]] || return 1
+
+  for needle in "$@"; do
+    if grep -qF "$needle" "$install_path/$surface"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+runtime_plugin_hook_file() {
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    local claude_cache_root latest_claude_cache
+    claude_cache_root="${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"
+    latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+    if [[ -n "$latest_claude_cache" && -f "$latest_claude_cache/hooks/workflow-chain-guard.sh" ]]; then
+      printf '%s\n' "$latest_claude_cache/hooks/workflow-chain-guard.sh"
+      return 0
+    fi
+    return 1
+  fi
+
+  local install_path
+  install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
+  if [[ -n "$install_path" && -f "$install_path/hooks/workflow-chain-guard.sh" ]]; then
+    printf '%s\n' "$install_path/hooks/workflow-chain-guard.sh"
+    return 0
+  fi
+
+  local marketplace_root
+  marketplace_root="$(codex_marketplace_root)"
+  if [[ -f "$marketplace_root/plugins/silver-bullet/hooks/workflow-chain-guard.sh" ]]; then
+    printf '%s\n' "$marketplace_root/plugins/silver-bullet/hooks/workflow-chain-guard.sh"
+    return 0
+  fi
+
+  return 1
+}
+
 refresh_runtime_installation() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     bootstrap_claude_dependencies
   else
-    (cd "$SB_ROOT" && ./scripts/install-codex.sh --purge-legacy-skills >/dev/null)
+    if [[ "$E2E_RUNTIME" == "kay" ]]; then
+      sync_install_generated_codex_user_hooks "$KAY_HOME" "kay"
+    else
+      sync_install_generated_codex_user_hooks "$HOME" "codex"
+    fi
   fi
 }
 
@@ -668,9 +891,9 @@ verify_runtime_dependency_access() {
       assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md"
       assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver-feature/SKILL.md"
       assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
-      assert_file_contains "Claude Silver Bullet init skill uses silver prefix" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init'
-      assert_file_contains "Claude Silver Bullet ensure-docs skill uses silver prefix" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs'
-      assert_file_contains "Claude Silver Bullet feature skill uses silver prefix" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature'
+      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init' 'name: silver-init'
+      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: silver-ensure-docs'
+      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature' 'name: silver-feature'
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
       echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"
@@ -712,11 +935,20 @@ verify_runtime_dependency_access() {
       PASS=$((PASS + 1))
     fi
     assert_command_succeeds "Codex Silver Bullet install path exposes package manifest" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex Silver Bullet managed hook manifest declared" codex_plugin_surface_file_contains_any "silver-bullet@alo-labs-codex" ".codex-plugin/plugin.json" '"hooks": "./hooks/hooks.json"'
     assert_command_succeeds "Codex Silver Bullet install path exposes workflow-chain guard" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- "hooks/workflow-chain-guard.sh"
     assert_command_succeeds "Codex Superpowers plugin registered" codex_plugin_registered_any "superpowers@superpowers-marketplace"
     assert_command_succeeds "Codex Superpowers install path exposes verification skill" codex_plugin_surface_exists_any "superpowers@superpowers-marketplace" -- "skills/verification-before-completion/SKILL.md" "skills/brainstorming/SKILL.md"
     assert_command_succeeds "Codex GSD plugin registered" codex_plugin_registered_any "gsd@get-shit-done-marketplace"
     assert_command_succeeds "Codex GSD install path exposes package manifest" codex_plugin_surface_exists_any "gsd@get-shit-done-marketplace" -- ".codex-plugin/plugin.json"
+    assert_command_succeeds "Codex hook discovery sees silver-quality-gates as invocable" sb_skill_is_installed "silver-quality-gates"
+    assert_command_succeeds "Codex hook discovery sees gsd-discuss-phase as invocable" sb_skill_is_installed "gsd-discuss-phase"
+    assert_command_succeeds "Codex hook discovery sees gsd-plan-phase as invocable" sb_skill_is_installed "gsd-plan-phase"
+    assert_command_succeeds "Codex hook discovery sees gsd-execute-phase as invocable" sb_skill_is_installed "gsd-execute-phase"
+    assert_command_succeeds "Codex hook discovery sees gsd-verify-work as invocable" sb_skill_is_installed "gsd-verify-work"
+    assert_command_succeeds "Codex hook discovery sees verification-before-completion as invocable" sb_skill_is_installed "verification-before-completion"
+    assert_command_succeeds "Codex hook discovery sees test-driven-development as invocable" sb_skill_is_installed "test-driven-development"
+    assert_command_succeeds "Codex hook discovery sees verify-tests as invocable" sb_skill_is_installed "verify-tests"
     assert_command_succeeds "Codex engineering plugin registered" codex_plugin_registered_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local"
     assert_command_succeeds "Codex engineering install path exposes package manifest" codex_plugin_surface_exists_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex design plugin registered" codex_plugin_registered_any "design@alo-labs-codex" "design@alo-labs-codex-local"
@@ -727,6 +959,20 @@ verify_runtime_dependency_access() {
     assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs'
     assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md" 'name: silver:feature'
     assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md" 'name: silver'
+
+    if [[ "$E2E_RUNTIME" == "kay" ]]; then
+      local active_config_file
+      active_config_file="$(kay_active_config_file)"
+      assert_file_contains "Kay active config enables plugin hooks" "$active_config_file" 'plugin_hooks = true'
+      assert_file_contains "Kay active config enables hooks" "$active_config_file" '^hooks = true$'
+      assert_file_not_contains "Kay active config strips Codex plugin registry sections" "$active_config_file" '\[plugins\."silver-bullet@alo-labs-codex"\]'
+      assert_file_not_contains "Kay active config omits Codex home rewrite sections" "$active_config_file" 'CODEX_HOME = "'
+      assert_command_succeeds "Isolated Silver Bullet install path registered" codex_plugin_install_path_matches "silver-bullet@alo-labs-codex" "${KAY_HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+    else
+      local runtime_home_root
+      runtime_home_root="$(runtime_codex_home_root)"
+      assert_command_succeeds "Native Codex Silver Bullet install path registered" codex_plugin_install_path_matches "silver-bullet@alo-labs-codex" "${runtime_home_root}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+    fi
   fi
 }
 
@@ -738,8 +984,59 @@ ensure_runtime_dependency_access_preflight() {
   write_dependency_access_preflight_marker
 }
 
+verify_runtime_hook_delivery() {
+  local target_file
+  local digest_before
+  local digest_after
+  local failed=0
+
+  prepare_workspace baseline
+  enable_hook_audit
+  clear_hook_audit_log
+
+  target_file="${WORK_DIR}/src/routes/todos.js"
+  rm -rf "${WORK_DIR}/.planning/workflows"
+  : > "$STATE_FILE"
+  digest_before="$(capture_digest "$target_file")"
+
+  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> src/routes/todos.js\` and do not do anything else." >/dev/null || true
+
+  digest_after="$(capture_digest "$target_file")"
+  if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
+    echo "PASS: hook-delivery preflight keeps source unchanged before planning"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: hook-delivery preflight keeps source unchanged before planning"
+    echo "  file contents changed unexpectedly: $target_file"
+    FAIL=$((FAIL + 1))
+    failed=1
+  fi
+
+  if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
+    failed=1
+  fi
+
+  if (( failed )); then
+    emit_hook_delivery_diagnostic
+    disable_hook_audit
+    return 1
+  fi
+
+  disable_hook_audit
+  return 0
+}
+
+ensure_runtime_hook_delivery_preflight() {
+  if hook_delivery_preflight_ready; then
+    return 0
+  fi
+  verify_runtime_hook_delivery
+  write_hook_delivery_preflight_marker
+}
+
 verify_runtime_installation() {
   ensure_runtime_dependency_access_preflight
+  ensure_runtime_hook_delivery_preflight
 }
 
 assert_contains() {
@@ -784,6 +1081,26 @@ assert_file_exists() {
   fi
 }
 
+assert_file_not_contains() {
+  local label="$1"
+  local path="$2"
+  local needle="$3"
+  if [[ ! -f "$path" ]]; then
+    echo "FAIL: $label (missing file: $path)"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if ! grep -qE "$needle" "$path"; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    echo "  unexpected pattern: $needle"
+    echo "  in file: $path"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 assert_file_absent() {
   local label="$1"
   local path="$2"
@@ -793,6 +1110,85 @@ assert_file_absent() {
   else
     echo "PASS: $label"
     PASS=$((PASS + 1))
+  fi
+}
+
+capture_digest() {
+  shasum -a 256 "$1" 2>/dev/null | awk '{print $1}' || sha256sum "$1" 2>/dev/null | awk '{print $1}' || echo ""
+}
+
+capture_git_head() {
+  git -C "$1" rev-parse HEAD 2>/dev/null || echo ""
+}
+
+assert_file_contains_any() {
+  local label="$1"
+  local path="$2"
+  shift 2
+  local pattern
+
+  for pattern in "$@"; do
+    if grep -qE "$pattern" "$path" 2>/dev/null; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+  done
+
+  echo "FAIL: $label"
+  echo "  expected one of: $*"
+  echo "  in file: $path"
+  FAIL=$((FAIL + 1))
+}
+
+assert_file_not_modified() {
+  local label="$1"
+  local path="$2"
+  local digest_before="$3"
+  local digest_after
+
+  digest_after="$(capture_digest "$path")"
+  if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    echo "  file contents changed unexpectedly: $path"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_file_modified() {
+  local label="$1"
+  local path="$2"
+  local digest_before="$3"
+  local digest_after
+
+  digest_after="$(capture_digest "$path")"
+  if [[ -n "$digest_before" && -n "$digest_after" && "$digest_after" != "$digest_before" ]]; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    echo "  expected file contents to change: $path"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_git_head_unchanged() {
+  local label="$1"
+  local repo_dir="$2"
+  local head_before="$3"
+  local head_after
+
+  head_after="$(capture_git_head "$repo_dir")"
+  if [[ -n "$head_before" && "$head_after" == "$head_before" ]]; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    echo "  expected HEAD to remain $head_before, got ${head_after:-<empty>}"
+    FAIL=$((FAIL + 1))
   fi
 }
 
@@ -896,6 +1292,44 @@ wait_for_state_contains() {
   echo "  expected state entry: $needle"
   if [[ -f "$STATE_FILE" ]]; then
     echo "  state: $(tr '\n' ' ' < "$STATE_FILE")"
+  fi
+  FAIL=$((FAIL + 1))
+  return 1
+}
+
+wait_for_hook_audit_entry() {
+  local label="$1"
+  local hook_name="$2"
+  local decision="$3"
+  local detail_pattern="${4:-}"
+  local timeout_seconds="${5:-60}"
+  local interval_seconds="${6:-2}"
+  local deadline=$((SECONDS + timeout_seconds))
+
+  while (( SECONDS < deadline )); do
+    if [[ -f "$HOOK_AUDIT_FILE" ]] && jq -e \
+      --arg hook_name "$hook_name" \
+      --arg decision "$decision" \
+      --arg detail_pattern "$detail_pattern" \
+      'select(.hook_name == $hook_name and .decision == $decision and ($detail_pattern == "" or ((.detail // "") | test($detail_pattern; "i"))))' \
+      "$HOOK_AUDIT_FILE" >/dev/null 2>&1; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    sleep "$interval_seconds"
+  done
+
+  echo "FAIL: $label"
+  echo "  expected hook audit entry hook=${hook_name} decision=${decision} detail~=${detail_pattern}"
+  if [[ -f "$HOOK_AUDIT_FILE" ]]; then
+    echo "  hook audit log:"
+    sed -n '1,40p' "$HOOK_AUDIT_FILE"
+  else
+    echo "  hook audit log missing at: $HOOK_AUDIT_FILE"
+    if [[ "$E2E_RUNTIME" != "claude" ]]; then
+      echo "  ${E2E_RUNTIME} runtime likely did not load Silver Bullet hook delivery for this turn."
+    fi
   fi
   FAIL=$((FAIL + 1))
   return 1

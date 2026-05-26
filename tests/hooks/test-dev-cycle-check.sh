@@ -5,10 +5,16 @@
 
 set -euo pipefail
 
-HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/dev-cycle-check.sh"
-WORKFLOWS_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/workflows.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK="$REPO_ROOT/hooks/dev-cycle-check.sh"
+WORKFLOWS_SCRIPT="$REPO_ROOT/scripts/workflows.sh"
 PASS=0
 FAIL=0
+
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
@@ -106,6 +112,24 @@ run_hook_bash() {
   local input
   input=$(jq -n --arg e "$event" --arg c "$cmd" \
     '{hook_event_name: $e, tool_name: "Bash", tool_input: {command: $c}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_exec_command() {
+  local event="$1"
+  local shell_cmd="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg c "$shell_cmd" \
+    '{hook_event_name: $e, tool_name: "exec_command", tool_input: {command: ["bash", "-lc", $c]}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_exec_array() {
+  local event="$1"
+  local command_json="$2"
+  local input
+  input=$(jq -n --arg e "$event" --argjson c "$command_json" \
+    '{hook_event_name: $e, tool_name: "exec_command", tool_input: {command: $c}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
@@ -236,6 +260,94 @@ EOF")
 assert_blocks "relative Bash write to src/ blocked without silver-quality-gates" "$out"
 teardown
 
+# Test 4aa: Stage A — exec_command array write to src/ is blocked without planning
+setup
+out=$(run_hook_exec_command "PreToolUse" "printf 'console.log(1)\n' > src/app.js")
+assert_blocks "exec_command array write to src/ blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4aaa: Stage A — direct exec_command argv redirect attempt is blocked without planning
+setup
+out=$(run_hook_exec_array "PreToolUse" '["printf","console.log(1)\n",">>","src/app.js"]')
+assert_blocks "direct exec_command argv redirect to src/ is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4aab: Stage A — direct exec_command echo argv redirect attempt is blocked without planning
+setup
+out=$(run_hook_exec_array "PreToolUse" '["echo","","// probe","",">>","src/app.js"]')
+assert_blocks "direct exec_command echo argv redirect to src/ is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4aac: Stage A — read-only exec_command search for literal >> stays allowed
+setup
+out=$(run_hook_exec_array "PreToolUse" '["rg",">>","src/app.js"]')
+assert_passes "direct exec_command literal >> search stays read-only" "$out"
+teardown
+
+# Test 4ab: Stage A — scaffold/config write with /src/ literal stays outside source gate
+setup
+out=$(run_hook_bash "PreToolUse" "cat > .silver-bullet.json <<'EOF'
+{\"project\":{\"src_pattern\":\"/src/\"}}
+EOF")
+assert_passes "Bash write to SB config with /src/ literal is not treated as a source edit" "$out"
+teardown
+
+# Test 4ac: Stage A — Bash write to excluded src test file passes without planning
+setup
+out=$(run_hook_bash "PreToolUse" "cat > src/app.test.js <<'EOF'
+console.log('test-only')
+EOF")
+assert_passes "Bash write to excluded src test file passes without planning" "$out"
+teardown
+
+# Test 4ad: Stage A — read-only src inspection via Bash passes without planning
+setup
+out=$(run_hook_bash "PreToolUse" "sed -n '1,40p' src/app.js")
+assert_passes "read-only Bash inspection of src file passes without planning" "$out"
+teardown
+
+# Test 4ae: Stage A — read-only git show of src file passes without planning
+setup
+out=$(run_hook_bash "PreToolUse" "git show HEAD:src/app.js | sed -n '1,40p'")
+assert_passes "read-only git show of src file passes without planning" "$out"
+teardown
+
+# Test 4af: Stage A — touch inside src is blocked without planning
+setup
+out=$(run_hook_bash "PreToolUse" "touch src/new-file.js")
+assert_blocks "touch inside src is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4ag: Stage A — tee append inside shell wrapper is blocked without planning
+setup
+out=$(run_hook_bash "PreToolUse" "bash -c \"printf 'console.log(1)\n' | tee -a src/app.js > /dev/null\"")
+assert_blocks "tee append inside bash -c is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4ah: Stage A — exec_command tee append inside shell wrapper is blocked without planning
+setup
+out=$(run_hook_exec_command "PreToolUse" "printf 'console.log(1)\n' | tee -a src/app.js > /dev/null")
+assert_blocks "exec_command tee append inside shell wrapper is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4ahh: Stage A — direct python exec_command write is blocked without planning
+setup
+out=$(run_hook_exec_array "PreToolUse" '["python3","-c","from pathlib import Path; Path(\"src/app.js\").open(\"a\", encoding=\"utf-8\").write(\"\\n# probe\\n\")"]')
+assert_blocks "direct python exec_command write inside src is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4ahi: Stage A — direct node exec_command write is blocked without planning
+setup
+out=$(run_hook_exec_array "PreToolUse" '["node","-e","require(\"fs\").appendFileSync(\"src/app.js\",\"\\n// probe\\n\")"]')
+assert_blocks "direct node exec_command write inside src is blocked without silver-quality-gates" "$out"
+teardown
+
+# Test 4ai: Stage A — mkdir outside src stays outside the planning gate
+setup
+out=$(run_hook_bash "PreToolUse" "mkdir -p docs/workflows")
+assert_passes "mkdir outside src passes without planning" "$out"
+teardown
+
 # Test 4b: PostToolUse write invalidates verify-tests freshness marker
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
@@ -248,6 +360,19 @@ assert_file_exists "PreToolUse write keeps verify-tests marker" "$VERIFY_TESTS_F
 out=$(run_hook_write "PostToolUse" "$TMPFILE")
 assert_passes "PostToolUse write still passes with planning complete" "$out"
 assert_file_missing "PostToolUse write invalidates verify-tests freshness" "$VERIFY_TESTS_FILE"
+teardown
+
+# Test 4ba: PostToolUse non-src Bash write does not invalidate verify-tests freshness
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+echo "gsd-code-review" >> "$TMPSTATE"
+mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
+printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
+out=$(run_hook_bash "PostToolUse" "cat > .silver-bullet.json <<'EOF'
+{\"project\":{\"src_pattern\":\"/src/\"}}
+EOF")
+assert_passes "PostToolUse non-src Bash write still passes with planning complete" "$out"
+assert_file_exists "PostToolUse non-src Bash write keeps verify-tests freshness" "$VERIFY_TESTS_FILE"
 teardown
 
 # Test 5: Stage B — planning done but no code-review → ALLOW with final-delivery reminder
@@ -419,6 +544,30 @@ out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ${SB_RUNTIME_HOME_ROOT}/.silver
 assert_blocks "tamper: tee to state file is still blocked (BUG-03)" "$out"
 teardown
 
+# Test 17ca: script indirection through a symlink to the state file is blocked
+setup
+mkdir -p "$TMPDIR_TEST/.hook-probes"
+ln -s "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state" "$TMPDIR_TEST/.hook-probes/state-link"
+cat > "$TMPDIR_TEST/.hook-probes/probe.sh" <<'EOF'
+printf 'fake-skill\n' >> .hook-probes/state-link
+EOF
+chmod +x "$TMPDIR_TEST/.hook-probes/probe.sh"
+out=$(run_hook_bash "PreToolUse" "bash .hook-probes/probe.sh")
+assert_blocks "tamper: script write through symlinked state file is blocked" "$out"
+teardown
+
+# Test 17cb: wrapped shell script indirection to the state file is blocked
+setup
+mkdir -p "$TMPDIR_TEST/.hook-probes"
+ln -s "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state" "$TMPDIR_TEST/.hook-probes/state-link"
+cat > "$TMPDIR_TEST/.hook-probes/probe.sh" <<'EOF'
+printf 'fake-skill\n' >> .hook-probes/state-link
+EOF
+chmod +x "$TMPDIR_TEST/.hook-probes/probe.sh"
+out=$(run_hook_bash "PreToolUse" "/bin/zsh -lc 'bash .hook-probes/probe.sh'")
+assert_blocks "tamper: wrapped shell script write through symlinked state file is blocked" "$out"
+teardown
+
 # Test 17d: tee to trivial file is now ALLOWED (BUG-03 fix — trivial is not state-managed)
 setup
 out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial")
@@ -500,6 +649,36 @@ teardown
 setup
 out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.js ${PLUGIN_CACHE_PATH}/some-plugin/index.js")
 assert_blocks "F-07: cp into plugin cache is still blocked" "$out"
+teardown
+
+# Test 22a: script indirection through a symlink into plugin cache is blocked
+setup
+mkdir -p "$TMPDIR_TEST/.hook-probes"
+PLUGIN_CACHE_TARGET="${PLUGIN_CACHE_PATH}/some-plugin/index.js"
+mkdir -p "$(dirname "$PLUGIN_CACHE_TARGET")"
+touch "$PLUGIN_CACHE_TARGET"
+ln -s "$PLUGIN_CACHE_TARGET" "$TMPDIR_TEST/.hook-probes/plugin-link"
+cat > "$TMPDIR_TEST/.hook-probes/probe.sh" <<'EOF'
+printf '// plugin tamper\n' >> .hook-probes/plugin-link
+EOF
+chmod +x "$TMPDIR_TEST/.hook-probes/probe.sh"
+out=$(run_hook_bash "PreToolUse" "bash .hook-probes/probe.sh")
+assert_blocks "F-07: script write through symlinked plugin cache target is blocked" "$out"
+teardown
+
+# Test 22b: wrapped shell script indirection into plugin cache is blocked
+setup
+mkdir -p "$TMPDIR_TEST/.hook-probes"
+PLUGIN_CACHE_TARGET="${PLUGIN_CACHE_PATH}/some-plugin/index.js"
+mkdir -p "$(dirname "$PLUGIN_CACHE_TARGET")"
+touch "$PLUGIN_CACHE_TARGET"
+ln -s "$PLUGIN_CACHE_TARGET" "$TMPDIR_TEST/.hook-probes/plugin-link"
+cat > "$TMPDIR_TEST/.hook-probes/probe.sh" <<'EOF'
+printf '// plugin tamper\n' >> .hook-probes/plugin-link
+EOF
+chmod +x "$TMPDIR_TEST/.hook-probes/probe.sh"
+out=$(run_hook_bash "PreToolUse" "/bin/zsh -lc 'bash .hook-probes/probe.sh'")
+assert_blocks "F-07: wrapped shell script write through symlinked plugin cache target is blocked" "$out"
 teardown
 
 # Tests 23-27: Hooks self-protection — execution vs write (fallback path, no CLAUDE_PLUGIN_ROOT)

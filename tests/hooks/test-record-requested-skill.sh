@@ -4,9 +4,15 @@
 
 set -euo pipefail
 
-HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/record-requested-skill.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK="$REPO_ROOT/hooks/record-requested-skill.sh"
 PASS=0
 FAIL=0
+
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
@@ -128,10 +134,23 @@ assert_in_session_log() {
   fi
 }
 
+assert_noop_json() {
+  local label="$1"
+  local output="$2"
+  if printf '%s' "$output" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit" and ((.hookSpecificOutput | keys) == ["hookEventName"])' >/dev/null 2>&1; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — expected no-op hook JSON, got: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 echo "=== record-requested-skill.sh tests ==="
 
 setup
-run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:scan` and then invoke `gsd:plan-phase`.'
+out="$(run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:scan` and then invoke `gsd:plan-phase`.')"
+assert_noop_json "requested-skill hook returns valid no-op JSON after recording routes" "$out"
 assert_in_requested "silver:scan request recorded as requested, not completed" "silver-scan"
 assert_in_requested "gsd:plan-phase request recorded as requested, not completed" "gsd-plan-phase"
 assert_not_in_state "silver:scan is not recorded as completed" "silver-scan"
@@ -143,13 +162,15 @@ teardown
 setup
 rm -f "$TMPDIR_TEST/.silver-bullet.json"
 rm -f "$TMPDIR_TEST/silver-bullet.md"
-run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:init` and then stop.'
+out="$(run_hook 'Use the [$silver-bullet:silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:init` and then stop.')"
+assert_noop_json "requested-skill hook returns valid no-op JSON before scaffold exists" "$out"
 assert_in_requested "silver:init request recorded before scaffold exists" "silver-init"
 assert_not_in_state "silver:init is not recorded as completed before scaffold exists" "silver-init"
 teardown
 
 setup
-run_hook 'hello world, no routed skill markers here'
+out="$(run_hook 'hello world, no routed skill markers here')"
+assert_noop_json "requested-skill hook returns valid no-op JSON for unrelated prompts" "$out"
 assert_not_in_requested "non-SB prompt does not record requested routes" "silver-scan"
 assert_not_in_state "non-SB prompt does not record completed routes" "silver-scan"
 teardown
