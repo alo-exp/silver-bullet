@@ -16,6 +16,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -23,8 +27,16 @@ input=$(cat)
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo "PreToolUse")
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)
-command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
+if declare -f sb_tool_file_path >/dev/null 2>&1; then
+  file_path="$(sb_tool_file_path "$input")"
+else
+  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  command_str="$(sb_tool_command_string "$input")"
+else
+  command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
+fi
 [[ -z "$file_path" && -z "$command_str" ]] && exit 0
 
 resolve_repo_config() {
@@ -49,10 +61,9 @@ SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
 trivial_file=$(jq -r --arg dt "$sb_default_trivial" '.state.trivial_file // $dt' "$config_file" 2>/dev/null || printf '%s' "$sb_default_trivial")
 trivial_file="${trivial_file/#\~/$HOME}"
-case "$trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) trivial_file="${sb_default_trivial}" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${sb_default_trivial}"
+fi
 [[ -L "$trivial_file" ]] && trivial_file="${sb_default_trivial}"
 trivial_file_tilde="${trivial_file/#$HOME/~}"
 

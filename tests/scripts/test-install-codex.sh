@@ -91,27 +91,162 @@ PY
   fi
 }
 
-assert_silver_bullet_hook_trust_state() {
-  local desc="$1" config_path="$2" package_hooks_path="$3"
-  if python3 - "$config_path" "$package_hooks_path" <<'PY' >/dev/null 2>&1
+assert_no_combined_tool_matchers() {
+  local desc="$1" path="$2"
+  if python3 - "$path" <<'PY' >/dev/null 2>&1
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text())
+bad_matchers = {
+    "Bash|shell|exec_command|Skill",
+    "Skill|Bash|shell|exec_command",
+    "Bash|shell|exec_command",
+    "Edit|Write|MultiEdit|Bash|shell|exec_command",
+}
+
+for event_name in ("PreToolUse", "PostToolUse"):
+    for item in data.get("hooks", {}).get(event_name, []):
+        if item.get("matcher") in bad_matchers:
+            raise SystemExit(1)
+
+raise SystemExit(0)
+PY
+  then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — combined command-tool matcher still present in $path"
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_hook_command_matchers() {
+  local desc="$1" path="$2" event_name="$3" command_name="$4"
+  shift 4
+  if python3 - "$path" "$event_name" "$command_name" "$@" <<'PY' >/dev/null 2>&1
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+event_name = sys.argv[2]
+command_name = sys.argv[3]
+required_matchers = sys.argv[4:]
+data = json.loads(path.read_text())
+groups = data.get("hooks", {}).get(event_name, [])
+
+present = set()
+for group in groups:
+    matcher = group.get("matcher", "")
+    for hook in group.get("hooks", []):
+        if command_name in hook.get("command", ""):
+            present.add(matcher)
+
+missing = [matcher for matcher in required_matchers if matcher not in present]
+raise SystemExit(0 if not missing else 1)
+PY
+  then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing matcher coverage for $command_name in $path"
+    python3 - "$path" "$event_name" "$command_name" "$@" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+event_name = sys.argv[2]
+command_name = sys.argv[3]
+required_matchers = sys.argv[4:]
+data = json.loads(path.read_text())
+groups = data.get("hooks", {}).get(event_name, [])
+
+present = []
+for group in groups:
+    matcher = group.get("matcher", "")
+    commands = [hook.get("command", "") for hook in group.get("hooks", [])]
+    if any(command_name in command for command in commands):
+        present.append(matcher)
+
+print(f"  event={event_name} command={command_name}")
+print(f"  required={required_matchers}")
+print(f"  present={present}")
+PY
+    (( FAIL++ )) || true
+  fi
+}
+
+assert_hook_trust_state_for_source() {
+  local desc="$1" config_path="$2" hooks_source_path="$3" hooks_prefix="$4"
+  if python3 - "$config_path" "$hooks_source_path" "$hooks_prefix" <<'PY' >/dev/null 2>&1
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
 
 config_path = pathlib.Path(sys.argv[1])
-package_hooks_path = pathlib.Path(sys.argv[2])
-home = config_path.parent.parent
+hooks_source_path = pathlib.Path(sys.argv[2])
+hooks_prefix = sys.argv[3]
 
 def event_slug(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
-def first_existing(*paths):
-    for path in paths:
-        if path.is_file():
-            return path
-    return None
+def canonical_json(value):
+    if isinstance(value, dict):
+        return {key: canonical_json(value[key]) for key in sorted(value) if value[key] is not None}
+    if isinstance(value, list):
+        return [canonical_json(item) for item in value]
+    return value
+
+def hook_current_hash(event_name, matcher, hook):
+    hook_type = hook.get("type")
+    if hook_type is None and "command" in hook:
+        hook_type = "command"
+    if hook_type != "command":
+        return None
+    if hook.get("async", False):
+        return None
+
+    command = hook.get("command", "")
+    command_windows = hook.get("commandWindows")
+    if command_windows is None:
+        command_windows = hook.get("command_windows")
+    if os.name == "nt" and command_windows:
+        command = command_windows
+    if not str(command).strip():
+        return None
+
+    normalized_hook = {
+        "type": "command",
+        "command": command,
+        "timeout": max(int(hook.get("timeout", 600) or 600), 1),
+        "async": False,
+    }
+    status_message = hook.get("statusMessage")
+    if status_message is None:
+        status_message = hook.get("status_message")
+    if status_message is not None:
+        normalized_hook["statusMessage"] = status_message
+
+    identity = {
+        "event_name": event_slug(event_name),
+        "hooks": [normalized_hook],
+    }
+    if matcher is not None:
+        identity["matcher"] = matcher
+
+    serialized = json.dumps(
+        canonical_json(identity),
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(serialized).hexdigest()
 
 def hooks_data_for(path):
     if path is None:
@@ -136,9 +271,7 @@ def parse_state(raw_text: str) -> dict[str, str]:
             current_key = None
     return state
 
-source_by_prefix = {
-    "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_path,
-}
+source_by_prefix = {hooks_prefix: hooks_source_path}
 
 expected = {}
 for prefix, source_path in source_by_prefix.items():
@@ -146,8 +279,10 @@ for prefix, source_path in source_by_prefix.items():
         slug = event_slug(event_name)
         for group_index, group in enumerate(groups):
             for hook_index, hook in enumerate(group.get("hooks", [])):
+                digest = hook_current_hash(event_name, group.get("matcher"), hook)
+                if digest is None:
+                    continue
                 key = f"{prefix}:{slug}:{group_index}:{hook_index}"
-                digest = "sha256:" + hashlib.sha256(hook.get("command", "").encode("utf-8")).hexdigest()
                 expected[key] = digest
 
 actual = {
@@ -167,26 +302,72 @@ PY
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
-    echo "FAIL: $desc — missing or mismatched Silver Bullet hook trust state in $config_path"
-    python3 - "$config_path" "$package_hooks_path" <<'PY'
+    echo "FAIL: $desc — missing or mismatched hook trust state in $config_path"
+    python3 - "$config_path" "$hooks_source_path" "$hooks_prefix" <<'PY'
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
 
 config_path = pathlib.Path(sys.argv[1])
-package_hooks_path = pathlib.Path(sys.argv[2])
-home = config_path.parent.parent
+hooks_source_path = pathlib.Path(sys.argv[2])
+hooks_prefix = sys.argv[3]
 
 def event_slug(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
-def first_existing(*paths):
-    for path in paths:
-        if path.is_file():
-            return path
-    return None
+def canonical_json(value):
+    if isinstance(value, dict):
+        return {key: canonical_json(value[key]) for key in sorted(value) if value[key] is not None}
+    if isinstance(value, list):
+        return [canonical_json(item) for item in value]
+    return value
+
+def hook_current_hash(event_name, matcher, hook):
+    hook_type = hook.get("type")
+    if hook_type is None and "command" in hook:
+        hook_type = "command"
+    if hook_type != "command":
+        return None
+    if hook.get("async", False):
+        return None
+
+    command = hook.get("command", "")
+    command_windows = hook.get("commandWindows")
+    if command_windows is None:
+        command_windows = hook.get("command_windows")
+    if os.name == "nt" and command_windows:
+        command = command_windows
+    if not str(command).strip():
+        return None
+
+    normalized_hook = {
+        "type": "command",
+        "command": command,
+        "timeout": max(int(hook.get("timeout", 600) or 600), 1),
+        "async": False,
+    }
+    status_message = hook.get("statusMessage")
+    if status_message is None:
+        status_message = hook.get("status_message")
+    if status_message is not None:
+        normalized_hook["statusMessage"] = status_message
+
+    identity = {
+        "event_name": event_slug(event_name),
+        "hooks": [normalized_hook],
+    }
+    if matcher is not None:
+        identity["matcher"] = matcher
+
+    serialized = json.dumps(
+        canonical_json(identity),
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(serialized).hexdigest()
 
 def hooks_data_for(path):
     if path is None:
@@ -211,9 +392,7 @@ def parse_state(raw_text: str) -> dict[str, str]:
             current_key = None
     return state
 
-source_by_prefix = {
-    "silver-bullet@alo-labs-codex:hooks/hooks.json": package_hooks_path,
-}
+source_by_prefix = {hooks_prefix: hooks_source_path}
 
 expected = {}
 for prefix, source_path in source_by_prefix.items():
@@ -221,8 +400,10 @@ for prefix, source_path in source_by_prefix.items():
         slug = event_slug(event_name)
         for group_index, group in enumerate(groups):
             for hook_index, hook in enumerate(group.get("hooks", [])):
+                digest = hook_current_hash(event_name, group.get("matcher"), hook)
+                if digest is None:
+                    continue
                 key = f"{prefix}:{slug}:{group_index}:{hook_index}"
-                digest = "sha256:" + hashlib.sha256(hook.get("command", "").encode("utf-8")).hexdigest()
                 expected[key] = digest
 
 actual = {
@@ -291,6 +472,18 @@ assert_command_succeeds() {
   fi
 }
 
+assert_command_fails() {
+  local desc="$1"
+  shift
+  if "$@"; then
+    echo "FAIL: $desc"
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -327,6 +520,11 @@ chmod +x "$BIN_DIR/install-gsd"
 cat > "$BIN_DIR/npx" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${1:-}" == "--yes" && "${2:-}" == "get-shit-done-cc@latest" ]]; then
+  mkdir -p "$HOME/.codex/get-shit-done"
+  printf '9.9.9' > "$HOME/.codex/get-shit-done/VERSION"
+  exit 0
+fi
 exec "$@"
 EOF
 chmod +x "$BIN_DIR/npx"
@@ -658,8 +856,10 @@ assert_command_succeeds "Design cache alias created" test -L "$FAKE_DESIGN_ALIAS
 assert_command_succeeds "Product-management cache alias created" test -L "$FAKE_PRODUCT_ALIAS"
 assert_file_exists "Marketplace root hooks config materialized" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_no_async_true "Marketplace root hooks config normalized for Codex package" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
+assert_file_exists "Marketplace root Codex hook adapter materialized" "$FAKE_MARKETPLACE_ROOT/hooks/codex-hook-adapter.sh"
 assert_not_symlink "SB hooks directory materialized" "$FAKE_SB_PACKAGE_ROOT/hooks"
 assert_file_exists "SB hooks config materialized" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_file_exists "SB package Codex hook adapter materialized" "$FAKE_SB_PACKAGE_ROOT/hooks/codex-hook-adapter.sh"
 assert_not_symlink "SB skills directory materialized" "$FAKE_SB_PACKAGE_ROOT/skills"
 assert_not_symlink "SB scripts directory materialized" "$FAKE_SB_PACKAGE_ROOT/scripts"
 assert_not_symlink "SB templates directory materialized" "$FAKE_SB_PACKAGE_ROOT/templates"
@@ -671,6 +871,9 @@ assert_file_exists "Current cache scan helper synced" "$FAKE_CACHE_ROOT/scripts/
 assert_file_exists "Current cache package sanitizer helper synced" "$FAKE_CACHE_ROOT/scripts/codex-sanitize-package.sh"
 assert_no_async_true "SB hooks config normalized for Codex package" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_no_async_true "Current cache hooks config normalized for Codex package" "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_no_combined_tool_matchers "Marketplace root hooks avoid combined command-tool matchers" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
+assert_no_combined_tool_matchers "SB hooks avoid combined command-tool matchers" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_no_combined_tool_matchers "Current cache hooks avoid combined command-tool matchers" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "Marketplace root SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
@@ -678,6 +881,18 @@ assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuesti
 assert_not_contains "Current cache package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_CACHE_ROOT"
+assert_contains "SB runtime path helper keeps dynamic state path" 'SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"' "$FAKE_SB_PACKAGE_ROOT/hooks/lib/runtime-paths.sh"
+assert_contains "Current cache runtime path helper keeps dynamic state path" 'SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"' "$FAKE_CACHE_ROOT/hooks/lib/runtime-paths.sh"
+assert_not_contains "SB runtime path helper does not bake literal tilde state root" 'SB_RUNTIME_STATE_DIR="~/.codex/.silver-bullet"' "$FAKE_SB_PACKAGE_ROOT/hooks/lib/runtime-paths.sh"
+assert_not_contains "Current cache runtime path helper does not bake literal tilde state root" 'SB_RUNTIME_STATE_DIR="~/.codex/.silver-bullet"' "$FAKE_CACHE_ROOT/hooks/lib/runtime-paths.sh"
+assert_contains "SB dev-cycle-check keeps dynamic plugin cache path" 'plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"' "$FAKE_SB_PACKAGE_ROOT/hooks/dev-cycle-check.sh"
+assert_contains "Current cache dev-cycle-check keeps dynamic plugin cache path" 'plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"' "$FAKE_CACHE_ROOT/hooks/dev-cycle-check.sh"
+assert_not_contains "SB dev-cycle-check does not bake literal tilde plugin cache path" 'plugin_cache="~/.codex/plugins/cache"' "$FAKE_SB_PACKAGE_ROOT/hooks/dev-cycle-check.sh"
+assert_not_contains "Current cache dev-cycle-check does not bake literal tilde plugin cache path" 'plugin_cache="~/.codex/plugins/cache"' "$FAKE_CACHE_ROOT/hooks/dev-cycle-check.sh"
+assert_contains "SB debug-dump keeps dynamic runtime state dir" 'DBG_DIR="${SB_RUNTIME_STATE_DIR}"' "$FAKE_SB_PACKAGE_ROOT/hooks/debug-dump.sh"
+assert_contains "Current cache debug-dump keeps dynamic runtime state dir" 'DBG_DIR="${SB_RUNTIME_STATE_DIR}"' "$FAKE_CACHE_ROOT/hooks/debug-dump.sh"
+assert_not_contains "SB debug-dump does not bake literal tilde state dir" 'DBG_DIR="~/.codex/.silver-bullet"' "$FAKE_SB_PACKAGE_ROOT/hooks/debug-dump.sh"
+assert_not_contains "Current cache debug-dump does not bake literal tilde state dir" 'DBG_DIR="~/.codex/.silver-bullet"' "$FAKE_CACHE_ROOT/hooks/debug-dump.sh"
 assert_not_contains "SB package does not contain /compact commands" "/compact" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain /compact commands" "/compact" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain model_profile routing" 'model_profile: "balanced"' "$FAKE_SB_PACKAGE_ROOT"
@@ -741,11 +956,27 @@ assert_not_symlink "SB skills surface is materialized in the source bundle" "$RE
 assert_not_symlink "SB skills surface is materialized in the marketplace snapshot" "$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet/skills"
 assert_not_symlink "Installed SB skills surface is materialized in the package root" "$FAKE_SB_PACKAGE_ROOT/skills"
 assert_not_symlink "Installed SB skills surface is materialized in the current cache" "$FAKE_CACHE_ROOT/skills"
+assert_contains "SB Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json"
+assert_contains "Current cache Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_CACHE_ROOT/.codex-plugin/plugin.json"
 assert_contains "SB hooks config includes dependency gate" 'dependency-skill-check.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "SB hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "SB hooks config includes instruction-file guard" 'instruction-file-guard.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "SB hooks config includes requested-skill recorder" 'record-requested-skill.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_contains "SB hooks config routes commands through Codex hook adapter" 'codex-hook-adapter.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_contains "SB hooks config includes exact Bash matcher" '"matcher": "Bash"' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_contains "SB hooks config includes exact exec_command matcher" '"matcher": "exec_command"' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+assert_hook_command_matchers "SB pretool completion-audit covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "completion-audit.sh" "Bash" "exec_command"
+assert_hook_command_matchers "SB pretool dev-cycle-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "dev-cycle-check.sh" "Bash" "exec_command"
+assert_hook_command_matchers "SB pretool ci-status-check covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PreToolUse" "ci-status-check.sh" "Bash" "exec_command"
+assert_hook_command_matchers "SB posttool completion-audit covers Bash and exec_command" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "PostToolUse" "completion-audit.sh" "Bash" "exec_command"
 assert_contains "Current cache hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_contains "Current cache hooks config routes commands through Codex hook adapter" 'codex-hook-adapter.sh' "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_contains "Current cache hooks config includes exact Bash matcher" '"matcher": "Bash"' "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_contains "Current cache hooks config includes exact exec_command matcher" '"matcher": "exec_command"' "$FAKE_CACHE_ROOT/hooks/hooks.json"
+assert_hook_command_matchers "Current cache pretool completion-audit covers Bash and exec_command" "$FAKE_CACHE_ROOT/hooks/hooks.json" "PreToolUse" "completion-audit.sh" "Bash" "exec_command"
+assert_hook_command_matchers "Current cache pretool dev-cycle-check covers Bash and exec_command" "$FAKE_CACHE_ROOT/hooks/hooks.json" "PreToolUse" "dev-cycle-check.sh" "Bash" "exec_command"
+assert_hook_command_matchers "Current cache pretool ci-status-check covers Bash and exec_command" "$FAKE_CACHE_ROOT/hooks/hooks.json" "PreToolUse" "ci-status-check.sh" "Bash" "exec_command"
+assert_hook_command_matchers "Current cache posttool completion-audit covers Bash and exec_command" "$FAKE_CACHE_ROOT/hooks/hooks.json" "PostToolUse" "completion-audit.sh" "Bash" "exec_command"
 assert_contains "SB package hooks use the canonical marketplace path" "$FAKE_SB_PACKAGE_ROOT/hooks/session-start" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks use the canonical marketplace path" "$FAKE_SB_PACKAGE_ROOT/hooks/session-start" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_contains "SB init skill uses silver prefix" "name: silver:init" "$REPO_ROOT/plugins/silver-bullet/skills/silver-init/SKILL.md"
@@ -811,8 +1042,16 @@ assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-cod
 assert_contains "Codex plugin hooks feature enabled" '[features]' "$HOME_DIR/.codex/config.toml"
 assert_contains "Codex plugin hooks feature flag" 'plugin_hooks = true' "$HOME_DIR/.codex/config.toml"
 assert_contains "SB hook state recorded inside SB root" 'silver-bullet@' "$HOME_DIR/.codex/config.toml"
-assert_silver_bullet_hook_trust_state "Silver Bullet hook trust seeded in Codex config" "$HOME_DIR/.codex/config.toml" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
-assert_silver_bullet_hook_trust_state "Silver Bullet hook trust seeded in codex config mirror" "$HOME_DIR/.codex/config.toml" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
+HOME_HOOKS_PATH_REAL="$(
+  python3 - "$HOME_DIR/.codex/hooks.json" <<'PY'
+import pathlib
+import sys
+
+print(pathlib.Path(sys.argv[1]).resolve())
+PY
+)"
+assert_hook_trust_state_for_source "Codex package hook trust seeded for managed SB hooks" "$HOME_DIR/.codex/config.toml" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "silver-bullet@alo-labs-codex:hooks/hooks.json"
+assert_not_contains "Native Codex config no longer seeds SB user-hook trust" "$HOME_HOOKS_PATH_REAL" "$HOME_DIR/.codex/config.toml"
 assert_file_exists "Codex registry created" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Silver Bullet registry install path refreshed" "$FAKE_SB_INSTALL_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Silver Bullet versioned install path removed" "$FAKE_SB_INSTALL_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
@@ -826,18 +1065,14 @@ assert_contains "Product-management registry install path refreshed" "$FAKE_PROD
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
-assert_contains "Requested-skill recorder merged into Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Requested-skill recorder merged into Codex user config mirror" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Prompt reminder merged into Codex user config" 'prompt-reminder.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Prompt reminder merged into Codex user config mirror" 'prompt-reminder.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Skill recorder merged into Codex user config" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Skill recorder merged into Codex user config mirror" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Instruction guard merged into Codex user config" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Instruction guard merged into Codex user config mirror" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Workflow-chain guard merged into Codex user config" 'workflow-chain-guard.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "Workflow-chain guard merged into Codex user config mirror" 'workflow-chain-guard.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Requested-skill recorder not merged into native Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Prompt reminder not merged into native Codex user config" 'prompt-reminder.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Skill recorder not merged into native Codex user config" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Instruction guard not merged into native Codex user config" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
+assert_not_contains "Workflow-chain guard not merged into native Codex user config" 'workflow-chain-guard.sh' "$HOME_DIR/.codex/hooks.json"
 assert_contains "GSD hook preserved in Codex user config" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_contains "GSD hook preserved in Codex user config mirror" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
+assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
 {
   rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
@@ -870,6 +1105,18 @@ fi
 if [[ -f "$FAKE_SB_INSTALL_ROOT/scripts/gsd-sdk.cjs" ]]; then
   assert_not_contains "Codex gsd-sdk cache copy no longer references Claude home" ".claude" "$FAKE_SB_INSTALL_ROOT/scripts/gsd-sdk.cjs"
 fi
+
+DEFAULT_GSD_TMP="$(mktemp -d)"
+DEFAULT_GSD_HOME="$DEFAULT_GSD_TMP/home"
+DEFAULT_GSD_WORKDIR="$DEFAULT_GSD_TMP/workdir"
+mkdir -p "$DEFAULT_GSD_HOME/.codex" "$DEFAULT_GSD_WORKDIR"
+(
+  cd "$DEFAULT_GSD_WORKDIR"
+  PATH="$BIN_DIR:$PATH" \
+  HOME="$DEFAULT_GSD_HOME" \
+    bash "$SCRIPT" --purge-legacy-skills >/dev/null
+)
+assert_file_exists "default GSD installer path uses non-interactive npx" "$DEFAULT_GSD_HOME/.codex/get-shit-done/VERSION"
 
 NON_SB_HOME="$TMP/no-sb-home"
 NON_SB_WORKDIR="$TMP/non-sb-workdir"
@@ -908,6 +1155,41 @@ HOME="$SEED_HOME" \
 GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
 assert_file_exists "Codex marketplace snapshot seeded when missing" "$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
+
+BROKEN_PUBLIC_TMP="$(mktemp -d)"
+BROKEN_PUBLIC_HOME="$BROKEN_PUBLIC_TMP/home"
+BROKEN_PUBLIC_WORKDIR="$BROKEN_PUBLIC_TMP/workdir"
+BROKEN_PUBLIC_MARKETPLACE="$BROKEN_PUBLIC_HOME/.codex/.tmp/marketplaces/alo-labs-codex"
+BROKEN_PUBLIC_PACKAGE="$BROKEN_PUBLIC_MARKETPLACE/plugins/silver-bullet"
+BROKEN_PUBLIC_OUTPUT="$BROKEN_PUBLIC_TMP/install.out"
+mkdir -p \
+  "$BROKEN_PUBLIC_HOME/.codex" \
+  "$BROKEN_PUBLIC_WORKDIR" \
+  "$BROKEN_PUBLIC_PACKAGE/.codex-plugin" \
+  "$BROKEN_PUBLIC_PACKAGE/commands"
+cat > "$BROKEN_PUBLIC_PACKAGE/.codex-plugin/plugin.json" <<'EOF'
+{
+  "name": "silver-bullet",
+  "version": "0.37.4",
+  "commands": "./commands/",
+  "skills": "./skills/"
+}
+EOF
+cat > "$BROKEN_PUBLIC_PACKAGE/commands/init.md" <<'EOF'
+# init
+EOF
+set +e
+(
+  cd "$BROKEN_PUBLIC_WORKDIR"
+  PATH="$BIN_DIR:$PATH" \
+  HOME="$BROKEN_PUBLIC_HOME" \
+  GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
+    bash "$SCRIPT" --public-release >"$BROKEN_PUBLIC_OUTPUT" 2>&1
+)
+broken_public_status=$?
+set -e
+assert_command_fails "public-release install fails fast when SB package skills are missing" test "$broken_public_status" -eq 0
+assert_contains "public-release failure explains missing SB skills surface" "ERROR: Silver Bullet installed package is missing skills/" "$BROKEN_PUBLIC_OUTPUT"
 
 echo
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"

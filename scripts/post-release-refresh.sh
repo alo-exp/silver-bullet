@@ -19,7 +19,7 @@ run_refresh() {
   bash "$script_path" "$@"
 }
 
-run_refresh "Claude" "$CLAUDE_INSTALL_SCRIPT" --purge-legacy-plugins
-run_refresh "Codex" "$CODEX_INSTALL_SCRIPT" --purge-legacy-skills
+run_refresh "Claude" "$CLAUDE_INSTALL_SCRIPT" --purge-legacy-plugins --public-release
+run_refresh "Codex" "$CODEX_INSTALL_SCRIPT" --purge-legacy-skills --public-release
 
-printf '[post-release-refresh] ✓ Clean reinstall complete for Claude and Codex\n'
+printf '[post-release-refresh] ✓ Public marketplace refresh complete for Claude and Codex\n'

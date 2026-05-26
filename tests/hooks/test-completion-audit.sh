@@ -4,9 +4,15 @@
 
 set -euo pipefail
 
-HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/completion-audit.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK="$REPO_ROOT/hooks/completion-audit.sh"
 PASS=0
 FAIL=0
+
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
@@ -233,6 +239,24 @@ run_hook() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
+run_hook_exec_command() {
+  local event="$1"
+  local shell_cmd="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg c "$shell_cmd" \
+    '{hook_event_name: $e, tool_name: "exec_command", tool_input: {command: ["bash", "-lc", $c]}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_exec_array() {
+  local event="$1"
+  local command_json="$2"
+  local input
+  input=$(jq -n --arg e "$event" --argjson c "$command_json" \
+    '{hook_event_name: $e, tool_name: "exec_command", tool_input: {command: $c}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
 is_blocked() {
   local output="$1"
   # A block occurs when output contains "block" decision or "deny" permissionDecision
@@ -294,11 +318,29 @@ assert_blocks "git commit blocked without silver-quality-gates" "$out"
 assert_contains "block message mentions planning" "$out" "COMMIT BLOCKED"
 teardown
 
+setup
+out=$(run_hook_exec_command "PreToolUse" "git commit -m 'test'")
+assert_blocks "exec_command git commit blocked without silver-quality-gates" "$out"
+assert_contains "exec_command block message mentions planning" "$out" "COMMIT BLOCKED"
+teardown
+
+setup
+out=$(run_hook_exec_array "PreToolUse" '["git","commit","-m","test"]')
+assert_blocks "direct exec_command git commit array blocked without silver-quality-gates" "$out"
+assert_contains "direct exec_command block message mentions planning" "$out" "COMMIT BLOCKED"
+teardown
+
 # Test 3: git commit allowed with planning complete (intermediate tier)
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "git commit allowed with silver-quality-gates done" "$out"
+teardown
+
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook_exec_array "PreToolUse" '["git","commit","-m","test"]')
+assert_passes "direct exec_command git commit array allowed with silver-quality-gates done" "$out"
 teardown
 
 # Test 3b: git commit warns + allows when required planning skill is not installed anywhere invocable
@@ -560,7 +602,7 @@ out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "release passes with all required workflow skills, live markers, and gate markers" "$out"
 teardown
 
-# Test 13b: codex-only live markers are blocked unless explicitly allowed
+# Test 13b: gh release create passes with codex-only live markers
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -596,11 +638,10 @@ full-test-suite-rerun
 EOF
 write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_blocks "release blocks with codex-only live markers unless explicitly allowed" "$out"
-assert_contains "codex-only block mentions explicit allowance" "$out" "SB_ALLOW_CODEX_ONLY_LIVE_RELEASE"
+assert_passes "release passes with codex-only live markers" "$out"
 teardown
 
-# Test 13c: gh release create passes with codex-only live markers when explicitly allowed
+# Test 13c: gh release create still passes with codex-only live markers when the legacy override is set
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -638,7 +679,7 @@ write_verify_tests_state
 export SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
-assert_passes "release passes with codex-only live markers when explicitly allowed" "$out"
+assert_passes "release passes with codex-only live markers when legacy override is set" "$out"
 teardown
 
 # Test 13d: gh release create blocked when the latest CI run is still in progress

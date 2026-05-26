@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.3)
+[![version](https://img.shields.io/badge/version-v0.37.4-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.4)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -195,13 +195,14 @@ sudo apt install jq
 
 ### Claude Code
 
-Install Silver Bullet and its normal helper dependencies:
+Install Silver Bullet and its required helper dependencies:
 
 ```text
 /plugin install alo-exp/silver-bullet
 /plugin install obra/superpowers
 /plugin install anthropics/knowledge-work-plugins/tree/main/engineering
 /plugin install anthropics/knowledge-work-plugins/tree/main/design
+/plugin install anthropics/knowledge-work-plugins/tree/main/product-management
 ```
 
 Install GSD:
@@ -228,7 +229,7 @@ The installer:
 
 - syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`
 - registers the shared `alo-labs/codex-plugins` marketplace
-- installs or wires GSD and Superpowers from their official sources when needed
+- installs or wires GSD, Superpowers, Engineering, Design, and Product Management from their official sources when needed
 - keeps `/silver` and `/silver:*` in the main Silver Bullet package
 - includes the packaged `scripts/workflows.sh` helper used by composed workflow
   tracking
@@ -510,8 +511,11 @@ runtime state are not treated as plugin package content.
 | `jq not found` | Install `jq` with Homebrew or apt |
 | `/silver` not available in Claude Code | Install the plugin and restart/reload the Claude Code session |
 | `/silver` not available in Codex | Run `./scripts/install-codex.sh --purge-legacy-skills` from this repo checkout |
-| GSD skills missing | Install/update GSD with `npx get-shit-done-cc@latest` |
-| Superpowers helper missing | Install `obra/superpowers`; SB uses it only at selected helper boundaries |
+| GSD skills missing | Repair or reinstall GSD with `npx get-shit-done-cc@latest` |
+| Superpowers helper missing | Repair or reinstall `obra/superpowers`; SB uses it only at selected helper boundaries |
+| Engineering helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/engineering` |
+| Design helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/design` |
+| Product Management helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/product-management` |
 | Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` both exist in the project root |
 | Too many files trigger enforcement | Adjust `project.src_pattern` and `project.src_exclude_pattern` |
 | YAML/JSON edits are unexpectedly gated | In `devops-cycle`, YAML/JSON/TOML are infrastructure code and intentionally gated |
@@ -521,8 +525,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.3`
-- Release: [v0.37.3](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.3)
+- Version: `0.37.4`
+- Release: [v0.37.4](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.4)
 - Notable changes:
   - The picker-facing Codex `skills/` tree is now materialized as real files after a clean reinstall, which keeps `/skills` discovery reliable.
   - The Codex install and sync tests now assert that the packaged skills surface is not a symlink chain.

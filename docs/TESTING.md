@@ -10,7 +10,7 @@
 
 Silver Bullet's test surface is primarily shell hooks, JSON configuration, and packaging
 glue — no application server, no database, no frontend. The bulk of coverage is fast static
-and unit tests, plus a shared live matrix that exercises the real Claude and Codex CLIs.
+and unit tests, plus a shared live matrix that exercises the real Kay-backed Codex-compatible path.
 
 ## Test Classification
 
@@ -22,8 +22,8 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
-| **Live AI matrix** | Shared scenario suite across Claude and Kay agent adapters | `tests/live/run-live-tests.sh` | 5-15 min per agent |
-| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min per agent |
+| **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
+| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -37,7 +37,7 @@ and unit tests, plus a shared live matrix that exercises the real Claude and Cod
 | `verify-tests.sh` | Configured commands, stack fallback, marker write, failure path | **Covered** by `tests/hooks/test-verify-tests.sh` |
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
-| Live Claude/Kay matrix | shared scenarios, agent adapters, sequential agent execution | 100% (`tests/live/run-live-tests.sh`) |
+| Live Kay matrix | shared scenarios, isolated Kay adapter, release-gate hook enforcement | 100% (`tests/live/run-live-tests.sh`) |
 | Live todo-app E2E | single inline full-surface journey on the standalone sibling `test-todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
@@ -93,7 +93,7 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 
 ## Live AI Matrix (separate suite)
 
-Not part of CI — run manually at roughly $0.10–$0.60 per full Claude+Codex matrix run via
+Not part of CI — run manually with real model/API usage via
 `tests/live/run-live-tests.sh`.
 
 | Test file | What it covers |
@@ -104,11 +104,11 @@ Not part of CI — run manually at roughly $0.10–$0.60 per full Claude+Codex m
 | `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
 | `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/lessons split |
 
-The suite invokes the real `claude` CLI or Kay with agent adapters in
-`tests/live/agents/`. By default `tests/live/run-live-tests.sh` runs both agents
-sequentially; set `SB_LIVE_RUNTIMES=claude` or `SB_LIVE_RUNTIMES=codex` to narrow the
-matrix. Sequential execution matters because both agents touch the same Silver Bullet
-state path under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
+The suite invokes Kay through the Codex-compatible adapter in
+`tests/live/agents/` by default. The standard combination is
+`opencode-go` + `deepseek-v4-flash` + low reasoning in isolated envs.
+Claude or native Codex runs are optional diagnostics only when explicitly
+requested.
 
 The live todo-app E2E suite is separate. It uses the standalone sibling
 `test-todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
@@ -119,11 +119,11 @@ That journey also verifies the installed command surface (`silver:init`,
 closest reliable proxy we currently have for picker exposure in the
 Codex/Claude hosts. The journey additionally writes `inline-e2e-matrix` so the
 release gate can prove the end-user experience actually ran in this session.
-When Claude quota is exhausted and the user explicitly approves skipping further
-Claude live testing for a release, the live runners may be narrowed to Codex
-only via `SB_LIVE_RUNTIMES=codex` and `SB_E2E_LIVE_RUNTIMES=codex`, and the
-release gate may be satisfied with `matrix=codex-only` markers after setting
-`SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1`.
+The default live runners write `matrix=codex-only` markers because SB release
+testing is now defined on the Kay/OpenCode Go/DeepSeek V4 Flash low path. Those
+codex-only markers are the standard release-gate markers. A
+`matrix=full-claude-codex` marker is still accepted when someone explicitly
+runs the broader parity matrix.
 
 The separate `tests/live/test-silver-init-migration.sh` scenario exercises the
 Step 3.5.5 delegation path where `silver:init` hands docs bootstrap/reconciliation

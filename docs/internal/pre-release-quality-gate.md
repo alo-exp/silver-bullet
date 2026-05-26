@@ -78,11 +78,12 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
    - **Skills**: all SKILL.md files — obsolete references, redundant work, contradictions
    - **Hooks + config**: .sh files, hooks.json, .silver-bullet.json, templates
    - **Help site + README**: HTML pages, search.js, README.md — step counts, paths, versions
-   - **Cross-plugin consistency**: read 100% of skill content from all 4 dependency plugins —
+   - **Cross-plugin consistency**: read 100% of skill content from all 5 dependency plugins —
      GSD: `${SB_RUNTIME_HOME_ROOT}/get-shit-done/` workflows/references/templates;
      Superpowers: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/superpowers/*/skills/*/SKILL.md`;
      Engineering: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/*/SKILL.md`;
-     Design: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md` —
+     Design: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/design/skills/*/SKILL.md`;
+     Product Management: `${SB_RUNTIME_HOME_ROOT}/plugins/cache/*/knowledge-work-plugins/*/product-management/skills/*/SKILL.md` —
      check for contradictions, conflicts, inconsistencies, or redundancies between Silver Bullet
      instructions and upstream plugin skills
 2. Fix all genuine issues found
@@ -160,7 +161,7 @@ session:
 
 1. Run `bash scripts/run-release-live-matrix.sh`
 2. Run `tests/e2e-live/run-e2e-live-tests.sh`
-3. Confirm both Claude and Codex pass in each suite
+3. Confirm the standard isolated Kay/OpenCode Go/DeepSeek V4 Flash low path passes in each suite
 4. Let each runner create its session-scoped marker
 
 `hooks/completion-audit.sh` blocks release creation until both markers exist.
@@ -169,13 +170,11 @@ wait for the release commit's `CI` and `Secret Scan` runs to complete
 successfully. The release must not be published while that commit is still
 running or failing.
 
-If Claude usage is exhausted for the release session and the user explicitly
-approves skipping further Claude live testing, run both suites with
-`SB_RELEASE_LIVE_MATRIX_CMD` (or the repo-local release matrix override),
-`SB_E2E_LIVE_RUNTIMES=codex`, then set `SB_ALLOW_CODEX_ONLY_LIVE_RELEASE=1`
-before `/silver-release`. In that case the two runners write
-`matrix=codex-only` markers and the completion audit accepts them for that
-release session only.
+The default runners now write `matrix=codex-only` markers because the release
+gate is defined on the Kay-backed Codex-compatible runtime. Those markers are
+the normal release prerequisite. A broader full Claude/native-Codex parity run
+is still accepted when explicitly requested, but it is no longer required to
+cut a release.
 
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface

@@ -5,8 +5,20 @@
 set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/record-skill.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0
 FAIL=0
+TEST_HOME_CLEANUP=""
+
+if [[ "${SILVER_BULLET_TEST_ISOLATE_HOME:-1}" == "1" ]]; then
+  TEST_HOME_CLEANUP="$(mktemp -d)"
+  export HOME="$TEST_HOME_CLEANUP"
+fi
+
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
@@ -65,7 +77,12 @@ teardown() {
 }
 
 # Always clean up on exit
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"; }
+cleanup_all() {
+  rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+  if [[ -n "$TEST_HOME_CLEANUP" ]]; then
+    rm -rf "$TEST_HOME_CLEANUP"
+  fi
+}
 trap cleanup_all EXIT
 
 run_hook() {
@@ -296,6 +313,89 @@ teardown
 setup
 run_hook "a:b:c:code-review" >/dev/null
 assert_in_state "triple-namespaced skill recorded (a:b:c:code-review → code-review)" "code-review"
+teardown
+
+# Test 15: Arbitrary Kay-looking state roots are rejected unless explicitly allowed.
+echo "--- Group 7: Kay isolated state root allowlist ---"
+setup
+KAY_TMP="$(mktemp -d)"
+KAY_STATE="${KAY_TMP}/.kay/.silver-bullet/state"
+mkdir -p "$(dirname "$KAY_STATE")"
+python3 - "$TMPCFG" "$KAY_STATE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = sys.argv[2]
+data = json.loads(path.read_text())
+data["state"]["state_file"] = state
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+unset SILVER_BULLET_STATE_FILE
+unset SB_RUNTIME_EXTRA_STATE_ROOTS
+DEFAULT_FALLBACK_STATE="${SB_RUNTIME_STATE_DIR}/state"
+rm -f "$DEFAULT_FALLBACK_STATE"
+group7_hook_out=""
+group7_hook_rc=0
+group7_hook_out="$(run_hook "silver-quality-gates" 2>&1)" || group7_hook_rc=$?
+if ! grep -qx "silver-quality-gates" "$KAY_STATE" 2>/dev/null \
+  && grep -qx "silver-quality-gates" "$DEFAULT_FALLBACK_STATE" 2>/dev/null; then
+  echo "  ✅ arbitrary Kay-looking .kay state root rejected without allowlist"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ arbitrary Kay-looking .kay state root was not rejected"
+  echo "    Hook rc: $group7_hook_rc"
+  echo "    Hook output: ${group7_hook_out:-"(empty)"}"
+  echo "    Kay state: $(cat "$KAY_STATE" 2>/dev/null || echo '(empty)')"
+  echo "    Default state: $(cat "$DEFAULT_FALLBACK_STATE" 2>/dev/null || echo '(empty)')"
+  FAIL=$((FAIL + 1))
+fi
+rm -f "$DEFAULT_FALLBACK_STATE"
+rm -rf "$KAY_TMP"
+teardown
+
+# Test 16: Explicitly allowlisted Kay state roots remain independent.
+echo "--- Group 8: Multiple allowlisted agent-local state roots ---"
+setup
+KAY_TMP_A="$(mktemp -d)"
+KAY_TMP_B="$(mktemp -d)"
+KAY_STATE_A="${KAY_TMP_A}/.kay/.silver-bullet/state"
+KAY_STATE_B="${KAY_TMP_B}/.kay/.silver-bullet/state"
+mkdir -p "$(dirname "$KAY_STATE_A")" "$(dirname "$KAY_STATE_B")"
+write_state_path() {
+  python3 - "$TMPCFG" "$1" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+state = sys.argv[2]
+data = json.loads(path.read_text())
+data["state"]["state_file"] = state
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+}
+unset SILVER_BULLET_STATE_FILE KAY_HOME KAY_SB_TEST_HOME SB_LIVE_CODEX_ISOLATION_DIR
+export SB_RUNTIME_EXTRA_STATE_ROOTS="$(dirname "$KAY_STATE_A"):$(dirname "$KAY_STATE_B")"
+write_state_path "$KAY_STATE_A"
+run_hook "silver-quality-gates" >/dev/null
+write_state_path "$KAY_STATE_B"
+run_hook "code-review" >/dev/null
+if grep -qx "silver-quality-gates" "$KAY_STATE_A" 2>/dev/null \
+  && ! grep -qx "code-review" "$KAY_STATE_A" 2>/dev/null \
+  && grep -qx "code-review" "$KAY_STATE_B" 2>/dev/null \
+  && ! grep -qx "silver-quality-gates" "$KAY_STATE_B" 2>/dev/null; then
+  echo "  ✅ separate Kay-style SB instances keep independent state roots"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ separate Kay-style state roots were not independent"
+  echo "    A: $(cat "$KAY_STATE_A" 2>/dev/null || echo '(empty)')"
+  echo "    B: $(cat "$KAY_STATE_B" 2>/dev/null || echo '(empty)')"
+  FAIL=$((FAIL + 1))
+fi
+unset SB_RUNTIME_EXTRA_STATE_ROOTS
+rm -rf "$KAY_TMP_A" "$KAY_TMP_B"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
