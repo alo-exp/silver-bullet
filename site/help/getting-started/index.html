@@ -266,9 +266,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="palette"></i></div>
           <div>
-            <h4>Design + Engineering Plugins <span class="tag tag-optional">Recommended</span></h4>
-            <p>Optional knowledge-work skills for testing strategy, documentation, deploy checklists, design systems, UX copy, and accessibility review.</p>
-            <div class="install-cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering<br>/plugin install anthropics/knowledge-work-plugins/tree/main/design</div>
+            <h4>Engineering, Design, and Product Management Plugins <span class="tag tag-required">Required</span></h4>
+            <p>Required knowledge-work skills for testing strategy, documentation, deploy checklists, design systems, UX copy, accessibility review, product specs, roadmaps, and research synthesis.</p>
+            <div class="install-cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering<br>/plugin install anthropics/knowledge-work-plugins/tree/main/design<br>/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</div>
           </div>
         </div>
       </div>
@@ -285,11 +285,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager, then install the required dependency plugins from their official sources.</p>
-      <div class="code-label">Claude Code</div>
-      <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span>
+<div class="code-label">Claude Code</div>
+<div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span>
 <span class="cmd">/plugin install obra/superpowers</span>
 <span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</span>
-<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/design</span></div>
+<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/design</span>
+<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</span></div>
 
       <h3>Codex Local Dev Install</h3>
       <p>When working from a Silver Bullet repository checkout in Codex, use the installer script. It refreshes the curated SB-only Codex bundle, registers the shared <code>alo-labs/codex-plugins</code> marketplace, installs supported dependencies from official sources where needed, and removes stale legacy SB skill copies.</p>

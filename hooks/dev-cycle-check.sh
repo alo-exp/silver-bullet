@@ -4,6 +4,18 @@ trap 'exit 0' ERR
 
 # Load shared workflow utilities (TD-1: single source of truth for Flow Log regex)
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
+  # shellcheck source=lib/hook-audit.sh
+  source "$_lib_dir/hook-audit.sh"
+fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
   source "$_lib_dir/workflow-utils.sh"
 fi
@@ -46,6 +58,7 @@ main() {
     local reason="$1"
     local json_reason
     json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+    sb_hook_audit_record "dev-cycle-check" "$hook_event" "deny" "$reason" "${file_path:-${command_str:-}}"
     if [[ "$hook_event" == "PreToolUse" ]]; then
       printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
     else
@@ -66,15 +79,84 @@ main() {
   }
 
   # --- Determine file path or command based on tool type ---
-  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_response.filePath // ""')
+  if declare -f sb_tool_file_path >/dev/null 2>&1; then
+    file_path="$(sb_tool_file_path "$input")"
+  else
+    file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_response.filePath // ""')
+  fi
   command_str=""
 
   if [[ -z "$file_path" ]]; then
-    # Bash tool — extract command
-    command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+    # Shell-like tool — extract command
+    if declare -f sb_tool_command_string >/dev/null 2>&1; then
+      command_str="$(sb_tool_command_string "$input")"
+    else
+      command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+    fi
     [[ -z "$command_str" ]] && exit 0
   fi
-  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+  if declare -f sb_tool_name >/dev/null 2>&1; then
+    tool_name="$(sb_tool_name "$input")"
+  else
+    tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+  fi
+  if [[ -z "$file_path" ]] && declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+    sb_tool_is_shell_like "$tool_name" || exit 0
+  fi
+
+  shell_script_path=""
+  shell_script_dir="$PWD"
+  shell_script_body=""
+  shell_write_targets=()
+  shell_in_scope_targets=()
+  shell_target_scope_fallback=false
+
+  collect_shell_write_targets() {
+    local payload="$1"
+    local base_dir="$2"
+    local target_path
+    [[ -n "$payload" ]] || return 0
+    if ! declare -f sb_shell_candidate_write_paths >/dev/null 2>&1; then
+      return 0
+    fi
+    while IFS= read -r target_path; do
+      [[ -n "$target_path" ]] || continue
+      shell_write_targets+=("$target_path")
+    done < <(sb_shell_candidate_write_paths "$payload" "$base_dir" 2>/dev/null || true)
+  }
+
+  shell_writes_to_exact_path() {
+    local expected="$1"
+    local target_path
+    for target_path in "${shell_write_targets[@]:-}"; do
+      [[ "$target_path" == "$expected" ]] && return 0
+    done
+    return 1
+  }
+
+  shell_writes_under_prefix() {
+    local prefix="${1%/}"
+    local target_path
+    for target_path in "${shell_write_targets[@]:-}"; do
+      [[ "$target_path" == "$prefix" || "$target_path" == "$prefix"/* ]] && return 0
+    done
+    return 1
+  }
+
+  if [[ -z "$file_path" && -n "$command_str" ]]; then
+    if declare -f sb_shell_invoked_script_path >/dev/null 2>&1; then
+      shell_script_path="$(sb_shell_invoked_script_path "$command_str" "$PWD" 2>/dev/null || true)"
+    fi
+    if [[ -n "$shell_script_path" && -f "$shell_script_path" ]]; then
+      shell_script_dir="$(dirname "$shell_script_path")"
+      shell_script_body="$(cat "$shell_script_path" 2>/dev/null || true)"
+    fi
+    collect_shell_write_targets "$command_str" "$PWD"
+    if [[ -n "$shell_script_body" ]]; then
+      collect_shell_write_targets "$shell_script_body" "$PWD"
+      collect_shell_write_targets "$shell_script_body" "$shell_script_dir"
+    fi
+  fi
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
   plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
@@ -94,6 +176,10 @@ See CLAUDE.md §8 for details."
     # F-07: Block Bash commands that write into the plugin cache.
     # Read-only access to upstream templates is allowed so Silver Bullet can
     # copy them into the project workspace during initialization.
+    if shell_writes_under_prefix "$plugin_cache"; then
+      emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
+      exit 0
+    fi
     if printf '%s' "$command_str" | grep -qE "$plugin_cache"; then
       plugin_write_pattern='([[:space:]](>>|>)[[:space:]]*"?'"$plugin_cache"'|\b(cp|mv|rm|chmod|install|tee)\b.*"?'"$plugin_cache"'|\b(sed|perl)\b.*-i.*"?'"$plugin_cache"')'
       if printf '%s' "$command_str" | grep -qE "$plugin_write_pattern"; then
@@ -117,8 +203,9 @@ See CLAUDE.md §8 for details."
     elif [[ -n "$command_str" ]]; then
       # Bash write commands targeting hooks directory or hooks.json.
       # Read-only inspection stays allowed; only write-capable commands are blocked.
-      if printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
-         printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; then
+      if shell_writes_under_prefix "$sb_hooks_dir" || shell_writes_to_exact_path "${CLAUDE_PLUGIN_ROOT}/hooks.json" || \
+         { printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
+           printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
       fi
@@ -135,8 +222,12 @@ See CLAUDE.md §8 for details."
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
-    if [[ -n "$command_str" ]] && printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
-       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; then
+    if [[ -n "$command_str" ]] && { \
+      { shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
+        printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \
+      { printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
+        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; \
+    }; then
       emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
       exit 0
     fi
@@ -169,8 +260,9 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
     state_path="${SB_STATE_DIR_EARLY}/state"
     if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
-       printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
-       printf '%s' "$cmd_first_line_tamper" | grep -qF "$state_path"; then
+       { { printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
+           printf '%s' "$cmd_first_line_tamper" | grep -qF "$state_path"; } || \
+         shell_writes_to_exact_path "$state_path"; }; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
 Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
@@ -262,6 +354,26 @@ To reset workflow state intentionally, run in your terminal:
     return 1
   }
 
+  collect_shell_in_scope_targets() {
+    shell_in_scope_targets=()
+    local target_path
+    for target_path in "${shell_write_targets[@]:-}"; do
+      if ! matches_src_scope "$target_path" "$src_pattern"; then
+        continue
+      fi
+      if printf '%s' "$target_path" | grep -qE "$src_exclude_pattern"; then
+        continue
+      fi
+      shell_in_scope_targets+=("$target_path")
+    done
+  }
+
+  shell_payload_looks_read_only() {
+    local payload="$1"
+    declare -f sb_shell_command_looks_read_only >/dev/null 2>&1 || return 1
+    sb_shell_command_looks_read_only "$payload" >/dev/null 2>&1
+  }
+
   # Set default required_planning based on workflow if not overridden by config
   # DevOps workflow: silver-blast-radius and devops-quality-gates replace silver-quality-gates
   if [[ -z "$required_planning" ]]; then
@@ -277,27 +389,23 @@ To reset workflow state intentionally, run in your terminal:
   verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
 
   # Security: validate state file path stays within the host runtime state root (SB-002/SB-003)
-  case "$state_file" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) state_file="${SB_STATE_DIR}/state" ;;
-  esac
-  case "$verify_tests_state_file" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state" ;;
-  esac
+  if ! sb_runtime_path_is_state_scoped "$state_file"; then
+    state_file="${SB_STATE_DIR}/state"
+  fi
+  if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
+    verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+  fi
 
   # Security: validate trivial file path stays within the host runtime state root (SB-002/SB-003)
-  case "$trivial_file" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) trivial_file="${SB_STATE_DIR}/trivial" ;;
-  esac
+  if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+    trivial_file="${SB_STATE_DIR}/trivial"
+  fi
 
   # --- Mid-session branch mismatch warning (F-09) ---
   sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
-  case "$sb_branch_file" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) sb_branch_file="${SB_STATE_DIR}/branch" ;;
-  esac
+  if ! sb_runtime_path_is_state_scoped "$sb_branch_file"; then
+    sb_branch_file="${SB_STATE_DIR}/branch"
+  fi
   if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
     stored_branch=$(cat "$sb_branch_file" 2>/dev/null || true)
     current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -328,13 +436,27 @@ To reset workflow state intentionally, run in your terminal:
       exit 0
     fi
   else
-    # Bash tool — check if command string contains src_pattern
-    if ! matches_src_scope "$command_str" "$src_pattern"; then
-      exit 0
-    fi
-    # Check exclude pattern for Bash commands too
-    if printf '%s' "$command_str" | grep -qE "$src_exclude_pattern"; then
-      exit 0
+    collect_shell_in_scope_targets
+    if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
+      # When we can resolve concrete write targets, scope Bash enforcement to the
+      # actual destination paths instead of matching arbitrary file content.
+      [[ ${#shell_in_scope_targets[@]} -gt 0 ]] || exit 0
+    else
+      if [[ -n "$shell_script_body" ]]; then
+        shell_payload_looks_read_only "$shell_script_body" && exit 0
+      else
+        shell_payload_looks_read_only "$command_str" && exit 0
+      fi
+      # Fallback for opaque shell commands where no concrete write target can be
+      # resolved from the command text or sourced script bodies.
+      if ! matches_src_scope "$command_str" "$src_pattern"; then
+        exit 0
+      fi
+      # Check exclude pattern for Bash commands too
+      if printf '%s' "$command_str" | grep -qE "$src_exclude_pattern"; then
+        exit 0
+      fi
+      shell_target_scope_fallback=true
     fi
   fi
 
@@ -354,9 +476,13 @@ To reset workflow state intentionally, run in your terminal:
           invalidate_verify_tests=true
           ;;
       esac
-    elif [[ -n "$command_str" ]] && \
-         printf '%s' "$command_str" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
-      invalidate_verify_tests=true
+    elif [[ -n "$command_str" ]]; then
+      if [[ ${#shell_in_scope_targets[@]} -gt 0 ]]; then
+        invalidate_verify_tests=true
+      elif [[ "$shell_target_scope_fallback" == true ]] && \
+           printf '%s' "$command_str" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
+        invalidate_verify_tests=true
+      fi
     fi
     if [[ "$invalidate_verify_tests" == true ]]; then
       rm -f -- "$verify_tests_state_file" 2>/dev/null || true
@@ -393,6 +519,26 @@ To reset workflow state intentionally, run in your terminal:
         printf '{"hookSpecificOutput":{"message":"ℹ️ Small edit (%d chars) — enforcement skipped for this edit."}}'  "$combined_len"
         exit 0
       fi
+    fi
+  elif [[ ${#shell_in_scope_targets[@]} -gt 0 ]]; then
+    shell_non_logic_only=true
+    for target_path in "${shell_in_scope_targets[@]}"; do
+      if [[ "$active_workflow" == "devops-cycle" ]]; then
+        case "$target_path" in
+          *.md|*.txt|*.css|*.svg|*.env|*.env.*|*.ini|*.cfg|*.conf|*.lock) ;;
+          *) shell_non_logic_only=false ;;
+        esac
+      else
+        case "$target_path" in
+          *.json|*.yml|*.yaml|*.md|*.txt|*.css|*.svg|*.env|*.env.*|*.toml|*.ini|*.cfg|*.conf|*.lock) ;;
+          *) shell_non_logic_only=false ;;
+        esac
+      fi
+      [[ "$shell_non_logic_only" == true ]] || break
+    done
+    if [[ "$shell_non_logic_only" == true ]]; then
+      printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+      exit 0
     fi
   fi
 
@@ -498,6 +644,7 @@ To reset workflow state intentionally, run in your terminal:
       unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)\n"
     done
     stage_a_msg=$(printf '⚠️ Planning skills not installed anywhere invocable, so they were not enforced:\n%s\nProceeding with source edits.' "$unavailable_display")
+    sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "$stage_a_msg" "${file_path:-${command_str:-}}"
     jq -n --arg m "$stage_a_msg" '{"hookSpecificOutput":{"message":$m}}'
     exit 0
   fi
@@ -523,8 +670,10 @@ To reset workflow state intentionally, run in your terminal:
     # Stage B: planning done, implementation window open. Code review is a
     # post-implementation/final-delivery gate and must not block GSD execution.
     if [[ "$has_finalization" == true ]]; then
+      sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified, but finalization markers exist before gsd-code-review." "${file_path:-${command_str:-}}"
       printf '{"hookSpecificOutput":{"message":"⚠️ Planning verified, but finalization markers exist before gsd-code-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."}}'
     else
+      sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified. Implementation edits allowed." "${file_path:-${command_str:-}}"
       printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Implementation edits allowed. Code review, verification, and finalization remain required before delivery."}}'
     fi
     exit 0
@@ -532,11 +681,13 @@ To reset workflow state intentionally, run in your terminal:
 
   if ! has_skill "finishing-a-development-branch"; then
     # Stage C: has gsd-code-review, finalization remaining
+    sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "GSD code review recorded. Source edits remain allowed." "${file_path:-${command_str:-}}"
     printf '{"hookSpecificOutput":{"message":"✅ GSD code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."}}'
     exit 0
   fi
 
   # Stage D: all phases complete
+  sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "All workflow phases complete. Proceed freely." "${file_path:-${command_str:-}}"
   printf '{"hookSpecificOutput":{"message":"✅ All workflow phases complete. Proceed freely."}}'
   exit 0
 }

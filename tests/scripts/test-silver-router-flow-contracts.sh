@@ -69,7 +69,18 @@ done
 for file in "$template" "$root_rules" "$forge_template"; do
   assert_contains "template states GSD authority in ${file#$REPO_ROOT/}" "GSD remains the lifecycle authority" "$file"
   assert_contains "template uses gsd-scan in ${file#$REPO_ROOT/}" "gsd-scan" "$file"
+  assert_contains "template keeps MultAI optional for research in ${file#$REPO_ROOT/}" "optional multi-AI only when user-requested" "$file"
   assert_not_contains "template has no silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
+done
+
+for file in \
+  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/forge/skills/silver-research/SKILL.md"; do
+  assert_contains "research skill defaults to direct research in ${file#$REPO_ROOT/}" "Default mode is direct research" "$file"
+  assert_contains "research skill keeps MultAI opt-in in ${file#$REPO_ROOT/}" "Only opt into MultAI" "$file"
+  assert_contains "research skill requires current-task explicit request in ${file#$REPO_ROOT/}" "current task" "$file"
+  assert_not_contains "research skill ignores stored-preference MultAI activation in ${file#$REPO_ROOT/}" "stored preference opts in|stored user workflow preference explicitly opts into MultAI for research" "$file"
+  assert_not_contains "research skill no longer treats MultAI as mandatory in ${file#$REPO_ROOT/}" "Run the relevant MultAI research path" "$file"
 done
 
 assert_contains "local backlog item SB-B-1 resolved" "SB-B-1.*reconcile FLOW table" "$REPO_ROOT/docs/issues/BACKLOG.md"

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Kay agent adapter for live Silver Bullet tests.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=tests/live/lib/kay-cli.sh
+source "${SCRIPT_DIR}/../../lib/kay-cli.sh"
+
 agent_name() {
   printf 'kay'
 }
@@ -8,14 +12,9 @@ agent_name() {
 agent_cli_path() {
   local cli
 
-  if [[ -n "${CODEX_BIN:-}" ]]; then
-    cli="$(command -v "$CODEX_BIN" 2>/dev/null || printf '%s' "$CODEX_BIN")"
-  else
-    cli="$(command -v kay 2>/dev/null || true)"
-  fi
-
+  cli="$(resolve_kay_cli_path "${CODEX_BIN:-}" || true)"
   if [[ -z "$cli" ]]; then
-    printf 'ERROR: Kay CLI not found or not working in PATH\n' >&2
+    printf 'ERROR: Kay CLI not found or not working\n' >&2
     return 1
   fi
   if [[ "$(basename "$cli")" != "kay" ]]; then
@@ -34,6 +33,10 @@ codex_transcript_dir() {
   # Live-harness archive for captured Kay transcripts; separate from the
   # agent's official session store used by silver-scan.
   printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/kay/transcripts}"
+}
+
+agent_transcript_dir() {
+  codex_transcript_dir
 }
 
 agent_preflight() {
@@ -242,7 +245,7 @@ PY
 
 kay_live_guard_context() {
   local test_root="${KAY_HOME:-${KAY_SB_TEST_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-}}}"
-  local state_file="${test_root}/.kay/.silver-bullet/state"
+  local state_file="${test_root}/.codex/.silver-bullet/state"
   local state_contents=""
 
   if [[ -f "$state_file" ]]; then
@@ -285,6 +288,8 @@ agent_invoke() {
   local kay_prompt
   local kay_model
   local kay_model_provider
+  local kay_reasoning_effort
+  local auto_trust_hooks
 
   cli="$(agent_cli_path)"
   tmpdir="${TMPDIR:-/tmp}"
@@ -300,6 +305,11 @@ PY
   kay_prompt="$prompt"
   kay_model="${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}"
   kay_model_provider="${CODEX_MODEL_PROVIDER:-${SB_LIVE_CODEX_MODEL_PROVIDER:-}}"
+  kay_reasoning_effort="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-low}}"
+  auto_trust_hooks="0"
+  if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" == "1" ]]; then
+    auto_trust_hooks="${SB_LIVE_CODEX_AUTO_TRUST_HOOKS:-1}"
+  fi
   if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" == "1" && -n "${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD:-}" ]]; then
     kay_prompt="${SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD}"$'\n\n'"${kay_prompt}"
   fi
@@ -314,8 +324,12 @@ PY
 
   output=$(
     cd "$SB_ROOT" && \
+      TERM="xterm-256color" \
       CODEX_MODEL="$kay_model" \
       CODEX_MODEL_PROVIDER="$kay_model_provider" \
+      CODEX_REASONING_EFFORT="$kay_reasoning_effort" \
+      CODEX_RUNTIME_AGENT="kay" \
+      CODEX_KAY_HOME="${KAY_HOME}/.kay" \
       CODEX_BIN="$cli" \
       CODEX_WORK_DIR="$WORK_DIR" \
       CODEX_PROMPT_FILE="$prompt_file" \
@@ -326,6 +340,7 @@ PY
       CODEX_COLOR="never" \
       CODEX_SANDBOX_MODE="danger-full-access" \
       CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
+      CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
       expect "$SB_ROOT/scripts/codex-interactive-invoke.expect"
   ) || true
   if [[ -f "$last_message_file" ]]; then

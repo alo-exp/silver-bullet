@@ -1,7 +1,7 @@
 ---
 name: silver-research
 description: >
-  This skill should be used for SB-orchestrated research workflow: clarify → MultAI (landscape | tech-selection | competitive) → clarify → hand off to silver-feature or silver-devops
+  This skill should be used for SB-orchestrated research workflow: clarify → direct research by default, optional MultAI augmentation only when user-requested → clarify → hand off to silver-feature or silver-devops
 argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
@@ -12,18 +12,18 @@ SB orchestrator for technology decisions, architecture spikes, tech comparisons,
 
 **Routing note:** `silver-research` takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
 
-Never does research directly — orchestrates MultAI research tools and then hands off to the appropriate implementation workflow.
+By default, research runs directly in the current host session using repository context, local artifacts, official docs, primary sources, and other concrete evidence available through the host/runtime. MultAI is optional and is used only when the user explicitly requests multi-AI perspectives in the current task. After research is complete, hand off to the appropriate implementation workflow.
 
 ## Mandatory dependency execution
 
 Before any local research write-up or handoff, the execution trace must show the dependency chain for this workflow. At minimum:
 
 1. Invoke `silver-clarify`
-2. Run the relevant MultAI research path
+2. Run the selected research path in the current host session; invoke MultAI only when the user explicitly requested it in the current task
 3. Invoke `silver-clarify`
 4. Handoff to `silver-feature` or `silver-devops` only after the research artifact exists
 
-If any required downstream skill or MultAI path cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or ad hoc local reasoning.
+If any required downstream skill cannot be invoked, stop immediately and notify the user. If the user explicitly requested MultAI and it is unavailable, stop and offer install-and-retry or permission to continue with the default direct-research path. Do not treat missing MultAI as a blocker for the default path. Do not replace missing dependency skills with shell reconnaissance, direct edits, or ad hoc local reasoning.
 
 The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, the research chain has not been completed yet.
 
@@ -160,9 +160,17 @@ When the user requests skipping any step:
 
 ## Step 1: Clarify Research Question
 
-Invoke `silver-clarify`. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong MultAI path on an ambiguous question.
+Invoke `silver-clarify`. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong research path or optional MultAI augmentation on an ambiguous question.
 
 After silver-clarify completes, the research question should be specific enough to select a path.
+
+## Step 1.5: Research Mode Policy
+
+Default mode is direct research in the current host session. Use repository context, local artifacts, and primary sources available through the current host/runtime.
+
+Only opt into MultAI when the user explicitly asks for multi-AI, second-opinion, or cross-model perspectives in the current task.
+
+If MultAI is requested but unavailable, stop and ask the user whether to install it now or continue with direct research only.
 
 ## Step 2: Choose Research Path
 
@@ -180,11 +188,14 @@ Wait for selection. Note: if the answer is obvious from $ARGUMENTS or silver-cla
 
 Invoked when: selection is A.
 
-**2a.1 — Landscape research across 9 sections**
-Invoke `multai:landscape-researcher`. Purpose: generates a 9-section market landscape report covering vendors, tools, patterns, and trends.
+**2a.1 — Direct landscape scan**
+Research the landscape directly in the current host session. Prefer official docs, vendor materials, primary sources, repo constraints, and concrete examples over generic summaries.
 
-**2a.2 — Consolidate findings**
-Invoke `multai:consolidator`. Purpose: synthesize the landscape report into unified findings with actionable recommendations.
+**2a.2 — Synthesize findings**
+Summarize the market map, key options, trade-offs, and recommendations in a concise artifact.
+
+**2a.3 — Optional MultAI augmentation**
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:landscape-researcher` and then `multai:consolidator` to broaden and cross-check the direct research artifact. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write consolidated findings to `.planning/research/<YYYY-MM-DD>-<topic-slug>/landscape-report.md`
 
@@ -194,14 +205,14 @@ Proceed to Step 3.
 
 Invoked when: selection is B.
 
-**2b.1 — Multi-AI perspectives**
-Invoke `multai:orchestrator`. Purpose: 7-AI perspectives on the technical question from different expert viewpoints.
+**2b.1 — Build the evaluation criteria directly**
+Define the decision criteria from the clarified question, repo constraints, and operational requirements.
 
-**2b.2 — Weighted comparison matrix**
-Invoke `multai:comparator`. Purpose: structured comparison matrix with weighted criteria for the options under consideration.
+**2b.2 — Compare the options directly**
+Use primary sources and concrete constraints to compare options and draft the recommendation rationale.
 
-**2b.3 — Unified recommendation**
-Invoke `multai:consolidator`. Purpose: synthesize multi-AI perspectives + comparison matrix into a unified recommendation report.
+**2b.3 — Optional MultAI augmentation**
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:orchestrator`, `multai:comparator`, and `multai:consolidator` to add cross-model perspectives and a comparison matrix. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write consolidated report to `.planning/research/<YYYY-MM-DD>-<topic-slug>/comparison-report.md`
 
@@ -211,8 +222,11 @@ Proceed to Step 3.
 
 Invoked when: selection is C.
 
-**2c.1 — Competitive intelligence research**
-Invoke `multai:solution-researcher`. Purpose: 7-AI competitive intelligence CIR — how do others solve this problem, what can we learn, what gaps exist.
+**2c.1 — Direct competitive/product research**
+Inspect public product evidence, docs, changelogs, demos, reviews, and local problem context directly in the current host session.
+
+**2c.2 — Optional MultAI augmentation**
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:solution-researcher` to broaden the competitive scan. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write CIR to `.planning/research/<YYYY-MM-DD>-<topic-slug>/competitive-intelligence-report.md`
 

@@ -24,6 +24,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
+  # shellcheck source=lib/hook-audit.sh
+  source "$_lib_dir/hook-audit.sh"
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 
@@ -112,10 +116,9 @@ _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
 _cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
 [[ -n "$_cfg_trivial" ]] && _trivial_file="${_cfg_trivial/#\~/$HOME}"
 # Security: validate trivial path stays within the host runtime state root (mirrors stop-check.sh SB-002)
-case "$_trivial_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$_trivial_file"; then
+  _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
+fi
 if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/trivial-bypass.sh"
@@ -173,4 +176,5 @@ To bypass for a one-off doc fix:
 Remove the file when done."
 
 json_msg=$(printf '%s' "$msg" | jq -Rs '.')
+sb_hook_audit_record "planning-file-guard" "PreToolUse" "deny" "$msg" "$_norm_path"
 printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_msg"

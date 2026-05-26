@@ -24,11 +24,14 @@ live_teardown
 echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
 seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
-response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S2 test edit'. Just add the comment, nothing else.")
+target_file="${WORK_DIR}/src/routes/todos.js"
+digest_before="$(capture_digest "$target_file")"
+comment_marker="// S2 test edit ${TEST_RUN_ID}"
+response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '${comment_marker}'. Just add the comment, nothing else.")
 sleep 2
 # With silver-quality-gates AND gsd-code-review recorded, Stage C is reached — edit should succeed
-assert_response_not_contains "S2: no HARD STOP in response" "$response" "HARD STOP"
-assert_response_not_contains "S2: no BLOCKED planning incomplete" "$response" "BLOCKED.*Planning incomplete"
+assert_file_changed "S2: target file modified after Stage C" "$target_file" "$digest_before"
+assert_file_contains "S2: target file contains Stage C comment" "$target_file" "S2 test edit ${TEST_RUN_ID}"
 live_teardown
 
 # --- S3: Forbidden skill hook fires correctly ---

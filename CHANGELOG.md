@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.37.4] — 2026-05-24
+
+## Bug Fixes
+
+- `fix(runtime): restrict Silver Bullet state writes to the active runtime root unless an explicit extra state root is allowlisted`
+- `fix(tests): make Codex skill-recording tests self-isolate HOME and verify Kay state-root allowlisting`
+- `fix(live): pin Kay-backed Codex runs to deepseek-v4-flash with low reasoning and text-only verification guards`
+
+## Docs
+
+- `docs(testing): restore Claude and Codex live-matrix defaults in release-facing test entrypoints`
+
+## Chores
+
+- `chore(release): prepare v0.37.4`
+
+---
+
 ## [0.37.3] — 2026-05-22
 
 ## Bug Fixes

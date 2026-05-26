@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/lib/kay-codex-isolation.sh"
+LIVE_TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_ISOLATION_HELPER="${LIVE_TEST_ROOT}/lib/codex-cli-isolation.sh"
+KAY_ISOLATION_HELPER="${LIVE_TEST_ROOT}/lib/kay-codex-isolation.sh"
+CODEX_HOOK_TRANSPLANT_HELPER="${LIVE_TEST_ROOT}/lib/codex-hook-transplant.sh"
 
 if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
   SILVER_BULLET_RUNTIME="claude"
 fi
-if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
+if [[ -f "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
-  source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
+  source "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh"
+fi
+if [[ -f "$CODEX_HOOK_TRANSPLANT_HELPER" ]]; then
+  # shellcheck source=tests/live/lib/codex-hook-transplant.sh
+  source "$CODEX_HOOK_TRANSPLANT_HELPER"
 fi
 
 RUNTIMES=()
@@ -18,8 +24,12 @@ if [[ -n "${SB_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
   RUNTIMES=(${SB_LIVE_RUNTIMES})
 else
-  RUNTIMES=(claude codex)
+  RUNTIMES=(kay)
 fi
+
+export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
+export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
+export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
 
 if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_claude=false
@@ -37,8 +47,8 @@ echo "========================================"
 echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests invoke the real Claude CLI or the Kay-backed agent."
-echo "Estimated cost: \$0.10-\$0.60 per full run."
+echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime."
+echo "Default provider/model: ${SB_LIVE_CODEX_MODEL_PROVIDER} / ${SB_LIVE_CODEX_MODEL} (${SB_LIVE_CODEX_REASONING_EFFORT})."
 echo ""
 
 if [[ -n "$RELEASE_LIVE_MATRIX_FILE" ]]; then
@@ -65,9 +75,9 @@ for runtime in "${RUNTIMES[@]}"; do
   case "$runtime" in
     claude)
       SILVER_BULLET_RUNTIME="claude"
-      if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
+      if [[ -f "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh" ]]; then
         # shellcheck source=hooks/lib/runtime-paths.sh
-        source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
+        source "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh"
       fi
       RELEASE_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/release-live-matrix"
       if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
@@ -77,20 +87,31 @@ for runtime in "${RUNTIMES[@]}"; do
       ;;
     codex)
       SILVER_BULLET_RUNTIME="codex"
-      if [[ -f "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh" ]]; then
-        # shellcheck source=hooks/lib/runtime-paths.sh
-        source "${SCRIPT_DIR}/../../hooks/lib/runtime-paths.sh"
-      fi
-      # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+      # shellcheck source=tests/live/lib/codex-cli-isolation.sh
       source "$CODEX_ISOLATION_HELPER"
+      setup_codex_cli_isolation
+      RELEASE_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/release-live-matrix"
+      if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
+        echo "ERROR: native Codex CLI not found or not working"
+        exit 1
+      fi
+      if ! sync_install_generated_codex_user_hooks "$HOME" "codex"; then
+        echo "ERROR: native Codex hook-surface refresh failed"
+        exit 1
+      fi
+      ;;
+    kay)
+      SILVER_BULLET_RUNTIME="codex"
+      # shellcheck source=tests/live/lib/kay-codex-isolation.sh
+      source "$KAY_ISOLATION_HELPER"
       setup_kay_codex_isolation
-      RELEASE_LIVE_MATRIX_FILE="${KAY_HOME}/.kay/.silver-bullet/release-live-matrix"
+      RELEASE_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/release-live-matrix"
       if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
         echo "ERROR: Kay CLI not found or not working"
         exit 1
       fi
-      if ! CODEX_BIN="$CODEX_BIN" "$SCRIPT_DIR/../../scripts/install-codex.sh" --purge-legacy-skills >/dev/null 2>&1; then
-        echo "ERROR: Kay-backed marketplace/bootstrap install failed"
+      if ! sync_install_generated_codex_user_hooks "$KAY_HOME" "kay"; then
+        echo "ERROR: Kay-backed hook-surface refresh failed"
         exit 1
       fi
       ;;
@@ -100,12 +121,14 @@ for runtime in "${RUNTIMES[@]}"; do
       ;;
   esac
 
-  run_suite "$runtime" "Doc Scheme" "$SCRIPT_DIR/test-live-doc-scheme.sh"
-  run_suite "$runtime" "Enforcement" "$SCRIPT_DIR/test-live-enforcement.sh"
-  run_suite "$runtime" "Skill Recording" "$SCRIPT_DIR/test-live-skill-recording.sh"
-  run_suite "$runtime" "Full Scenario" "$SCRIPT_DIR/test-live-full-scenario.sh"
+  run_suite "$runtime" "Doc Scheme" "$LIVE_TEST_ROOT/test-live-doc-scheme.sh"
+  run_suite "$runtime" "Enforcement" "$LIVE_TEST_ROOT/test-live-enforcement.sh"
+  run_suite "$runtime" "Skill Recording" "$LIVE_TEST_ROOT/test-live-skill-recording.sh"
+  run_suite "$runtime" "Full Scenario" "$LIVE_TEST_ROOT/test-live-full-scenario.sh"
 
   if [[ "$runtime" == "codex" ]]; then
+    teardown_codex_cli_isolation
+  elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
 done
@@ -119,7 +142,7 @@ else
   marker=""
   if [[ "$full_matrix_requested" == true ]]; then
     marker="full-claude-codex"
-  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "codex" ]]; then
+  elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
     marker="codex-only"
   fi
 

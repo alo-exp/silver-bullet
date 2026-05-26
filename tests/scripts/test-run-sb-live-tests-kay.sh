@@ -45,14 +45,24 @@ assert_executable "wrapper is executable" "$WRAPPER"
 assert_file_contains "wrapper skips direct MiniMax.io tests" "$WRAPPER" 'SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-1}"'
 assert_file_contains "wrapper skips Forge tests" "$WRAPPER" 'SB_DISABLE_FORGE_TESTS="${SB_DISABLE_FORGE_TESTS:-1}"'
 assert_file_contains "wrapper pins OpenCode-Go provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"'
-assert_file_contains "wrapper pins MiniMax M2.7" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"'
+assert_file_contains "wrapper pins DeepSeek V4 Flash" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"'
+assert_file_contains "wrapper pins low reasoning" "$WRAPPER" 'SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"'
+assert_file_contains "wrapper forwards low reasoning to Kay" "$WRAPPER" 'CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-$SB_LIVE_CODEX_REASONING_EFFORT}"'
+assert_file_contains "wrapper targets kay runtime for live suite" "$WRAPPER" 'SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-kay}"'
+assert_file_contains "wrapper targets kay runtime for todo-app suite" "$WRAPPER" 'SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-kay}"'
 assert_file_contains "wrapper runs live agent suite" "$WRAPPER" 'tests/live/run-live-tests.sh'
 assert_file_contains "wrapper runs todo-app suite" "$WRAPPER" 'tests/e2e-live/run-e2e-live-tests.sh'
 assert_file_not_contains "wrapper no longer pins direct MiniMax provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"'
+assert_file_not_contains "wrapper no longer pins MiniMax model" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"'
 
 assert_file_not_contains "kay isolation helper does not fall back to codex" "$REPO_ROOT/tests/live/lib/kay-codex-isolation.sh" 'command -v codex'
 assert_file_not_contains "kay agent adapter does not fall back to codex" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'command -v codex'
-assert_file_not_contains "interactive launcher does not fall back to codex" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'command -v codex'
+assert_file_contains "interactive launcher accepts kay runtime selector" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_RUNTIME_AGENT'
+assert_file_contains "interactive launcher exposes isolated hook auto-trust" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_AUTO_TRUST_HOOKS'
+assert_file_contains "interactive launcher rewires Kay config home for isolated runs" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_KAY_HOME'
+assert_file_contains "kay agent enables isolated hook auto-trust" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks"'
+assert_file_contains "kay agent points subprocess KAY_HOME at the isolated config dir" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'CODEX_KAY_HOME="${KAY_HOME}/.kay"'
+assert_file_contains "live helpers source Kay isolation library in child shells" "$REPO_ROOT/tests/live/helpers.sh" 'source "$SB_ROOT/tests/live/lib/kay-codex-isolation.sh"'
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

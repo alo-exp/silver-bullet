@@ -30,6 +30,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
@@ -45,13 +49,21 @@ input=$(cat)
 # completed workflow state; reading instructions is not proof that the workflow
 # ran or produced its artifacts.
 raw_skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
-tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
-cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  cmd="$(sb_tool_command_string "$input")"
+else
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
+fi
 
 skills_to_record=()
 if [[ -n "$raw_skill" ]]; then
   skills_to_record+=("$raw_skill")
-elif [[ "$tool_name" == "Bash" && "$cmd" == *"SKILL.md"* ]]; then
+elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; } && [[ "$cmd" == *"SKILL.md"* ]]; then
   # Extract any SKILL.md paths embedded in the command string.
   while IFS= read -r token; do
     [[ -n "$token" ]] || continue
@@ -122,10 +134,9 @@ fi
 STATE_FILE="${STATE_FILE:-${SB_STATE_DIR}/state}"
 
 # Security: validate state file path stays within the host runtime state root (SB-002/SB-003)
-case "$STATE_FILE" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) STATE_FILE="${SB_STATE_DIR}/state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
+  STATE_FILE="${SB_STATE_DIR}/state"
+fi
 
 # --- Tracked skills list ---
 # GSD command phases (tracked as gsd-* markers for compliance visibility)

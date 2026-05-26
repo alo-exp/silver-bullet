@@ -144,10 +144,9 @@ active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
 
 # Security: validate state file path stays within the host runtime state root
-case "$state_file" in
-  "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-  *) state_file="${SB_RUNTIME_STATE_DIR}/state" ;;
-esac
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_RUNTIME_STATE_DIR}/state"
+fi
 
 # Read session mode (default: interactive if missing)
 mode_file="${SB_RUNTIME_STATE_DIR}/mode"
