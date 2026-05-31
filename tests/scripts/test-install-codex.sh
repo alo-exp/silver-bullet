@@ -1164,9 +1164,21 @@ PUBLIC_STALE_PACKAGE="$PUBLIC_STALE_MARKETPLACE/plugins/silver-bullet"
 mkdir -p "$PUBLIC_STALE_HOME/.codex" "$PUBLIC_STALE_WORKDIR" "$PUBLIC_STALE_PACKAGE" "$PUBLIC_STALE_MARKETPLACE/skills"
 rsync -aL --delete "$REPO_ROOT/plugins/silver-bullet/" "$PUBLIC_STALE_PACKAGE/"
 rsync -a --delete "$PUBLIC_STALE_PACKAGE/skills/" "$PUBLIC_STALE_MARKETPLACE/skills/"
+git -C "$PUBLIC_STALE_MARKETPLACE" init -q
+git -C "$PUBLIC_STALE_MARKETPLACE" config user.email "tests@example.invalid"
+git -C "$PUBLIC_STALE_MARKETPLACE" config user.name "Tests"
+git -C "$PUBLIC_STALE_MARKETPLACE" add .
+git -C "$PUBLIC_STALE_MARKETPLACE" commit -q -m "seed clean public marketplace"
+git -C "$PUBLIC_STALE_MARKETPLACE" branch -M main
+PUBLIC_STALE_REMOTE="$PUBLIC_STALE_TMP/remote.git"
+git -C "$PUBLIC_STALE_TMP" init --bare -q "$PUBLIC_STALE_REMOTE"
+git -C "$PUBLIC_STALE_MARKETPLACE" remote add origin "$PUBLIC_STALE_REMOTE"
+git -C "$PUBLIC_STALE_MARKETPLACE" push -q -u origin HEAD:main
 mkdir -p \
   "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate" \
-  "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans"
+  "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans" \
+  "$PUBLIC_STALE_PACKAGE/skills/forge-delegate" \
+  "$PUBLIC_STALE_PACKAGE/skills/writing-plans"
 cat > "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate/SKILL.md" <<'EOF'
 ---
 name: forge-delegate
@@ -1177,6 +1189,8 @@ cat > "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" <<'EOF'
 name: writing-plans
 ---
 EOF
+cp "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/forge-delegate/SKILL.md"
+cp "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/writing-plans/SKILL.md"
 (
   cd "$PUBLIC_STALE_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
