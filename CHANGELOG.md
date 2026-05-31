@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.7] — 2026-05-31
+
+## Bug Fixes
+
+- `fix(codex): normalize SB skill picker labels to use the single Silver prefix`
+- `fix(codex): prevent generated route skills from displaying as Silver: Silver: <skill>`
+
+## Tests
+
+- `test(codex): assert generated Codex picker labels do not use Silver Bullet or duplicate Silver prefixes`
+
+## Chores
+
+- `chore(release): prepare v0.37.7`
+
+---
+
 ## [0.37.6] — 2026-05-31
 
 ## Bug Fixes
