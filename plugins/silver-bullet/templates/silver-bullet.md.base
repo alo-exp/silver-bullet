@@ -732,9 +732,9 @@ Bullet owns what to do and when; GSD owns how.
   workflow explicitly selects them.
 - **Planning**: Always use `/gsd:plan-phase` as the GSD execution planner (produces PLAN.md).
   If a Superpowers skill offers to hand off to `writing-plans` as a substitute for planning,
-  redirect to `/gsd:plan-phase`. SB may invoke its local `writing-plans` helper only as an
-  optional precursor when the active composition explicitly includes it; it never replaces
-  the GSD PLAN.md.
+  redirect to `/gsd:plan-phase`. If an active SB composition explicitly needs that
+  Superpowers planning discipline, invoke `superpowers:writing-plans`; SB does not package
+  a local `writing-plans` skill, and it never replaces the GSD PLAN.md.
 - **Requirements**: `.planning/REQUIREMENTS.md` is the single source of truth (owned by GSD).
   Superpowers must NOT create or maintain a separate requirements list.
 - **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
@@ -840,9 +840,9 @@ Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-
 
 - **Phase exit.** Release the lock so other runtimes can claim.
 
-### Delegation exception (`/forge-delegate`)
+### Delegation exception
 
-When the runtime holding a lock wants to delegate implementation work to a sibling runtime **underneath** its existing claim, use `/forge-delegate`. The skill packages phase context into a JSON envelope, spawns the target runtime with `SB_PHASE_LOCK_INHERITED=true`, integrates the structured result. The lock stays with the parent throughout.
+When the runtime holding a lock delegates implementation work to a sibling runtime **underneath** its existing claim, the child must run with `SB_PHASE_LOCK_INHERITED=true` and return a structured result for the parent to integrate. Silver Bullet no longer packages a `forge-delegate` skill in Codex; use the active runtime's supported delegation mechanism if one is installed.
 
 See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.
 

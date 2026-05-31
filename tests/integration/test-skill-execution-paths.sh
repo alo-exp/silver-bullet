@@ -34,7 +34,8 @@ EXTERNAL_SKILLS=(
   gsd-docs-update gsd-milestone-summary gsd-ui-phase gsd-ui-review
   "gsd-review --all"
   "requesting-code-review" "receiving-code-review"
-  "superpowers:test-driven-development" "superpowers:finishing-a-development-branch"
+  "superpowers:test-driven-development" "superpowers:writing-plans"
+  "superpowers:finishing-a-development-branch"
   "superpowers:requesting-code-review" "superpowers:receiving-code-review"
   "superpowers:systematic-debugging"
   "multai:orchestrator" "multai:landscape-researcher" "multai:consolidator"
@@ -73,9 +74,7 @@ resolve_silver_alias() {
     silver:intel)               echo "gsd-intel" ;;
     silver:scan)                echo "gsd-scan" ;;
     silver:clarify)             echo "silver-clarify" ;;
-    silver:writing-plans)       echo "writing-plans" ;;
     silver:tdd)                 echo "tdd" ;;
-    silver:finishing-branch)    echo "finishing-branch" ;;
     silver:request-review)      echo "requesting-code-review" ;;
     silver:receive-review)      echo "receiving-code-review" ;;
     silver:multai)              echo "multai:orchestrator" ;;
