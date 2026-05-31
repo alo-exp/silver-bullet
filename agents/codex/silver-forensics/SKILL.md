@@ -79,7 +79,7 @@ GSD's built-in silver:forensics (`/gsd-forensics`).
 > "This looks like a GSD workflow issue (plan drift / execution anomaly / missing artifacts).
 > GSD has specialized silver:forensics for this. Running `/gsd-forensics` instead."
 
-Invoke `/gsd-forensics` via the Skill tool and stop. Do not proceed to Step 2.
+Invoke `/gsd-forensics` through the active runtime's SB-recognized skill invocation channel and stop. Do not proceed to Step 2.
 
 **If routing to SB silver:forensics:** Continue to Step 2.
 

@@ -175,14 +175,14 @@ When the user requests skipping any step:
 
 ## Step 0: Orient in Codebase
 
-Invoke `gsd-scan` via the Skill tool to understand existing UI patterns and component hierarchy.
+Invoke `gsd-scan` through the active runtime's SB-recognized skill invocation channel to understand existing UI patterns and component hierarchy.
 
-If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` via the Skill tool.
+If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
 **Only if intent is fuzzy or $ARGUMENTS is empty:**
-Invoke `silver:clarify` via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.
+Invoke `silver:clarify` through the active runtime's SB-recognized skill invocation channel for Socratic framing, option comparison, and decision-ready handoff of UI intent.
 
 ## Step 1b: MultAI UI Perspectives (conditional)
 
@@ -194,23 +194,23 @@ Ask:
 > A. Yes — run multai:orchestrator for multi-AI UX review
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) via the Skill tool. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
+If A: invoke `silver:multai` (multai:orchestrator) through the active runtime's SB-recognized skill invocation channel. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
 
 ## Step 2: Testing Strategy
 
-Invoke `testing-strategy` via the Skill tool when available. Purpose: define test levels for UI (component, visual, e2e) before GSD planning.
+Invoke `testing-strategy` through the active runtime's SB-recognized skill invocation channel when available. Purpose: define test levels for UI (component, visual, e2e) before GSD planning.
 
 ## Step 2.5: Writing Plans
 
-Keep the authoritative implementation plan in `gsd-plan-phase`. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` via the Skill tool; SB does not package a local `writing-plans` skill.
+Keep the authoritative implementation plan in `gsd-plan-phase`. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` through the active runtime's SB-recognized skill invocation channel; SB does not package a local `writing-plans` skill.
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: 8 core dimensions with usability + testability emphasis, plus conditional AI/LLM safety where applicable; `security` mandatory.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: 8 core dimensions with usability + testability emphasis, plus conditional AI/LLM safety where applicable; `security` mandatory.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CONTEXT.md with locked decisions.
+Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: UI phase context → CONTEXT.md with locked decisions.
 
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
@@ -218,7 +218,7 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CON
 
 **Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
 
-**Steps** (all via Skill tool):
+**Steps** (all through the active runtime's SB-recognized skill invocation channel):
 1. `design:design-system` (Always)
 2. `design:ux-copy` (As-needed — user-facing copy requires review)
 3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
@@ -230,13 +230,13 @@ Invoke `gsd-discuss-phase` via the Skill tool. Purpose: UI phase context → CON
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase` via the Skill tool. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
+Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
 
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase --tdd` via the Skill tool for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `tdd` gate can run before execution.
+If mode is Interactive: invoke `gsd-execute-phase --tdd` through the active runtime's SB-recognized skill invocation channel for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
+If mode is Autonomous (§10e): invoke `gsd-autonomous` through the active runtime's SB-recognized skill invocation channel. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `tdd` gate can run before execution.
 
 **Internal TDD gate:**
 `tdd` is hidden from the picker and activates immediately before execution for component logic. It delegates to `superpowers:test-driven-development`, so the execute boundary cannot start until the failing-test-first discipline is in place.
@@ -244,10 +244,10 @@ If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool. For i
 ## Step 8: Code Review
 
 Run review sequence in order:
-1. Invoke `requesting-code-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `gsd-code-review` via the Skill tool. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues found: invoke `gsd-code-review-fix` via the Skill tool.
-3. For architecturally significant UI systems: invoke `gsd-review --all` via the Skill tool (cross-AI adversarial review across all available CLIs).
-3. Invoke `receiving-code-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues found: invoke `gsd-code-review-fix` through the active runtime's SB-recognized skill invocation channel.
+3. For architecturally significant UI systems: invoke `gsd-review --all` through the active runtime's SB-recognized skill invocation channel (cross-AI adversarial review across all available CLIs).
+3. Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel.
 
 ## FLOW UI QUALITY — Post-execution UI audit
 
@@ -255,7 +255,7 @@ Run review sequence in order:
 
 **Note:** Always active in silver:ui (no trigger detection needed).
 
-**Steps** (all via Skill tool):
+**Steps** (all through the active runtime's SB-recognized skill invocation channel):
 1. `design:design-critique` (Always)
 2. `gsd-ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
 3. `design:accessibility-review` (Always)
@@ -268,21 +268,21 @@ Run review sequence in order:
 
 ## Step 10: Frontend Security
 
-Invoke `gsd-secure-phase` via the Skill tool. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
+Invoke `gsd-secure-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
 
 ## Step 11: Verify Work + Test Gap Fill
 
-Invoke `gsd-verify-work` via the Skill tool. Non-skippable.
+Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
 
-If coverage gaps remain after verification: invoke `gsd-add-tests` via the Skill tool.
+If coverage gaps remain after verification: invoke `gsd-add-tests` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase` via the Skill tool. Purpose: Nyquist gap filling.
+Invoke `gsd-validate-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: Nyquist gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `tech-debt` via the Skill tool when available. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
+Invoke `tech-debt` through the active runtime's SB-recognized skill invocation channel when available. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -301,7 +301,7 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Run the 8 core dimensions plus any conditional gates that apply. Non-skippable.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Run the 8 core dimensions plus any conditional gates that apply. Non-skippable.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -325,19 +325,19 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `superpowers:finishing-a-development-branch` via the Skill tool; SB does not package a local `finishing-branch` skill.
+Invoke `superpowers:finishing-a-development-branch` through the active runtime's SB-recognized skill invocation channel; SB does not package a local `finishing-branch` skill.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
 > A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` via the Skill tool.
+If A: invoke `gsd-pr-branch` through the active runtime's SB-recognized skill invocation channel.
 If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 15: Ship Phase
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level).
+Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level).
 
 ## Step 16: Milestone Completion (last phase of milestone only)
 

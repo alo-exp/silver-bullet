@@ -161,7 +161,7 @@ When the user requests skipping any step:
 
 ## Step 1: Clarify Research Question
 
-Invoke `silver:clarify` via the Skill tool. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong research path or optional MultAI augmentation on an ambiguous question.
+Invoke `silver:clarify` through the active runtime's SB-recognized skill invocation channel. Purpose: Socratic clarification — precisely define the research question before choosing the research mode. This prevents running the wrong research path or optional MultAI augmentation on an ambiguous question.
 
 After silver:clarify completes, the research question should be specific enough to select a path.
 
@@ -196,7 +196,7 @@ Research the landscape directly in the current host session. Prefer official doc
 Summarize the market map, key options, trade-offs, and recommendations in a concise artifact.
 
 **2a.3 — Optional MultAI augmentation**
-Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:landscape-researcher` and then `multai:consolidator` via the Skill tool to broaden and cross-check the direct research artifact. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:landscape-researcher` and then `multai:consolidator` through the active runtime's SB-recognized skill invocation channel to broaden and cross-check the direct research artifact. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write consolidated findings to `.planning/research/<YYYY-MM-DD>-<topic-slug>/landscape-report.md`
 
@@ -213,7 +213,7 @@ Define the decision criteria from the clarified question, repo constraints, and 
 Use primary sources and concrete constraints to compare options and draft the recommendation rationale.
 
 **2b.3 — Optional MultAI augmentation**
-Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:orchestrator`, `multai:comparator`, and `multai:consolidator` via the Skill tool to add cross-model perspectives and a comparison matrix. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:orchestrator`, `multai:comparator`, and `multai:consolidator` through the active runtime's SB-recognized skill invocation channel to add cross-model perspectives and a comparison matrix. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write consolidated report to `.planning/research/<YYYY-MM-DD>-<topic-slug>/comparison-report.md`
 
@@ -227,7 +227,7 @@ Invoked when: selection is C.
 Inspect public product evidence, docs, changelogs, demos, reviews, and local problem context directly in the current host session.
 
 **2c.2 — Optional MultAI augmentation**
-Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:solution-researcher` via the Skill tool to broaden the competitive scan. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
+Only when the user explicitly requested multi-AI perspectives in the current task, invoke `multai:solution-researcher` through the active runtime's SB-recognized skill invocation channel to broaden the competitive scan. If MultAI is unavailable, stop and ask whether to install it now or continue without it.
 
 **Output:** Write CIR to `.planning/research/<YYYY-MM-DD>-<topic-slug>/competitive-intelligence-report.md`
 
@@ -245,7 +245,7 @@ The artifact file path will be referenced in the handoff to the receiving workfl
 
 ## Step 3: Apply Research to Engineering Design
 
-Invoke `silver:clarify` via the Skill tool. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. Use the research artifact as primary input context for the clarification pass.
+Invoke `silver:clarify` through the active runtime's SB-recognized skill invocation channel. Purpose: apply research findings to engineering design — turn the research artifact into a decision-ready handoff that the implementation workflow can absorb. Use the research artifact as primary input context for the clarification pass.
 
 ## Step 4: Hand Off to Implementation Workflow
 
@@ -257,8 +257,8 @@ Ask:
 > B. silver:devops — infrastructure/deployment change based on research findings
 > C. Done — research-only engagement, no implementation needed
 
-If A: invoke `silver:feature` via the Skill tool. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
+If A: invoke `silver:feature` through the active runtime's SB-recognized skill invocation channel. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
 
-If B: invoke `silver:devops` via the Skill tool. Pass the artifact path as context argument.
+If B: invoke `silver:devops` through the active runtime's SB-recognized skill invocation channel. Pass the artifact path as context argument.
 
 If C: summarize research artifacts created and their paths. Done.

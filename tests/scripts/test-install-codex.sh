@@ -450,12 +450,23 @@ assert_contains() {
 }
 
 assert_not_contains() {
-  local desc="$1" needle="$2" file="$3"
-  if ! grep -qF -- "$needle" "$file"; then
+  local desc="$1" needle="$2" path="$3"
+  if [[ -d "$path" ]]; then
+    if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+      echo "FAIL: $desc — unexpected [$needle] in $path"
+      (( FAIL++ )) || true
+    else
+      echo "PASS: $desc"
+      (( PASS++ )) || true
+    fi
+    return
+  fi
+
+  if ! grep -qF -- "$needle" "$path"; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
-    echo "FAIL: $desc — unexpected [$needle] in $file"
+    echo "FAIL: $desc — unexpected [$needle] in $path"
     (( FAIL++ )) || true
   fi
 }
@@ -863,12 +874,16 @@ assert_file_exists "SB package Codex hook adapter materialized" "$FAKE_SB_PACKAG
 assert_not_symlink "SB skills directory materialized" "$FAKE_SB_PACKAGE_ROOT/skills"
 assert_not_symlink "SB scripts directory materialized" "$FAKE_SB_PACKAGE_ROOT/scripts"
 assert_not_symlink "SB templates directory materialized" "$FAKE_SB_PACKAGE_ROOT/templates"
+assert_file_exists "SB invoke-skill adapter materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/silver-bullet"
 assert_file_exists "SB workflows helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/workflows.sh"
 assert_file_exists "SB scan helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/silver-scan.sh"
 assert_file_exists "SB package sanitizer helper materialized" "$FAKE_SB_PACKAGE_ROOT/scripts/codex-sanitize-package.sh"
+assert_file_exists "Current cache invoke-skill adapter synced" "$FAKE_CACHE_ROOT/scripts/silver-bullet"
 assert_file_exists "Current cache workflows helper synced" "$FAKE_CACHE_ROOT/scripts/workflows.sh"
 assert_file_exists "Current cache scan helper synced" "$FAKE_CACHE_ROOT/scripts/silver-scan.sh"
 assert_file_exists "Current cache package sanitizer helper synced" "$FAKE_CACHE_ROOT/scripts/codex-sanitize-package.sh"
+assert_file_exists "Codex invoke-skill CLI shim installed" "$HOME_DIR/.codex/bin/silver-bullet"
+assert_contains "Codex invoke-skill CLI shim targets SB cache" "plugins/cache/alo-labs-codex/silver-bullet" "$HOME_DIR/.codex/bin/silver-bullet"
 assert_no_async_true "SB hooks config normalized for Codex package" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_no_async_true "Current cache hooks config normalized for Codex package" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_no_combined_tool_matchers "Marketplace root hooks avoid combined command-tool matchers" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
@@ -879,6 +894,24 @@ assert_not_contains "SB package hooks no longer use Claude plugin root placehold
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude-only Skill tool wording" "via the Skill tool" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude-only Skill tool wording" "via the Skill tool" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids duplicate skill tracker wording" "PostToolUse/Skill or Codex invoke-skill receipt or Codex" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids duplicate skill tracker wording" "PostToolUse/Skill or Codex invoke-skill receipt or Codex" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude-only Agent tool wording" "Agent tool" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude-only Agent tool wording" "Agent tool" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude-only Read tool wording" "Read tool" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude-only Read tool wording" "Read tool" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude-only Write tool wording" "Write tool" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude-only Write tool wording" "Write tool" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude-only Edit tool wording" "Edit tool" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude-only Edit tool wording" "Edit tool" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids Claude MCP install command" "claude mcp install" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids Claude MCP install command" "claude mcp install" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids manual state recording workaround" "Manually record skills in agent-mode sessions" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids manual state recording workaround" "Manually record skills in agent-mode sessions" "$FAKE_CACHE_ROOT"
+assert_not_contains "SB package avoids state-file write workaround" "write its name to the SB state file" "$FAKE_SB_PACKAGE_ROOT"
+assert_not_contains "Current cache package avoids state-file write workaround" "write its name to the SB state file" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$FAKE_CACHE_ROOT"
 assert_contains "SB runtime path helper keeps dynamic state path" 'SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"' "$FAKE_SB_PACKAGE_ROOT/hooks/lib/runtime-paths.sh"

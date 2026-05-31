@@ -8,7 +8,7 @@ This reference expands the steps summarized in `SKILL.md` Phase 3. Follow the su
 
 If Phase 0 determined this is an update:
 
-1. Invoke `superpowers:using-superpowers` via the Skill tool to activate Superpowers skills.
+1. Invoke `superpowers:using-superpowers` through the active runtime's SB-recognized skill invocation channel to activate Superpowers skills.
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
@@ -72,7 +72,7 @@ If sections found:
 1. Read the project instruction file fully
 2. Identify each SB section (from `## N.` heading to just before the next `## ` heading or EOF)
 3. Also remove the old-style enforcement reference line if present: `> **Always adhere strictly to this file — it overrides all defaults.**` (note: this is the pre-separation version that does NOT mention silver-bullet.md)
-4. Remove these sections using the Edit tool, preserving all non-SB content (project overview, project-specific rules, user-added sections)
+4. Remove these sections using the active runtime file-editing mechanism, preserving all non-SB content (project overview, project-specific rules, user-added sections)
 5. Clean up any resulting double-blank-lines to single-blank-lines
 
 **Step 2 — Add reference line:**
@@ -102,7 +102,7 @@ For each match found, present it to the user directly:
   - "B. No, keep it"
   - "C. Skip all remaining conflict checks"
 
-If user selects A, use Edit tool to remove the line. If user selects B, leave it. If user selects C, stop checking further conflicts.
+If user selects A, use active runtime file-editing mechanism to remove the line. If user selects B, leave it. If user selects C, stop checking further conflicts.
 
 ### 3.2 Create directories
 
@@ -143,7 +143,7 @@ Copy both workflow templates to `docs/workflows/`, backing up any existing file 
 
 `silver:init` no longer performs direct docs migration/scaffolding.
 
-Invoke via the Skill tool:
+Invoke through the active runtime's SB-recognized skill invocation channel:
 ```text
 silver:ensure-docs --bootstrap
 ```
@@ -227,7 +227,7 @@ Idempotent — re-running `/silver:init` adds no duplicate entries.
 
 ### 3.8 Activate plugins
 
-Invoke `superpowers:using-superpowers` via the Skill tool. GSD commands (`/gsd:*`) and Design plugin skills (`/design:*`) are available immediately — no activation needed.
+Invoke `superpowers:using-superpowers` through the active runtime's SB-recognized skill invocation channel. GSD commands (`/gsd:*`) and Design plugin skills (`/design:*`) are available immediately — no activation needed.
 
 ### 3.9 Done
 

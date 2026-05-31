@@ -44,7 +44,7 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
-# Extract skill name from real Skill tool invocations. Bash commands that read
+# Extract skill name from supported skill invocations. Bash commands that read
 # `.../skills/<skill>/SKILL.md` are recorded as loaded-only metadata, not as
 # completed workflow state; reading instructions is not proof that the workflow
 # ran or produced its artifacts.
@@ -60,31 +60,139 @@ else
   cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 fi
 
+extract_invoke_skill_adapter_skill() {
+  local command_str="$1"
+  python3 - "$command_str" <<'PY' 2>/dev/null || true
+import pathlib
+import re
+import shlex
+import sys
+
+command = sys.argv[1]
+assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+shell_names = {"bash", "sh", "zsh"}
+
+
+def parse(raw):
+    try:
+        return shlex.split(raw, posix=True)
+    except Exception:
+        return []
+
+
+def skip_env_and_assignments(tokens):
+    idx = 0
+    if idx < len(tokens) and tokens[idx] == "env":
+        idx += 1
+    while idx < len(tokens) and assignment_re.match(tokens[idx]):
+        idx += 1
+    return idx
+
+
+def inspect_tokens(tokens):
+    idx = skip_env_and_assignments(tokens)
+    if idx >= len(tokens):
+        return None
+
+    cmd = pathlib.Path(tokens[idx]).name
+    args = tokens[idx + 1 :]
+
+    if cmd in shell_names:
+        for arg_index, arg in enumerate(args):
+            if arg.startswith("-") and "c" in arg[1:] and arg_index + 1 < len(args):
+                return inspect_tokens(parse(args[arg_index + 1]))
+        script_index = 0
+        while script_index < len(args) and args[script_index].startswith("-"):
+            script_index += 1
+        if script_index < len(args) and pathlib.Path(args[script_index]).name == "silver-bullet":
+            script_args = args[script_index + 1 :]
+            if len(script_args) >= 2 and script_args[0] == "invoke-skill":
+                return script_args[1]
+        return None
+
+    if cmd == "silver-bullet" and len(args) >= 2 and args[0] == "invoke-skill":
+        return args[1]
+    return None
+
+
+skill = inspect_tokens(parse(command))
+if skill:
+    print(skill)
+PY
+}
+
+invoke_skill_adapter_receipt_is_valid() {
+  local raw_skill="$1"
+  local canonical_skill="$raw_skill"
+  local receipt_dir="${SB_RUNTIME_STATE_DIR}/skill-invocations"
+  local cwd_real now max_age receipt
+
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    canonical_skill="$(sb_skill_canonical_name "$raw_skill")"
+  fi
+
+  [[ -d "$receipt_dir" && ! -L "$receipt_dir" ]] || return 1
+  cwd_real="$(python3 -c 'import pathlib; print(pathlib.Path.cwd().resolve())' 2>/dev/null || printf '%s' "$PWD")"
+  now="$(date +%s)"
+  max_age="${SILVER_BULLET_INVOKE_SKILL_RECEIPT_MAX_AGE_SECONDS:-300}"
+
+  shopt -s nullglob
+  for receipt in "$receipt_dir"/*.json; do
+    [[ -f "$receipt" && ! -L "$receipt" ]] || continue
+    if jq -e \
+      --arg channel "silver-bullet.invoke-skill" \
+      --arg skill "$canonical_skill" \
+      --arg cwd "$cwd_real" \
+      --argjson now "$now" \
+      --argjson max_age "$max_age" \
+      '.channel == $channel
+        and .status == "loaded"
+        and .canonical_skill == $skill
+        and .cwd == $cwd
+        and ((.timestamp_epoch // 0) >= ($now - $max_age))
+        and (.skill_file | type == "string")
+        and (.script | type == "string")' \
+      "$receipt" >/dev/null 2>&1; then
+      shopt -u nullglob
+      return 0
+    fi
+  done
+  shopt -u nullglob
+
+  return 1
+}
+
 skills_to_record=()
 if [[ -n "$raw_skill" ]]; then
   skills_to_record+=("$raw_skill")
-elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; } && [[ "$cmd" == *"SKILL.md"* ]]; then
-  # Extract any SKILL.md paths embedded in the command string.
-  while IFS= read -r token; do
-    [[ -n "$token" ]] || continue
-    token="${token#\"}"
-    token="${token%\"}"
-    token="${token#\'}"
-    token="${token%\'}"
-    token="${token#,}"
-    token="${token%;}"
-    token="${token#(}"
-    token="${token%)}"
-    [[ "$token" == *"SKILL.md"* ]] || continue
+elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/null 2>&1 && sb_tool_is_shell_like "$tool_name"; }; }; then
+  adapter_skill="$(extract_invoke_skill_adapter_skill "$cmd")"
+  adapter_exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || printf '0')"
+  if [[ -n "$adapter_skill" && "$adapter_exit_code" == "0" ]] && invoke_skill_adapter_receipt_is_valid "$adapter_skill"; then
+    skills_to_record+=("$adapter_skill")
+  elif [[ "$cmd" == *"SKILL.md"* ]]; then
+    # Extract any SKILL.md paths embedded in the command string.
+    while IFS= read -r token; do
+      [[ -n "$token" ]] || continue
+      token="${token#\"}"
+      token="${token%\"}"
+      token="${token#\'}"
+      token="${token%\'}"
+      token="${token#,}"
+      token="${token%;}"
+      token="${token#(}"
+      token="${token%)}"
+      [[ "$token" == *"SKILL.md"* ]] || continue
 
-    # Prefer deriving the skill from the directory name so we can record the
-    # canonical hyphenated marker (e.g. silver-init, gsd-discuss-phase).
-    if [[ "$token" =~ /skills/([^/]+)/SKILL\.md$ ]]; then
-      skills_to_record+=("loaded:${BASH_REMATCH[1]}")
-    elif [[ "$token" =~ /forge/skills/([^/]+)/SKILL\.md$ ]]; then
-      skills_to_record+=("loaded:${BASH_REMATCH[1]}")
-    fi
-  done < <(printf '%s' "$cmd" | grep -oE '[^[:space:]]+SKILL\.md' || true)
+      # Prefer deriving the skill from the directory name so we can record the
+      # canonical hyphenated marker (e.g. silver-init, gsd-discuss-phase).
+      if [[ "$token" =~ /skills/([^/]+)/SKILL\.md$ ]]; then
+        skills_to_record+=("loaded:${BASH_REMATCH[1]}")
+      elif [[ "$token" =~ /forge/skills/([^/]+)/SKILL\.md$ ]]; then
+        skills_to_record+=("loaded:${BASH_REMATCH[1]}")
+      fi
+    done < <(printf '%s' "$cmd" | grep -oE '[^[:space:]]+SKILL\.md' || true)
+  fi
 fi
 
 [[ ${#skills_to_record[@]} -gt 0 ]] || exit 0

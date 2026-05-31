@@ -11,7 +11,7 @@ trap 'exit 0' ERR
 #   - startup  : process launch, fresh shell
 #   - resume   : continuing a prior session
 #   - clear    : explicit /clear by the user
-#   - compact  : /compact (auto or manual) — context compression, NOT a reset
+#   - compact  : context compression (auto or manual) — NOT a reset
 # Previously, all four triggered destructive cleanup, wiping mid-session GSD
 # progress on every compact. Now only `startup` and `clear` reset ephemeral gate
 # files; `resume` and `compact` are benign continuation events.

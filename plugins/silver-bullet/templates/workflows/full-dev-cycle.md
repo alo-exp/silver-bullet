@@ -5,7 +5,7 @@
 > See `silver-bullet.md` §2h for the composable flows architecture and
 > `docs/composable-flows-contracts.md` for the full flow catalog.
 
-> **ENFORCED** -- Silver Bullet hooks track Skill tool invocations for quality gates
+> **ENFORCED** -- Silver Bullet hooks track supported skill invocation events/receipts for quality gates
 > and gap-filling skills. GSD's own hooks (workflow guard, context monitor) enforce
 > GSD step compliance independently. Both enforcement layers run in parallel.
 >
@@ -19,8 +19,8 @@
 | `/silver` smart orchestrator | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/silver:quality-gates`, `/silver:blast-radius`, etc. |
-| Gap-filling skills | Skill tool -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
+| Silver Bullet skills | runtime-native skill invocation channel -- `/silver:quality-gates`, `/silver:blast-radius`, etc. |
+| Gap-filling skills | runtime-native skill invocation channel -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -195,7 +195,7 @@ minutes of focused discussion depending on phase complexity.
 
 Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
 
-**Conditional sub-steps** (invoke via Skill tool if applicable):
+**Conditional sub-steps** (invoke through the active runtime's SB-recognized skill invocation channel if applicable):
 
 - If this phase introduces an **architectural decision**: write an ADR inline
   (structure: title, status, context, decision, consequences) before moving to PLAN.
@@ -697,7 +697,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
-  that track Skill tool invocations. "I already covered this" is NOT valid.
+  that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/silver:quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.
 - For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
