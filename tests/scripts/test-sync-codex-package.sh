@@ -103,6 +103,15 @@ for skill_md in sorted((package_root / "skills").glob("*/SKILL.md")):
         bad.append(f"{skill_md}: legacy plugin prefix remains in title {title!r}")
     if title.startswith("Silver: Silver: "):
         bad.append(f"{skill_md}: duplicate Silver route prefix in title {title!r}")
+    name = meta.get("name") or ""
+    if name == "silver":
+        route = "/silver"
+    elif name.startswith("silver:"):
+        route = f"/{name}"
+    else:
+        route = ""
+    if route and route not in title:
+        bad.append(f"{skill_md}: picker title must expose route {route!r}, got {title!r}")
 
 if bad:
     print("\n".join(bad))
