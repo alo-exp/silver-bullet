@@ -182,11 +182,26 @@ PY
 refresh_marketplace() {
   local marketplace_name="$1"
   local marketplace_root
+  local upstream_ref
   marketplace_root="$(codex_marketplace_root)"
 
   if [[ -d "${marketplace_root}/.git" ]]; then
     git -C "$marketplace_root" fetch --all --prune >/dev/null 2>&1 || true
-    git -C "$marketplace_root" pull --ff-only >/dev/null 2>&1 || true
+    upstream_ref="$(git -C "$marketplace_root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+    if [[ -n "$upstream_ref" ]]; then
+      git -C "$marketplace_root" reset --hard "$upstream_ref" >/dev/null 2>&1 || true
+    else
+      git -C "$marketplace_root" pull --ff-only >/dev/null 2>&1 || true
+    fi
+    git -C "$marketplace_root" clean -fd -- \
+      plugins/silver-bullet \
+      agents \
+      commands \
+      docs \
+      hooks \
+      scripts \
+      skills \
+      templates >/dev/null 2>&1 || true
   fi
 }
 
