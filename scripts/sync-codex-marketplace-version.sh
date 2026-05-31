@@ -51,6 +51,9 @@ sync_marketplace_repo() {
   local manifest="$root/plugins/silver-bullet/.codex-plugin/plugin.json"
   local remote_before
   local remote_after
+  local upstream_ref
+  local upstream_remote
+  local upstream_branch
 
   [[ -d "$root/.git" ]] || {
     echo "ERROR: Codex marketplace repo root is not a git repository: $root" >&2
@@ -74,7 +77,15 @@ sync_marketplace_repo() {
 
   git -C "$root" add plugins/silver-bullet
   git -C "$root" commit -m "Sync silver-bullet Codex package to $plugin_v"
-  git -C "$root" push
+
+  upstream_ref="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || true)"
+  if [[ "$upstream_ref" == */* ]]; then
+    upstream_remote="${upstream_ref%%/*}"
+    upstream_branch="${upstream_ref#*/}"
+    git -C "$root" push "$upstream_remote" "HEAD:${upstream_branch}"
+  else
+    git -C "$root" push
+  fi
 
   remote_after=$(jq -r '.version' "$manifest")
   echo "✓ Updated and pushed Codex marketplace repo: $remote_before → $remote_after"
