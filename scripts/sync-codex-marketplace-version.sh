@@ -78,7 +78,7 @@ sync_marketplace_repo() {
   git -C "$root" add plugins/silver-bullet
   git -C "$root" commit -m "Sync silver-bullet Codex package to $plugin_v"
 
-  upstream_ref="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || true)"
+  upstream_ref="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
   if [[ "$upstream_ref" == */* ]]; then
     upstream_remote="${upstream_ref%%/*}"
     upstream_branch="${upstream_ref#*/}"
