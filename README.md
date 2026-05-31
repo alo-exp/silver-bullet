@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.4-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.4)
+[![version](https://img.shields.io/badge/version-v0.37.5-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.5)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -525,12 +525,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.4`
-- Release: [v0.37.4](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.4)
+- Version: `0.37.5`
+- Release: [v0.37.5](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.5)
 - Notable changes:
-  - The picker-facing Codex `skills/` tree is now materialized as real files after a clean reinstall, which keeps `/skills` discovery reliable.
-  - The Codex install and sync tests now assert that the packaged skills surface is not a symlink chain.
-  - The release prep flow keeps the package metadata, README release surface, and marketplace manifests aligned with the patch release.
+  - The Codex marketplace release sync now publishes the full materialized SB package, not only the manifest version.
+  - The release regression test covers stale symlinked `plugins/silver-bullet/skills` trees so future Codex cache installs keep the picker-facing SB skills.
+  - The active Codex install repair path verifies the SB cache alias points at a package with all SB `SKILL.md` files.
 
 ## License
 

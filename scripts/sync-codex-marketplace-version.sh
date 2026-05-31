@@ -18,6 +18,7 @@ trap 'exit 1' ERR
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 codex_plugin_json="$repo_root/plugins/silver-bullet/.codex-plugin/plugin.json"
 codex_marketplace_repo_root="${CODEX_MARKETPLACE_REPO_ROOT:-${HOME}/.codex/.tmp/marketplaces/alo-labs-codex}"
+codex_package_sync_script="$repo_root/scripts/sync-codex-package.sh"
 requested_version="${1:-}"
 
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
@@ -61,17 +62,18 @@ sync_marketplace_repo() {
   }
 
   remote_before=$(jq -r '.version' "$manifest")
+  sync_marketplace_package_surface "$root"
   if [[ "$remote_before" != "$plugin_v" ]]; then
     update_version_file "$manifest"
   fi
 
-  if git -C "$root" diff --quiet -- plugins/silver-bullet/.codex-plugin/plugin.json; then
+  if git -C "$root" diff --quiet -- plugins/silver-bullet; then
     echo "✓ Codex marketplace repo already at silver-bullet $plugin_v: $root"
     return 0
   fi
 
-  git -C "$root" add plugins/silver-bullet/.codex-plugin/plugin.json
-  git -C "$root" commit -m "Bump silver-bullet to $plugin_v"
+  git -C "$root" add plugins/silver-bullet
+  git -C "$root" commit -m "Sync silver-bullet Codex package to $plugin_v"
   git -C "$root" push
 
   remote_after=$(jq -r '.version' "$manifest")
@@ -79,6 +81,32 @@ sync_marketplace_repo() {
 }
 
 update_version_file "$codex_plugin_json"
+
+if [[ -x "$codex_package_sync_script" ]]; then
+  bash "$codex_package_sync_script" >/dev/null
+else
+  echo "ERROR: Codex package sync script not found or not executable: $codex_package_sync_script" >&2
+  exit 1
+fi
+
+sync_marketplace_package_surface() {
+  local root="$1"
+  local source_package="$repo_root/plugins/silver-bullet"
+  local dest_package="$root/plugins/silver-bullet"
+
+  [[ -d "$source_package" ]] || {
+    echo "ERROR: source Codex package not found: $source_package" >&2
+    exit 1
+  }
+
+  mkdir -p "$dest_package"
+
+  # The Codex cache can drop symlink-backed package entries. Release the
+  # marketplace package as materialized files so skill-picker discovery does not
+  # depend on installer-side repair.
+  rsync -aL --delete --exclude '.git/' "${source_package}/" "${dest_package}/"
+}
+
 sync_marketplace_repo "$codex_marketplace_repo_root"
 
 cat <<EOF
