@@ -119,6 +119,9 @@ assert_contains "Codex package uses ~/.codex plugin cache paths" '~/.codex/plugi
 assert_contains "Codex package tracks gsd-scan in config" '"gsd-scan"' "$PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_ROOT/skills/tdd/SKILL.md"
+assert_path_absent "Sidekick Forge delegate skill excluded from SB bundle" "$PACKAGE_ROOT/skills/forge-delegate"
+assert_path_absent "Superpowers finishing branch skill excluded from SB bundle" "$PACKAGE_ROOT/skills/finishing-branch"
+assert_path_absent "Superpowers writing plans skill excluded from SB bundle" "$PACKAGE_ROOT/skills/writing-plans"
 assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/third-party-plugins"
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"
 

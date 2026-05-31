@@ -201,7 +201,7 @@ Invoke `testing-strategy` via the Skill tool when available. Purpose: define tes
 
 ## Step 2.5: Writing Plans
 
-Invoke `writing-plans` via the Skill tool only when the selected SB flow needs a local planning helper. Purpose: spec + test strategy support with frontend-design emphasis. Keep the authoritative implementation plan in `gsd-plan-phase`.
+Keep the authoritative implementation plan in `gsd-plan-phase`. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` via the Skill tool; SB does not package a local `writing-plans` skill.
 
 ## Step 3: Pre-Plan Quality Gates
 
@@ -324,7 +324,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool.
+Invoke `superpowers:finishing-a-development-branch` via the Skill tool; SB does not package a local `finishing-branch` skill.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
