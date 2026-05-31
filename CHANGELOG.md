@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.37.12] — 2026-06-01
+
+## Bug Fixes
+
+- `fix(codex): add native skill invocation adapter`
+- `fix(codex): sanitize Codex packages and marketplace snapshots for runtime-native tool wording`
+
+## Tests
+
+- `test(codex): reject Claude-only tool requirements from Codex package surfaces`
+- `test(codex): verify invoke-skill receipts before recording completed skills`
+
+## Chores
+
+- `chore(release): prepare v0.37.12`
+
+---
+
 ## [0.37.11] — 2026-06-01
 
 ## Bug Fixes
