@@ -59,7 +59,7 @@ assert_not_symlink() {
   fi
 }
 
-assert_codex_picker_labels_have_silver_prefix() {
+assert_codex_skill_titles_have_silver_prefix() {
   local desc="$1" package_root="$2"
   local output
   if output=$(python3 - "$package_root" <<'PY'
@@ -87,24 +87,22 @@ def frontmatter(path: Path) -> dict[str, str]:
     return meta
 
 
-def humanize(name: str) -> str:
-    words: list[str] = []
-    for part in name.split(":"):
-        words.append(" ".join(token.capitalize() for token in re.split(r"[-_\s]+", part) if token))
-    return ": ".join(words)
-
-
 bad: list[str] = []
+if plugin_display_name != "Silver Bullet":
+    bad.append(f"plugin displayName must remain 'Silver Bullet', got {plugin_display_name!r}")
+
 for skill_md in sorted((package_root / "skills").glob("*/SKILL.md")):
     meta = frontmatter(skill_md)
-    skill_label = meta.get("title") or humanize(meta.get("name") or skill_md.parent.name)
-    picker_label = f"{plugin_display_name}: {skill_label}"
-    if not picker_label.startswith("Silver: "):
-        bad.append(f"{skill_md}: expected Silver prefix, got {picker_label!r}")
-    if picker_label.startswith("Silver Bullet: "):
-        bad.append(f"{skill_md}: legacy plugin prefix remains in {picker_label!r}")
-    if picker_label.startswith("Silver: Silver: "):
-        bad.append(f"{skill_md}: duplicate Silver route prefix in {picker_label!r}")
+    title = meta.get("title")
+    if not title:
+        bad.append(f"{skill_md}: missing Codex picker title")
+        continue
+    if not title.startswith("Silver: "):
+        bad.append(f"{skill_md}: expected title to start with 'Silver: ', got {title!r}")
+    if title.startswith("Silver Bullet: "):
+        bad.append(f"{skill_md}: legacy plugin prefix remains in title {title!r}")
+    if title.startswith("Silver: Silver: "):
+        bad.append(f"{skill_md}: duplicate Silver route prefix in title {title!r}")
 
 if bad:
     print("\n".join(bad))
@@ -143,7 +141,7 @@ SOURCE_ASK_USER_FILES=(
 )
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
-assert_codex_picker_labels_have_silver_prefix "Codex picker labels use a single Silver prefix" "$PACKAGE_ROOT"
+assert_codex_skill_titles_have_silver_prefix "Codex skill titles use a single Silver prefix" "$PACKAGE_ROOT"
 assert_file_exists "Silver Bullet skill router available" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_file_exists "Silver Bullet init skill available" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_file_exists "Silver Bullet ensure-docs skill available" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"

@@ -1,5 +1,6 @@
 ---
 name: modularity
+title: Silver: Modularity
 description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "split this file", "decouple X from Y", "refactor into modules" — enforces small, focused modules so any change fits in context without compaction
 user-invocable: false
 version: 0.1.0

@@ -1,5 +1,6 @@
 ---
 name: review-requirements
+title: Silver: Review Requirements
 description: >
   This skill should be used for REQUIREMENTS.md artifact reviewer — validates requirements quality: required sections, REQ-ID format and uniqueness, testable acceptance criteria, priority fields, traceability frontmatter, and SPEC.md criterion coverage
 argument-hint: "<requirements-path> [--source-inputs <spec-path>]"
