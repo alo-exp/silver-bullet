@@ -1680,7 +1680,9 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   sync_marketplace_package_snapshot
 fi
 materialize_silver_bullet_package
-sync_materialized_package_surface
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
+  sync_materialized_package_surface
+fi
 sanitize_codex_package_surface
 sync_codex_cache_package_surface
 rewrite_codex_bundle_host_paths
