@@ -295,7 +295,7 @@ Invoke `testing-strategy` via the Skill tool when the dependency is installed. P
 
 ## Step 2.5: Writing Plans
 
-Invoke `writing-plans` when SB needs its local planning helper; otherwise keep implementation planning inside `gsd:plan-phase`. Do not run Superpowers planning unless the selected SB flow explicitly requires that dependency.
+Keep implementation planning inside `gsd:plan-phase` by default. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` via the Skill tool; SB does not package a local `writing-plans` skill.
 
 ## Step 2.7: Pre-Build Validation
 
@@ -433,7 +433,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `finishing-branch` (superpowers:finishing-a-development-branch) via the Skill tool. Purpose: merge / PR / cleanup decision.
+Invoke `superpowers:finishing-a-development-branch` via the Skill tool. Purpose: merge / PR / cleanup decision; SB does not package a local `finishing-branch` skill.
 
 ## Step 15a: PR Branch (ask user)
 
