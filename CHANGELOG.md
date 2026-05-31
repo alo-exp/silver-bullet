@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.8] — 2026-05-31
+
+## Bug Fixes
+
+- `fix(codex): keep the plugin display name as Silver Bullet while prefixing Codex skill titles with Silver`
+- `fix(codex): generate Silver: titles for every packaged Codex skill without duplicate Silver route prefixes`
+
+## Tests
+
+- `test(codex): assert plugin displayName remains Silver Bullet and every Codex skill title starts with Silver:`
+
+## Chores
+
+- `chore(release): prepare v0.37.8`
+
+---
+
 ## [0.37.7] — 2026-05-31
 
 ## Bug Fixes
