@@ -23,7 +23,7 @@
   "hooks": "./hooks/hooks.json",
   "skills": "./skills/",
   "interface": {
-    "displayName": "Silver Bullet",
+    "displayName": "Silver",
     "shortDescription": "SB+GSD Agentic Process Orchestrator",
     "longDescription": "Silver Bullet layers SB-owned skills, hooks, and workflow assets onto Codex and Claude Code to compose task-shaped workflows around GSD. Third-party dependencies are installed from their own sources rather than vendored into the SB Codex bundle.",
     "developerName": "Alo Labs",

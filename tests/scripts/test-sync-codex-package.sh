@@ -59,6 +59,67 @@ assert_not_symlink() {
   fi
 }
 
+assert_codex_picker_labels_have_silver_prefix() {
+  local desc="$1" package_root="$2"
+  local output
+  if output=$(python3 - "$package_root" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+package_root = Path(sys.argv[1])
+manifest = json.loads((package_root / ".codex-plugin/plugin.json").read_text())
+plugin_display_name = manifest.get("interface", {}).get("displayName") or manifest.get("name")
+
+
+def frontmatter(path: Path) -> dict[str, str]:
+    lines = path.read_text(errors="ignore").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    meta: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
+        if match:
+            meta[match.group(1)] = match.group(2).strip().strip('"')
+    return meta
+
+
+def humanize(name: str) -> str:
+    words: list[str] = []
+    for part in name.split(":"):
+        words.append(" ".join(token.capitalize() for token in re.split(r"[-_\s]+", part) if token))
+    return ": ".join(words)
+
+
+bad: list[str] = []
+for skill_md in sorted((package_root / "skills").glob("*/SKILL.md")):
+    meta = frontmatter(skill_md)
+    skill_label = meta.get("title") or humanize(meta.get("name") or skill_md.parent.name)
+    picker_label = f"{plugin_display_name}: {skill_label}"
+    if not picker_label.startswith("Silver: "):
+        bad.append(f"{skill_md}: expected Silver prefix, got {picker_label!r}")
+    if picker_label.startswith("Silver Bullet: "):
+        bad.append(f"{skill_md}: legacy plugin prefix remains in {picker_label!r}")
+    if picker_label.startswith("Silver: Silver: "):
+        bad.append(f"{skill_md}: duplicate Silver route prefix in {picker_label!r}")
+
+if bad:
+    print("\n".join(bad))
+    raise SystemExit(1)
+PY
+  ); then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc"
+    printf '%s\n' "$output"
+    (( FAIL++ )) || true
+  fi
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -82,6 +143,7 @@ SOURCE_ASK_USER_FILES=(
 )
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
+assert_codex_picker_labels_have_silver_prefix "Codex picker labels use a single Silver prefix" "$PACKAGE_ROOT"
 assert_file_exists "Silver Bullet skill router available" "$PACKAGE_ROOT/skills/silver/SKILL.md"
 assert_file_exists "Silver Bullet init skill available" "$PACKAGE_ROOT/skills/silver-init/SKILL.md"
 assert_file_exists "Silver Bullet ensure-docs skill available" "$PACKAGE_ROOT/skills/silver-ensure-docs/SKILL.md"

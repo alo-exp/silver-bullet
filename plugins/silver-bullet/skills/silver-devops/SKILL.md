@@ -1,5 +1,6 @@
 ---
 name: silver:devops
+title: DevOps
 description: >
   This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → GSD plan/execute/verify → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"

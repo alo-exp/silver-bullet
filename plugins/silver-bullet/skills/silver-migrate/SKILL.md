@@ -1,5 +1,6 @@
 ---
 name: silver:migrate
+title: Migrate
 description: This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from the retired single-file WORKFLOW.md model to per-instance `.planning/workflows/<id>.md` tracking.
 version: 0.2.0
 ---
