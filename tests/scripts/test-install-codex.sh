@@ -1156,6 +1156,39 @@ GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
 assert_file_exists "Codex marketplace snapshot seeded when missing" "$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
 
+PUBLIC_STALE_TMP="$(mktemp -d)"
+PUBLIC_STALE_HOME="$PUBLIC_STALE_TMP/home"
+PUBLIC_STALE_WORKDIR="$PUBLIC_STALE_TMP/workdir"
+PUBLIC_STALE_MARKETPLACE="$PUBLIC_STALE_HOME/.codex/.tmp/marketplaces/alo-labs-codex"
+PUBLIC_STALE_PACKAGE="$PUBLIC_STALE_MARKETPLACE/plugins/silver-bullet"
+mkdir -p "$PUBLIC_STALE_HOME/.codex" "$PUBLIC_STALE_WORKDIR" "$PUBLIC_STALE_PACKAGE" "$PUBLIC_STALE_MARKETPLACE/skills"
+rsync -aL --delete "$REPO_ROOT/plugins/silver-bullet/" "$PUBLIC_STALE_PACKAGE/"
+rsync -a --delete "$PUBLIC_STALE_PACKAGE/skills/" "$PUBLIC_STALE_MARKETPLACE/skills/"
+mkdir -p \
+  "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate" \
+  "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans"
+cat > "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate/SKILL.md" <<'EOF'
+---
+name: forge-delegate
+---
+EOF
+cat > "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" <<'EOF'
+---
+name: writing-plans
+---
+EOF
+(
+  cd "$PUBLIC_STALE_WORKDIR"
+  PATH="$BIN_DIR:$PATH" \
+  HOME="$PUBLIC_STALE_HOME" \
+  GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
+    bash "$SCRIPT" --public-release >/dev/null
+)
+PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$(jq -r '.version' "$PUBLIC_STALE_PACKAGE/.codex-plugin/plugin.json")"
+assert_file_exists "public-release cache keeps Silver Bullet feature skill" "$PUBLIC_STALE_CACHE/skills/silver-feature/SKILL.md"
+assert_file_absent "public-release ignores stale marketplace forge-delegate skill" "$PUBLIC_STALE_CACHE/skills/forge-delegate/SKILL.md"
+assert_file_absent "public-release ignores stale marketplace writing-plans skill" "$PUBLIC_STALE_CACHE/skills/writing-plans/SKILL.md"
+
 BROKEN_PUBLIC_TMP="$(mktemp -d)"
 BROKEN_PUBLIC_HOME="$BROKEN_PUBLIC_TMP/home"
 BROKEN_PUBLIC_WORKDIR="$BROKEN_PUBLIC_TMP/workdir"
