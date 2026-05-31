@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.37.6] — 2026-05-31
+
+## Bug Fixes
+
+- `fix(codex): remove non-SB skills from the Silver Bullet package surface`
+- `fix(codex): route plan-writing and branch-finishing workflow steps to Superpowers explicitly`
+- `fix(codex): remove stale Forge delegation instructions from packaged SB runtime guidance`
+
+## Tests
+
+- `test(codex): assert Sidekick and Superpowers-owned skill directories are excluded from the SB Codex bundle`
+
+## Chores
+
+- `chore(release): prepare v0.37.6`
+
+---
+
 ## [0.37.5] — 2026-05-31
 
 ## Bug Fixes
