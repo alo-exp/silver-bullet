@@ -11,6 +11,18 @@ import shutil
 import sys
 
 NAME_RE = re.compile(r"^(name:\s*)(silver-)([A-Za-z0-9_-]+)\s*$", re.MULTILINE)
+CODEX_TITLE_WORD_OVERRIDES = {
+    "ai": "AI",
+    "api": "API",
+    "ci": "CI",
+    "docs": "Docs",
+    "devops": "DevOps",
+    "llm": "LLM",
+    "pr": "PR",
+    "tdd": "TDD",
+    "ui": "UI",
+    "uat": "UAT",
+}
 
 CODEX_REPLACEMENTS = [
     ("Then invoke `/compact` via the Skill tool to compact the loaded context before proceeding.", "Then summarize the loaded context and continue without relying on `/compact`."),
@@ -54,6 +66,58 @@ def rewrite_names(text: str) -> str:
     return NAME_RE.sub(repl, text, count=1)
 
 
+def codex_title_for_name(name: str) -> str | None:
+    if name == "silver":
+        return "Router"
+    if not name.startswith("silver:"):
+        return None
+
+    route = name.split(":", 1)[1]
+    return " ".join(
+        CODEX_TITLE_WORD_OVERRIDES.get(part.lower(), part.capitalize())
+        for part in re.split(r"[-_\s]+", route)
+        if part
+    )
+
+
+def ensure_codex_picker_title(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return text
+
+    frontmatter_end: int | None = None
+    name_idx: int | None = None
+    title_idx: int | None = None
+    skill_name: str | None = None
+
+    for idx, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            frontmatter_end = idx
+            break
+        name_match = re.match(r"^(name:\s*)(.+?)\s*$", line)
+        if name_match and name_idx is None:
+            name_idx = idx
+            skill_name = name_match.group(2).strip().strip('"')
+            continue
+        if re.match(r"^title:\s*", line) and title_idx is None:
+            title_idx = idx
+
+    if frontmatter_end is None or name_idx is None or skill_name is None:
+        return text
+
+    title = codex_title_for_name(skill_name)
+    if title is None:
+        return text
+
+    title_line = f"title: {title}\n"
+    if title_idx is not None and title_idx < frontmatter_end:
+        lines[title_idx] = title_line
+    else:
+        lines.insert(name_idx + 1, title_line)
+
+    return "".join(lines)
+
+
 def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     current_home = os.path.join("~", f".{agent}")
     opposite = "claude" if agent == "codex" else "codex"
@@ -83,6 +147,8 @@ def sanitize_codex_text(text: str) -> str:
 
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = rewrite_names(text)
+    if agent == "codex":
+        updated = ensure_codex_picker_title(updated)
     if not preserve_runtime_placeholders:
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
