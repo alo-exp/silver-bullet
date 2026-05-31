@@ -1,5 +1,6 @@
 ---
 name: review-spec
+title: Silver: Review Spec
 description: >
   This skill should be used for SPEC.md artifact reviewer — validates spec quality against the SB spec template: required sections, non-empty overview, user story format, testable acceptance criteria, assumption completeness, and frontmatter fields
 argument-hint: "<spec-path> [--source-inputs <jira-ticket> <figma-url>]"

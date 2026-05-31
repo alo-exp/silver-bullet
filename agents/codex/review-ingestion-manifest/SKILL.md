@@ -1,5 +1,6 @@
 ---
 name: review-ingestion-manifest
+title: Silver: Review Ingestion Manifest
 description: This skill should be used for INGESTION_MANIFEST.md artifact reviewer — validates that all source artifacts are listed, statuses are accurate, failed artifacts have corresponding ARTIFACT MISSING blocks in the linked SPEC.md, and the manifest supports resumability
 argument-hint: "<manifest-path> [--source-inputs <spec-path>]"
 user-invocable: false
