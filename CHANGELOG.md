@@ -6,10 +6,12 @@
 
 - `fix(codex): materialize the full Silver Bullet package during Codex marketplace release sync`
 - `fix(codex): repair active Codex installs so the SB skill picker sees the packaged skills tree`
+- `fix(codex): push marketplace package sync commits to the tracked upstream branch explicitly`
 
 ## Tests
 
 - `test(codex): cover stale symlinked marketplace skills during release sync`
+- `test(codex): cover marketplace sync from a local branch whose name differs from its upstream branch`
 
 ## Chores
 
