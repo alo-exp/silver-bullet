@@ -37,6 +37,17 @@ assert_equal() {
   fi
 }
 
+assert_not_contains() {
+  local desc="$1" needle="$2" path="$3"
+  if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+    echo "FAIL: $desc — found [$needle] under $path"
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
 TMP="$(mktemp -d)"
@@ -81,6 +92,17 @@ assert_not_symlink "marketplace plugin skills surface is materialized" "$MARKETP
 assert_file_exists "marketplace plugin includes Silver Bullet init skill" "$MARKETPLACE/plugins/silver-bullet/skills/silver-init/SKILL.md"
 assert_file_exists "marketplace plugin includes Silver Bullet feature skill" "$MARKETPLACE/plugins/silver-bullet/skills/silver-feature/SKILL.md"
 assert_equal "marketplace plugin skill count matches source package" "$source_count" "$marketplace_count"
+assert_not_contains "marketplace plugin avoids Claude-only Skill tool wording" "via the Skill tool" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids duplicate skill tracker wording" "PostToolUse/Skill or Codex invoke-skill receipt or Codex" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids Claude-only Agent tool wording" "Agent tool" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids Claude-only Read tool wording" "Read tool" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids Claude-only Write tool wording" "Write tool" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids Claude-only Edit tool wording" "Edit tool" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids Claude MCP install command" "claude mcp install" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids /compact commands" "/compact" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids AskUserQuestion" "AskUserQuestion" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids manual state recording workaround" "Manually record skills in agent-mode sessions" "$MARKETPLACE/plugins/silver-bullet"
+assert_not_contains "marketplace plugin avoids state-file write workaround" "write its name to the SB state file" "$MARKETPLACE/plugins/silver-bullet"
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

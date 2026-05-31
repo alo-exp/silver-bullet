@@ -93,6 +93,14 @@ run_hook() {
   cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null
 }
 
+run_hook_bash() {
+  local command_str="$1"
+  local input
+  input=$(jq -n --arg c "$command_str" \
+    '{hook_event_name: "PostToolUse", tool_name: "Bash", tool_input: {command: $c}}')
+  cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null
+}
+
 assert_in_state() {
   local label="$1"
   local skill="$2"
@@ -113,6 +121,18 @@ assert_not_in_state() {
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$skill' unexpectedly found in state"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_in_loaded_state() {
+  local label="$1"
+  local skill="$2"
+  if grep -qx "$skill" "${TMPSTATE}.loaded" 2>/dev/null; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$skill' not found in loaded state: $(cat "${TMPSTATE}.loaded" 2>/dev/null || echo '(empty)')"
     FAIL=$((FAIL + 1))
   fi
 }
@@ -281,6 +301,29 @@ setup
 input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Edit", tool_input: {file_path: "/src/app.js"}}')
 cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null 2>/dev/null || true
 assert_not_in_state "Edit tool event does not record anything" "Edit"
+teardown
+
+# Test 12b: Codex shell reads of SKILL.md are loaded-only, not completed skills
+setup
+run_hook_bash "cat \"$REPO_ROOT/skills/silver-quality-gates/SKILL.md\"" >/dev/null
+assert_not_in_state "Bash SKILL.md read does not record completed skill" "silver-quality-gates"
+assert_in_loaded_state "Bash SKILL.md read records loaded-only metadata" "silver-quality-gates"
+teardown
+
+# Test 12c: SB-owned Codex invoke-skill adapter records completed skills only with receipt
+echo "--- Group 5b: Codex invoke-skill adapter ---"
+setup
+adapter_cmd_without_receipt="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+run_hook_bash "$adapter_cmd_without_receipt" >/dev/null
+assert_not_in_state "invoke-skill command without adapter receipt is not trusted" "silver-quality-gates"
+teardown
+
+setup
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>/dev/null) || true
+run_hook_bash "$adapter_cmd" >/dev/null
+assert_in_state "Codex invoke-skill adapter records completed skill after verified receipt" "silver-quality-gates"
+assert_in_session_log "Codex invoke-skill adapter marks session ledger completed" "  - [x] silver-quality-gates"
 teardown
 
 # Test 13: Empty skill name is ignored

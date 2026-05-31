@@ -71,7 +71,7 @@ If any URL is provided in A, B, or C, note it internally for artifact injection 
 
 ## Step 2: Invoke product-management:write-spec
 
-Invoke `product-management:write-spec` via the Skill tool. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
+Invoke `product-management:write-spec` through the active runtime's SB-recognized skill invocation channel. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
 
 If the skill is unavailable (invocation fails or skill not found), STOP and
 notify the user instead of proceeding without it. Offer: A. Install the plugin
@@ -138,7 +138,7 @@ For each URL provided:
 1. Display the URL and describe what will be extracted.
 2. Attempt extraction:
    - **Google Doc or PPT URL:** attempt text extraction via WebFetch tool. If accessible, show a 3-bullet summary of extracted content. If inaccessible, record the URL in `source-artifacts:` frontmatter for Phase 13 MCP ingestion.
-   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` via the Skill tool for design context. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without design context if the user explicitly approves the degraded path.
+   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` through the active runtime's SB-recognized skill invocation channel for design context. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without design context if the user explicitly approves the degraded path.
 3. Ask: "A. Incorporate this content into the spec  B. Skip"
 
 If user selects A: incorporate the relevant content into the appropriate sections during Step 7.
@@ -166,7 +166,7 @@ If no assumptions were surfaced, note this and ask: "Before we write the spec, a
 
 Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
 
-Invoke `design:design-critique` via the Skill tool. If the skill is unavailable,
+Invoke `design:design-critique` through the active runtime's SB-recognized skill invocation channel. If the skill is unavailable,
 STOP and notify the user. Offer install-and-retry first; only continue without
 design critique if the user explicitly approves the degraded path.
 
@@ -194,7 +194,7 @@ design critique if the user explicitly approves the degraded path.
    - `source-artifacts:` — list of all URLs provided in Step 1 (empty list if none)
    - `created:` — today's date (greenfield) OR preserve existing value (augment)
    - `last-updated:` — today's date
-5. Write to `.planning/SPEC.md` using the Write tool.
+5. Write to `.planning/SPEC.md` using the active runtime file-writing mechanism.
 
 Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` fields. No untagged assumptions.
 
@@ -202,7 +202,7 @@ Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` 
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` via the Skill tool.
+Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -213,13 +213,13 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 3. Derive `NFR-XX` IDs from any non-functional concerns raised during elicitation (performance, security, accessibility, reliability). Assign sequential IDs starting at NFR-01.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
-6. Write to `.planning/REQUIREMENTS.md` using the Write tool.
+6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
 
 ### Step 8a: Review REQUIREMENTS.md
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool.
+Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 9 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -229,13 +229,13 @@ Only if a design artifact or Figma URL was provided:
 
 1. Read `templates/specs/DESIGN.md.template` to get the canonical structure.
 2. Populate from design context gathered in Steps 4 and 6.
-3. Write to `.planning/DESIGN.md` using the Write tool.
+3. Write to `.planning/DESIGN.md` using the active runtime file-writing mechanism.
 
 ### Step 9a: Review DESIGN.md (conditional)
 
 **Only if Step 9 produced a DESIGN.md.**
 
-Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` via the Skill tool.
+Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 10 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 

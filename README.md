@@ -233,6 +233,8 @@ The installer:
 - keeps `/silver` and `/silver:*` in the main Silver Bullet package
 - includes the packaged `scripts/workflows.sh` helper used by composed workflow
   tracking
+- includes the `scripts/silver-bullet invoke-skill <name>` Codex adapter so
+  required skills can be invoked and recorded without a Claude-only `Skill` tool
 - enables SB only when the current working directory is an actual SB project
   root (`.silver-bullet.json` plus `silver-bullet.md`)
 - purges stale SB user-level hook entries so unrelated Codex projects do not get
@@ -330,6 +332,10 @@ Logical route names may appear differently by host. For example, a Codex plugin
 install may expose `silver-bullet:silver-feature`, while generated command
 surfaces may expose `silver:feature`. The workflow contracts use logical names;
 the host adapter chooses the equivalent exposed name.
+
+In Codex, use `silver-bullet invoke-skill <name>` when SB requires a recorded
+skill invocation and the runtime has no callable `Skill` tool. Directly reading
+`SKILL.md` is loaded-only metadata and does not satisfy workflow gates.
 
 ## Configuration
 

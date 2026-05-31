@@ -26,7 +26,7 @@ emit_block() {
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
-# Extract skill name from Skill tool input
+# Extract skill name from supported skill invocation input
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
 # Only gate on gsd-complete-milestone

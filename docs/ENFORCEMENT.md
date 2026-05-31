@@ -6,7 +6,7 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 
 | # | Layer | Mechanism | Fires On | What It Prevents |
 |---|-------|-----------|----------|-----------------|
-| 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Every Skill tool call | Skills invoked but not tracked |
+| 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Claude `Skill` tool calls and Codex `silver-bullet invoke-skill` receipts | Skills invoked through a supported channel but not tracked |
 | 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, MultiEdit, Bash | Code changes before planning is complete. Uses active `.planning/workflows/<id>.md` admission control first, then legacy skill markers when no composed workflow is active. |
 | 3 | **Planning File Guard** | `planning-file-guard.sh` (PreToolUse) | Edit, Write, MultiEdit | Direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of owning GSD skill |
 | 4 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. Uses `SB_WORKFLOW_ID`-matched `.planning/workflows/<id>.md` first, then legacy fallback when no composed workflow is active. |
@@ -15,7 +15,7 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 | 7 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
 | 8 | **Stop Hook** | `stop-check.sh` (Stop/SubagentStop) | Task-complete declaration | Declaring done before required planning skills are in state |
 | 9 | **Prompt Recorder + Reminder** | `record-requested-skill.sh` + `prompt-reminder.sh` (UserPromptSubmit) | Every user message | Requested SB/GSD routes are recorded before the next turn; missing skills are re-injected |
-| 10 | **Forbidden Skill Gate** | `forbidden-skill-check.sh` (PreToolUse/Skill) | Every Skill invocation | Deprecated/forbidden skills (`executing-plans`, `subagent-driven-development`) |
+| 10 | **Forbidden Skill Gate** | `forbidden-skill-check.sh` (PreToolUse/Skill) | Every Claude Skill invocation | Deprecated/forbidden skills (`executing-plans`, `subagent-driven-development`) |
 | 11 | **ROADMAP Freshness Gate** | `roadmap-freshness.sh` (PreToolUse/Bash) | git commit | Committing SUMMARY.md without ticking the corresponding ROADMAP.md checkbox |
 | 12 | **Redundant Instructions** | `silver-bullet.md` + optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present) | Every session | Same rules enforced across multiple surfaces for defense-in-depth |
 

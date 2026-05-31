@@ -104,6 +104,7 @@ sync_marketplace_package_surface() {
   local root="$1"
   local source_package="$repo_root/plugins/silver-bullet"
   local dest_package="$root/plugins/silver-bullet"
+  local sanitizer="$repo_root/scripts/codex-sanitize-package.sh"
 
   [[ -d "$source_package" ]] || {
     echo "ERROR: source Codex package not found: $source_package" >&2
@@ -116,6 +117,13 @@ sync_marketplace_package_surface() {
   # marketplace package as materialized files so skill-picker discovery does not
   # depend on installer-side repair.
   rsync -aL --delete --exclude '.git/' "${source_package}/" "${dest_package}/"
+
+  if [[ -x "$sanitizer" ]]; then
+    "$sanitizer" "$dest_package"
+  else
+    echo "ERROR: Codex package sanitizer not found or not executable: $sanitizer" >&2
+    exit 1
+  fi
 }
 
 sync_marketplace_repo "$codex_marketplace_repo_root"

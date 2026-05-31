@@ -1,6 +1,6 @@
 # DevOps Cycle Workflow
 
-> **ENFORCED** -- Silver Bullet hooks track Skill tool invocations for quality gates
+> **ENFORCED** -- Silver Bullet hooks track supported skill invocation events/receipts for quality gates
 > and gap-filling skills. GSD's own hooks (workflow guard, context monitor) enforce
 > GSD step compliance independently. Both enforcement layers run in parallel.
 >
@@ -17,7 +17,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Skill tool -- `/silver:blast-radius`, `/devops-quality-gates`, `/silver:forensics`, etc. |
+| Silver Bullet skills | runtime-native skill invocation channel -- `/silver:blast-radius`, `/devops-quality-gates`, `/silver:forensics`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -254,7 +254,7 @@ Typical duration: 5-10 minutes.
 
 **Produces:** `.planning/phases/{phase}-CONTEXT.md`
 
-**Conditional sub-steps** (invoke via Skill tool if applicable):
+**Conditional sub-steps** (invoke through the active runtime's SB-recognized skill invocation channel if applicable):
 - If this phase introduces a **new service or major component**: `/system-design`
 - If this phase introduces an **architectural decision**: write an ADR inline
   (structure: title, status, context, decision, consequences) before moving to blast radius.
@@ -788,7 +788,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (silver-blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
-  by PostToolUse hooks that track Skill tool invocations. "I already covered this" is NOT valid.
+  by PostToolUse hooks that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.

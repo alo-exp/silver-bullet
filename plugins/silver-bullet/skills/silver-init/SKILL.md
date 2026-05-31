@@ -36,7 +36,7 @@ If `NEEDED`:
 
 ### −1.1 Load project context
 
-Use the Read tool to read each of the following files **if they exist** (check with Bash `test -f` first):
+Use the active runtime file-reading mechanism to read each of the following files **if they exist** (check with Bash `test -f` first):
 
 1. `README.md` — project overview and usage
 2. `CONTEXT.md` — project-specific context
@@ -56,7 +56,7 @@ If it exists, use the Glob tool to find all markdown files:
 docs/**/*.md
 ```
 
-Read each file found using the Read tool.
+Read each file found using the active runtime file-reading mechanism.
 
 ### −1.3 Compact context
 
@@ -65,7 +65,7 @@ Use the Bash tool to run:
 touch ~/.codex/.silver-bullet/session-init
 ```
 
-Then summarize the loaded context and continue without relying on `context compaction`.
+Then summarize the loaded context and continue without relying on context compaction.
 
 ---
 
@@ -129,7 +129,7 @@ Use the Glob tool to search for Design plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/design:design-system` via the Skill tool as a fallback check. If that also fails, ask the user directly:
+If no files found in any of those patterns, try invoking `/design:design-system` through the active runtime's SB-recognized skill invocation channel as a fallback check. If that also fails, ask the user directly:
 - Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -148,7 +148,7 @@ Use the Glob tool to search for Engineering plugin skills in these paths:
 
 Expand `~` to the user's home directory.
 
-If no files found in any of those patterns, try invoking `/engineering:documentation` via the Skill tool as a fallback check. If that also fails, ask the user directly:
+If no files found in any of those patterns, try invoking `/engineering:documentation` through the active runtime's SB-recognized skill invocation channel as a fallback check. If that also fails, ask the user directly:
 - Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
 - Options:
   - "A. Yes, I've installed it — continue"
@@ -185,7 +185,7 @@ Keep bootstrap terminology aligned to the current runtime:
 
 ### 1.7 v1 incompatibility check
 
-Use the Read tool to read `.codex/settings.json` in the project root. If the file does not exist, skip this check.
+Use the active runtime file-reading mechanism to read `.codex/settings.json` in the project root. If the file does not exist, skip this check.
 
 If the file exists, inspect its contents for any references to:
 - `record-skill.sh`
@@ -204,7 +204,7 @@ Ask the user directly:
   - "A. Yes, remove them"
   - "B. No, stop init"
 
-If user selects A, use the Edit tool to remove the offending hook entries from `.codex/settings.json`. If user selects B, STOP.
+If user selects A, use the active runtime file-editing mechanism to remove the offending hook entries from `.codex/settings.json`. If user selects B, STOP.
 
 ### 1.8 MultAI plugin
 
@@ -263,7 +263,7 @@ If installed < latest, ask the user directly:
   - "A. Yes, update now"
   - "B. Skip, continue with current version"
 
-If user selects A: invoke `/silver:update` via the Skill tool. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
+If user selects A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
 If user selects B: output "Skipping SB update." and proceed.
 If version check fails (curl error, missing file, or either version is "unknown"): output "Could not check SB version (offline?). Continuing..." and proceed.
 
@@ -287,7 +287,7 @@ If both versions are known and installed < latest, ask the user directly:
   - "A. Yes, update now"
   - "B. Skip, continue with current version"
 
-If user selects A: invoke `/gsd-update` via the Skill tool. After it completes, output "GSD updated. Continuing init..." and proceed.
+If user selects A: invoke `/gsd-update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "GSD updated. Continuing init..." and proceed.
 If user selects B: output "Skipping GSD update." and proceed.
 If either version is "unknown": output "Could not determine GSD version. Continuing..." and proceed.
 
@@ -381,8 +381,8 @@ Ask the user directly:
   - "B. Existing codebase — map it first before scaffolding"
   - "C. Skip project initialization — I'll handle it manually"
 
-If A: invoke `/gsd-new-project` via the Skill tool. After it completes, continue.
-If B: invoke `/gsd-map-codebase` via the Skill tool, then `/gsd-scan`. After both complete, offer to run `/gsd-new-project`. Then continue.
+If A: invoke `/gsd-new-project` through the active runtime's SB-recognized skill invocation channel. After it completes, continue.
+If B: invoke `/gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel, then `/gsd-scan`. After both complete, offer to run `/gsd-new-project`. Then continue.
 If C: continue without project initialization.
 
 **If EXISTING project:**
@@ -393,11 +393,11 @@ test -d ".planning/codebase" && echo "INTEL_EXISTS" || echo "NO_INTEL"
 
 If NO_INTEL and project appears brownfield (has source files but no .planning/codebase/):
 Display: "No codebase intelligence found. Running gsd-scan to orient planning..."
-Invoke `/gsd-scan` via the Skill tool. After it completes, continue.
+Invoke `/gsd-scan` through the active runtime's SB-recognized skill invocation channel. After it completes, continue.
 
 ### 2.2 Detect project name
 
-1. Use the Read tool to check for these files in the project root (in order):
+1. Use the active runtime file-reading mechanism to check for these files in the project root (in order):
    `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `pom.xml`, `build.gradle`,
    `build.gradle.kts`, `Gemfile`, `composer.json`, `mix.exs`, `Package.swift`,
    `*.csproj`, `*.sln`, `pubspec.yaml`.
@@ -554,7 +554,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (pre-v0.7.0 migration) and remove the old-style reference line that does not mention `silver-bullet.md`.
 4. If the project instruction file already exists, ensure it has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing. If no project instruction file exists, skip this step.
 5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
-6. Invoke `silver:ensure-docs --bootstrap` via the Skill tool so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
+6. Invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
 7. Re-register/refresh SB hooks (step 3.7.5 in the reference).
 8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
@@ -569,7 +569,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 
 - **3.1c Conflict resolution** (only when an existing project instruction file is present — no silent override guarantee):
 
-  **3.1c-1 Build the section inventory.** Use the Read tool to load `${PLUGIN_ROOT}/templates/CLAUDE.md.base` (the Silver Bullet template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
+  **3.1c-1 Build the section inventory.** Use the active runtime file-reading mechanism to load `${PLUGIN_ROOT}/templates/CLAUDE.md.base` (the Silver Bullet template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
 
   **3.1c-2 Categorize each section:**
   - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision. If the content is identical, preserve as-is (no prompt needed).
@@ -605,7 +605,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing filename (`CLAUDE.md` or `AGENTS.md`) when writing it back out.
 - **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
-- **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` via the Skill tool. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
+- **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.

@@ -449,6 +449,29 @@ sync_codex_cache_package_surface() {
   shopt -u nullglob
 }
 
+install_silver_bullet_codex_cli() {
+  local bin_dir="${CODEX_HOME_ROOT}/.codex/bin"
+  local cli_path="${bin_dir}/silver-bullet"
+  local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
+  local target_path="${package_root}/current/scripts/silver-bullet"
+  local latest_dir
+
+  if [[ ! -f "$target_path" ]]; then
+    latest_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1 || true)"
+    target_path="${latest_dir}/scripts/silver-bullet"
+  fi
+
+  [[ -f "$target_path" ]] || return 0
+
+  mkdir -p "$bin_dir"
+  cat > "$cli_path" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$target_path" "\$@"
+EOF
+  chmod 700 "$cli_path"
+}
+
 ensure_silver_bullet_registry_entry() {
   local registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
 
@@ -1700,6 +1723,7 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
 fi
 sanitize_codex_package_surface
 sync_codex_cache_package_surface
+install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
 normalize_codex_hook_async_flags

@@ -122,7 +122,7 @@ C. Switch to a different workflow or stop.
 
 For the highest-priority available skill:
 
-1. Invoke it via the Skill tool. The exact syntax depends on how each plugin
+1. Invoke it through the active runtime's SB-recognized skill invocation channel. The exact syntax depends on how each plugin
    registers its skills. Try these patterns in order:
    - `/<plugin-namespace>:<skill-name>` (e.g., `/hashicorp:terraform-code-generation`)
    - `/<skill-name>@<plugin-name>` (e.g., `/terraform-code-generation@hashicorp`)

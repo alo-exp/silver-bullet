@@ -45,7 +45,7 @@ Use the disambiguation table to determine mode:
 
 ## Step 1: Load quality dimension skills
 
-Use the Read tool to read each of the following files:
+Use the active runtime file-reading mechanism to read each of the following files:
 
 1. `${PLUGIN_ROOT}/skills/modularity/SKILL.md`
 2. `${PLUGIN_ROOT}/skills/reusability/SKILL.md`

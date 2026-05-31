@@ -25,7 +25,7 @@ At the very start of any new session, perform these steps automatically:
    Compare as semver. If installed < latest, ask the user directly:
    - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
-   If A: invoke `/silver:update` via the Skill tool, then continue.
+   If A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel, then continue.
    If B or check fails (offline/unknown): output "Skipping SB update." and continue.
 
    **5.2 GSD**
@@ -36,7 +36,7 @@ At the very start of any new session, perform these steps automatically:
    Compare as semver. If installed < latest, ask the user directly:
    - Question: "GSD v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
-   If A: invoke `/gsd-update` via the Skill tool, then continue.
+   If A: invoke `/gsd-update` through the active runtime's SB-recognized skill invocation channel, then continue.
    If B or either version is unknown: output "Skipping GSD update." and continue.
 
    **5.3 Plugins (informational)**
@@ -63,7 +63,7 @@ At the very start of any new session, perform these steps automatically:
    - "MultAI v{installed} appears outdated. Update manually with `/multai:update` if you plan to use optional multi-AI perspectives in this session."
    If the plugin is missing or the version is unknown: output "MultAI not installed. Optional; skipping." and continue.
 
-> **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip context compaction. Evidence: no Read tool calls for docs/ files in session start.
+> **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip context compaction. Evidence: no active runtime file-reading mechanism calls for docs/ files in session start.
 
 ---
 
@@ -71,7 +71,7 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
+1. **Skill tracker** (Claude Skill events or Codex `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning GSD skill
@@ -93,8 +93,16 @@ invocation (calling a skill and dismissing its output) satisfies the
 hook technically but violates the workflow intent and will be caught
 during code review or verification.
 
+**Skill invocation compatibility**: Required workflow skills must be recorded through
+one of SB's supported runtime-native invocation channels:
+
+- Claude Code: `Skill` tool events.
+- Codex: the SB-owned `silver-bullet invoke-skill <name>` adapter, which prints the skill body and emits a hook-validated receipt.
+
+Reading `SKILL.md`, editing state files, or manually appending markers never counts.
+
 **GSD command visibility**: GSD commands (`/gsd:discuss-phase`, etc.)
-are tracked via their Skill tool invocations and recorded as `gsd-*`
+are tracked via supported runtime-native invocations and recorded as `gsd-*`
 markers in the state file. The compliance status shows `GSD N/5` for
 the 5 core phases. However, recording only proves invocation — it does
 not verify GSD phases completed successfully.
@@ -273,7 +281,7 @@ so the user can follow along without being asked to act.
 ### 2g. Bare Instruction Interception
 
 When the user sends a **bare instruction** — a message that is not a slash command and is
-non-trivial in nature — SB MUST intercept it and invoke `/silver` via the Skill tool before
+non-trivial in nature — SB MUST intercept it and invoke `/silver` through the active runtime's SB-recognized skill invocation channel before
 doing anything else. `/silver` routes the instruction to the correct GSD command, Superpowers
 skill, or SB skill.
 
@@ -293,7 +301,7 @@ If a reply or attached/pasted artifact introduces new action intent while a work
 **Process:**
 1. Receive bare instruction
 2. Classify: is it non-trivial work? If yes → intercept
-3. Invoke `/silver` via Skill tool, passing the original instruction as arguments
+3. Invoke `/silver` through the active runtime's SB-recognized skill invocation channel, passing the original instruction as arguments
 4. `/silver` handles routing — SB does not do the work directly
 
 > **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver orchestrator exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
@@ -420,7 +428,7 @@ You MUST NOT:
 - Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute a GSD phase (plan, execute, verify) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next GSD phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
-- Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST dispatch it as a subagent via the Agent tool so it runs in a fresh, independent context window. If subagent dispatch is not possible, ask the user to run `context compaction` before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
+- Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST delegate it through the active runtime's supported subagent or delegation mechanism so it runs in a fresh, independent context window. If subagent dispatch is not possible, summarize the current context or continue in a fresh context before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
 
 If you believe a step is genuinely not applicable, you MUST:
 1. State which step you want to skip
@@ -428,8 +436,9 @@ If you believe a step is genuinely not applicable, you MUST:
 3. Wait for explicit user approval before proceeding
 
 "I already covered this" is NOT valid. Each Silver Bullet skill MUST be
-explicitly invoked via the Skill tool — implicit coverage does not count
-because the enforcement hooks track Skill tool invocations, not your judgment.
+explicitly invoked through the active runtime's SB-recognized skill invocation
+channel — implicit coverage does not count because the enforcement hooks track
+supported skill invocation events/receipts, not your judgment.
 GSD steps MUST be invoked as slash commands in the correct phase order.
 
 **Rules**:
@@ -501,29 +510,29 @@ GSD commands that produce reviewable artifacts MUST be followed by a review roun
 
 **After /gsd:new-milestone completes:**
 
-1. **ROADMAP.md review (WFIN-04):** Invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` via the Skill tool. Do NOT commit the roadmap until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to ROADMAP.md and re-review automatically.
+1. **ROADMAP.md review (WFIN-04):** Invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the roadmap until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to ROADMAP.md and re-review automatically.
 
-2. **REQUIREMENTS.md review (WFIN-05):** Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool. Do NOT commit requirements until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to REQUIREMENTS.md and re-review automatically.
+2. **REQUIREMENTS.md review (WFIN-05):** Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` through the active runtime's SB-recognized skill invocation channel. Do NOT commit requirements until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to REQUIREMENTS.md and re-review automatically.
 
 Run these reviews in sequence (ROADMAP first, then REQUIREMENTS) since requirements reference the roadmap.
 
 **After /gsd:discuss-phase completes:**
 
-3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` via the Skill tool. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
+3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
 
 **After /gsd:plan-phase researcher step completes (before planning begins):**
 
-4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` via the Skill tool. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
+4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
 
 > **Note:** The `{phase}` placeholder refers to the current phase directory (e.g., `12-spec-foundation`). The artifact-reviewer resolves the absolute path internally.
 
 ## 3b. GSD Command Tracking
 
 GSD command markers are recorded **automatically** by `record-skill.sh` whenever a
-GSD command is invoked via the Skill tool. No manual state writes are needed or permitted
+GSD command is invoked through a supported runtime-native channel. No manual state writes are needed or permitted
 — direct writes to the state file are blocked by `dev-cycle-check.sh` tamper detection.
 
-When a GSD command is invoked via the Skill tool, `record-skill.sh` records the
+When a GSD command is invoked through that channel, `record-skill.sh` records the
 `gsd-` prefixed marker automatically:
 
 | Skill invocation | Recorded marker |
@@ -538,7 +547,7 @@ These markers allow `compliance-status.sh` to display a GSD phase counter (e.g. 
 
 They also feed the workflow-chain guard: when a composed `silver:feature`, `silver:ui`, or `silver:research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
 
-> **Anti-Skip:** You are violating this rule if you invoke a GSD command outside the Skill tool. Markers are recorded only by the PostToolUse:Skill hook — there is no other recording mechanism, and manual state writes are blocked.
+> **Anti-Skip:** You are violating this rule if you invoke a GSD command outside the active runtime's SB-recognized skill invocation channel. Markers are recorded only by supported invocation events or receipts, and manual state writes are blocked.
 
 ### 3b-i. Deferred-Item Capture (mandatory, all sessions)
 
@@ -575,7 +584,7 @@ Skill(skill="silver-rem", args="<insight or lesson text>")
 
 ## 3c. Completion Claim Verification
 
-**Rule:** Whenever any plugin, skill, or subagent (GSD, Superpowers, Design, Engineering, or any other) declares a task, plan, phase, or step complete, SB MUST invoke `/verification-before-completion` via the Skill tool before accepting that claim and moving on.
+**Rule:** Whenever any plugin, skill, or subagent (GSD, Superpowers, Design, Engineering, or any other) declares a task, plan, phase, or step complete, SB MUST invoke `/verification-before-completion` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
 
 **Trigger:** Any of these signals from a plugin/skill/subagent constitutes a completion claim:
 - `## PLANNING COMPLETE`, `## EXECUTION COMPLETE`, `## VERIFICATION COMPLETE`
@@ -586,7 +595,7 @@ Skill(skill="silver-rem", args="<insight or lesson text>")
 
 **What to do:**
 1. Identify the specific claim being made (e.g. "Plan 09-01 executed — 2 tasks complete, SUMMARY.md written")
-2. Invoke `/verification-before-completion` via the Skill tool, passing the claim as context
+2. Invoke `/verification-before-completion` through the active runtime's SB-recognized skill invocation channel, passing the claim as context
 3. Run the verification checks that skill prescribes against the actual artifacts
 4. Only after fresh evidence confirms the claim: accept it and advance to the next step
 
@@ -858,7 +867,7 @@ Silver Bullet's enforcement model is built on the host runtime's **PostToolUse /
 
 ### What breaks in those runtimes
 
-- `PostToolUse/Skill` does not fire → `record-skill.sh` is never invoked → state file stays empty
+- No supported skill invocation event/receipt is observed → `record-skill.sh` is never invoked → state file stays empty
 - `PreToolUse/Bash` does not fire → `completion-audit.sh` does not gate `gh release create` / `gh pr create` / `deploy`
 - `Stop` may or may not fire depending on the runtime; when it does, it sees an empty state file and blocks; when it doesn't, no enforcement
 
@@ -867,7 +876,7 @@ This is the same root cause for the previously open issues #48 and #50. The repo
 ### Workarounds
 
 1. **Run releases from the host CLI.** This is the canonical SB-supported runtime. All hooks fire and gates work as intended.
-2. **Manually record skills in agent-mode sessions.** When forced to run inside an SDK / web session that does not load hooks, invoke each required skill and then explicitly write its name to the SB state file via a Bash command. This is brittle and not recommended for releases.
+2. **Use supported skill invocation channels in agent-mode sessions.** When forced to run inside an SDK / web session that does not load hooks, invoke each required skill through the active runtime's supported channel. Direct state-file writes are not supported and must not be used for releases.
 3. **Detect agent-mode and refuse delivery actions.** A future SB version may add a startup probe that detects the absence of hook-protocol support and warns / blocks `gh release create` from agent-mode sessions outright. Filed as a follow-up; see the seed file for design constraints.
 
 ### Enabling hooks in SDK sessions

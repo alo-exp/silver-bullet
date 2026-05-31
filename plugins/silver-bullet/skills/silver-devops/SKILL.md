@@ -158,54 +158,54 @@ When the user requests skipping any step:
 
 ## Step 0: Codebase Intel
 
-Invoke `gsd-scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `gsd-scan` through the active runtime's SB-recognized skill invocation channel. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
-If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` via the Skill tool.
+If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 1: Blast Radius Analysis
 
-Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
+Invoke `silver:blast-radius` through the active runtime's SB-recognized skill invocation channel. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
 
 ## Step 2: DevOps Skill Router
 
-Invoke `devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
+Invoke `devops-skill-router` through the active runtime's SB-recognized skill invocation channel. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
+Invoke `devops-quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
 
 Note: this is NOT the standard product `silver:quality-gates` sweep. The devops workflow uses `devops-quality-gates` exclusively at both quality gate positions.
 
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
-Invoke `security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
+Invoke `security` through the active runtime's SB-recognized skill invocation channel. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` via the Skill tool. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
+Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
 
 ## Step 5: Plan Phase
 
-Invoke `gsd-plan-phase` via the Skill tool. Purpose: PLAN.md for the infrastructure change.
+Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md for the infrastructure change.
 
 ## Step 6: Execute Phase (IaC validation, not app TDD)
 
-If mode is Interactive: invoke `gsd-execute-phase` via the Skill tool.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` via the Skill tool.
+If mode is Interactive: invoke `gsd-execute-phase` through the active runtime's SB-recognized skill invocation channel.
+If mode is Autonomous (§10e): invoke `gsd-autonomous` through the active runtime's SB-recognized skill invocation channel.
 
 **Application TDD is explicitly skipped for pure infra plans.** Infrastructure and configuration work is declarative; use provider plan/dry-run, policy-as-code, security scans, drift checks, and rollback verification. Do not invoke `tdd` unless the DevOps phase includes behavior-changing application code.
 
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `requesting-code-review` (superpowers:requesting-code-review) via the Skill tool.
-2. Invoke `gsd-code-review` via the Skill tool. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant infra changes: invoke `gsd-review --all` via the Skill tool (fans out to all available external CLIs for cross-AI review).
-4. Invoke `receiving-code-review` (superpowers:receiving-code-review) via the Skill tool.
+1. Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. If issues found: invoke `gsd-code-review-fix`.
+3. For architecturally significant infra changes: invoke `gsd-review --all` through the active runtime's SB-recognized skill invocation channel (fans out to all available external CLIs for cross-AI review).
+4. Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 8: IaC Security + Secrets Verification
 
-Invoke `gsd-secure-phase` via the Skill tool. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+Invoke `gsd-secure-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -224,11 +224,11 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 9: Deployment Verification
 
-Invoke `gsd-verify-work` via the Skill tool. Purpose: deployment verification and UAT. Non-skippable gate.
+Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+Invoke `devops-quality-gates` through the active runtime's SB-recognized skill invocation channel again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 
@@ -252,4 +252,4 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 11: Ship / Deploy
 
-Invoke `gsd-ship` via the Skill tool. Purpose: push branch, deploy, create PR.
+Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.
