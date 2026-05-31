@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.10] — 2026-06-01
+
+## Bug Fixes
+
+- `fix(codex): ignore stale top-level marketplace skills during public Codex refresh`
+- `fix(codex): keep the published Silver Bullet package as the authoritative public-release skill surface`
+
+## Tests
+
+- `test(codex): cover public-release refresh with stale marketplace forge-delegate and writing-plans skill directories`
+
+## Chores
+
+- `chore(release): prepare v0.37.10`
+
+---
+
 ## [0.37.9] — 2026-06-01
 
 ## Bug Fixes
