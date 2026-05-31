@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+LIB_DIR="${PLUGIN_ROOT}/hooks/lib"
+
+if [[ -f "${LIB_DIR}/runtime-paths.sh" ]]; then
+  # shellcheck source=../hooks/lib/runtime-paths.sh
+  source "${LIB_DIR}/runtime-paths.sh"
+fi
+if [[ -f "${LIB_DIR}/skill-discovery.sh" ]]; then
+  # shellcheck source=../hooks/lib/skill-discovery.sh
+  source "${LIB_DIR}/skill-discovery.sh"
+fi
+
+usage() {
+  cat <<'USAGE'
+Usage: silver-bullet invoke-skill <skill-name>
+
+Codex-compatible Silver Bullet skill invocation adapter.
+
+The adapter validates that the skill is installed, prints the skill body for the
+agent to follow, and emits an SB-owned invocation receipt. The record-skill hook
+records completion only when a matching receipt is observed after this command.
+Reading SKILL.md directly or editing state files does not count.
+USAGE
+}
+
+canonical_skill_name() {
+  local skill="$1"
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    sb_skill_canonical_name "$skill"
+    return
+  fi
+
+  if [[ "$skill" == gsd:* ]]; then
+    printf 'gsd-%s' "${skill#gsd:}"
+    return
+  fi
+  if [[ "$skill" == silver:* ]]; then
+    printf 'silver-%s' "${skill#silver:}"
+    return
+  fi
+  while [[ "$skill" == *:* ]]; do
+    skill="${skill#*:}"
+  done
+  printf '%s' "$skill"
+}
+
+append_skill_roots() {
+  local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT:-${HOME}/.codex/plugins/cache}"
+  local candidate
+
+  SKILL_ROOTS+=(
+    "${PLUGIN_ROOT}/skills"
+    "${PLUGIN_ROOT}/.generated-skills"
+    "${PLUGIN_ROOT}/agents/codex"
+    "${PLUGIN_ROOT}/agents/claude"
+    "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
+    "${HOME}/.codex/skills"
+    "${HOME}/.agents/skills"
+  )
+
+  shopt -s nullglob
+  for candidate in \
+    "${cache_root}"/*/skills \
+    "${cache_root}"/*/*/skills \
+    "${cache_root}"/*/*/*/skills \
+    "${cache_root}"/*/*/*/*/skills; do
+    [[ -d "$candidate" ]] && SKILL_ROOTS+=("$candidate")
+  done
+  shopt -u nullglob
+}
+
+find_skill_file() {
+  local raw_skill="$1"
+  local canonical_skill="$2"
+  local short_skill="${raw_skill##*:}"
+  local root name candidate escaped_raw escaped_canonical
+  SKILL_ROOTS=()
+  append_skill_roots
+
+  for root in "${SKILL_ROOTS[@]}"; do
+    [[ -d "$root" ]] || continue
+    for name in "$canonical_skill" "$raw_skill" "$short_skill"; do
+      [[ -n "$name" ]] || continue
+      candidate="${root}/${name}/SKILL.md"
+      if [[ -f "$candidate" ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+    done
+  done
+
+  escaped_raw=$(printf '%s' "$raw_skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
+  escaped_canonical=$(printf '%s' "$canonical_skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
+  for root in "${SKILL_ROOTS[@]}"; do
+    [[ -d "$root" ]] || continue
+    if command -v rg >/dev/null 2>&1; then
+      candidate=$(rg -l -m1 -g 'SKILL.md' "^(name:[[:space:]]*(${escaped_raw}|${escaped_canonical})[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
+    else
+      candidate=$(grep -Rls -E "^(name:[[:space:]]*(${escaped_raw}|${escaped_canonical})[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
+    fi
+    if [[ -n "$candidate" && -f "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+write_receipt() {
+  local raw_skill="$1"
+  local canonical_skill="$2"
+  local skill_file="$3"
+  local receipt_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.codex/.silver-bullet}/skill-invocations"
+  local timestamp receipt_file script_real cwd_real
+
+  if [[ -L "$receipt_dir" ]]; then
+    printf 'ERROR: refusing to write invocation receipt through symlinked directory: %s\n' "$receipt_dir" >&2
+    return 1
+  fi
+  mkdir -p "$receipt_dir"
+
+  timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+  receipt_file="${receipt_dir}/${canonical_skill}.$(date +%s).$$.${RANDOM}.json"
+  script_real="$(python3 -c 'import pathlib,sys; print(pathlib.Path(sys.argv[1]).resolve())' "$SCRIPT_PATH")"
+  cwd_real="$(python3 -c 'import pathlib; print(pathlib.Path.cwd().resolve())')"
+
+  python3 - "$receipt_file" "$raw_skill" "$canonical_skill" "$skill_file" "$script_real" "$cwd_real" "$timestamp" <<'PY'
+import json
+import pathlib
+import sys
+import time
+
+receipt_path = pathlib.Path(sys.argv[1])
+payload = {
+    "channel": "silver-bullet.invoke-skill",
+    "status": "loaded",
+    "raw_skill": sys.argv[2],
+    "canonical_skill": sys.argv[3],
+    "skill_file": str(pathlib.Path(sys.argv[4]).resolve()),
+    "script": sys.argv[5],
+    "cwd": sys.argv[6],
+    "timestamp": sys.argv[7],
+    "timestamp_epoch": int(time.time()),
+}
+receipt_path.write_text(json.dumps(payload, sort_keys=True) + "\n")
+PY
+}
+
+invoke_skill() {
+  local raw_skill="${1:-}"
+  local canonical_skill skill_file
+
+  if [[ -z "$raw_skill" ]]; then
+    usage >&2
+    return 2
+  fi
+
+  canonical_skill="$(canonical_skill_name "$raw_skill")"
+  if ! skill_file="$(find_skill_file "$raw_skill" "$canonical_skill")"; then
+    printf 'ERROR: skill not installed or not discoverable: %s\n' "$raw_skill" >&2
+    return 1
+  fi
+
+  write_receipt "$raw_skill" "$canonical_skill" "$skill_file"
+
+  printf 'Silver Bullet skill invocation adapter\n'
+  printf 'Skill: %s\n' "$raw_skill"
+  printf 'Canonical: %s\n' "$canonical_skill"
+  printf 'Source: %s\n\n' "$skill_file"
+  printf '%s\n' "----- BEGIN SKILL ${canonical_skill} -----"
+  cat "$skill_file"
+  printf '\n%s\n' "----- END SKILL ${canonical_skill} -----"
+  printf '\nFollow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'
+}
+
+main() {
+  local command="${1:-}"
+  case "$command" in
+    invoke-skill)
+      shift
+      invoke_skill "$@"
+      ;;
+    -h|--help|help|"")
+      usage
+      ;;
+    *)
+      printf 'ERROR: unknown command: %s\n' "$command" >&2
+      usage >&2
+      return 2
+      ;;
+  esac
+}
+
+main "$@"

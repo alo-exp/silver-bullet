@@ -251,7 +251,7 @@ for skill in $final_skills; do
   fi
 done
 
-# --- GSD PHASES (tracked when /gsd:* commands fire via Skill tool) ---
+# --- GSD PHASES (tracked when /gsd:* commands fire through a supported skill invocation channel) ---
 gsd_core_skills="gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship"
 gsd_done=0
 gsd_total=0

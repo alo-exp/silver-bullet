@@ -248,7 +248,7 @@ See CLAUDE.md §8 for details."
     if [[ "$file_path" == "${SB_STATE_DIR_EARLY}/"* ]]; then
       emit_block "🚫 STATE TAMPER BLOCKED — Direct edits to Silver Bullet state files are not permitted.
 
-Skills are recorded automatically when invoked via the Skill tool. Modifying state files directly bypasses workflow enforcement.
+Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Modifying state files directly bypasses workflow enforcement.
 
 To reset the workflow state, remove the file from your terminal (not from Claude):
       rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
@@ -265,7 +265,7 @@ To reset the workflow state, remove the file from your terminal (not from Claude
          shell_writes_to_exact_path "$state_path"; }; then
       emit_block "🚫 STATE TAMPER BLOCKED — Writing to Silver Bullet state files bypasses workflow enforcement.
 
-Skills are recorded automatically when invoked via the Skill tool. Do not write to state files directly.
+Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Do not write to state files directly.
 
 To reset workflow state intentionally, run in your terminal:
       rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
@@ -411,7 +411,7 @@ To reset workflow state intentionally, run in your terminal:
     current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
     if [[ -n "$stored_branch" && -n "$current_branch" && "$stored_branch" != "$current_branch" ]]; then
       jq -n --arg s "$stored_branch" --arg c "$current_branch" \
-        '{"hookSpecificOutput":{"message":"Warning: Branch mismatch -- state recorded for [\($s)] but current branch is [\($c)]. Run /compact to reset."}}'
+        '{"hookSpecificOutput":{"message":"Warning: Branch mismatch -- state recorded for [\($s)] but current branch is [\($c)]. Restart the session or clear runtime context to reset."}}'
       # Warning only -- do not exit, let the rest of the hook proceed
     fi
   fi
@@ -427,7 +427,7 @@ To reset workflow state intentionally, run in your terminal:
 
   # --- Check if file/command matches src_pattern ---
   if [[ -n "$file_path" ]]; then
-    # Edit/Write tool — check file path
+    # File edit/write event — check file path
     if ! matches_src_scope "$file_path" "$src_pattern"; then
       exit 0
     fi
@@ -509,7 +509,7 @@ To reset workflow state intentionally, run in your terminal:
       esac
     fi
 
-    # Small Edit tool changes (combined old+new < 100 chars) are trivial (typo fixes)
+    # Small edit changes (combined old+new < 100 chars) are trivial (typo fixes)
     # Threshold reduced from 300 to 100 to prevent bypassing enforcement via incremental changes
     if [[ "$tool_name" == "Edit" ]]; then
       old_str_len=$(printf '%s' "$input" | jq -r '.tool_input.old_string // "" | length')

@@ -121,7 +121,7 @@ If user cancels, exit.
 Run the host-appropriate install command:
 
 ```bash
-claude mcp install silver-bullet@alo-labs
+bash "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/scripts/install-codex.sh" --purge-legacy-skills
 # Codex host: ./scripts/install-codex.sh --purge-legacy-skills
 ```
 

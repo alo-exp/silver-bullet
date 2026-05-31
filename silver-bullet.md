@@ -71,7 +71,7 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (PostToolUse/Skill) — Records every Silver Bullet skill invocation to the state file
+1. **Skill tracker** (Claude Skill events or Codex `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning GSD skill
@@ -93,8 +93,16 @@ invocation (calling a skill and dismissing its output) satisfies the
 hook technically but violates the workflow intent and will be caught
 during code review or verification.
 
+**Skill invocation compatibility**: Required workflow skills must be recorded through
+one of SB's supported runtime-native invocation channels:
+
+- Claude Code: `Skill` tool events.
+- Codex: the SB-owned `silver-bullet invoke-skill <name>` adapter, which prints the skill body and emits a hook-validated receipt.
+
+Reading `SKILL.md`, editing state files, or manually appending markers never counts.
+
 **GSD command visibility**: GSD commands (`/gsd:discuss-phase`, etc.)
-are tracked via their Skill tool invocations and recorded as `gsd-*`
+are tracked via supported runtime-native invocations and recorded as `gsd-*`
 markers in the state file. The compliance status shows `GSD N/5` for
 the 5 core phases. However, recording only proves invocation — it does
 not verify GSD phases completed successfully.
@@ -431,8 +439,9 @@ If you believe a step is genuinely not applicable, you MUST:
 3. Wait for explicit user approval before proceeding
 
 "I already covered this" is NOT valid. Each Silver Bullet skill MUST be
-explicitly invoked via the Skill tool — implicit coverage does not count
-because the enforcement hooks track Skill tool invocations, not your judgment.
+explicitly invoked through the active runtime's SB-recognized skill invocation
+channel — implicit coverage does not count because the enforcement hooks track
+supported skill invocation events/receipts, not your judgment.
 GSD steps MUST be invoked as slash commands in the correct phase order.
 
 **Rules**:
@@ -523,10 +532,10 @@ Run these reviews in sequence (ROADMAP first, then REQUIREMENTS) since requireme
 ## 3b. GSD Command Tracking
 
 GSD command markers are recorded **automatically** by `record-skill.sh` whenever a
-GSD command is invoked via the Skill tool. No manual state writes are needed or permitted
+GSD command is invoked through a supported runtime-native channel. No manual state writes are needed or permitted
 — direct writes to the state file are blocked by `dev-cycle-check.sh` tamper detection.
 
-When a GSD command is invoked via the Skill tool, `record-skill.sh` records the
+When a GSD command is invoked through that channel, `record-skill.sh` records the
 `gsd-` prefixed marker automatically:
 
 | Skill invocation | Recorded marker |
@@ -541,7 +550,7 @@ These markers allow `compliance-status.sh` to display a GSD phase counter (e.g. 
 
 They also feed the workflow-chain guard: when a composed `silver:feature`, `silver:ui`, or `silver:research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
 
-> **Anti-Skip:** You are violating this rule if you invoke a GSD command outside the Skill tool. Markers are recorded only by the PostToolUse:Skill hook — there is no other recording mechanism, and manual state writes are blocked.
+> **Anti-Skip:** You are violating this rule if you invoke a GSD command outside the active runtime's SB-recognized skill invocation channel. Markers are recorded only by supported invocation events or receipts, and manual state writes are blocked.
 
 ### 3b-i. Deferred-Item Capture (mandatory, all sessions)
 
@@ -998,7 +1007,7 @@ This is the same root cause for the previously open issues #48 and #50. The repo
 ### Workarounds
 
 1. **Run releases from the host CLI.** This is the canonical SB-supported runtime. All hooks fire and gates work as intended.
-2. **Manually record skills in agent-mode sessions.** When forced to run inside an SDK / web session that does not load hooks, invoke each required skill and then explicitly write its name to the SB state file via a Bash command. This is brittle and not recommended for releases.
+2. **Use supported skill invocation channels in agent-mode sessions.** When forced to run inside an SDK / web session that does not load hooks, invoke each required skill through the active runtime's supported channel. Direct state-file writes are not supported and must not be used for releases.
 3. **Detect agent-mode and refuse delivery actions.** A future SB version may add a startup probe that detects the absence of hook-protocol support and warns / blocks `gh release create` from agent-mode sessions outright. Filed as a follow-up; see the seed file for design constraints.
 
 ### Enabling hooks in SDK sessions

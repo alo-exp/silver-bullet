@@ -20,7 +20,7 @@ directories up.
 
 ## Step 1: Load quality dimension skills
 
-Use the Read tool to read each of the following core dimension files:
+Use the active runtime file-reading mechanism to read each of the following core dimension files:
 
 1. `${PLUGIN_ROOT}/skills/modularity/SKILL.md`
 2. `${PLUGIN_ROOT}/skills/scalability/SKILL.md`
