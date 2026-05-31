@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.37.9] — 2026-06-01
+
+## Bug Fixes
+
+- `fix(codex): expose /silver and /silver:* route tokens in Codex skill picker titles while preserving the Silver prefix`
+
+## Tests
+
+- `test(codex): assert every packaged silver route title includes its visible /silver route token`
+
+## Chores
+
+- `chore(release): prepare v0.37.9`
+
+---
+
 ## [0.37.8] — 2026-05-31
 
 ## Bug Fixes
