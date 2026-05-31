@@ -1,5 +1,6 @@
 ---
 name: devops-quality-gates
+title: Silver: DevOps Quality Gates
 description: This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /gsd:plan-phase in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop.
 user-invocable: false
 version: 0.1.0

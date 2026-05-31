@@ -1,6 +1,6 @@
 ---
 name: silver:remove
-title: Remove
+title: Silver: Remove
 description: This skill should be used to remove a tracked work item by ID — closes a GitHub Issue as "not planned" with a removed-by-silver-bullet label (when issue_tracker=github), or marks a local SB-I-N or SB-B-N entry with [REMOVED YYYY-MM-DD] inline in docs/issues/ISSUES.md or docs/issues/BACKLOG.md (when issue_tracker=gsd or absent).
 version: 0.1.0
 ---

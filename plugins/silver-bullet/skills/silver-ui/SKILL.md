@@ -1,6 +1,6 @@
 ---
 name: silver:ui
-title: UI
+title: Silver: UI
 description: >
   This skill should be used for full SB-orchestrated UI/frontend workflow: orient → clarify/decide → testing strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → verify → ship
 argument-hint: "<UI feature or component description>"

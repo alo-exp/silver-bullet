@@ -1,5 +1,6 @@
 ---
 name: review-roadmap
+title: Silver: Review Roadmap
 description: >
   This skill should be used for ROADMAP.md artifact reviewer — validates roadmap quality: required phase fields, 100% requirement coverage, no phantom requirements, no circular phase dependencies, success criteria derivation, and plans field completeness
 argument-hint: "<roadmap-path> [--source-inputs <requirements-path>]"

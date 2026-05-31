@@ -1,5 +1,6 @@
 ---
 name: review-research
+title: Silver: Review Research
 description: This skill should be used for RESEARCH.md artifact reviewer — validates that all findings cite evidence, confidence levels are justified, pitfalls are actionable, and recommendations are concrete and implementable
 argument-hint: "<research-path>"
 user-invocable: false

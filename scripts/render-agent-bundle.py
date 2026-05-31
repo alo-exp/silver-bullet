@@ -66,18 +66,25 @@ def rewrite_names(text: str) -> str:
     return NAME_RE.sub(repl, text, count=1)
 
 
-def codex_title_for_name(name: str) -> str | None:
-    if name == "silver":
-        return "Router"
-    if not name.startswith("silver:"):
-        return None
-
-    route = name.split(":", 1)[1]
+def humanize_codex_skill_name(name: str) -> str:
     return " ".join(
         CODEX_TITLE_WORD_OVERRIDES.get(part.lower(), part.capitalize())
-        for part in re.split(r"[-_\s]+", route)
+        for part in re.split(r"[-_\s]+", name)
         if part
     )
+
+
+def codex_title_for_name(name: str, current_title: str | None = None) -> str:
+    if name == "silver":
+        title = "Router"
+    elif name.startswith("silver:"):
+        title = humanize_codex_skill_name(name.split(":", 1)[1])
+    elif current_title:
+        title = current_title.removeprefix("Silver: ").strip()
+    else:
+        title = humanize_codex_skill_name(name)
+
+    return f"Silver: {title}"
 
 
 def ensure_codex_picker_title(text: str) -> str:
@@ -89,6 +96,7 @@ def ensure_codex_picker_title(text: str) -> str:
     name_idx: int | None = None
     title_idx: int | None = None
     skill_name: str | None = None
+    current_title: str | None = None
 
     for idx, line in enumerate(lines[1:], start=1):
         if line.strip() == "---":
@@ -101,14 +109,12 @@ def ensure_codex_picker_title(text: str) -> str:
             continue
         if re.match(r"^title:\s*", line) and title_idx is None:
             title_idx = idx
+            current_title = re.sub(r"^title:\s*", "", line).strip().strip('"')
 
     if frontmatter_end is None or name_idx is None or skill_name is None:
         return text
 
-    title = codex_title_for_name(skill_name)
-    if title is None:
-        return text
-
+    title = codex_title_for_name(skill_name, current_title=current_title)
     title_line = f"title: {title}\n"
     if title_idx is not None and title_idx < frontmatter_end:
         lines[title_idx] = title_line
