@@ -66,6 +66,7 @@ git -C "$MARKETPLACE" config user.email "tests@example.invalid"
 git -C "$MARKETPLACE" config user.name "Tests"
 git -C "$MARKETPLACE" add .
 git -C "$MARKETPLACE" commit -q -m "seed stale marketplace"
+git -C "$MARKETPLACE" branch -M local-release
 git -C "$TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
