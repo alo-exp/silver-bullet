@@ -1,6 +1,6 @@
 ---
 name: silver:ingest
-title: Silver: Ingest
+title: Silver: /silver:ingest - Ingest
 description: >
   This skill should be used for external artifact ingestion: JIRA/Figma/Google Docs to SPEC.md + DESIGN.md via MCP connectors, plus cross-repo spec fetch with version pinning
 argument-hint: "<JIRA ticket key, --source-url <repo-url>, or artifact URL>"

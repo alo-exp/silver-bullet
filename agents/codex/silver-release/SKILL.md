@@ -1,6 +1,6 @@
 ---
 name: silver:release
-title: Silver: Release
+title: Silver: /silver:release - Release
 description: >
   This skill should be used for SB-orchestrated milestone release: silver:quality-gates → audit → gap-closure (max 2x) → docs → GSD ship/complete milestone → silver:create-release
 argument-hint: "<version or release description, e.g. v1.2.0>"
