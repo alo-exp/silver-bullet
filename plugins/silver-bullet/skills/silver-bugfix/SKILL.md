@@ -1,6 +1,6 @@
 ---
 name: silver:bugfix
-title: Silver: Bugfix
+title: Silver: /silver:bugfix - Bugfix
 description: >
   This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → TDD regression test → plan → execute → review → verify → ship
 argument-hint: "<description of the bug or failure>"

@@ -1,6 +1,6 @@
 ---
 name: silver
-title: Silver: Router
+title: Silver: /silver - Router
 description: This skill should be used to route most non-trivial freeform user intent to the right Silver Bullet workflow or GSD skill automatically
 argument-hint: "<description of what you want to do>"
 version: 0.2.0
