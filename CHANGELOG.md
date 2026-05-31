@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.11] — 2026-06-01
+
+## Bug Fixes
+
+- `fix(codex): reset the cached Codex marketplace clone before public refresh installs`
+- `fix(codex): remove stale untracked Silver Bullet package skills before copying the live cache`
+
+## Tests
+
+- `test(codex): cover public-release refresh from a dirty marketplace clone with stale package skill directories`
+
+## Chores
+
+- `chore(release): prepare v0.37.11`
+
+---
+
 ## [0.37.10] — 2026-06-01
 
 ## Bug Fixes
