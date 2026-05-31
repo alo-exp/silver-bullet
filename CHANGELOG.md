@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.5] — 2026-05-31
+
+## Bug Fixes
+
+- `fix(codex): materialize the full Silver Bullet package during Codex marketplace release sync`
+- `fix(codex): repair active Codex installs so the SB skill picker sees the packaged skills tree`
+
+## Tests
+
+- `test(codex): cover stale symlinked marketplace skills during release sync`
+
+## Chores
+
+- `chore(release): prepare v0.37.5`
+
+---
+
 ## [0.37.4] — 2026-05-24
 
 ## Bug Fixes
