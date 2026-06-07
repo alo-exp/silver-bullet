@@ -35,7 +35,11 @@ resolve_silver_bullet_codex_adapter() {
   local candidate
 
   if [[ -n "$_lib_dir" ]]; then
-    hook_package_root="$(cd "$_lib_dir/../.." && pwd 2>/dev/null || true)"
+    if hook_package_root="$(cd "$_lib_dir/../.." && pwd 2>/dev/null)"; then
+      :
+    else
+      hook_package_root=""
+    fi
   fi
 
   for candidate in \
