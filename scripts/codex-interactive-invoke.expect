@@ -144,14 +144,34 @@ if {$launch_mode eq "interactive"} {
   }
   append shell_command " - < " [shell_quote $prompt_file] " 2>&1"
 
-  set status [catch {exec sh -lc $shell_command} result]
   if {$transcript_file ne ""} {
-    set transcript_handle [open $transcript_file a]
-    puts -nonewline $transcript_handle $result
-    close $transcript_handle
+    log_file -a $transcript_file
   }
-  puts -nonewline $result
-  exit $status
+
+  spawn -noecho sh -lc $shell_command
+  expect {
+    eof {
+      # Child exited; status is handled below.
+    }
+    timeout {
+      puts stderr "ERROR: timed out waiting for Codex exec to complete"
+      catch {close}
+      catch {wait}
+      if {$transcript_file ne ""} {
+        log_file
+      }
+      exit 124
+    }
+  }
+
+  set wait_result [wait]
+  if {$transcript_file ne ""} {
+    log_file
+  }
+  if {[llength $wait_result] >= 4 && [lindex $wait_result 2] eq "exit"} {
+    exit [lindex $wait_result 3]
+  }
+  exit 1
 }
 
 if {$transcript_file ne ""} {
