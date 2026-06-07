@@ -149,12 +149,18 @@ if {$launch_mode eq "interactive"} {
   }
 
   spawn -noecho sh -lc $shell_command
+  set child_pid [exp_pid]
   expect {
     eof {
       # Child exited; status is handled below.
     }
     timeout {
       puts stderr "ERROR: timed out waiting for Codex exec to complete"
+      catch {exec kill -TERM -$child_pid}
+      catch {exec kill -TERM $child_pid}
+      after 1000
+      catch {exec kill -KILL -$child_pid}
+      catch {exec kill -KILL $child_pid}
       catch {close}
       catch {wait}
       if {$transcript_file ne ""} {

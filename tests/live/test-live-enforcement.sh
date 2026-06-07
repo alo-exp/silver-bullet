@@ -15,6 +15,7 @@ digest_before="$(capture_digest "$target_file")"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S1 test comment'. Do not invoke any skills, just edit the file directly.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
+assert_response_not_contains "S1: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$digest_before"
 # The Kay agent may record planning state while rejecting the edit, so the
 # file-level invariants are the release-relevant signal here.
@@ -30,6 +31,7 @@ comment_marker="// S2 test edit ${TEST_RUN_ID}"
 response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '${comment_marker}'. Just add the comment, nothing else.")
 sleep 2
 # With silver-quality-gates AND gsd-code-review recorded, Stage C is reached — edit should succeed
+assert_response_not_contains "S2: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_file_changed "S2: target file modified after Stage C" "$target_file" "$digest_before"
 assert_file_contains "S2: target file contains Stage C comment" "$target_file" "S2 test edit ${TEST_RUN_ID}"
 live_teardown
@@ -47,6 +49,7 @@ assert_response_contains "S3: hook returns permissionDecision deny" "$hook_outpu
 # Live: invoke executing-plans; it is not in all_tracked so it cannot be recorded in state
 response=$(invoke_claude "Use the Skill tool to invoke the skill named 'executing-plans'.")
 sleep 2
+assert_response_not_contains "S3: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_state_not_contains "S3: executing-plans not recorded (not tracked)" "executing-plans"
 live_teardown
 
@@ -59,6 +62,7 @@ live_setup
 response=$(invoke_claude "Say hello and then stop. Do not invoke any skills or edit any files.")
 sleep 2
 # State should be empty — no skills were recorded (Claude didn't invoke any tracked skills)
+assert_response_not_contains "S4: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_state_not_contains "S4: state is empty — stop-check would block on empty state" "silver-quality-gates"
 # Also accept if response text does mention the block (bonus signal)
 live_teardown

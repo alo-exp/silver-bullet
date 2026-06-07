@@ -60,6 +60,7 @@ assert_exists "hook-delivery preflight exists" "${SCRIPT_DIR}/hook-delivery-pref
 assert_executable "hook-delivery preflight is executable" "${SCRIPT_DIR}/hook-delivery-preflight.sh"
 assert_exists "hook-failure scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-hook-failures.sh"
 assert_exists "full-surface journey exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"
+assert_file_contains "live enforcement rejects timeout output" "${REPO_ROOT}/tests/live/test-live-enforcement.sh" 'live turn did not time out'
 assert_file_contains "full-surface journey strips ANSI before evaluating responses" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'strip_ansi_response'
 assert_file_contains "full-surface journey rejects Codex timeout output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'timed out waiting for Codex prompt to complete'
 assert_file_contains "full-surface journey rejects stop-hook block output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'Cannot complete -- missing required skills'
