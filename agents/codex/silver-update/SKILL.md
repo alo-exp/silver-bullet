@@ -1,7 +1,7 @@
 ---
-name: silver:update
-title: Silver: /silver:update - Update
-description: This skill should be used when the user runs `/silver:update` or asks to update Silver Bullet — checks GitHub for the latest release, shows the changelog since the installed version, and installs the update after confirmation.
+name: "silver:update"
+title: "Silver: /silver:update - Update"
+description: "This skill should be used when the user runs `/silver:update` or asks to update Silver Bullet — checks GitHub for the latest release, shows the changelog since the installed version, and installs the update after confirmation."
 version: 0.1.0
 ---
 

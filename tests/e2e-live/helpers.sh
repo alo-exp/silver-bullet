@@ -891,9 +891,9 @@ verify_runtime_dependency_access() {
       assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md"
       assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver-feature/SKILL.md"
       assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
-      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init' 'name: silver-init'
-      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: silver-ensure-docs'
-      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature' 'name: silver-feature'
+      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init' 'name: "silver:init"' 'name: silver-init'
+      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: "silver:ensure-docs"' 'name: silver-ensure-docs'
+      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature' 'name: "silver:feature"' 'name: silver-feature'
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
       echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"
@@ -955,9 +955,9 @@ verify_runtime_dependency_access() {
     assert_command_succeeds "Codex design install path exposes package manifest" codex_plugin_surface_exists_any "design@alo-labs-codex" "design@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex product-management plugin registered" codex_plugin_registered_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local"
     assert_command_succeeds "Codex product-management install path exposes package manifest" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md" 'name: silver:init'
-    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs'
-    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md" 'name: silver:feature'
+    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-init/SKILL.md" 'name: "silver:init"'
+    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-ensure-docs/SKILL.md" 'name: "silver:ensure-docs"'
+    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skills/silver-feature/SKILL.md" 'name: "silver:feature"'
     assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skills/silver/SKILL.md" 'name: silver'
 
     if [[ "$E2E_RUNTIME" == "kay" ]]; then

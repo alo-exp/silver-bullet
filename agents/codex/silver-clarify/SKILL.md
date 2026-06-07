@@ -1,6 +1,6 @@
 ---
-name: silver:clarify
-title: Silver: /silver:clarify - Clarify
+name: "silver:clarify"
+title: "Silver: /silver:clarify - Clarify"
 description: Turn vague ideas or requirements into a decision-ready brief that merges PM framing and Superpowers brainstorming before handing off to GSD.
 argument-hint: "<idea, rough requirement, or requirement doc>"
 version: 0.1.0

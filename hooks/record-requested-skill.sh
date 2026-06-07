@@ -83,6 +83,10 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/session-ledger.sh" ]]; then
   # shellcheck source=lib/session-ledger.sh
   source "$_lib_dir/session-ledger.sh"
 fi
+if [[ -n "$_lib_dir" && -f "$_lib_dir/prompt-classifier.sh" ]]; then
+  # shellcheck source=lib/prompt-classifier.sh
+  source "$_lib_dir/prompt-classifier.sh"
+fi
 
 # ── Extract requested route(s) from prompt ──────────────────────────────────
 #
@@ -115,6 +119,12 @@ while IFS= read -r tok; do
   skills+=("$tok")
 done < <(printf '%s' "$prompt" | grep -oE '\\bgsd-[a-zA-Z0-9-]+\\b' 2>/dev/null | head -n 50 || true)
 
+if [[ ${#skills[@]} -eq 0 ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
+  if sb_prompt_is_bare_work_request "$prompt"; then
+    skills+=("silver")
+  fi
+fi
+
 [[ ${#skills[@]} -gt 0 ]] || finish_noop
 
 REQUESTED_FILE="${STATE_FILE}.requested"
@@ -138,6 +148,7 @@ canonicalize() {
 for raw in "${skills[@]}"; do
   skill="$(canonicalize "$raw")"
   case "$skill" in
+    silver) ;;
     silver-*) ;;
     gsd-*) ;;
     *) continue ;;

@@ -6,6 +6,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/completion-audit.sh"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
 
@@ -42,8 +43,9 @@ trap cleanup_all EXIT
 
 write_cfg() {
   local workflow="${1:-full-dev-cycle}"
-  cat > "$TMPCFG" << EOF
+cat > "$TMPCFG" << EOF
 {
+  "config_version": "${CURRENT_CONFIG_VERSION}",
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
@@ -347,6 +349,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
+  "config_version": "0.37.0",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],
@@ -1277,6 +1280,45 @@ WFROWS
 _make_workflow "$ID" "$rows"
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "WF-PASS2-K (#86): pending row still blocks even with skipped present" "$out"
+teardown
+
+echo "--- WF-PASS2-L: inline SB_WORKFLOW_ID admits final delivery command ---"
+setup
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
+| 2 | execute | complete | - | now |
+| 3 | release | complete | - | now |"
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+requesting-code-review
+gsd-code-review
+receiving-code-review
+finishing-a-development-branch
+silver-create-release
+verification-before-completion
+test-driven-development
+verify-tests
+EOF
+write_verify_tests_state
+out=$(run_hook "PreToolUse" "SB_WORKFLOW_ID=$ID gh pr create --title 'feat'")
+assert_passes "WF-PASS2-L: inline matching SB_WORKFLOW_ID allows final delivery" "$out"
+teardown
+
+echo "--- WF-PASS2-M: inline mismatched SB_WORKFLOW_ID still blocks final delivery ---"
+setup
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |"
+out=$(run_hook "PreToolUse" "SB_WORKFLOW_ID=20260101T000000Z-zzzzzz-silver-bugfix gh pr create --title 'feat'")
+assert_blocks "WF-PASS2-M: inline mismatched SB_WORKFLOW_ID blocks final delivery" "$out"
+assert_contains "WF-PASS2-M: error mentions no match" "$out" "No active workflow file matches"
+teardown
+
+echo "--- WF-PASS2-N: SB adapter skill invocation is not classified as deploy delivery ---"
+setup
+ID="20260428T120000Z-abc123-silver-feature"
+_make_workflow "$ID" "| 1 | bootstrap | complete | - | now |"
+out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill gsd-ship 'Ship marker; user did not request push/PR/deploy.'")
+assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill gsd-ship is not delivery-gated" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

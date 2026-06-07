@@ -71,6 +71,15 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  # shellcheck disable=SC1091
+  source "$_lib_dir/required-skills.sh"
+fi
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
+DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
@@ -132,6 +141,76 @@ fi
 is_intermediate=false
 is_completion=false
 cmd_first_line=$(printf '%s' "$cmd" | head -1)
+
+shell_payload_is_sb_skill_adapter_invocation() {
+  local payload="$1"
+  [[ -n "$payload" ]] || return 1
+  [[ "$payload" != *$'\n'* ]] || return 1
+  python3 - "$payload" <<'PY' >/dev/null 2>&1
+import pathlib
+import re
+import shlex
+import sys
+
+payload = sys.argv[1]
+assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+try:
+    lexer = shlex.shlex(payload, posix=True, punctuation_chars=True)
+    lexer.whitespace_split = True
+    tokens = list(lexer)
+except Exception:
+    raise SystemExit(1)
+
+if not tokens:
+    raise SystemExit(1)
+if any(token in {";", "|", "||", "&", "&&", ">", ">>", "<", "<<"} for token in tokens):
+    raise SystemExit(1)
+
+idx = 0
+if tokens[idx] == "env":
+    idx += 1
+while idx < len(tokens) and assignment_re.match(tokens[idx]):
+    idx += 1
+if idx + 1 >= len(tokens):
+    raise SystemExit(1)
+
+command = tokens[idx]
+if not (command == "scripts/silver-bullet" or command.endswith("/scripts/silver-bullet")):
+    raise SystemExit(1)
+if tokens[idx + 1] != "invoke-skill":
+    raise SystemExit(1)
+
+print("adapter")
+PY
+}
+
+workflow_id_from_shell_assignment() {
+  local payload="$1"
+  local first_line
+  first_line=$(printf '%s' "$payload" | sed -n '1p')
+  first_line="${first_line#"${first_line%%[![:space:]]*}"}"
+
+  if [[ "$first_line" =~ ^export[[:space:]]+SB_WORKFLOW_ID=([A-Za-z0-9T_-]+)[[:space:]]*[\;] ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+    return 0
+  fi
+
+  if [[ "$first_line" =~ ^env[[:space:]]+ ]]; then
+    first_line="${first_line#env }"
+    first_line="${first_line#"${first_line%%[![:space:]]*}"}"
+  fi
+
+  if [[ "$first_line" =~ (^|[[:space:]])SB_WORKFLOW_ID=([A-Za-z0-9T_-]+)[[:space:]] ]]; then
+    printf '%s' "${BASH_REMATCH[2]}"
+    return 0
+  fi
+
+  return 1
+}
+
+if shell_payload_is_sb_skill_adapter_invocation "$cmd"; then
+  exit 0
+fi
 
 if printf '%s' "$cmd_first_line" | grep -qE '\bgit commit\b'; then
   is_intermediate=true
@@ -277,6 +356,9 @@ run_workflow_strict_gate() {
   [[ ${#active[@]} -eq 0 ]] && return 0
 
   local id="${SB_WORKFLOW_ID:-}"
+  if [[ -z "$id" ]]; then
+    id="$(workflow_id_from_shell_assignment "$cmd" 2>/dev/null || true)"
+  fi
   if [[ -z "$id" ]]; then
     local active_names=""
     for _wf in "${active[@]}"; do
@@ -493,15 +575,19 @@ skill_line() {
 if [[ "$is_intermediate" == true ]]; then
   # Determine planning skills required for intermediate commits
   # DevOps workflow requires silver-blast-radius + devops-quality-gates instead of silver-quality-gates
+  default_planning="$DEFAULT_PLANNING"
   if [[ "$active_workflow" == "devops-cycle" ]]; then
-    DEFAULT_PLANNING="silver-blast-radius devops-quality-gates"
-  else
-    DEFAULT_PLANNING="silver-quality-gates"
+    default_planning="$DEVOPS_DEFAULT_PLANNING"
   fi
   if [[ "$active_workflow" == "devops-cycle" && -n "$required_planning_devops_cfg" ]]; then
-    planning_skills="$required_planning_devops_cfg"
+    configured_planning="$required_planning_devops_cfg"
   else
-    planning_skills="${required_planning_cfg:-$DEFAULT_PLANNING}"
+    configured_planning="$required_planning_cfg"
+  fi
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    planning_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
+  else
+    planning_skills="${configured_planning:-$default_planning}"
   fi
 
   missing_planning=""
@@ -669,11 +755,9 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/required-skills.sh"
-else
-  # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
-  DEVOPS_DEFAULT_REQUIRED="silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 fi
+DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
+DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 if [[ "$active_workflow" == "devops-cycle" ]]; then
@@ -687,9 +771,12 @@ if [[ "$on_main" == true ]]; then
   required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
-# When config supplies required_deploy, it is the sole source of truth.
-# When config is absent, fall back to DEFAULT_REQUIRED from required-skills.sh.
-if [[ -n "$required_deploy_cfg" ]]; then
+# Current-version config-supplied required_deploy remains the sole source of
+# truth. Legacy configs are normalized so old projects inherit current gates
+# and retired dependencies do not deadlock delivery.
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  all_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+elif [[ -n "$required_deploy_cfg" ]]; then
   all_skills="$required_deploy_cfg"
 else
   all_skills="$DEFAULT_REQUIRED"

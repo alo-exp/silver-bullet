@@ -17,14 +17,15 @@ fi
 
 usage() {
   cat <<'USAGE'
-Usage: silver-bullet invoke-skill <skill-name>
+Usage: silver-bullet invoke-skill <skill-name> [arguments...]
 
 Codex-compatible Silver Bullet skill invocation adapter.
 
 The adapter validates that the skill is installed, prints the skill body for the
-agent to follow, and emits an SB-owned invocation receipt. The record-skill hook
-records completion only when a matching receipt is observed after this command.
-Reading SKILL.md directly or editing state files does not count.
+agent to follow, surfaces optional runtime arguments as the skill's `$ARGUMENTS`,
+and emits an SB-owned invocation receipt. The record-skill hook records
+completion only when a matching receipt is observed after this command. Reading
+SKILL.md directly or editing state files does not count.
 USAGE
 }
 
@@ -99,9 +100,9 @@ find_skill_file() {
   for root in "${SKILL_ROOTS[@]}"; do
     [[ -d "$root" ]] || continue
     if command -v rg >/dev/null 2>&1; then
-      candidate=$(rg -l -m1 -g 'SKILL.md' "^(name:[[:space:]]*(${escaped_raw}|${escaped_canonical})[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
+      candidate=$(rg -l -m1 -g 'SKILL.md' "^(name:[[:space:]]*[\"']?(${escaped_raw}|${escaped_canonical})[\"']?[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
     else
-      candidate=$(grep -Rls -E "^(name:[[:space:]]*(${escaped_raw}|${escaped_canonical})[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
+      candidate=$(grep -Rls -E "^(name:[[:space:]]*[\"']?(${escaped_raw}|${escaped_canonical})[\"']?[[:space:]]*)$" "$root" 2>/dev/null | head -1 || true)
     fi
     if [[ -n "$candidate" && -f "$candidate" ]]; then
       printf '%s\n' "$candidate"
@@ -154,12 +155,14 @@ PY
 
 invoke_skill() {
   local raw_skill="${1:-}"
-  local canonical_skill skill_file
+  local canonical_skill skill_file skill_arguments
 
   if [[ -z "$raw_skill" ]]; then
     usage >&2
     return 2
   fi
+  shift || true
+  skill_arguments="$*"
 
   canonical_skill="$(canonical_skill_name "$raw_skill")"
   if ! skill_file="$(find_skill_file "$raw_skill" "$canonical_skill")"; then
@@ -173,10 +176,16 @@ invoke_skill() {
   printf 'Skill: %s\n' "$raw_skill"
   printf 'Canonical: %s\n' "$canonical_skill"
   printf 'Source: %s\n\n' "$skill_file"
+  if [[ -n "$skill_arguments" ]]; then
+    printf 'Runtime arguments for this skill ($ARGUMENTS):\n%s\n\n' "$skill_arguments"
+  fi
   printf '%s\n' "----- BEGIN SKILL ${canonical_skill} -----"
   cat "$skill_file"
   printf '\n%s\n' "----- END SKILL ${canonical_skill} -----"
-  printf '\nFollow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'
+  if [[ -n "$skill_arguments" ]]; then
+    printf '\nUse the runtime arguments above wherever the skill refers to `$ARGUMENTS`.\n'
+  fi
+  printf 'Follow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'
 }
 
 main() {

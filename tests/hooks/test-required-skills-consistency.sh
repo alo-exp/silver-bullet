@@ -35,6 +35,8 @@ check() {
 source "$LIB"
 
 sort_space() { tr ' ' '\n' | sed '/^$/d' | sort -u; }
+has_word() { printf '%s\n' "$1" | tr ' ' '\n' | grep -qx "$2"; }
+missing_word() { ! has_word "$1" "$2"; }
 
 CFG_REQUIRED_DEPLOY=$(jq -r '.skills.required_deploy | .[]' "$CONFIG" | sort -u)
 CFG_REQUIRED_DEVOPS=$(jq -r '.skills.required_deploy_devops | .[]' "$CONFIG" 2>/dev/null | sort -u)
@@ -98,6 +100,63 @@ if [[ ${#missing_from_tracked_devops[@]} -gt 0 ]]; then
   echo "    Skills in required_deploy_devops but missing from all_tracked:"
   for s in "${missing_from_tracked_devops[@]}"; do echo "      - $s"; done
 fi
+
+# Legacy project configs should not weaken current gates or force retired skills.
+# This guards the real Codex-TUI failure mode where an old project config caused
+# SB to request missing legacy skills like testing-strategy while omitting current
+# GSD gates such as gsd-plan-phase and gsd-execute-phase.
+tmp_legacy_cfg=$(mktemp)
+tmp_current_cfg=$(mktemp)
+trap 'rm -f "$tmp_legacy_cfg" "$tmp_current_cfg"' EXIT
+
+cat > "$tmp_legacy_cfg" <<'JSON'
+{
+  "config_version": "0.2.0",
+  "skills": {
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": [
+      "silver-quality-gates",
+      "code-review",
+      "testing-strategy",
+      "documentation",
+      "deploy-checklist",
+      "tech-debt",
+      "custom-review"
+    ]
+  }
+}
+JSON
+
+cat > "$tmp_current_cfg" <<JSON
+{
+  "config_version": "$(jq -r '.config_version' "$CONFIG")",
+  "skills": {
+    "required_deploy": ["custom-review"]
+  }
+}
+JSON
+
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  legacy_deploy=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates code-review testing-strategy documentation deploy-checklist tech-debt custom-review" "$DEFAULT_REQUIRED")
+  legacy_planning=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates" "$DEFAULT_PLANNING")
+  current_deploy=$(sb_required_skills_normalize_configured_list "$tmp_current_cfg" "custom-review" "$DEFAULT_REQUIRED")
+else
+  legacy_deploy=""
+  legacy_planning=""
+  current_deploy=""
+fi
+
+check "legacy config deploy list inherits current default deploy gates" \
+  bash -c 'for skill in gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work verify-tests custom-review; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+
+check "legacy config deploy list drops retired legacy dependencies" \
+  bash -c 'for skill in code-review testing-strategy documentation deploy-checklist tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+
+check "legacy config planning list inherits current default planning gates" \
+  bash -c 'for skill in silver-quality-gates gsd-discuss-phase gsd-plan-phase; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_planning"
+
+check "current config custom deploy list remains explicit" \
+  test "$current_deploy" = "custom-review"
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

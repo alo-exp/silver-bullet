@@ -104,6 +104,14 @@ fi
 # ── Resolve lib dir (needed for trivial-bypass and required-skills helpers) ───
 lib_dir="${_lib_dir:-$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)}"
 
+if [[ -f "$lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  # shellcheck disable=SC1090
+  source "$lib_dir/required-skills.sh"
+fi
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+
 # shellcheck source=lib/skill-discovery.sh
 if [[ -f "$lib_dir/skill-discovery.sh" ]]; then
   # shellcheck disable=SC1090
@@ -465,14 +473,19 @@ fi
 #   2. Library-derived planning floor (silver-quality-gates / devops pair)
 #   3. Hardcoded fallback for installs missing the lib
 if [[ "$active_workflow" == "devops-cycle" ]]; then
-  default_planning="silver-blast-radius devops-quality-gates"
+  default_planning="$DEVOPS_DEFAULT_PLANNING"
 else
-  default_planning="silver-quality-gates"
+  default_planning="$DEFAULT_PLANNING"
 fi
 if [[ "$active_workflow" == "devops-cycle" && -n "$required_planning_devops_cfg" ]]; then
-  all_skills="$required_planning_devops_cfg"
-elif [[ -n "$required_planning_cfg" ]]; then
-  all_skills="$required_planning_cfg"
+  configured_planning="$required_planning_devops_cfg"
+else
+  configured_planning="$required_planning_cfg"
+fi
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  all_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
+elif [[ -n "$configured_planning" ]]; then
+  all_skills="$configured_planning"
 else
   all_skills="$default_planning"
 fi

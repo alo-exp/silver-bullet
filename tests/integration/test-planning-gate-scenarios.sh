@@ -30,8 +30,10 @@ echo "--- Scenario 2: Progressive stage unlocking A->B->C ---"
 integration_setup
 write_default_config
 
-# Step 1: Record silver-quality-gates skill (simulates /silver-quality-gates invocation)
+# Step 1: Record current planning-floor skills.
+run_record_skill "gsd-discuss-phase"
 run_record_skill "silver-quality-gates"
+run_record_skill "gsd-plan-phase"
 
 # Step 2: Try edit — allowed at Stage B (no gsd-code-review yet)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -57,7 +59,7 @@ integration_setup
 write_default_config
 
 # Step 1: Record planning (directly write state — record-skill only records tracked skills)
-printf 'silver-quality-gates\ngsd-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\ngsd-code-review\n' > "$TMPSTATE"
 
 # Step 2: dev-cycle-check allows edit (Stage C)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -68,22 +70,7 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S3.2: PR create blocked with partial skills" "$out"
 
 # Step 4: Complete all skills (using config's required_deploy list, without stages)
-cat > "$TMPSTATE" << 'EOSKILLS'
-silver-quality-gates
-requesting-code-review
-gsd-code-review
-receiving-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
-deploy-checklist
-silver-create-release
-verification-before-completion
-test-driven-development
-tech-debt
-verify-tests
-EOSKILLS
-date +%s > "$VERIFY_TESTS_FILE"
+write_all_skills
 
 # Step 5: completion-audit allows PR create
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
@@ -97,7 +84,7 @@ integration_setup
 write_default_config
 
 # Record silver-quality-gates then skip to finalization (no gsd-code-review)
-printf 'silver-quality-gates\nsilver-create-release\n' > "$TMPSTATE"
+printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\nsilver-create-release\n' > "$TMPSTATE"
 
 # Edit should be allowed so fixes can proceed, while warning that delivery remains blocked.
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")

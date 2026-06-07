@@ -1,6 +1,6 @@
 ---
-name: silver:feature
-title: Silver: /silver:feature - Feature
+name: "silver:feature"
+title: "Silver: /silver:feature - Feature"
 description: >
   This skill should be used for full SB-orchestrated feature development workflow: orient → clarify/decide → silver:quality-gates → GSD plan/execute/verify → ship
 argument-hint: "<feature description>"
