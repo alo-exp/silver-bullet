@@ -968,10 +968,32 @@ verify_runtime_dependency_access() {
       assert_file_not_contains "Kay active config strips Codex plugin registry sections" "$active_config_file" '\[plugins\."silver-bullet@alo-labs-codex"\]'
       assert_file_not_contains "Kay active config omits Codex home rewrite sections" "$active_config_file" 'CODEX_HOME = "'
       assert_command_succeeds "Isolated Silver Bullet install path registered" codex_plugin_install_path_matches "silver-bullet@alo-labs-codex" "${KAY_HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+      local kay_sb_cli
+      kay_sb_cli="$(command -v silver-bullet 2>/dev/null || true)"
+      if [[ "$kay_sb_cli" == "${KAY_HOME}/.codex/bin/silver-bullet" && -x "$kay_sb_cli" ]]; then
+        echo "PASS: Isolated Silver Bullet CLI shim is on PATH"
+        PASS=$((PASS + 1))
+      else
+        echo "FAIL: Isolated Silver Bullet CLI shim is on PATH"
+        echo "  expected: ${KAY_HOME}/.codex/bin/silver-bullet"
+        echo "  actual: ${kay_sb_cli:-<missing>}"
+        FAIL=$((FAIL + 1))
+      fi
     else
       local runtime_home_root
       runtime_home_root="$(runtime_codex_home_root)"
       assert_command_succeeds "Native Codex Silver Bullet install path registered" codex_plugin_install_path_matches "silver-bullet@alo-labs-codex" "${runtime_home_root}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+      local codex_sb_cli
+      codex_sb_cli="$(command -v silver-bullet 2>/dev/null || true)"
+      if [[ "$codex_sb_cli" == "${runtime_home_root}/.codex/bin/silver-bullet" && -x "$codex_sb_cli" ]]; then
+        echo "PASS: Native Codex Silver Bullet CLI shim is on PATH"
+        PASS=$((PASS + 1))
+      else
+        echo "FAIL: Native Codex Silver Bullet CLI shim is on PATH"
+        echo "  expected: ${runtime_home_root}/.codex/bin/silver-bullet"
+        echo "  actual: ${codex_sb_cli:-<missing>}"
+        FAIL=$((FAIL + 1))
+      fi
     fi
   fi
 }

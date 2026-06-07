@@ -27,10 +27,33 @@ else
   RUNTIMES=(kay)
 fi
 
-export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
-export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
-export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
+
+runtime_model_provider() {
+  local runtime="$1"
+  if [[ -n "${SB_LIVE_CODEX_MODEL_PROVIDER:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_MODEL_PROVIDER"
+  elif [[ "$runtime" == "kay" ]]; then
+    printf 'opencode-go\n'
+  fi
+}
+
+runtime_model() {
+  local runtime="$1"
+  if [[ -n "${SB_LIVE_CODEX_MODEL:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_MODEL"
+  elif [[ "$runtime" == "kay" ]]; then
+    printf 'deepseek-v4-flash\n'
+  fi
+}
+
+runtime_reasoning_effort() {
+  if [[ -n "${SB_LIVE_CODEX_REASONING_EFFORT:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_REASONING_EFFORT"
+  else
+    printf 'low\n'
+  fi
+}
 
 if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_claude=false
@@ -49,7 +72,7 @@ echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
 echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime."
-echo "Default provider/model: ${SB_LIVE_CODEX_MODEL_PROVIDER} / ${SB_LIVE_CODEX_MODEL} (${SB_LIVE_CODEX_REASONING_EFFORT})."
+echo "Default provider/model: runtime-aware (Kay: opencode-go / deepseek-v4-flash; Codex: native config)."
 echo "Per-turn timeout: ${CODEX_INTERACTIVE_TIMEOUT}s."
 echo ""
 
@@ -63,9 +86,19 @@ run_suite() {
   local runtime="$1"
   local name="$2"
   local script="$3"
+  local provider
+  local model
+  local reasoning
+  provider="$(runtime_model_provider "$runtime")"
+  model="$(runtime_model "$runtime")"
+  reasoning="$(runtime_reasoning_effort)"
   echo ""
   echo "--- [$runtime] Running: $name ---"
-  if SB_LIVE_RUNTIME="$runtime" bash "$script"; then
+  if SB_LIVE_RUNTIME="$runtime" \
+    SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
+    SB_LIVE_CODEX_MODEL="$model" \
+    SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
+    bash "$script"; then
     echo "SUITE PASSED: [$runtime] $name"
   else
     echo "SUITE FAILED: [$runtime] $name"

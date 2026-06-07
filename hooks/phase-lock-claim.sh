@@ -56,12 +56,20 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 # ── Read stdin JSON ──────────────────────────────────────────────────────────
 input=$(cat)
 
-# ── Resolve phase from tool_input.file_path ──────────────────────────────────
-file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
+# ── Resolve phase from direct file path or native Codex apply_patch headers ──
+if declare -f sb_tool_file_path >/dev/null 2>&1; then
+  file_path="$(sb_tool_file_path "$input")"
+else
+  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
+fi
 [[ -z "$file_path" ]] && exit 0
 phase=$(_resolve_phase_from_path "$file_path" || true)
 [[ -z "$phase" ]] && exit 0

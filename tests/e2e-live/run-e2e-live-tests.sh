@@ -25,6 +25,7 @@ SCENARIOS=(
 )
 RUNTIMES=()
 full_matrix_requested=false
+export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
 
 if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
@@ -33,9 +34,31 @@ else
   RUNTIMES=(kay)
 fi
 
-export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
-export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
-export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
+runtime_model_provider() {
+  local runtime="$1"
+  if [[ -n "${SB_LIVE_CODEX_MODEL_PROVIDER:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_MODEL_PROVIDER"
+  elif [[ "$runtime" == "kay" ]]; then
+    printf 'opencode-go\n'
+  fi
+}
+
+runtime_model() {
+  local runtime="$1"
+  if [[ -n "${SB_LIVE_CODEX_MODEL:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_MODEL"
+  elif [[ "$runtime" == "kay" ]]; then
+    printf 'deepseek-v4-flash\n'
+  fi
+}
+
+runtime_reasoning_effort() {
+  if [[ -n "${SB_LIVE_CODEX_REASONING_EFFORT:-}" ]]; then
+    printf '%s\n' "$SB_LIVE_CODEX_REASONING_EFFORT"
+  else
+    printf 'low\n'
+  fi
+}
 
 if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_claude=false
@@ -59,7 +82,7 @@ echo "  Silver Bullet Live Todo-App E2E Suite"
 echo "========================================"
 echo ""
 echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the todo-app fixture."
-echo "Default provider/model: ${SB_LIVE_CODEX_MODEL_PROVIDER} / ${SB_LIVE_CODEX_MODEL} (${SB_LIVE_CODEX_REASONING_EFFORT})."
+echo "Default provider/model: runtime-aware (Kay: opencode-go / deepseek-v4-flash; Codex: native config)."
 echo ""
 
 if [[ -n "$E2E_LIVE_MATRIX_FILE" ]]; then
@@ -75,9 +98,19 @@ TOTAL_PASS=0
 run_scenario() {
   local runtime="$1"
   local scenario="$2"
+  local provider
+  local model
+  local reasoning
+  provider="$(runtime_model_provider "$runtime")"
+  model="$(runtime_model "$runtime")"
+  reasoning="$(runtime_reasoning_effort)"
   echo ""
   echo "--- [$runtime] Running: $(basename "$scenario") ---"
-  if SB_E2E_LIVE_RUNTIME="$runtime" bash "$scenario"; then
+  if SB_E2E_LIVE_RUNTIME="$runtime" \
+    SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
+    SB_LIVE_CODEX_MODEL="$model" \
+    SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
+    bash "$scenario"; then
     echo "SCENARIO PASSED: [$runtime] $(basename "$scenario")"
     TOTAL_PASS=$((TOTAL_PASS + 1))
   else
@@ -89,11 +122,21 @@ run_scenario() {
 run_dependency_preflight() {
   local runtime="$1"
   local marker_file
+  local provider
+  local model
+  local reasoning
+  provider="$(runtime_model_provider "$runtime")"
+  model="$(runtime_model "$runtime")"
+  reasoning="$(runtime_reasoning_effort)"
 
   marker_file="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-dependency-preflight-${runtime}.XXXXXX")"
   export E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE="$marker_file"
 
-  if ! SB_E2E_LIVE_RUNTIME="$runtime" bash "$DEPENDENCY_PREFLIGHT_SCRIPT"; then
+  if ! SB_E2E_LIVE_RUNTIME="$runtime" \
+    SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
+    SB_LIVE_CODEX_MODEL="$model" \
+    SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
+    bash "$DEPENDENCY_PREFLIGHT_SCRIPT"; then
     rm -f "$marker_file"
     unset E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE
     return 1
@@ -103,11 +146,21 @@ run_dependency_preflight() {
 run_hook_preflight() {
   local runtime="$1"
   local marker_file
+  local provider
+  local model
+  local reasoning
+  provider="$(runtime_model_provider "$runtime")"
+  model="$(runtime_model "$runtime")"
+  reasoning="$(runtime_reasoning_effort)"
 
   marker_file="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-hook-preflight-${runtime}.XXXXXX")"
   export E2E_LIVE_HOOK_PREFLIGHT_FILE="$marker_file"
 
-  if ! SB_E2E_LIVE_RUNTIME="$runtime" bash "$HOOK_PREFLIGHT_SCRIPT"; then
+  if ! SB_E2E_LIVE_RUNTIME="$runtime" \
+    SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
+    SB_LIVE_CODEX_MODEL="$model" \
+    SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
+    bash "$HOOK_PREFLIGHT_SCRIPT"; then
     rm -f "$marker_file"
     unset E2E_LIVE_HOOK_PREFLIGHT_FILE
     return 1

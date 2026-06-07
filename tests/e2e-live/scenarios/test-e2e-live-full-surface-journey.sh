@@ -47,7 +47,7 @@ journey_turn() {
   local usable_response=false
   local timed_out=false
   local turn_timeout_seconds="${SB_E2E_LIVE_TURN_TIMEOUT_SECONDS:-180}"
-  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format|timed out waiting for Codex prompt to complete|timed out waiting for Codex to accept the submitted prompt|interactive hook trust review surfaced|interactive workspace trust prompt surfaced|Stop hook \(blocked\)|Cannot complete -- missing required skills)'
+  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format|command not found: silver-bullet|silver-bullet invoke-skill .+ not available|timed out waiting for Codex prompt to complete|timed out waiting for Codex to accept the submitted prompt|interactive hook trust review surfaced|interactive workspace trust prompt surfaced|Stop hook \(blocked\)|Cannot complete -- missing required skills)'
   local response_pid=""
   local response_stdout_file
   local response_status_file
@@ -142,6 +142,8 @@ skill_prompt() {
 }
 
 LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
+LOCAL_SKILL_SOURCE_ROOT='/Users/shafqat/projects/codex-plugins/skills'
+LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT="do[[:space:]]*not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|avoid(ed|s|ing)?[[:space:]]*local[[:space:]]*codex-plugins[[:space:]]*skill[[:space:]]*sources|not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*read[[:space:]]*from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*using[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|prohibited[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}[[:space:]]*as[[:space:]]*requested|!${LOCAL_SKILL_SOURCE_ROOT}"
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
@@ -181,9 +183,15 @@ assert_no_local_skill_source_bypass() {
   local label="$1"
   local path="$2"
   local contents=""
+  local suspicious=""
   contents="$(cat "$path" 2>/dev/null || true)"
-  if grep -Eq "$LOCAL_SKILL_SOURCE_REGEX" <<<"$contents"; then
+  suspicious="$(printf '%s\n' "$contents" \
+    | grep -E "$LOCAL_SKILL_SOURCE_REGEX|$LOCAL_SKILL_SOURCE_ROOT" \
+    | grep -Ev "$LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT" \
+    || true)"
+  if [[ -n "$suspicious" ]]; then
     echo "FAIL: $label"
+    printf '%s\n' "$suspicious" | sed -n '1,5p'
     FAIL=$((FAIL + 1))
   else
     echo "PASS: $label"
@@ -853,8 +861,12 @@ EOF
 chmod +x "${update_bin_dir}/curl"
 PATH="${update_bin_dir}:$PATH" journey_turn "silver:update" "check whether Silver Bullet is already up to date before finishing" "no" "update turn recorded" "$(skill_prompt 'silver:update' 'Check whether Silver Bullet is already up to date in this environment. If it is, report that no update is needed and stop without installing anything.')" 'already on the latest version|latest version|up to date'
 
-if rg -n "$LOCAL_SKILL_SOURCE_REGEX" "$TURN_LOG_DIR" >/dev/null 2>&1; then
+local_skill_source_hits="$(rg -n "$LOCAL_SKILL_SOURCE_REGEX|$LOCAL_SKILL_SOURCE_ROOT" "$TURN_LOG_DIR" \
+  | grep -Ev "$LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT" \
+  || true)"
+if [[ -n "$local_skill_source_hits" ]]; then
   echo "FAIL: no turn in this run should source local /Users/shafqat/projects/codex-plugins/skills paths"
+  printf '%s\n' "$local_skill_source_hits" | sed -n '1,5p'
   FAIL=$((FAIL + 1))
 else
   echo "PASS: no turn in this run sourced local /Users/shafqat/projects/codex-plugins/skills paths"

@@ -71,7 +71,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit",
+        "matcher": "Edit|Write|MultiEdit|apply_patch",
         "hooks": [
           {
             "type": "command",
@@ -100,7 +100,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [
           {
             "type": "command",
@@ -206,7 +206,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write|Edit|MultiEdit|apply_patch",
         "hooks": [
           {
             "type": "command",
@@ -250,7 +250,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [
           {
             "type": "command",
