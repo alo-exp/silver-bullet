@@ -12,6 +12,7 @@
 
 ## Tests
 
+- `test(live): skip Kay timeout probe when expect is unavailable`
 - `test(live): harden Kay MiniMax release gates`
 - `test(live): fail release gates on Kay timeouts`
 
