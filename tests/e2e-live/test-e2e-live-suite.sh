@@ -53,6 +53,7 @@ assert_exists "suite runner exists" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests.sh"
 assert_file_contains "suite runner writes inline release marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'matrix=inline-full-surface'
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
+assert_file_contains "live suite sets bounded per-turn timeout" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
 assert_exists "dependency-access preflight exists" "${SCRIPT_DIR}/dependency-access-preflight.sh"
 assert_executable "dependency-access preflight is executable" "${SCRIPT_DIR}/dependency-access-preflight.sh"
 assert_exists "hook-delivery preflight exists" "${SCRIPT_DIR}/hook-delivery-preflight.sh"

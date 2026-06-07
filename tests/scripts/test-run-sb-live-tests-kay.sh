@@ -60,9 +60,38 @@ assert_file_not_contains "kay agent adapter does not fall back to codex" "$REPO_
 assert_file_contains "interactive launcher accepts kay runtime selector" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_RUNTIME_AGENT'
 assert_file_contains "interactive launcher exposes isolated hook auto-trust" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_AUTO_TRUST_HOOKS'
 assert_file_contains "interactive launcher rewires Kay config home for isolated runs" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'CODEX_KAY_HOME'
+assert_file_contains "interactive launcher enforces exec-mode timeout" "$REPO_ROOT/scripts/codex-interactive-invoke.expect" 'timed out waiting for Codex exec to complete'
 assert_file_contains "kay agent enables isolated hook auto-trust" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks"'
 assert_file_contains "kay agent points subprocess KAY_HOME at the isolated config dir" "$REPO_ROOT/tests/live/agents/kay/agent.sh" 'CODEX_KAY_HOME="${KAY_HOME}/.kay"'
 assert_file_contains "live helpers source Kay isolation library in child shells" "$REPO_ROOT/tests/live/helpers.sh" 'source "$SB_ROOT/tests/live/lib/kay-codex-isolation.sh"'
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+mkdir -p "$tmpdir/bin" "$tmpdir/work"
+cat >"$tmpdir/bin/kay" <<'EOF'
+#!/usr/bin/env bash
+sleep 5
+EOF
+chmod +x "$tmpdir/bin/kay"
+printf 'test prompt\n' >"$tmpdir/prompt.txt"
+set +e
+PATH="$tmpdir/bin:$PATH" \
+  CODEX_RUNTIME_AGENT="kay" \
+  CODEX_LAUNCH_MODE="exec" \
+  CODEX_WORK_DIR="$tmpdir/work" \
+  CODEX_PROMPT_FILE="$tmpdir/prompt.txt" \
+  CODEX_INTERACTIVE_TIMEOUT="1" \
+  expect "$REPO_ROOT/scripts/codex-interactive-invoke.expect" >"$tmpdir/stdout.txt" 2>"$tmpdir/stderr.txt"
+timeout_rc=$?
+set -e
+if [[ $timeout_rc -eq 124 ]] && grep -qF 'timed out waiting for Codex exec to complete' "$tmpdir/stderr.txt"; then
+  echo "PASS: interactive launcher times out hung Kay exec mode"
+  (( PASS++ )) || true
+else
+  echo "FAIL: interactive launcher times out hung Kay exec mode — rc=$timeout_rc"
+  sed 's/^/  stderr: /' "$tmpdir/stderr.txt"
+  (( FAIL++ )) || true
+fi
 
 echo
 echo "Results: $PASS passed, $FAIL failed"
