@@ -8,6 +8,7 @@
 - `fix(codex): enforce bare prompt workflow reliability`
 - `fix(codex): mirror Silver Bullet picker skills`
 - `fix(ci): satisfy shellcheck in prompt reminder`
+- `fix(ci): keep deploy gate fallback aligned with template`
 - `fix(live): enforce Kay exec timeout in release gates`
 
 ## Tests
