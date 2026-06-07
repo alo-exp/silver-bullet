@@ -25,11 +25,12 @@ assert_state_contains "S5: silver-quality-gates recorded in state after direct h
 # Live test: with silver-quality-gates in state, dev-cycle-check.sh allows edits to src files
 # This verifies the full loop: state → hook reads state → enforcement decision
 seed_state "silver-quality-gates" "code-review"
-target_file="${WORK_DIR}/src/index.js"
+target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 comment_marker="// S5 state-driven test ${TEST_RUN_ID}"
-response=$(invoke_claude_permissive "Edit the file src/index.js and add the comment '${comment_marker}' at the top.")
+response=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
 sleep 2
+assert_response_not_contains "S5: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_file_changed "S5: target file modified when planning state is present" "$target_file" "$digest_before"
 assert_file_contains "S5: target file contains state-driven comment" "$target_file" "S5 state-driven test ${TEST_RUN_ID}"
 

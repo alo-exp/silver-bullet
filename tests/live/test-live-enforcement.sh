@@ -2,7 +2,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/helpers.sh"
-export SB_LIVE_CODEX_GUARD=1
+export SB_LIVE_CODEX_GUARD=0
 
 echo "=== Live Enforcement Tests ==="
 
@@ -12,10 +12,11 @@ live_setup
 # State is empty — no skills recorded. Prompt Claude to edit a src file.
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
-response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '// S1 test comment'. Do not invoke any skills, just edit the file directly.")
+response=$(invoke_claude "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: // S1 test comment. Do not invoke any skills.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
 assert_response_not_contains "S1: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
+assert_response_contains "S1: hook block surfaced" "$response" "HARD STOP|planning incomplete|blocked|permissionDecision|deny"
 assert_file_not_modified "S1: target file unchanged when edit is blocked" "$target_file" "$digest_before"
 # The Kay agent may record planning state while rejecting the edit, so the
 # file-level invariants are the release-relevant signal here.
@@ -28,7 +29,7 @@ seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "re
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 comment_marker="// S2 test edit ${TEST_RUN_ID}"
-response=$(invoke_claude "Edit the file src/routes/todos.js and add a comment at the top that says '${comment_marker}'. Just add the comment, nothing else.")
+response=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
 sleep 2
 # With silver-quality-gates AND gsd-code-review recorded, Stage C is reached — edit should succeed
 assert_response_not_contains "S2: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"

@@ -37,8 +37,9 @@ echo "  S8.3: Attempting edit at Stage C..."
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 comment_marker="// S8 lifecycle test ${TEST_RUN_ID}"
-response3=$(invoke_claude_permissive "Edit the file src/routes/todos.js and add a comment at the very top: '${comment_marker}'. Just add this one comment line.")
+response3=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
 sleep 2
+assert_response_not_contains "S8.3: live turn did not time out" "$response3" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_file_changed "S8.3: target file modified at Stage C" "$target_file" "$digest_before"
 assert_file_contains "S8.3: target file contains lifecycle comment" "$target_file" "S8 lifecycle test ${TEST_RUN_ID}"
 

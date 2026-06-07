@@ -92,6 +92,7 @@ assert_file_contains "hook transplant rewrites user hooks against the target hom
 assert_file_contains "native Codex agent enables hook trust bypass in isolation" "${REPO_ROOT}/tests/live/agents/codex/agent.sh" 'CODEX_BYPASS_HOOK_TRUST='
 assert_file_contains "native Codex agent enables isolated hook auto-trust" "${REPO_ROOT}/tests/live/agents/codex/agent.sh" 'CODEX_AUTO_TRUST_HOOKS='
 assert_file_contains "Kay agent enables isolated hook auto-trust" "${REPO_ROOT}/tests/live/agents/kay/agent.sh" 'CODEX_AUTO_TRUST_HOOKS='
+assert_file_contains "Kay agent captures expect stderr for timeout assertions" "${REPO_ROOT}/tests/live/agents/kay/agent.sh" 'codex-interactive-invoke\.expect" 2>&1'
 
 scenario_list=()
 while IFS= read -r scenario; do

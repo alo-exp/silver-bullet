@@ -341,7 +341,7 @@ PY
       CODEX_SANDBOX_MODE="danger-full-access" \
       CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
       CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
-      expect "$SB_ROOT/scripts/codex-interactive-invoke.expect"
+      expect "$SB_ROOT/scripts/codex-interactive-invoke.expect" 2>&1
   ) || true
   if [[ -f "$last_message_file" ]]; then
     output="${output}"$'\n'"$(cat "$last_message_file")"
