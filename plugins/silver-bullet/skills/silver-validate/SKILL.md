@@ -1,6 +1,6 @@
 ---
-name: silver:validate
-title: Silver: /silver:validate - Validate
+name: "silver:validate"
+title: "Silver: /silver:validate - Validate"
 description: >
   This skill should be used for pre-build gap analysis: validates SPEC.md coverage in PLAN.md, surfaces assumptions, emits machine-readable findings with BLOCK/WARN/INFO severity
 argument-hint: ""

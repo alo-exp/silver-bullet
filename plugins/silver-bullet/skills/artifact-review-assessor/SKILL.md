@@ -1,6 +1,6 @@
 ---
 name: artifact-review-assessor
-title: Silver: Artifact Review Assessor
+title: "Silver: Artifact Review Assessor"
 description: This skill should be used to triage artifact reviewer findings into MUST-FIX / NICE-TO-HAVE / DISMISS based on artifact contract -- prevents over-zealous reviews
 argument-hint: "<review-findings> <artifact-path> [--contract-source <path>]"
 user-invocable: false

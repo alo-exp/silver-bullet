@@ -5,10 +5,12 @@
 set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/prompt-reminder.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
 
-RUNTIME_PATHS_SH="$(cd "$(dirname "$0")/../.." && pwd)/hooks/lib/runtime-paths.sh"
+RUNTIME_PATHS_SH="$REPO_ROOT/hooks/lib/runtime-paths.sh"
 if [[ -f "$RUNTIME_PATHS_SH" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$RUNTIME_PATHS_SH"
@@ -27,13 +29,32 @@ write_cfg() {
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
-  cat > "$TMPCFG" << EOF
+cat > "$TMPCFG" << EOF
 {
+  "config_version": "${CURRENT_CONFIG_VERSION}",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
     "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch"],
     "all_tracked": ["silver-quality-gates","code-review"]
+  },
+  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
+}
+EOF
+}
+
+write_legacy_cfg() {
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
+  cat > "$TMPCFG" << EOF
+{
+  "config_version": "0.2.0",
+  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
+  "skills": {
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","deploy-checklist","tech-debt"],
+    "all_tracked": ["silver-quality-gates","code-review","testing-strategy","documentation","deploy-checklist","tech-debt"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -63,8 +84,14 @@ teardown() {
 }
 
 run_hook() {
-  # prompt-reminder does NOT read stdin — just run script with PWD set to project dir
-  ( cd "$TMPDIR_TEST" && bash "$HOOK" 2>/dev/null )
+  local prompt="${1:-}"
+  local input
+  if [[ -n "$prompt" ]]; then
+    input=$(jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}')
+    ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+  else
+    ( cd "$TMPDIR_TEST" && bash "$HOOK" 2>/dev/null )
+  fi
 }
 
 assert_contains() {
@@ -201,6 +228,42 @@ echo "CANARY_EVIL_RULES" > "$evil_dir/core-rules.md"
 out=$(cd "$TMPDIR_TEST" && CLAUDE_PLUGIN_ROOT="$evil_dir" bash "$HOOK" 2>/dev/null)
 assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANARY_EVIL_RULES"
 rm -rf "$evil_dir"
+teardown
+
+# Test 8: Bare end-user work prompt -> inject Silver router-first instruction
+echo "--- Test 8: Bare work prompt -> route through Silver before direct work ---"
+setup
+write_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')
+assert_contains "bare work prompt: hook identifies bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
+assert_contains "bare work prompt: hook uses package-local Silver adapter path" "$out" "scripts/silver-bullet"
+assert_contains "bare work prompt: hook instructs Codex to invoke Silver router" "$out" "invoke-skill silver"
+assert_not_contains "bare work prompt: hook does not rely on PATH-only adapter command" "$out" "  silver-bullet invoke-skill silver"
+assert_contains "bare work prompt: hook forbids direct implementation before routing" "$out" "Do not inspect, edit, run tests, or implement directly before routing"
+assert_contains "bare work prompt: original prompt included as router context" "$out" "Add a due date field to todos"
+teardown
+
+# Test 8b: Legacy config required_deploy is normalized to current gates
+echo "--- Test 8b: Legacy config -> no retired missing-skill reminders ---"
+setup
+write_legacy_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook 'Add a due date field to todos. Keep it simple.')
+assert_contains "legacy config: inherits current GSD planning gate" "$out" "gsd-discuss-phase"
+assert_contains "legacy config: inherits current GSD execution gate" "$out" "gsd-execute-phase"
+assert_not_contains "legacy config: does not request retired testing-strategy" "$out" "testing-strategy"
+assert_not_contains "legacy config: does not request retired deploy-checklist" "$out" "deploy-checklist"
+teardown
+
+# Test 9: Explanatory question -> no bare-prompt router injection
+echo "--- Test 9: Explanatory question -> no Silver router interception ---"
+setup
+write_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook 'What does Silver Bullet aim to achieve?')
+assert_not_contains "explanatory question: no bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
+assert_not_contains "explanatory question: no forced Silver router invocation" "$out" "invoke-skill silver"
 teardown
 
 # ── Composed-workflow position tests (Pass 1: workflows/ dir) ────────────────

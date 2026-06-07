@@ -8,6 +8,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/dev-cycle-check.sh"
 WORKFLOWS_SCRIPT="$REPO_ROOT/scripts/workflows.sh"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
 
@@ -42,6 +43,7 @@ EOF
   touch "$TMPFILE"
   cat > "$TMPCFG" << EOF
 {
+  "config_version": "${CURRENT_CONFIG_VERSION}",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\\\.test\\\\.",
@@ -221,6 +223,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
+  "config_version": "0.37.0",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -469,6 +472,7 @@ echo "--- Group 7: DevOps workflow ---"
 setup
 cat > "$TMPCFG" << 'EOF'
 {
+  "config_version": "0.37.0",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -494,6 +498,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
+  "config_version": "0.37.0",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -835,6 +840,78 @@ EOF
 out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "WF-PASS2-D: matching SB_WORKFLOW_ID allows source edit" "$out"
 assert_contains "WF-PASS2-D: output references workflow completion" "$out" "All workflow phases complete"
+teardown
+
+# WF-PASS2-E: active workflow does not block read-only source inspection
+echo "--- WF-PASS2-E: active workflow allows read-only source inspection ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_bash "PreToolUse" "nl -ba src/app.js | tail -20")
+assert_passes "WF-PASS2-E: read-only nl/tail inspection is not gated by SB_WORKFLOW_ID" "$out"
+teardown
+
+# WF-PASS2-F: active workflow does not block test commands that mention source paths
+echo "--- WF-PASS2-F: active workflow allows validation test commands ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_bash "PreToolUse" "npm test -- src/app.js")
+assert_passes "WF-PASS2-F: npm test command is not treated as a source edit" "$out"
+teardown
+
+# WF-PASS2-G: active workflow does not block the SB adapter skill invocation path
+echo "--- WF-PASS2-G: active workflow allows SB adapter skill invocation ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_bash "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill security 'review src/app.js'")
+assert_passes "WF-PASS2-G: silver-bullet invoke-skill adapter can continue workflows" "$out"
+teardown
+
+# WF-PASS2-G2: quoted shell punctuation in adapter arguments is still a plain adapter invocation
+echo "--- WF-PASS2-G2: adapter arguments may contain quoted punctuation ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+out=$(run_hook_bash "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill security 'review src/app.js; do not edit directly'")
+assert_passes "WF-PASS2-G2: quoted semicolon in adapter argument does not trigger admission gate" "$out"
+teardown
+
+# WF-PASS2-H: inline SB_WORKFLOW_ID assignment admits Bash source edits
+echo "--- WF-PASS2-H: inline SB_WORKFLOW_ID assignment admits Bash source edits ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+gsd-code-review
+finishing-a-development-branch
+EOF
+out=$(run_hook_bash "PreToolUse" "SB_WORKFLOW_ID=$workflow_id perl -0pi -e 's/old/new/' src/app.js")
+assert_passes "WF-PASS2-H: inline matching SB_WORKFLOW_ID allows Bash source edit" "$out"
+teardown
+
+# WF-PASS2-I: inline mismatched SB_WORKFLOW_ID still blocks Bash source edits
+echo "--- WF-PASS2-I: inline mismatched SB_WORKFLOW_ID still blocks ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+gsd-code-review
+finishing-a-development-branch
+EOF
+out=$(run_hook_bash "PreToolUse" "SB_WORKFLOW_ID=20260510T000000Z-abc123-silver-feature perl -0pi -e 's/old/new/' src/app.js")
+assert_blocks "WF-PASS2-I: inline mismatched SB_WORKFLOW_ID blocks Bash source edit" "$out"
+assert_contains "WF-PASS2-I: block mentions no active workflow match" "$out" "no active workflow file matches"
+teardown
+
+# WF-PASS2-J: export-style inline SB_WORKFLOW_ID admits Bash source edits
+echo "--- WF-PASS2-J: export-style SB_WORKFLOW_ID assignment admits Bash source edits ---"
+setup
+workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+gsd-code-review
+finishing-a-development-branch
+EOF
+out=$(run_hook_bash "PreToolUse" "export SB_WORKFLOW_ID=$workflow_id; perl -0pi -e 's/old/new/' src/app.js")
+assert_passes "WF-PASS2-J: export-style matching SB_WORKFLOW_ID allows Bash source edit" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

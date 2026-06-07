@@ -51,6 +51,8 @@ set -euo pipefail
 root="${KAY_HOME:-${HOME}}"
 mkdir -p "$root/.codex"
 mkdir -p "$root/.codex/hooks"
+mkdir -p "$root/.codex/bin"
+mkdir -p "$root/.codex/skills/silver-feature"
 mkdir -p "$root/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/hooks"
 mkdir -p "$root/.codex/plugins/cache/alo-labs-codex/silver-bullet/9.9.9/hooks"
 mkdir -p "$root/.codex/plugins/cache/alo-labs-codex/silver-bullet/9.9.9/.codex-plugin"
@@ -83,6 +85,23 @@ JSON
 cat > "$root/.codex/hooks/gsd-check-update.js" <<'HOOKJS'
 console.log("harvested-check-update");
 HOOKJS
+cat > "$root/.codex/bin/silver-bullet" <<SHIM
+#!/usr/bin/env bash
+exec "$root/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" "\$@"
+SHIM
+chmod +x "$root/.codex/bin/silver-bullet"
+cat > "$root/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
+---
+name: "silver:feature"
+title: "Silver: /silver:feature - Feature"
+---
+
+# Silver Feature
+harvested-valid-native-skill
+SKILL
+cat > "$root/.codex/skills/silver-feature/.silver-bullet-managed" <<'MARKER'
+source=Silver Bullet
+MARKER
 cat > "$root/.codex/config.toml" <<CFG
 model = "gpt-5.5"
 
@@ -197,6 +216,22 @@ cat > "$TARGET_HOME/.codex/hooks.json" <<'EOF'
   }
 }
 EOF
+mkdir -p "$TARGET_HOME/.codex/bin"
+mkdir -p "$TARGET_HOME/.codex/skills/silver-feature"
+cat > "$TARGET_HOME/.codex/bin/silver-bullet" <<'EOF'
+#!/usr/bin/env bash
+echo stale-target-shim
+EOF
+chmod +x "$TARGET_HOME/.codex/bin/silver-bullet"
+cat > "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
+---
+name: silver:feature
+title: Silver: /silver:feature - Feature
+---
+
+# Silver Feature
+stale-invalid-native-skill
+SKILL
 mkdir -p "$TARGET_HOME/.codex/plugins/cache/episodic-memory-dev/episodic-memory/1.2.3/.codex-plugin"
 mkdir -p "$TARGET_HOME/.codex/plugins/cache/episodic-memory-dev/episodic-memory/1.2.3/hooks"
 cat > "$TARGET_HOME/.codex/plugins/cache/episodic-memory-dev/episodic-memory/1.2.3/.codex-plugin/plugin.json" <<'EOF'
@@ -260,6 +295,24 @@ assert_file_contains "target hooks.json updated from harvested install" \
 assert_file_contains "target hooks directory synced from harvested install" \
   "$TARGET_HOME/.codex/hooks/gsd-check-update.js" \
   'harvested-check-update'
+assert_file_contains "target Codex invoke-skill shim synced from harvested install" \
+  "$TARGET_HOME/.codex/bin/silver-bullet" \
+  'plugins/cache/alo-labs-codex/silver-bullet/current/scripts/silver-bullet'
+assert_file_not_contains "target Codex invoke-skill shim does not retain stale target content" \
+  "$TARGET_HOME/.codex/bin/silver-bullet" \
+  'stale-target-shim'
+assert_file_contains "target native SB mirror synced from harvested install" \
+  "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" \
+  'harvested-valid-native-skill'
+assert_file_contains "target native SB mirror uses YAML-safe quoted Silver route name" \
+  "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" \
+  'name: "silver:feature"'
+assert_file_not_contains "target native SB mirror does not retain stale invalid Silver route name" \
+  "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" \
+  'name: silver:feature'
+assert_file_contains "target native SB mirror preserves managed marker" \
+  "$TARGET_HOME/.codex/skills/silver-feature/.silver-bullet-managed" \
+  'source=Silver Bullet'
 assert_file_contains "target config keeps existing non-SB plugin config" \
   "$TARGET_HOME/.codex/config.toml" \
   '[plugins."superpowers@superpowers-marketplace"]'

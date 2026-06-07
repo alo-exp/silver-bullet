@@ -1,6 +1,6 @@
 ---
 name: artifact-reviewer
-title: Silver: Artifact Reviewer
+title: "Silver: Artifact Reviewer"
 description: This skill should be used for framework for artifact review — defines the standard interface, 2-pass loop, state tracking, and audit trail that all SB artifact reviewers implement
 argument-hint: "<artifact-path> [--reviewer <reviewer-skill-name>]"
 user-invocable: false

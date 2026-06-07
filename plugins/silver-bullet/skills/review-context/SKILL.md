@@ -1,6 +1,6 @@
 ---
 name: review-context
-title: Silver: Review Context
+title: "Silver: Review Context"
 description: This skill should be used for CONTEXT.md artifact reviewer — validates that all discussion points are resolved (locked decision or Claude's Discretion), decisions are specific (not vague), and no contradictions exist between decisions
 argument-hint: "<context-path>"
 user-invocable: false

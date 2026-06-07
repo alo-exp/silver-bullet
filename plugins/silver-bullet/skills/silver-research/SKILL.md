@@ -1,6 +1,6 @@
 ---
-name: silver:research
-title: Silver: /silver:research - Research
+name: "silver:research"
+title: "Silver: /silver:research - Research"
 description: >
   This skill should be used for SB-orchestrated research workflow: clarify → direct research by default, optional MultAI augmentation only when user-requested → clarify → hand off to silver:feature or silver:devops
 argument-hint: "<research question or technology decision>"

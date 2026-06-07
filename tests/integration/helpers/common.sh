@@ -12,6 +12,7 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 PASS=0
 FAIL=0
+DEFAULT_CONFIG_TEMPLATE="${REPO_ROOT}/templates/silver-bullet.config.json.default"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
@@ -74,37 +75,79 @@ integration_teardown() {
 
 write_default_config() {
   local workflow="${1:-full-dev-cycle}"
+  local config_version required_planning required_deploy all_tracked
+  config_version=$(jq -r '.config_version' "$DEFAULT_CONFIG_TEMPLATE")
+  if [[ "$workflow" == "devops-cycle" ]]; then
+    required_planning=$(jq -c '.skills.required_planning_devops' "$DEFAULT_CONFIG_TEMPLATE")
+    required_deploy=$(jq -c '.skills.required_deploy_devops' "$DEFAULT_CONFIG_TEMPLATE")
+  else
+    required_planning=$(jq -c '.skills.required_planning' "$DEFAULT_CONFIG_TEMPLATE")
+    required_deploy=$(jq -c '.skills.required_deploy' "$DEFAULT_CONFIG_TEMPLATE")
+  fi
+  all_tracked=$(jq -c '.skills.all_tracked' "$DEFAULT_CONFIG_TEMPLATE")
   cat > "$TMPCFG" << EOCFG
 {
+  "config_version": "${config_version}",
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
-    "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","verification-before-completion","test-driven-development","tech-debt","verify-tests"]
+    "required_planning": ${required_planning},
+    "required_deploy": ${required_deploy},
+    "all_tracked": ${all_tracked}
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
 EOCFG
 }
 
+emit_required_deploy_skills() {
+  local field="${1:-required_deploy}"
+  jq -r ".skills.${field}[]" "$DEFAULT_CONFIG_TEMPLATE" | awk '
+    $0 == "gsd-code-review" { pending_gsd = 1; next }
+    $0 == "requesting-code-review" {
+      print
+      if (pending_gsd) {
+        print "gsd-code-review"
+        pending_gsd = 0
+      }
+      next
+    }
+    { print }
+    END {
+      if (pending_gsd) print "gsd-code-review"
+    }
+  '
+}
+
+seed_gsd_lifecycle_artifacts() {
+  mkdir -p "$TMPDIR_TEST/.planning"
+  cat > "$TMPDIR_TEST/.planning/STATE.md" <<'EOF'
+# Execution State
+
+status: complete
+EOF
+  cat > "$TMPDIR_TEST/.planning/UAT.md" <<'EOF'
+# UAT
+
+| Scenario | Result |
+|---|---|
+| Integration fixture | PASS |
+EOF
+  cat > "$TMPDIR_TEST/.planning/SECURITY.md" <<'EOF'
+# Security Verification
+
+status: complete
+EOF
+  cat > "$TMPDIR_TEST/.planning/VALIDATION.md" <<'EOF'
+# Validation
+
+status: complete
+EOF
+}
+
 write_all_skills() {
-  cat > "$TMPSTATE" << 'EOSKILLS'
-silver-quality-gates
-requesting-code-review
-gsd-code-review
-receiving-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
-deploy-checklist
-silver-create-release
-silver-ensure-docs
-verification-before-completion
-test-driven-development
-tech-debt
-verify-tests
-EOSKILLS
+  emit_required_deploy_skills required_deploy > "$TMPSTATE"
   date +%s > "$VERIFY_TESTS_FILE"
+  seed_gsd_lifecycle_artifacts
 }
 
 # Write a WORKFLOW.md with all paths marked complete

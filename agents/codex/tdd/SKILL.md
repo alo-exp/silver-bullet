@@ -1,8 +1,8 @@
 ---
 name: tdd
 id: tdd
-title: Silver: TDD — Test-Driven Development
-description: Internal Silver Bullet enforcement wrapper around superpowers:test-driven-development; enforces Red-Green-Refactor for implementation work
+title: "Silver: TDD — Test-Driven Development"
+description: "Internal Silver Bullet enforcement wrapper around superpowers:test-driven-development; enforces Red-Green-Refactor for implementation work"
 user-invocable: false
 trigger:
   - "TDD"

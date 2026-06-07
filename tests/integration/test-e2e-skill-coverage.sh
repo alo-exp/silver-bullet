@@ -159,18 +159,13 @@ echo "--- Scenario 8: Compliance status with all required_deploy skills ---"
 integration_setup
 write_default_config
 
-# Record all 12 required_deploy skills
-required_deploy_skills=(
-  "silver-quality-gates" "requesting-code-review" "gsd-code-review" "receiving-code-review"
-  "finishing-a-development-branch" "silver-create-release"
-  "verification-before-completion" "test-driven-development" "verify-tests"
-)
-for skill in "${required_deploy_skills[@]}"; do
+# Record all current required_deploy skills
+while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
-done
+done < <(emit_required_deploy_skills required_deploy)
 
 out=$(run_compliance_status)
-assert_contains "S8.1: compliance shows PLANNING complete" "$out" "PLANNING 1/1"
+assert_contains "S8.1: compliance shows PLANNING complete" "$out" "PLANNING 3/3"
 assert_contains "S8.2: compliance shows REVIEW complete" "$out" "REVIEW 3/3"
 assert_contains "S8.3: compliance shows FINALIZATION complete" "$out" "FINALIZATION 4/4"
 assert_contains "S8.4: compliance shows RELEASE complete" "$out" "RELEASE 1/1"

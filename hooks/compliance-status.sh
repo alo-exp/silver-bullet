@@ -31,6 +31,13 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  # shellcheck disable=SC1091
+  source "$_lib_dir/required-skills.sh"
+fi
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
 
 # jq is required — silent exit if missing (session-start already warned visibly)
 command -v jq >/dev/null 2>&1 || exit 0
@@ -128,8 +135,9 @@ fi
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[
   (.state.state_file // env.SB_RUNTIME_STATE_DIR + "/state"),
-  ((.skills.required_planning // ["silver-quality-gates"]) | join(" ")),
-  (.project.active_workflow // "full-dev-cycle")
+  ((.skills.required_planning // []) | join(" ")),
+  (.project.active_workflow // "full-dev-cycle"),
+  ((.skills.required_planning_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -139,6 +147,19 @@ required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
 # active_workflow is read for future per-workflow status formatting
 # shellcheck disable=SC2034
 active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
+required_planning_devops=$(printf '%s' "$config_vals" | sed -n '4p')
+
+default_planning="$DEFAULT_PLANNING"
+configured_planning="$required_planning"
+if [[ "$active_workflow" == "devops-cycle" ]]; then
+  default_planning="$DEVOPS_DEFAULT_PLANNING"
+  configured_planning="${required_planning_devops:-$required_planning}"
+fi
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  required_planning="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
+else
+  required_planning="${configured_planning:-$default_planning}"
+fi
 
 # Env var override
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"

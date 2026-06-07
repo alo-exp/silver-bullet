@@ -1,6 +1,6 @@
 ---
-name: silver:create-release
-title: Silver: /silver:create-release - Create Release
+name: "silver:create-release"
+title: "Silver: /silver:create-release - Create Release"
 description: This skill should be used to generate structured release notes from git history since the last tag, then create a GitHub Release (for GitHub repos) or output notes for manual publishing
 version: 0.1.0
 ---

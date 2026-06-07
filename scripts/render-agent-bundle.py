@@ -111,6 +111,40 @@ def codex_title_for_name(name: str, current_title: str | None = None) -> str:
     return f"Silver: {title}"
 
 
+def yaml_quote_scalar(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def yaml_unquote_scalar(value: str) -> str:
+    stripped = value.strip()
+    if len(stripped) >= 2 and stripped[0] == stripped[-1] and stripped[0] in {'"', "'"}:
+        return stripped[1:-1]
+    return stripped
+
+
+def quote_codex_frontmatter_scalars(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return text
+
+    for idx, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            break
+        match = re.match(r"^([A-Za-z0-9_-]+:\s*)(.+?)(\r?\n?)$", line)
+        if not match:
+            continue
+        prefix, value, newline = match.groups()
+        stripped = value.strip()
+        if stripped in {">", "|", ">-", "|-"} or not stripped:
+            continue
+        if stripped[0] in {'"', "'"}:
+            continue
+        if ":" in stripped or stripped.startswith(("/", "@", "`")):
+            lines[idx] = f"{prefix}{yaml_quote_scalar(stripped)}{newline}"
+
+    return "".join(lines)
+
+
 def ensure_codex_picker_title(text: str) -> str:
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
@@ -129,17 +163,17 @@ def ensure_codex_picker_title(text: str) -> str:
         name_match = re.match(r"^(name:\s*)(.+?)\s*$", line)
         if name_match and name_idx is None:
             name_idx = idx
-            skill_name = name_match.group(2).strip().strip('"')
+            skill_name = yaml_unquote_scalar(name_match.group(2))
             continue
         if re.match(r"^title:\s*", line) and title_idx is None:
             title_idx = idx
-            current_title = re.sub(r"^title:\s*", "", line).strip().strip('"')
+            current_title = yaml_unquote_scalar(re.sub(r"^title:\s*", "", line))
 
     if frontmatter_end is None or name_idx is None or skill_name is None:
         return text
 
     title = codex_title_for_name(skill_name, current_title=current_title)
-    title_line = f"title: {title}\n"
+    title_line = f"title: {yaml_quote_scalar(title)}\n"
     if title_idx is not None and title_idx < frontmatter_end:
         lines[title_idx] = title_line
     else:
@@ -179,6 +213,7 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
     updated = rewrite_names(text)
     if agent == "codex":
         updated = ensure_codex_picker_title(updated)
+        updated = quote_codex_frontmatter_scalars(updated)
     if not preserve_runtime_placeholders:
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)

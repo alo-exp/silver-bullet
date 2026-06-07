@@ -503,6 +503,114 @@ for plugin_root in cache_root.iterdir():
 PY
 }
 
+sb_rewrite_text_file_runtime_paths() {
+  local source_path="$1"
+  local dest_path="$2"
+  local harvest_home_root="$3"
+  local target_home_root="$4"
+  local original_home_root="${5:-}"
+
+  python3 - "$source_path" "$dest_path" "$harvest_home_root" "$target_home_root" "$original_home_root" <<'PY'
+import pathlib
+import sys
+
+source_path = pathlib.Path(sys.argv[1])
+dest_path = pathlib.Path(sys.argv[2])
+harvest_home_root_raw = sys.argv[3]
+harvest_home_root = pathlib.Path(harvest_home_root_raw)
+target_home_root = pathlib.Path(sys.argv[4])
+original_home_root_raw = sys.argv[5]
+original_home_root = pathlib.Path(original_home_root_raw) if original_home_root_raw else None
+target_codex_home = str(target_home_root / ".codex")
+
+source_prefixes = []
+for raw_home_root, home_root in [
+    (harvest_home_root_raw, harvest_home_root),
+    (original_home_root_raw, original_home_root),
+]:
+    if home_root is None or not raw_home_root:
+        continue
+    raw_codex_home = raw_home_root.rstrip("/") + "/.codex"
+    for candidate in [raw_codex_home, home_root / ".codex", (home_root / ".codex").resolve()]:
+        candidate_str = str(candidate)
+        if candidate_str not in source_prefixes:
+            source_prefixes.append(candidate_str)
+source_prefixes.sort(key=len, reverse=True)
+
+content = source_path.read_text()
+for source_prefix in source_prefixes:
+    content = content.replace(source_prefix, target_codex_home)
+
+dest_path.parent.mkdir(parents=True, exist_ok=True)
+dest_path.write_text(content)
+PY
+}
+
+sb_sync_silver_bullet_codex_bin() {
+  local harvest_codex_home="$1"
+  local target_codex_home="$2"
+  local harvest_home_root="$3"
+  local target_home_root="$4"
+  local original_home_root="${5:-}"
+  local harvest_cli="${harvest_codex_home}/bin/silver-bullet"
+  local target_cli="${target_codex_home}/bin/silver-bullet"
+
+  [[ -f "$harvest_cli" ]] || return 0
+
+  sb_rewrite_text_file_runtime_paths \
+    "$harvest_cli" \
+    "$target_cli" \
+    "$harvest_home_root" \
+    "$target_home_root" \
+    "$original_home_root"
+  chmod 700 "$target_cli"
+}
+
+sb_sync_managed_native_codex_skills() {
+  local harvest_skills_root="$1"
+  local target_skills_root="$2"
+
+  [[ -d "$harvest_skills_root" ]] || return 0
+
+  python3 - "$harvest_skills_root" "$target_skills_root" <<'PY'
+import pathlib
+import shutil
+import sys
+
+harvest_skills_root = pathlib.Path(sys.argv[1])
+target_skills_root = pathlib.Path(sys.argv[2])
+marker_name = ".silver-bullet-managed"
+
+desired = {}
+for skill_dir in sorted(harvest_skills_root.iterdir(), key=lambda path: path.name):
+    if not skill_dir.is_dir():
+        continue
+    if not (skill_dir / marker_name).exists():
+        continue
+    desired[skill_dir.name] = skill_dir
+
+if not desired:
+    return_code = 0
+    raise SystemExit(return_code)
+
+target_skills_root.mkdir(parents=True, exist_ok=True)
+
+for target in sorted(target_skills_root.iterdir(), key=lambda path: path.name):
+    if not target.is_dir():
+        continue
+    if (target / marker_name).exists() and target.name not in desired:
+        shutil.rmtree(target)
+
+for dirname, source in desired.items():
+    target = target_skills_root / dirname
+    if target.is_symlink() or target.is_file():
+        target.unlink()
+    elif target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(source, target)
+PY
+}
+
 sync_install_generated_codex_user_hooks() {
   local target_home_root="$1"
   local runtime_mode="${2:-codex}"
@@ -518,6 +626,7 @@ sync_install_generated_codex_user_hooks() {
   local target_plugin_cache_root="${target_codex_home}/plugins/cache/alo-labs-codex"
   local harvest_user_hooks_root=""
   local target_user_hooks_root=""
+  local harvest_codex_home=""
 
   if [[ "$runtime_mode" == "kay" ]]; then
     command_package_root="$target_marketplace_package_root"
@@ -532,6 +641,7 @@ sync_install_generated_codex_user_hooks() {
   target_plugin_cache_root="${target_codex_home}/plugins/cache/alo-labs-codex"
   harvest_user_hooks_root="${harvest_root}/.codex/hooks"
   target_user_hooks_root="${target_codex_home}/hooks"
+  harvest_codex_home="${harvest_root}/.codex"
 
   mkdir -p "${harvest_root}/.codex"
   if [[ "$runtime_mode" == "kay" ]]; then
@@ -589,6 +699,17 @@ sync_install_generated_codex_user_hooks() {
   else
     rm -rf -- "$target_user_hooks_root"
   fi
+
+  sb_sync_silver_bullet_codex_bin \
+    "$harvest_codex_home" \
+    "$target_codex_home" \
+    "$harvest_root" \
+    "$target_home_root" \
+    "${SB_LIVE_ORIGINAL_HOME:-}"
+
+  sb_sync_managed_native_codex_skills \
+    "${harvest_codex_home}/skills" \
+    "${target_codex_home}/skills"
 
   if [[ -d "${harvest_marketplace_root}/plugins/silver-bullet" ]]; then
     if [[ -n "$command_package_version_root" ]]; then

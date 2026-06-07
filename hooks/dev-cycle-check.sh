@@ -8,6 +8,13 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  # shellcheck disable=SC1091
+  source "$_lib_dir/required-skills.sh"
+fi
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
@@ -374,14 +381,85 @@ To reset workflow state intentionally, run in your terminal:
     sb_shell_command_looks_read_only "$payload" >/dev/null 2>&1
   }
 
-  # Set default required_planning based on workflow if not overridden by config
-  # DevOps workflow: silver-blast-radius and devops-quality-gates replace silver-quality-gates
-  if [[ -z "$required_planning" ]]; then
-    if [[ "$active_workflow" == "devops-cycle" ]]; then
-      required_planning="silver-blast-radius devops-quality-gates"
-    else
-      required_planning="silver-quality-gates"
+  shell_payload_is_sb_skill_adapter_invocation() {
+    local payload="$1"
+    [[ -n "$payload" ]] || return 1
+    # Codex invokes SB skills through the package-local adapter. The adapter is
+    # the workflow continuation channel, not a source edit; concrete redirects
+    # and writes are still handled by shell_write_targets before this check.
+    [[ "$payload" != *$'\n'* ]] || return 1
+    python3 - "$payload" <<'PY' >/dev/null 2>&1
+import pathlib
+import re
+import shlex
+import sys
+
+payload = sys.argv[1]
+assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+try:
+    lexer = shlex.shlex(payload, posix=True, punctuation_chars=True)
+    lexer.whitespace_split = True
+    tokens = list(lexer)
+except Exception:
+    raise SystemExit(1)
+
+if not tokens:
+    raise SystemExit(1)
+if any(token in {";", "|", "||", "&", "&&", ">", ">>", "<", "<<"} for token in tokens):
+    raise SystemExit(1)
+
+idx = 0
+if tokens[idx] == "env":
+    idx += 1
+while idx < len(tokens) and assignment_re.match(tokens[idx]):
+    idx += 1
+if idx + 1 >= len(tokens):
+    raise SystemExit(1)
+
+command = tokens[idx]
+if not (command == "scripts/silver-bullet" or command.endswith("/scripts/silver-bullet")):
+    raise SystemExit(1)
+if tokens[idx + 1] != "invoke-skill":
+    raise SystemExit(1)
+
+print("adapter")
+PY
+  }
+
+  workflow_id_from_shell_assignment() {
+    local payload="$1"
+    local first_line
+    first_line=$(printf '%s' "$payload" | sed -n '1p')
+    first_line="${first_line#"${first_line%%[![:space:]]*}"}"
+
+    if [[ "$first_line" =~ ^export[[:space:]]+SB_WORKFLOW_ID=([A-Za-z0-9T_-]+)[[:space:]]*[\;] ]]; then
+      printf '%s' "${BASH_REMATCH[1]}"
+      return 0
     fi
+
+    if [[ "$first_line" =~ ^env[[:space:]]+ ]]; then
+      first_line="${first_line#env }"
+      first_line="${first_line#"${first_line%%[![:space:]]*}"}"
+    fi
+
+    if [[ "$first_line" =~ (^|[[:space:]])SB_WORKFLOW_ID=([A-Za-z0-9T_-]+)[[:space:]] ]]; then
+      printf '%s' "${BASH_REMATCH[2]}"
+      return 0
+    fi
+
+    return 1
+  }
+
+  # Current-version configs can explicitly set the planning floor. Legacy
+  # configs are normalized to inherit the current default GSD planning gates.
+  default_planning="$DEFAULT_PLANNING"
+  if [[ "$active_workflow" == "devops-cycle" ]]; then
+    default_planning="$DEVOPS_DEFAULT_PLANNING"
+  fi
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    required_planning="$(sb_required_skills_normalize_configured_list "$config_file" "$required_planning" "$default_planning")"
+  elif [[ -z "$required_planning" ]]; then
+    required_planning="$default_planning"
   fi
 
   # Env var overrides
@@ -436,6 +514,7 @@ To reset workflow state intentionally, run in your terminal:
       exit 0
     fi
   else
+    shell_payload_is_sb_skill_adapter_invocation "$command_str" && exit 0
     collect_shell_in_scope_targets
     if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
       # When we can resolve concrete write targets, scope Bash enforcement to the
@@ -563,6 +642,9 @@ To reset workflow state intentionally, run in your terminal:
 
         if [[ ${#active_workflows[@]} -gt 0 ]]; then
           active_id="${SB_WORKFLOW_ID:-}"
+          if [[ -z "$active_id" && -n "$command_str" ]]; then
+            active_id="$(workflow_id_from_shell_assignment "$command_str" 2>/dev/null || true)"
+          fi
           if [[ -z "$active_id" ]]; then
             active_names=""
             for _wf in "${active_workflows[@]}"; do

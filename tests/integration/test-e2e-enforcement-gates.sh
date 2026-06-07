@@ -17,8 +17,10 @@ out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.1: edit blocked with no planning (Stage A)" "$out"
 assert_contains "S1.2: mentions HARD STOP" "$out" "HARD STOP"
 
-# Record silver-quality-gates only: Stage B implementation window
+# Record current planning floor: Stage B implementation window
+run_record_skill "gsd-discuss-phase" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S1.3: edit allowed after planning, before gsd-code-review (Stage B)" "$out"
 assert_contains "S1.4: mentions code review remains required" "$out" "Code review"
@@ -39,8 +41,10 @@ write_default_config
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_blocked "S2.1: commit blocked with no planning" "$out"
 
-# Record silver-quality-gates: commit now ALLOWED
+# Record current planning floor: commit now ALLOWED
+run_record_skill "gsd-discuss-phase" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.2: commit allowed after planning" "$out"
 
@@ -52,16 +56,13 @@ integration_setup
 write_default_config
 
 # Only planning: PR blocked
+run_record_skill "gsd-discuss-phase" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S3.1: PR create blocked with only planning" "$out"
 
-# Record all required_deploy: PR now ALLOWED
-for skill in silver-quality-gates requesting-code-review gsd-code-review receiving-code-review \
-             finishing-a-development-branch silver-create-release verification-before-completion \
-             test-driven-development verify-tests; do
-  run_record_skill "$skill" >/dev/null
-done
+write_all_skills
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_allowed "S3.2: PR create allowed with all required skills" "$out"
 
@@ -88,8 +89,10 @@ echo "--- Scenario 6: Phase-skip detection (finalization before gsd-code-review)
 integration_setup
 write_default_config
 
-# Record silver-quality-gates + finalization but NOT gsd-code-review
+# Record current planning + finalization but NOT gsd-code-review
+run_record_skill "gsd-discuss-phase" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 run_record_skill "silver-create-release" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S6.1: edit allowed so phase-skip fixes can proceed" "$out"
@@ -130,6 +133,13 @@ write_default_config
 # Write state with gsd-code-review BEFORE requesting-code-review
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-discuss-phase
+gsd-plan-phase
+gsd-execute-phase
+gsd-verify-work
+gsd-ship
+gsd-secure-phase
+gsd-validate-phase
 gsd-code-review
 requesting-code-review
 receiving-code-review
@@ -141,7 +151,9 @@ silver-create-release
 verification-before-completion
 test-driven-development
 tech-debt
+verify-tests
 EOF
+date +%s > "$VERIFY_TESTS_FILE"
 
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_contains "S8.1: ordering violation detected" "$out" "wrong order"

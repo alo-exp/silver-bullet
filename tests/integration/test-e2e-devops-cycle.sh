@@ -9,17 +9,7 @@ echo "=== Integration: E2E DevOps Cycle ==="
 
 # Helper: write devops config (required_planning = silver-blast-radius + devops-quality-gates)
 write_devops_config() {
-  cat > "$TMPCFG" << EOCFG
-{
-  "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
-  "skills": {
-    "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
-  },
-  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
-}
-EOCFG
+  write_default_config "devops-cycle"
 }
 
 # Scenario 1: DevOps planning requires silver-blast-radius + devops-quality-gates
@@ -37,8 +27,10 @@ run_record_skill "silver-blast-radius" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.3: edit blocked with only silver-blast-radius (devops-quality-gates missing)" "$out"
 
-# Record devops-quality-gates: Stage B implementation window
+# Record devops-quality-gates + GSD planning: Stage B implementation window
 run_record_skill "devops-quality-gates" >/dev/null
+run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S1.4: edit allowed after devops planning, before gsd-code-review (Stage B)" "$out"
 
@@ -61,6 +53,8 @@ assert_blocked "S2.1: commit blocked without silver-blast-radius" "$out"
 # Record silver-blast-radius + devops-quality-gates: commit ALLOWED
 run_record_skill "silver-blast-radius" >/dev/null
 run_record_skill "devops-quality-gates" >/dev/null
+run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 out=$(run_completion_audit "PreToolUse" "git commit -m 'infra: update deploy'")
 assert_allowed "S2.2: commit allowed after devops planning" "$out"
 
@@ -99,11 +93,9 @@ out=$(run_stop_check "Stop")
 assert_blocked "S4.1: stop-check blocks when all required devops skills are missing" "$out"
 
 # Record all devops required_deploy skills
-for skill in silver-blast-radius devops-quality-gates requesting-code-review gsd-code-review \
-             receiving-code-review finishing-a-development-branch silver-create-release \
-             verification-before-completion test-driven-development verify-tests; do
+while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
-done
+done < <(emit_required_deploy_skills required_deploy_devops)
 out=$(run_stop_check "Stop")
 assert_allowed "S4.2: stop-check allowed with all devops skills" "$out"
 
@@ -124,6 +116,8 @@ assert_blocked "S5.1: .tf edit blocked in devops-cycle (no devops planning)" "$o
 # Record devops planning + gsd-code-review: ALLOWED
 run_record_skill "silver-blast-radius" >/dev/null
 run_record_skill "devops-quality-gates" >/dev/null
+run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "gsd-plan-phase" >/dev/null
 run_record_skill "gsd-code-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/main.tf")
 assert_allowed "S5.2: .tf edit allowed after devops planning + gsd-code-review" "$out"
@@ -141,11 +135,10 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'infra: promote to
 assert_blocked "S6.1: PR blocked with only silver-blast-radius" "$out"
 
 # Record all devops required_deploy
-for skill in silver-blast-radius devops-quality-gates requesting-code-review gsd-code-review \
-             receiving-code-review finishing-a-development-branch silver-create-release \
-             verification-before-completion test-driven-development verify-tests; do
+while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
-done
+done < <(emit_required_deploy_skills required_deploy_devops)
+seed_gsd_lifecycle_artifacts
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'infra: promote to staging'")
 assert_allowed "S6.2: PR allowed with all devops required skills" "$out"
 

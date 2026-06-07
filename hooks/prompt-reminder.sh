@@ -18,7 +18,7 @@ trap 'finish_noop' ERR
 # Fires before every user prompt is processed.
 # Injects a compact Silver Bullet compliance reminder into additionalContext.
 #
-# Must be FAST (< 200ms) — no git operations, no stdin blocking, single jq call.
+# Must be FAST (< 200ms) — no git operations and no blocking stdin reads.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -30,10 +30,43 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   source "$_lib_dir/runtime-paths.sh"
 fi
 
+resolve_silver_bullet_codex_adapter() {
+  local hook_package_root=""
+  local candidate
+
+  if [[ -n "$_lib_dir" ]]; then
+    hook_package_root="$(cd "$_lib_dir/../.." && pwd 2>/dev/null || true)"
+  fi
+
+  for candidate in \
+    "${hook_package_root}/scripts/silver-bullet" \
+    "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-}/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" \
+    "${SB_RUNTIME_HOME_ROOT:-}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet" \
+    "${SB_RUNTIME_HOME_ROOT:-}/bin/silver-bullet"; do
+    [[ -n "$candidate" ]] || continue
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  printf 'silver-bullet'
+}
+
+shell_single_quote() {
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
 # jq is required — return a no-op payload if missing.
 command -v jq >/dev/null 2>&1 || finish_noop
 
-# DO NOT read stdin — UserPromptSubmit hooks must not block on stdin for speed.
+prompt=""
+if [[ ! -t 0 ]]; then
+  input="$(cat 2>/dev/null || true)"
+  if [[ -n "$input" ]]; then
+    prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+  fi
+fi
 
 # ── Resolve config file by walking up from $PWD ──────────────────────────────
 config_file=""
@@ -111,8 +144,14 @@ else
   # Fallback if lib not found (should not happen in correct installs)
   DEFAULT_REQUIRED="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
 fi
+if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
+  # shellcheck source=lib/prompt-classifier.sh
+  source "$_lib_dir/prompt-classifier.sh"
+fi
 
-if [[ -n "$required_deploy_cfg" ]]; then
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+elif [[ -n "$required_deploy_cfg" ]]; then
   required_skills="$required_deploy_cfg"
 else
   required_skills="$DEFAULT_REQUIRED"
@@ -193,6 +232,24 @@ if [[ -n "$workflow_position" ]]; then
 ${workflow_position}"
 fi
 
+bare_prompt_context=""
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
+  if sb_prompt_is_bare_work_request "$prompt"; then
+    silver_bullet_adapter="$(resolve_silver_bullet_codex_adapter)"
+    quoted_prompt="$(shell_single_quote "$prompt")"
+    bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action: invoke the Silver router through the Codex SB adapter:
+
+  \"${silver_bullet_adapter}\" invoke-skill silver ${quoted_prompt}
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB/GSD workflow it selects."
+  fi
+fi
+
 # Prepend core rules if available, then append skill status
 if [[ -f "$core_rules_file" ]]; then
   core_content=$(cat "$core_rules_file")
@@ -203,6 +260,14 @@ if [[ -f "$core_rules_file" ]]; then
 ${skill_status}"
 else
   msg="$skill_status"
+fi
+
+if [[ -n "$bare_prompt_context" ]]; then
+  msg="${bare_prompt_context}
+
+---
+
+${msg}"
 fi
 
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"

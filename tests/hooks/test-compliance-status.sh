@@ -6,6 +6,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/compliance-status.sh"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
 
@@ -27,8 +28,9 @@ cleanup_all() {
 trap cleanup_all EXIT
 
 write_cfg() {
-  cat > "$TMPCFG" << EOF
+cat > "$TMPCFG" << EOF
 {
+  "config_version": "${CURRENT_CONFIG_VERSION}",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],

@@ -175,6 +175,21 @@ assert_not_in_requested "non-SB prompt does not record requested routes" "silver
 assert_not_in_state "non-SB prompt does not record completed routes" "silver-scan"
 teardown
 
+setup
+out="$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')"
+assert_noop_json "bare feature prompt returns valid no-op JSON after recording router request" "$out"
+assert_in_requested "bare feature prompt records Silver router as requested" "silver"
+assert_not_in_state "bare feature prompt does not record Silver router as completed" "silver"
+assert_in_session_log "session ledger records bare prompt routed through silver" "  - [ ] silver"
+teardown
+
+setup
+out="$(run_hook 'What does Silver Bullet aim to achieve?')"
+assert_noop_json "explanatory question returns valid no-op JSON" "$out"
+assert_not_in_requested "explanatory question does not trigger Silver router" "silver"
+assert_not_in_state "explanatory question does not complete Silver router" "silver"
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

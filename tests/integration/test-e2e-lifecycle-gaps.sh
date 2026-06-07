@@ -63,11 +63,10 @@ integration_setup
 write_default_config
 
 # Record all required_deploy skills EXCEPT verification-before-completion
-for skill in silver-quality-gates gsd-code-review requesting-code-review receiving-code-review \
-             testing-strategy documentation finishing-a-development-branch \
-             deploy-checklist silver-create-release test-driven-development tech-debt verify-tests; do
+while IFS= read -r skill; do
+  [[ "$skill" == "verification-before-completion" ]] && continue
   run_record_skill "$skill" >/dev/null
-done
+done < <(emit_required_deploy_skills required_deploy)
 
 # Provide a local invocable copy of the verifier skill so completion-audit
 # treats it as installed in CI even though the repo does not vendor that skill.
@@ -87,6 +86,7 @@ assert_blocked "S3.1: completion-audit blocks when verification-before-completio
 
 # Record the missing skill
 run_record_skill "verification-before-completion" >/dev/null
+seed_gsd_lifecycle_artifacts
 
 # Now should be allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: test'")
@@ -147,16 +147,7 @@ rm -rf "$FAKE_HOME"
 echo "--- S5: DevOps workflow transition ---"
 integration_setup
 
-# Write devops-cycle config (devops required skills differ from full-dev-cycle)
-printf '{
-  "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "devops-cycle" },
-  "skills": {
-    "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
-  },
-  "state": { "state_file": "%s", "trivial_file": "%s/trivial-test-%s" }
-}\n' "$TMPSTATE" "$SB_TEST_DIR" "$TEST_RUN_ID" > "$TMPCFG"
+write_default_config "devops-cycle"
 
 # Non-empty state but missing all required devops skills → stop-check should block.
 # (HOOK-04 exits 0 on truly empty state — that's a non-dev session fail-open.
@@ -166,14 +157,9 @@ printf 'some-unrelated-skill\n' > "$TMPSTATE"
 out=$(run_stop_check "Stop")
 assert_blocked "S5.1: stop-check blocks when required devops skills are missing" "$out"
 
-# Record all devops required skills (including quality-gate stages and review loops)
-for skill in silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review \
-             receiving-code-review testing-strategy documentation \
-             finishing-a-development-branch deploy-checklist silver-create-release \
-             verification-before-completion test-driven-development tech-debt \
-             verify-tests review-loop-pass-1 review-loop-pass-2; do
+while IFS= read -r skill; do
   echo "$skill" >> "$TMPSTATE"
-done
+done < <(emit_required_deploy_skills required_deploy_devops)
 date +%s > "$VERIFY_TESTS_FILE"
 
 out=$(run_stop_check "Stop")
