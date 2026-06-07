@@ -164,6 +164,19 @@ assert_in_session_log() {
   fi
 }
 
+assert_output_contains() {
+  local label="$1"
+  local output="$2"
+  local needle="$3"
+  if printf '%s' "$output" | grep -qF "$needle"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — '$needle' not found in output: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # ── Tests ─────────────────────────────────────────────────────────────────────
 echo "=== record-skill.sh tests ==="
 
@@ -324,6 +337,15 @@ adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quali
 run_hook_bash "$adapter_cmd" >/dev/null
 assert_in_state "Codex invoke-skill adapter records completed skill after verified receipt" "silver-quality-gates"
 assert_in_session_log "Codex invoke-skill adapter marks session ledger completed" "  - [x] silver-quality-gates"
+teardown
+
+setup
+adapter_output="$(
+  cd "$TMPDIR_TEST" && \
+    bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver 'Add a due date field to todos.' 2>/dev/null
+)"
+assert_output_contains "Codex invoke-skill adapter surfaces runtime arguments" "$adapter_output" "Runtime arguments for this skill"
+assert_output_contains "Codex invoke-skill adapter includes original bare prompt argument" "$adapter_output" "Add a due date field to todos."
 teardown
 
 # Test 13: Empty skill name is ignored

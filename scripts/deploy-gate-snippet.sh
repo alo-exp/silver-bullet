@@ -11,6 +11,11 @@ if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$_repo_root/hooks/lib/runtime-paths.sh"
 fi
+if [[ -f "$_repo_root/hooks/lib/required-skills.sh" ]]; then
+  # shellcheck source=hooks/lib/required-skills.sh
+  # shellcheck disable=SC1091
+  source "$_repo_root/hooks/lib/required-skills.sh"
+fi
 
 ###############################################################################
 # Deploy Gate Snippet — Silver Bullet
@@ -49,7 +54,7 @@ done
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
-REQUIRED_DEPLOY="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+REQUIRED_DEPLOY="${DEFAULT_REQUIRED:-silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
@@ -59,7 +64,11 @@ if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   [[ -n "$_val" ]] && TRIVIAL_FILE="${_val/#\~/$HOME}"
 
   _val=$(jq -r '(.skills.required_deploy // []) | join(" ")' "$_dw_config_file")
-  [[ -n "$_val" ]] && REQUIRED_DEPLOY="$_val"
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    REQUIRED_DEPLOY="$(sb_required_skills_normalize_configured_list "$_dw_config_file" "$_val" "$REQUIRED_DEPLOY")"
+  elif [[ -n "$_val" ]]; then
+    REQUIRED_DEPLOY="$_val"
+  fi
 fi
 
 # --- Gate logic ---

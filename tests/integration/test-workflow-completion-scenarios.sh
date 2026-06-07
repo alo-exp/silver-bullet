@@ -20,13 +20,10 @@ out=$(run_stop_check "Stop")
 assert_blocked "S1.1: stop-check blocks when required skills are missing" "$out"
 
 # Step 2: Record all skills progressively
-skills=("silver-quality-gates" "requesting-code-review" "gsd-code-review" "receiving-code-review"
-        "testing-strategy" "documentation" "finishing-a-development-branch"
-        "deploy-checklist" "silver-create-release" "verification-before-completion"
-        "test-driven-development" "tech-debt" "verify-tests")
-for skill in "${skills[@]}"; do
+while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
-done
+done < <(emit_required_deploy_skills required_deploy)
+seed_gsd_lifecycle_artifacts
 # Step 3: stop-check passes now (all skills present)
 out=$(run_stop_check "Stop")
 assert_allowed "S1.2: stop-check passes with all skills" "$out"
@@ -47,8 +44,8 @@ echo "--- Scenario 2: Commit allowed early, delivery blocked until complete ---"
 integration_setup
 write_default_config
 
-# Step 1: With only silver-quality-gates, commit allowed
-printf 'silver-quality-gates\n' > "$TMPSTATE"
+# Step 1: With the current planning floor, commit allowed
+printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.1: commit allowed with planning only" "$out"
 
@@ -67,23 +64,7 @@ echo "--- Scenario 3: PR create and release allowed with all skills ---"
 integration_setup
 write_default_config
 
-# All skills present
-cat > "$TMPSTATE" << 'EOSKILLS'
-silver-quality-gates
-requesting-code-review
-gsd-code-review
-receiving-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
-deploy-checklist
-silver-create-release
-verification-before-completion
-test-driven-development
-tech-debt
-verify-tests
-EOSKILLS
-date +%s > "$VERIFY_TESTS_FILE"
+write_all_skills
 
 # Step 1: PR create allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
@@ -145,17 +126,20 @@ write_default_config
 # Write all skills but with gsd-code-review before requesting-code-review.
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-discuss-phase
+gsd-plan-phase
+gsd-execute-phase
+gsd-verify-work
+gsd-ship
+gsd-secure-phase
+gsd-validate-phase
 gsd-code-review
 requesting-code-review
 receiving-code-review
-testing-strategy
-documentation
 finishing-a-development-branch
-deploy-checklist
 silver-create-release
 verification-before-completion
 test-driven-development
-tech-debt
 verify-tests
 EOF
 date +%s > "$VERIFY_TESTS_FILE"

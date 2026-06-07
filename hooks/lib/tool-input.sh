@@ -367,6 +367,7 @@ read_only_commands = {
     "head",
     "jq",
     "ls",
+    "nl",
     "printf",
     "pwd",
     "readlink",
@@ -394,6 +395,17 @@ git_read_only_subcommands = {
 }
 shell_names = {"bash", "sh", "zsh"}
 stdout_redirect_commands = {"echo", "printf"}
+test_command_names = {
+    "jest",
+    "mocha",
+    "node",
+    "npm",
+    "npx",
+    "pnpm",
+    "tap",
+    "vitest",
+    "yarn",
+}
 
 
 def parse_tokens(segment: str):
@@ -438,6 +450,73 @@ def has_tokenized_redirect(command_name, args):
         ]
         if prior_operands or command_name in stdout_redirect_commands:
             return True
+    return False
+
+
+def first_non_option(args):
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if arg in {"--"}:
+            idx += 1
+            break
+        if arg in {"-C", "--prefix", "--cwd"} and idx + 1 < len(args):
+            idx += 2
+            continue
+        if arg.startswith("-"):
+            idx += 1
+            continue
+        break
+    return idx if idx < len(args) else None
+
+
+def looks_like_test_command(command_name, args):
+    if command_name not in test_command_names:
+        return False
+
+    if command_name == "node":
+        return any(arg == "--test" or arg.startswith("--test=") for arg in args)
+
+    if command_name in {"jest", "mocha", "tap", "vitest"}:
+        return True
+
+    if command_name in {"npm", "pnpm"}:
+        idx = first_non_option(args)
+        if idx is None:
+            return False
+        subcmd = args[idx]
+        if subcmd in {"test", "t"}:
+            return True
+        if subcmd == "run" and idx + 1 < len(args):
+            script = args[idx + 1]
+            return script == "test" or script.startswith("test:")
+        if subcmd == "exec":
+            exec_args = args[idx + 1 :]
+            if exec_args and exec_args[0] == "--":
+                exec_args = exec_args[1:]
+            if not exec_args:
+                return False
+            return looks_like_test_command(pathlib.Path(exec_args[0]).name, exec_args[1:])
+        return False
+
+    if command_name == "yarn":
+        idx = first_non_option(args)
+        if idx is None:
+            return False
+        subcmd = args[idx]
+        if subcmd in {"test", "jest", "vitest"}:
+            return True
+        if subcmd == "run" and idx + 1 < len(args):
+            script = args[idx + 1]
+            return script == "test" or script.startswith("test:")
+        return False
+
+    if command_name in {"npx"}:
+        idx = first_non_option(args)
+        if idx is None:
+            return False
+        return looks_like_test_command(pathlib.Path(args[idx]).name, args[idx + 1 :])
+
     return False
 
 
@@ -489,6 +568,8 @@ while pending_chunks:
                 break
             if idx >= len(args) or args[idx] not in git_read_only_subcommands:
                 raise SystemExit(1)
+            continue
+        if looks_like_test_command(command_name, args):
             continue
         if command_name == "sed":
             if any(arg == "-i" or arg.startswith("-i") for arg in args):

@@ -4,13 +4,20 @@
 
 set -euo pipefail
 
-HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/stop-check.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK="$REPO_ROOT/hooks/stop-check.sh"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
 FAIL=0
 
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
-SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
@@ -47,6 +54,10 @@ EOF
 # write_cfg_with_release is kept for backward compatibility; the full canonical list
 # already includes silver-create-release via write_cfg.
 write_cfg_with_release() { write_cfg; }
+
+write_current_planning_state() {
+  jq -r '.skills.required_planning[]' "$REPO_ROOT/templates/silver-bullet.config.json.default" > "$TMPSTATE"
+}
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
@@ -268,6 +279,8 @@ echo "--- Test 2: All required skills present ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-discuss-phase
+gsd-plan-phase
 code-review
 requesting-code-review
 receiving-code-review
@@ -303,6 +316,7 @@ echo "--- Test 3b: Uninstalled required skill warns and allows ---"
 setup
 cat > "$TMPCFG" << EOF
 {
+  "config_version": "${CURRENT_CONFIG_VERSION}",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],
@@ -351,6 +365,8 @@ git -C "$TMPDIR_TEST" add main-work.txt
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
+gsd-discuss-phase
+gsd-plan-phase
 code-review
 requesting-code-review
 receiving-code-review
@@ -612,7 +628,7 @@ setup
 # Only the planning skill — would have blocked under the old flat-list behavior
 # because code-review / testing-strategy / deploy-checklist / create-release etc.
 # were all required.
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 # Dirty tree so HOOK-14 doesn't short-circuit before the skill check
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
@@ -643,7 +659,7 @@ setup
 # Verify the precise old-behavior that #85 reported: a session with the
 # planning skill but missing deploy-checklist / create-release MUST NOT
 # be blocked by Stop. (completion-audit.sh handles those at delivery.)
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
@@ -653,7 +669,7 @@ teardown
 # ── Doc-scheme per-task gate (option 2) ──────────────────────────────────────
 echo "--- DOC-2A: docs/doc-scheme.md present + missing checklist/docs -> blocks ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
@@ -664,7 +680,7 @@ teardown
 
 echo "--- DOC-2B: stale docs/checklist (pre-session) -> blocks ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
@@ -680,7 +696,7 @@ teardown
 
 echo "--- DOC-2C: docs + checklist updated this session -> allows completion ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
@@ -703,7 +719,7 @@ teardown
 
 echo "--- DOC-2D: concrete docs file missing from checklist -> blocks ---"
 setup
-echo "silver-quality-gates" > "$TMPSTATE"
+write_current_planning_state
 printf 'work\n' > "$TMPDIR_TEST/wip.txt"
 git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
