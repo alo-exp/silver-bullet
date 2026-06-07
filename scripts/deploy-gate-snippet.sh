@@ -54,7 +54,8 @@ done
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
-REQUIRED_DEPLOY="${DEFAULT_REQUIRED:-silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
+REQUIRED_DEPLOY="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+[[ -n "${DEFAULT_REQUIRED:-}" ]] && REQUIRED_DEPLOY="$DEFAULT_REQUIRED"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
