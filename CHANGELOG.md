@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.37.13] — 2026-06-07
+
+## Bug Fixes
+
+- `fix(codex): enforce bare prompt workflow reliability`
+- `fix(codex): mirror Silver Bullet picker skills`
+
+---
+
 ## [0.37.12] — 2026-06-01
 
 ## Bug Fixes
