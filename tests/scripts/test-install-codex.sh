@@ -507,11 +507,42 @@ fi
 SCRIPT="$REPO_ROOT/scripts/install-codex.sh"
 HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
-mkdir -p "$HOME_DIR/.codex" "$HOME_DIR/.agents/skills/silver-feature" "$HOME_DIR/.agents/skills/using-silver-bullet" "$HOME_DIR/.agents/skills/unrelated-skill" "$BIN_DIR"
+mkdir -p \
+  "$HOME_DIR/.codex" \
+  "$HOME_DIR/.codex/skills/progressive-review-loop" \
+  "$HOME_DIR/.codex/skills/unrelated-native" \
+  "$HOME_DIR/.codex/skills/writing-plans" \
+  "$HOME_DIR/.agents/skills/silver-feature" \
+  "$HOME_DIR/.agents/skills/using-silver-bullet" \
+  "$HOME_DIR/.agents/skills/unrelated-skill" \
+  "$BIN_DIR"
 cat > "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md" <<'EOF'
 ---
 name: unrelated-skill
 ---
+EOF
+
+cat > "$HOME_DIR/.codex/skills/unrelated-native/SKILL.md" <<'EOF'
+---
+name: unrelated-native
+---
+EOF
+
+cat > "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md" <<'EOF'
+---
+name: progressive-review-loop
+title: External Progressive Review Loop
+---
+EOF
+
+cat > "$HOME_DIR/.codex/skills/writing-plans/SKILL.md" <<'EOF'
+---
+name: writing-plans
+---
+EOF
+
+cat > "$HOME_DIR/.codex/skills/writing-plans/.silver-bullet-managed" <<'EOF'
+source=Silver Bullet
 EOF
 
 cat > "$HOME_DIR/.agents/skills/using-silver-bullet/SKILL.md" <<'EOF'
@@ -855,6 +886,18 @@ else
   (( PASS++ )) || true
 fi
 assert_command_succeeds "Silver Bullet cache alias created" test -L "$FAKE_SB_INSTALL_ALIAS"
+assert_file_exists "Silver Bullet cache alias exposes picker skill surface" "$FAKE_SB_INSTALL_ALIAS/skills/silver-feature/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/silver/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes progressive review loop" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver-feature/.silver-bullet-managed"
+assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
+assert_contains "Codex native SB mirror preserves Silver picker title" "title: Silver: /silver:feature - Feature" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_contains "Codex native SB mirror preserves Silver route name" "name: silver:feature" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_contains "Codex native SB mirror takes over progressive review loop title" "title: Silver: Progressive Review Loop" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
+assert_file_absent "Codex native SB mirror prunes stale managed writing-plans skill" "$HOME_DIR/.codex/skills/writing-plans"
+assert_file_exists "Codex native SB mirror preserves unrelated native skill" "$HOME_DIR/.codex/skills/unrelated-native/SKILL.md"
 assert_file_absent "stale SB local install root removed" "$FAKE_SB_STALE_ROOT"
 assert_file_absent "stale SB local cache alias removed" "$FAKE_SB_STALE_ALIAS"
 assert_file_absent "stale SB local install root removed from lowercase mirror" "$FAKE_SB_STALE_ROOT_MIRROR"
@@ -985,6 +1028,10 @@ assert_file_exists "SB ensure-docs skill surface synced into source bundle" "$RE
 assert_file_exists "SB feature skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver-feature/SKILL.md"
 assert_file_exists "SB router skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver/SKILL.md"
 assert_file_exists "SB handoff skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/silver-handoff/SKILL.md"
+assert_file_exists "Progressive review loop skill surface synced into source bundle" "$REPO_ROOT/plugins/silver-bullet/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Installed progressive review loop skill surface synced" "$FAKE_SB_PACKAGE_ROOT/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Current cache progressive review loop skill surface synced" "$FAKE_CACHE_ROOT/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Current alias progressive review loop skill surface synced" "$FAKE_SB_INSTALL_ALIAS/skills/progressive-review-loop/SKILL.md"
 assert_not_symlink "SB skills surface is materialized in the source bundle" "$REPO_ROOT/plugins/silver-bullet/skills"
 assert_not_symlink "SB skills surface is materialized in the marketplace snapshot" "$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet/skills"
 assert_not_symlink "Installed SB skills surface is materialized in the package root" "$FAKE_SB_PACKAGE_ROOT/skills"
@@ -1024,6 +1071,8 @@ assert_contains "SB ensure-docs skill avoids placeholder doc keys" "using real g
 assert_contains "SB feature skill uses silver prefix" "name: silver:feature" "$REPO_ROOT/plugins/silver-bullet/skills/silver-feature/SKILL.md"
 assert_contains "SB router skill uses silver name" "name: silver" "$REPO_ROOT/plugins/silver-bullet/skills/silver/SKILL.md"
 assert_contains "SB handoff skill uses silver prefix" "name: silver:handoff" "$REPO_ROOT/plugins/silver-bullet/skills/silver-handoff/SKILL.md"
+assert_contains "Progressive review loop keeps canonical skill name in source bundle" "name: progressive-review-loop" "$REPO_ROOT/plugins/silver-bullet/skills/progressive-review-loop/SKILL.md"
+assert_contains "Progressive review loop picker title uses Silver prefix in source bundle" "title: Silver: Progressive Review Loop" "$REPO_ROOT/plugins/silver-bullet/skills/progressive-review-loop/SKILL.md"
 assert_contains "TDD skill hidden from picker in source bundle" "user-invocable: false" "$REPO_ROOT/plugins/silver-bullet/skills/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD in source bundle" "superpowers:test-driven-development" "$REPO_ROOT/plugins/silver-bullet/skills/tdd/SKILL.md"
 assert_contains "SB scan Codex agent bundle uses silver prefix" "name: silver:scan" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
@@ -1194,7 +1243,20 @@ PUBLIC_STALE_HOME="$PUBLIC_STALE_TMP/home"
 PUBLIC_STALE_WORKDIR="$PUBLIC_STALE_TMP/workdir"
 PUBLIC_STALE_MARKETPLACE="$PUBLIC_STALE_HOME/.codex/.tmp/marketplaces/alo-labs-codex"
 PUBLIC_STALE_PACKAGE="$PUBLIC_STALE_MARKETPLACE/plugins/silver-bullet"
-mkdir -p "$PUBLIC_STALE_HOME/.codex" "$PUBLIC_STALE_WORKDIR" "$PUBLIC_STALE_PACKAGE" "$PUBLIC_STALE_MARKETPLACE/skills"
+mkdir -p \
+  "$PUBLIC_STALE_HOME/.codex" \
+  "$PUBLIC_STALE_HOME/.codex/skills/writing-plans" \
+  "$PUBLIC_STALE_WORKDIR" \
+  "$PUBLIC_STALE_PACKAGE" \
+  "$PUBLIC_STALE_MARKETPLACE/skills"
+cat > "$PUBLIC_STALE_HOME/.codex/skills/writing-plans/SKILL.md" <<'EOF'
+---
+name: writing-plans
+---
+EOF
+cat > "$PUBLIC_STALE_HOME/.codex/skills/writing-plans/.silver-bullet-managed" <<'EOF'
+source=Silver Bullet
+EOF
 rsync -aL --delete "$REPO_ROOT/plugins/silver-bullet/" "$PUBLIC_STALE_PACKAGE/"
 rsync -a --delete "$PUBLIC_STALE_PACKAGE/skills/" "$PUBLIC_STALE_MARKETPLACE/skills/"
 git -C "$PUBLIC_STALE_MARKETPLACE" init -q
@@ -1232,7 +1294,15 @@ cp "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" "$PUBLIC_STALE_PACK
     bash "$SCRIPT" --public-release >/dev/null
 )
 PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$(jq -r '.version' "$PUBLIC_STALE_PACKAGE/.codex-plugin/plugin.json")"
+PUBLIC_STALE_ALIAS="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 assert_file_exists "public-release cache keeps Silver Bullet feature skill" "$PUBLIC_STALE_CACHE/skills/silver-feature/SKILL.md"
+assert_command_succeeds "public-release cache alias created" test -L "$PUBLIC_STALE_ALIAS"
+assert_file_exists "public-release cache alias exposes picker skill surface" "$PUBLIC_STALE_ALIAS/skills/silver-feature/SKILL.md"
+assert_file_exists "public-release cache alias exposes progressive review loop skill" "$PUBLIC_STALE_ALIAS/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes progressive review loop skill" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_absent "public-release native SB mirror excludes stale forge-delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/forge-delegate"
+assert_file_absent "public-release native SB mirror prunes stale managed writing-plans skill" "$PUBLIC_STALE_HOME/.codex/skills/writing-plans"
 assert_file_absent "public-release ignores stale marketplace forge-delegate skill" "$PUBLIC_STALE_CACHE/skills/forge-delegate/SKILL.md"
 assert_file_absent "public-release ignores stale marketplace writing-plans skill" "$PUBLIC_STALE_CACHE/skills/writing-plans/SKILL.md"
 
