@@ -38,11 +38,42 @@ agent_preflight() {
   fi
 }
 
+codex_rotate_transcripts() {
+  local transcript_dir="$1"
+  local keep_archives="${2:-4}"
+
+  python3 - "$transcript_dir" "$keep_archives" <<'PY'
+import sys
+from pathlib import Path
+
+transcript_dir = Path(sys.argv[1])
+keep_archives = int(sys.argv[2])
+
+entries = []
+for path in transcript_dir.glob("*.jsonl"):
+    if path.name == "latest.jsonl":
+        continue
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        continue
+    entries.append((stat.st_mtime, path.name, path))
+
+entries.sort(key=lambda item: (item[0], item[1]), reverse=True)
+for _, _, path in entries[keep_archives:]:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+PY
+}
+
 codex_capture_transcript() {
   local transcript_source_file="$1"
   local prompt_file="$2"
   local transcript_dir
   local transcript_dest
+  local archive_id
   local meta_dest
 
   transcript_dir="$(agent_transcript_dir)"
@@ -69,12 +100,16 @@ PY
   else
     cp -f -- "$transcript_source_file" "$transcript_dest"
   fi
+  archive_id="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  cp -f -- "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl"
+  codex_rotate_transcripts "$transcript_dir" 4
   meta_dest="${transcript_dir}/latest.meta.json"
   jq -n \
+    --arg archive_id "$archive_id" \
     --arg captured_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     --arg source "$transcript_source_file" \
     --arg work_dir "$WORK_DIR" \
-    '{captured_at:$captured_at, source:$source, work_dir:$work_dir}' \
+    '{archive_id:$archive_id, captured_at:$captured_at, source:$source, work_dir:$work_dir}' \
     > "$meta_dest"
   printf '%s\n' "$transcript_dest"
   return 1

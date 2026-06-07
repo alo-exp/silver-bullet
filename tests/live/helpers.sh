@@ -86,6 +86,12 @@ live_setup() {
     cp "$REAL_STATE" "$REAL_STATE_BACKUP"
   fi
   : > "$REAL_STATE"
+  if [[ "${SB_LIVE_DEBUG_DUMP:-0}" == "1" ]]; then
+    : > "${SB_TEST_DIR}/debug-dump"
+    : > "${SB_TEST_DIR}/hook-dump.jsonl"
+  else
+    rm -f "${SB_TEST_DIR}/debug-dump" "${SB_TEST_DIR}/hook-dump.jsonl"
+  fi
 
   if [[ -f "$REAL_TRIVIAL" ]]; then
     cp "$REAL_TRIVIAL" "$REAL_TRIVIAL_BACKUP"

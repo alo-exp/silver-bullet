@@ -37,9 +37,60 @@ elif isinstance(command, list):
 PY
 }
 
+sb_tool_patch_paths() {
+  local payload="${1:-}"
+  python3 - "$payload" <<'PY' 2>/dev/null || true
+import json
+import re
+import sys
+
+try:
+    payload = json.loads(sys.argv[1] or "{}")
+except Exception:
+    raise SystemExit(0)
+
+tool_input = payload.get("tool_input")
+if tool_input is None:
+    raise SystemExit(0)
+
+texts = []
+
+def collect(value):
+    if isinstance(value, str):
+        texts.append(value)
+    elif isinstance(value, dict):
+        for item in value.values():
+            collect(item)
+    elif isinstance(value, list):
+        for item in value:
+            collect(item)
+
+collect(tool_input)
+
+seen = set()
+for text in texts:
+    for line in text.splitlines():
+        match = re.match(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", line)
+        if not match:
+            match = re.match(r"^\*\*\* Move to: (.+)$", line)
+        if not match:
+            continue
+        path = match.group(1).strip()
+        if path and path not in seen:
+            seen.add(path)
+            print(path)
+PY
+}
+
 sb_tool_file_path() {
   local payload="${1:-}"
-  printf '%s' "$payload" | jq -r '.tool_input.file_path // .tool_response.filePath // ""' 2>/dev/null || true
+  local direct_path
+  direct_path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // .tool_response.filePath // ""' 2>/dev/null || true)"
+  if [[ -n "$direct_path" ]]; then
+    printf '%s\n' "$direct_path"
+    return 0
+  fi
+  sb_tool_patch_paths "$payload" | sed -n '1p'
 }
 
 sb_shell_invoked_script_path() {

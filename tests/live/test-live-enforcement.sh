@@ -12,7 +12,8 @@ live_setup
 # State is empty — no skills recorded. Prompt Claude to edit a src file.
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
-response=$(invoke_claude "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: // S1 test comment. Do not invoke any skills.")
+blocked_marker="// S1 blocked edit should not land because planning is incomplete; this marker intentionally exceeds one hundred characters to avoid the trivial-edit bypass."
+response=$(invoke_claude "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${blocked_marker}. Do not invoke any skills.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
 assert_response_not_contains "S1: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
@@ -22,16 +23,16 @@ assert_file_not_modified "S1: target file unchanged when edit is blocked" "$targ
 # file-level invariants are the release-relevant signal here.
 live_teardown
 
-# --- S2: Planning gate opens after silver-quality-gates + gsd-code-review ---
+# --- S2: Planning gate opens after full planning floor + gsd-code-review ---
 echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
-seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 comment_marker="// S2 test edit ${TEST_RUN_ID}"
 response=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
 sleep 2
-# With silver-quality-gates AND gsd-code-review recorded, Stage C is reached — edit should succeed
+# With the planning floor AND gsd-code-review recorded, Stage C is reached — edit should succeed
 assert_response_not_contains "S2: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
 assert_file_changed "S2: target file modified after Stage C" "$target_file" "$digest_before"
 assert_file_contains "S2: target file contains Stage C comment" "$target_file" "S2 test edit ${TEST_RUN_ID}"

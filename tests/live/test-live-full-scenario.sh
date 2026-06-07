@@ -27,9 +27,9 @@ hook_out=$(cd "$WORK_DIR" && printf '{"tool_name":"Skill","tool_input":{"skill":
   | bash "${SB_ROOT}/hooks/record-skill.sh" 2>/dev/null || true)
 assert_state_contains "S8.1: silver-quality-gates recorded" "silver-quality-gates"
 
-# Step 2: seed gsd-code-review and related review skills (saves cost vs real invocation)
-echo "  S8.2: Seeding gsd-code-review state..."
-seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+# Step 2: seed the planning floor, gsd-code-review, and related review skills (saves cost vs real invocation)
+echo "  S8.2: Seeding planning floor and gsd-code-review state..."
+seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 assert_state_contains "S8.2: gsd-code-review in state" "gsd-code-review"
 
 # Step 3: attempt edit (should succeed at Stage C)

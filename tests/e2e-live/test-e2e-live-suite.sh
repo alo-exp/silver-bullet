@@ -54,6 +54,7 @@ assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests
 assert_file_contains "suite runner writes inline release marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'matrix=inline-full-surface'
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
 assert_file_contains "live suite sets bounded per-turn timeout" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
+assert_file_contains "todo-app e2e suite sets bounded per-turn timeout" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
 assert_exists "dependency-access preflight exists" "${SCRIPT_DIR}/dependency-access-preflight.sh"
 assert_executable "dependency-access preflight is executable" "${SCRIPT_DIR}/dependency-access-preflight.sh"
 assert_exists "hook-delivery preflight exists" "${SCRIPT_DIR}/hook-delivery-preflight.sh"
@@ -64,6 +65,7 @@ assert_file_contains "live enforcement rejects timeout output" "${REPO_ROOT}/tes
 assert_file_contains "full-surface journey strips ANSI before evaluating responses" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'strip_ansi_response'
 assert_file_contains "full-surface journey rejects Codex timeout output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'timed out waiting for Codex prompt to complete'
 assert_file_contains "full-surface journey rejects stop-hook block output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'Cannot complete -- missing required skills'
+assert_file_contains "full-surface journey rejects missing SB CLI adapter" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'command not found: silver-bullet'
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'gsd-discuss-phase gsd-plan-phase'
 assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
 if grep -Eq 'multai_dependency_available|skipped because MultAI dependency is unavailable' "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"; then
@@ -88,6 +90,9 @@ assert_file_contains "native Codex PTY launcher clears inherited desktop origina
 assert_file_contains "native Codex isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'default_codex_isolation_parent'
 assert_file_contains "Kay isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/kay-codex-isolation.sh" 'default_kay_isolation_parent'
 assert_file_contains "Codex isolation mirrors the native plugin cache" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'original_codex_home}/plugins/cache'
+assert_file_contains "Codex isolation preserves thin helper plugin manifests" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'thin_manifest_only_plugins'
+assert_file_contains "Codex isolation prepends isolated SB CLI shim" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'PATH="\$\{CODEX_HOME\}/bin:'
+assert_file_contains "dependency preflight verifies native SB CLI shim" "${SCRIPT_DIR}/helpers.sh" 'Native Codex Silver Bullet CLI shim is on PATH'
 assert_file_contains "hook transplant rewrites user hooks against the target home" "${REPO_ROOT}/tests/live/lib/codex-hook-transplant.sh" 'target_home_root'
 assert_file_contains "native Codex agent enables hook trust bypass in isolation" "${REPO_ROOT}/tests/live/agents/codex/agent.sh" 'CODEX_BYPASS_HOOK_TRUST='
 assert_file_contains "native Codex agent enables isolated hook auto-trust" "${REPO_ROOT}/tests/live/agents/codex/agent.sh" 'CODEX_AUTO_TRUST_HOOKS='

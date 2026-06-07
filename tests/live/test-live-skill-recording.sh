@@ -22,9 +22,9 @@ assert_response_contains "S5: record-skill.sh outputs Skill recorded" "$hook_out
 # Verify skill is now in state (hook wrote it)
 assert_state_contains "S5: silver-quality-gates recorded in state after direct hook call" "silver-quality-gates"
 
-# Live test: with silver-quality-gates in state, dev-cycle-check.sh allows edits to src files
+# Live test: with full planning state, dev-cycle-check.sh allows edits to src files
 # This verifies the full loop: state → hook reads state → enforcement decision
-seed_state "silver-quality-gates" "code-review"
+seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 comment_marker="// S5 state-driven test ${TEST_RUN_ID}"

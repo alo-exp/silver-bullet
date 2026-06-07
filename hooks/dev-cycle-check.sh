@@ -107,6 +107,15 @@ main() {
   else
     tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
   fi
+  patch_file_paths=()
+  if [[ "$tool_name" == "apply_patch" ]] && declare -f sb_tool_patch_paths >/dev/null 2>&1; then
+    while IFS= read -r patch_path; do
+      [[ -n "$patch_path" ]] && patch_file_paths+=("$patch_path")
+    done < <(sb_tool_patch_paths "$input" 2>/dev/null || true)
+    if [[ -z "$file_path" && ${#patch_file_paths[@]} -gt 0 ]]; then
+      file_path="${patch_file_paths[0]}"
+    fi
+  fi
   if [[ -z "$file_path" ]] && declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
     sb_tool_is_shell_like "$tool_name" || exit 0
   fi
@@ -504,7 +513,17 @@ PY
   fi
 
   # --- Check if file/command matches src_pattern ---
-  if [[ -n "$file_path" ]]; then
+  if [[ ${#patch_file_paths[@]} -gt 0 ]]; then
+    patch_in_scope=false
+    for patch_path in "${patch_file_paths[@]}"; do
+      if matches_src_scope "$patch_path" "$src_pattern" && ! printf '%s' "$patch_path" | grep -qE "$src_exclude_pattern"; then
+        file_path="$patch_path"
+        patch_in_scope=true
+        break
+      fi
+    done
+    [[ "$patch_in_scope" == true ]] || exit 0
+  elif [[ -n "$file_path" ]]; then
     # File edit/write event — check file path
     if ! matches_src_scope "$file_path" "$src_pattern"; then
       exit 0
@@ -551,7 +570,7 @@ PY
     invalidate_verify_tests=false
     if [[ -n "$file_path" ]]; then
       case "$tool_name" in
-        Edit|Write|MultiEdit)
+        Edit|Write|MultiEdit|apply_patch)
           invalidate_verify_tests=true
           ;;
       esac

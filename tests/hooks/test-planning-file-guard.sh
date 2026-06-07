@@ -4,6 +4,12 @@ HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/planning-file-guard.sh"
 PASS=0
 FAIL=0
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
@@ -49,6 +55,14 @@ run_hook_write() {
   local file_path="$1"
   local input
   input=$(printf '{"tool_name":"Write","tool_input":{"file_path":"%s"}}' "$file_path")
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_apply_patch() {
+  local patch="$1"
+  local input
+  input=$(jq -n --arg p "$patch" \
+    '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{patch:$p}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
@@ -195,6 +209,15 @@ echo "--- Group 6: Path traversal bypass is blocked (IN-03) ---"
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/sub/../ROADMAP.md")
 assert_blocks "path traversal .planning/sub/../ROADMAP.md is blocked" "$out"
+teardown
+
+setup
+out=$(run_hook_apply_patch "*** Begin Patch
+*** Update File: .planning/sub/../ROADMAP.md
+@@
++forbidden planning edit
+*** End Patch")
+assert_blocks "apply_patch path traversal .planning/sub/../ROADMAP.md is blocked" "$out"
 teardown
 
 setup
