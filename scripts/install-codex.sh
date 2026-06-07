@@ -449,6 +449,135 @@ sync_codex_cache_package_surface() {
   shopt -u nullglob
 }
 
+refresh_silver_bullet_current_alias() {
+  local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
+
+  python3 - "$package_root" <<'PY'
+import pathlib
+import re
+import shutil
+import sys
+
+plugin_root = pathlib.Path(sys.argv[1]).expanduser()
+if not plugin_root.exists():
+    sys.exit(0)
+
+
+def version_sort_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
+
+version_dirs = sorted(
+    [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
+    key=version_sort_key,
+)
+if not version_dirs:
+    sys.exit(0)
+
+target_path = version_dirs[-1].resolve()
+current_path = plugin_root / "current"
+if current_path.exists() or current_path.is_symlink():
+    if current_path.is_dir() and not current_path.is_symlink():
+        shutil.rmtree(current_path)
+    else:
+        current_path.unlink()
+current_path.symlink_to(target_path)
+PY
+
+  validate_silver_bullet_skill_surface "installed package alias" "${package_root}/current"
+}
+
+sync_silver_bullet_native_codex_skill_mirror() {
+  local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+  local package_skills_root="${package_root}/skills"
+  local native_skills_root="${CODEX_HOME_ROOT}/.codex/skills"
+
+  [[ -d "$package_skills_root" ]] || return 0
+
+  python3 - "$package_root" "$package_skills_root" "$native_skills_root" <<'PY'
+import pathlib
+import re
+import shutil
+import sys
+
+package_root = pathlib.Path(sys.argv[1]).resolve()
+package_skills_root = pathlib.Path(sys.argv[2]).resolve()
+native_skills_root = pathlib.Path(sys.argv[3]).expanduser()
+marker_name = ".silver-bullet-managed"
+helper_skill_names = {"progressive-review-loop", "verify-tests"}
+
+
+def read_frontmatter(skill_md: pathlib.Path) -> dict[str, str]:
+    try:
+        lines = skill_md.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        lines = skill_md.read_text(errors="replace").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+
+    frontmatter: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
+        if not match:
+            continue
+        key, value = match.groups()
+        frontmatter[key] = value.strip().strip('"').strip("'")
+    return frontmatter
+
+
+def is_user_invocable(frontmatter: dict[str, str]) -> bool:
+    return frontmatter.get("user-invocable", "").lower() != "false"
+
+
+def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
+    return (
+        dirname == "silver"
+        or dirname.startswith("silver-")
+        or skill_name == "silver"
+        or skill_name.startswith("silver:")
+        or dirname in helper_skill_names
+        or skill_name in helper_skill_names
+    )
+
+
+desired: dict[str, pathlib.Path] = {}
+for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.name):
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_dir.is_dir() or not skill_md.is_file():
+        continue
+    frontmatter = read_frontmatter(skill_md)
+    skill_name = frontmatter.get("name", "")
+    if not skill_name or not is_user_invocable(frontmatter):
+        continue
+    if not is_silver_bullet_picker_skill(skill_dir.name, skill_name):
+        continue
+    desired[skill_dir.name] = skill_dir
+
+native_skills_root.mkdir(parents=True, exist_ok=True)
+
+for target in sorted(native_skills_root.iterdir(), key=lambda path: path.name):
+    if not target.is_dir():
+        continue
+    marker = target / marker_name
+    if marker.exists() and target.name not in desired:
+        shutil.rmtree(target)
+
+for dirname, source in desired.items():
+    target = native_skills_root / dirname
+    if target.is_symlink() or target.is_file():
+        target.unlink()
+    elif target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(source, target)
+    (target / marker_name).write_text(
+        f"source=Silver Bullet\npackage={package_root}\nskill={dirname}\n",
+        encoding="utf-8",
+    )
+PY
+}
+
 install_silver_bullet_codex_cli() {
   local bin_dir="${CODEX_HOME_ROOT}/.codex/bin"
   local cli_path="${bin_dir}/silver-bullet"
@@ -1723,6 +1852,8 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
 fi
 sanitize_codex_package_surface
 sync_codex_cache_package_surface
+refresh_silver_bullet_current_alias
+sync_silver_bullet_native_codex_skill_mirror
 install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
