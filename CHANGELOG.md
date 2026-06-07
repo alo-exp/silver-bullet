@@ -6,6 +6,7 @@
 
 - `fix(codex): enforce bare prompt workflow reliability`
 - `fix(codex): mirror Silver Bullet picker skills`
+- `fix(live): enforce Kay exec timeout in release gates`
 
 ---
 

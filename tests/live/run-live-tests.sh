@@ -30,6 +30,7 @@ fi
 export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"
 export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
 export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
+export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
 
 if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_claude=false
@@ -49,6 +50,7 @@ echo "========================================"
 echo ""
 echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime."
 echo "Default provider/model: ${SB_LIVE_CODEX_MODEL_PROVIDER} / ${SB_LIVE_CODEX_MODEL} (${SB_LIVE_CODEX_REASONING_EFFORT})."
+echo "Per-turn timeout: ${CODEX_INTERACTIVE_TIMEOUT}s."
 echo ""
 
 if [[ -n "$RELEASE_LIVE_MATRIX_FILE" ]]; then
