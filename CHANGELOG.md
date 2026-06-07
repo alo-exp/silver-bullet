@@ -7,6 +7,7 @@
 - `fix(codex): enforce native hook reliability in isolation`
 - `fix(codex): enforce bare prompt workflow reliability`
 - `fix(codex): mirror Silver Bullet picker skills`
+- `fix(ci): satisfy shellcheck in prompt reminder`
 - `fix(live): enforce Kay exec timeout in release gates`
 
 ## Tests
