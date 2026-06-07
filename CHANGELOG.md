@@ -9,6 +9,7 @@
 - `fix(codex): mirror Silver Bullet picker skills`
 - `fix(ci): satisfy shellcheck in prompt reminder`
 - `fix(ci): keep deploy gate fallback aligned with template`
+- `fix(ci): run secret scan on release branches`
 - `fix(live): enforce Kay exec timeout in release gates`
 
 ## Tests
