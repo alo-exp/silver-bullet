@@ -69,6 +69,7 @@ FAKE_BIN="$TMP/bin/codex"
 mkdir -p "$ORIGINAL_HOME/.codex/agents" "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/skills/gsd-discuss-phase" "$ORIGINAL_HOME/.agents/skills/gsd-plan-phase" "$(dirname "$FAKE_BIN")"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/hooks"
+mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/scripts"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/sb-live-version.zzzzzz"
 mkdir -p "$ORIGINAL_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/hooks"
@@ -167,6 +168,11 @@ cat > "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/h
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
 EOF
 chmod +x "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/hooks/session-start"
+cat > "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/scripts/silver-bullet" <<'EOF'
+#!/usr/bin/env bash
+printf 'silver-bullet %s\n' "$*"
+EOF
+chmod +x "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/scripts/silver-bullet"
 cat > "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/hooks/hooks.json" <<EOF
 {
   "hooks": {
@@ -251,6 +257,8 @@ assert_eq "CODEX_HOME is rooted under isolated HOME" "$HOME/.codex" "$CODEX_HOME
 assert_eq "runtime-paths resolves Codex home under isolation root" "$CODEX_HOME" "$SB_RUNTIME_HOME_ROOT"
 assert_eq "runtime-paths resolves Codex state under isolation root" "$CODEX_HOME/.silver-bullet" "$SB_RUNTIME_STATE_DIR"
 assert_eq "native Codex binary is preserved" "$FAKE_BIN" "$CODEX_BIN"
+assert_eq "isolated Codex PATH exposes SB CLI shim first" "$CODEX_HOME/bin/silver-bullet" "$(command -v silver-bullet || true)"
+assert_file_contains "isolated SB CLI shim targets isolated package cache" "$CODEX_HOME/bin/silver-bullet" "$CODEX_HOME/plugins/cache/alo-labs-codex/silver-bullet/current/scripts/silver-bullet"
 assert_eq "trusted command package root uses the isolated Codex cache current path" "$CODEX_HOME/plugins/cache/alo-labs-codex/silver-bullet/current" "$SB_LIVE_COMMAND_PACKAGE_ROOT"
 assert_file_exists "trusted command package temp version root exists" "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT"
 case "$SB_LIVE_CODEX_ISOLATION_DIR" in
@@ -351,6 +359,13 @@ if [[ "$HOME" == "$ORIGINAL_HOME" ]]; then
   (( PASS++ )) || true
 else
   echo "FAIL: HOME not restored after teardown: $HOME"
+  (( FAIL++ )) || true
+fi
+if [[ ":$PATH:" != *":$isolated_root/.codex/bin:"* ]]; then
+  echo "PASS: isolated Codex bin removed from PATH after teardown"
+  (( PASS++ )) || true
+else
+  echo "FAIL: isolated Codex bin still present in PATH after teardown"
   (( FAIL++ )) || true
 fi
 if [[ ! -e "$isolated_root" ]]; then

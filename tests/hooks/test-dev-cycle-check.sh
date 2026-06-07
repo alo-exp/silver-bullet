@@ -108,6 +108,15 @@ run_hook_multiedit() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
+run_hook_apply_patch() {
+  local event="$1"
+  local patch="$2"
+  local input
+  input=$(jq -n --arg e "$event" --arg p "$patch" \
+    '{hook_event_name: $e, tool_name: "apply_patch", tool_input: {patch: $p}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
 run_hook_bash() {
   local event="$1"
   local cmd="$2"
@@ -219,6 +228,16 @@ out=$(run_hook_write "PreToolUse" "$TMPFILE")
 assert_blocks "Stage A: Write to src blocked without silver-quality-gates" "$out"
 teardown
 
+# Test 2a: Stage A — native Codex apply_patch to src is blocked before planning
+setup
+out=$(run_hook_apply_patch "PreToolUse" "*** Begin Patch
+*** Update File: src/app.js
+@@
++console.log('blocked before planning')
+*** End Patch")
+assert_blocks "Stage A: apply_patch source edit blocked without silver-quality-gates" "$out"
+teardown
+
 # Test 2b: Stage A — missing skill that is not installed anywhere invocable warns and allows
 setup
 cat > "$TMPCFG" << 'EOF'
@@ -244,6 +263,27 @@ teardown
 setup
 out=$(run_hook_edit "PreToolUse" "${TMPDIR_TEST}/README.md" "old" "new")
 assert_passes "non-src file passes without silver-quality-gates" "$out"
+teardown
+
+setup
+out=$(run_hook_apply_patch "PreToolUse" "*** Begin Patch
+*** Update File: README.md
+@@
++Documentation-only patch
+*** End Patch")
+assert_passes "non-src apply_patch passes without silver-quality-gates" "$out"
+teardown
+
+setup
+out=$(run_hook_apply_patch "PreToolUse" "*** Begin Patch
+*** Update File: README.md
+@@
++Documentation change
+*** Update File: src/app.js
+@@
++console.log('blocked multi-file source edit')
+*** End Patch")
+assert_blocks "multi-file apply_patch blocks when any path is source" "$out"
 teardown
 
 # Test 4: Stage A — test file passes even without planning
@@ -365,6 +405,20 @@ assert_passes "PostToolUse write still passes with planning complete" "$out"
 assert_file_missing "PostToolUse write invalidates verify-tests freshness" "$VERIFY_TESTS_FILE"
 teardown
 
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+echo "gsd-code-review" >> "$TMPSTATE"
+mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
+printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
+out=$(run_hook_apply_patch "PostToolUse" "*** Begin Patch
+*** Update File: src/app.js
+@@
++console.log('post patch invalidates freshness')
+*** End Patch")
+assert_passes "PostToolUse apply_patch passes with planning complete" "$out"
+assert_file_missing "PostToolUse apply_patch invalidates verify-tests freshness" "$VERIFY_TESTS_FILE"
+teardown
+
 # Test 4ba: PostToolUse non-src Bash write does not invalidate verify-tests freshness
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
@@ -385,6 +439,16 @@ echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "Stage B: src edit allowed after planning, before gsd-code-review" "$out"
 assert_contains "Stage B reminder mentions code review" "$out" "Code review"
+teardown
+
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook_apply_patch "PreToolUse" "*** Begin Patch
+*** Update File: src/app.js
+@@
++console.log('allowed after planning')
+*** End Patch")
+assert_passes "Stage B: apply_patch source edit allowed after planning" "$out"
 teardown
 
 # Test 6: Phase-skip detection — finalization before gsd-code-review warns but allows fixes

@@ -52,6 +52,14 @@ run_hook() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
+run_hook_apply_patch() {
+  local patch="$1"
+  local input
+  input=$(jq -n --arg p "$patch" \
+    '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{patch:$p}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
 is_blocked() {
   local output="$1"
   [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"'
@@ -89,6 +97,12 @@ assert_blocks "Fresh root CLAUDE.md creation is blocked" "$out"
 
 out=$(run_hook "Write" "AGENTS.md")
 assert_blocks "Fresh root AGENTS.md creation is blocked" "$out"
+
+out=$(run_hook_apply_patch "*** Begin Patch
+*** Add File: AGENTS.md
++# Agent Instructions
+*** End Patch")
+assert_blocks "Fresh root AGENTS.md creation through apply_patch is blocked" "$out"
 
 touch "${TMPDIR_TEST}/CLAUDE.md"
 out=$(run_hook "Write" "CLAUDE.md")

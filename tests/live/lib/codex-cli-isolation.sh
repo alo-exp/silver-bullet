@@ -213,6 +213,7 @@ allowed_plugins = {
     "gsd@get-shit-done-marketplace",
     "superpowers@superpowers-marketplace",
 }
+thin_manifest_only_plugins = {"engineering", "design", "product-management"}
 
 def version_sort_key(path: pathlib.Path):
     import re
@@ -225,6 +226,14 @@ def is_valid_version_dir(path: pathlib.Path) -> bool:
             manifest = json.loads(manifest_path.read_text())
         except Exception:
             return False
+
+        # These helper packages are thin Codex wrappers around upstream
+        # knowledge-work plugins. Some live environments have the package
+        # manifest installed before optional upstream skills are hydrated.
+        # Preserve the manifest surface so dependency preflights can verify the
+        # package registration instead of deleting the version dir.
+        if path.parent.name in thin_manifest_only_plugins:
+            return True
 
         for key in ("hooks", "skills", "commands"):
             rel_path = manifest.get(key)
@@ -419,6 +428,28 @@ seed_native_codex_user_hook_surface() {
   return 1
 }
 
+seed_native_codex_cli_shims() {
+  local bin_dir="${CODEX_HOME}/bin"
+  local cli_path="${bin_dir}/silver-bullet"
+  local target_path="${CODEX_HOME}/plugins/cache/alo-labs-codex/silver-bullet/current/scripts/silver-bullet"
+  local latest_dir=""
+
+  if [[ ! -f "$target_path" ]]; then
+    latest_dir="$(find "${CODEX_HOME}/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1 || true)"
+    target_path="${latest_dir}/scripts/silver-bullet"
+  fi
+
+  [[ -f "$target_path" ]] || return 0
+
+  mkdir -p "$bin_dir"
+  cat > "$cli_path" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$target_path" "\$@"
+EOF
+  chmod 700 "$cli_path"
+}
+
 refresh_native_codex_hook_surface() {
   local state_blob=""
 
@@ -463,6 +494,7 @@ setup_codex_cli_isolation() {
   local isolated_command_cache_root=""
 
   export SB_LIVE_ORIGINAL_HOME="${SB_LIVE_ORIGINAL_HOME:-$HOME}"
+  export SB_LIVE_ORIGINAL_PATH="${SB_LIVE_ORIGINAL_PATH:-${PATH:-}}"
   export SB_LIVE_ORIGINAL_CODEX_HOME="${SB_LIVE_ORIGINAL_CODEX_HOME:-${SB_LIVE_ORIGINAL_HOME}/.codex}"
   if [[ -z "$isolation_parent" ]]; then
     isolation_parent="$(default_codex_isolation_parent)"
@@ -512,6 +544,11 @@ PY
   mirror_native_codex_runtime_surface
   seed_native_codex_dependency_cache
   seed_native_codex_local_marketplaces
+  seed_native_codex_cli_shims
+  case ":${PATH:-}:" in
+    *":${CODEX_HOME}/bin:"*) ;;
+    *) export PATH="${CODEX_HOME}/bin:${PATH:-}" ;;
+  esac
   seed_native_codex_runtime_config
   export SB_LIVE_COMMAND_VERSION_BASE="${SB_LIVE_COMMAND_VERSION_BASE:-$(mktemp -d "${isolated_command_cache_root}/sb-live-version.XXXXXX")}"
   export SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
@@ -549,6 +586,10 @@ teardown_codex_cli_isolation() {
     export HOME="$SB_LIVE_ORIGINAL_HOME"
   fi
   unset SB_LIVE_ORIGINAL_HOME
+  if [[ -n "${SB_LIVE_ORIGINAL_PATH:-}" ]]; then
+    export PATH="$SB_LIVE_ORIGINAL_PATH"
+  fi
+  unset SB_LIVE_ORIGINAL_PATH
 
   if [[ -n "$command_current_path" ]]; then
     if [[ -n "$command_original_current" ]]; then

@@ -13,13 +13,19 @@ umask 0077
 
 command -v jq >/dev/null 2>&1 || exit 0
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
+
 input=$(cat)
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 case "$tool_name" in
-  Edit|Write|MultiEdit) ;;
+  Edit|Write|MultiEdit|apply_patch) ;;
   *) exit 0 ;;
 esac
 
@@ -70,14 +76,20 @@ deny_root_instruction_creation() {
   exit 0
 }
 
+tool_paths() {
+  if [[ "$tool_name" == "apply_patch" ]] && declare -f sb_tool_patch_paths >/dev/null 2>&1; then
+    sb_tool_patch_paths "$input" 2>/dev/null || true
+  else
+    printf '%s' "$input" | jq -r '
+      .tool_input.file_path? // empty,
+      (.tool_input.file_paths? // [])[]?
+    ' 2>/dev/null || true
+  fi
+}
+
 while IFS= read -r raw_path; do
   [[ -n "$raw_path" ]] || continue
   deny_root_instruction_creation "$(normalize_path "$raw_path")"
-done < <(
-  printf '%s' "$input" | jq -r '
-    .tool_input.file_path? // empty,
-    (.tool_input.file_paths? // [])[]?
-  ' 2>/dev/null || true
-)
+done < <(tool_paths)
 
 exit 0

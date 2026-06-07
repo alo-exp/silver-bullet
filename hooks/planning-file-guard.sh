@@ -28,13 +28,22 @@ if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
 fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 command -v jq >/dev/null 2>&1 || exit 0
 
 input=$(cat)
 
-# Extract file path from tool input (Edit, Write, and MultiEdit all use file_path)
-file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
+# Extract file path from tool input. Native Codex apply_patch payloads are
+# parsed by hooks/lib/tool-input.sh from patch file headers.
+if declare -f sb_tool_file_path >/dev/null 2>&1; then
+  file_path="$(sb_tool_file_path "$input")"
+else
+  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
+fi
 [[ -z "$file_path" ]] && exit 0
 
 # Canonicalize path to prevent traversal bypass (e.g. .planning/sub/../ROADMAP.md)
