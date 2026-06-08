@@ -1,6 +1,6 @@
 {
   "name": "silver-bullet",
-  "version": "0.37.13",
+  "version": "0.37.14",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, and templates only; GSD and selected helper plugins are installed from their official sources.",
   "author": {
     "name": "Alo Labs",
@@ -21,7 +21,6 @@
   ],
   "commands": "./commands/",
   "hooks": "./hooks/hooks.json",
-  "skills": "./skills/",
   "interface": {
     "displayName": "Silver Bullet",
     "shortDescription": "SB+GSD Agentic Process Orchestrator",
