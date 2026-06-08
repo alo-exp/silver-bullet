@@ -59,7 +59,7 @@ assert_not_symlink() {
   fi
 }
 
-assert_codex_skill_titles_have_silver_prefix() {
+assert_codex_skill_titles_match_picker_namespace() {
   local desc="$1" package_root="$2"
   local output
   if output=$(python3 - "$package_root" <<'PY'
@@ -102,8 +102,6 @@ for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SOURCE.md"
     if not title:
         bad.append(f"{skill_md}: missing Codex picker title")
         continue
-    if not title.startswith("Silver: "):
-        bad.append(f"{skill_md}: expected title to start with 'Silver: ', got {title!r}")
     if title.startswith("Silver Bullet: "):
         bad.append(f"{skill_md}: legacy plugin prefix remains in title {title!r}")
     if title.startswith("Silver: Silver: "):
@@ -115,8 +113,15 @@ for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SOURCE.md"
         route = f"/{name}"
     else:
         route = ""
-    if route and title.startswith("Silver: /"):
-        bad.append(f"{skill_md}: picker title must not duplicate route {route!r}, got {title!r}")
+    if route:
+        if title.startswith("Silver: "):
+            bad.append(f"{skill_md}: silver namespace title must be bare because Codex renders {route!r} under /Silver, got {title!r}")
+        if title.startswith("Silver Bullet: "):
+            bad.append(f"{skill_md}: legacy plugin prefix remains in title {title!r}")
+        if title.startswith("/"):
+            bad.append(f"{skill_md}: picker title must not duplicate route {route!r}, got {title!r}")
+    elif not title.startswith("Silver: "):
+        bad.append(f"{skill_md}: non-namespaced SB helper title must use Silver grouping, got {title!r}")
 
 if bad:
     print("\n".join(bad))
@@ -160,7 +165,7 @@ SOURCE_ASK_USER_FILES=(
 )
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
-assert_codex_skill_titles_have_silver_prefix "Codex skill titles use a single Silver prefix" "$PACKAGE_ROOT"
+assert_codex_skill_titles_match_picker_namespace "Codex skill titles match Codex picker namespace" "$PACKAGE_ROOT"
 assert_path_absent "Codex package does not expose plugin picker skills directory" "$PACKAGE_ROOT/skills"
 assert_path_absent "Codex package does not expose generated picker skills directory" "$PACKAGE_ROOT/.generated-skills"
 assert_path_absent "Codex package does not expose agent SKILL.md bundle" "$PACKAGE_ROOT/agents"
