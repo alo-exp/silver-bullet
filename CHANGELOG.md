@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.14] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): expose Silver Bullet picker skills only through the native /Silver mirror`
+- `fix(codex): hydrate thin helper plugin skill surfaces in installs and isolated live runs`
+- `fix(codex): suppress BrokenPipe tracebacks after transcript archival`
+- `fix(live): ignore collapsed negative prompt text in local-source bypass scans`
+
+## Tests
+
+- `test(codex): prevent duplicate /Silver Bullet skill listings from the plugin manifest`
+- `test(codex): verify helper plugin hydration and Codex PTY BrokenPipe handling`
+- `test(live): gate Codex full-surface runs on hook failures, helper skills, and local-source bypass detection`
+
+---
+
 ## [0.37.13] — 2026-06-07
 
 ## Bug Fixes

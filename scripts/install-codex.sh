@@ -860,6 +860,104 @@ if changed:
 PY
 }
 
+materialize_codex_helper_plugin_skill_surfaces() {
+  python3 - "$CODEX_HOME_ROOT" "$REPO_ROOT" <<'PY'
+import json
+import pathlib
+import shutil
+import sys
+
+home = pathlib.Path(sys.argv[1]).expanduser()
+repo_root = pathlib.Path(sys.argv[2])
+cache_root = home / ".codex" / "plugins" / "cache"
+forge_skills_root = repo_root / "forge" / "skills"
+
+helper_specs = {
+    "engineering": (
+        "engineering",
+        [
+            "architecture",
+            "code-review",
+            "debug",
+            "deploy-checklist",
+            "documentation",
+            "incident-response",
+            "standup",
+            "system-design",
+            "tech-debt",
+            "testing-strategy",
+        ],
+    ),
+    "design": (
+        "design",
+        [
+            "accessibility-review",
+            "design-critique",
+            "design-handoff",
+            "design-system",
+            "research-synthesis",
+            "user-research",
+            "ux-copy",
+        ],
+    ),
+    "product-management": (
+        "product-management",
+        [
+            "competitive-brief",
+            "metrics-review",
+            "product-brainstorming",
+            "roadmap-update",
+            "sprint-planning",
+            "stakeholder-update",
+            "synthesize-research",
+            "write-spec",
+        ],
+    ),
+}
+
+def declared_skills_dir(version_dir: pathlib.Path) -> pathlib.Path:
+    manifest_path = version_dir / ".codex-plugin" / "plugin.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except Exception:
+            manifest = {}
+        rel_path = manifest.get("skills")
+        if isinstance(rel_path, str) and rel_path.strip():
+            return version_dir / rel_path
+    return version_dir / "upstream" / "skills"
+
+def hydrate_plugin(plugin_root: pathlib.Path, prefix: str, skills: list[str]) -> None:
+    if not plugin_root.is_dir():
+        return
+    for version_dir in plugin_root.iterdir():
+        if not version_dir.is_dir() or version_dir.name == "current":
+            continue
+        if not (version_dir / ".codex-plugin" / "plugin.json").is_file():
+            continue
+
+        target_skills_root = declared_skills_dir(version_dir)
+        for skill in skills:
+            source = forge_skills_root / f"{prefix}-{skill}" / "SKILL.md"
+            if not source.is_file():
+                continue
+            target = target_skills_root / skill / "SKILL.md"
+            if target.is_file():
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+
+if not cache_root.is_dir() or not forge_skills_root.is_dir():
+    sys.exit(0)
+
+for marketplace_root in cache_root.iterdir():
+    if not marketplace_root.is_dir():
+        continue
+    for plugin_name, (prefix, skills) in helper_specs.items():
+        hydrate_plugin(marketplace_root / plugin_name, prefix, skills)
+PY
+}
+
 normalize_codex_hook_async_flags() {
   local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
@@ -1857,6 +1955,7 @@ sync_silver_bullet_native_codex_skill_mirror
 install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
+materialize_codex_helper_plugin_skill_surfaces
 normalize_codex_hook_async_flags
 ensure_feature_enabled "plugin_hooks"
 ensure_plugin_enabled "superpowers@superpowers-marketplace"

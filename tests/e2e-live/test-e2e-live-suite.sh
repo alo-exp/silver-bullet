@@ -68,6 +68,8 @@ assert_file_contains "full-surface journey rejects stop-hook block output" "${SC
 assert_file_contains "full-surface journey rejects missing SB CLI adapter" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'command not found: silver-bullet'
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'gsd-discuss-phase gsd-plan-phase'
 assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
+assert_file_contains "full-surface source scanner ignores collapsed negative prompts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'donotreadoruselocal'
+assert_file_contains "full-surface source scanner normalizes punctuation and whitespace" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'compact_for_negative_context'
 if grep -Eq 'multai_dependency_available|skipped because MultAI dependency is unavailable' "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"; then
   echo "FAIL: full-surface journey no longer skips research when MultAI is absent"
   FAIL=$((FAIL + 1))
@@ -87,10 +89,12 @@ assert_file_contains "native Codex PTY launcher answers terminal capability prob
 assert_file_contains "native Codex PTY launcher recognizes the current Codex banner" "${REPO_ROOT}/scripts/codex-interactive-invoke.py" 'openaicodex'
 assert_file_contains "native Codex PTY launcher clears inherited desktop thread ids" "${REPO_ROOT}/scripts/codex-interactive-invoke.py" 'CODEX_THREAD_ID'
 assert_file_contains "native Codex PTY launcher clears inherited desktop originator overrides" "${REPO_ROOT}/scripts/codex-interactive-invoke.py" 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE'
+assert_file_contains "native Codex PTY launcher suppresses closed stdout tracebacks" "${REPO_ROOT}/scripts/codex-interactive-invoke.py" 'except BrokenPipeError'
+assert_file_contains "native Codex PTY launcher archives transcript before stdout forwarding" "${REPO_ROOT}/scripts/codex-interactive-invoke.py" 'stdout_forwarding_enabled = forward_stdout\(chunk, stdout_forwarding_enabled\)'
 assert_file_contains "native Codex isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'default_codex_isolation_parent'
 assert_file_contains "Kay isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/kay-codex-isolation.sh" 'default_kay_isolation_parent'
 assert_file_contains "Codex isolation mirrors the native plugin cache" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'original_codex_home}/plugins/cache'
-assert_file_contains "Codex isolation preserves thin helper plugin manifests" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'thin_manifest_only_plugins'
+assert_file_contains "Codex isolation hydrates thin helper plugin skills" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'hydrate_helper_plugin'
 assert_file_contains "Codex isolation prepends isolated SB CLI shim" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'PATH="\$\{CODEX_HOME\}/bin:'
 assert_file_contains "dependency preflight verifies native SB CLI shim" "${SCRIPT_DIR}/helpers.sh" 'Native Codex Silver Bullet CLI shim is on PATH'
 assert_file_contains "hook transplant rewrites user hooks against the target home" "${REPO_ROOT}/tests/live/lib/codex-hook-transplant.sh" 'target_home_root'
