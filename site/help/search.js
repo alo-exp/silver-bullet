@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install, Codex local dev installer ./scripts/install-codex.sh --purge-legacy-skills, or Forge installer curl script then silver-init. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or Codex local dev installer ./scripts/install-codex.sh --purge-legacy-skills. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -218,7 +218,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.37.16, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.37.17, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",

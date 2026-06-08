@@ -83,6 +83,16 @@ for file in \
   assert_not_contains "research skill no longer treats MultAI as mandatory in ${file#$REPO_ROOT/}" "Run the relevant MultAI research path" "$file"
 done
 
+for file in \
+  "$REPO_ROOT/skills/silver-feature/SKILL.md" \
+  "$REPO_ROOT/skills/silver-ui/SKILL.md" \
+  "$REPO_ROOT/skills/silver-devops/SKILL.md" \
+  "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
+  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-release/SKILL.md"; do
+  assert_not_contains "workflow does not route to missing SB-local MultAI skill in ${file#$REPO_ROOT/}" "silver:multai" "$file"
+done
+
 assert_contains "local backlog item SB-B-1 resolved" "SB-B-1.*reconcile FLOW table" "$REPO_ROOT/docs/issues/BACKLOG.md"
 assert_contains "local backlog item marked resolved" "Status:\\*\\* resolved in Phase 92" "$REPO_ROOT/docs/issues/BACKLOG.md"
 
