@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.20-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.20)
+[![version](https://img.shields.io/badge/version-v0.37.21-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.21)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -219,7 +219,13 @@ Then open a project and run:
 
 ### Codex
 
-For local development from this repository checkout:
+For normal use, install or refresh Silver Bullet from the public Codex
+marketplace. The published package exposes SB through the native `/Silver:`
+picker namespace, keeps internal `skill-source/` files hidden from duplicate
+plugin listings, and wires hooks through the package manifest.
+
+For local development from this repository checkout, use the same installer with
+legacy cleanup enabled:
 
 ```bash
 ./scripts/install-codex.sh --purge-legacy-skills
@@ -516,7 +522,7 @@ runtime state are not treated as plugin package content.
 |---------|-----|
 | `jq not found` | Install `jq` with Homebrew or apt |
 | `/silver` not available in Claude Code | Install the plugin and restart/reload the Claude Code session |
-| `/silver` not available in Codex | Run `./scripts/install-codex.sh --purge-legacy-skills` from this repo checkout |
+| `/Silver:` entries not available in Codex | Refresh the public Codex marketplace install, or run `./scripts/install-codex.sh --purge-legacy-skills` from a repo checkout when developing SB itself |
 | GSD skills missing | Repair or reinstall GSD with `npx get-shit-done-cc@latest` |
 | Superpowers helper missing | Repair or reinstall `obra/superpowers`; SB uses it only at selected helper boundaries |
 | Engineering helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/engineering` |
@@ -531,8 +537,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.20`
-- Release: [v0.37.20](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.20)
+- Version: `0.37.21`
+- Release: [v0.37.21](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.21)
 - Notable changes:
   - The Codex package no longer exposes a plugin-owned `skills/` directory, preventing `/Silver Bullet:` duplicate picker entries.
   - The Codex installer maps internal `skill-source/` files into the native `~/.codex/skills` mirror so the picker-facing surface remains `/Silver:`.

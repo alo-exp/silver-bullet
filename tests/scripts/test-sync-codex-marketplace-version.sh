@@ -75,7 +75,7 @@ cat > "$MARKETPLACE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
   "commands": "./commands/"
 }
 EOF
-cat > "$MARKETPLACE/skill-source/silver-init/SILVER_SOURCE.md" <<'EOF'
+cat > "$MARKETPLACE/skill-source/silver-init/SILVER_SOURCE" <<'EOF'
 ---
 name: stale-silver-init
 ---
@@ -92,17 +92,18 @@ git -C "$TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
-source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SOURCE.md | wc -l | tr -d ' ')"
+source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SOURCE | wc -l | tr -d ' ')"
 
 CODEX_MARKETPLACE_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
 
-marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SOURCE.md | wc -l | tr -d ' ')"
+marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SOURCE | wc -l | tr -d ' ')"
 
 assert_file_absent "marketplace plugin does not expose picker skills directory" "$MARKETPLACE/plugins/silver-bullet/skills"
 assert_file_absent "marketplace plugin does not expose picker-discoverable internal skill files" "$(find "$MARKETPLACE/plugins/silver-bullet" -name '*SKILL.md' -print -quit)"
 assert_not_symlink "marketplace plugin skill-source surface is materialized" "$MARKETPLACE/plugins/silver-bullet/skill-source"
-assert_file_exists "marketplace plugin includes Silver Bullet init skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE.md"
-assert_file_exists "marketplace plugin includes Silver Bullet feature skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE.md"
+assert_file_exists "marketplace plugin includes Silver Bullet init skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE"
+assert_file_exists "marketplace plugin includes Silver Bullet feature skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE"
+assert_file_absent "marketplace plugin does not expose Markdown skill source files" "$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit)"
 assert_equal "marketplace plugin skill count matches source package" "$source_count" "$marketplace_count"
 assert_file_absent "marketplace plugin does not expose generated picker skills directory" "$MARKETPLACE/plugins/silver-bullet/.generated-skills"
 assert_file_absent "marketplace plugin does not expose agent SKILL.md bundle" "$MARKETPLACE/plugins/silver-bullet/agents"
