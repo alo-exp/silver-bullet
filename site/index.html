@@ -964,7 +964,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, 29 covered runtime hooks, and a Codex package surface that exposes only native <code>/Silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1037,12 +1037,12 @@ img{max-width:100%;height:auto}
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="git-branch"></i></div>
         <h3>Dynamic Workflow Composition</h3>
-        <p><code>/silver</code> classifies the task and composes the chain it needs: feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, or fast path. GSD already has freeform routing; Silver Bullet&rsquo;s value is broader task-shaped orchestration across SB gates and adjacent plugins.</p>
+        <p><code>/silver</code> classifies the task and composes the chain it needs: clarify, feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, docs, tracking, or fast path. GSD already has freeform routing; Silver Bullet&rsquo;s value is broader task-shaped orchestration across SB gates and adjacent plugins.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="rocket"></i></div>
         <h3>Per-Workflow State Tracking</h3>
-        <p>Every composition is tracked under <code>.planning/workflows/&lt;id&gt;.md</code>: active flow, completed flows, deferred improvements, dynamic insertions, autonomous decisions, and the next required step. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
+        <p>Every composition is tracked under <code>.planning/workflows/&lt;id&gt;.md</code>: active flow, completed flows, deferred improvements, dynamic insertions, autonomous decisions, and the next required step. Deferred work, removed work items, and durable lessons are handled through <code>/silver:add</code>, <code>/silver:remove</code>, <code>/silver:rem</code>, and <code>/silver:scan</code>. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="shield"></i></div>
@@ -1784,7 +1784,7 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(10)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(11)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('dev')">Software Delivery Loop <span style="opacity:.6">(20)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps / IaC Loop <span style="opacity:.6">(24)</span></button>
     </div>

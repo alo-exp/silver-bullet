@@ -82,6 +82,10 @@ run_test "silver-release"    "Create release workflow"      "Prepare v1.0.0 rele
 run_test "silver-spec"        "Write feature specification" "Write spec for new feature"
 run_test "silver-validate"   "Validate implementation"       "Verify the API works correctly"
 run_test "silver-handoff"    "Prepare session handoff"        "Wrap up this session for the next agent"
+run_test "silver-add"        "Append workflow scope"          "Add this requirement to the current Silver workflow"
+run_test "silver-rem"        "Remove stale workflow scope"    "Remove this requirement from the current Silver workflow"
+run_test "silver-remove"     "Safely remove functionality"    "Remove the obsolete todo priority feature"
+run_test "silver-scan"       "Scan sessions for follow-ups"   "Scan prior sessions for missed bugs and backlog items"
 
 # ============================================
 # SILVER EXTENDED SKILLS
@@ -102,6 +106,8 @@ run_test "silver-init"        "Initialize new project"       "Start a new Node.j
 run_test "silver-migrate"     "Migrate database schema"      "Add user table to database"
 run_test "silver-review-stats" "Review code statistics"    "Show code quality metrics"
 run_test "silver-update"      "Update dependencies"          "Upgrade all npm packages"
+run_test "progressive-review-loop" "Iterate review/fix loop" "Review and fix until no actionable findings remain"
+run_test "verify-tests"      "Verify test command freshness"  "Run the configured verification gate"
 run_test "silver"             "Silver workflow routing"      "Route between sub-workflows"
 
 # ============================================
@@ -209,7 +215,8 @@ echo ""
 
 # List skills missing scenarios
 echo -e "${YELLOW}Skills needing scenario documentation:${NC}"
-for skill in $(ls skills/ 2>/dev/null | sort); do
+REPO_ROOT="$(cd ../.. && pwd)"
+for skill in $(find "$REPO_ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort); do
     if [ ! -f "SCENARIOS/$skill.md" ]; then
         echo -e "  ${YELLOW}○${NC} $skill"
     fi

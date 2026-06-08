@@ -144,6 +144,7 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#gsd-commands">GSD Commands</a></li>
         <li><a href="#sb-skills">Silver Bullet Skills</a></li>
         <li><a href="#spec-skills">Spec Pipeline Skills</a></li>
+        <li><a href="#quality-review-skills">Quality &amp; Review Skills</a></li>
         <li><a href="#orchestration-workflows">Orchestration Workflows</a></li>
         <li><a href="#sp-skills">Superpowers Skills</a></li>
         <li><a href="#devops-skills">DevOps Skills</a></li>
@@ -308,7 +309,7 @@ footer a:hover{color:var(--accent-light)}
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator layer around GSD. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB/GSD/plugin path, and then enforces that the selected path actually runs. GSD remains the lifecycle and execution authority; SB owns routing, composition, quality gates, risk checks, traceability, and recovery.</p>
-      <p><strong>Command naming note:</strong> public docs use the logical slash-command names. Some host/plugin surfaces may expose generated package names differently, but the source command definitions in this repo use the <code>silver:*</code> namespace.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.19+ exposes the native picker as <code>/Silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -330,6 +331,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
+          <tr><td>/progressive-review-loop</td><td>High-confidence review</td><td>Runs iterative audit/fix/verify loops over bounded artifact sets until the required clean-pass threshold is reached.</td></tr>
         </tbody>
       </table>
 
@@ -362,6 +364,38 @@ footer a:hover{color:var(--accent-light)}
             <td>Anytime (review health reporting)</td>
             <td>Generates three summary tables from accumulated review metrics (JSON Lines): pass rates by artifact type, rounds to clean pass, and finding categories by artifact type. Use to track review health over time.</td>
           </tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <!-- QUALITY AND REVIEW SKILLS -->
+      <h2 id="quality-review-skills">Quality &amp; Review Skills</h2>
+      <p>These SB-owned skills provide the one-by-one quality dimensions and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are source-owned SB skills and are included in the 51-skill inventory.</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Skill</th><th>Role</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>modularity</td><td>Quality dimension</td><td>Checks separation of concerns, boundaries, cohesion, and coupling.</td></tr>
+          <tr><td>reusability</td><td>Quality dimension</td><td>Checks whether useful behavior is generalized without premature abstraction.</td></tr>
+          <tr><td>scalability</td><td>Quality dimension</td><td>Checks growth paths, resource limits, and operational scale assumptions.</td></tr>
+          <tr><td>security</td><td>Quality dimension</td><td>Checks threat boundaries, injection risks, auth, secrets, and unsafe defaults.</td></tr>
+          <tr><td>reliability</td><td>Quality dimension</td><td>Checks failure modes, retries, idempotency, observability, and recovery behavior.</td></tr>
+          <tr><td>usability</td><td>Quality dimension</td><td>Checks user-facing clarity, error states, accessibility-adjacent UX, and workflow friction.</td></tr>
+          <tr><td>testability</td><td>Quality dimension</td><td>Checks whether behavior can be verified with focused, maintainable tests.</td></tr>
+          <tr><td>extensibility</td><td>Quality dimension</td><td>Checks future-change seams, compatibility boundaries, and extension risks.</td></tr>
+          <tr><td>ai-llm-safety</td><td>Conditional quality dimension</td><td>Applies when the phase includes AI behavior, prompts, retrieval, model outputs, or agentic automation.</td></tr>
+          <tr><td>artifact-reviewer</td><td>Review orchestrator</td><td>Runs structured artifact review against specs, requirements, UAT, roadmap, context, research, design, and cross-artifact sets.</td></tr>
+          <tr><td>artifact-review-assessor</td><td>Review triage</td><td>Classifies findings as MUST-FIX, NICE-TO-HAVE, or DISMISS so review loops can stop safely.</td></tr>
+          <tr><td>review-spec</td><td>Artifact reviewer</td><td>Reviews SPEC.md for completeness, ambiguity, assumptions, and acceptance criteria quality.</td></tr>
+          <tr><td>review-requirements</td><td>Artifact reviewer</td><td>Reviews REQUIREMENTS.md alignment with the spec and user intent.</td></tr>
+          <tr><td>review-roadmap</td><td>Artifact reviewer</td><td>Reviews roadmap structure, sequencing, dependency clarity, and milestone coverage.</td></tr>
+          <tr><td>review-uat</td><td>Artifact reviewer</td><td>Reviews UAT criteria and execution evidence before milestone completion.</td></tr>
+          <tr><td>review-design</td><td>Artifact reviewer</td><td>Reviews design artifacts, UI contracts, and design-system alignment.</td></tr>
+          <tr><td>review-research</td><td>Artifact reviewer</td><td>Reviews research artifacts for decision quality, evidence, and handoff clarity.</td></tr>
+          <tr><td>review-context</td><td>Artifact reviewer</td><td>Reviews context packets for enough detail to support downstream planning and execution.</td></tr>
+          <tr><td>review-ingestion-manifest</td><td>Artifact reviewer</td><td>Reviews external artifact ingestion manifests and source-to-spec traceability.</td></tr>
+          <tr><td>review-cross-artifact</td><td>Artifact reviewer</td><td>Checks consistency across SPEC, REQUIREMENTS, ROADMAP, DESIGN, UAT, and review artifacts.</td></tr>
         </tbody>
       </table>
 

@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or Codex local dev installer ./scripts/install-codex.sh --purge-legacy-skills. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or Codex local dev installer ./scripts/install-codex.sh --purge-legacy-skills. Codex exposes native /Silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -29,14 +29,14 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /Silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /Silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
   },
   {
     "page": "Core Concepts",
     "url": "/help/concepts/",
     "anchor": "hooks",
     "title": "Hooks and enforcement",
-    "text": "Silver Bullet hooks run on host lifecycle events to record skills, enforce workflow order, block direct planning artifact edits, check CI, remind on prompts, and block incomplete final delivery. Hook-capable runtimes get hard gates."
+    "text": "Silver Bullet has 29 covered runtime hooks. Hooks run on host lifecycle events to record skills, enforce workflow order, block direct planning artifact edits, check CI, remind on prompts, and block incomplete final delivery. Hook-capable runtimes get hard gates."
   },
   {
     "page": "Core Concepts",
@@ -204,7 +204,14 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "Silver Bullet command reference",
-    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:rem, /silver:scan, /silver:migrate, and more."
+    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, progressive-review-loop, and more."
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/",
+    "anchor": "quality-review-skills",
+    "title": "Quality and review skills",
+    "text": "SB-owned quality and review skills include modularity, reusability, scalability, security, reliability, usability, testability, extensibility, ai-llm-safety, artifact-reviewer, artifact-review-assessor, and review-spec, review-requirements, review-roadmap, review-uat, review-design, review-research, review-context, review-ingestion-manifest, and review-cross-artifact."
   },
   {
     "page": "Reference",
