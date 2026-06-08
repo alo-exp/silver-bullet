@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.37.21] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): make packaged SB skill sources extensionless so Codex cannot surface /Silver Bullet picker duplicates`
+- `fix(codex): expose only the silver route family in the native Codex picker mirror`
+- `docs: refresh install and Help Center copy for the current Claude/Codex package model`
+
+## Tests
+
+- `test(codex): reject Markdown hidden skill-source files and redundant helper mirror entries`
+- `test(codex): verify local installs expose one native /Silver picker surface`
+
+---
+
 ## [0.37.20] — 2026-06-08
 
 ## Bug Fixes
