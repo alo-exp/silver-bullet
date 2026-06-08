@@ -920,10 +920,11 @@ verify_runtime_dependency_access() {
     assert_not_contains "Codex split silver plugin absent" "$(cat "$config_file" 2>/dev/null)" 'silver@alo-labs-codex'
     assert_file_exists "Codex Silver Bullet package synced" "$marketplace_root/plugins/silver-bullet/.codex-plugin/plugin.json"
     assert_file_absent "Codex Silver Bullet package does not expose plugin picker skills directory" "$marketplace_root/plugins/silver-bullet/skills"
-    assert_file_exists "Codex Silver Bullet init skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SKILL.md"
-    assert_file_exists "Codex Silver Bullet ensure-docs skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SKILL.md"
-    assert_file_exists "Codex Silver Bullet feature skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SKILL.md"
-    assert_file_exists "Codex Silver Bullet router skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SKILL.md"
+    assert_file_exists "Codex Silver Bullet init skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE.md"
+    assert_file_exists "Codex Silver Bullet ensure-docs skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE.md"
+    assert_file_exists "Codex Silver Bullet feature skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE.md"
+    assert_file_exists "Codex Silver Bullet router skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE.md"
+    assert_file_absent "Codex Silver Bullet package has no picker-discoverable internal skill files" "$(find "$marketplace_root/plugins/silver-bullet" -name '*SKILL.md' -print -quit 2>/dev/null)"
     assert_file_absent "Codex Silver Bullet package does not expose generated picker skills directory" "$marketplace_root/plugins/silver-bullet/.generated-skills"
     assert_file_absent "Codex Silver Bullet package does not expose agent SKILL.md bundle" "$marketplace_root/plugins/silver-bullet/agents"
     assert_file_exists "Codex native Silver Bullet init skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/silver-init/SKILL.md"
@@ -964,10 +965,10 @@ verify_runtime_dependency_access() {
     assert_command_succeeds "Codex product-management plugin registered" codex_plugin_registered_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local"
     assert_command_succeeds "Codex product-management install path exposes package manifest" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex product-management install path exposes write-spec helper skill" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- "upstream/skills/write-spec/SKILL.md" "skills/write-spec/SKILL.md"
-    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SKILL.md" 'name: "silver:init"'
-    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SKILL.md" 'name: "silver:ensure-docs"'
-    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SKILL.md" 'name: "silver:feature"'
-    assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SKILL.md" 'name: silver'
+    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE.md" 'name: "silver:init"'
+    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE.md" 'name: "silver:ensure-docs"'
+    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE.md" 'name: "silver:feature"'
+    assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE.md" 'name: silver'
 
     if [[ "$E2E_RUNTIME" == "kay" ]]; then
       local active_config_file

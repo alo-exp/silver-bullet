@@ -28,14 +28,14 @@ assert_file_absent() {
 }
 
 sb_internal_skill() {
-  printf '%s/skill-source/%s/SILVER_SKILL.md\n' "$1" "$2"
+  printf '%s/skill-source/%s/SILVER_SOURCE.md\n' "$1" "$2"
 }
 
 assert_no_packaged_skill_md() {
   local desc="$1" path="$2"
-  if find "$path" -name SKILL.md -print -quit 2>/dev/null | grep -q .; then
-    echo "FAIL: $desc — packaged SKILL.md found under $path"
-    find "$path" -name SKILL.md -print 2>/dev/null | head -20
+  if find "$path" -name '*SKILL.md' -print -quit 2>/dev/null | grep -q .; then
+    echo "FAIL: $desc — packaged *SKILL.md found under $path"
+    find "$path" -name '*SKILL.md' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
   else
     echo "PASS: $desc"

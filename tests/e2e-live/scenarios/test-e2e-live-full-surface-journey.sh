@@ -155,21 +155,33 @@ resolve_silver_skill_path() {
 
     local install_path
     install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
-    if [[ -n "$install_path" && -f "$install_path/skill-source/silver/SILVER_SKILL.md" ]]; then
-      printf '%s\n' "$install_path/skill-source/silver/SILVER_SKILL.md"
-      return 0
+    if [[ -n "$install_path" ]]; then
+      for source_name in SILVER_SOURCE.md SILVER_SKILL.md; do
+        if [[ -f "$install_path/skill-source/silver/$source_name" ]]; then
+          printf '%s\n' "$install_path/skill-source/silver/$source_name"
+          return 0
+        fi
+      done
     fi
 
     local codex_cache_root latest_codex_cache
     codex_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
-    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skill-source/silver/SILVER_SKILL.md" ]]; then
-      printf '%s\n' "$codex_cache_root/current/skill-source/silver/SILVER_SKILL.md"
-      return 0
+    if [[ -L "$codex_cache_root/current" ]]; then
+      for source_name in SILVER_SOURCE.md SILVER_SKILL.md; do
+        if [[ -f "$codex_cache_root/current/skill-source/silver/$source_name" ]]; then
+          printf '%s\n' "$codex_cache_root/current/skill-source/silver/$source_name"
+          return 0
+        fi
+      done
     fi
     latest_codex_cache="$(find "$codex_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skill-source/silver/SILVER_SKILL.md" ]]; then
-      printf '%s\n' "$latest_codex_cache/skill-source/silver/SILVER_SKILL.md"
-      return 0
+    if [[ -n "$latest_codex_cache" ]]; then
+      for source_name in SILVER_SOURCE.md SILVER_SKILL.md; do
+        if [[ -f "$latest_codex_cache/skill-source/silver/$source_name" ]]; then
+          printf '%s\n' "$latest_codex_cache/skill-source/silver/$source_name"
+          return 0
+        fi
+      done
     fi
   else
     local claude_cache_root latest_claude_cache

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.37.18] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): prevent plugin-cache skill source files from appearing in the Codex skill picker`
+- `fix(codex): keep SB picker entries exclusively on the native /Silver surface`
+- `fix(codex): refresh all installed SB cache versions from the safe package surface during install`
+
+## Tests
+
+- `test(codex): reject any packaged plugin *SKILL.md file that Codex could discover`
+- `test(codex): verify isolated installs expose no duplicate /Silver Bullet picker entries`
+
+---
+
 ## [0.37.16] — 2026-06-08
 
 ## Bug Fixes
