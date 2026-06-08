@@ -17,6 +17,14 @@ The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/silver-quality-gates/SKILL.md`, so the plugin root is two directories up.
 
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a Codex native mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
+
+```bash
+DIMENSION_SKILLS_ROOT="$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source"
+```
+
+Do not require dimension helper skills to appear in the Codex skill picker. They are implementation dependencies of `silver:quality-gates`, not user-facing routes.
+
 ---
 
 ## Step 0: Mode Detection
@@ -47,15 +55,15 @@ Use the disambiguation table to determine mode:
 
 Use the active runtime file-reading mechanism to read each of the following files:
 
-1. `${PLUGIN_ROOT}/skills/modularity/SKILL.md`
-2. `${PLUGIN_ROOT}/skills/reusability/SKILL.md`
-3. `${PLUGIN_ROOT}/skills/scalability/SKILL.md`
-4. `${PLUGIN_ROOT}/skills/security/SKILL.md`
-5. `${PLUGIN_ROOT}/skills/reliability/SKILL.md`
-6. `${PLUGIN_ROOT}/skills/usability/SKILL.md`
-7. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
-8. `${PLUGIN_ROOT}/skills/extensibility/SKILL.md`
-9. `${PLUGIN_ROOT}/skills/ai-llm-safety/SKILL.md` only when the phase includes AI/LLM behavior
+1. `${DIMENSION_SKILLS_ROOT}/modularity/SKILL.md`
+2. `${DIMENSION_SKILLS_ROOT}/reusability/SKILL.md`
+3. `${DIMENSION_SKILLS_ROOT}/scalability/SKILL.md`
+4. `${DIMENSION_SKILLS_ROOT}/security/SKILL.md`
+5. `${DIMENSION_SKILLS_ROOT}/reliability/SKILL.md`
+6. `${DIMENSION_SKILLS_ROOT}/usability/SKILL.md`
+7. `${DIMENSION_SKILLS_ROOT}/testability/SKILL.md`
+8. `${DIMENSION_SKILLS_ROOT}/extensibility/SKILL.md`
+9. `${DIMENSION_SKILLS_ROOT}/ai-llm-safety/SKILL.md` only when the phase includes AI/LLM behavior
 
 ---
 
