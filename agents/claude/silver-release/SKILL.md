@@ -100,9 +100,9 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "~/.claude/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet/current" \
       "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "~/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
+      "$HOME/.claude/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break
@@ -251,7 +251,7 @@ Invoke `deploy-checklist` via the Skill tool when available. Purpose: verify all
 
 ## Step 6c: Mandatory Full Test Suite Rerun
 
-Invoke `verify-tests` after the pre-release quality gate has completed and before any ship/release step. Purpose: re-run the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `~/.claude/.silver-bullet/quality-gate-state`. Non-skippable.
+Invoke `verify-tests` after the pre-release quality gate has completed and before any ship/release step. Purpose: re-run the full local test suite in the current release session so the release gate is based on fresh verification, not stale results. After the suite passes, `verify-tests` writes its freshness marker and the release flow records `full-test-suite-rerun` in `$HOME/.claude/.silver-bullet/quality-gate-state`. Non-skippable.
 
 **Enforcement:** Do not proceed to Step 7 until the full suite rerun has completed and the marker is recorded.
 

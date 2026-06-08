@@ -103,7 +103,7 @@ Invoke `/gsd-forensics` through the active runtime's SB-recognized skill invocat
    Flag any file appearing in 3+ consecutive commits; confidence HIGH if commit messages are
    similar, MEDIUM if varied.
 4. Uncommitted work (crash/interruption signal): `git status --short` and `git diff --stat`
-5. Presence of `~/.codex/.silver-bullet/timeout` (was sentinel triggered?)
+5. Presence of `$HOME/.codex/.silver-bullet/timeout` (was sentinel triggered?)
 6. Phase artifact completeness: for each `.planning/phases/*/`, check which of PLAN.md, SUMMARY.md,
    VERIFICATION.md, CONTEXT.md, and RESEARCH.md are present. Record missing artifacts per phase.
 7. SESSION_REPORT.md: read `.planning/reports/SESSION_REPORT.md` if it exists — extract last
@@ -130,7 +130,7 @@ writing the post-mortem. Then proceed to the matching path section below.
 
 1. Read full session log from `<project-root>/docs/sessions/` — extract Mode, Autonomous
    decisions, Needs human review, Outcome
-2. Check sentinel artifacts: was `~/.codex/.silver-bullet/timeout` set? What was the last
+2. Check sentinel artifacts: was `$HOME/.codex/.silver-bullet/timeout` set? What was the last
    tool use before stall? If the sentinel file is absent, note "No sentinel detected"
    in Evidence Gathered and proceed — absence does not rule out stall; rely on session
    log and git history.

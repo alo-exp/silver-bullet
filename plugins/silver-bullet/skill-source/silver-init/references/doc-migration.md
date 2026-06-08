@@ -21,9 +21,9 @@ echo "=== END SCAN ==="
 
 | Detected Pattern | SB Target | Action |
 |-----------------|-----------|--------|
-| `Architecture-and-Design.md`, `architecture.md`, etc. | `docs/ARCHITECTURE.md` | Rename (preserve content) |
-| `Testing-Strategy-and-Plan.md`, `test-plan.md`, etc. | `docs/TESTING.md` | Rename (preserve content) |
-| `KNOWLEDGE.md` (single file) | `docs/knowledge/` directory | Split: project intelligence → `docs/knowledge/YYYY-MM.md`, portable lessons → `docs/lessons/YYYY-MM.md` |
+| Legacy architecture/design doc variants | `docs/ARCHITECTURE.md` | Rename (preserve content) |
+| Legacy testing strategy/plan doc variants | `docs/TESTING.md` | Rename (preserve content) |
+| Legacy single-file project knowledge doc | `docs/knowledge/` directory | Split: project intelligence → `docs/knowledge/YYYY-MM.md`, portable lessons → `docs/lessons/YYYY-MM.md` |
 | `changelog.md` (lowercase or variant) | `docs/CHANGELOG.md` | Rename (preserve content) |
 | `cicd.md`, `pipeline.md`, `deploy.md` | `docs/CICD.md` | Rename (preserve content) |
 | File already matches SB naming | — | Skip (no action needed) |
@@ -36,9 +36,9 @@ For each rename action:
 2. Rename using Bash (`mv <old> <new>`)
 3. Confirm with user before proceeding to next step
 
-## KNOWLEDGE.md Split Logic
+## Legacy Knowledge Split Logic
 
-1. Copy `docs/KNOWLEDGE.md` to `docs/KNOWLEDGE.md.pre-sb-backup`
+1. Copy the legacy single-file knowledge doc to a `.pre-sb-backup` file
 2. Read full content and separate into two categories:
    - **Project-scoped intelligence** (architecture patterns, gotchas, decisions, project-specific recurring patterns, open questions) → `docs/knowledge/YYYY-MM.md`
    - **Portable lessons** (general lessons beyond this project — remove all project-specific file paths, feature names, and requirement IDs) → `docs/lessons/YYYY-MM.md`
@@ -58,12 +58,12 @@ Present plan directly:
 ✅ Documentation migration complete
 
 Migrated:
-- docs/Architecture-and-Design.md → docs/ARCHITECTURE.md
-- docs/KNOWLEDGE.md → docs/knowledge/YYYY-MM.md + docs/lessons/YYYY-MM.md
+- legacy architecture/design doc → docs/ARCHITECTURE.md
+- legacy single-file knowledge doc → docs/knowledge/YYYY-MM.md + docs/lessons/YYYY-MM.md
 
 Backups:
-- docs/Architecture-and-Design.md.pre-sb-backup
-- docs/KNOWLEDGE.md.pre-sb-backup
+- legacy architecture/design backup
+- legacy single-file knowledge backup
 
 Untouched:
 - docs/custom-guide.md (not part of SB scheme)

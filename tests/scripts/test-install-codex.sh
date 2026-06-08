@@ -982,8 +982,8 @@ assert_not_contains "SB package does not contain auto-routing wording" "auto-sel
 assert_not_contains "Current cache package does not contain auto-routing wording" "auto-select the correct model for the current host" "$FAKE_CACHE_ROOT"
 assert_not_contains "SB package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$FAKE_SB_PACKAGE_ROOT"
 assert_not_contains "Current cache package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$FAKE_CACHE_ROOT"
-assert_contains "SB package uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.md.base"
-assert_contains "Current cache uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$FAKE_CACHE_ROOT/templates/silver-bullet.md.base"
+assert_contains "SB package uses HOME-expanded Codex state paths" '$HOME/.codex/.silver-bullet/state' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Current cache uses HOME-expanded Codex state paths" '$HOME/.codex/.silver-bullet/state' "$FAKE_CACHE_ROOT/templates/silver-bullet.md.base"
 assert_contains "SB package tracks gsd-scan in config" '"gsd-scan"' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "Current cache tracks gsd-scan in config" '"gsd-scan"' "$FAKE_CACHE_ROOT/templates/silver-bullet.config.json.default"
 assert_command_succeeds "Marketplace and SB package hook surfaces are identical" python3 - "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" <<'PY'
@@ -1073,7 +1073,7 @@ assert_contains "SB init skill uses silver prefix" "name: \"silver:init\"" "$REP
 assert_contains "SB ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-ensure-docs/SKILL.md"
 assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
 # shellcheck disable=SC2088 # literal tilde is part of the documented Codex cache glob
-assert_contains "SB init skill checks Codex product-management cache" "~/.codex/plugins/cache/*/product-management/skills/" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
+assert_contains "SB init skill checks Codex product-management cache" '$HOME/.codex/plugins/cache/*/product-management/skills/' "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
 assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
 assert_contains "SB init skill keeps the working GSD entrypoint fallback" "prefer the local entrypoint and continue bootstrap instead of failing on wrapper import noise" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
 assert_contains "SB ensure-docs skill runs semantic audits" "semantic freshness audits against the current project state" "$REPO_ROOT/plugins/silver-bullet/skill-source/silver-ensure-docs/SKILL.md"

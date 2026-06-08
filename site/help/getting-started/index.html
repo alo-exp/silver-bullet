@@ -293,7 +293,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</span></div>
 
       <h3>Codex Local Dev Install</h3>
-      <p>When working from a Silver Bullet repository checkout in Codex, use the installer script. It refreshes the curated SB-only Codex bundle, registers the shared <code>alo-labs/codex-plugins</code> marketplace, installs supported dependencies from official sources where needed, and removes stale legacy SB skill copies.</p>
+      <p>When working from a Silver Bullet repository checkout in Codex, use the installer script. It refreshes the curated SB-only Codex bundle, registers the shared <code>alo-labs/codex-plugins</code> marketplace, installs supported dependencies from official sources where needed, removes stale legacy SB skill copies, and mirrors internal <code>skill-source/</code> files into native <code>~/.codex/skills</code> so the picker exposes only the <code>/Silver:</code> namespace.</p>
       <div class="code-label">From this repository checkout</div>
       <div class="code-block"><span class="cmd">./scripts/install-codex.sh --purge-legacy-skills</span></div>
 

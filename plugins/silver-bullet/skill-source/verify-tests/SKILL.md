@@ -25,7 +25,7 @@ Run the project's test execution gate. This skill executes the configured verify
 
 ## Output Contract
 
-- On success: report that the test execution gate passed and mention the marker file written under `~/.codex/.silver-bullet/`
+- On success: report that the test execution gate passed and mention the marker file written under `$HOME/.codex/.silver-bullet/`
 - On failure: show the failing command and the first error line if available
 
 ## Notes
