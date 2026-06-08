@@ -200,6 +200,7 @@ refresh_marketplace() {
       docs \
       hooks \
       scripts \
+      skill-source \
       skills \
       templates >/dev/null 2>&1 || true
   fi
@@ -304,7 +305,7 @@ materialize_silver_bullet_package() {
 
   # Codex's cache materialization can drop symlink-backed package entries.
   # Replace SB's symlinked top-level package surface with real files/dirs so
-  # hooks/hooks.json, agents/, skills/, templates/, and the rest survive install-time
+  # hooks/hooks.json, agents/, skill-source/, templates/, and the rest survive install-time
   # copying into the versioned cache.
   python3 - "$package_root" <<'PY'
 import pathlib
@@ -346,12 +347,19 @@ sync_materialized_package_surface() {
   [[ -d "$package_root" ]] || return 0
 
   local dir
-  for dir in agents hooks skills templates docs commands scripts; do
+  rm -rf -- "${package_root}/skills"
+
+  for dir in agents hooks skill-source templates docs commands scripts; do
     if [[ -d "${marketplace_root}/${dir}" ]]; then
       mkdir -p "${package_root}/${dir}"
       rsync -a --delete "${marketplace_root}/${dir}/" "${package_root}/${dir}/"
     fi
   done
+
+  if [[ -d "${marketplace_root}/skills" ]]; then
+    mkdir -p "${package_root}/skill-source"
+    rsync -a --delete "${marketplace_root}/skills/" "${package_root}/skill-source/"
+  fi
 
   local file
   for file in \
@@ -376,18 +384,24 @@ fail_missing_silver_bullet_skill_surface() {
   local label="$1"
   local path="$2"
 
-  printf 'ERROR: Silver Bullet %s is missing skills/ at %s\n' "$label" "$path" >&2
-  printf 'The Codex skill picker will not surface SB skills from this package. Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
+  printf 'ERROR: Silver Bullet %s is missing internal skill-source/ at %s\n' "$label" "$path" >&2
+  printf 'Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
   exit 1
 }
 
 validate_silver_bullet_skill_surface() {
   local label="$1"
   local package_root="$2"
-  local skills_root="${package_root}/skills"
+  local skills_root="${package_root}/skill-source"
   local required_skill
 
   [[ -d "$package_root" ]] || return 0
+
+  if [[ -d "${package_root}/skills" ]]; then
+    printf 'ERROR: Silver Bullet %s exposes top-level skills/ at %s\n' "$label" "${package_root}/skills" >&2
+    printf 'Codex surfaces top-level plugin skills with the /Silver Bullet prefix; SB skills must be mirrored natively from skill-source/ instead.\n' >&2
+    exit 1
+  fi
 
   if [[ ! -d "$skills_root" ]]; then
     fail_missing_silver_bullet_skill_surface "$label" "$skills_root"
@@ -399,7 +413,7 @@ validate_silver_bullet_skill_surface() {
         "$label" \
         "$required_skill" \
         "${skills_root}/${required_skill}/SKILL.md" >&2
-      printf 'The Codex skill picker will not surface SB skills from this package. Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
+      printf 'Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
       exit 1
     fi
   done
@@ -489,9 +503,15 @@ PY
 
 sync_silver_bullet_native_codex_skill_mirror() {
   local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
-  local package_skills_root="${package_root}/skills"
+  local package_skills_root="${package_root}/skill-source"
   local native_skills_root="${CODEX_HOME_ROOT}/.codex/skills"
 
+  if [[ ! -d "$package_skills_root" && -d "${package_root}/skills" ]]; then
+    # Legacy pre-0.37.15 packages used top-level skills/. Keep upgrades from
+    # failing before the refreshed package is in place, but current packages
+    # must use skill-source/ so Codex does not expose plugin-prefixed skills.
+    package_skills_root="${package_root}/skills"
+  fi
   [[ -d "$package_skills_root" ]] || return 0
 
   python3 - "$package_root" "$package_skills_root" "$native_skills_root" <<'PY'
@@ -1631,9 +1651,9 @@ sync_silver_bullet_skill_cache() {
   [[ -d "$marketplace_root" ]] || return 0
 
   current_package_dir="${marketplace_root}/plugins/silver-bullet"
-  [[ -d "${current_package_dir}/skills" ]] || return 0
+  [[ -d "${current_package_dir}/skill-source" ]] || return 0
 
-  python3 - "${current_package_dir}/skills" <<'PY'
+  python3 - "${current_package_dir}/skill-source" <<'PY'
 import pathlib
 import re
 import sys

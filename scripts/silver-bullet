@@ -55,13 +55,14 @@ append_skill_roots() {
   local candidate
 
   SKILL_ROOTS+=(
-    "${PLUGIN_ROOT}/skills"
-    "${PLUGIN_ROOT}/.generated-skills"
-    "${PLUGIN_ROOT}/agents/codex"
-    "${PLUGIN_ROOT}/agents/claude"
     "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
     "${HOME}/.codex/skills"
     "${HOME}/.agents/skills"
+    "${PLUGIN_ROOT}/skill-source"
+    "${PLUGIN_ROOT}/.generated-skills"
+    "${PLUGIN_ROOT}/agents/codex"
+    "${PLUGIN_ROOT}/agents/claude"
+    "${PLUGIN_ROOT}/skills"
   )
 
   shopt -s nullglob

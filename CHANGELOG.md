@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.37.15] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): remove plugin-owned SB skills surface from the Codex package`
+- `fix(codex): mirror SB picker skills only through native ~/.codex/skills`
+- `fix(codex): map legacy marketplace root skills into internal skill-source during install`
+
+## Tests
+
+- `test(codex): fail package sync when plugins/silver-bullet/skills exists`
+- `test(codex): verify installer removes stale plugin skills during public-release refresh`
+- `test(live): use native $silver entrypoint in full-surface prompts`
+
 ## [0.37.14] — 2026-06-08
 
 ## Bug Fixes

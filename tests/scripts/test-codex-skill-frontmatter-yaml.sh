@@ -54,7 +54,7 @@ RUBY
 echo "=== Codex skill YAML frontmatter tests ==="
 
 assert_command "plugin SB skills have YAML-parseable frontmatter" \
-  parse_frontmatter_tree "$REPO_ROOT/plugins/silver-bullet/skills"
+  parse_frontmatter_tree "$REPO_ROOT/plugins/silver-bullet/skill-source"
 
 assert_command "canonical repo skills have YAML-parseable frontmatter" \
   parse_frontmatter_tree "$REPO_ROOT/skills"

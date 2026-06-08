@@ -73,12 +73,14 @@ fi
 
 ln -sfn "agents/codex" "${DEST_DIR}/.generated-skills"
 
-# The Codex picker needs a real skills tree, not a symlink chain. Keep the
-# internal generated alias for compatibility, but materialize the picker-facing
-# `skills/` directory as actual files so host-side discovery is reliable.
-rm -rf -- "${DEST_DIR}/skills"
-mkdir -p -- "${DEST_DIR}/skills"
-rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skills/"
+# Codex discovers plugin-owned picker entries from a top-level `skills/` tree
+# even when the manifest does not advertise one. Keep SB's packaged skill files
+# available for the installer and invoke-skill adapter, but store them in a
+# non-picker internal directory so the only user-facing picker surface is the
+# native ~/.codex/skills mirror with /Silver: titles.
+rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source"
+mkdir -p -- "${DEST_DIR}/skill-source"
+rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skill-source/"
 
 if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
   "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"

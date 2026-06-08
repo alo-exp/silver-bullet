@@ -138,7 +138,7 @@ record_completed_surface() {
 skill_prompt() {
   local target_route="$1"
   shift
-  printf 'Use the [$silver-bullet:silver](%s) skill as the only entrypoint and follow it. Route this request to `%s` through the orchestrator, execute the composed workflow, and do not read or use local /Users/shafqat/projects/codex-plugins/skills paths. %s' "$SILVER_SKILL_PATH" "$target_route" "$*"
+  printf 'Use the [$silver](%s) skill as the only entrypoint and follow it. Route this request to `%s` through the orchestrator, execute the composed workflow, and do not read or use local /Users/shafqat/projects/codex-plugins/skills paths. %s' "$SILVER_SKILL_PATH" "$target_route" "$*"
 }
 
 LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
@@ -147,22 +147,28 @@ LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT="do[[:space:]]*not[[:space:]]*read[[:space:]
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
+    local native_silver_skill="${KAY_HOME:-$HOME}/.codex/skills/silver/SKILL.md"
+    if [[ -f "$native_silver_skill" ]]; then
+      printf '%s\n' "$native_silver_skill"
+      return 0
+    fi
+
     local install_path
     install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
-    if [[ -n "$install_path" && -f "$install_path/skills/silver/SKILL.md" ]]; then
-      printf '%s\n' "$install_path/skills/silver/SKILL.md"
+    if [[ -n "$install_path" && -f "$install_path/skill-source/silver/SKILL.md" ]]; then
+      printf '%s\n' "$install_path/skill-source/silver/SKILL.md"
       return 0
     fi
 
     local codex_cache_root latest_codex_cache
     codex_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
-    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skills/silver/SKILL.md" ]]; then
-      printf '%s\n' "$codex_cache_root/current/skills/silver/SKILL.md"
+    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skill-source/silver/SKILL.md" ]]; then
+      printf '%s\n' "$codex_cache_root/current/skill-source/silver/SKILL.md"
       return 0
     fi
     latest_codex_cache="$(find "$codex_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skills/silver/SKILL.md" ]]; then
-      printf '%s\n' "$latest_codex_cache/skills/silver/SKILL.md"
+    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skill-source/silver/SKILL.md" ]]; then
+      printf '%s\n' "$latest_codex_cache/skill-source/silver/SKILL.md"
       return 0
     fi
   else
@@ -176,7 +182,7 @@ resolve_silver_skill_path() {
   fi
 
   # Deterministic fallback for local dev runs when registry metadata is missing.
-  printf '%s\n' "/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skills/silver/SKILL.md"
+  printf '%s\n' "/Users/shafqat/.codex/skills/silver/SKILL.md"
 }
 
 assert_no_local_skill_source_bypass() {

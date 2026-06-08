@@ -301,7 +301,7 @@ HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
-{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
+{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver](/Users/shafqat/.codex/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
 EOF
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_contains "prompt replay recorded silver-init as requested" "${TMPSTATE}.requested" "silver-init"
@@ -317,7 +317,7 @@ new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 rm -f "$HOOK_WORKDIR/.silver-bullet.json" "$HOOK_WORKDIR/silver-bullet.md"
 cat > "$HOOK_WORKDIR/.silver-bullet.prompt.json" <<'EOF'
-{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver-bullet:silver](/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3+codex.1/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
+{"hook_event_name":"UserPromptSubmit","prompt":"Use the [$silver](/Users/shafqat/.codex/skills/silver/SKILL.md) skill as the only entrypoint and follow it. Route this request to `silver:init` through the orchestrator, execute the composed workflow, and stop after initialization."}
 EOF
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_contains "fresh init prompt replay recorded silver-init as requested" "${TMPSTATE}.requested" "silver-init"
