@@ -15,6 +15,17 @@ assert_file_exists() {
   fi
 }
 
+assert_file_absent() {
+  local desc="$1" path="$2"
+  if [[ ! -e "$path" && ! -L "$path" ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — should be absent: $path"
+    (( FAIL++ )) || true
+  fi
+}
+
 assert_not_symlink() {
   local desc="$1" path="$2"
   if [[ -e "$path" && ! -L "$path" ]]; then
@@ -55,7 +66,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 MARKETPLACE="$TMP/marketplace"
 REMOTE="$TMP/remote.git"
-mkdir -p "$MARKETPLACE/plugins/silver-bullet/.codex-plugin" "$MARKETPLACE/skills/silver-init"
+mkdir -p "$MARKETPLACE/plugins/silver-bullet/.codex-plugin" "$MARKETPLACE/skill-source/silver-init"
 
 cat > "$MARKETPLACE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
 {
@@ -64,12 +75,12 @@ cat > "$MARKETPLACE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
   "commands": "./commands/"
 }
 EOF
-cat > "$MARKETPLACE/skills/silver-init/SKILL.md" <<'EOF'
+cat > "$MARKETPLACE/skill-source/silver-init/SKILL.md" <<'EOF'
 ---
 name: stale-silver-init
 ---
 EOF
-ln -s ../../skills "$MARKETPLACE/plugins/silver-bullet/skills"
+ln -s ../../skill-source "$MARKETPLACE/plugins/silver-bullet/skill-source"
 
 git -C "$MARKETPLACE" init -q
 git -C "$MARKETPLACE" config user.email "tests@example.invalid"
@@ -81,15 +92,16 @@ git -C "$TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
-source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skills" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 
 CODEX_MARKETPLACE_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
 
-marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skills" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
 
-assert_not_symlink "marketplace plugin skills surface is materialized" "$MARKETPLACE/plugins/silver-bullet/skills"
-assert_file_exists "marketplace plugin includes Silver Bullet init skill" "$MARKETPLACE/plugins/silver-bullet/skills/silver-init/SKILL.md"
-assert_file_exists "marketplace plugin includes Silver Bullet feature skill" "$MARKETPLACE/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+assert_file_absent "marketplace plugin does not expose picker skills directory" "$MARKETPLACE/plugins/silver-bullet/skills"
+assert_not_symlink "marketplace plugin skill-source surface is materialized" "$MARKETPLACE/plugins/silver-bullet/skill-source"
+assert_file_exists "marketplace plugin includes Silver Bullet init skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
+assert_file_exists "marketplace plugin includes Silver Bullet feature skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-feature/SKILL.md"
 assert_equal "marketplace plugin skill count matches source package" "$source_count" "$marketplace_count"
 assert_not_contains "marketplace plugin avoids Claude-only Skill tool wording" "via the Skill tool" "$MARKETPLACE/plugins/silver-bullet"
 assert_not_contains "marketplace plugin avoids duplicate skill tracker wording" "PostToolUse/Skill or Codex invoke-skill receipt or Codex" "$MARKETPLACE/plugins/silver-bullet"

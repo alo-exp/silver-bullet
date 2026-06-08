@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Combines GSD, SB gates, and selected helper plugins into enforced task-shaped workflows with layered technical compliance.",
-  "version": "0.37.14",
+  "version": "0.37.15",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
