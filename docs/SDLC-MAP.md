@@ -2,7 +2,7 @@
 
 Single-page view of which Silver Bullet skills, artifacts, and enforcement layers activate at each SDLC stage. This is SB's authoritative coverage matrix.
 
-**Last updated:** 2026-06-08 (v0.37.16)
+**Last updated:** 2026-06-08 (v0.37.18)
 
 ## Coverage Matrix
 

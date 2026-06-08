@@ -27,7 +27,8 @@ require "yaml"
 root = ARGV.fetch(0)
 failures = []
 
-Dir[File.join(root, "**", "SKILL.md")].sort.each do |path|
+patterns = ["SKILL.md", "SILVER_SOURCE.md", "SILVER_SKILL.md"]
+patterns.flat_map { |pattern| Dir[File.join(root, "**", pattern)] }.sort.each do |path|
   text = File.read(path)
   frontmatter = text.match(/\A---\n(.*?)\n---/m)&.[](1)
   next unless frontmatter
