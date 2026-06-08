@@ -2,19 +2,19 @@
 
 Defines what each plugin owns. Silver Bullet never duplicates documentation or functionality that belongs to another plugin — it orchestrates and enforces.
 
-**Last updated:** 2026-05-07
+**Last updated:** 2026-06-08
 
 ## Ownership Matrix
 
 | Concern | GSD | Superpowers | Engineering | Design | Silver Bullet |
 |---------|-----|-------------|-------------|--------|--------------|
 | Phase planning | **Owns** | — | — | — | Enforces (dev-cycle gate) |
-| Phase execution | **Owns** | — | — | — | Enforces (model routing) |
+| Phase execution | **Owns** | — | — | — | Enforces sequencing, gates, and hook-triggered freshness |
 | Verification | **Owns** | — | — | — | Enforces (completion audit) |
 | Spec creation | — | **Owns** | — | — | Orchestrates (silver-spec) |
 | TDD methodology | — | **Owns** | — | — | Enforces (required_deploy) |
 | Code review dispatch | — | **Owns** | — | — | Enforces (dev-cycle Stage C) |
-| Autonomous patterns | — | **Owns** | — | — | Delegates to |
+| Autonomous patterns | — | **Owns** | — | — | Delegates when an SB flow explicitly selects them |
 | System design | — | — | **Owns** | — | Triggers at workflow step |
 | Deploy checklist | — | — | **Owns** | — | Triggers at workflow step |
 | Testing strategy | — | — | **Owns** | — | Triggers at workflow step |

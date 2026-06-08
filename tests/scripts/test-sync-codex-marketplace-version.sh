@@ -75,7 +75,7 @@ cat > "$MARKETPLACE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
   "commands": "./commands/"
 }
 EOF
-cat > "$MARKETPLACE/skill-source/silver-init/SKILL.md" <<'EOF'
+cat > "$MARKETPLACE/skill-source/silver-init/SILVER_SKILL.md" <<'EOF'
 ---
 name: stale-silver-init
 ---
@@ -92,17 +92,19 @@ git -C "$TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
-source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SKILL.md | wc -l | tr -d ' ')"
 
 CODEX_MARKETPLACE_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
 
-marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')"
+marketplace_count="$(find "$MARKETPLACE/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SKILL.md | wc -l | tr -d ' ')"
 
 assert_file_absent "marketplace plugin does not expose picker skills directory" "$MARKETPLACE/plugins/silver-bullet/skills"
 assert_not_symlink "marketplace plugin skill-source surface is materialized" "$MARKETPLACE/plugins/silver-bullet/skill-source"
-assert_file_exists "marketplace plugin includes Silver Bullet init skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-init/SKILL.md"
-assert_file_exists "marketplace plugin includes Silver Bullet feature skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-feature/SKILL.md"
+assert_file_exists "marketplace plugin includes Silver Bullet init skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-init/SILVER_SKILL.md"
+assert_file_exists "marketplace plugin includes Silver Bullet feature skill source" "$MARKETPLACE/plugins/silver-bullet/skill-source/silver-feature/SILVER_SKILL.md"
 assert_equal "marketplace plugin skill count matches source package" "$source_count" "$marketplace_count"
+assert_file_absent "marketplace plugin does not expose generated picker skills directory" "$MARKETPLACE/plugins/silver-bullet/.generated-skills"
+assert_file_absent "marketplace plugin does not expose agent SKILL.md bundle" "$MARKETPLACE/plugins/silver-bullet/agents"
 assert_not_contains "marketplace plugin avoids Claude-only Skill tool wording" "via the Skill tool" "$MARKETPLACE/plugins/silver-bullet"
 assert_not_contains "marketplace plugin avoids duplicate skill tracker wording" "PostToolUse/Skill or Codex invoke-skill receipt or Codex" "$MARKETPLACE/plugins/silver-bullet"
 assert_not_contains "marketplace plugin avoids Claude-only Agent tool wording" "Agent tool" "$MARKETPLACE/plugins/silver-bullet"
