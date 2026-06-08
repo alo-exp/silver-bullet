@@ -16,17 +16,25 @@ proceeds to `/gsd:plan-phase`. A ❌ is a hard stop — redesign before continui
 `${PLUGIN_ROOT}/skills/devops-quality-gates/SKILL.md`, so the plugin root is two
 directories up.
 
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a Codex native mirror such as `$HOME/.codex/skills/devops-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
+
+```bash
+DIMENSION_SKILLS_ROOT="$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source"
+```
+
+Do not require dimension helper skills to appear in the Codex skill picker. They are implementation dependencies of `devops-quality-gates`, not user-facing routes.
+
 ---
 
 ## Step 1: Load quality dimension skills
 
 Use the active runtime file-reading mechanism to read each of the following core dimension files:
 
-1. `${PLUGIN_ROOT}/skills/modularity/SKILL.md`
-2. `${PLUGIN_ROOT}/skills/scalability/SKILL.md`
-3. `${PLUGIN_ROOT}/skills/security/SKILL.md`
-4. `${PLUGIN_ROOT}/skills/reliability/SKILL.md`
-5. `${PLUGIN_ROOT}/skills/testability/SKILL.md`
+1. `${DIMENSION_SKILLS_ROOT}/modularity/SKILL.md`
+2. `${DIMENSION_SKILLS_ROOT}/scalability/SKILL.md`
+3. `${DIMENSION_SKILLS_ROOT}/security/SKILL.md`
+4. `${DIMENSION_SKILLS_ROOT}/reliability/SKILL.md`
+5. `${DIMENSION_SKILLS_ROOT}/testability/SKILL.md`
 
 Then apply the built-in observability and change-safety checks below. Together these form the 7 IaC dimensions.
 

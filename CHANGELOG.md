@@ -5,10 +5,13 @@
 ## Bug Fixes
 
 - `fix(codex): normalize Silver picker titles`
+- `fix(codex): resolve hidden quality-gate dimensions from packaged skill-source without exposing helper skills in the picker`
+- `fix(live): ignore explicit non-use denials when scanning Codex transcripts for local skill-source bypasses`
 
 ## Tests
 
 - `test: cover every SB skill scenario`
+- `test(codex): verify picker title normalization, legacy stale-skill purging, and live local-source guard behavior`
 
 ---
 
