@@ -308,8 +308,8 @@ sync_marketplace_package_snapshot() {
 
   # Keep the marketplace package root in lockstep with the repo's generated
   # plugin snapshot. The snapshot intentionally stores skill sources as
-  # SILVER_SKILL.md so Codex's picker cannot recursively discover duplicate
-  # plugin-cache SKILL.md files.
+  # SILVER_SOURCE.md so Codex's picker cannot recursively discover duplicate
+  # plugin-cache *SKILL.md files.
   rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/" "${package_root}/"
 }
 
@@ -380,7 +380,7 @@ sync_materialized_package_surface() {
     rsync -a --delete "${marketplace_root}/skills/" "${package_root}/skill-source/"
     find "${package_root}/skill-source" -name SKILL.md -type f -exec sh -c '
       for path do
-        mv "$path" "$(dirname "$path")/SILVER_SKILL.md"
+        mv "$path" "$(dirname "$path")/SILVER_SOURCE.md"
       done
     ' sh {} +
   fi
@@ -415,6 +415,10 @@ fail_missing_silver_bullet_skill_surface() {
 
 silver_bullet_internal_skill_file() {
   local skill_dir="$1"
+  if [[ -f "${skill_dir}/SILVER_SOURCE.md" ]]; then
+    printf '%s\n' "${skill_dir}/SILVER_SOURCE.md"
+    return 0
+  fi
   if [[ -f "${skill_dir}/SILVER_SKILL.md" ]]; then
     printf '%s\n' "${skill_dir}/SILVER_SKILL.md"
     return 0
@@ -449,7 +453,7 @@ validate_silver_bullet_skill_surface() {
       printf 'ERROR: Silver Bullet %s is missing required skill surface %s at %s\n' \
         "$label" \
         "$required_skill" \
-        "${skills_root}/${required_skill}/SILVER_SKILL.md" >&2
+        "${skills_root}/${required_skill}/SILVER_SOURCE.md" >&2
       printf 'Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
       exit 1
     fi
@@ -601,7 +605,9 @@ def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
 
 desired: dict[str, pathlib.Path] = {}
 for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.name):
-    skill_md = skill_dir / "SILVER_SKILL.md"
+    skill_md = skill_dir / "SILVER_SOURCE.md"
+    if not skill_md.is_file():
+        skill_md = skill_dir / "SILVER_SKILL.md"
     if not skill_md.is_file():
         skill_md = skill_dir / "SKILL.md"
     if not skill_dir.is_dir() or not skill_md.is_file():
@@ -630,7 +636,9 @@ for dirname, source in desired.items():
     elif target.exists():
         shutil.rmtree(target)
     shutil.copytree(source, target)
-    internal_skill = target / "SILVER_SKILL.md"
+    internal_skill = target / "SILVER_SOURCE.md"
+    if not internal_skill.is_file():
+        internal_skill = target / "SILVER_SKILL.md"
     picker_skill = target / "SKILL.md"
     if internal_skill.is_file():
         if picker_skill.exists():
@@ -1706,7 +1714,8 @@ import sys
 skills_root = pathlib.Path(sys.argv[1])
 name_re = re.compile(r'^(name:\s*)silver-([A-Za-z0-9_-]+)\s*$', re.MULTILINE)
 
-for skill_md in skills_root.rglob("SKILL.md"):
+for pattern in ("SILVER_SOURCE.md", "SILVER_SKILL.md", "SKILL.md"):
+  for skill_md in skills_root.rglob(pattern):
     text = skill_md.read_text()
     updated = name_re.sub(lambda m: f"{m.group(1)}silver:{m.group(2)}", text, count=1)
     if updated != text:

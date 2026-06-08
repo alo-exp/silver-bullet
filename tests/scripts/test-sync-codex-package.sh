@@ -93,10 +93,10 @@ if plugin_display_name != "Silver Bullet":
 if "skills" in manifest:
     bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /Silver to avoid duplicate /Silver Bullet listings")
 
-if list(package_root.glob("**/SKILL.md")):
-    bad.append("Codex plugin package must not contain picker-discoverable SKILL.md files")
+if list(package_root.glob("**/*SKILL.md")):
+    bad.append("Codex plugin package must not contain picker-discoverable *SKILL.md files")
 
-for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SKILL.md")):
+for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SOURCE.md")):
     meta = frontmatter(skill_md)
     title = meta.get("title")
     if not title:
@@ -143,7 +143,7 @@ PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
 PACKAGE_SKILL_ROOT="$PACKAGE_ROOT/skill-source"
 
 skill_file() {
-  printf '%s/%s/SILVER_SKILL.md\n' "$PACKAGE_SKILL_ROOT" "$1"
+  printf '%s/%s/SILVER_SOURCE.md\n' "$PACKAGE_SKILL_ROOT" "$1"
 }
 
 bash "$SCRIPT" >/dev/null

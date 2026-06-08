@@ -70,16 +70,17 @@ if [[ -d "${REPO_ROOT}/templates" ]]; then
   rsync -a --delete "${REPO_ROOT}/templates/" "${DEST_DIR}/templates/"
 fi
 
-# Codex can discover plugin-owned picker entries from any cached SKILL.md file
+# Codex can discover plugin-owned picker entries from any cached *SKILL.md file
 # under the plugin package. Keep SB's packaged skill sources available for the
-# installer, but store them under a non-picker filename so the only user-facing
-# picker surface is the native ~/.codex/skills mirror with /Silver: titles.
+# installer, but store them under a filename that does not match skill discovery
+# globs so the only user-facing picker surface is the native ~/.codex/skills
+# mirror with /Silver: titles.
 rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source" "${DEST_DIR}/.generated-skills" "${DEST_DIR}/agents"
 mkdir -p -- "${DEST_DIR}/skill-source"
 rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skill-source/"
 find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
   for path do
-    mv "$path" "$(dirname "$path")/SILVER_SKILL.md"
+    mv "$path" "$(dirname "$path")/SILVER_SOURCE.md"
   done
 ' sh {} +
 
