@@ -194,7 +194,7 @@ Ask:
 > A. Yes — run multai:orchestrator for multi-AI UX review
 > B. No — proceed with spec as-is
 
-If A: invoke `silver:multai` (multai:orchestrator) through the active runtime's SB-recognized skill invocation channel. If the MultAI plugin is unavailable, STOP and notify the user; offer install-and-retry first.
+If A: invoke the external `multai:orchestrator` skill via the active host's supported skill invocation channel. MultAI is optional and is not bundled by Silver Bullet; if the MultAI plugin is unavailable, STOP and notify the user, then offer install-and-retry before continuing without multi-AI UX perspectives.
 
 ## Step 2: Testing Strategy
 
