@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.19-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.19)
+[![version](https://img.shields.io/badge/version-v0.37.20-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.20)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -531,8 +531,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.19`
-- Release: [v0.37.19](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.19)
+- Version: `0.37.20`
+- Release: [v0.37.20](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.20)
 - Notable changes:
   - The Codex package no longer exposes a plugin-owned `skills/` directory, preventing `/Silver Bullet:` duplicate picker entries.
   - The Codex installer maps internal `skill-source/` files into the native `~/.codex/skills` mirror so the picker-facing surface remains `/Silver:`.

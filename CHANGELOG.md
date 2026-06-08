@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.37.20] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): normalize Silver picker titles`
+
+## Tests
+
+- `test: cover every SB skill scenario`
+
+---
+
 ## [0.37.19] — 2026-06-08
 
 ## Bug Fixes
