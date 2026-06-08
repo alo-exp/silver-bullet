@@ -650,9 +650,18 @@ EOF
 FAKE_MARKETPLACE_ROOT="$HOME_DIR/.codex/.tmp/marketplaces/alo-labs-codex"
 FAKE_SB_PACKAGE_ROOT="$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet"
 FAKE_SB_SKILLS_SOURCE="$FAKE_MARKETPLACE_ROOT/skill-source"
+FAKE_STALE_MARKETPLACE_SKILLS="$FAKE_MARKETPLACE_ROOT/skills"
 FAKE_CACHE_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.3"
+FAKE_OLD_CACHE_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.32.2"
 FAKE_SB_INSTALL_ROOT="$FAKE_CACHE_ROOT"
 FAKE_SB_INSTALL_ALIAS="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+FAKE_LEGACY_BACKUP_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/plugins/cache/alo-labs-codex/silver-bullet/0.31.0/skills/silver-feature/SKILL.md"
+FAKE_LEGACY_BACKUP_GENERATED_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.generated-skills/silver-feature/SKILL.md"
+FAKE_LEGACY_BACKUP_FORGE_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/.tmp/marketplaces/alo-labs-codex/forge/skills/silver-feature/SKILL.md"
+FAKE_TMP_MARKETPLACE_BACKUP_SKILL="$HOME_DIR/.codex/.tmp/marketplaces/marketplace-backup-test/root/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL="$HOME_DIR/.codex/.tmp/marketplaces/marketplace-backup-test/root/agents/codex/silver-feature/SKILL.md"
+FAKE_TMP_SB_LIVE_COMMAND_SKILL="$HOME_DIR/.codex/.tmp/sb-live-command.test/plugins/silver-bullet/skills/silver-feature/SKILL.md"
+FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL="$HOME_DIR/.codex/.tmp/sb-live-command.test/plugins/silver-bullet/agents/codex/silver-feature/SKILL.md"
 FAKE_SB_STALE_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/silver-bullet/0.32.3"
 FAKE_SB_STALE_ALIAS="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/silver-bullet/current"
 FAKE_SB_STALE_ROOT_MIRROR="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/silver-bullet/0.32.3"
@@ -678,13 +687,22 @@ make_async_hooks_fixture "$REPO_ROOT/hooks/hooks.json" "$FAKE_HOOKS_FIXTURE"
 mkdir -p \
   "$FAKE_SB_PACKAGE_ROOT/.codex-plugin" \
   "$FAKE_MARKETPLACE_ROOT/hooks" \
+  "$FAKE_STALE_MARKETPLACE_SKILLS/silver-feature" \
   "$FAKE_SB_SKILLS_SOURCE/silver-init" \
   "$FAKE_SB_SKILLS_SOURCE/silver-ensure-docs" \
   "$FAKE_SB_SKILLS_SOURCE/silver-feature" \
   "$FAKE_SB_SKILLS_SOURCE/silver" \
+  "$FAKE_OLD_CACHE_ROOT/skills/silver-feature" \
   "$FAKE_CACHE_ROOT/hooks" \
   "$FAKE_SB_STALE_ROOT" \
-  "$FAKE_SB_STALE_ROOT_MIRROR"
+  "$FAKE_SB_STALE_ROOT_MIRROR" \
+  "$(dirname "$FAKE_LEGACY_BACKUP_SKILL")" \
+  "$(dirname "$FAKE_LEGACY_BACKUP_GENERATED_SKILL")" \
+  "$(dirname "$FAKE_LEGACY_BACKUP_FORGE_SKILL")" \
+  "$(dirname "$FAKE_TMP_MARKETPLACE_BACKUP_SKILL")" \
+  "$(dirname "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL")" \
+  "$(dirname "$FAKE_TMP_SB_LIVE_COMMAND_SKILL")" \
+  "$(dirname "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL")"
 cat > "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json" <<'EOF'
 {
   "name": "silver-bullet",
@@ -711,6 +729,60 @@ EOF
 cat > "$FAKE_SB_SKILLS_SOURCE/silver/SKILL.md" <<'EOF'
 ---
 name: silver
+---
+EOF
+cat > "$FAKE_STALE_MARKETPLACE_SKILLS/silver-feature/SKILL.md" <<'EOF'
+---
+name: silver-feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_OLD_CACHE_ROOT/skills/silver-feature/SKILL.md" <<'EOF'
+---
+name: silver:feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_LEGACY_BACKUP_SKILL" <<'EOF'
+---
+name: silver-feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_LEGACY_BACKUP_GENERATED_SKILL" <<'EOF'
+---
+name: silver:feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_LEGACY_BACKUP_FORGE_SKILL" <<'EOF'
+---
+name: silver-feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_TMP_MARKETPLACE_BACKUP_SKILL" <<'EOF'
+---
+name: silver-feature
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL" <<'EOF'
+---
+name: "silver:feature"
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_TMP_SB_LIVE_COMMAND_SKILL" <<'EOF'
+---
+name: "silver:feature"
+title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL" <<'EOF'
+---
+name: "silver:feature"
+title: "Silver Bullet: Silver: Feature"
 ---
 EOF
 cp "$FAKE_HOOKS_FIXTURE" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
@@ -880,6 +952,8 @@ PATH="$BIN_DIR:$PATH" \
 HOME="$HOME_DIR" \
 GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
+FAKE_LEGACY_CACHE_ROOT="$FAKE_CACHE_ROOT"
+FAKE_CACHE_ROOT="$FAKE_SB_INSTALL_ALIAS"
 
 assert_file_exists "GSD installer created VERSION file" "$HOME_DIR/.codex/get-shit-done/VERSION"
 assert_not_contains "legacy marketplace removed from config" "[marketplaces.silver-bullet-local]" "$HOME_DIR/.codex/config.toml"
@@ -923,6 +997,16 @@ assert_file_absent "stale SB local install root removed" "$FAKE_SB_STALE_ROOT"
 assert_file_absent "stale SB local cache alias removed" "$FAKE_SB_STALE_ALIAS"
 assert_file_absent "stale SB local install root removed from lowercase mirror" "$FAKE_SB_STALE_ROOT_MIRROR"
 assert_file_absent "stale SB local cache alias removed from lowercase mirror" "$FAKE_SB_STALE_ALIAS_MIRROR"
+assert_file_absent "stale same-marketplace SB cache version removed" "$FAKE_OLD_CACHE_ROOT"
+assert_file_absent "stale pre-release SB cache version removed" "$FAKE_LEGACY_CACHE_ROOT"
+assert_file_absent "stale marketplace root picker skill removed" "$FAKE_STALE_MARKETPLACE_SKILLS/silver-feature/SKILL.md"
+assert_file_absent "legacy backup SB picker skill removed" "$FAKE_LEGACY_BACKUP_SKILL"
+assert_file_absent "legacy backup generated SB picker skill removed" "$FAKE_LEGACY_BACKUP_GENERATED_SKILL"
+assert_file_absent "legacy backup Forge SB picker skill removed" "$FAKE_LEGACY_BACKUP_FORGE_SKILL"
+assert_file_absent "temporary marketplace backup SB picker skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_SKILL"
+assert_file_absent "temporary marketplace backup SB agent skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL"
+assert_file_absent "temporary SB live-command picker skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_SKILL"
+assert_file_absent "temporary SB live-command agent skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL"
 assert_command_succeeds "Superpowers cache alias created" test -L "$FAKE_SUPERPOWERS_ALIAS"
 assert_command_succeeds "GSD cache alias created" test -L "$FAKE_GSD_ALIAS"
 assert_command_succeeds "Sidekick cache alias created" test -L "$FAKE_SIDEKICK_ALIAS"

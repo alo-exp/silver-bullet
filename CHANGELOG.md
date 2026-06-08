@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.37.19] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): prune stale SB picker surfaces from old cache versions and Codex temp backups`
+- `fix(codex): keep local Codex skill picker entries exclusively on the native /Silver surface`
+- `fix(runtime): clarify that Silver Bullet does not auto-switch host models`
+
+## Tests
+
+- `test(codex): cover stale marketplace, uppercase-backup, and sb-live-command temp picker cleanup`
+- `test(runtime): reject stale automatic model-routing promises from current docs`
+
+---
+
 ## [0.37.18] — 2026-06-08
 
 ## Bug Fixes

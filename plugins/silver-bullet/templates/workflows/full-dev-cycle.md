@@ -136,23 +136,23 @@ before any planning begins. Worktrees keep development isolated from your main b
 > Repeat these steps for each phase listed in `.planning/ROADMAP.md`.
 > Use `/gsd:next` to confirm which phase is current.
 
-This is the core of the development cycle. Each phase goes through: Model Routing, Skill
+This is the core of the development cycle. Each phase goes through: Host Model Boundary, Skill
 Discovery, Discuss, Quality Gates, Plan, Execute, Verify, Code Review, and Post-Review
 Execution. The entire loop enforces a strict order -- you cannot skip ahead.
 
 ---
 
-### MODEL ROUTING (automatic — no prompt)
+### HOST MODEL BOUNDARY (no SB routing)
 
-**What it does:** Sub-agents are pre-assigned to models via YAML frontmatter. No user prompt needed.
+**What it does:** Keeps model selection owned by the active host runtime and delegated tools. Silver Bullet does not switch models or silently escalate model tiers.
 
-**Default:** host execution tier for all orchestrator work and routine GSD agents.
-**Host high tier reserved for:** design, review, and verification work.
-**Host top tier reserved for:** `gsd-planner` (architectural reasoning) and `gsd-security-auditor` (adversarial threat modeling) only.
+**Default:** active host session model for orchestrator work.
+**Delegated work:** GSD and helper plugins use their own host/tool configuration.
+**Historical hook:** `ensure-model-routing.sh` is disabled and exits as a no-op.
 
 **What to expect:** No model choice prompt from Silver Bullet. Model selection is host-managed, and SB does not auto-route subagents. The orchestrator (this session) stays in the current host session.
 
-**Autonomous mode:** Same — no escalation prompt. Silent escalation to the next higher host tier only if a planning step produces measurably incomplete output (< 5 lines, `TBD`/`[TODO]` placeholders, or a file-producing step that produces no file). Log escalation as an autonomous decision.
+**Autonomous mode:** Same boundary. If stronger reasoning is needed, record it as a host/tool configuration need rather than silently changing models inside SB.
 
 ---
 
