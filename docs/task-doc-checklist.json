@@ -83,7 +83,7 @@
     "docs/workflows/devops-cycle.md": "updated",
     "docs/workflows/full-dev-cycle.md": "updated",
     "docs/internal/alo-labs-plugin-installation-playbook.md": "updated",
-    "docs/sb-benefits-over-plain-gsd.md": "updated"
+    "docs/internal/sb-benefits-over-plain-gsd.md": "updated"
   },
   "task_granularity": 3
 }

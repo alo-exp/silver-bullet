@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the host Skill tool. /silver is the APO router that accepts natural language, classifies complexity, and composes SB, GSD, and selected helper plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /Silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -218,7 +218,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.35.1, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.37.16, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",

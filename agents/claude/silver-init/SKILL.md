@@ -13,7 +13,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 **This skill MUST NOT destroy existing project content.** Rules:
 - **Never overwrite existing docs** (`docs/*.md`) — only create if absent
 - **Backup before overwrite** — if an existing project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex) or workflow files must be replaced (update mode), copy the original to `*.backup` first
-- **Never delete files or directories** in the project (only `~/.claude/.silver-bullet/` state files are deleted)
+- **Never delete files or directories** in the project (only `$HOME/.claude/.silver-bullet/` state files are deleted)
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
@@ -23,10 +23,10 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 
 ## Phase −1: Session Init
 
-Run this phase exactly once per session. Skip if the session state file `~/.claude/.silver-bullet/session-init` already exists.
+Run this phase exactly once per session. Skip if the session state file `$HOME/.claude/.silver-bullet/session-init` already exists.
 
 ```bash
-test -f ~/.claude/.silver-bullet/session-init && echo "ALREADY_DONE" || echo "NEEDED"
+test -f $HOME/.claude/.silver-bullet/session-init && echo "ALREADY_DONE" || echo "NEEDED"
 ```
 
 If `ALREADY_DONE` → skip to Phase 0.
@@ -61,7 +61,7 @@ Read each file found using the Read tool.
 
 Use the Bash tool to run:
 ```bash
-touch ~/.claude/.silver-bullet/session-init
+touch $HOME/.claude/.silver-bullet/session-init
 ```
 
 Then invoke `/compact` via the Skill tool to compact the loaded context before proceeding.
@@ -107,7 +107,7 @@ If B: STOP.
 
 Use the Glob tool to search for:
 ```
-~/.claude/plugins/cache/*/superpowers/*/skills/brainstorming/SKILL.md
+$HOME/.claude/plugins/cache/*/superpowers/*/skills/brainstorming/SKILL.md
 ```
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
@@ -123,8 +123,8 @@ If B: STOP.
 ### 1.3 Design plugin
 
 Use the Glob tool to search for Design plugin skills in these paths:
-- `~/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md`
-- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
+- `$HOME/.claude/plugins/cache/*/design/*/skills/design-system/SKILL.md`
+- `$HOME/.claude/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
 
 Expand `~` to the user's home directory.
 
@@ -140,10 +140,10 @@ If B: STOP.
 ### 1.4 Engineering plugin
 
 Use the Glob tool to search for Engineering plugin skills in these paths:
-- `~/.claude/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
-- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
-- `~/.claude/plugins/cache/engineering/skills/`
-- `~/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
+- `$HOME/.claude/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
+- `$HOME/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
+- `$HOME/.claude/plugins/cache/engineering/skills/`
+- `$HOME/.claude/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
 
 Expand `~` to the user's home directory.
 
@@ -160,7 +160,7 @@ If B: STOP.
 
 Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
 ```bash
-{ test -f "~/.claude/get-shit-done/workflows/new-project.md" || test -f "~/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "~/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
+{ test -f "$HOME/.claude/get-shit-done/workflows/new-project.md" || test -f "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.claude/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND`, use AskUserQuestion:
@@ -208,7 +208,7 @@ If user selects A, use the Edit tool to remove the offending hook entries from `
 ### 1.8 MultAI plugin
 
 Use the Glob tool to search for:
-`~/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
+`$HOME/.claude/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
 If no file found, use AskUserQuestion:
 - Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional — Silver Bullet research works without it. Install it only if you want optional multi-AI / second-opinion perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
@@ -222,9 +222,9 @@ If B: continue without stopping.
 ### 1.9 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
-`~/.claude/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
-and `~/.claude/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
-and `~/.claude/plugins/cache/*/product-management/skills/`
+`$HOME/.claude/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
+and `$HOME/.claude/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
+and `$HOME/.claude/plugins/cache/*/product-management/skills/`
 in supported Codex cache roots
 
 If no directory found in any supported cache root, use AskUserQuestion:
@@ -246,7 +246,7 @@ Run this phase only after all Phase 1 presence checks pass. For each dependency,
 
 Read installed version:
 ```bash
-cat "~/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 Check latest version:
@@ -270,7 +270,7 @@ If version check fails (curl error, missing file, or either version is "unknown"
 
 Read installed version:
 ```bash
-cat "~/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+cat "$HOME/.claude/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
 ```
 
 Check latest version:
@@ -292,10 +292,10 @@ If either version is "unknown": output "Could not determine GSD version. Continu
 
 ### 1.5.3 Check Superpowers / Design / Engineering / Product Management plugin versions
 
-Read installed versions from `~/.claude/plugins/installed_plugins.json`. Display the installed version of each plugin found:
+Read installed versions from `$HOME/.claude/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
-cat "~/.claude/plugins/installed_plugins.json" | jq -r '
+cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
   select(.key | test("^(superpowers|design|engineering|product-management)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -312,12 +312,12 @@ No automated update skill exists for these plugins. If the user wants to update 
 
 Read installed version:
 ```bash
-cat "~/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
 ```
 
 Check latest:
 ```bash
-cat "~/.claude/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
+cat "$HOME/.claude/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
 ```
 
 If installed version appears outdated compared to CHANGELOG, display:
@@ -542,7 +542,7 @@ Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `
 
 ### Exit condition
 
-Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, placeholder `docs/*.md`, an initial git commit, SB hooks registered in `~/.claude/settings.json`, and an activation message printed. If the project already had a project instruction file, it was updated in place; otherwise no new project instruction file was created.
+Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, placeholder `docs/*.md`, an initial git commit, SB hooks registered in `$HOME/.claude/settings.json`, and an activation message printed. If the project already had a project instruction file, it was updated in place; otherwise no new project instruction file was created.
 
 ### Update mode (`.silver-bullet.json` exists)
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.37.16] — 2026-06-08
+
+## Bug Fixes
+
+- `fix(codex): use HOME-expanded runtime paths in generated package snippets`
+- `fix(codex): keep SB picker skills on a single native /Silver surface`
+- `fix(codex): add hook trigger parity coverage for exec_command and apply_patch`
+
+## Documentation
+
+- `docs: refresh website and Help Center for the current Codex package model`
+- `docs: record June 2026 Codex picker and runtime path lessons`
+
+---
+
 ## [0.37.15] — 2026-06-08
 
 ## Bug Fixes

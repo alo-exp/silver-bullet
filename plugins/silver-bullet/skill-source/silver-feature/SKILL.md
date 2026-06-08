@@ -132,9 +132,9 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "~/.codex/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "~/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
+      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break
@@ -209,16 +209,16 @@ FOR each phase in remaining_phases:
     GSD's FLOW 13 (SHIP) handles this as part of phase completion.
     Do NOT use the active runtime file-editing mechanism directly — planning-file-guard.sh will block it.
     If FLOW 13 did not tick the checkbox, use the override bypass:
-      touch ~/.codex/.silver-bullet/planning-edit-override
+      touch $HOME/.codex/.silver-bullet/planning-edit-override
       # Edit .planning/ROADMAP.md: change - [ ] **Phase {N}: ... to - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
-      rm ~/.codex/.silver-bullet/planning-edit-override
+      rm $HOME/.codex/.silver-bullet/planning-edit-override
     After removing the override, verify it is gone:
-      ls -la ~/.codex/.silver-bullet/planning-edit-override   # should: No such file
+      ls -la $HOME/.codex/.silver-bullet/planning-edit-override   # should: No such file
     If the session was interrupted before the rm, clean up manually:
-      rm -f ~/.codex/.silver-bullet/planning-edit-override
-    Session-start cleanup: if a new session starts and ~/.codex/.silver-bullet/planning-edit-override
+      rm -f $HOME/.codex/.silver-bullet/planning-edit-override
+    Session-start cleanup: if a new session starts and $HOME/.codex/.silver-bullet/planning-edit-override
     exists from a prior interrupted session, remove it before proceeding:
-      rm -f ~/.codex/.silver-bullet/planning-edit-override
+      rm -f $HOME/.codex/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
   AFTER phase complete: advance to next phase through GSD state

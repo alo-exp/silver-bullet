@@ -92,7 +92,7 @@ State is written after EVERY round so that review sessions can resume across con
 ### State File Location
 
 ```
-~/.codex/.silver-bullet/review-state/{artifact-hash}.json
+$HOME/.codex/.silver-bullet/review-state/{artifact-hash}.json
 ```
 
 Where `{artifact-hash}` = first 8 chars of SHA256 of the artifact's absolute path.
@@ -124,7 +124,7 @@ Where `{artifact-hash}` = first 8 chars of SHA256 of the artifact's absolute pat
 
 ```bash
 # State directory
-SB_REVIEW_STATE="~/.codex/.silver-bullet/review-state"
+SB_REVIEW_STATE="$HOME/.codex/.silver-bullet/review-state"
 mkdir -p "$SB_REVIEW_STATE"
 
 # Hash for state file (8-char prefix of SHA256 of absolute artifact path)

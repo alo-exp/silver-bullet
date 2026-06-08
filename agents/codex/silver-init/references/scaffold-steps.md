@@ -15,7 +15,7 @@ If Phase 0 determined this is an update:
 3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `~/.codex/settings.json`.
+5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.codex/settings.json`.
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
 
 ### Template refresh (only when user explicitly requests it)
@@ -197,7 +197,7 @@ Merges the SB hook entries from `hooks/hooks.json` into the user's global host s
 ```bash
 INSTALL_PATH=$(python3 -c "
 import json, os, sys
-reg = os.path.expanduser('~/.codex/plugins/installed_plugins.json')
+reg = os.path.expanduser('$HOME/.codex/plugins/installed_plugins.json')
 with open(reg) as f:
     data = json.load(f)
 plugins = data.get('plugins', {})
