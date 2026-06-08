@@ -95,8 +95,10 @@ if "skills" in manifest:
 
 if list(package_root.glob("**/*SKILL.md")):
     bad.append("Codex plugin package must not contain picker-discoverable *SKILL.md files")
+if list((package_root / "skill-source").glob("**/SILVER_SOURCE.md")):
+    bad.append("Codex plugin skill-source must not contain SILVER_SOURCE.md files; hidden sources are extensionless to avoid /Silver Bullet picker discovery")
 
-for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SOURCE.md")):
+for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SOURCE")):
     meta = frontmatter(skill_md)
     title = meta.get("title")
     if not title:
@@ -148,7 +150,7 @@ PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
 PACKAGE_SKILL_ROOT="$PACKAGE_ROOT/skill-source"
 
 skill_file() {
-  printf '%s/%s/SILVER_SOURCE.md\n' "$PACKAGE_SKILL_ROOT" "$1"
+  printf '%s/%s/SILVER_SOURCE\n' "$PACKAGE_SKILL_ROOT" "$1"
 }
 
 bash "$SCRIPT" >/dev/null

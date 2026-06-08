@@ -309,7 +309,7 @@ footer a:hover{color:var(--accent-light)}
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator layer around GSD. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB/GSD/plugin path, and then enforces that the selected path actually runs. GSD remains the lifecycle and execution authority; SB owns routing, composition, quality gates, risk checks, traceability, and recovery.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.20+ exposes the native picker as <code>/Silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.21+ exposes the native picker as <code>/Silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -578,7 +578,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.37.20"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.37.21"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -782,7 +782,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.37.20</div>
+/silver:release v0.37.21</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>

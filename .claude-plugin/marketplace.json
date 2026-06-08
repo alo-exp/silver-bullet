@@ -5,7 +5,7 @@
     "email": "hello@alolabs.io"
   },
   "metadata": {
-    "description": "Silver Bullet — AI-native software development enforcement for Claude Code",
+    "description": "Silver Bullet — Agentic Process Orchestrator for Claude Code and Codex",
     "version": "1.0.0"
   },
   "plugins": [
@@ -16,7 +16,7 @@
         "repo": "alo-exp/silver-bullet"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Combines GSD, SB gates, and selected helper plugins into enforced task-shaped workflows with layered technical compliance.",
-      "version": "0.37.20",
+      "version": "0.37.21",
       "author": {
         "name": "Alo Labs",
         "email": "info@alolabs.dev"

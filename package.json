@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
-  "version": "0.37.20",
-  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
+  "version": "0.37.21",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Composes SB, GSD, and selected helper plugins into hook-enforced task-shaped workflows for Claude Code and Codex.",
   "author": "Alo Labs <info@alolabs.dev>",
   "license": "MIT",
   "repository": {
@@ -10,6 +10,7 @@
   },
   "keywords": [
     "claude-code",
+    "codex",
     "plugin",
     "silver-bullet",
     "enforcement",

@@ -28,7 +28,7 @@ assert_file_absent() {
 }
 
 sb_internal_skill() {
-  printf '%s/skill-source/%s/SILVER_SOURCE.md\n' "$1" "$2"
+  printf '%s/skill-source/%s/SILVER_SOURCE\n' "$1" "$2"
 }
 
 assert_no_packaged_skill_md() {
@@ -36,6 +36,18 @@ assert_no_packaged_skill_md() {
   if find "$path" -name '*SKILL.md' -print -quit 2>/dev/null | grep -q .; then
     echo "FAIL: $desc — packaged *SKILL.md found under $path"
     find "$path" -name '*SKILL.md' -print 2>/dev/null | head -20
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
+assert_no_packaged_markdown_skill_sources() {
+  local desc="$1" path="$2"
+  if find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit 2>/dev/null | grep -q .; then
+    echo "FAIL: $desc — packaged Markdown skill source found under $path/skill-source"
+    find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
   else
     echo "PASS: $desc"
@@ -992,14 +1004,13 @@ assert_file_exists "Silver Bullet cache alias exposes internal skill source" "$(
 assert_no_packaged_skill_md "Silver Bullet cache alias exposes no picker-discoverable SKILL.md files" "$FAKE_SB_INSTALL_ALIAS"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/silver/SKILL.md"
-assert_file_exists "Codex native SB mirror exposes progressive review loop" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver-feature/.silver-bullet-managed"
-assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
 assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_contains "Codex native SB mirror takes over progressive review loop title" "title: \"Silver: Progressive Review Loop\"" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_absent "Codex native SB mirror does not expose progressive review loop helper" "$HOME_DIR/.codex/skills/progressive-review-loop"
+assert_file_absent "Codex native SB mirror does not expose verify-tests helper" "$HOME_DIR/.codex/skills/verify-tests"
 assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
 assert_file_absent "Codex native SB mirror prunes stale managed writing-plans skill" "$HOME_DIR/.codex/skills/writing-plans"
 assert_file_exists "Codex native SB mirror preserves unrelated native skill" "$HOME_DIR/.codex/skills/unrelated-native/SKILL.md"
@@ -1153,6 +1164,8 @@ assert_not_symlink "Installed SB skill-source surface is materialized in the pac
 assert_not_symlink "Installed SB skill-source surface is materialized in the current cache" "$FAKE_CACHE_ROOT/skill-source"
 assert_no_packaged_skill_md "Installed SB package contains no picker-discoverable SKILL.md files" "$FAKE_SB_PACKAGE_ROOT"
 assert_no_packaged_skill_md "Current cache contains no picker-discoverable SKILL.md files" "$FAKE_CACHE_ROOT"
+assert_no_packaged_markdown_skill_sources "Installed SB package contains no Markdown skill-source files" "$FAKE_SB_PACKAGE_ROOT"
+assert_no_packaged_markdown_skill_sources "Current cache contains no Markdown skill-source files" "$FAKE_CACHE_ROOT"
 assert_contains "SB Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json"
 assert_contains "Current cache Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_CACHE_ROOT/.codex-plugin/plugin.json"
 assert_not_contains "SB Codex plugin manifest does not advertise duplicate plugin skills" '"skills": "./skills/"' "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json"
@@ -1422,7 +1435,8 @@ assert_file_exists "public-release cache alias exposes internal feature skill so
 assert_file_exists "public-release cache alias exposes internal progressive review loop skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" progressive-review-loop)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
 assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
-assert_file_exists "public-release native SB mirror exposes progressive review loop skill" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_absent "public-release native SB mirror does not expose progressive review loop helper" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop"
+assert_file_absent "public-release native SB mirror does not expose verify-tests helper" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests"
 assert_file_absent "public-release native SB mirror excludes stale forge-delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/forge-delegate"
 assert_file_absent "public-release native SB mirror prunes stale managed writing-plans skill" "$PUBLIC_STALE_HOME/.codex/skills/writing-plans"
 assert_file_absent "public-release ignores stale marketplace forge-delegate skill" "$PUBLIC_STALE_CACHE/skills/forge-delegate/SKILL.md"

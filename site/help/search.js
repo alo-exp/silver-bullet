@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or Codex local dev installer ./scripts/install-codex.sh --purge-legacy-skills. Codex exposes native /Silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or the public alo-labs/codex-plugins Codex marketplace package. The checkout installer ./scripts/install-codex.sh --purge-legacy-skills is for Silver Bullet development. Codex exposes native /Silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -225,7 +225,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.37.20, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.37.21, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",
