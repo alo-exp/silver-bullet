@@ -99,10 +99,10 @@ def humanize_codex_skill_name(name: str) -> str:
 
 def codex_title_for_name(name: str, current_title: str | None = None) -> str:
     if name == "silver":
-        title = "/silver - Router"
+        title = "Router"
     elif name.startswith("silver:"):
         route = name.split(":", 1)[1]
-        title = f"/{name} - {humanize_codex_skill_name(route)}"
+        title = humanize_codex_skill_name(route)
     elif current_title:
         title = current_title.removeprefix("Silver: ").strip()
     else:

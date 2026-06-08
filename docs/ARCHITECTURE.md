@@ -40,7 +40,7 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 
 | Hook | Trigger | Behavior |
 |------|---------|----------|
-| `record-skill.sh` | PostToolUse (Skill tool) | Appends normalized skill name to state file |
+| `record-skill.sh` | PostToolUse (Claude Skill calls or Codex SB adapter receipts) | Appends normalized skill name to state file |
 | `record-requested-skill.sh` | UserPromptSubmit | Records requested SB/GSD route markers before the next turn starts |
 | `dev-cycle-check.sh` | PreToolUse (Edit/Write/Bash) | 4-stage gate: blocks source edits if planning incomplete |
 | `compliance-status.sh` | PostToolUse (all tools) | Emits live progress score per tool call |
@@ -89,7 +89,7 @@ Codex entry point.
 |----------|--------|-----------|
 | Language | Bash | Pure Bash hooks and scripts; `jq` for JSON parsing (no Node.js runtime required) |
 | Config format | JSON | Machine-readable by hooks and CI; human-readable for customization |
-| Skill format | Markdown | Loaded natively by Claude Code's Skill tool |
+| Skill format | Markdown | Loaded through the active host's skill surface; Codex mirrors SB skills into the native `/Silver:` picker and records via the SB adapter |
 | State format | Line-delimited text | `grep -q` lookups; append-only; trivially auditable |
 | CI | GitHub Actions | Target audience is GitHub repos; `gh` CLI integrates release workflow |
 | Codex packaging | Thin wrapper + install-time fetch | Keeps SB bundle SB-only while supporting third-party plugins that lack native Codex packaging |

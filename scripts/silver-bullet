@@ -58,10 +58,6 @@ append_skill_roots() {
     "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
     "${HOME}/.codex/skills"
     "${HOME}/.agents/skills"
-    "${PLUGIN_ROOT}/skill-source"
-    "${PLUGIN_ROOT}/.generated-skills"
-    "${PLUGIN_ROOT}/agents/codex"
-    "${PLUGIN_ROOT}/agents/claude"
     "${PLUGIN_ROOT}/skills"
   )
 

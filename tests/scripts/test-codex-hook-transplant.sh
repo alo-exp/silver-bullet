@@ -93,7 +93,7 @@ chmod +x "$root/.codex/bin/silver-bullet"
 cat > "$root/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
 ---
 name: "silver:feature"
-title: "Silver: /silver:feature - Feature"
+title: "Silver: Feature"
 ---
 
 # Silver Feature
@@ -226,7 +226,7 @@ chmod +x "$TARGET_HOME/.codex/bin/silver-bullet"
 cat > "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
 ---
 name: silver:feature
-title: Silver: /silver:feature - Feature
+title: Silver: Feature
 ---
 
 # Silver Feature

@@ -19,8 +19,8 @@
 | `/silver` smart orchestrator | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
 | Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | runtime-native skill invocation channel -- `/silver:quality-gates`, `/silver:blast-radius`, etc. |
-| Gap-filling skills | runtime-native skill invocation channel -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
+| Silver Bullet skills | Active host skill surface -- `/silver:quality-gates`, `/silver:blast-radius`, etc. Codex uses the native `/Silver:` picker plus SB adapter receipts when recording is required. |
+| Gap-filling skills | Active host skill surface -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -696,7 +696,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 
 - **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
-- **Silver Bullet skills** (quality gates + gap-fillers) are enforced by PostToolUse hooks
+- **Silver Bullet skills** (quality gates + gap-fillers) are enforced by hooks
   that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/silver:quality-gates` completes.
 - For ANY bug encountered during execution: use `/gsd:debug`.

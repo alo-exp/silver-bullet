@@ -93,7 +93,10 @@ if plugin_display_name != "Silver Bullet":
 if "skills" in manifest:
     bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /Silver to avoid duplicate /Silver Bullet listings")
 
-for skill_md in sorted((package_root / "skill-source").glob("*/SKILL.md")):
+if list(package_root.glob("**/SKILL.md")):
+    bad.append("Codex plugin package must not contain picker-discoverable SKILL.md files")
+
+for skill_md in sorted((package_root / "skill-source").glob("*/SILVER_SKILL.md")):
     meta = frontmatter(skill_md)
     title = meta.get("title")
     if not title:
@@ -112,8 +115,8 @@ for skill_md in sorted((package_root / "skill-source").glob("*/SKILL.md")):
         route = f"/{name}"
     else:
         route = ""
-    if route and route not in title:
-        bad.append(f"{skill_md}: picker title must expose route {route!r}, got {title!r}")
+    if route and title.startswith("Silver: /"):
+        bad.append(f"{skill_md}: picker title must not duplicate route {route!r}, got {title!r}")
 
 if bad:
     print("\n".join(bad))
@@ -137,6 +140,11 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 SCRIPT="$REPO_ROOT/scripts/sync-codex-package.sh"
 PACKAGE_ROOT="$REPO_ROOT/plugins/silver-bullet"
+PACKAGE_SKILL_ROOT="$PACKAGE_ROOT/skill-source"
+
+skill_file() {
+  printf '%s/%s/SILVER_SKILL.md\n' "$PACKAGE_SKILL_ROOT" "$1"
+}
 
 bash "$SCRIPT" >/dev/null
 
@@ -154,39 +162,36 @@ SOURCE_ASK_USER_FILES=(
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
 assert_codex_skill_titles_have_silver_prefix "Codex skill titles use a single Silver prefix" "$PACKAGE_ROOT"
 assert_path_absent "Codex package does not expose plugin picker skills directory" "$PACKAGE_ROOT/skills"
-PACKAGE_SKILL_ROOT="$PACKAGE_ROOT/skill-source"
-assert_file_exists "Silver Bullet internal skill router available" "$PACKAGE_SKILL_ROOT/silver/SKILL.md"
-assert_file_exists "Silver Bullet internal init skill available" "$PACKAGE_SKILL_ROOT/silver-init/SKILL.md"
-assert_file_exists "Silver Bullet internal ensure-docs skill available" "$PACKAGE_SKILL_ROOT/silver-ensure-docs/SKILL.md"
-assert_file_exists "Silver Bullet internal feature skill available" "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
-assert_file_exists "Silver Bullet internal handoff skill available" "$PACKAGE_SKILL_ROOT/silver-handoff/SKILL.md"
+assert_path_absent "Codex package does not expose generated picker skills directory" "$PACKAGE_ROOT/.generated-skills"
+assert_path_absent "Codex package does not expose agent SKILL.md bundle" "$PACKAGE_ROOT/agents"
+assert_file_exists "Silver Bullet internal skill router available" "$(skill_file silver)"
+assert_file_exists "Silver Bullet internal init skill available" "$(skill_file silver-init)"
+assert_file_exists "Silver Bullet internal ensure-docs skill available" "$(skill_file silver-ensure-docs)"
+assert_file_exists "Silver Bullet internal feature skill available" "$(skill_file silver-feature)"
+assert_file_exists "Silver Bullet internal handoff skill available" "$(skill_file silver-handoff)"
 assert_file_exists "Progressive review loop source skill available" "$REPO_ROOT/skills/progressive-review-loop/SKILL.md"
-assert_file_exists "Progressive review loop internal skill available" "$PACKAGE_SKILL_ROOT/progressive-review-loop/SKILL.md"
+assert_file_exists "Progressive review loop internal skill available" "$(skill_file progressive-review-loop)"
 assert_file_exists "Progressive review loop OpenAI metadata available" "$PACKAGE_SKILL_ROOT/progressive-review-loop/agents/openai.yaml"
 assert_file_exists "Silver Bullet invoke-skill adapter available" "$PACKAGE_ROOT/scripts/silver-bullet"
 assert_file_exists "Silver Bullet scan helper available" "$PACKAGE_ROOT/scripts/silver-scan.sh"
 assert_file_exists "Silver Bullet package sanitizer helper available" "$PACKAGE_ROOT/scripts/codex-sanitize-package.sh"
 assert_file_exists "Silver Bullet Claude agent bundle available" "$REPO_ROOT/agents/claude/silver-scan/SKILL.md"
 assert_file_exists "Silver Bullet Codex agent bundle available" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
-assert_file_exists "Silver Bullet Claude agent bundle exposed in package" "$PACKAGE_ROOT/agents/claude/silver-scan/SKILL.md"
-assert_file_exists "Silver Bullet agent bundle directory exposed in package" "$PACKAGE_ROOT/agents/codex/silver-scan/SKILL.md"
-assert_file_exists "Silver Bullet scan generated skill available" "$PACKAGE_ROOT/.generated-skills/silver-scan/SKILL.md"
 assert_file_exists "Stamped template present" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_not_symlink "Codex templates directory materialized" "$PACKAGE_ROOT/templates"
-assert_contains "Silver router skill has silver name" "name: silver" "$PACKAGE_SKILL_ROOT/silver/SKILL.md"
-assert_contains "Silver init skill uses silver prefix" "name: \"silver:init\"" "$PACKAGE_SKILL_ROOT/silver-init/SKILL.md"
-assert_contains "Silver ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$PACKAGE_SKILL_ROOT/silver-ensure-docs/SKILL.md"
-assert_contains "Silver feature skill uses silver prefix" "name: \"silver:feature\"" "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
-assert_contains "Silver handoff skill uses silver prefix" "name: \"silver:handoff\"" "$PACKAGE_SKILL_ROOT/silver-handoff/SKILL.md"
-assert_contains "Progressive review loop keeps canonical skill name" "name: progressive-review-loop" "$PACKAGE_SKILL_ROOT/progressive-review-loop/SKILL.md"
-assert_contains "Progressive review loop picker title uses Silver prefix" "title: \"Silver: Progressive Review Loop\"" "$PACKAGE_SKILL_ROOT/progressive-review-loop/SKILL.md"
-assert_contains "Silver scan Codex agent bundle uses silver prefix" "name: \"silver:scan\"" "$PACKAGE_ROOT/agents/codex/silver-scan/SKILL.md"
-assert_contains "Silver scan generated skill uses silver prefix" "name: \"silver:scan\"" "$PACKAGE_ROOT/.generated-skills/silver-scan/SKILL.md"
-assert_contains "Silver feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
-assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD gate" "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
-assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$PACKAGE_SKILL_ROOT/silver-ui/SKILL.md"
-assert_contains "Silver bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$PACKAGE_SKILL_ROOT/silver-bugfix/SKILL.md"
-assert_contains "Silver bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$PACKAGE_SKILL_ROOT/silver-bugfix/SKILL.md"
+assert_contains "Silver router skill has silver name" "name: silver" "$(skill_file silver)"
+assert_contains "Silver init skill uses silver prefix" "name: \"silver:init\"" "$(skill_file silver-init)"
+assert_contains "Silver ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$(skill_file silver-ensure-docs)"
+assert_contains "Silver feature skill uses silver prefix" "name: \"silver:feature\"" "$(skill_file silver-feature)"
+assert_contains "Silver handoff skill uses silver prefix" "name: \"silver:handoff\"" "$(skill_file silver-handoff)"
+assert_contains "Progressive review loop keeps canonical skill name" "name: progressive-review-loop" "$(skill_file progressive-review-loop)"
+assert_contains "Progressive review loop picker title uses Silver prefix" "title: \"Silver: Progressive Review Loop\"" "$(skill_file progressive-review-loop)"
+assert_contains "Silver scan Codex agent bundle uses silver prefix" "name: \"silver:scan\"" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
+assert_contains "Silver feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$(skill_file silver-feature)"
+assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD gate" "$(skill_file silver-feature)"
+assert_contains "Silver UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$(skill_file silver-ui)"
+assert_contains "Silver bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$(skill_file silver-bugfix)"
+assert_contains "Silver bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$(skill_file silver-bugfix)"
 assert_contains "Codex core rules document runtime-native invocation channel" "SB-recognized skill invocation channel" "$PACKAGE_ROOT/hooks/core-rules.md"
 assert_contains "Codex core rules document invoke-skill adapter" "silver-bullet invoke-skill <name>" "$PACKAGE_ROOT/hooks/core-rules.md"
 assert_not_contains "Codex package avoids Claude-only Skill tool wording" "via the Skill tool" "$PACKAGE_ROOT"
@@ -210,10 +215,10 @@ assert_not_contains "Codex package does not contain auto-routing wording" "auto-
 assert_not_contains "Codex package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$PACKAGE_ROOT"
 assert_contains "Codex package uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Codex package uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
-assert_contains "Codex generated snippets use quoted HOME paths" '"$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"' "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
+assert_contains "Codex generated snippets use quoted HOME paths" '"$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"' "$(skill_file silver-feature)"
 assert_contains "Codex package tracks gsd-scan in config" '"gsd-scan"' "$PACKAGE_ROOT/templates/silver-bullet.config.json.default"
-assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_SKILL_ROOT/tdd/SKILL.md"
-assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_SKILL_ROOT/tdd/SKILL.md"
+assert_contains "TDD skill hidden from picker" "user-invocable: false" "$(skill_file tdd)"
+assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$(skill_file tdd)"
 assert_path_absent "Sidekick Forge delegate skill excluded from SB bundle" "$PACKAGE_SKILL_ROOT/forge-delegate"
 assert_path_absent "Superpowers finishing branch skill excluded from SB bundle" "$PACKAGE_SKILL_ROOT/finishing-branch"
 assert_path_absent "Superpowers writing plans skill excluded from SB bundle" "$PACKAGE_SKILL_ROOT/writing-plans"

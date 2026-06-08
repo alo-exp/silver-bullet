@@ -17,7 +17,7 @@
 | What | How to invoke |
 |------|---------------|
 | GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | runtime-native skill invocation channel -- `/silver:blast-radius`, `/devops-quality-gates`, `/silver:forensics`, etc. |
+| Silver Bullet skills | Active host skill surface -- `/silver:blast-radius`, `/devops-quality-gates`, `/silver:forensics`, etc. Codex uses the native `/Silver:` picker plus SB adapter receipts when recording is required. |
 
 Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
 
@@ -788,7 +788,7 @@ Every review loop in this workflow (spec review, plan review, code review, verif
 - **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
   GSD steps MUST follow DISCUSS -> BLAST RADIUS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
 - **Silver Bullet skills** (silver-blast-radius, devops-quality-gates, requesting-code-review, etc.) are enforced
-  by PostToolUse hooks that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
+  by hooks that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
 - Phase order is a hard constraint: do NOT start PLAN before `/devops-quality-gates` completes.
 - **.yml/.yaml files are infrastructure code** -- they are NOT exempt from this workflow.
 - For ANY bug or unexpected state encountered: use `/gsd:debug`.
