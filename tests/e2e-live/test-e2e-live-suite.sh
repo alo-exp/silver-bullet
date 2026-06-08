@@ -69,6 +69,7 @@ assert_file_contains "full-surface journey rejects missing SB CLI adapter" "${SC
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'gsd-discuss-phase gsd-plan-phase'
 assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
 assert_file_contains "full-surface source scanner ignores collapsed negative prompts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'donotreadoruselocal'
+assert_file_contains "full-surface source scanner ignores explicit non-use denials" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'didnotreadoruse'
 assert_file_contains "full-surface source scanner normalizes punctuation and whitespace" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'compact_for_negative_context'
 if grep -Eq 'multai_dependency_available|skipped because MultAI dependency is unavailable' "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"; then
   echo "FAIL: full-surface journey no longer skips research when MultAI is absent"
