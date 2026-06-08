@@ -1,6 +1,6 @@
 ---
 name: "silver:fast"
-title: "Silver: Fast"
+title: "Fast"
 description: >
   This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver:feature escalation.
 argument-hint: "<description of change>"

@@ -108,6 +108,13 @@ def codex_title_for_name(name: str, current_title: str | None = None) -> str:
     else:
         title = humanize_codex_skill_name(name)
 
+    # Codex already renders `silver:*` skills under the native `/Silver:` group.
+    # Prefixing their title too produces `/Silver: Silver: ...` in the picker.
+    if name == "silver" or name.startswith("silver:"):
+        return title
+
+    # A few SB helper skills keep non-silver canonical names for compatibility.
+    # Keep those grouped under the Silver picker title without changing their name.
     return f"Silver: {title}"
 
 

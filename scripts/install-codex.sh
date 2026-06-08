@@ -641,6 +641,41 @@ for path in sorted(set(roots_to_prune), key=lambda item: len(item.parts), revers
 PY
 }
 
+purge_legacy_silver_bullet_standalone_skills() {
+  python3 - "$CODEX_HOME_ROOT" "$REPO_ROOT" <<'PY'
+import pathlib
+import shutil
+import sys
+
+home = pathlib.Path(sys.argv[1]).expanduser()
+repo_root = pathlib.Path(sys.argv[2])
+
+skill_names = {
+    path.name
+    for path in (repo_root / "skills").iterdir()
+    if path.is_dir()
+}
+skill_names.add("using-silver-bullet")
+
+roots = [
+    home / ".codex" / "skills",
+    home / ".agents" / "skills",
+]
+
+for root in roots:
+    if not root.is_dir():
+        continue
+    for skill_name in sorted(skill_names):
+        target = root / skill_name
+        if target.exists() or target.is_symlink():
+            if target.is_dir() and not target.is_symlink():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+            print(f"Removed legacy skill: {target}")
+PY
+}
+
 sync_silver_bullet_native_codex_skill_mirror() {
   local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
   local package_skills_root="${package_root}/skill-source"
@@ -2127,6 +2162,9 @@ sync_codex_cache_package_surface
 prune_stale_silver_bullet_cache_versions
 refresh_silver_bullet_current_alias
 prune_legacy_silver_bullet_picker_surfaces
+if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
+  purge_legacy_silver_bullet_standalone_skills
+fi
 sync_silver_bullet_native_codex_skill_mirror
 install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
@@ -2182,24 +2220,6 @@ fi
 
 sync_silver_bullet_skill_cache
 scrub_legacy_silver_bullet_traces
-
-if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
-  LEGACY_SKILLS_HOME="${CODEX_HOME_ROOT}/.agents/skills"
-  if [[ -d "${LEGACY_SKILLS_HOME}" ]]; then
-    while IFS= read -r -d '' skill_dir; do
-      skill_name="$(basename "${skill_dir}")"
-      if [[ -e "${LEGACY_SKILLS_HOME}/${skill_name}" ]]; then
-        rm -rf -- "${LEGACY_SKILLS_HOME:?}/${skill_name}"
-        printf 'Removed legacy skill: %s\n' "${skill_name}"
-      fi
-    done < <(find "${REPO_ROOT}/skills" -mindepth 1 -maxdepth 1 -type d -print0)
-  fi
-
-  if [[ -e "${LEGACY_SKILLS_HOME}/using-silver-bullet" ]]; then
-    rm -rf -- "${LEGACY_SKILLS_HOME:?}/using-silver-bullet"
-    printf 'Removed legacy skill: using-silver-bullet\n'
-  fi
-fi
 
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   printf 'Codex marketplace refreshed from published source %s\n' "${CODEX_MARKETPLACE_SOURCE}"

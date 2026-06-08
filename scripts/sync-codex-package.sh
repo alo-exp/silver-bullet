@@ -74,7 +74,9 @@ fi
 # under the plugin package. Keep SB's packaged skill sources available for the
 # installer, but store them under a filename that does not match skill discovery
 # globs so the only user-facing picker surface is the native ~/.codex/skills
-# mirror with /Silver: titles.
+# mirror with Codex-native titles. `silver:*` skills use bare titles because
+# Codex renders the `/Silver:` namespace itself; non-namespaced SB helper skills
+# retain `Silver:` titles to stay grouped with the Silver picker surface.
 rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source" "${DEST_DIR}/.generated-skills" "${DEST_DIR}/agents"
 mkdir -p -- "${DEST_DIR}/skill-source"
 rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skill-source/"

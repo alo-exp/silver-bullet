@@ -525,6 +525,7 @@ HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
 mkdir -p \
   "$HOME_DIR/.codex" \
+  "$HOME_DIR/.codex/skills/silver-feature" \
   "$HOME_DIR/.codex/skills/progressive-review-loop" \
   "$HOME_DIR/.codex/skills/unrelated-native" \
   "$HOME_DIR/.codex/skills/writing-plans" \
@@ -541,6 +542,13 @@ EOF
 cat > "$HOME_DIR/.codex/skills/unrelated-native/SKILL.md" <<'EOF'
 ---
 name: unrelated-native
+---
+EOF
+
+cat > "$HOME_DIR/.codex/skills/silver-feature/SKILL.md" <<'EOF'
+---
+name: "silver:feature"
+title: "Silver Bullet: Silver: Feature"
 ---
 EOF
 
@@ -987,7 +995,9 @@ assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "
 assert_file_exists "Codex native SB mirror exposes progressive review loop" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver-feature/.silver-bullet-managed"
 assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
-assert_contains "Codex native SB mirror preserves single Silver picker title" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_contains "Codex native SB mirror takes over progressive review loop title" "title: \"Silver: Progressive Review Loop\"" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
