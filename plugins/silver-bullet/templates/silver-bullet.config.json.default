@@ -130,15 +130,15 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "~/.codex/.silver-bullet/state",
-    "trivial_file": "~/.codex/.silver-bullet/trivial"
+    "state_file": "$HOME/.codex/.silver-bullet/state",
+    "trivial_file": "$HOME/.codex/.silver-bullet/trivial"
   },
   "issue_tracker": "gsd",
   "release": {
     "profile": "generic",
     "require_plugin_runtime_matrix": true,
     "require_pre_release_quality_gate": true,
-    "quality_gate_state_file": "~/.codex/.silver-bullet/quality-gate-state"
+    "quality_gate_state_file": "$HOME/.codex/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {

@@ -34,7 +34,7 @@ If user intent implies a semver-relevant codebase change, route through an SB wo
 Use logical route names in decisions (`silver:feature`, `gsd:do`, `tdd`, `product-management:write-spec`). At invocation time, use the skill name exposed by the current host:
 
 - Claude-style slash/skill aliases may expose `silver:feature` and `gsd:do`.
-- Codex plugin installs may expose `silver-bullet:silver-feature` while generated package surfaces expose `silver:feature`.
+- Codex exposes SB skills through the native `/Silver:` picker surface, with logical names such as `silver:feature`.
 - Source repos may show authoring names such as `silver-feature`.
 
 If the exact logical skill is unavailable, choose the host-equivalent skill with the same semantic name. If no equivalent exists, stop and report the missing dependency. Do not silently replace a missing dependency with shell work, direct edits, or a weaker workflow.

@@ -93,7 +93,7 @@ if plugin_display_name != "Silver Bullet":
 if "skills" in manifest:
     bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /Silver to avoid duplicate /Silver Bullet listings")
 
-for skill_md in sorted((package_root / "skills").glob("*/SKILL.md")):
+for skill_md in sorted((package_root / "skill-source").glob("*/SKILL.md")):
     meta = frontmatter(skill_md)
     title = meta.get("title")
     if not title:
@@ -202,12 +202,15 @@ assert_not_contains "Codex package avoids manual state recording workaround" "Ma
 assert_not_contains "Codex package avoids state-file write workaround" "write its name to the SB state file" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain ${SB_RUNTIME_HOME_ROOT} paths" "${SB_RUNTIME_HOME_ROOT}" "$PACKAGE_ROOT"
+assert_not_contains "Codex package does not contain stale silver-bullet namespace guidance" "silver-bullet:silver-" "$PACKAGE_ROOT"
+assert_not_contains "Codex package executable snippets avoid quoted tilde paths" '"~/.codex' "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain /compact commands" "/compact" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain model_profile routing" 'model_profile: "balanced"' "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain auto-routing wording" "auto-select the correct model for the current host" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$PACKAGE_ROOT"
-assert_contains "Codex package uses ~/.codex state paths" "~/.codex/.silver-bullet/state" "$PACKAGE_ROOT/templates/silver-bullet.md.base"
-assert_contains "Codex package uses ~/.codex plugin cache paths" '~/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Codex package uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Codex package uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
+assert_contains "Codex generated snippets use quoted HOME paths" '"$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"' "$PACKAGE_SKILL_ROOT/silver-feature/SKILL.md"
 assert_contains "Codex package tracks gsd-scan in config" '"gsd-scan"' "$PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$PACKAGE_SKILL_ROOT/tdd/SKILL.md"
 assert_contains "TDD skill delegates to Superpowers TDD" "superpowers:test-driven-development" "$PACKAGE_SKILL_ROOT/tdd/SKILL.md"

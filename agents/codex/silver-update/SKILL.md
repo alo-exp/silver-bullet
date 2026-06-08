@@ -13,7 +13,7 @@ Check GitHub for the latest Silver Bullet release, display what changed since yo
 
 ### Step 1: Read installed version
 
-Read `~/.codex/plugins/installed_plugins.json`. Try the `silver-bullet@alo-labs` key first; if absent, fall back to the `silver-bullet@silver-bullet` key (legacy installation):
+Read `$HOME/.codex/plugins/installed_plugins.json`. Try the `silver-bullet@alo-labs` key first; if absent, fall back to the `silver-bullet@silver-bullet` key (legacy installation):
 
 - `version` — currently installed version (e.g. `0.24.1`)
 - If neither key exists, treat installed version as `0.0.0`.
@@ -143,7 +143,7 @@ After the marketplace install succeeds, clean up any residual legacy installatio
 Check whether `installed_plugins.json` contains the legacy `silver-bullet@silver-bullet` key. If it does, remove it atomically:
 
 ```bash
-REG="~/.codex/plugins/installed_plugins.json"
+REG="$HOME/.codex/plugins/installed_plugins.json"
 if jq -e '.plugins["silver-bullet@silver-bullet"]' "$REG" > /dev/null 2>&1; then
   TMP="$(mktemp "${REG}.XXXXXX")"
   jq 'del(.plugins["silver-bullet@silver-bullet"])' "$REG" > "$TMP" && mv "$TMP" "$REG"
@@ -152,20 +152,20 @@ fi
 
 **6b. Remove stale cache directory:**
 
-Check whether `~/.codex/plugins/cache/silver-bullet/silver-bullet/` exists. If it does, remove it:
+Check whether `$HOME/.codex/plugins/cache/silver-bullet/silver-bullet/` exists. If it does, remove it:
 
 ```bash
 if [[ -z "$HOME" ]]; then
   echo "WARNING: HOME is unset — skipping stale cache cleanup."
 else
-  STALE_CACHE="~/.codex/plugins/cache/silver-bullet/silver-bullet"
+  STALE_CACHE="$HOME/.codex/plugins/cache/silver-bullet/silver-bullet"
   if [[ -d "$STALE_CACHE" && ! -L "$STALE_CACHE" && "$STALE_CACHE" == "${HOME}/"* ]]; then
     rm -rf "$STALE_CACHE"
   fi
 fi
 ```
 
-Do NOT remove `~/.codex/plugins/cache/silver-bullet/alo-labs/` — that is the newly installed version.
+Do NOT remove `$HOME/.codex/plugins/cache/silver-bullet/alo-labs/` — that is the newly installed version.
 
 If either cleanup step fails, log the error but do not abort — the install already succeeded.
 

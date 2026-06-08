@@ -14,7 +14,7 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 **This skill MUST NOT destroy existing project content.** Rules:
 - **Never overwrite existing docs** (`docs/*.md`) — only create if absent
 - **Backup before overwrite** — if an existing project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex) or workflow files must be replaced (update mode), copy the original to `*.backup` first
-- **Never delete files or directories** in the project (only `~/.codex/.silver-bullet/` state files are deleted)
+- **Never delete files or directories** in the project (only `$HOME/.codex/.silver-bullet/` state files are deleted)
 - **Never run `git clean`, `git checkout --`, `git reset --hard`**, or any command that discards uncommitted work
 - **Config is preserved** — in update mode, `.silver-bullet.json` customizations are read first and carried forward
 
@@ -24,10 +24,10 @@ This skill initializes Silver Bullet enforcement for a project. Follow each phas
 
 ## Phase −1: Session Init
 
-Run this phase exactly once per session. Skip if the session state file `~/.codex/.silver-bullet/session-init` already exists.
+Run this phase exactly once per session. Skip if the session state file `$HOME/.codex/.silver-bullet/session-init` already exists.
 
 ```bash
-test -f ~/.codex/.silver-bullet/session-init && echo "ALREADY_DONE" || echo "NEEDED"
+test -f $HOME/.codex/.silver-bullet/session-init && echo "ALREADY_DONE" || echo "NEEDED"
 ```
 
 If `ALREADY_DONE` → skip to Phase 0.
@@ -62,7 +62,7 @@ Read each file found using the active runtime file-reading mechanism.
 
 Use the Bash tool to run:
 ```bash
-touch ~/.codex/.silver-bullet/session-init
+touch $HOME/.codex/.silver-bullet/session-init
 ```
 
 Then summarize the loaded context and continue without relying on context compaction.
@@ -108,7 +108,7 @@ If B: STOP.
 
 Use the Glob tool to search for:
 ```
-~/.codex/plugins/cache/*/superpowers/*/skills/brainstorming/SKILL.md
+$HOME/.codex/plugins/cache/*/superpowers/*/skills/brainstorming/SKILL.md
 ```
 Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
 
@@ -124,8 +124,8 @@ If B: STOP.
 ### 1.3 Design plugin
 
 Use the Glob tool to search for Design plugin skills in these paths:
-- `~/.codex/plugins/cache/*/design/*/skills/design-system/SKILL.md`
-- `~/.codex/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
+- `$HOME/.codex/plugins/cache/*/design/*/skills/design-system/SKILL.md`
+- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
 
 Expand `~` to the user's home directory.
 
@@ -141,10 +141,10 @@ If B: STOP.
 ### 1.4 Engineering plugin
 
 Use the Glob tool to search for Engineering plugin skills in these paths:
-- `~/.codex/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
-- `~/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
-- `~/.codex/plugins/cache/engineering/skills/`
-- `~/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
+- `$HOME/.codex/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
+- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
+- `$HOME/.codex/plugins/cache/engineering/skills/`
+- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
 
 Expand `~` to the user's home directory.
 
@@ -161,7 +161,7 @@ If B: STOP.
 
 Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
 ```bash
-{ test -f "~/.codex/get-shit-done/workflows/new-project.md" || test -f "~/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "~/.codex/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
+{ test -f "$HOME/.codex/get-shit-done/workflows/new-project.md" || test -f "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.codex/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
 ```
 
 If `NOT_FOUND`, ask the user directly:
@@ -209,7 +209,7 @@ If user selects A, use the active runtime file-editing mechanism to remove the o
 ### 1.8 MultAI plugin
 
 Use the Glob tool to search for:
-`~/.codex/plugins/cache/multai/skills/orchestrator/SKILL.md`
+`$HOME/.codex/plugins/cache/multai/skills/orchestrator/SKILL.md`
 
 If no file found, ask the user directly:
 - Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional — Silver Bullet research works without it. Install it only if you want optional multi-AI / second-opinion perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
@@ -223,9 +223,9 @@ If B: continue without stopping.
 ### 1.9 Anthropic Product Management plugin
 
 Use the Glob tool to search for:
-`~/.codex/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
-and `~/.codex/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
-and `~/.codex/plugins/cache/*/product-management/skills/`
+`$HOME/.codex/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
+and `$HOME/.codex/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
+and `$HOME/.codex/plugins/cache/*/product-management/skills/`
 in supported Codex cache roots
 
 If no directory found in any supported cache root, ask the user directly:
@@ -247,7 +247,7 @@ Run this phase only after all Phase 1 presence checks pass. For each dependency,
 
 Read installed version:
 ```bash
-cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
 ```
 
 Check latest version:
@@ -271,7 +271,7 @@ If version check fails (curl error, missing file, or either version is "unknown"
 
 Read installed version:
 ```bash
-cat "~/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
+cat "$HOME/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
 ```
 
 Check latest version:
@@ -293,10 +293,10 @@ If either version is "unknown": output "Could not determine GSD version. Continu
 
 ### 1.5.3 Check Superpowers / Design / Engineering / Product Management plugin versions
 
-Read installed versions from `~/.codex/plugins/installed_plugins.json`. Display the installed version of each plugin found:
+Read installed versions from `$HOME/.codex/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
-cat "~/.codex/plugins/installed_plugins.json" | jq -r '
+cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
   select(.key | test("^(superpowers|design|engineering|product-management)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
@@ -313,12 +313,12 @@ No automated update skill exists for these plugins. If the user wants to update 
 
 Read installed version:
 ```bash
-cat "~/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
 ```
 
 Check latest:
 ```bash
-cat "~/.codex/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
+cat "$HOME/.codex/plugins/cache/multai/CHANGELOG.md" 2>/dev/null | grep "^## \[" | head -1
 ```
 
 If installed version appears outdated compared to CHANGELOG, display:
@@ -543,7 +543,7 @@ Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `
 
 ### Exit condition
 
-Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, placeholder `docs/*.md`, an initial git commit, SB hooks registered in `~/.codex/settings.json`, and an activation message printed. If the project already had a project instruction file, it was updated in place; otherwise no new project instruction file was created.
+Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, placeholder `docs/*.md`, an initial git commit, SB hooks registered in `$HOME/.codex/settings.json`, and an activation message printed. If the project already had a project instruction file, it was updated in place; otherwise no new project instruction file was created.
 
 ### Update mode (`.silver-bullet.json` exists)
 

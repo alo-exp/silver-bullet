@@ -190,14 +190,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet includes orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:research</code>, <code>silver:release</code>, <code>silver:fast</code>), spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), artifact reviewer skills, and supporting skills for quality gates, enforcement, analytics, and project management.</p>
 
       <h3>How Skills Are Stored</h3>
-      <p>Skills live in two locations:</p>
+      <p>Skills live in host-specific locations:</p>
       <ul>
-        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — flat <code>.md</code> files, one per skill</li>
-        <li><code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> — structured as <code>publisher/plugin/version/skills/skill-name/SKILL.md</code></li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — native host skill mirror. In Codex, SB mirrors internal <code>skill-source/</code> files here so the picker shows a single <code>/Silver:</code> namespace.</li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> — plugin cache. Claude plugin skills can live under plugin <code>skills/</code>; the Codex SB package deliberately keeps internal skill sources under <code>skill-source/</code> to avoid duplicate plugin-prefixed picker entries.</li>
       </ul>
 
       <h3>How Skills Are Invoked</h3>
-      <p>Inside the host coding agent, skills are invoked with the <code>Skill</code> tool using a slash-command shorthand:</p>
+      <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/Silver:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
       <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
 <span class="cmd">/requesting-code-review</span>  <span class="comment"># frames review; may dispatch helper reviewer</span>
@@ -208,7 +208,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Implicit coverage does not count.</strong> The enforcement hooks track actual Skill tool invocations. Saying "I already covered this while writing the code" is not valid — each skill must be explicitly invoked. This is intentional: the hooks can only measure what actually happened, not what the runtime claims happened.</div>
+        <div class="callout-body"><strong>Implicit coverage does not count.</strong> The enforcement hooks track actual supported skill invocation receipts. Saying "I already covered this while writing the code" is not valid — each required skill must be explicitly invoked through the active host channel. This is intentional: the hooks can only measure what actually happened, not what the runtime claims happened.</div>
       </div>
 
       <h3>Skill Discovery</h3>
@@ -221,7 +221,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>What Hooks Enforce</h3>
       <ul>
-        <li><strong>Skill recording</strong> — records actual Skill tool invocations; implicit coverage never counts.</li>
+        <li><strong>Skill recording</strong> — records actual supported skill invocation receipts; implicit coverage never counts.</li>
         <li><strong>Workflow order</strong> — blocks plan/execute/ship movement when required upstream gates are missing.</li>
         <li><strong>Planning file ownership</strong> — blocks direct edits to GSD-managed artifacts and forces the owning GSD workflow to make lifecycle changes.</li>
         <li><strong>Completion and delivery gates</strong> — blocks final delivery commands until the required planning, review, verification, test, CI, and release gates are complete.</li>
@@ -326,10 +326,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.35.1 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.37.16 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
-        <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual Skill tool invocations. The completion audit trusts state, not prose claims.</p></div></div>
+        <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
         <div class="layer-card"><div class="layer-num">2</div><div><h4>Dev Cycle Gate</h4><p><code>dev-cycle-check.sh</code> enforces the current composed workflow stage and prevents premature source edits or phase movement.</p></div></div>
         <div class="layer-card"><div class="layer-num">3</div><div><h4>Planning File Guard</h4><p><code>planning-file-guard.sh</code> blocks direct edits to GSD-managed artifacts such as ROADMAP, STATE, PROJECT, RELEASE, and milestone audit files.</p></div></div>
         <div class="layer-card"><div class="layer-num">4</div><div><h4>Completion Audit</h4><p><code>completion-audit.sh</code> checks planning-floor and final-delivery requirements before git, PR, deploy, and release operations.</p></div></div>

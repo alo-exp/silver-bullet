@@ -3,6 +3,7 @@
 **Date:** 2026-05-14  
 **Scope:** Concrete benefits Silver Bullet provides when layered on top of GSD, based on the current Silver Bullet project documents and codebase surfaces: hooks, commands, and skills.  
 **Short answer:** GSD is the planning and execution engine. Silver Bullet is the orchestration, enforcement, quality, release, and operating-discipline layer around that engine.
+**Location:** Internal long-form analysis; the concise public summary lives in README and the website.
 
 ---
 

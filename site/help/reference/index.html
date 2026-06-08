@@ -165,7 +165,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- GSD COMMANDS -->
       <h2 id="gsd-commands">GSD Commands</h2>
-      <p>GSD commands are slash commands that resolve to GSD's installed workflow files. All are invoked via the Skill tool inside the active host coding agent. <code>/gsd:do</code> is GSD's own natural-language router; Silver Bullet uses it when the task is lifecycle-owned by GSD rather than SB-specific orchestration.</p>
+      <p>GSD commands resolve to GSD's installed workflow files and are invoked through the active host's supported skill or command channel. Claude records Skill-tool events; Codex records native picker or <code>silver-bullet invoke-skill</code> receipts. <code>/gsd:do</code> is GSD's own natural-language router; Silver Bullet uses it when the task is lifecycle-owned by GSD rather than SB-specific orchestration.</p>
 
       <table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
@@ -544,7 +544,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.35.1"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.37.16"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -748,7 +748,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.35.1</div>
+/silver:release v0.37.16</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>

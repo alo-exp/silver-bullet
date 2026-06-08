@@ -129,4 +129,53 @@ else
   fail "plugin.json version field is missing or empty"
 fi
 
+# CHECK 8: Codex hook trigger parity for tool-name differences
+echo "--- CHECK 8: Codex hook trigger parity ---"
+if output=$(python3 - "$HOOKS_JSON" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text())
+errors: list[str] = []
+
+
+def commands_for(event: str, matcher: str) -> set[str]:
+    commands: set[str] = set()
+    for registration in data["hooks"].get(event, []):
+        if registration.get("matcher") != matcher:
+            continue
+        for hook in registration.get("hooks", []):
+            if hook.get("type") == "command":
+                commands.add(Path(hook.get("command", "").strip('"')).name)
+    return commands
+
+
+for event in ("PreToolUse", "PostToolUse"):
+    bash_commands = commands_for(event, "Bash") | commands_for(event, "Skill|Bash")
+    bash_commands |= commands_for(event, "Bash|Skill")
+    exec_commands = commands_for(event, "exec_command")
+    missing = sorted(bash_commands - exec_commands - {"semantic-compress.sh", "forbidden-skill-check.sh", "dependency-skill-check.sh", "uat-gate.sh"})
+    if missing:
+        errors.append(f"{event}: Bash-triggered commands missing exec_command parity: {', '.join(missing)}")
+
+for event in ("PreToolUse", "PostToolUse"):
+    for registration in data["hooks"].get(event, []):
+        matcher = registration.get("matcher", "")
+        command_names = {Path(hook.get("command", "").strip('"')).name for hook in registration.get("hooks", [])}
+        if command_names & {"planning-file-guard.sh", "instruction-file-guard.sh", "workflow-chain-guard.sh", "phase-lock-claim.sh", "trivial-file-guard.sh", "trivial-file-clear.sh", "dev-cycle-check.sh", "phase-lock-heartbeat.sh"}:
+            if any(name in matcher.split("|") for name in ("Edit", "Write", "MultiEdit")) and "apply_patch" not in matcher.split("|"):
+                errors.append(f"{event}: edit/write guard matcher lacks apply_patch parity: {matcher}")
+
+if errors:
+    print("\n".join(errors))
+    raise SystemExit(1)
+PY
+); then
+  pass "Codex exec_command/apply_patch trigger parity is covered"
+else
+  fail "Codex hook trigger parity failed"
+  printf '%s\n' "$output"
+fi
+
 print_results
