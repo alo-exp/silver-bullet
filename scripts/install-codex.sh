@@ -504,6 +504,45 @@ sync_codex_cache_package_surface() {
   shopt -u nullglob
 }
 
+prune_stale_silver_bullet_cache_versions() {
+  local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
+
+  python3 - "$package_root" <<'PY'
+import pathlib
+import re
+import shutil
+import sys
+
+package_root = pathlib.Path(sys.argv[1]).expanduser()
+if not package_root.exists():
+    sys.exit(0)
+
+
+def version_sort_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
+
+version_dirs = sorted(
+    [path for path in package_root.iterdir() if path.is_dir() and path.name != "current"],
+    key=version_sort_key,
+)
+if len(version_dirs) <= 1:
+    sys.exit(0)
+
+latest = version_dirs[-1]
+for stale in version_dirs[:-1]:
+    shutil.rmtree(stale)
+
+current = package_root / "current"
+if current.exists() or current.is_symlink():
+    if current.is_dir() and not current.is_symlink():
+        shutil.rmtree(current)
+    else:
+        current.unlink()
+current.symlink_to(latest.resolve())
+PY
+}
+
 refresh_silver_bullet_current_alias() {
   local package_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
 
@@ -540,6 +579,66 @@ current_path.symlink_to(target_path)
 PY
 
   validate_silver_bullet_skill_surface "installed package alias" "${package_root}/current"
+}
+
+prune_legacy_silver_bullet_picker_surfaces() {
+  python3 - "$CODEX_HOME_ROOT" <<'PY'
+import pathlib
+import shutil
+import sys
+
+home = pathlib.Path(sys.argv[1]).expanduser()
+codex_home = home / ".codex"
+
+roots_to_prune = [
+    codex_home / ".tmp" / "marketplaces" / "alo-labs-codex" / "skills",
+    codex_home / ".tmp" / "marketplaces" / "alo-labs-codex" / "plugins" / "silver-bullet" / "skills",
+    codex_home / ".tmp" / "marketplaces" / "alo-labs-codex" / "plugins" / "silver-bullet" / ".generated-skills",
+]
+
+backup_root = codex_home / "legacy-uppercase-backups"
+if backup_root.exists():
+    for backup in backup_root.rglob("*"):
+        if not backup.is_dir():
+            continue
+        parts = backup.parts
+        if backup.name in {"skills", ".generated-skills"} and "silver-bullet" in parts:
+            roots_to_prune.append(backup)
+        if backup.name == "skills" and len(parts) >= 2 and parts[-2] in {"alo-labs-codex", "forge"}:
+            roots_to_prune.append(backup)
+
+tmp_marketplaces = codex_home / ".tmp" / "marketplaces"
+if tmp_marketplaces.exists():
+    for backup in tmp_marketplaces.glob("marketplace-backup-*"):
+        if not backup.is_dir():
+            continue
+        roots_to_prune.extend(
+            [
+                backup / "root" / "skills",
+                backup / "root" / "agents" / "claude",
+                backup / "root" / "agents" / "codex",
+                backup / "root" / "plugins" / "silver-bullet" / "skills",
+                backup / "root" / "plugins" / "silver-bullet" / ".generated-skills",
+            ]
+        )
+
+tmp_root = codex_home / ".tmp"
+if tmp_root.exists():
+    for temp_dir in tmp_root.glob("sb-*"):
+        if not temp_dir.is_dir():
+            continue
+        roots_to_prune.extend(
+            [
+                temp_dir / "plugins" / "silver-bullet" / "skills",
+                temp_dir / "plugins" / "silver-bullet" / ".generated-skills",
+                temp_dir / "plugins" / "silver-bullet" / "agents",
+            ]
+        )
+
+for path in sorted(set(roots_to_prune), key=lambda item: len(item.parts), reverse=True):
+    if path.exists():
+        shutil.rmtree(path)
+PY
 }
 
 sync_silver_bullet_native_codex_skill_mirror() {
@@ -2025,7 +2124,9 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
 fi
 sanitize_codex_package_surface
 sync_codex_cache_package_surface
+prune_stale_silver_bullet_cache_versions
 refresh_silver_bullet_current_alias
+prune_legacy_silver_bullet_picker_surfaces
 sync_silver_bullet_native_codex_skill_mirror
 install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
