@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import errno
 import fcntl
 import pty
 import re
@@ -67,6 +68,34 @@ def append_transcript(path: str, data: bytes) -> None:
         return
     with open(path, "ab") as handle:
         handle.write(data)
+
+
+def redirect_stdout_to_devnull() -> None:
+    try:
+        devnull_fd = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(devnull_fd, sys.stdout.fileno())
+        finally:
+            os.close(devnull_fd)
+    except OSError:
+        pass
+
+
+def forward_stdout(chunk: bytes, enabled: bool) -> bool:
+    if not enabled:
+        return False
+    try:
+        sys.stdout.buffer.write(chunk)
+        sys.stdout.buffer.flush()
+        return True
+    except BrokenPipeError:
+        redirect_stdout_to_devnull()
+        return False
+    except OSError as exc:
+        if getattr(exc, "errno", None) == errno.EPIPE:
+            redirect_stdout_to_devnull()
+            return False
+        raise
 
 
 def answer_terminal_queries(master_fd: int, chunk: bytes) -> None:
@@ -167,6 +196,7 @@ def main() -> int:
     prompt_typed_at = None
     text_buffer = ""
     text_since_prompt = ""
+    stdout_forwarding_enabled = True
 
     try:
         while True:
@@ -189,9 +219,8 @@ def main() -> int:
                 if not chunk:
                     break
                 answer_terminal_queries(master_fd, chunk)
-                sys.stdout.buffer.write(chunk)
-                sys.stdout.buffer.flush()
                 append_transcript(transcript_file, chunk)
+                stdout_forwarding_enabled = forward_stdout(chunk, stdout_forwarding_enabled)
                 decoded = chunk.decode("utf-8", errors="replace")
                 plain = strip_ansi(decoded)
                 text_buffer = (text_buffer + plain)[-40000:]

@@ -90,6 +90,8 @@ def frontmatter(path: Path) -> dict[str, str]:
 bad: list[str] = []
 if plugin_display_name != "Silver Bullet":
     bad.append(f"plugin displayName must remain 'Silver Bullet', got {plugin_display_name!r}")
+if "skills" in manifest:
+    bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /Silver to avoid duplicate /Silver Bullet listings")
 
 for skill_md in sorted((package_root / "skills").glob("*/SKILL.md")):
     meta = frontmatter(skill_md)

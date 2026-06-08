@@ -182,13 +182,8 @@ resolve_silver_skill_path() {
 assert_no_local_skill_source_bypass() {
   local label="$1"
   local path="$2"
-  local contents=""
   local suspicious=""
-  contents="$(cat "$path" 2>/dev/null || true)"
-  suspicious="$(printf '%s\n' "$contents" \
-    | grep -E "$LOCAL_SKILL_SOURCE_REGEX|$LOCAL_SKILL_SOURCE_ROOT" \
-    | grep -Ev "$LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT" \
-    || true)"
+  suspicious="$(local_skill_source_bypass_hits "$path")"
   if [[ -n "$suspicious" ]]; then
     echo "FAIL: $label"
     printf '%s\n' "$suspicious" | sed -n '1,5p'
@@ -197,6 +192,79 @@ assert_no_local_skill_source_bypass() {
     echo "PASS: $label"
     PASS=$((PASS + 1))
   fi
+}
+
+local_skill_source_bypass_hits() {
+  local path="$1"
+  python3 - "$LOCAL_SKILL_SOURCE_ROOT" "$path" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+root = sys.argv[1]
+target = Path(sys.argv[2])
+ansi_re = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+def compact(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+def compact_for_negative_context(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", text.lower())
+
+def is_negative_context(context: str) -> bool:
+    root_l = root.lower()
+    context = compact(context)
+    squashed_context = compact_for_negative_context(context)
+    squashed_root = compact_for_negative_context(root_l)
+    negative_patterns = [
+        f"do not read or use local {root_l}",
+        f"did not read or use local {root_l}",
+        f"not read or use local {root_l}",
+        f"not read from {root_l}",
+        f"not using {root_l}",
+        f"prohibited {root_l}",
+        f"from {root_l} as requested",
+        f"!{root_l}",
+        "avoided local codex-plugins skill sources",
+        "avoids local codex-plugins skill sources",
+        "avoiding local codex-plugins skill sources",
+    ]
+    if any(pattern in context for pattern in negative_patterns):
+        return True
+    squashed_negative_patterns = [
+        f"donotreadoruselocal{squashed_root}",
+        f"didnotreadoruselocal{squashed_root}",
+        f"notreadoruselocal{squashed_root}",
+        f"donotreadoruselocal{squashed_root}paths",
+        f"didnotreadoruselocal{squashed_root}paths",
+        f"notreadoruselocal{squashed_root}paths",
+        "avoidedlocalcodexpluginsskillsources",
+        "avoidlocalcodexpluginsskillsources",
+        "avoidinglocalcodexpluginsskillsources",
+    ]
+    return any(pattern in squashed_context for pattern in squashed_negative_patterns)
+
+def candidate_files(path: Path):
+    if path.is_dir():
+        yield from (entry for entry in path.rglob("*") if entry.is_file())
+    elif path.is_file():
+        yield path
+
+for file_path in candidate_files(target):
+    try:
+        raw = file_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        continue
+    text = ansi_re.sub("", raw)
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if root not in line:
+            continue
+        context = "\n".join(lines[max(0, index - 2): index + 3])
+        if is_negative_context(context):
+            continue
+        print(f"{file_path}:{index + 1}:{line}")
+PY
 }
 
 SILVER_SKILL_PATH="$(resolve_silver_skill_path)"
@@ -861,9 +929,7 @@ EOF
 chmod +x "${update_bin_dir}/curl"
 PATH="${update_bin_dir}:$PATH" journey_turn "silver:update" "check whether Silver Bullet is already up to date before finishing" "no" "update turn recorded" "$(skill_prompt 'silver:update' 'Check whether Silver Bullet is already up to date in this environment. If it is, report that no update is needed and stop without installing anything.')" 'already on the latest version|latest version|up to date'
 
-local_skill_source_hits="$(rg -n "$LOCAL_SKILL_SOURCE_REGEX|$LOCAL_SKILL_SOURCE_ROOT" "$TURN_LOG_DIR" \
-  | grep -Ev "$LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT" \
-  || true)"
+local_skill_source_hits="$(local_skill_source_bypass_hits "$TURN_LOG_DIR")"
 if [[ -n "$local_skill_source_hits" ]]; then
   echo "FAIL: no turn in this run should source local /Users/shafqat/projects/codex-plugins/skills paths"
   printf '%s\n' "$local_skill_source_hits" | sed -n '1,5p'

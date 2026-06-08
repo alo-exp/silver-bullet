@@ -61,8 +61,7 @@ cat > "$MARKETPLACE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
 {
   "name": "silver-bullet",
   "version": "0.0.1",
-  "commands": "./commands/",
-  "skills": "./skills/"
+  "commands": "./commands/"
 }
 EOF
 cat > "$MARKETPLACE/skills/silver-init/SKILL.md" <<'EOF'

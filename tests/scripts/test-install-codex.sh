@@ -674,7 +674,6 @@ cat > "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json" <<'EOF'
   "name": "silver-bullet",
   "version": "0.32.3",
   "commands": "./commands/",
-  "skills": "./skills/",
   "hooks": "./hooks/hooks.json"
 }
 EOF
@@ -733,7 +732,10 @@ def write_text(path: pathlib.Path, text: str) -> None:
     path.write_text(text)
 
 def write_manifest(path: pathlib.Path, name: str, version: str) -> None:
-    write_json(path, {"name": name, "version": version})
+    payload = {"name": name, "version": version}
+    if name in {"engineering", "design", "product-management"}:
+        payload["skills"] = "./upstream/skills/"
+    write_json(path, payload)
 
 for root in [
     sb_install_root,
@@ -885,6 +887,7 @@ else
   echo "PASS: Silver Bullet skills are bundled into the main SB plugin"
   (( PASS++ )) || true
 fi
+assert_not_contains "Silver Bullet plugin manifest does not advertise duplicate plugin skill listings" '"skills": "./skills/"' "$FAKE_SB_INSTALL_ALIAS/.codex-plugin/plugin.json"
 assert_command_succeeds "Silver Bullet cache alias created" test -L "$FAKE_SB_INSTALL_ALIAS"
 assert_file_exists "Silver Bullet cache alias exposes picker skill surface" "$FAKE_SB_INSTALL_ALIAS/skills/silver-feature/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
@@ -1038,6 +1041,8 @@ assert_not_symlink "Installed SB skills surface is materialized in the package r
 assert_not_symlink "Installed SB skills surface is materialized in the current cache" "$FAKE_CACHE_ROOT/skills"
 assert_contains "SB Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json"
 assert_contains "Current cache Codex plugin manifest declares managed hooks" '"hooks": "./hooks/hooks.json"' "$FAKE_CACHE_ROOT/.codex-plugin/plugin.json"
+assert_not_contains "SB Codex plugin manifest does not advertise duplicate plugin skills" '"skills": "./skills/"' "$FAKE_SB_PACKAGE_ROOT/.codex-plugin/plugin.json"
+assert_not_contains "Current cache Codex plugin manifest does not advertise duplicate plugin skills" '"skills": "./skills/"' "$FAKE_CACHE_ROOT/.codex-plugin/plugin.json"
 assert_contains "SB hooks config includes dependency gate" 'dependency-skill-check.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "SB hooks config includes workflow-chain guard" 'workflow-chain-guard.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "SB hooks config includes instruction-file guard" 'instruction-file-guard.sh' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
@@ -1143,10 +1148,13 @@ assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS
 assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_file_exists "Engineering helper skill hydrated into Codex cache" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
 assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_file_exists "Design helper skill hydrated into Codex cache" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
 assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_file_exists "Product-management helper skill hydrated into Codex cache" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Requested-skill recorder not merged into native Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
@@ -1323,8 +1331,7 @@ cat > "$BROKEN_PUBLIC_PACKAGE/.codex-plugin/plugin.json" <<'EOF'
 {
   "name": "silver-bullet",
   "version": "0.37.4",
-  "commands": "./commands/",
-  "skills": "./skills/"
+  "commands": "./commands/"
 }
 EOF
 cat > "$BROKEN_PUBLIC_PACKAGE/commands/init.md" <<'EOF'

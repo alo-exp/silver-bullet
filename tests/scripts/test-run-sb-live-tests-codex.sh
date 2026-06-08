@@ -61,6 +61,8 @@ assert_file_contains "native codex PTY launcher answers terminal capability prob
 assert_file_contains "native codex PTY launcher recognizes the current Codex banner" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'openaicodex'
 assert_file_contains "native codex PTY launcher clears inherited desktop thread ids" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'CODEX_THREAD_ID'
 assert_file_contains "native codex PTY launcher clears inherited desktop originator overrides" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE'
+assert_file_contains "native codex PTY launcher suppresses closed stdout tracebacks" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'except BrokenPipeError'
+assert_file_contains "native codex PTY launcher keeps transcript capture before stdout forwarding" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'stdout_forwarding_enabled = forward_stdout(chunk, stdout_forwarding_enabled)'
 
 echo
 echo "Results: $PASS passed, $FAIL failed"
