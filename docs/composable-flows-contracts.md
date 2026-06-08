@@ -10,7 +10,7 @@ Contracts use logical skill names. At invocation time, use the host-exposed equi
 
 | Logical family | Examples | Notes |
 |----------------|----------|-------|
-| SB | `silver:feature`, `silver:quality-gates`, `verify-tests` | Codex plugin installs may expose `silver-bullet:silver-feature`; source dirs may use `silver-feature`. |
+| SB | `silver:feature`, `silver:quality-gates`, `verify-tests` | Codex exposes SB through the native `/Silver:` picker and `silver-bullet invoke-skill`; source dirs may use `silver-feature`. |
 | GSD | `gsd:do`, `gsd:plan-phase`, `gsd:execute-phase` | Prefer `gsd:do` for freeform GSD delegation. Use exact GSD skill only when a flow contract names it. |
 | Superpowers | SB wrapper skills such as `tdd`, `requesting-code-review`, and `receiving-code-review` | Required only when a selected SB flow marks them Always. |
 | Product Management | `product-management:write-spec`, `product-management:competitive-brief` | Optional unless the flow says Always. |

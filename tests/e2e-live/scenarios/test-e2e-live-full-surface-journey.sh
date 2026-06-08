@@ -155,20 +155,20 @@ resolve_silver_skill_path() {
 
     local install_path
     install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
-    if [[ -n "$install_path" && -f "$install_path/skill-source/silver/SKILL.md" ]]; then
-      printf '%s\n' "$install_path/skill-source/silver/SKILL.md"
+    if [[ -n "$install_path" && -f "$install_path/skill-source/silver/SILVER_SKILL.md" ]]; then
+      printf '%s\n' "$install_path/skill-source/silver/SILVER_SKILL.md"
       return 0
     fi
 
     local codex_cache_root latest_codex_cache
     codex_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
-    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skill-source/silver/SKILL.md" ]]; then
-      printf '%s\n' "$codex_cache_root/current/skill-source/silver/SKILL.md"
+    if [[ -L "$codex_cache_root/current" && -f "$codex_cache_root/current/skill-source/silver/SILVER_SKILL.md" ]]; then
+      printf '%s\n' "$codex_cache_root/current/skill-source/silver/SILVER_SKILL.md"
       return 0
     fi
     latest_codex_cache="$(find "$codex_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skill-source/silver/SKILL.md" ]]; then
-      printf '%s\n' "$latest_codex_cache/skill-source/silver/SKILL.md"
+    if [[ -n "$latest_codex_cache" && -f "$latest_codex_cache/skill-source/silver/SILVER_SKILL.md" ]]; then
+      printf '%s\n' "$latest_codex_cache/skill-source/silver/SILVER_SKILL.md"
       return 0
     fi
   else

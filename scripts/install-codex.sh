@@ -206,6 +206,19 @@ refresh_marketplace() {
   fi
 }
 
+cleanup_legacy_marketplace_picker_surfaces() {
+  local marketplace_root
+  marketplace_root="$(codex_marketplace_root)"
+
+  [[ -d "$marketplace_root" ]] || return 0
+
+  if [[ "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$marketplace_root")" == "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$REPO_ROOT")" ]]; then
+    return 0
+  fi
+
+  rm -rf -- "${marketplace_root}/skills" "${marketplace_root}/agents" "${marketplace_root}/skill-source"
+}
+
 seed_marketplace_snapshot_if_missing() {
   local marketplace_root
   local package_root
@@ -236,7 +249,7 @@ PY
   }
 
   local dir
-  for dir in agents hooks skills templates docs commands scripts; do
+  for dir in hooks templates docs commands scripts; do
     if [[ -d "${REPO_ROOT}/${dir}" ]]; then
       local src_dir="${REPO_ROOT}/${dir}"
       local dst_dir="${marketplace_root}/${dir}"
@@ -250,6 +263,10 @@ PY
       rsync -a --delete "${src_dir}/" "${dst_dir}/"
     fi
   done
+
+  if [[ "$(resolve_realpath "$marketplace_root")" != "$(resolve_realpath "$REPO_ROOT")" ]]; then
+    rm -rf -- "${marketplace_root}/skills" "${marketplace_root}/agents"
+  fi
 
   local file
   for file in \
@@ -286,11 +303,13 @@ sync_marketplace_package_snapshot() {
   package_root="${marketplace_root}/plugins/silver-bullet"
 
   [[ -d "${REPO_ROOT}/plugins/silver-bullet" ]] || return 0
-  mkdir -p "$package_root"
+  rm -rf -- "$package_root"
+  mkdir -p "$(dirname "$package_root")"
 
   # Keep the marketplace package root in lockstep with the repo's generated
-  # plugin snapshot, including `.generated-skills/` where Codex reads the
-  # routed skill bodies during live runs.
+  # plugin snapshot. The snapshot intentionally stores skill sources as
+  # SILVER_SKILL.md so Codex's picker cannot recursively discover duplicate
+  # plugin-cache SKILL.md files.
   rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/" "${package_root}/"
 }
 
@@ -305,7 +324,7 @@ materialize_silver_bullet_package() {
 
   # Codex's cache materialization can drop symlink-backed package entries.
   # Replace SB's symlinked top-level package surface with real files/dirs so
-  # hooks/hooks.json, agents/, skill-source/, templates/, and the rest survive install-time
+  # hooks/hooks.json, skill-source/, templates/, and the rest survive install-time
   # copying into the versioned cache.
   python3 - "$package_root" <<'PY'
 import pathlib
@@ -349,16 +368,21 @@ sync_materialized_package_surface() {
   local dir
   rm -rf -- "${package_root}/skills"
 
-  for dir in agents hooks skill-source templates docs commands scripts; do
+  for dir in hooks templates docs commands scripts; do
     if [[ -d "${marketplace_root}/${dir}" ]]; then
       mkdir -p "${package_root}/${dir}"
       rsync -a --delete "${marketplace_root}/${dir}/" "${package_root}/${dir}/"
     fi
   done
 
-  if [[ -d "${marketplace_root}/skills" ]]; then
+  if [[ ! -d "${package_root}/skill-source" && -d "${marketplace_root}/skills" ]]; then
     mkdir -p "${package_root}/skill-source"
     rsync -a --delete "${marketplace_root}/skills/" "${package_root}/skill-source/"
+    find "${package_root}/skill-source" -name SKILL.md -type f -exec sh -c '
+      for path do
+        mv "$path" "$(dirname "$path")/SILVER_SKILL.md"
+      done
+    ' sh {} +
   fi
 
   local file
@@ -389,6 +413,19 @@ fail_missing_silver_bullet_skill_surface() {
   exit 1
 }
 
+silver_bullet_internal_skill_file() {
+  local skill_dir="$1"
+  if [[ -f "${skill_dir}/SILVER_SKILL.md" ]]; then
+    printf '%s\n' "${skill_dir}/SILVER_SKILL.md"
+    return 0
+  fi
+  if [[ -f "${skill_dir}/SKILL.md" ]]; then
+    printf '%s\n' "${skill_dir}/SKILL.md"
+    return 0
+  fi
+  return 1
+}
+
 validate_silver_bullet_skill_surface() {
   local label="$1"
   local package_root="$2"
@@ -408,11 +445,11 @@ validate_silver_bullet_skill_surface() {
   fi
 
   for required_skill in silver-init silver silver-feature; do
-    if [[ ! -f "${skills_root}/${required_skill}/SKILL.md" ]]; then
+    if ! silver_bullet_internal_skill_file "${skills_root}/${required_skill}" >/dev/null; then
       printf 'ERROR: Silver Bullet %s is missing required skill surface %s at %s\n' \
         "$label" \
         "$required_skill" \
-        "${skills_root}/${required_skill}/SKILL.md" >&2
+        "${skills_root}/${required_skill}/SILVER_SKILL.md" >&2
       printf 'Rebuild or reinstall the Silver Bullet Codex package before continuing.\n' >&2
       exit 1
     fi
@@ -564,7 +601,9 @@ def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
 
 desired: dict[str, pathlib.Path] = {}
 for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.name):
-    skill_md = skill_dir / "SKILL.md"
+    skill_md = skill_dir / "SILVER_SKILL.md"
+    if not skill_md.is_file():
+        skill_md = skill_dir / "SKILL.md"
     if not skill_dir.is_dir() or not skill_md.is_file():
         continue
     frontmatter = read_frontmatter(skill_md)
@@ -591,6 +630,12 @@ for dirname, source in desired.items():
     elif target.exists():
         shutil.rmtree(target)
     shutil.copytree(source, target)
+    internal_skill = target / "SILVER_SKILL.md"
+    picker_skill = target / "SKILL.md"
+    if internal_skill.is_file():
+        if picker_skill.exists():
+            picker_skill.unlink()
+        internal_skill.rename(picker_skill)
     (target / marker_name).write_text(
         f"source=Silver Bullet\npackage={package_root}\nskill={dirname}\n",
         encoding="utf-8",
@@ -1957,6 +2002,7 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   seed_marketplace_snapshot_if_missing
 fi
 refresh_marketplace "alo-labs-codex"
+cleanup_legacy_marketplace_picker_surfaces
 purge_legacy_silver_bullet_codex_alias
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   render_agent_bundle "claude"

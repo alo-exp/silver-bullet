@@ -48,7 +48,6 @@ PACKAGE_ENTRIES=(
   SECURITY.md
   SENTINEL-audit-silver-bullet-v0.15.1.md
   SENTINEL-audit-silver-init.md
-  agents
   commands
   .silver-bullet.json
   docs
@@ -71,16 +70,18 @@ if [[ -d "${REPO_ROOT}/templates" ]]; then
   rsync -a --delete "${REPO_ROOT}/templates/" "${DEST_DIR}/templates/"
 fi
 
-ln -sfn "agents/codex" "${DEST_DIR}/.generated-skills"
-
-# Codex discovers plugin-owned picker entries from a top-level `skills/` tree
-# even when the manifest does not advertise one. Keep SB's packaged skill files
-# available for the installer and invoke-skill adapter, but store them in a
-# non-picker internal directory so the only user-facing picker surface is the
-# native ~/.codex/skills mirror with /Silver: titles.
-rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source"
+# Codex can discover plugin-owned picker entries from any cached SKILL.md file
+# under the plugin package. Keep SB's packaged skill sources available for the
+# installer, but store them under a non-picker filename so the only user-facing
+# picker surface is the native ~/.codex/skills mirror with /Silver: titles.
+rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source" "${DEST_DIR}/.generated-skills" "${DEST_DIR}/agents"
 mkdir -p -- "${DEST_DIR}/skill-source"
 rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skill-source/"
+find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
+  for path do
+    mv "$path" "$(dirname "$path")/SILVER_SKILL.md"
+  done
+' sh {} +
 
 if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
   "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"
