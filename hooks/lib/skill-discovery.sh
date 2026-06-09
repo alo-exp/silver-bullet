@@ -42,6 +42,7 @@ sb_skill_is_installed() {
       "$repo_root"
       # Host-specific runtime root.
       "${SB_RUNTIME_HOME_ROOT}"
+      "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-${SB_RUNTIME_HOME_ROOT}/plugins/cache}"
       "$HOME/.agents"
     )
   fi
