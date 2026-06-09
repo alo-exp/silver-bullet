@@ -349,7 +349,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td><a href="../workflows/silver-research.html" style="color:var(--accent-light)">/silver:research</a></td>
             <td style="font-family:inherit;font-size:.875rem">"how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:clarify → configured research path → research artifact → handoff</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:clarify → direct research by default → optional multi-AI only when explicitly requested → research artifact → handoff</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>
@@ -391,7 +391,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           </tr>
           <tr>
             <td>Active phase in progress, no version signal</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>gsd:ship</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>gsd-ship</code> / <code>/gsd:ship</code></td>
             <td style="font-family:inherit;font-size:.875rem">Phase-level merge: push branch, create PR</td>
           </tr>
           <tr>
@@ -404,7 +404,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>These are different scopes.</strong> <code>/gsd:ship</code> runs inside any workflow as the final phase-level step (push → PR). <code>silver:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/silver</code> disambiguate for you.</div>
+        <div class="callout-body"><strong>These are different scopes.</strong> <code>gsd-ship</code> (shown as <code>/gsd:ship</code> where the host exposes slash commands) runs inside workflows as the final phase-level step (push → PR). <code>silver:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, security review, fresh tests, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/silver</code> disambiguate for you.</div>
       </div>
 
       <div class="divider"></div>

@@ -36,7 +36,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "hooks",
     "title": "Hooks and enforcement",
-    "text": "Silver Bullet has 29 covered runtime hooks. Hooks run on host lifecycle events to record skills, enforce workflow order, block direct planning artifact edits, check CI, remind on prompts, and block incomplete final delivery. Hook-capable runtimes get hard gates."
+    "text": "Silver Bullet uses twelve enforcement layers backed by host lifecycle hooks and redundant instruction surfaces. Hooks record skills, enforce workflow order, block direct planning artifact edits, check CI, remind on prompts, and block incomplete final delivery where the runtime supports hook delivery."
   },
   {
     "page": "Core Concepts",
@@ -148,14 +148,14 @@ var IDX = [
     "url": "/help/workflows/silver-research.html",
     "anchor": "overview",
     "title": "/silver:research",
-    "text": "Research workflow clarifies the question, runs the configured research path when available, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, /gsd:do, or stops as research-only."
+    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, uses optional MultAI only when explicitly requested, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, /gsd:do, or stops as research-only."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-release.html",
     "anchor": "overview",
     "title": "/silver:release",
-    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs quality gates, UAT and milestone audits, docs checks, cross-artifact review, /verify-tests, gsd:ship, gsd:complete-milestone, then /silver:create-release last."
+    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs quality gates, UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, gsd-ship, gsd:complete-milestone, /silver:create-release, then a post-release items summary."
   },
   {
     "page": "Workflows",

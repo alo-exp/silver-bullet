@@ -441,8 +441,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>
           <div class="step-num">3</div>
           <div class="step-body">
-            <h4>Initialize Session Logs</h4>
-            <p>The session log hook creates or reuses the current session log path under <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>, so workflow events and decisions can be recorded consistently.</p>
+            <h4>Initialize Session State and Compact</h4>
+            <p>The session log hook creates or reuses the current session log path under <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>, so workflow events and decisions can be recorded consistently. After startup context is read, the host-supported compaction step keeps room available for the task without changing SB's model-selection policy.</p>
           </div>
         </li>
         <li>

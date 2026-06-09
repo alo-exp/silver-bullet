@@ -413,8 +413,8 @@ footer a:hover{color:var(--accent-light)}
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td>triage path → systematic debugging or forensics → regression test → fix → verify/review</td></tr>
           <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation → clarify/research if needed → UI design contract → GSD plan/execute → visual/UI audit → verify/ship</td></tr>
           <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, deploy, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation → blast radius → DevOps skill routing → IaC quality gates → GSD plan/execute without TDD → review/security/verify/ship</td></tr>
-          <tr><td><a href="../workflows/silver-research.html">/silver:research</a></td><td>how should we, compare X vs Y, spike, architecture decision</td><td>clarify question → configured research path when available → research artifact → handoff to feature/UI/DevOps/GSD or stop</td></tr>
-          <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td>release disambiguation → quality gates → UAT/milestone audits → docs/review/fresh tests → <code>gsd:ship</code> → <code>gsd:complete-milestone</code> → <code>/silver:create-release</code></td></tr>
+          <tr><td><a href="../workflows/silver-research.html">/silver:research</a></td><td>how should we, compare X vs Y, spike, architecture decision</td><td>clarify question → direct evidence-based research by default → optional multi-AI only when user-requested → research artifact → handoff to feature/UI/DevOps/GSD or stop</td></tr>
+          <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td>release disambiguation → quality gates → UAT/milestone audits → security hard gate → docs/review/fresh tests → <code>gsd-ship</code> → <code>gsd:complete-milestone</code> → <code>/silver:create-release</code> → post-release summary</td></tr>
           <tr><td><a href="../workflows/silver-fast.html">/silver:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td>tier triage → <code>gsd:fast</code>, <code>gsd:quick</code> with flags, or escalation to <code>silver:feature</code></td></tr>
           <tr><td><a href="../workflows/silver-spec.html">/silver:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td>Socratic elicitation → SPEC.md / REQUIREMENTS alignment → artifact review</td></tr>
           <tr><td><a href="../workflows/silver-ingest.html">/silver:ingest</a></td><td>JIRA, Figma, Google Docs, Confluence, external artifact</td><td>MCP connector check → artifact extraction → manifest/spec draft → ingestion review</td></tr>
@@ -441,7 +441,7 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Signal</th><th>Route</th></tr></thead>
         <tbody>
           <tr><td>Version number, changelog, release notes, public publish, go live</td><td><code>/silver:release</code></td></tr>
-          <tr><td>Active phase in progress, no version signal</td><td><code>/gsd:ship</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>gsd-ship</code> / <code>/gsd:ship</code></td></tr>
           <tr><td>No active phase and milestone complete</td><td><code>/silver:release</code></td></tr>
         </tbody>
       </table>
