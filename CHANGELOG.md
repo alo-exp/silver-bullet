@@ -4,6 +4,10 @@
 
 ## Bug Fixes
 
+- `fix(codex): hydrate missing dependency skill sources from marketplace installs before fallback`
+- `fix(codex): resolve hidden Silver quality-gate dimension sources from packaged Codex installs`
+- `fix(codex): terminate live interactive sessions after verified completion prompts return`
+- `fix(codex): initialize session-start markers for doc-scheme enforcement in live runs`
 - `fix(codex): expose progressive-review-loop as a single /Silver picker entry`
 - `fix(runtime): keep Claude progressive-review-loop escalation on Anthropic models`
 - `fix(codex): stop hydrating retired helper-runtime skill surfaces into Codex installs`
@@ -16,7 +20,9 @@
 
 - `test: verify no active Forge runtime files or references remain`
 - `test(codex): verify local installs keep one non-duplicated /Silver picker surface`
-- `test(release): rerun full suite with 2661 passed and 0 failed`
+- `test(codex): verify marketplace-backed dependency skill discovery and install hydration`
+- `test(codex): run full live release matrix with 53 passed and 0 failed`
+- `test(release): rerun full suite with 2693 passed and 0 failed`
 
 ---
 
