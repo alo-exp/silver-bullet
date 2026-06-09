@@ -66,7 +66,11 @@ append_skill_roots() {
     "${cache_root}"/*/skills \
     "${cache_root}"/*/*/skills \
     "${cache_root}"/*/*/*/skills \
-    "${cache_root}"/*/*/*/*/skills; do
+    "${cache_root}"/*/*/*/*/skills \
+    "${cache_root}"/*/upstream/skills \
+    "${cache_root}"/*/*/upstream/skills \
+    "${cache_root}"/*/*/*/upstream/skills \
+    "${cache_root}"/*/*/*/*/upstream/skills; do
     [[ -d "$candidate" ]] && SKILL_ROOTS+=("$candidate")
   done
   shopt -u nullglob

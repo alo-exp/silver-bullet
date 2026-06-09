@@ -27,6 +27,7 @@ CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-lab
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
 SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
 GSD_MARKETPLACE_SOURCE="${GSD_MARKETPLACE_SOURCE:-https://github.com/gsd-build/get-shit-done.git}"
+CODEX_KW_MARKETPLACE_SOURCE="${CODEX_KW_MARKETPLACE_SOURCE:-https://github.com/anthropics/knowledge-work-plugins.git}"
 CODEX_HOME_ROOT="${KAY_HOME:-${HOME}}"
 
 resolve_codex_config_file() {
@@ -729,15 +730,18 @@ def is_user_invocable(frontmatter: dict[str, str]) -> bool:
     return frontmatter.get("user-invocable", "").lower() != "false"
 
 
+def is_silver_bullet_helper_picker_skill(dirname: str, skill_name: str) -> bool:
+    helper_picker_skills = {"devops-quality-gates", "progressive-review-loop", "security", "verify-tests"}
+    return dirname in helper_picker_skills or skill_name in helper_picker_skills
+
+
 def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
-    helper_picker_skills = {"progressive-review-loop"}
     return (
         dirname == "silver"
         or dirname.startswith("silver-")
         or skill_name == "silver"
         or skill_name.startswith("silver:")
-        or dirname in helper_picker_skills
-        or skill_name in helper_picker_skills
+        or is_silver_bullet_helper_picker_skill(dirname, skill_name)
     )
 
 
@@ -754,7 +758,9 @@ for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.nam
         continue
     frontmatter = read_frontmatter(skill_md)
     skill_name = frontmatter.get("name", "")
-    if not skill_name or not is_user_invocable(frontmatter):
+    if not skill_name:
+        continue
+    if not is_user_invocable(frontmatter) and not is_silver_bullet_helper_picker_skill(skill_dir.name, skill_name):
         continue
     if not is_silver_bullet_picker_skill(skill_dir.name, skill_name):
         continue
@@ -1073,6 +1079,52 @@ if changed:
     registry_path.parent.mkdir(parents=True, exist_ok=True)
     registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
+}
+
+ensure_codex_knowledge_work_dependency_sources() {
+  local source_spec="${CODEX_KW_MARKETPLACE_SOURCE}"
+  local source_root=""
+  local tmp_dir=""
+  local plugin
+  local marketplace
+  local plugin_root
+  local src_skills
+  local version_dir
+
+  if [[ -d "$source_spec" ]]; then
+    source_root="$source_spec"
+  elif command -v git >/dev/null 2>&1; then
+    tmp_dir="$(mktemp -d)"
+    if git clone --depth 1 "$source_spec" "${tmp_dir}/knowledge-work-plugins" >/dev/null 2>&1; then
+      source_root="${tmp_dir}/knowledge-work-plugins"
+    else
+      rm -rf "$tmp_dir"
+      return 0
+    fi
+  else
+    return 0
+  fi
+
+  for plugin in engineering design product-management; do
+    src_skills="${source_root}/${plugin}/skills"
+    [[ -d "$src_skills" ]] || continue
+
+    for marketplace in alo-labs-codex alo-labs-codex-local; do
+      plugin_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/${marketplace}/${plugin}"
+      [[ -d "$plugin_root" ]] || continue
+
+      shopt -s nullglob
+      for version_dir in "${plugin_root}"/*; do
+        [[ -d "$version_dir" ]] || continue
+        [[ "$(basename "$version_dir")" != "current" ]] || continue
+        mkdir -p "${version_dir}/upstream"
+        rsync -a --delete "${src_skills}/" "${version_dir}/upstream/skills/"
+      done
+      shopt -u nullglob
+    done
+  done
+
+  [[ -z "$tmp_dir" ]] || rm -rf "$tmp_dir"
 }
 
 normalize_codex_hook_async_flags() {
@@ -2087,6 +2139,7 @@ remove_plugin_enabled "silver@alo-labs-codex"
 ensure_plugin_enabled "product-management@alo-labs-codex"
 ensure_plugin_enabled "engineering@alo-labs-codex"
 ensure_plugin_enabled "design@alo-labs-codex"
+ensure_codex_knowledge_work_dependency_sources
 ensure_codex_dependency_registry_entries
 purge_legacy_silver_bullet_hooks_from_user_config
 

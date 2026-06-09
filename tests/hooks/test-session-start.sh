@@ -6,6 +6,11 @@
 set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/session-start"
+RUNTIME_PATHS="$(cd "$(dirname "$0")/../.." && pwd)/hooks/lib/runtime-paths.sh"
+if [[ -f "$RUNTIME_PATHS" ]]; then
+  # shellcheck source=../../hooks/lib/runtime-paths.sh
+  source "$RUNTIME_PATHS"
+fi
 PASS=0
 FAIL=0
 
@@ -20,6 +25,7 @@ TEST_RUN_ID="$$"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
 TMPTRIVIAL="${SB_TEST_DIR}/trivial"   # trivial still uses default path (config-driven tests below)
+SESSION_START_FILE="${SB_TEST_DIR}/session-start-time"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state-${TEST_RUN_ID}"
@@ -33,6 +39,7 @@ cleanup_all() {
   rm -f "$TMPSTATE" "$TMPBRANCH" 2>/dev/null || true
   rm -f "${TMPSTATE}.requested" 2>/dev/null || true
   rm -f "${TMPTRIVIAL}" 2>/dev/null || true
+  rm -f "$SESSION_START_FILE" 2>/dev/null || true
   rm -f "$RELEASE_LIVE_MATRIX_FILE" "$E2E_LIVE_MATRIX_FILE" 2>/dev/null || true
   rm -f "$QUALITY_GATE_FILE" 2>/dev/null || true
   rm -f "$VERIFY_TESTS_FILE" 2>/dev/null || true
@@ -169,9 +176,46 @@ echo "=== session-start tests ==="
 echo "--- Test 0: No SB markers -> no-op ---"
 HOOK_WORKDIR=$(make_git_repo)
 rm -f "$HOOK_WORKDIR/.silver-bullet.json" "$HOOK_WORKDIR/silver-bullet.md"
+rm -f "$SESSION_START_FILE"
 out=$(run_hook "$HOOK_WORKDIR")
 assert_empty "no SB markers -> silent exit, no output" "$out"
+assert_file_missing "no SB markers -> session marker not created" "$SESSION_START_FILE"
 rm -rf "$HOOK_WORKDIR"
+
+# Test 0b: SB project -> session marker created for doc-scheme gates
+echo "--- Test 0b: SB project -> session marker created ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+rm -f "$SESSION_START_FILE"
+run_hook "$HOOK_WORKDIR" >/dev/null
+assert_file_exists "SB project -> session marker created" "$SESSION_START_FILE"
+if [[ -f "$SESSION_START_FILE" ]] && grep -Eq '^[0-9]+$' "$SESSION_START_FILE"; then
+  echo "  PASS: SB project -> session marker is numeric"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: SB project -> session marker is not numeric"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$SESSION_START_FILE"
+
+# Test 0c: SB project -> existing marker preserved across Codex process restarts
+echo "--- Test 0c: SB project -> existing session marker preserved ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+printf '%s' "$new_branch" > "$TMPBRANCH"
+printf '1234567890\n' > "$SESSION_START_FILE"
+run_hook "$HOOK_WORKDIR" >/dev/null
+if [[ "$(cat "$SESSION_START_FILE" 2>/dev/null)" == "1234567890" ]]; then
+  echo "  PASS: existing session marker preserved"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: existing session marker should be preserved, got: $(cat "$SESSION_START_FILE" 2>/dev/null || true)"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$HOOK_WORKDIR"
+rm -f "$TMPBRANCH" "$SESSION_START_FILE"
 
 # ── Branch-scoped state reset tests ──────────────────────────────────────────
 

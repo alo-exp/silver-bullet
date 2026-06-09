@@ -37,7 +37,17 @@ Use logical route names in decisions (`silver:feature`, `gsd:do`, `tdd`, `produc
 - Codex exposes SB skills through the native `/Silver:` picker surface, with logical names such as `silver:feature`.
 - Source repos may show authoring names such as `silver-feature`.
 
-If the exact logical skill is unavailable, choose the host-equivalent skill with the same semantic name. If no equivalent exists, stop and report the missing dependency. Do not silently replace a missing dependency with shell work, direct edits, or a weaker workflow.
+If the exact logical skill is unavailable, choose the host-equivalent skill with the same semantic name.
+
+If no equivalent exists, follow the missing dependency protocol before any fallback:
+
+1. Identify the missing skill and its owning plugin or marketplace source.
+2. Use the current host's plugin installation/update mechanism when available.
+3. If automatic install is not available, show the exact install command or SB installer/update command and pause until the user confirms it has run.
+4. Re-run discovery and retry the original skill invocation.
+5. Continue without the skill only when the workflow marks it optional, the install/repair attempt failed, or the user explicitly declines installation; record that degraded path in the work notes or generated artifact.
+
+Do not silently replace a missing dependency with shell work, direct edits, or a weaker workflow.
 
 ## Process
 

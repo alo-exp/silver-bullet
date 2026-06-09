@@ -668,6 +668,7 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
 EOF
 
 FAKE_MARKETPLACE_ROOT="$HOME_DIR/.codex/.tmp/marketplaces/alo-labs-codex"
+FAKE_KW_MARKETPLACE_ROOT="$TMP/knowledge-work-plugins"
 FAKE_SB_PACKAGE_ROOT="$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet"
 FAKE_SB_SKILLS_SOURCE="$FAKE_MARKETPLACE_ROOT/skill-source"
 FAKE_STALE_MARKETPLACE_SKILLS="$FAKE_MARKETPLACE_ROOT/skills"
@@ -707,6 +708,9 @@ make_async_hooks_fixture "$REPO_ROOT/hooks/hooks.json" "$FAKE_HOOKS_FIXTURE"
 mkdir -p \
   "$FAKE_SB_PACKAGE_ROOT/.codex-plugin" \
   "$FAKE_MARKETPLACE_ROOT/hooks" \
+  "$FAKE_KW_MARKETPLACE_ROOT/engineering/skills/documentation" \
+  "$FAKE_KW_MARKETPLACE_ROOT/design/skills/design-system" \
+  "$FAKE_KW_MARKETPLACE_ROOT/product-management/skills/write-spec" \
   "$FAKE_STALE_MARKETPLACE_SKILLS/silver-feature" \
   "$FAKE_SB_SKILLS_SOURCE/silver-init" \
   "$FAKE_SB_SKILLS_SOURCE/silver-ensure-docs" \
@@ -803,6 +807,21 @@ cat > "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL" <<'EOF'
 ---
 name: "silver:feature"
 title: "Silver Bullet: Silver: Feature"
+---
+EOF
+cat > "$FAKE_KW_MARKETPLACE_ROOT/engineering/skills/documentation/SKILL.md" <<'EOF'
+---
+name: documentation
+---
+EOF
+cat > "$FAKE_KW_MARKETPLACE_ROOT/design/skills/design-system/SKILL.md" <<'EOF'
+---
+name: design-system
+---
+EOF
+cat > "$FAKE_KW_MARKETPLACE_ROOT/product-management/skills/write-spec/SKILL.md" <<'EOF'
+---
+name: write-spec
 ---
 EOF
 cp "$FAKE_HOOKS_FIXTURE" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
@@ -970,6 +989,7 @@ cd "$REPO_ROOT"
 PATH="$BIN_DIR:$PATH" \
 HOME="$HOME_DIR" \
 GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
+CODEX_KW_MARKETPLACE_SOURCE="$FAKE_KW_MARKETPLACE_ROOT" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
 FAKE_LEGACY_CACHE_ROOT="$FAKE_CACHE_ROOT"
 FAKE_CACHE_ROOT="$FAKE_SB_INSTALL_ALIAS"
@@ -1000,6 +1020,8 @@ assert_not_contains "Silver Bullet plugin manifest does not advertise duplicate 
 assert_command_succeeds "Silver Bullet cache alias created" test -L "$FAKE_SB_INSTALL_ALIAS"
 assert_file_absent "Silver Bullet cache alias does not expose plugin picker skills surface" "$FAKE_SB_INSTALL_ALIAS/skills"
 assert_file_exists "Silver Bullet cache alias exposes internal skill source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" silver-feature)"
+assert_file_exists "Silver Bullet cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" modularity)"
+assert_file_exists "Silver Bullet cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" testability)"
 assert_no_packaged_skill_md "Silver Bullet cache alias exposes no picker-discoverable SKILL.md files" "$FAKE_SB_INSTALL_ALIAS"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/silver/SKILL.md"
@@ -1011,8 +1033,18 @@ assert_contains "Codex native SB mirror preserves Silver route name" "name: \"si
 assert_file_exists "Codex native SB mirror exposes progressive review loop helper" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
 assert_contains "Codex native progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
-assert_file_absent "Codex native SB mirror does not expose verify-tests helper" "$HOME_DIR/.codex/skills/verify-tests"
+assert_file_exists "Codex native SB mirror exposes verify-tests gate" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
+assert_file_exists "Codex native SB mirror marks verify-tests gate as managed" "$HOME_DIR/.codex/skills/verify-tests/.silver-bullet-managed"
+assert_contains "Codex native verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes security gate" "$HOME_DIR/.codex/skills/security/SKILL.md"
+assert_file_exists "Codex native SB mirror marks security gate as managed" "$HOME_DIR/.codex/skills/security/.silver-bullet-managed"
+assert_contains "Codex native security gate keeps Silver picker prefix" "title: \"Silver: Security\"" "$HOME_DIR/.codex/skills/security/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes DevOps quality gate" "$HOME_DIR/.codex/skills/devops-quality-gates/SKILL.md"
+assert_file_exists "Codex native SB mirror marks DevOps quality gate as managed" "$HOME_DIR/.codex/skills/devops-quality-gates/.silver-bullet-managed"
+assert_contains "Codex native DevOps quality gate keeps Silver picker prefix" "title: \"Silver: DevOps Quality Gates\"" "$HOME_DIR/.codex/skills/devops-quality-gates/SKILL.md"
 assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
+assert_file_absent "Codex native SB mirror excludes hidden modularity dimension helper" "$HOME_DIR/.codex/skills/modularity/SKILL.md"
+assert_file_absent "Codex native SB mirror excludes hidden testability dimension helper" "$HOME_DIR/.codex/skills/testability/SKILL.md"
 assert_file_absent "Codex native SB mirror prunes stale managed writing-plans skill" "$HOME_DIR/.codex/skills/writing-plans"
 assert_file_exists "Codex native SB mirror preserves unrelated native skill" "$HOME_DIR/.codex/skills/unrelated-native/SKILL.md"
 assert_file_absent "stale SB local install root removed" "$FAKE_SB_STALE_ROOT"
@@ -1270,13 +1302,13 @@ assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS
 assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_absent "Engineering helper skill is not synthetically hydrated from retired runtime files" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
+assert_file_exists "Engineering helper skill hydrated from knowledge-work marketplace source" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
 assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_absent "Design helper skill is not synthetically hydrated from retired runtime files" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
+assert_file_exists "Design helper skill hydrated from knowledge-work marketplace source" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
 assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_absent "Product-management helper skill is not synthetically hydrated from retired runtime files" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
+assert_file_exists "Product-management helper skill hydrated from knowledge-work marketplace source" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Requested-skill recorder not merged into native Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
@@ -1434,11 +1466,20 @@ assert_command_succeeds "public-release cache alias created" test -L "$PUBLIC_ST
 assert_file_absent "public-release cache alias does not expose plugin picker skills surface" "$PUBLIC_STALE_ALIAS/skills"
 assert_file_exists "public-release cache alias exposes internal feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" silver-feature)"
 assert_file_exists "public-release cache alias exposes internal progressive review loop skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" progressive-review-loop)"
+assert_file_exists "public-release cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" modularity)"
+assert_file_exists "public-release cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" testability)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
 assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes progressive review loop helper" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
 assert_contains "public-release progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
-assert_file_absent "public-release native SB mirror does not expose verify-tests helper" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests"
+assert_file_exists "public-release native SB mirror exposes verify-tests gate" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
+assert_contains "public-release verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes security gate" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"
+assert_contains "public-release security gate keeps Silver picker prefix" "title: \"Silver: Security\"" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes DevOps quality gate" "$PUBLIC_STALE_HOME/.codex/skills/devops-quality-gates/SKILL.md"
+assert_contains "public-release DevOps quality gate keeps Silver picker prefix" "title: \"Silver: DevOps Quality Gates\"" "$PUBLIC_STALE_HOME/.codex/skills/devops-quality-gates/SKILL.md"
+assert_file_absent "public-release native SB mirror excludes hidden modularity dimension helper" "$PUBLIC_STALE_HOME/.codex/skills/modularity/SKILL.md"
+assert_file_absent "public-release native SB mirror excludes hidden testability dimension helper" "$PUBLIC_STALE_HOME/.codex/skills/testability/SKILL.md"
 assert_file_absent "public-release native SB mirror excludes stale delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/stale-delegate"
 assert_file_absent "public-release native SB mirror prunes stale managed writing-plans skill" "$PUBLIC_STALE_HOME/.codex/skills/writing-plans"
 assert_file_absent "public-release ignores stale marketplace delegate skill" "$PUBLIC_STALE_CACHE/skills/stale-delegate/SKILL.md"
