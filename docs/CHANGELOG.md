@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-10 — one-index-canonical-flows
+**What**: Renumbered SB's canonical software engineering flows from the former zero-based catalog to `FLOW 1`-`FLOW 18` across the website, flow contracts, skill instructions, packaged sources, templates, hooks, and tests.
+**Commits**: —
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.16 (medium complexity — source-wide numbering migration and consistency tests)
+**KNOWLEDGE.md**: no changes
+
 ## 2026-06-10 — website-content-consistency-scan
 **What**: Scanned the public website content for stale or nonaligned claims and corrected comparison/SB-vs-GSD/workflow wording for host-neutral instruction files, monthly knowledge docs, helper-plugin orchestration, current release-gate scope, and the 18 canonical software engineering flows.
 **Commits**: —

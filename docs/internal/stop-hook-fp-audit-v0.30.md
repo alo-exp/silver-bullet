@@ -32,7 +32,7 @@ This audit catalogs every code path in `hooks/stop-check.sh` and `hooks/completi
 | 1 | Two-tier intermediate (`git commit`, `git push`) | Missing `required_planning` skills | Invoke the planning skill | ✅ |
 | 2 | Two-tier final delivery (`gh pr create`, `gh release create`, `gh pr merge`, `deploy*`) | Missing `required_deploy` skills | Invoke each missing skill | ✅ |
 | 3 | Strict SB_WORKFLOW_ID gate | `.planning/workflows/<id>.md` exists, command is delivery, but `SB_WORKFLOW_ID` unset OR malformed OR doesn't match a file OR matched file's Flow Log isn't 100% complete | Set/correct `SB_WORKFLOW_ID`; mark missing flows complete via `bash scripts/workflows.sh complete-flow <id> <flow>`; or remove stale workflow file via `complete <id>` | ✅ |
-| 4 | Pre-v0.30.0: `count_complete_flow_rows` only matched `complete` | Workflows with legitimately-skipped flows (e.g. FLOW 8 UI QUALITY for CLI tools) blocked release | None — loop indefinitely | ✅ **Fixed in v0.30.0 #86** — `(complete\|skipped)` now counted as terminal |
+| 4 | Pre-v0.30.0: `count_complete_flow_rows` only matched `complete` | Workflows with legitimately-skipped flows (e.g. FLOW 9 UI QUALITY for CLI tools) blocked release | None — loop indefinitely | ✅ **Fixed in v0.30.0 #86** — `(complete\|skipped)` now counted as terminal |
 
 ## SessionStart — destructive-mutation paths
 

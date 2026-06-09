@@ -1242,7 +1242,7 @@ teardown
 
 echo "--- WF-PASS2-I (#86): mixed complete+skipped workflow allows release ---"
 # Issue #86: 'skipped' is a valid terminal state for non-applicable flows
-# (e.g. FLOW 8 UI QUALITY for a CLI-only tool). Previously the count regex
+# (e.g. FLOW 9 UI QUALITY for a CLI-only tool). Previously the count regex
 # matched only 'complete', so skipped rows were treated as incomplete and
 # blocked release indefinitely.
 setup

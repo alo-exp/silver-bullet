@@ -127,7 +127,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="ui-paths">UI-Specific Path Composition</h2>
 
-      <h3>FLOW 6: DESIGN CONTRACT</h3>
+      <h3>FLOW 7: DESIGN CONTRACT</h3>
       <p><strong>Trigger:</strong> Phase involves UI — detected via intent keywords, UI file types in scope, or DESIGN.md existence.</p>
       <p><strong>Steps:</strong></p>
       <ul>
@@ -138,8 +138,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       </ul>
       <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan (FLOW 7) is built on top of this contract — implementation must match the spec.</p>
 
-      <h3>FLOW 8: UI QUALITY</h3>
-      <p><strong>Trigger:</strong> FLOW 6 was in the composition, OR SUMMARY.md references UI file types after execution.</p>
+      <h3>FLOW 9: UI QUALITY</h3>
+      <p><strong>Trigger:</strong> FLOW 7 was in the composition, OR SUMMARY.md references UI file types after execution.</p>
       <p><strong>Steps:</strong></p>
       <ul>
         <li><code>design:design-critique</code> — design quality review</li>
@@ -149,7 +149,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>gsd:execute-phase --gaps-only</code> for targeted fixes.</p>
 
       <h3>Full composition for UI work</h3>
-      <p>A typical <code>silver:ui</code> composition: FLOW 0 → FLOW 1 → FLOW 2 (if fuzzy) → FLOW 3 → FLOW 4 → FLOW 5 → <strong>FLOW 6 (DESIGN CONTRACT)</strong> → FLOW 7 → <strong>FLOW 8 (UI QUALITY)</strong> → FLOW 9 → FLOW 10 → FLOW 11 → FLOW 12 → FLOW 13 → FLOW 16.</p>
+      <p>A typical <code>silver:ui</code> composition: FLOW 1 → FLOW 2 → FLOW 3 (if fuzzy) → FLOW 4 → FLOW 5 → FLOW 6 → <strong>FLOW 7 (DESIGN CONTRACT)</strong> → FLOW 8 → <strong>FLOW 9 (UI QUALITY)</strong> → FLOW 10 → FLOW 11 → FLOW 12 → FLOW 13 → FLOW 14 → FLOW 17.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>

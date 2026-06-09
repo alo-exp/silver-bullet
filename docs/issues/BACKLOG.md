@@ -11,7 +11,7 @@ Items tracked by Silver Bullet. IDs are sequential (SB-B-N). Do not renumber.
 **Source:** session
 **Status:** resolved in Phase 92
 
-FLOW summary table in silver-bullet.md and silver-bullet.md.base has abbreviated/inconsistent skill names vs composable-flows-contracts.md — e.g. FLOW 3 says "silver:brainstorm, product-brainstorming" but contract specifies "superpowers:brainstorming (Always)"; FLOW 6 missing namespace prefixes (design-system vs design:design-system); FLOW 5 missing skills (engineering:testing-strategy, gsd-analyze-dependencies). Pre-existing documentation drift; not blocking but should be reconciled in a future polish pass.
+Historical note: the FLOW summary table in silver-bullet.md and silver-bullet.md.base previously had abbreviated/inconsistent skill names versus composable-flows-contracts.md. This was resolved in Phase 92; the backlog entry is retained only as an audit trail.
 
 ---
 

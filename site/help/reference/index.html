@@ -537,7 +537,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>NICE-TO-HAVE</strong> — improvement worth making if time allows; does not block</li>
         <li><strong>DISMISS</strong> — finding is not applicable, already addressed, or out of scope</li>
       </ul>
-      <p><strong>When it runs:</strong> Inside <strong>FLOW 9 (REVIEW)</strong> after each reviewer pass. Also runs in FLOW 4 (SPECIFY), FLOW 5 (PLAN), and FLOW 11 (VERIFY) after artifact reviewers complete. Produces a triage report that the orchestrator uses to decide whether exit condition is met.</p>
+      <p><strong>When it runs:</strong> Inside <strong>FLOW 10 (REVIEW)</strong> after each reviewer pass. Also runs in FLOW 5 (SPECIFY), FLOW 6 (PLAN), and FLOW 12 (VERIFY) after artifact reviewers complete. Produces a triage report that the orchestrator uses to decide whether exit condition is met.</p>
       <p><strong>Review cycle pattern:</strong> Artifact → reviewer → artifact-review-assessor → fix → 2-pass. Two consecutive clean passes (no MUST-FIX findings) satisfy the exit condition.</p>
 
       <div class="divider"></div>
@@ -548,12 +548,12 @@ footer a:hover{color:var(--accent-light)}
       <ul>
         <li><code>path_log</code> — ordered list of paths completed with timestamps and exit conditions met</li>
         <li><code>phase_iterations</code> — how many times the per-phase loop (PLAN → EXECUTE → REVIEW → VERIFY) has run</li>
-        <li><code>dynamic_insertions</code> — paths inserted mid-composition (e.g., FLOW 14 DEBUG on failure, FLOW 6 DESIGN CONTRACT on UI detection)</li>
+        <li><code>dynamic_insertions</code> — paths inserted mid-composition (e.g., FLOW 15 DEBUG on failure, FLOW 7 DESIGN CONTRACT on UI detection)</li>
         <li><code>autonomous_decisions</code> — decisions the orchestrator made without user input (logged for transparency)</li>
         <li><code>deferred_improvements</code> — NICE-TO-HAVE findings from assessor that were deferred</li>
         <li><code>next_path</code> — the path scheduled to run next</li>
       </ul>
-      <p><strong>Where created:</strong> <strong>FLOW 0 (BOOTSTRAP)</strong> on first run, or via <code>silver:migrate</code> when upgrading from pre-composable-flows versions. Updated by the supervision loop after each path completes.</p>
+      <p><strong>Where created:</strong> <strong>FLOW 1 (BOOTSTRAP)</strong> on first run, or via <code>silver:migrate</code> when upgrading from pre-composable-flows versions. Updated by the supervision loop after each path completes.</p>
 
       <div class="divider"></div>
 
@@ -569,7 +569,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>GSD Impact</strong> — which GSD state fields are read/written</li>
         <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
       </ul>
-      <p>The 18 flows are: FLOW 0 BOOTSTRAP · FLOW 1 ORIENT · FLOW 2 CLARIFY · FLOW 3 DECIDE · FLOW 4 SPECIFY · FLOW 5 PLAN · FLOW 6 DESIGN CONTRACT · FLOW 7 EXECUTE · FLOW 8 UI QUALITY · FLOW 9 REVIEW · FLOW 10 SECURE · FLOW 11 VERIFY · FLOW 12 QUALITY GATE · FLOW 13 SHIP · FLOW 14 DEBUG · FLOW 15 DESIGN HANDOFF · FLOW 16 DOCUMENT · FLOW 17 RELEASE.</p>
+      <p>The 18 flows are: FLOW 1 BOOTSTRAP · FLOW 2 ORIENT · FLOW 3 CLARIFY · FLOW 4 DECIDE · FLOW 5 SPECIFY · FLOW 6 PLAN · FLOW 7 DESIGN CONTRACT · FLOW 8 EXECUTE · FLOW 9 UI QUALITY · FLOW 10 REVIEW · FLOW 11 SECURE · FLOW 12 VERIFY · FLOW 13 QUALITY GATE · FLOW 14 SHIP · FLOW 15 DEBUG · FLOW 16 DESIGN HANDOFF · FLOW 17 DOCUMENT · FLOW 18 RELEASE.</p>
 
       <div class="divider"></div>
 

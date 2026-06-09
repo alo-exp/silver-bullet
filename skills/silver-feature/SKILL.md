@@ -66,10 +66,10 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 4 (SPECIFY) |
-| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 5 (PLAN) |
-| `.planning/VERIFICATION.md` exists and passing | Verification already done | Skip FLOW 11 (VERIFY) |
-| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) |
+| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 5 (SPECIFY) |
+| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 6 (PLAN) |
+| `.planning/VERIFICATION.md` exists and passing | Verification already done | Skip FLOW 12 (VERIFY) |
+| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) |
 | `STATE.md` current phase and completion status | Phase position | Set loop start/end |
 
 ```bash
@@ -77,7 +77,7 @@ Check the following artifacts and set skip/include flags:
 grep "^current_phase\|^current_plan" .planning/STATE.md 2>/dev/null
 
 # Check for existing SPEC.md
-[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 4" || echo "No SPEC — include FLOW 4"
+[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 5" || echo "No SPEC — include FLOW 5"
 
 # Check ROADMAP.md for remaining phases in milestone
 grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
@@ -85,9 +85,9 @@ grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 
 ### 2. Build Flow Chain
 
-Construct the proposed flow chain from the 18-flow catalog (FLOW 0-17), including only relevant flows based on the context scan. Standard full-feature chain:
+Construct the proposed flow chain from the 18-flow catalog (FLOW 1-18), including only relevant flows based on the context scan. Standard full-feature chain:
 
-FLOW 0 (BOOTSTRAP) → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) [if research/architecture choice needed] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [include if UI] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [include if UI] → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP)
+FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if research/architecture choice needed] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [include if UI] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [include if UI] → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
 
 ### 3. Display Proposal
 
@@ -198,16 +198,16 @@ For each remaining phase in the current milestone:
 
 ```
 FOR each phase in remaining_phases:
-  EXECUTE FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
+  EXECUTE FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
   INSERT optional flows per composition proposal:
-    - FLOW 6 (DESIGN CONTRACT) before FLOW 7 if UI discovered
-    - FLOW 8 (UI QUALITY) after FLOW 7 if UI in scope
-    - Internal TDD gate within FLOW 7 for behavior-changing implementation plans
-    - FLOW 14 (DEBUG) dynamically on execution, CI, test, or verification failure
+    - FLOW 7 (DESIGN CONTRACT) before FLOW 8 if UI discovered
+    - FLOW 9 (UI QUALITY) after FLOW 8 if UI in scope
+    - Internal TDD gate within FLOW 8 for behavior-changing implementation plans
+    - FLOW 15 (DEBUG) dynamically on execution, CI, test, or verification failure
   TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
-    GSD's FLOW 13 (SHIP) handles this as part of phase completion.
+    GSD's FLOW 14 (SHIP) handles this as part of phase completion.
     Do NOT use the Edit tool directly — planning-file-guard.sh will block it.
-    If FLOW 13 did not tick the checkbox, use the override bypass:
+    If FLOW 14 did not tick the checkbox, use the override bypass:
       touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override
       # Edit .planning/ROADMAP.md: change - [ ] **Phase {N}: ... to - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
       rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override

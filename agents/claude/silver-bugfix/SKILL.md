@@ -38,21 +38,21 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip FLOW 0 (BOOTSTRAP) |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 1 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | GSD state present | Skip FLOW 1 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
+[ -d ".planning" ] && echo "SKIP FLOW 1 — .planning/ exists" || echo "Include FLOW 1"
 ```
 
 ### 2. Build Flow Chain
 
 Construct the proposed flow chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
-FLOW 1 (ORIENT) → FLOW 14 (DEBUG) [always included — this is a bugfix] → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE) → FLOW 13 (SHIP)
+FLOW 2 (ORIENT) → FLOW 15 (DEBUG) [always included — this is a bugfix] → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
 
-Note: FLOW 14 (DEBUG) is always included for any bugfix engagement. FLOW 0 (BOOTSTRAP) is skipped when `.planning/` already exists.
+Note: FLOW 15 (DEBUG) is always included for any bugfix engagement. FLOW 1 (BOOTSTRAP) is skipped when `.planning/` already exists.
 
 ### 3. Display Proposal
 
