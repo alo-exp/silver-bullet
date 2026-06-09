@@ -17,13 +17,28 @@ The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/silver-quality-gates/SKILL.md`, so the plugin root is two directories up.
 
-**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a Codex native mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. Dimension helpers are hidden implementation dependencies, so their packaged files may be named `SILVER_SOURCE` instead of `SKILL.md`.
+
+If this skill is running from a Codex native mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
 
 ```bash
-DIMENSION_SKILLS_ROOT="$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source"
+for candidate in \
+  "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source" \
+  "$(find "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 2 -maxdepth 2 -type d -path '*/skill-source' 2>/dev/null | sort -V | tail -n 1)"; do
+  if [[ -n "$candidate" && -f "$candidate/modularity/SILVER_SOURCE" ]]; then
+    DIMENSION_SKILLS_ROOT="$candidate"
+    break
+  fi
+done
 ```
 
 Do not require dimension helper skills to appear in the Codex skill picker. They are implementation dependencies of `silver:quality-gates`, not user-facing routes.
+
+If any required dimension source is unavailable, first repair the missing dependency from its marketplace source before any fallback:
+
+1. Reinstall or update Silver Bullet from the active host marketplace source (`/plugin install alo-exp/silver-bullet` or the host-specific marketplace equivalent; Codex package key: `silver-bullet@alo-labs-codex`).
+2. Re-run the dimension source lookup.
+3. Only if installation/repair fails or the user explicitly declines, stop or mark the quality-gates run degraded. Do not silently replace missing dimension skills with ad hoc reasoning.
 
 ---
 
@@ -53,17 +68,17 @@ Use the disambiguation table to determine mode:
 
 ## Step 1: Load quality dimension skills
 
-Use the active runtime file-reading mechanism to read each of the following files:
+Use the active runtime file-reading mechanism to read each of the following files. For every dimension path, read the first file that exists in this order: `SILVER_SOURCE`, `SILVER_SOURCE.md`, `SILVER_SKILL.md`, `SKILL.md`.
 
-1. `${DIMENSION_SKILLS_ROOT}/modularity/SKILL.md`
-2. `${DIMENSION_SKILLS_ROOT}/reusability/SKILL.md`
-3. `${DIMENSION_SKILLS_ROOT}/scalability/SKILL.md`
-4. `${DIMENSION_SKILLS_ROOT}/security/SKILL.md`
-5. `${DIMENSION_SKILLS_ROOT}/reliability/SKILL.md`
-6. `${DIMENSION_SKILLS_ROOT}/usability/SKILL.md`
-7. `${DIMENSION_SKILLS_ROOT}/testability/SKILL.md`
-8. `${DIMENSION_SKILLS_ROOT}/extensibility/SKILL.md`
-9. `${DIMENSION_SKILLS_ROOT}/ai-llm-safety/SKILL.md` only when the phase includes AI/LLM behavior
+1. `${DIMENSION_SKILLS_ROOT}/modularity/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+2. `${DIMENSION_SKILLS_ROOT}/reusability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+3. `${DIMENSION_SKILLS_ROOT}/scalability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+4. `${DIMENSION_SKILLS_ROOT}/security/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+5. `${DIMENSION_SKILLS_ROOT}/reliability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+6. `${DIMENSION_SKILLS_ROOT}/usability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+7. `${DIMENSION_SKILLS_ROOT}/testability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+8. `${DIMENSION_SKILLS_ROOT}/extensibility/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
+9. `${DIMENSION_SKILLS_ROOT}/ai-llm-safety/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}` only when the phase includes AI/LLM behavior
 
 ---
 
