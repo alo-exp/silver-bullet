@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-10 — website-content-consistency-scan
+**What**: Scanned the public website content for stale or nonaligned claims and corrected comparison/SB-vs-GSD/workflow wording for host-neutral instruction files, monthly knowledge docs, helper-plugin orchestration, current release-gate scope, and the 18 canonical software engineering flows.
+**Commits**: —
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.08 (low complexity — targeted static-site consistency scan and verification)
+**KNOWLEDGE.md**: no changes
+
 ## 2026-06-09 — website-help-center-currentness-audit
 **What**: Audited the public website and Help Center against the current v0.37.22 implementation, removed stale research, release, session-startup, enforcement-count, and workflow-step claims, and aligned workflow, reference, and search content with current skill contracts.
 **Commits**: —
