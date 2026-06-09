@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="../../../favicon.png">
-<link rel="shortcut icon" href="../../../favicon.ico">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:feature — Feature Development Workflow — Silver Bullet Help</title>
 <meta name="description" content="Full SB-orchestrated feature development workflow: orientation → clarify when needed → quality gates → GSD plan/execute/verify → review and ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -86,7 +86,7 @@ footer a:hover{color:var(--accent-light)}
 <nav>
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
-      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <a href="../../" class="nav-logo">Silver Bullet</a>
       <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Feature</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
@@ -229,9 +229,9 @@ footer a:hover{color:var(--accent-light)}
 
       <h3>Step 1c — Optional research review (conditional)</h3>
       <p>Offered automatically when the change is architecturally significant (choosing between 2+ architectures, selecting a tech stack from scratch, domain is novel, change affects public API or data model). SB asks:</p>
-      <div class="code-block">This appears to be an architecturally significant change. Would you like the configured research/review path to run before locking the spec?
+      <div class="code-block">This appears to be an architecturally significant change. Would you like the optional research/review path to run before locking the spec?
 
-A. Yes — run the configured multi-AI/research review path
+A. Yes — run the optional multi-AI/research review path
 B. No — proceed with spec as-is</div>
       <p><strong>Note:</strong> this step informs the spec PRE-implementation. The optional cross-AI review inside Step 9 reviews completed code POST-execution. Both steps are independent.</p>
 
@@ -240,6 +240,9 @@ B. No — proceed with spec as-is</div>
 
       <h3>Step 2.5 — Writing plans</h3>
       <p>Invoke the local <code>/writing-plans</code> helper only when SB needs a pre-GSD plan-shaping aid for complex scope. Otherwise, keep implementation planning inside <code>gsd:plan-phase</code>.</p>
+
+      <h3>Step 2.7 — Pre-build validation</h3>
+      <p>When a SPEC/PLAN coverage check is needed before implementation, invoke <code>silver:validate</code>. BLOCK findings stop the workflow before quality gates or planning continue; WARN findings must be tracked explicitly.</p>
 
       <h3>Step 3 — Pre-plan quality gates (8 core dimensions + conditional gates)</h3>
       <p>Invoke <code>/silver:quality-gates</code>. All applicable dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
@@ -263,13 +266,28 @@ B. No — proceed with spec as-is</div>
       <p>Only if gsd:verify-work surfaces coverage gaps: invoke <code>gsd:add-tests</code> to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>. The review-framing helpers run only because this SB review boundary selects them.</p>
+      <p>Run in order: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for architecture-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>. The review-framing helpers run only because this SB review boundary selects them.</p>
 
-      <h3>Step 10 — Secure phase</h3>
-      <p>Invoke <code>gsd:secure-phase</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase. <strong>Non-skippable gate — cannot be bypassed via §10.</strong></p>
+      <h3>Step 9e — Backlog capture from review</h3>
+      <p>Capture accepted-but-deferred review findings with <code>/silver:add</code> so they are tracked instead of disappearing after review completion.</p>
 
-      <h3>Steps 11–13 — Validate and pre-ship quality gates</h3>
-      <p>Invoke <code>gsd:validate-phase</code> (Nyquist validation gap filling) → <code>/silver:quality-gates</code> again (8 core dimensions plus conditional gates). Pre-ship quality gates are <strong>non-skippable</strong>.</p>
+      <h3>Step 10 — Security review</h3>
+      <p>Invoke <code>security</code>. This is the independent security review gate and is non-skippable regardless of §10 preferences.</p>
+
+      <h3>Step 11 — Secure phase</h3>
+      <p>Invoke <code>gsd:secure-phase</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase.</p>
+
+      <h3>Step 12 — Validate phase</h3>
+      <p>Invoke <code>gsd:validate-phase</code> for Nyquist validation gap filling.</p>
+
+      <h3>Step 12b — Tech debt review</h3>
+      <p>Invoke <code>tech-debt</code> when available. Any shortcuts or deferred refactors that cannot be fixed immediately must be captured through <code>/silver:add</code>.</p>
+
+      <h3>Step 13 — Pre-ship quality gates</h3>
+      <p>Invoke <code>/silver:quality-gates</code> again for the full 8-core-dimension sweep plus conditional AI/LLM and DevOps gates. Pre-ship quality gates are <strong>non-skippable</strong>.</p>
+
+      <h3>Step 13b — Doc-scheme compliance (conditional)</h3>
+      <p>If <code>docs/doc-scheme.md</code> exists, verify documentation freshness before PR/ship: update the changelog, current-month knowledge and lessons files, any affected durable docs, and <code>docs/task-doc-checklist.json</code>. If the scheme is missing or incomplete, recover it with <code>/silver:ensure-docs --recover-scheme</code> before proceeding.</p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
       <p>Invoke <code>/finishing-a-development-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
@@ -339,7 +357,7 @@ B. No — proceed with spec as-is</div>
       <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
       <div class="footer-links">
         <a href="../../">Help Home</a>
-        <a href="../../../">Home</a>
+        <a href="../../">Home</a>
         <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
         <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
       </div>

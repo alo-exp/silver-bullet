@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="../../../favicon.png">
-<link rel="shortcut icon" href="../../../favicon.ico">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:research — Research &amp; Tech Decision Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated research workflow: clarify question → configured research path → decision artifact → hand off to feature, UI, DevOps, or GSD.">
+<meta name="description" content="SB-orchestrated research workflow: clarify question → direct evidence-based research by default → optional multi-AI only when explicitly requested → decision artifact → hand off to feature, UI, DevOps, or GSD.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -79,7 +79,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 <nav>
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
-      <a href="../../../" class="nav-logo">Silver Bullet</a>
+      <a href="../../" class="nav-logo">Silver Bullet</a>
       <span class="nav-breadcrumb"><span class="sep">/</span><a href="../../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Research</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
@@ -95,7 +95,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
   <div class="container">
     <div class="breadcrumb-nav"><a href="../../">Help Center</a><span>/</span><a href="./">Workflows</a><span>/</span><span>/silver:research</span></div>
     <h1>/silver:research</h1>
-    <p>SB-orchestrated research workflow for technology decisions, architecture spikes, and comparative analysis — clarify question, run configured research, synthesize findings, hand off.</p>
+    <p>SB-orchestrated research workflow for technology decisions, architecture spikes, and comparative analysis — clarify question, run direct evidence-based research, optionally add multi-AI only when explicitly requested, synthesize findings, hand off.</p>
   </div>
 </div>
 
@@ -107,7 +107,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
         <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#research-tool-auto-offer">Research tool auto-offer</a></li>
+        <li><a href="#research-tool-auto-offer">Optional multi-AI</a></li>
         <li><a href="#workflow-steps">Workflow steps</a></li>
         <li><a href="#research-paths">Research paths</a></li>
         <li><a href="#handoff">Handoff to implementation</a></li>
@@ -122,7 +122,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>.planning/research/</code> and referenced by the receiving workflow.</p>
-      <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, invokes the configured research provider when available, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
+      <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, runs direct evidence-based research in the current host session by default, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
       <p><code>silver:research</code> uses <strong>composable flows architecture</strong> — it composes only the flows needed for pre-implementation discovery. Typical path: <strong>FLOW 2 (CLARIFY)</strong> → <strong>FLOW 3 (DECIDE)</strong> → <strong>FLOW 4 (SPECIFY)</strong> when the research should become a spec. After research completes, it can hand off to <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, or <code>gsd:do</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="callout callout-info">
@@ -145,14 +145,16 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <div class="divider"></div>
 
-      <h2 id="research-tool-auto-offer">When Research Tools Are Auto-Offered</h2>
-      <p>Silver Bullet proactively offers deeper research or multi-perspective review when:</p>
+      <h2 id="research-tool-auto-offer">When Optional Multi-AI Is Used</h2>
+      <p><code>silver:research</code> does not auto-run MultAI. The default path is direct research using repository context, local artifacts, official docs, primary sources, and concrete runtime evidence. MultAI is optional and is used only when you explicitly ask for multi-AI, second-opinion, or cross-model perspectives in the current task.</p>
+      <p>Consider explicitly requesting optional multi-AI perspectives when:</p>
       <ul>
         <li>Choosing between 2 or more fundamentally different architectures</li>
         <li>Selecting a technology stack from scratch (no prior art in <code>.planning/</code>)</li>
         <li>Domain is novel — no prior intel in <code>.planning/</code> and no comparable existing code</li>
         <li>Change affects a public API or data model fundamentally</li>
       </ul>
+      <p>If MultAI is requested but unavailable, SB stops and asks whether to install it or continue with direct research only. Missing MultAI is not a blocker for the default research path.</p>
 
       <div class="divider"></div>
 
@@ -177,13 +179,13 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h2 id="research-paths">Research paths</h2>
 
       <h3>Path 2a — Market/landscape research</h3>
-      <p>Run the configured landscape research provider, then consolidate the findings into a decision-ready artifact. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code>.</p>
+      <p>Run direct landscape research first, then consolidate the findings into a decision-ready artifact. If and only if you explicitly requested multi-AI perspectives, add the optional MultAI landscape/consolidation pass. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code>.</p>
 
       <h3>Path 2b — Tech selection research</h3>
-      <p>Run the configured comparison path: gather multiple perspectives, evaluate the options against weighted criteria, and consolidate a recommendation. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>
+      <p>Run direct comparison research: gather evidence for the options, evaluate them against weighted criteria, and consolidate a recommendation. If and only if you explicitly requested multi-AI perspectives, add the optional MultAI comparison/consolidation pass. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>
 
       <h3>Path 2c — Competitive/product intelligence</h3>
-      <p>Run the configured product or competitive-intelligence path to identify how other products solve the problem, what gaps exist, and what can be adapted. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
+      <p>Run direct product or competitive-intelligence research to identify how other products solve the problem, what gaps exist, and what can be adapted. If and only if you explicitly requested multi-AI perspectives, add the optional MultAI solution-research pass. Output is written to <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
 
       <h3>Step 3 — Apply research to engineering design</h3>
       <p>Invoke <code>/silver:clarify</code> again with the research artifact as primary context. Purpose: turn findings into a decision-ready handoff that the implementation workflow can absorb.</p>
@@ -205,7 +207,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:research Should we use React Query or SWR for server state management?</div>
-      <p>Silver Bullet routes to research. <code>/silver:clarify</code> clarifies the question. Path 2b is selected. The configured research path produces perspectives, comparison criteria, and a recommendation artifact. <code>/silver:clarify</code> synthesizes the artifact into a decision-ready handoff. The result can then be routed to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/gsd:do</code>.</p>
+      <p>Silver Bullet routes to research. <code>/silver:clarify</code> clarifies the question. Path 2b is selected. Direct research produces evidence, comparison criteria, and a recommendation artifact. Optional MultAI augmentation runs only if explicitly requested. <code>/silver:clarify</code> synthesizes the artifact into a decision-ready handoff. The result can then be routed to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/gsd:do</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
@@ -230,7 +232,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div style="font-size:.9rem;color:var(--text-secondary)">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
       <div class="footer-links">
         <a href="../../">Help Home</a>
-        <a href="../../../">Home</a>
+        <a href="../../">Home</a>
         <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
         <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
       </div>

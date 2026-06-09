@@ -563,7 +563,7 @@ docs/
       <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
 
       <h3>Where It Runs</h3>
-      <p>The cross-artifact reviewer fires at two points: <strong>Step 17b</strong> in <code>silver:feature</code> (after artifact review gates, before milestone audit) and <strong>Step 7</strong> in <code>silver:release</code> (after <code>/gsd:ship</code> and before <code>gsd:complete-milestone</code>).</p>
+      <p>The cross-artifact reviewer fires at two points: <strong>Step 17.0b</strong> in <code>silver:feature</code> (after UAT generation/review, before milestone audit) and <strong>Step 6</strong> in <code>silver:release</code> (before <code>gsd-ship</code>, so blocking alignment findings are resolved before ship or milestone archival).</p>
 
       <div class="divider"></div>
 

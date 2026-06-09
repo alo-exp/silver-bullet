@@ -964,7 +964,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, 29 covered runtime hooks, and a Codex package surface that exposes only native <code>/Silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/Silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1479,7 +1479,7 @@ img{max-width:100%;height:auto}
         <ul class="compare-items">
           <li><span class="ci ci-yes">✓</span> Orchestrates GSD (execution engine)</li>
           <li><span class="ci ci-yes">✓</span> Calls Superpowers helpers only when required</li>
-          <li><span class="ci ci-yes">✓</span> 6-layer technical enforcement + documentation layer</li>
+          <li><span class="ci ci-yes">✓</span> Twelve enforcement layers plus documentation governance</li>
           <li><span class="ci ci-yes">✓</span> 8 core quality dimensions plus conditional gates + hard-stop gate</li>
           <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
           <li><span class="ci ci-yes">✓</span> Composable workflow orchestration — dynamic composition per context</li>
@@ -1827,14 +1827,14 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"how should we", "compare X vs Y", "spike", "which technology"</td>
-            <td>clarify question → configured research path → decision artifact → implementation handoff or research-only stop</td>
+            <td>clarify question → direct evidence-based research → optional multi-AI only when requested → decision artifact → implementation handoff or research-only stop</td>
             <td><em style="color:var(--text-dim)">No code changes; artifact quality and handoff discipline apply</em></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td>quality gates → UAT audit → milestone audit → docs/review/fresh tests → gsd:ship → gsd:complete-milestone → /silver:create-release</td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">gsd:ship</span></td>
+            <td>quality gates → UAT audit → milestone audit → security hard gate → docs/review/fresh tests → gsd-ship → gsd:complete-milestone → /silver:create-release</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">gsd-ship</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
