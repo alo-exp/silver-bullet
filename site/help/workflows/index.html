@@ -137,7 +137,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#the-18-paths">The 18 Workflow Steps</a></li>
+        <li><a href="#the-18-paths">The 18 Canonical Software Engineering Flows</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
         <li><a href="#workflow-tracking">Workflow Tracker</a></li>
         <li><a href="#supervision-loop">Supervision Loop</a></li>
@@ -148,8 +148,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What is Composable Workflow Orchestration?</h2>
-      <p>Silver Bullet's composable workflow orchestration replaces fixed step-by-step pipelines with a catalog of 18 named workflow steps. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of steps appropriate to the work — no two compositions need be identical.</p>
-      <p>Each step is a discrete unit with a contract: prerequisites, trigger signals, steps, produced artifacts, review cycle, GSD state impact, and exit condition. Steps compose into chains. Chains execute under supervision.</p>
+      <p>Silver Bullet's composable workflow orchestration replaces fixed step-by-step pipelines with a catalog of 18 canonical software engineering flows. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of flows appropriate to the work — no two compositions need be identical.</p>
+      <p>Each flow is a discrete unit with a contract: prerequisites, trigger signals, steps, produced artifacts, review cycle, GSD state impact, and exit condition. Flows compose into chains. Chains execute under supervision.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
@@ -158,12 +158,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="the-18-paths">The 18 Workflow Steps</h2>
-      <p>Every step has a number, a name, and a one-line description. The trigger column describes what causes <code>/silver</code> to include this step in a composition.</p>
+      <h2 id="the-18-paths">The 18 Canonical Software Engineering Flows</h2>
+      <p>Every flow has a zero-indexed number, a name, and a one-line description. The catalog contains 18 flows total: <code>FLOW 0</code> through <code>FLOW 17</code>. The trigger column describes what causes <code>/silver</code> to include the flow in a composition.</p>
 
       <table class="ref-table">
         <thead>
-          <tr><th>Step</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
+          <tr><th>Flow</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -284,9 +284,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <ol>
         <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
-        <li><strong>Step selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 steps apply. Always-included steps (FLOW 7 EXECUTE, FLOW 11 VERIFY, FLOW 12 QUALITY GATE, FLOW 13 SHIP) are anchors. Context-dependent steps (FLOW 2 CLARIFY, FLOW 3 DECIDE, FLOW 6 DESIGN CONTRACT, FLOW 8 UI QUALITY, FLOW 14 DEBUG) are added based on signals.</li>
-        <li><strong>Chain ordering</strong> — Steps are ordered by their dependency graph. FLOW 0 before FLOW 1 before FLOW 5 before FLOW 7, etc. Dynamic insertions (e.g. FLOW 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
-        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which steps are included and why, before execution begins.</li>
+        <li><strong>Flow selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 flows apply. Implementation anchors such as FLOW 7 EXECUTE, FLOW 11 VERIFY, FLOW 12 QUALITY GATE, and FLOW 13 SHIP apply to delivery compositions; context-dependent flows such as FLOW 2 CLARIFY, FLOW 3 DECIDE, FLOW 6 DESIGN CONTRACT, FLOW 8 UI QUALITY, and FLOW 14 DEBUG are added based on signals.</li>
+        <li><strong>Chain ordering</strong> — Flows are ordered by their dependency graph. FLOW 0 before FLOW 1 before FLOW 5 before FLOW 7, etc. Dynamic insertions (e.g. FLOW 14 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
+        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which flows are included and why, before execution begins.</li>
       </ol>
 
       <div class="callout callout-tip">
@@ -297,36 +297,36 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="workflow-tracking">Per-instance Workflow Tracker</h2>
-      <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every step completes.</p>
+      <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every flow completes.</p>
 
       <h3>What the workflow tracker contains</h3>
       <ul>
-        <li><strong>Active step</strong> — which workflow step is currently executing</li>
-        <li><strong>Completed steps</strong> — log of steps that have exited successfully, with timestamps</li>
+        <li><strong>Active flow</strong> — which workflow flow is currently executing</li>
+        <li><strong>Completed flows</strong> — log of flows that have exited successfully, with timestamps</li>
         <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
-        <li><strong>Dynamic insertions</strong> — steps inserted at runtime (e.g. FLOW 14 DEBUG after a failure)</li>
+        <li><strong>Dynamic insertions</strong> — flows inserted at runtime (e.g. FLOW 14 DEBUG after a failure)</li>
         <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
       </ul>
 
       <h3>Why the workflow tracker matters</h3>
-      <p>The per-instance tracker gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, <code>.planning/workflows/&lt;id&gt;.md</code> allows the next session to resume from the correct point in the chain without re-running completed steps. It also provides an audit trail for post-hoc review. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
+      <p>The per-instance tracker gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, <code>.planning/workflows/&lt;id&gt;.md</code> allows the next session to resume from the correct point in the chain without re-running completed flows. It also provides an audit trail for post-hoc review. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
 
       <div class="divider"></div>
 
       <h2 id="supervision-loop">Supervision Loop</h2>
-      <p>Each step in a composition runs under a supervision loop:</p>
+      <p>Each flow in a composition runs under a supervision loop:</p>
 
       <ol>
-        <li><strong>Pre-step check</strong> — Prerequisites are verified before the step begins. If prerequisites are missing, the step is blocked and the user is notified.</li>
-        <li><strong>Step execution</strong> — The step's actions execute in order, with mandatory actions always running and as-needed actions gated on context signals.</li>
-        <li><strong>Exit verification</strong> — The step's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective step (e.g. FLOW 14 DEBUG on execution failure).</li>
-        <li><strong>Stall detection</strong> — If a step makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
-        <li><strong>Progress reporting</strong> — On every tool use, the compliance status hook shows the current step and overall chain progress.</li>
+        <li><strong>Pre-flow check</strong> — Prerequisites are verified before the flow begins. If prerequisites are missing, the flow is blocked and the user is notified.</li>
+        <li><strong>Flow execution</strong> — The flow's actions execute in order, with mandatory actions always running and as-needed actions gated on context signals.</li>
+        <li><strong>Exit verification</strong> — The flow's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective flow (e.g. FLOW 14 DEBUG on execution failure).</li>
+        <li><strong>Stall detection</strong> — If a flow makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
+        <li><strong>Progress reporting</strong> — On every tool use, the compliance status hook shows the current flow and overall chain progress.</li>
       </ol>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>FLOW 11 VERIFY is NON-SKIPPABLE.</strong> The supervision loop cannot exit the chain before FLOW 11 completes. Even if the user requests to skip it, the enforcement hooks block any <code>git commit</code> or <code>git push</code> until verification has run and passed.</div>
+        <div class="callout-body"><strong>FLOW 11 VERIFY is NON-SKIPPABLE for delivery compositions.</strong> The supervision loop cannot mark a delivery chain complete before FLOW 11 satisfies its exit condition. Intermediate commits follow SB's planning-floor rules, while final PR, deploy, and release actions require the full delivery evidence.</div>
       </div>
 
       <div class="divider"></div>
