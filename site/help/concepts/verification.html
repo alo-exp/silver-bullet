@@ -182,10 +182,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="when-it-fires">When It Fires</h2>
-      <p>Verification fires as the penultimate step of every workflow that produces code changes, immediately before the ship step:</p>
+      <p>Verification fires before final quality, review, and ship boundaries for every workflow that produces code changes:</p>
 
       <ul>
-        <li><strong>silver:feature</strong> — Step 8: gsd:verify-work (must pass before security review and ship)</li>
+        <li><strong>silver:feature</strong> — Step 8: gsd:verify-work (must pass before security review, pre-ship quality gates, and ship)</li>
         <li><strong>silver:bugfix</strong> — after TDD regression test passes, gsd:verify-work confirms full suite</li>
         <li><strong>silver:ui</strong> — Step 11: gsd:verify-work after implementation; if coverage gaps remain, gsd:add-tests fills them before ship</li>
         <li><strong>silver:devops</strong> — gsd:verify-work runs against the IaC plan acceptance criteria</li>

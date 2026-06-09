@@ -156,11 +156,11 @@ footer a:hover{color:var(--accent-light)}
     <div class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p>Section §0 of <code>silver-bullet.md</code> defines the session startup sequence. It runs at the start of a new session and after some context transitions. The sequence makes sure the active runtime has the Silver Bullet contract, relevant project context, and current workflow state before taking project action.</p>
+      <p>Section §0 of <code>silver-bullet.md</code> defines the session startup sequence. It runs at the start of a new session and after some context transitions. The sequence makes sure the active runtime has the Silver Bullet contract, relevant project context, compacted working context, and current workflow state before taking project action. SB uses the active host execution model selected by the user or host configuration; it does not switch models automatically.</p>
 
       <div class="callout callout-warn">
         <span class="callout-icon">⚠</span>
-        <div class="callout-body"><strong>Anti-skip:</strong> the runtime is violating this rule if it begins workflow work without loading the SB contract, project context, and active workflow state. Evidence: no startup context load, no active workflow check, or no session state available.</div>
+        <div class="callout-body"><strong>Anti-skip:</strong> the runtime is violating this rule if it begins workflow work without loading the SB contract, reading project context, compacting context where the host supports it, and checking active workflow state. Evidence: no startup context load, no active workflow check, or no session state available.</div>
       </div>
 
       <h2 id="step1">Step 1 — Load the SB Contract</h2>
@@ -181,7 +181,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h2 id="step3">Step 3 — Initialize Session State</h2>
       <p>The session log hook creates or reuses the current session log path under <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>. Mode, requested-skill tracking, timeout sentinels, and other hook state are made available so later enforcement checks can report concrete missing steps instead of relying on memory.</p>
-      <p>Hosts may compact context when appropriate, but compaction is not Silver Bullet's model-routing mechanism and should not be treated as a required model switch.</p>
+      <p>After reading the startup context, run the host-supported compaction step where available. Compaction preserves room for the task; it is not a model-routing mechanism and should not be treated as a required model switch.</p>
 
       <h2 id="step4">Step 4 — Check Active Workflow State</h2>
       <p>Silver Bullet checks the active workflow tracker, requested skills, required gates, phase locks, and any stall or timeout state. If a prior composition exists under <code>.planning/workflows/&lt;id&gt;.md</code>, the runtime can resume from the next required step instead of starting over.</p>

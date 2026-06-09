@@ -16,6 +16,13 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-09 — website-help-center-currentness-audit
+**What**: Audited the public website and Help Center against the current v0.37.22 implementation, removed stale research, release, session-startup, enforcement-count, and workflow-step claims, and aligned workflow, reference, and search content with current skill contracts.
+**Commits**: —
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.20 (medium complexity — full static-site audit, Help Center section pass, and targeted docs tests)
+**KNOWLEDGE.md**: updated (research multi-AI exception)
+
 ## 2026-05-19 — v0.37.0-sdlc-interception-ledger
 **What**: Extended Silver Bullet's orchestration contract for v0.37.0 with merged clarify behavior, SB-owned milestone bootstrap, a live active-intent ledger in session logs, and release-prep docs that keep the user-facing workflow aligned with the new SDLC interception model.
 **Commits**: —

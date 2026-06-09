@@ -478,7 +478,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">20</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Runs the milestone-level release workflow when the work is ready to publish: release quality gates, UAT and milestone audits, documentation checks, cross-artifact review, <code>/verify-tests</code>, <code>gsd:ship</code>, <code>gsd:complete-milestone</code>, then <code>/silver:create-release</code> as the final tag/release step.</p>
+          <p class="step-desc">Runs the milestone-level release workflow when the work is ready to publish: release quality gates, UAT and milestone audits, security hard gate, documentation checks, cross-artifact review, <code>/verify-tests</code>, <code>gsd-ship</code>, <code>gsd:complete-milestone</code>, <code>/silver:create-release</code>, then the post-release items summary.</p>
           <div class="step-output">→ Produces: completed milestone, git tag, GitHub Release, structured release notes</div>
         </div>
       </div>
