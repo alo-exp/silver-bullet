@@ -10,7 +10,7 @@
 # The default search order is intentionally broad but cheap:
 #   1. Installed Silver Bullet plugin skills (repo/plugin root or CLAUDE_PLUGIN_ROOT)
 #   2. User skill roots under the active host runtime and ~/.agents/
-#   3. Claude plugin caches for upstream dependency plugins
+#   3. Plugin caches for upstream dependency plugins
 #
 # Tests may override the search roots with SILVER_BULLET_SKILL_ROOTS as a
 # colon-separated list of root directories to search instead of the defaults.
@@ -54,9 +54,7 @@ sb_skill_is_installed() {
         shopt -s nullglob
         for candidate in \
           "$root"/*/skills/"$skill"/SKILL.md \
-          "$root"/*/*/skills/"$skill"/SKILL.md \
-          "$root"/*/forge/skills/"$skill"/SKILL.md \
-          "$root"/*/*/forge/skills/"$skill"/SKILL.md; do
+          "$root"/*/*/skills/"$skill"/SKILL.md; do
           if [[ -f "$candidate" ]]; then
             shopt -u nullglob
             return 0
@@ -67,7 +65,6 @@ sb_skill_is_installed() {
       *)
         for candidate in \
           "$root/skills/$skill/SKILL.md" \
-          "$root/forge/skills/$skill/SKILL.md" \
           "$root/$skill/SKILL.md"; do
           if [[ -f "$candidate" ]]; then
             return 0
@@ -76,7 +73,6 @@ sb_skill_is_installed() {
 
         local search_dirs=()
         [[ -d "$root/skills" ]] && search_dirs+=("$root/skills")
-        [[ -d "$root/forge/skills" ]] && search_dirs+=("$root/forge/skills")
         if [[ ${#search_dirs[@]} -gt 0 ]]; then
           local escaped_skill
           escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')

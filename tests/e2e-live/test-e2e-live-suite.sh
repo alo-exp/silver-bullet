@@ -95,7 +95,7 @@ assert_file_contains "native Codex PTY launcher archives transcript before stdou
 assert_file_contains "native Codex isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'default_codex_isolation_parent'
 assert_file_contains "Kay isolation uses stable workspace temp root" "${REPO_ROOT}/tests/live/lib/kay-codex-isolation.sh" 'default_kay_isolation_parent'
 assert_file_contains "Codex isolation mirrors the native plugin cache" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'original_codex_home}/plugins/cache'
-assert_file_contains "Codex isolation hydrates thin helper plugin skills" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'hydrate_helper_plugin'
+assert_file_contains "Codex isolation preserves thin helper plugin manifests" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'thin_manifest_only_plugins'
 assert_file_contains "Codex isolation prepends isolated SB CLI shim" "${REPO_ROOT}/tests/live/lib/codex-cli-isolation.sh" 'PATH="\$\{CODEX_HOME\}/bin:'
 assert_file_contains "dependency preflight verifies native SB CLI shim" "${SCRIPT_DIR}/helpers.sh" 'Native Codex Silver Bullet CLI shim is on PATH'
 assert_file_contains "hook transplant rewrites user hooks against the target home" "${REPO_ROOT}/tests/live/lib/codex-hook-transplant.sh" 'target_home_root'

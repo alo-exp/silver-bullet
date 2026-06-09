@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.37.22] — 2026-06-09
+
+## Bug Fixes
+
+- `fix(codex): expose progressive-review-loop as a single /Silver picker entry`
+- `fix(runtime): keep Claude progressive-review-loop escalation on Anthropic models`
+- `fix(codex): stop hydrating retired helper-runtime skill surfaces into Codex installs`
+
+## Removed
+
+- `remove: retire Forge runtime files, docs, tests, and install surfaces`
+
+## Tests
+
+- `test: verify no active Forge runtime files or references remain`
+- `test(codex): verify local installs keep one non-duplicated /Silver picker surface`
+- `test(release): rerun full suite with 2661 passed and 0 failed`
+
+---
+
 ## [0.37.21] — 2026-06-08
 
 ## Bug Fixes

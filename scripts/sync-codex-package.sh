@@ -33,7 +33,7 @@ done
 shopt -u dotglob nullglob
 
 # Codex gets the plugin-facing SB surface here. Project-instance artifacts
-# like planning, Claude packaging, Forge packaging, and repo governance live
+# like planning, Claude packaging, and repo governance live
 # outside this bundle. Third-party Codex wrappers are maintained in the shared
 # marketplace repo, not in this SB package snapshot. The packaged skills tree is
 # generated under agents/ so the repo keeps agent-specific variants while the

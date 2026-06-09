@@ -282,6 +282,9 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
 
     dest_root.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_root, dest_root, symlinks=False)
+    if agent == "claude":
+        for metadata in dest_root.glob("*/agents/openai.yaml"):
+            metadata.unlink()
     sanitize_root(dest_root, agent)
 
 
