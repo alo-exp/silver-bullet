@@ -47,23 +47,23 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip FLOW 0 (BOOTSTRAP) |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 1 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | GSD state present | Skip FLOW 1 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
+[ -d ".planning" ] && echo "SKIP FLOW 1 — .planning/ exists" || echo "Include FLOW 1"
 ```
 
-Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
+Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included in the devops workflow — infra has no user-facing interface.
 
 ### 2. Build Flow Chain
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) [if scope unclear] → FLOW 3 (DECIDE) [if IaC/tooling choice needed] → FLOW 12 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 5 (PLAN) → FLOW 7 (EXECUTE) → FLOW 9 (REVIEW) → FLOW 10 (SECURE) [always included — infra work] → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 13 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 14 (SHIP)
 
-Note: FLOW 10 (SECURE) is always included for any infrastructure engagement. FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are never included.
+Note: FLOW 11 (SECURE) is always included for any infrastructure engagement. FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included.
 
 ### 3. Display Proposal
 

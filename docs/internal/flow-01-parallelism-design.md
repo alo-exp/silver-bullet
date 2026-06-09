@@ -23,7 +23,7 @@ There is no parallelism at the FLOW layer today. The composer dispatches one ski
 
 ## What FLOW Layer Parallelism Means
 
-A "FLOW" in Silver Bullet terminology is one composable path through the workflow (e.g., FLOW 1 = DISCUSS, FLOW 2 = PLAN, FLOW 3 = EXECUTE, etc.). FLOW layer parallelism means running two or more FLOWs simultaneously within a single composer invocation, or running the same FLOW across multiple independent work items concurrently.
+A "FLOW" in Silver Bullet terminology is one composable path through the workflow (e.g., FLOW 2 = ORIENT, FLOW 6 = PLAN, FLOW 8 = EXECUTE, etc.). FLOW layer parallelism means running two or more FLOWs simultaneously within a single composer invocation, or running the same FLOW across multiple independent work items concurrently.
 
 Two forms of parallelism are relevant to the `/silver` composer:
 

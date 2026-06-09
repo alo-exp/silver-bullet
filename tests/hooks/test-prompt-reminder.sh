@@ -310,7 +310,7 @@ cat > "$TMPDIR_TEST/.planning/WORKFLOW.md" << 'WFEOF'
 ## Heartbeat
 Last-flow: 7
 ## Next Flow
-FLOW 11: VERIFY
+FLOW 12: VERIFY
 WFEOF
 out=$(run_hook)
 if printf '%s' "$out" | grep -q 'Composable path'; then

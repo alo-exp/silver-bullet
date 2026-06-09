@@ -62,25 +62,25 @@ Check the following artifacts and set skip/include flags:
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 0 (BOOTSTRAP) |
-| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 4 (SPECIFY) |
-| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 5 (PLAN) |
-| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) — this is the UI workflow |
+| `.planning/` directory exists | Project already bootstrapped | Skip FLOW 1 (BOOTSTRAP) |
+| `.planning/SPEC.md` exists | Specification already written | Skip FLOW 5 (SPECIFY) |
+| `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 6 (PLAN) |
+| UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Always include FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) — this is the UI workflow |
 
 ```bash
 # Check for existing planning artifacts
-[ -d ".planning" ] && echo "SKIP FLOW 0 — .planning/ exists" || echo "Include FLOW 0"
-[ -f ".planning/SPEC.md" ] && echo "SKIP FLOW 4 — SPEC.md exists" || echo "Include FLOW 4"
-ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 5 — PLAN.md exists" || echo "Include FLOW 5"
+[ -d ".planning" ] && echo "SKIP FLOW 1 — .planning/ exists" || echo "Include FLOW 1"
+[ -f ".planning/SPEC.md" ] && echo "SKIP FLOW 5 — SPEC.md exists" || echo "Include FLOW 5"
+ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 6 — PLAN.md exists" || echo "Include FLOW 6"
 ```
 
 ### 2. Build Flow Chain
 
 Construct the proposed flow chain for UI work. Default full chain:
 
-FLOW 0 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 1 (ORIENT) → FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 4 (SPECIFY) [skip if SPEC.md exists] → FLOW 12 (QUALITY GATE, pre-plan) → FLOW 5 (PLAN) → FLOW 6 (DESIGN CONTRACT) [always in UI workflow] → FLOW 7 (EXECUTE) → FLOW 8 (UI QUALITY) [always in UI workflow] → FLOW 9 (REVIEW) → FLOW 10 (SECURE) → FLOW 11 (VERIFY) → FLOW 12 (QUALITY GATE, pre-ship) → FLOW 13 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [always in UI workflow] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [always in UI workflow] → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
 
-Note: FLOW 6 (DESIGN CONTRACT) and FLOW 8 (UI QUALITY) are always included — this is a UI-focused workflow.
+Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are always included — this is a UI-focused workflow.
 
 ### 3. Display Proposal
 

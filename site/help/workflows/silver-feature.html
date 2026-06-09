@@ -141,21 +141,21 @@ footer a:hover{color:var(--accent-light)}
       <h3>Composition Proposal</h3>
       <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a path chain. For a typical feature request the proposed composition looks like:</p>
       <ul>
-        <li><strong>FLOW 0 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
-        <li><strong>FLOW 1 (ORIENT)</strong> — codebase and project-state orientation</li>
-        <li><strong>FLOW 2 (CLARIFY)</strong> — scope clarification when intent is fuzzy</li>
-        <li><strong>FLOW 3 (DECIDE)</strong> — clarify, architecture decision, system design</li>
-        <li><strong>FLOW 4 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
-        <li><strong>FLOW 5 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
-        <li><strong>FLOW 7 (EXECUTE)</strong> — wave-based execution with atomic commits</li>
-        <li><strong>FLOW 9 (REVIEW)</strong> — multi-layer code review sequence</li>
-        <li><strong>FLOW 10 (SECURE)</strong> — security audit, threat mitigation verification</li>
-        <li><strong>FLOW 11 (VERIFY)</strong> — goal-backward verification, UAT</li>
-        <li><strong>FLOW 12 (QUALITY GATE)</strong> — 8 core quality dimensions plus conditional gates (pre-plan and pre-ship)</li>
-        <li><strong>FLOW 13 (SHIP)</strong> — PR creation, CI green</li>
-        <li><strong>FLOW 16 (DOCUMENT)</strong> — docs update, episodic memory</li>
+        <li><strong>FLOW 1 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
+        <li><strong>FLOW 2 (ORIENT)</strong> — codebase and project-state orientation</li>
+        <li><strong>FLOW 3 (CLARIFY)</strong> — scope clarification when intent is fuzzy</li>
+        <li><strong>FLOW 4 (DECIDE)</strong> — clarify, architecture decision, system design</li>
+        <li><strong>FLOW 5 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
+        <li><strong>FLOW 6 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
+        <li><strong>FLOW 8 (EXECUTE)</strong> — wave-based execution with atomic commits</li>
+        <li><strong>FLOW 10 (REVIEW)</strong> — multi-layer code review sequence</li>
+        <li><strong>FLOW 11 (SECURE)</strong> — security audit, threat mitigation verification</li>
+        <li><strong>FLOW 12 (VERIFY)</strong> — goal-backward verification, UAT</li>
+        <li><strong>FLOW 13 (QUALITY GATE)</strong> — 8 core quality dimensions plus conditional gates (pre-plan and pre-ship)</li>
+        <li><strong>FLOW 14 (SHIP)</strong> — PR creation, CI green</li>
+        <li><strong>FLOW 17 (DOCUMENT)</strong> — docs update, episodic memory</li>
       </ul>
-      <p>If the phase involves UI work, <strong>FLOW 6 (DESIGN CONTRACT)</strong> and <strong>FLOW 8 (UI QUALITY)</strong> are inserted automatically. If execution fails, <strong>FLOW 14 (DEBUG)</strong> is inserted dynamically.</p>
+      <p>If the phase involves UI work, <strong>FLOW 7 (DESIGN CONTRACT)</strong> and <strong>FLOW 9 (UI QUALITY)</strong> are inserted automatically. If execution fails, <strong>FLOW 15 (DEBUG)</strong> is inserted dynamically.</p>
 
       <h3>Per-Phase Loop</h3>
       <p>For each phase, the orchestrator runs a tightly coupled loop: <strong>PLAN (FLOW 5) → EXECUTE (FLOW 7) → REVIEW (FLOW 9) → VERIFY (FLOW 11)</strong>. This cycle repeats per phase until VERIFY passes two consecutive clean passes.</p>
@@ -164,7 +164,7 @@ footer a:hover{color:var(--accent-light)}
       <p>After each path completes, the supervision loop runs:</p>
       <ul>
         <li>Verify exit condition met (path contract satisfied)</li>
-        <li>Evaluate whether the composition should change (dynamic insertions — e.g., add FLOW 14 if execution failed)</li>
+        <li>Evaluate whether the composition should change (dynamic insertions — e.g., add FLOW 15 if execution failed)</li>
         <li>Stall check — detect if the same path has been attempted 3+ times without progress</li>
         <li>Advance to next path in chain</li>
       </ul>

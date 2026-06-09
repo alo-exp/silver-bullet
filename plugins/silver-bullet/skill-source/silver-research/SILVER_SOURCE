@@ -50,12 +50,12 @@ Before beginning execution, read existing artifacts to determine context and pro
 
 ### 1. Context Scan
 
-Research is an exploration-focused workflow — it produces artifacts, not shipped code. No FLOW 7 (EXECUTE), FLOW 11 (VERIFY), or FLOW 13 (SHIP) are included.
+Research is an exploration-focused workflow — it produces artifacts, not shipped code. No FLOW 8 (EXECUTE), FLOW 12 (VERIFY), or FLOW 14 (SHIP) are included.
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
 | `.planning/research/` directory exists | Prior research artifacts present | Note for continuity — do not skip, always re-scope |
-| External spec artifacts provided | Structured source material | Include FLOW 4 (SPECIFY) to ingest into SPEC.md |
+| External spec artifacts provided | Structured source material | Include FLOW 5 (SPECIFY) to ingest into SPEC.md |
 
 ```bash
 # Check for existing research artifacts
@@ -66,7 +66,7 @@ ls .planning/research/ 2>/dev/null | head -5
 
 Construct the proposed flow chain for research/exploration work. Short chain — research produces artifacts only:
 
-FLOW 2 (CLARIFY) → FLOW 3 (DECIDE) → FLOW 4 (SPECIFY) [only when research should become a spec]
+FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → FLOW 5 (SPECIFY) [only when research should become a spec]
 
 No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`) or to `gsd:do` for GSD-owned lifecycle work.
 

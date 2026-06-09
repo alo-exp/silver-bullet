@@ -39,8 +39,8 @@ assert_contains "router delegates GSD lifecycle to gsd:do" "gsd:do" "$router"
 assert_contains "router protects semver via GSD" "semver, milestone, and phase management" "$router"
 
 assert_contains "contracts define atomic flow catalog" "Atomic Flow Catalog" "$contracts"
-assert_contains "contracts canonical FLOW 2 CLARIFY" "FLOW 2[[:space:]]*\\| CLARIFY" "$contracts"
-assert_contains "contracts canonical FLOW 3 DECIDE" "FLOW 3[[:space:]]*\\| DECIDE" "$contracts"
+assert_contains "contracts canonical FLOW 3 CLARIFY" "FLOW 3[[:space:]]*\\| CLARIFY" "$contracts"
+assert_contains "contracts canonical FLOW 4 DECIDE" "FLOW 4[[:space:]]*\\| DECIDE" "$contracts"
 assert_contains "contracts keep GSD semver ownership" "GSD owns the project lifecycle" "$contracts"
 assert_contains "contracts make release use GSD complete before SB release" "gsd:complete-milestone.*silver:create-release" "$contracts"
 

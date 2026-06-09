@@ -40,7 +40,7 @@ All hooks check active `.planning/workflows/<id>.md` files first, falling back t
 | `completion-audit.sh` | `SB_WORKFLOW_ID`-matched workflow file shows all required flow rows complete | `required_deploy` skill list check |
 | `compliance-status.sh` | Shows path progress (FLOW N/M) | Shows skill count only |
 | `prompt-reminder.sh` | Includes active composed workflow IDs and current position | Omits composition context |
-| `spec-floor-check.sh` | Advisory when FLOW 4 excluded from composition | Hard gate always |
+| `spec-floor-check.sh` | Advisory when FLOW 5 excluded from composition | Hard gate always |
 
 Detection: hooks check for `.planning/workflows/` existence and active `.md` files. Present = composed-workflow mode, absent = legacy mode.
 

@@ -174,7 +174,7 @@ write_workflow_md_complete() {
 
 ## Heartbeat
 
-Last-flow: FLOW 13 SHIP
+Last-flow: FLOW 14 SHIP
 Last-beat: 2026-04-15T00:00:00Z
 
 ## Next Flow
@@ -206,16 +206,16 @@ write_workflow_md_partial() {
 
 ## Heartbeat
 
-Last-flow: FLOW 5 PLAN
+Last-flow: FLOW 6 PLAN
 Last-beat: 2026-04-15T00:00:00Z
 
 ## Next Flow
 
-FLOW 7 EXECUTE
+FLOW 8 EXECUTE
 WFEOF
 }
 
-# Write a WORKFLOW.md with FLOW 4 excluded (for spec-floor advisory tests)
+# Write a WORKFLOW.md with FLOW 5 excluded (for spec-floor advisory tests)
 write_workflow_md_no_path4() {
   local planning_dir="${TMPDIR_TEST}/.planning"
   mkdir -p "$planning_dir"
@@ -236,7 +236,7 @@ write_workflow_md_no_path4() {
 
 ## Next Flow
 
-FLOW 5 PLAN
+FLOW 6 PLAN
 WFEOF
 }
 
