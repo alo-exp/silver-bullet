@@ -310,7 +310,7 @@ If a reply or attached/pasted artifact introduces new action intent while a work
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 0-17). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 14 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
+Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
 GSD remains the lifecycle authority. SB may route, compose, review, and gate, but semver, milestones, phases, planning, execution, verification, bug fixing, testing, and phase/milestone shipping must flow through GSD-owned skills.
 
@@ -352,24 +352,24 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 
 | Flow | Name | Purpose |
 |------|------|---------|
-| FLOW 0 | BOOTSTRAP | Project setup — PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
-| FLOW 1 | ORIENT | Codebase intelligence — gsd-intel, gsd-scan, gsd-map-codebase |
-| FLOW 2 | CLARIFY | Discovery and framing — silver:clarify, optional multi-AI research only when explicitly requested |
-| FLOW 3 | DECIDE | Option synthesis — silver:clarify |
-| FLOW 4 | SPECIFY | Spec creation — silver-ingest, write-spec, silver-spec, silver-validate |
-| FLOW 5 | PLAN | Phase planning — discuss-phase, writing-plans, gsd-plan-phase |
-| FLOW 6 | DESIGN CONTRACT | UI/UX design — design-system, ux-copy, gsd-ui-phase |
-| FLOW 7 | EXECUTE | Implementation — internal `tdd` gate + `gsd-execute-phase --tdd` |
-| FLOW 8 | UI QUALITY | UI review — design-critique, gsd-ui-review, accessibility-review |
-| FLOW 9 | REVIEW | Code review — 3 parallel layers with triage + fix |
-| FLOW 10 | SECURE | Security audit — SENTINEL, gsd-secure-phase, gsd-validate-phase |
-| FLOW 11 | VERIFY | Verification — gsd-verify-work, verification-before-completion |
-| FLOW 12 | QUALITY GATE | 8 core quality dimensions plus conditional gates, dual-mode (design-time + adversarial) |
-| FLOW 13 | SHIP | Phase shipping — gsd-ship, PR creation |
-| FLOW 14 | DEBUG | Debugging — systematic-debugging, gsd-debug (dynamic insertion on failure) |
-| FLOW 15 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 17 only |
-| FLOW 16 | DOCUMENT | Documentation — gsd-docs-update, engineering:documentation, episodic memory |
-| FLOW 17 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, silver-create-release |
+| FLOW 1 | BOOTSTRAP | Project setup — PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
+| FLOW 2 | ORIENT | Codebase intelligence — gsd-intel, gsd-scan, gsd-map-codebase |
+| FLOW 3 | CLARIFY | Discovery and framing — silver:clarify, optional multi-AI research only when explicitly requested |
+| FLOW 4 | DECIDE | Option synthesis — silver:clarify |
+| FLOW 5 | SPECIFY | Spec creation — silver-ingest, write-spec, silver-spec, silver-validate |
+| FLOW 6 | PLAN | Phase planning — discuss-phase, writing-plans, gsd-plan-phase |
+| FLOW 7 | DESIGN CONTRACT | UI/UX design — design-system, ux-copy, gsd-ui-phase |
+| FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `gsd-execute-phase --tdd` |
+| FLOW 9 | UI QUALITY | UI review — design-critique, gsd-ui-review, accessibility-review |
+| FLOW 10 | REVIEW | Code review — 3 parallel layers with triage + fix |
+| FLOW 11 | SECURE | Security audit — SENTINEL, gsd-secure-phase, gsd-validate-phase |
+| FLOW 12 | VERIFY | Verification — gsd-verify-work, verification-before-completion |
+| FLOW 13 | QUALITY GATE | 8 core quality dimensions plus conditional gates, dual-mode (design-time + adversarial) |
+| FLOW 14 | SHIP | Phase shipping — gsd-ship, PR creation |
+| FLOW 15 | DEBUG | Debugging — systematic-debugging, gsd-debug (dynamic insertion on failure) |
+| FLOW 16 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 18 only |
+| FLOW 17 | DOCUMENT | Documentation — gsd-docs-update, engineering:documentation, episodic memory |
+| FLOW 18 | RELEASE | Milestone release — gsd-audit-uat, gsd-audit-milestone, silver-create-release |
 
 ---
 

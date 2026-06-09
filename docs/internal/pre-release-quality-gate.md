@@ -10,10 +10,10 @@ The `/silver-create-release` skill will not be invoked until all four stages pas
 
 ---
 
-## Stage 1 — Code Review (FLOW 9: SB+GSD Review Stack)
+## Stage 1 — Code Review (FLOW 10: SB+GSD Review Stack)
 
-Runs SB's FLOW 9 code-review structure against the release candidate
-(see `docs/composable-flows-contracts.md` §FLOW 9). GSD owns the authoritative
+Runs SB's FLOW 10 code-review structure against the release candidate
+(see `docs/composable-flows-contracts.md` §FLOW 10). GSD owns the authoritative
 `REVIEW.md`; SB surrounds it with the Superpowers review-framing pair only where
 the active release workflow requires that helper discipline. The stage iterates
 until **2 consecutive clean passes across the active review stack**.

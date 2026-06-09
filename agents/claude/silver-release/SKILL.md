@@ -42,21 +42,21 @@ Release is a milestone-completion workflow — short chain focused on quality ga
 
 | Artifact | Signal | Action |
 |----------|--------|--------|
-| UI-SPEC.md or UI-REVIEW.md in any phase directory | Milestone has UI phases | Include FLOW 15 (DESIGN HANDOFF) |
-| `.planning/phases/*/UI-SPEC.md` or `.planning/phases/*/UI-REVIEW.md` absent | No UI phases in milestone | Skip FLOW 15 (DESIGN HANDOFF) |
+| UI-SPEC.md or UI-REVIEW.md in any phase directory | Milestone has UI phases | Include FLOW 16 (DESIGN HANDOFF) |
+| `.planning/phases/*/UI-SPEC.md` or `.planning/phases/*/UI-REVIEW.md` absent | No UI phases in milestone | Skip FLOW 16 (DESIGN HANDOFF) |
 
 ```bash
 # Detect UI phases in current milestone
 ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | grep -q . \
-  && echo "Include FLOW 15 — UI phases detected" \
-  || echo "SKIP FLOW 15 — no UI phases in this milestone"
+  && echo "Include FLOW 16 — UI phases detected" \
+  || echo "SKIP FLOW 16 — no UI phases in this milestone"
 ```
 
 ### 2. Build Flow Chain
 
 Construct the proposed flow chain for milestone release. Default chain:
 
-FLOW 12 (QUALITY GATE) → FLOW 15 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 16 (DOCUMENT) → FLOW 17 (RELEASE: GSD audit → GSD complete milestone → silver:create-release last)
+FLOW 13 (QUALITY GATE) → FLOW 16 (DESIGN HANDOFF) [only if UI milestone detected] → FLOW 17 (DOCUMENT) → FLOW 18 (RELEASE: GSD audit → GSD complete milestone → silver:create-release last)
 
 Short chain — release produces a versioned milestone artifact, not implementation code. GSD owns semver/milestone completion; SB creates the final release artifact only after GSD completion.
 
