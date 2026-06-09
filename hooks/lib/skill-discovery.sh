@@ -55,7 +55,8 @@ sb_skill_is_installed() {
         shopt -s nullglob
         for candidate in \
           "$root"/*/skills/"$skill"/SKILL.md \
-          "$root"/*/*/skills/"$skill"/SKILL.md; do
+          "$root"/*/*/skills/"$skill"/SKILL.md \
+          "$root"/*/*/*/skills/"$skill"/SKILL.md; do
           if [[ -f "$candidate" ]]; then
             shopt -u nullglob
             return 0
