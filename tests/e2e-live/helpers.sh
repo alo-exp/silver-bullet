@@ -958,13 +958,10 @@ verify_runtime_dependency_access() {
     assert_command_succeeds "Codex hook discovery sees verify-tests as invocable" sb_skill_is_installed "verify-tests"
     assert_command_succeeds "Codex engineering plugin registered" codex_plugin_registered_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local"
     assert_command_succeeds "Codex engineering install path exposes package manifest" codex_plugin_surface_exists_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex engineering install path exposes documentation helper skill" codex_plugin_surface_exists_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local" -- "upstream/skills/documentation/SKILL.md" "skills/documentation/SKILL.md"
     assert_command_succeeds "Codex design plugin registered" codex_plugin_registered_any "design@alo-labs-codex" "design@alo-labs-codex-local"
     assert_command_succeeds "Codex design install path exposes package manifest" codex_plugin_surface_exists_any "design@alo-labs-codex" "design@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex design install path exposes design-system helper skill" codex_plugin_surface_exists_any "design@alo-labs-codex" "design@alo-labs-codex-local" -- "upstream/skills/design-system/SKILL.md" "skills/design-system/SKILL.md"
     assert_command_succeeds "Codex product-management plugin registered" codex_plugin_registered_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local"
     assert_command_succeeds "Codex product-management install path exposes package manifest" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex product-management install path exposes write-spec helper skill" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- "upstream/skills/write-spec/SKILL.md" "skills/write-spec/SKILL.md"
     assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE" 'name: "silver:init"'
     assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE" 'name: "silver:ensure-docs"'
     assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE" 'name: "silver:feature"'

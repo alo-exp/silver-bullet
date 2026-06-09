@@ -26,6 +26,7 @@ Use this skill for review tasks where one pass is not enough and the process mus
 - Keep scope narrow and artifact-driven.
 - Preserve user changes; do not revert unrelated edits.
 - Do not parallelize model/reasoning combinations.
+- Use the active runtime's model family for escalation: Claude uses Anthropic/Claude models; Codex/OpenAI-compatible hosts use their configured OpenAI-compatible models.
 - Treat a pass as clean only when verification is clean, not when no obvious issue is seen.
 - Ask subagents for raw findings, diffs, logs, and verification output.
 - Stay on the same pair if a fix introduces a new issue.

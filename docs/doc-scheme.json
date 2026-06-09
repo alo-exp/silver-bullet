@@ -154,11 +154,6 @@
       "required_sections": []
     },
     {
-      "key": "docs/forge-sb-README.md",
-      "mandatory_updated": false,
-      "required_sections": []
-    },
-    {
       "key": "docs/gsd-vs-silver-bullet.md",
       "mandatory_updated": false,
       "required_sections": []

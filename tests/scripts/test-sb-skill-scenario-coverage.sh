@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SCENARIO_DIR="$ROOT/tests/forge-test-app/SCENARIOS"
+SCENARIO_DIR="$ROOT/tests/skill-scenarios"
 
 pass=0
 fail=0

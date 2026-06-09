@@ -50,7 +50,7 @@ documents one.
 
 ## Packaging Boundaries
 
-- `/.planning/`, `/.claude/`, and `/.forge/` are project-instance artifacts, not plugin artifacts.
+- `/.planning/` and `/.claude/` are project-instance artifacts, not plugin artifacts.
 - `silver-bullet.md` is the project-side instance copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is the curated SB-only Codex bundle, synchronized from the repo root.
 - `commands/` is the Codex command surface. It exposes `/silver:*` entry points and ships inside the Silver Bullet bundle so the default install presents one SB plugin.

@@ -17,7 +17,6 @@ export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"
 export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
 export CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-}}"
 export SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-1}"
-export SB_DISABLE_FORGE_TESTS="${SB_DISABLE_FORGE_TESTS:-1}"
 
 _repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then

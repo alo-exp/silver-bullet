@@ -111,15 +111,15 @@ teardown
 # ── T5: helper not-owned does not block ─────────────────────────────────────
 echo "--- T5: manifest entry not owned by current runtime → warn but exit 0 ---"
 setup
-# Have forge claim 098 — manifest says we want to heartbeat 098 but don't own it
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 forge "owned-by-forge" >/dev/null 2>&1
+# Have opencode claim 098; manifest says we want to heartbeat 098 but don't own it.
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 opencode "owned-by-opencode" >/dev/null 2>&1
 printf '098\n' > "$MANIFEST"
 rm -f "${SB_TEST_DIR}/heartbeat-098"
 out=$(printf '{"session_id":"test-%s"}' "$TEST_RUN_ID" | bash "$HOOK" 2>&1)
 rc=$?
 [[ "$rc" == "0" ]] && ok "T5: exit 0 even on non-owner" || nope "T5: exit 0" "rc=$rc"
 # Stderr may contain warning — non-blocking is the contract
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 098 forge >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 098 opencode >/dev/null 2>&1
 teardown
 
 # ── Summary ─────────────────────────────────────────────────────────────────

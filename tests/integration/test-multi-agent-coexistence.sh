@@ -3,7 +3,7 @@
 #
 # v0.29.0 multi-agent coordination integration tests:
 #   TEST-01 — Coexistence smoke: two-agent race for the same phase.
-#             Agent A (claude) claims; agent B (forge) is told to wait;
+#             Agent A (claude) claims; agent B (opencode) is told to wait;
 #             A releases; B claims successfully.
 #   TEST-02 — Stale-lock recovery: A claims, mocks last_heartbeat_at to
 #             be older than TTL, B peeks (sees expired:true), B claims
@@ -61,14 +61,14 @@ out=$($helper claim 099 claude "agent-A-task" 2>&1); rc=$?
 [[ "$rc" == "0" ]] && ok "TEST-01.1: claude claims phase 099 (rc=0)" \
   || nope "TEST-01.1: claude claim" "rc=$rc out=$out"
 
-# B (forge) attempts claim — should be told to wait (rc=2)
-out=$($helper claim 099 forge "agent-B-task" 2>&1); rc=$?
-[[ "$rc" == "2" ]] && ok "TEST-01.2: forge claim rejected with rc=2" \
-  || nope "TEST-01.2: forge claim" "expected rc=2, got rc=$rc"
+# B (opencode) attempts claim; should be told to wait (rc=2).
+out=$($helper claim 099 opencode "agent-B-task" 2>&1); rc=$?
+[[ "$rc" == "2" ]] && ok "TEST-01.2: opencode claim rejected with rc=2" \
+  || nope "TEST-01.2: opencode claim" "expected rc=2, got rc=$rc"
 if printf '%s' "$out" | grep -q '099 is locked by'; then
-  ok "TEST-01.3: forge stderr names current claude owner"
+  ok "TEST-01.3: opencode stderr names current claude owner"
 else
-  nope "TEST-01.3: forge stderr" "$out"
+  nope "TEST-01.3: opencode stderr" "$out"
 fi
 
 # B peeks → should see claude lock with agent_runtime=claude
@@ -83,11 +83,11 @@ $helper release 099 claude >/dev/null 2>&1; rc=$?
   || nope "TEST-01.5: release" "rc=$rc"
 
 # B claims now succeeds
-out=$($helper claim 099 forge "agent-B-task-retry" 2>&1); rc=$?
-[[ "$rc" == "0" ]] && ok "TEST-01.6: forge claims after release (rc=0)" \
-  || nope "TEST-01.6: forge retry claim" "rc=$rc out=$out"
+out=$($helper claim 099 opencode "agent-B-task-retry" 2>&1); rc=$?
+[[ "$rc" == "0" ]] && ok "TEST-01.6: opencode claims after release (rc=0)" \
+  || nope "TEST-01.6: opencode retry claim" "rc=$rc out=$out"
 runtime=$(jq -r '."099".agent_runtime' "$SB_PHASE_LOCK_FILE")
-[[ "$runtime" == "forge" ]] && ok "TEST-01.7: lock file shows forge ownership after handoff" \
+[[ "$runtime" == "opencode" ]] && ok "TEST-01.7: lock file shows opencode ownership after handoff" \
   || nope "TEST-01.7: handoff state" "got '$runtime'"
 
 teardown
@@ -114,8 +114,8 @@ expired=$(printf '%s' "$peek_json" | jq -r '.expired // false')
   || nope "TEST-02.1: stale peek" "got '$expired' from $peek_json"
 
 # B claims (should steal with WARN on stderr)
-stderr_out=$($helper claim 099 forge "steal-test" 2>&1 >/dev/null); rc=$?
-[[ "$rc" == "0" ]] && ok "TEST-02.2: forge stale-steal exits 0" \
+stderr_out=$($helper claim 099 opencode "steal-test" 2>&1 >/dev/null); rc=$?
+[[ "$rc" == "0" ]] && ok "TEST-02.2: opencode stale-steal exits 0" \
   || nope "TEST-02.2: stale steal rc" "rc=$rc"
 if printf '%s' "$stderr_out" | grep -qiE 'WARN|stealing|stale'; then
   ok "TEST-02.3: stderr mentions stale-steal (WARN)"
@@ -123,9 +123,9 @@ else
   nope "TEST-02.3: stale-steal stderr" "$stderr_out"
 fi
 
-# After steal, lock is owned by forge with fresh heartbeat
+# After steal, lock is owned by opencode with fresh heartbeat.
 runtime=$(jq -r '."099".agent_runtime' "$SB_PHASE_LOCK_FILE")
-[[ "$runtime" == "forge" ]] && ok "TEST-02.4: lock now owned by forge after steal" \
+[[ "$runtime" == "opencode" ]] && ok "TEST-02.4: lock now owned by opencode after steal" \
   || nope "TEST-02.4: post-steal owner" "got '$runtime'"
 
 teardown
@@ -143,9 +143,9 @@ parent_state_before=$(cat "$SB_PHASE_LOCK_FILE")
 
 # Child runs with SB_PHASE_LOCK_INHERITED=true and tries operations:
 # All should short-circuit to exit 0 without changing the lock file.
-SB_PHASE_LOCK_INHERITED=true $helper claim 099 forge "child-claim" >/dev/null 2>&1; rc1=$?
-SB_PHASE_LOCK_INHERITED=true $helper heartbeat 099 forge >/dev/null 2>&1; rc2=$?
-SB_PHASE_LOCK_INHERITED=true $helper release 099 forge >/dev/null 2>&1; rc3=$?
+SB_PHASE_LOCK_INHERITED=true $helper claim 099 opencode "child-claim" >/dev/null 2>&1; rc1=$?
+SB_PHASE_LOCK_INHERITED=true $helper heartbeat 099 opencode >/dev/null 2>&1; rc2=$?
+SB_PHASE_LOCK_INHERITED=true $helper release 099 opencode >/dev/null 2>&1; rc3=$?
 
 [[ "$rc1" == "0" ]] && ok "TEST-03.1: child claim short-circuits to rc=0" || nope "TEST-03.1: child claim" "rc=$rc1"
 [[ "$rc2" == "0" ]] && ok "TEST-03.2: child heartbeat short-circuits to rc=0" || nope "TEST-03.2: child heartbeat" "rc=$rc2"

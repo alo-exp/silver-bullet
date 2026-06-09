@@ -93,9 +93,9 @@ fi
 teardown
 
 # ── T4: non-owner does not abort the loop ──────────────────────────────────
-echo "--- T4: 099 owned by forge, 098 by current runtime → continues, 098 released, manifest deleted ---"
+echo "--- T4: 099 owned by opencode, 098 by current runtime -> continues, 098 released, manifest deleted ---"
 setup
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 forge  "owned-by-forge"  >/dev/null 2>&1
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "owned-by-opencode" >/dev/null 2>&1
 bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 098 "$SB_RUNTIME_NAME" "owned-by-runtime" >/dev/null 2>&1
 printf '099\n098\n' > "$MANIFEST"
 out=$(printf '{"hook_event_name":"Stop","session_id":"test-%s"}' "$TEST_RUN_ID" \
@@ -107,15 +107,15 @@ if jq -e '."098" == null' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
 else
   nope "T4: 098 release" "still in lock file"
 fi
-if jq -e '."099".agent_runtime == "forge"' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
-  ok "T4: 099 still owned by forge (current runtime could not release)"
+if jq -e '."099".agent_runtime == "opencode"' "$SB_PHASE_LOCK_FILE" >/dev/null 2>&1; then
+  ok "T4: 099 still owned by opencode (current runtime could not release)"
 else
-  nope "T4: 099 forge ownership" "$(cat "$SB_PHASE_LOCK_FILE")"
+  nope "T4: 099 opencode ownership" "$(cat "$SB_PHASE_LOCK_FILE")"
 fi
 [[ ! -f "$MANIFEST" ]] && ok "T4: manifest deleted (cleanup safety)" \
   || nope "T4: manifest cleanup" "still exists"
-# Cleanup forge claim
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 forge >/dev/null 2>&1
+# Cleanup opencode claim
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 opencode >/dev/null 2>&1
 teardown
 
 # ── Summary ─────────────────────────────────────────────────────────────────

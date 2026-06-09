@@ -9,11 +9,10 @@
 | Runtime | Identity tag | Integration |
 |---------|--------------|-------------|
 | Claude Code (with Silver Bullet plugin) | `claude` | Hooks (`hooks/phase-lock-claim.sh` etc.) |
-| Forge (with Silver Bullet for Forge) | `forge` | Custom agents (`forge/agents/forge-claim-phase.md` etc.) |
-| Codex-SB | `codex` | (future) |
-| OpenCode-SB | `opencode` | (future) |
+| Codex-SB | `codex` | Codex hooks and SB package |
+| OpenCode-SB | `opencode` | OpenCode-compatible integration |
 
-Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bullet.json` (default: the four above). Adding a new runtime requires registering its tag and integrating it with the same `phase-lock.sh` helper.
+Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bullet.json` (default: the three above). Adding a new runtime requires registering its tag and integrating it with the same `phase-lock.sh` helper.
 
 ## Lock state machine
 
@@ -52,35 +51,35 @@ Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bul
 
 ## Two SB-bearing agents collaborating on the same milestone
 
-Scenario: developer has Claude-SB and Forge-SB both running in the same project folder. Claude is working on Phase 70 while Forge is working on Phase 72.
+Scenario: developer has Claude-SB and Codex-SB both running in the same project folder. Claude is working on Phase 70 while Codex is working on Phase 72.
 
 1. **Claude opens its session.** `hooks/session-start` fires. Claude invokes `/silver:feature` for Phase 70.
 2. **Claude claims Phase 70** via `hooks/phase-lock-claim.sh` on its first edit under `.planning/phases/070-*/`. The lock file gains `"070": {"agent_runtime": "claude", ...}`.
-3. **Forge opens its own session.** `forge-session-init` peeks `.planning/.phase-locks.json` and prints `OTHER-RUNTIME-LOCK: phase 070 is owned by claude (...)` in the session summary — informational, not blocking.
-4. **Forge invokes `/silver:feature` for Phase 72.** The skill's "Multi-Agent Phase Coordination" section directs it to invoke `forge-claim-phase 072 "<intent>"`. Forge gets `CLAIMED: phase 072 locked by forge`.
-5. **Both runtimes work simultaneously on different phases.** Claude's `PostToolUse/Bash` heartbeats Phase 70 every 5 min via `hooks/phase-lock-heartbeat.sh`; Forge's parent skill calls `forge-heartbeat-phase 072` periodically.
-6. **Claude finishes Phase 70 and ships.** `hooks/phase-lock-release.sh` (Stop) releases. Forge's session-init on next session no longer reports the claude lock.
-7. **Forge finishes Phase 72.** Parent skill invokes `forge-release-phase 072` at phase exit.
+3. **Codex opens its own session.** `hooks/session-start` peeks `.planning/.phase-locks.json` and prints `OTHER-RUNTIME-LOCK: phase 070 is owned by claude (...)` in the session summary — informational, not blocking.
+4. **Codex invokes `/silver:feature` for Phase 72.** The first edit under `.planning/phases/072-*/` claims the phase through `hooks/phase-lock-claim.sh`.
+5. **Both runtimes work simultaneously on different phases.** Each runtime heartbeats its own phase via `hooks/phase-lock-heartbeat.sh`.
+6. **Claude finishes Phase 70 and ships.** `hooks/phase-lock-release.sh` releases its lock.
+7. **Codex finishes Phase 72.** Its release hook clears the Codex-owned lock at phase exit.
 
-If Forge had tried to claim Phase 70 while Claude held it, `forge-claim-phase` would have returned `BLOCKED: phase 070 is locked by claude (...)` and Forge's parent skill would stop.
+If Codex had tried to edit Phase 70 while Claude held it, `hooks/phase-lock-claim.sh` would block with `BLOCKED: phase 070 is locked by claude (...)`.
 
-## Cross-runtime delegation: `/forge-delegate`
+## Cross-runtime delegation
 
 The phase-ownership invariant has one controlled exception: when a runtime that holds a lock wants to delegate the implementation work to a sibling runtime *underneath* its existing claim.
 
 ```
 Claude holds phase 070 lock.
    │
-   ├─► /forge-delegate
+   ├─► active runtime delegation mechanism
    │     ├─ peek confirms claude holds 070
    │     ├─ build envelope { phase, plan_paths, req_ids, ... }
-   │     ├─ spawn  forge -p <prompt>
+   │     ├─ spawn child runtime with a bounded prompt
    │     │       env: SB_PHASE_LOCK_INHERITED=true
    │     │       timeout: 1200s (configurable)
    │     │
-   │     │   In Forge's child session:
-   │     │      forge-claim-phase → ALLOW (inherited)
-   │     │      forge does the implementation work
+   │     │   In the child session:
+   │     │      phase-lock claim → ALLOW (inherited)
+   │     │      child does the implementation work
    │     │      emits structured result:
    │     │        ## FILES_CHANGED
    │     │        ## ASSUMPTIONS
@@ -89,16 +88,16 @@ Claude holds phase 070 lock.
    │     ├─ parse result, append to {phase}-SUMMARY.md
    │     └─ return to parent
    │
-   └─► Claude continues Phase 070 with Forge's work integrated.
+   └─► Claude continues Phase 070 with the delegated work integrated.
        Claude STILL owns the lock — never released.
 ```
 
 **Key invariants for delegation:**
 
 - The parent always owns the lock. Even on timeout or child failure, the parent retains ownership and the user resumes manually.
-- The child runs with `SB_PHASE_LOCK_INHERITED=true`. Both Claude-SB hooks and Forge-SB agents short-circuit their own claim/heartbeat/release to ALLOW under this env var — the child cannot double-claim or accidentally release the parent's lock.
+- The child runs with `SB_PHASE_LOCK_INHERITED=true`. SB hooks short-circuit their own claim/heartbeat/release to ALLOW under this env var — the child cannot double-claim or accidentally release the parent's lock.
 - The result follows a strict markdown contract (`## FILES_CHANGED` / `## ASSUMPTIONS` / `## REQ-IDS`) so the parent can integrate without re-reading every file the child touched.
-- `multi_agent.delegation_timeout_seconds` (default 1200) bounds the child's execution. On timeout (rc=124), the child is killed, partial output is preserved at `/tmp/forge-delegate-<pid>.out`, and the user is prompted.
+- `multi_agent.delegation_timeout_seconds` (default 1200) bounds the child's execution. On timeout, the child is killed, partial output is preserved by the active delegation mechanism, and the user is prompted.
 
 ## Configuration
 
@@ -106,7 +105,7 @@ Claude holds phase 070 lock.
 ```json
 {
   "multi_agent": {
-    "identity_tags": ["claude", "forge", "codex", "opencode"],
+    "identity_tags": ["claude", "codex", "opencode"],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
   }
@@ -115,9 +114,9 @@ Claude holds phase 070 lock.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `identity_tags` | `["claude","forge","codex","opencode"]` | Recognized runtime identity tags. Unknown tags rejected by `phase-lock.sh claim`. |
+| `identity_tags` | `["claude","codex","opencode"]` | Recognized runtime identity tags. Unknown tags rejected by `phase-lock.sh claim`. |
 | `stale_lock_ttl_seconds` | `1800` | Lock expires after this many seconds without a heartbeat; another runtime may steal with a WARN. |
-| `delegation_timeout_seconds` | `1200` | `/forge-delegate` child runtime timeout. |
+| `delegation_timeout_seconds` | `1200` | Child runtime delegation timeout. |
 
 ## Diagnostics
 
@@ -140,5 +139,4 @@ cat .planning/.phase-locks.json | jq
 ## See also
 
 - `silver-bullet.md` §11 (Multi-Agent Coordination) — runtime contract for end-user projects
-- `forge/PARITY.md` — Forge runtime parity table including phase-ownership model
 - `.planning/scripts/phase-lock.sh` — the canonical helper (Phase 70)

@@ -117,8 +117,8 @@ teardown
 # ── Test 5: conflict exits 2 + stderr block-message ─────────────────────────
 echo "--- T5: another runtime holds lock → exit 2 + stderr names owner ---"
 setup
-# Have forge claim phase 099 directly via helper
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 forge "simulated-other-runtime" >/dev/null 2>&1
+# Have opencode claim phase 099 directly via helper
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "simulated-other-runtime" >/dev/null 2>&1
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
@@ -134,9 +134,9 @@ if printf '%s' "$stderr_capture" | grep -q '099 is locked by'; then
 else
   nope "T5: stderr conflict phrasing" "got: $stderr_capture"
 fi
-printf '%s' "$stderr_capture" | grep -q 'forge' \
-  && ok "T5: stderr names owner runtime forge" \
-  || nope "T5: forge" "stderr did not mention forge"
+printf '%s' "$stderr_capture" | grep -q 'opencode' \
+  && ok "T5: stderr names owner runtime opencode" \
+  || nope "T5: opencode" "stderr did not mention opencode"
 printf '%s' "$stderr_capture" | grep -q 'peek' \
   && ok "T5: stderr suggests peek hint" \
   || nope "T5: peek hint" "stderr did not mention peek"
@@ -146,8 +146,8 @@ else
   ok "T5: stdout does NOT contain permissionDecision (CONTEXT.md locks exit-2 path)"
 fi
 
-# Cleanup forge claim
-bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 forge >/dev/null 2>&1
+# Cleanup opencode claim
+bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" release 099 opencode >/dev/null 2>&1
 teardown
 
 # ── Test 6: jq-missing fail-open (best-effort) ──────────────────────────────

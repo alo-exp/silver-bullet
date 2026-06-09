@@ -188,8 +188,6 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
       # canonical hyphenated marker (e.g. silver-init, gsd-discuss-phase).
       if [[ "$token" =~ /skills/([^/]+)/SKILL\.md$ ]]; then
         skills_to_record+=("loaded:${BASH_REMATCH[1]}")
-      elif [[ "$token" =~ /forge/skills/([^/]+)/SKILL\.md$ ]]; then
-        skills_to_record+=("loaded:${BASH_REMATCH[1]}")
       fi
     done < <(printf '%s' "$cmd" | grep -oE '[^[:space:]]+SKILL\.md' || true)
   fi
