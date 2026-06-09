@@ -955,27 +955,24 @@ Last updated: 2026-05-06
 
 ## 11. Multi-Agent Coordination (v0.29.0+)
 
-Any number of SB-bearing coding agents (Claude-SB, Forge-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
+Any number of SB-bearing coding agents (Claude-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
 
 ### Runtime contract for the main agent
 
-- **Session start.** When other-runtime locks are detected at session start, the session-init hook for the current host or `forge-session-init` agent (Forge) emits an informational `OTHER-RUNTIME-LOCK:` line for each non-self lock. Surface these to the user so they know other runtimes are in flight.
+- **Session start.** When other-runtime locks are detected at session start, the session-init hook for the current host emits an informational `OTHER-RUNTIME-LOCK:` line for each non-self lock. Surface these to the user so they know other runtimes are in flight.
 
 - **Phase entry.** Before editing any file under `.planning/phases/<NNN>/`:
   - Host-SB: `hooks/phase-lock-claim.sh` (PreToolUse) auto-claims via `phase-lock.sh claim <NNN> <runtime> "<intent>"`. On conflict (helper exit 2), the host runtime blocks the edit and surfaces the owner's identity.
-  - Forge-SB: parent silver-* skill explicitly invokes `forge-claim-phase`. On `BLOCKED:`, the skill stops and asks the user.
 
 - **During work.** Heartbeats refresh `last_heartbeat_at` so the lock doesn't expire under stale-TTL (default 1800s):
   - Host-SB: `hooks/phase-lock-heartbeat.sh` (PostToolUse, throttled to once per 5 min per phase).
-  - Forge-SB: parent skill invokes `forge-heartbeat-phase` periodically (every wave / verify pass / >5 min op).
 
 - **Phase exit.** Release the lock so other runtimes can claim:
   - Host-SB: `hooks/phase-lock-release.sh` (Stop / SubagentStop) walks the session manifest and releases each entry.
-  - Forge-SB: parent skill invokes `forge-release-phase` after `gsd-ship` for the phase.
 
 ### Delegation exception
 
-When the runtime holding a lock delegates implementation work to a sibling runtime **underneath** its existing claim, the child must run with `SB_PHASE_LOCK_INHERITED=true` and return a structured result for the parent to integrate. Silver Bullet no longer packages a `forge-delegate` skill in Codex; use the active runtime's supported delegation mechanism if one is installed.
+When the runtime holding a lock delegates implementation work to a sibling runtime **underneath** its existing claim, the child must run with `SB_PHASE_LOCK_INHERITED=true` and return a structured result for the parent to integrate. Use the active runtime's supported delegation mechanism if one is installed.
 
 See `docs/multi-agent-coordination.md` for the full diagram and configuration reference.
 

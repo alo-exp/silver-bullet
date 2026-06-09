@@ -677,7 +677,7 @@ FAKE_SB_INSTALL_ROOT="$FAKE_CACHE_ROOT"
 FAKE_SB_INSTALL_ALIAS="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 FAKE_LEGACY_BACKUP_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/plugins/cache/alo-labs-codex/silver-bullet/0.31.0/skills/silver-feature/SKILL.md"
 FAKE_LEGACY_BACKUP_GENERATED_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.generated-skills/silver-feature/SKILL.md"
-FAKE_LEGACY_BACKUP_FORGE_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/.tmp/marketplaces/alo-labs-codex/forge/skills/silver-feature/SKILL.md"
+FAKE_LEGACY_BACKUP_MARKETPLACE_SKILL="$HOME_DIR/.codex/legacy-uppercase-backups/20260513T031529Z.test/Codex/.tmp/marketplaces/alo-labs-codex/skills/silver-feature/SKILL.md"
 FAKE_TMP_MARKETPLACE_BACKUP_SKILL="$HOME_DIR/.codex/.tmp/marketplaces/marketplace-backup-test/root/plugins/silver-bullet/skills/silver-feature/SKILL.md"
 FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL="$HOME_DIR/.codex/.tmp/marketplaces/marketplace-backup-test/root/agents/codex/silver-feature/SKILL.md"
 FAKE_TMP_SB_LIVE_COMMAND_SKILL="$HOME_DIR/.codex/.tmp/sb-live-command.test/plugins/silver-bullet/skills/silver-feature/SKILL.md"
@@ -718,7 +718,7 @@ mkdir -p \
   "$FAKE_SB_STALE_ROOT_MIRROR" \
   "$(dirname "$FAKE_LEGACY_BACKUP_SKILL")" \
   "$(dirname "$FAKE_LEGACY_BACKUP_GENERATED_SKILL")" \
-  "$(dirname "$FAKE_LEGACY_BACKUP_FORGE_SKILL")" \
+  "$(dirname "$FAKE_LEGACY_BACKUP_MARKETPLACE_SKILL")" \
   "$(dirname "$FAKE_TMP_MARKETPLACE_BACKUP_SKILL")" \
   "$(dirname "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL")" \
   "$(dirname "$FAKE_TMP_SB_LIVE_COMMAND_SKILL")" \
@@ -775,7 +775,7 @@ name: silver:feature
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
-cat > "$FAKE_LEGACY_BACKUP_FORGE_SKILL" <<'EOF'
+cat > "$FAKE_LEGACY_BACKUP_MARKETPLACE_SKILL" <<'EOF'
 ---
 name: silver-feature
 title: "Silver Bullet: Silver: Feature"
@@ -869,7 +869,6 @@ write_manifest(design_root / ".codex-plugin/plugin.json", "design", "1.2.0")
 write_manifest(product_root / ".codex-plugin/plugin.json", "product-management", "1.2.0")
 
 write_text(sidekick_root / "skills/codex-delegate/SKILL.md", "---\nname: codex-delegate\n---\n")
-write_text(sidekick_root / "skills/forge-delegate/SKILL.md", "---\nname: forge-delegate\n---\n")
 write_text(superpowers_root / "skills/verification-before-completion/SKILL.md", "---\nname: verification-before-completion\n---\n")
 
 registry = {
@@ -1009,7 +1008,9 @@ assert_contains "Codex native SB mirror uses bare silver namespace title" "title
 assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_file_absent "Codex native SB mirror does not expose progressive review loop helper" "$HOME_DIR/.codex/skills/progressive-review-loop"
+assert_file_exists "Codex native SB mirror exposes progressive review loop helper" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
+assert_contains "Codex native progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_absent "Codex native SB mirror does not expose verify-tests helper" "$HOME_DIR/.codex/skills/verify-tests"
 assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
 assert_file_absent "Codex native SB mirror prunes stale managed writing-plans skill" "$HOME_DIR/.codex/skills/writing-plans"
@@ -1023,7 +1024,7 @@ assert_file_absent "stale pre-release SB cache version removed" "$FAKE_LEGACY_CA
 assert_file_absent "stale marketplace root picker skill removed" "$FAKE_STALE_MARKETPLACE_SKILLS/silver-feature/SKILL.md"
 assert_file_absent "legacy backup SB picker skill removed" "$FAKE_LEGACY_BACKUP_SKILL"
 assert_file_absent "legacy backup generated SB picker skill removed" "$FAKE_LEGACY_BACKUP_GENERATED_SKILL"
-assert_file_absent "legacy backup Forge SB picker skill removed" "$FAKE_LEGACY_BACKUP_FORGE_SKILL"
+assert_file_absent "legacy backup marketplace SB picker skill removed" "$FAKE_LEGACY_BACKUP_MARKETPLACE_SKILL"
 assert_file_absent "temporary marketplace backup SB picker skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_SKILL"
 assert_file_absent "temporary marketplace backup SB agent skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL"
 assert_file_absent "temporary SB live-command picker skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_SKILL"
@@ -1269,13 +1270,13 @@ assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS
 assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Engineering helper skill hydrated into Codex cache" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
+assert_file_absent "Engineering helper skill is not synthetically hydrated from retired runtime files" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
 assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Design helper skill hydrated into Codex cache" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
+assert_file_absent "Design helper skill is not synthetically hydrated from retired runtime files" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
 assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Product-management helper skill hydrated into Codex cache" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
+assert_file_absent "Product-management helper skill is not synthetically hydrated from retired runtime files" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Requested-skill recorder not merged into native Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
@@ -1401,13 +1402,13 @@ git -C "$PUBLIC_STALE_TMP" init --bare -q "$PUBLIC_STALE_REMOTE"
 git -C "$PUBLIC_STALE_MARKETPLACE" remote add origin "$PUBLIC_STALE_REMOTE"
 git -C "$PUBLIC_STALE_MARKETPLACE" push -q -u origin HEAD:main
 mkdir -p \
-  "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate" \
+  "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate" \
   "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans" \
-  "$PUBLIC_STALE_PACKAGE/skills/forge-delegate" \
+  "$PUBLIC_STALE_PACKAGE/skills/stale-delegate" \
   "$PUBLIC_STALE_PACKAGE/skills/writing-plans"
-cat > "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate/SKILL.md" <<'EOF'
+cat > "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate/SKILL.md" <<'EOF'
 ---
-name: forge-delegate
+name: stale-delegate
 ---
 EOF
 cat > "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" <<'EOF'
@@ -1415,7 +1416,7 @@ cat > "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" <<'EOF'
 name: writing-plans
 ---
 EOF
-cp "$PUBLIC_STALE_MARKETPLACE/skills/forge-delegate/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/forge-delegate/SKILL.md"
+cp "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/stale-delegate/SKILL.md"
 cp "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/writing-plans/SKILL.md"
 (
   cd "$PUBLIC_STALE_WORKDIR"
@@ -1435,11 +1436,12 @@ assert_file_exists "public-release cache alias exposes internal feature skill so
 assert_file_exists "public-release cache alias exposes internal progressive review loop skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" progressive-review-loop)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
 assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
-assert_file_absent "public-release native SB mirror does not expose progressive review loop helper" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop"
+assert_file_exists "public-release native SB mirror exposes progressive review loop helper" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
+assert_contains "public-release progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
 assert_file_absent "public-release native SB mirror does not expose verify-tests helper" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests"
-assert_file_absent "public-release native SB mirror excludes stale forge-delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/forge-delegate"
+assert_file_absent "public-release native SB mirror excludes stale delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/stale-delegate"
 assert_file_absent "public-release native SB mirror prunes stale managed writing-plans skill" "$PUBLIC_STALE_HOME/.codex/skills/writing-plans"
-assert_file_absent "public-release ignores stale marketplace forge-delegate skill" "$PUBLIC_STALE_CACHE/skills/forge-delegate/SKILL.md"
+assert_file_absent "public-release ignores stale marketplace delegate skill" "$PUBLIC_STALE_CACHE/skills/stale-delegate/SKILL.md"
 assert_file_absent "public-release ignores stale marketplace writing-plans skill" "$PUBLIC_STALE_CACHE/skills/writing-plans/SKILL.md"
 
 BROKEN_PUBLIC_TMP="$(mktemp -d)"

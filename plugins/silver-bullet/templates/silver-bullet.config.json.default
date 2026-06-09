@@ -152,7 +152,6 @@
   "multi_agent": {
     "identity_tags": [
       "claude",
-      "forge",
       "codex",
       "opencode"
     ],

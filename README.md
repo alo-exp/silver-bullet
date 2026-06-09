@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.21-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.21)
+[![version](https://img.shields.io/badge/version-v0.37.22-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.22)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -176,7 +176,6 @@ guidance, but hard blocks depend on host support.
 | Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
 | Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
 | Kay | Tested agent for isolated live testing | Used for isolated live testing via the `opencode-go` provider path |
-| Forge | Port available | Uses Forge skills, slash commands, and hook-equivalent custom agents |
 
 Silver Bullet's Codex package intentionally contains only SB-owned surfaces:
 skills, hooks, templates, commands, and helper scripts. GSD, Superpowers, and
@@ -252,19 +251,6 @@ For isolated Codex-compatible live testing, Kay `v0.9.6` plus the
 `opencode-go` provider path is the tested route. The live harness creates a
 temporary `KAY_HOME` root so tests do not rewrite the user's real Kay or Codex
 hook cache.
-
-### Forge
-
-Silver Bullet also ships a Forge port:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/alo-exp/silver-bullet/main/forge-sb-install.sh | bash
-```
-
-Then run `silver-init` in the target project.
-
-See [forge/PARITY.md](forge/PARITY.md) for the Claude Code to Forge capability
-map.
 
 ### Optional DevOps Plugins
 
@@ -506,14 +492,13 @@ templates/                        Project config, instruction, workflow, and doc
 docs/                             Product, architecture, enforcement, testing, release docs
 site/                             Public website and Help Center
 plugins/silver-bullet/            Codex package surface, mostly symlinks to source
-forge/                            Forge runtime port
 tests/                            Unit, integration, live, and E2E harnesses
 .claude-plugin/                   Claude plugin marketplace metadata
 .planning/                        GSD project lifecycle artifacts for this repo
 ```
 
 The Codex package mostly symlinks source-owned assets into `plugins/silver-bullet/`, stores internal generated skill files under `skill-source/`, and mirrors those files into native `~/.codex/skills` during install so the picker exposes only the `/Silver:` namespace.
-Project-instance artifacts such as `.planning/`, `.claude/`, `.forge/`, and
+Project-instance artifacts such as `.planning/` and `.claude/`, and
 runtime state are not treated as plugin package content.
 
 ## Troubleshooting
@@ -537,8 +522,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.21`
-- Release: [v0.37.21](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.21)
+- Version: `0.37.22`
+- Release: [v0.37.22](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.22)
 - Notable changes:
   - The Codex package no longer exposes a plugin-owned `skills/` directory, preventing `/Silver Bullet:` duplicate picker entries.
   - The Codex installer maps internal `skill-source/` files into the native `~/.codex/skills` mirror so the picker-facing surface remains `/Silver:`.

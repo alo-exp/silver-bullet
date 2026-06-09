@@ -130,17 +130,16 @@ Step 3.5.5 delegation path where `silver:init` hands docs bootstrap/reconciliati
 to `silver:ensure-docs`. It validates the brownfield preserve-vs-switch behavior,
 archive-move policy, and recovery/remediation command paths.
 
-## Forge-Silver Bullet Skill Test Harness
+## Skill Scenario Coverage
 
-The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 61 scenario checks against realistic todo app development scenarios.
+The skill scenario coverage test validates that each SB-owned source skill has a scenario fixture under `tests/skill-scenarios/`.
 
 ### Test Classification
 
 | Type | What | Location | Speed |
 |------|------|----------|-------|
-| **API unit tests** | Todo API endpoints (CRUD, health) | `tests/forge-test-app/tests/api.test.js` | <1s |
-| **Skill scenario tests** | Each skill has documented trigger + workflow | `tests/forge-test-app/SCENARIOS/*.md` | <5s |
-| **Integration smoke** | Full harness runs all scenarios | `tests/forge-test-app/run-forge-sb-tests.sh` | <30s |
+| **Skill scenario tests** | Each skill has documented trigger + workflow | `tests/skill-scenarios/*.md` | <5s |
+| **Coverage guard** | Every source skill has a scenario fixture | `tests/scripts/test-sb-skill-scenario-coverage.sh` | <5s |
 
 ### Coverage Goals
 
@@ -154,14 +153,12 @@ The skill test harness (`tests/forge-test-app/run-forge-sb-tests.sh`) validates 
 | Planning & Documentation | 5 | 100% |
 | DevOps & Routing | 2 | 100% |
 
-**Total: 61 skills tested**
+**Total:** one scenario fixture per source skill.
 
 ### Running the Harness
 
 ```bash
-cd tests/forge-test-app
-npm install  # Only needed once
-bash run-forge-sb-tests.sh
+bash tests/scripts/test-sb-skill-scenario-coverage.sh
 ```
 
 ### Skill Trigger Examples
@@ -176,7 +173,7 @@ bash run-forge-sb-tests.sh
 
 ### Adding New Skill Scenarios
 
-Create `tests/forge-test-app/SCENARIOS/{skill-name}.md`:
+Create `tests/skill-scenarios/{skill-name}.md`:
 
 ```markdown
 # {Skill Name} Skill Scenario

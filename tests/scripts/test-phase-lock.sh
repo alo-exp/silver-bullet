@@ -74,7 +74,7 @@ assert_json_key "claim wrote correct shape" \
 # ---------------------------------------------------------------------------
 # Test 2 — claim-when-held-by-other (LOCK-05 case 2)
 # ---------------------------------------------------------------------------
-err_out=$("$SCRIPT" claim 070 forge "intrusion" 2>&1 1>/dev/null) && rc=0 || rc=$?
+err_out=$("$SCRIPT" claim 070 opencode "intrusion" 2>&1 1>/dev/null) && rc=0 || rc=$?
 assert_eq "claim-when-held-by-other exits 2" "2" "$rc"
 assert_contains "stderr identifies it is locked by prior owner" "locked by" "$err_out"
 assert_json_key "lock unchanged after rejected claim" \
@@ -101,7 +101,7 @@ assert_eq "heartbeat does not change claimed_at" "$before_claim" "$after_claim"
 # ---------------------------------------------------------------------------
 # Test 4 — release-by-non-owner (LOCK-05 case 4)
 # ---------------------------------------------------------------------------
-err_out=$("$SCRIPT" release 070 forge 2>&1 1>/dev/null) && rc=0 || rc=$?
+err_out=$("$SCRIPT" release 070 opencode 2>&1 1>/dev/null) && rc=0 || rc=$?
 assert_eq "release-by-non-owner exits 2" "2" "$rc"
 assert_contains "release-by-non-owner stderr says cannot release" "cannot release" "$err_out"
 assert_json_key "lock still present after rejected release" '."070"' "$(cat "$LOCK_FILE")"
@@ -127,11 +127,11 @@ old_iso=$(date -u -r "$old_epoch" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
           || date -u -d "@$old_epoch" +%Y-%m-%dT%H:%M:%SZ)
 jq --arg t "$old_iso" '."070".last_heartbeat_at = $t' "$LOCK_FILE" > "$LOCK_FILE.tmp" \
   && mv "$LOCK_FILE.tmp" "$LOCK_FILE"
-err_out=$("$SCRIPT" claim 070 forge "stealer" 2>&1 1>/dev/null) && rc=0 || rc=$?
+err_out=$("$SCRIPT" claim 070 opencode "stealer" 2>&1 1>/dev/null) && rc=0 || rc=$?
 assert_eq "stale-lock claim exits 0 (steals)" "0" "$rc"
 assert_contains "stale-lock claim emits WARN: stealing stale lock" "WARN: stealing stale lock" "$err_out"
-assert_json_key "lock now owned by forge" \
-  '."070".agent_runtime == "forge" and ."070".intent == "stealer"' \
+assert_json_key "lock now owned by opencode" \
+  '."070".agent_runtime == "opencode" and ."070".intent == "stealer"' \
   "$(cat "$LOCK_FILE")"
 
 # Bonus: peek on stale lock includes expired:true

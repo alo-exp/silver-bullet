@@ -206,7 +206,6 @@ original_home = pathlib.Path(sys.argv[3])
 isolated_home = pathlib.Path(sys.argv[4])
 sb_root = pathlib.Path(sys.argv[5])
 original_cache_root = original_home / "plugins" / "cache"
-forge_skills_root = sb_root / "forge" / "skills"
 allowed_plugins = {
     "silver-bullet@alo-labs-codex",
     "engineering@alo-labs-codex",
@@ -216,89 +215,10 @@ allowed_plugins = {
     "superpowers@superpowers-marketplace",
 }
 thin_manifest_only_plugins = {"engineering", "design", "product-management"}
-helper_specs = {
-    "engineering": (
-        "engineering",
-        [
-            "architecture",
-            "code-review",
-            "debug",
-            "deploy-checklist",
-            "documentation",
-            "incident-response",
-            "standup",
-            "system-design",
-            "tech-debt",
-            "testing-strategy",
-        ],
-    ),
-    "design": (
-        "design",
-        [
-            "accessibility-review",
-            "design-critique",
-            "design-handoff",
-            "design-system",
-            "research-synthesis",
-            "user-research",
-            "ux-copy",
-        ],
-    ),
-    "product-management": (
-        "product-management",
-        [
-            "competitive-brief",
-            "metrics-review",
-            "product-brainstorming",
-            "roadmap-update",
-            "sprint-planning",
-            "stakeholder-update",
-            "synthesize-research",
-            "write-spec",
-        ],
-    ),
-}
 
 def version_sort_key(path: pathlib.Path):
     import re
     return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
-
-def declared_skills_dir(version_dir: pathlib.Path) -> pathlib.Path:
-    manifest_path = version_dir / ".codex-plugin" / "plugin.json"
-    if manifest_path.is_file():
-        try:
-            manifest = json.loads(manifest_path.read_text())
-        except Exception:
-            manifest = {}
-        rel_path = manifest.get("skills")
-        if isinstance(rel_path, str) and rel_path.strip():
-            return version_dir / rel_path
-    return version_dir / "upstream" / "skills"
-
-def hydrate_helper_plugin(plugin_root: pathlib.Path, prefix: str, skills: list[str]) -> None:
-    if not forge_skills_root.is_dir() or not plugin_root.is_dir():
-        return
-    for version_dir in plugin_root.iterdir():
-        if not version_dir.is_dir() or version_dir.name == "current":
-            continue
-        if not (version_dir / ".codex-plugin" / "plugin.json").is_file():
-            continue
-        target_skills_root = declared_skills_dir(version_dir)
-        for skill in skills:
-            source = forge_skills_root / f"{prefix}-{skill}" / "SKILL.md"
-            if not source.is_file():
-                continue
-            target = target_skills_root / skill / "SKILL.md"
-            if target.is_file():
-                continue
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
-
-for marketplace_root in cache_root.iterdir() if cache_root.is_dir() else []:
-    if not marketplace_root.is_dir():
-        continue
-    for plugin_name, (prefix, skills) in helper_specs.items():
-        hydrate_helper_plugin(marketplace_root / plugin_name, prefix, skills)
 
 def is_valid_version_dir(path: pathlib.Path) -> bool:
     manifest_path = path / ".codex-plugin" / "plugin.json"

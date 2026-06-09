@@ -89,9 +89,9 @@ out=$(run_hook "product-management:write-spec")
 assert_blocks "missing product-management:write-spec blocked" "$out"
 teardown
 
-# Test 2: product-management skill installed in forge/skills passes
+# Test 2: product-management skill installed in skills/ passes
 setup
-make_skill "forge/skills/product-management-write-spec/SKILL.md" "write-spec"
+make_skill "skills/product-management-write-spec/SKILL.md" "write-spec"
 out=$(run_hook "product-management:write-spec")
 assert_passes "installed product-management:write-spec passes" "$out"
 teardown
@@ -103,16 +103,16 @@ out=$(run_hook "design:user-research")
 assert_passes "installed design:user-research passes" "$out"
 teardown
 
-# Test 4: Bare GSD dependency installed in forge/skills passes
+# Test 4: Bare GSD dependency installed in skills/ passes
 setup
-make_skill "forge/skills/gsd-plan-phase/SKILL.md" "gsd-plan-phase"
+make_skill "skills/gsd-plan-phase/SKILL.md" "gsd-plan-phase"
 out=$(run_hook "gsd-plan-phase")
 assert_passes "installed gsd-plan-phase passes" "$out"
 teardown
 
-# Test 5: Namespaced GSD dependency installed in forge/skills passes
+# Test 5: Namespaced GSD dependency installed in skills/ passes
 setup
-make_skill "forge/skills/gsd-discuss-phase/SKILL.md" "gsd-discuss-phase"
+make_skill "skills/gsd-discuss-phase/SKILL.md" "gsd-discuss-phase"
 out=$(run_hook "gsd:discuss-phase")
 assert_passes "installed gsd:discuss-phase passes" "$out"
 teardown

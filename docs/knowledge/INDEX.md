@@ -11,7 +11,7 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Security | `docs/SECURITY.md` | Current posture + audit archive index |
 | Release | `docs/RELEASE.md` | Release process, CI, versioning |
 | Testing | `docs/TESTING.md` | Test pyramid, coverage goals |
-| Skill Harness | `tests/forge-test-app/run-forge-sb-tests.sh` | 61 skill scenario validation |
+| Skill Scenarios | `tests/skill-scenarios/` | Skill scenario validation fixtures |
 | Tech Debt | `docs/tech-debt.md` | Active debt register (max 20 items) |
 | Changelog | `docs/CHANGELOG.md` | Version history |
 | Task Doc Checklist | `docs/task-doc-checklist.json` | Per-task doc update checklist; must cover governed doc inventory enforced by completion hooks |
