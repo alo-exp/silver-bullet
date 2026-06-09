@@ -73,10 +73,34 @@ If any URL is provided in A, B, or C, note it internally for artifact injection 
 
 Invoke `product-management:write-spec` through the active runtime's SB-recognized skill invocation channel. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
 
-If the skill is unavailable (invocation fails or skill not found), STOP and
-notify the user instead of proceeding without it. Offer: A. Install the plugin
-and retry  B. Continue only with an explicitly approved degraded path
-  C. Stop / choose a different workflow.
+If the skill is unavailable (invocation fails, times out, or the skill is not
+discoverable), first repair the missing dependency from its marketplace source,
+then retry the invocation before considering any degraded path.
+
+Dependency repair sequence:
+
+1. Tell the user the dependency skill is missing and that SB will install or
+   repair the Product Management plugin before continuing.
+2. Use the host runtime's plugin installation mechanism when available. For this
+   dependency, the canonical marketplace source is:
+   `/plugin install anthropics/knowledge-work-plugins/tree/main/product-management`
+3. In Codex installs, also accept the SB-managed shared marketplace wrapper
+   `product-management@alo-labs-codex`; if the wrapper/cache is stale, repair by
+   rerunning the SB Codex public installer/update path, then retry.
+4. Re-run discovery for `product-management:write-spec` and retry the skill
+   invocation.
+
+Only if the marketplace-backed install/repair attempt fails, is unavailable in
+the current host, or the user explicitly declines installation may SB continue
+with the built-in scaffold path. Record this line in the working notes:
+
+`[SB-FALLBACK: product-management:write-spec unavailable; using silver:spec built-in SPEC.md scaffold]`
+
+The built-in scaffold path MUST still produce `.planning/SPEC.md` and
+`.planning/REQUIREMENTS.md`. Use `templates/specs/SPEC.md.template` as the
+canonical structure, ask the same Socratic questions below, and explicitly add
+the fallback note to the generated spec frontmatter or assumptions section. Do
+not leave `.planning/SPEC.md` missing after an attempted dependency repair.
 
 ## Step 3: Socratic Elicitation Dialogue
 

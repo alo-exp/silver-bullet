@@ -63,6 +63,15 @@ def native_prompt_ready(text: str) -> bool:
     return "›" in text or "❯" in text
 
 
+def completion_prompt_returned(text: str) -> bool:
+    compact = compact_text(text)
+    if "workedfor" not in compact and "running2stophooks" not in compact:
+        return False
+    if "use/skillstolistavailableskills" in compact:
+        return True
+    return "›" in text or "❯" in text
+
+
 def append_transcript(path: str, data: bytes) -> None:
     if not path:
         return
@@ -273,6 +282,17 @@ def main() -> int:
                         text_since_prompt = ""
                         text_buffer = ""
                         continue
+
+                if prompt_submitted and saw_post_submit_output and completion_prompt_returned(text_buffer):
+                    try:
+                        os.killpg(child_pid, signal.SIGTERM)
+                    except OSError:
+                        pass
+                    try:
+                        os.waitpid(child_pid, 0)
+                    except ChildProcessError:
+                        pass
+                    return 0
 
             exited, returncode = child_returncode(child_pid)
             if exited:
