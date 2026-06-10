@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -379,7 +379,7 @@ function applyTheme(dark){
   localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
 }
 function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
-(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='light'?false:true)})();
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='dark')})();
 lucide.createIcons();
 </script>
 </body>
