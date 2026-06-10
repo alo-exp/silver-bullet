@@ -134,12 +134,12 @@
 
 /* ───── DARK THEME ───── */
 [data-theme="dark"]{
-  --bg-page:#080c10;
-  --bg-card:#0f1520;
-  --bg-card-hover:#162030;
-  --bg-code:#060a0e;
-  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
-  --chrome-gradient:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
+  --bg-page:#02060c;
+  --bg-card:#0c1724;
+  --bg-card-hover:#172638;
+  --bg-code:#050a13;
+  --bg-hero:linear-gradient(160deg,#010307 0%,#04101d 26%,#081827 52%,#0d2031 68%,#06111d 84%,#010307 100%);
+  --chrome-gradient:linear-gradient(90deg,#d9e1ea 0%,#ffffff 9%,#b4c0ce 21%,#f5f8fb 35%,#7f8ea0 49%,#ffffff 63%,#c9d3de 77%,#607184 89%,#eff4f8 100%);
   --accent:#00a82e;
   --accent-light:#00a82e;
   --accent-glow:rgba(0,168,46,0.13);
@@ -149,18 +149,18 @@
   --amber:#ffaa00;
   --red:#c44060;
   --cyan:#00ccff;
-  --text-primary:#e2e8f0;
-  --text-secondary:#94a3b8;
-  --text-dim:#64748b;
-  --border:#112218;
-  --border-hover:#1a3824;
-  --shadow-lg:0 20px 60px rgba(0,0,0,.7);
+  --text-primary:#f6f9fc;
+  --text-secondary:#bdcad8;
+  --text-dim:#8190a3;
+  --border:#2d4158;
+  --border-hover:#4d6884;
+  --shadow-lg:0 28px 82px rgba(0,0,0,.84);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
-  --nav-bg:rgba(8,12,16,.92);
-  --nav-mobile-bg:rgba(8,12,16,.99);
-  --section-alt:rgba(12,20,16,.7);
+  --nav-bg:rgba(3,7,12,.94);
+  --nav-mobile-bg:rgba(3,7,12,.99);
+  --section-alt:rgba(9,18,30,.96);
   --table-row-hover:rgba(0,255,65,.02);
-  --skill-phase-border:rgba(17,34,24,.9);
+  --skill-phase-border:rgba(45,62,82,.92);
   --btn-gradient:linear-gradient(135deg,#007a20 0%,#00a82e 50%,#007a20 100%);
   --btn-gradient-hover:linear-gradient(135deg,#009428 0%,#00c034 50%,#009428 100%);
   --hero-glow:rgba(0,176,42,0.04);
@@ -178,13 +178,21 @@
   --green-a12:rgba(52,211,153,.12);
   --green-a15:rgba(5,150,105,.12);
   --accent3-a12:rgba(244,114,182,.12);
-  --slate-a10:rgba(100,116,139,.10);
-  --slate-a12:rgba(100,116,139,.12);
-  --slate-text:#64748b;
+  --slate-a02:rgba(142,158,180,.04);
+  --slate-a07:rgba(142,158,180,.09);
+  --slate-a08:rgba(142,158,180,.10);
+  --slate-a10b:rgba(142,158,180,.12);
+  --slate-a10:rgba(142,158,180,.16);
+  --slate-a12:rgba(142,158,180,.20);
+  --slate-a15:rgba(142,158,180,.23);
+  --slate-a20:rgba(142,158,180,.28);
+  --slate-a25:rgba(142,158,180,.34);
+  --slate-a30:rgba(142,158,180,.40);
+  --slate-text:#9caabd;
   --cyan-discuss-a12:rgba(8,145,178,.12);
-  --neutral-a12:rgba(180,194,210,.12);
-  --neutral-a10:rgba(75,85,99,.10);
-  --heading-muted:#b8c4cc;
+  --neutral-a10:rgba(168,184,204,.14);
+  --neutral-a12:rgba(184,200,220,.18);
+  --heading-muted:#f8fbff;
 }
 
 /* ───── THEME TRANSITION ───── */
@@ -193,3 +201,81 @@ body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-b
 }
 
 code,kbd,pre,samp{font-family:var(--font-mono)}
+code,kbd,samp{font-size:1em !important;line-height:inherit}
+
+[data-theme="dark"] body{
+  background:linear-gradient(180deg,#02060c 0%,#010409 100%);
+}
+
+[data-theme="dark"] .hero,
+[data-theme="dark"] .page-hero{
+  background:rgba(6,13,21,.92);
+}
+
+[data-theme="dark"] .help-card,
+[data-theme="dark"] .quick-link,
+[data-theme="dark"] .sr-item,
+[data-theme="dark"] .card,
+[data-theme="dark"] .benefit-card,
+[data-theme="dark"] .score-card,
+[data-theme="dark"] .when-card,
+[data-theme="dark"] .step-card,
+[data-theme="dark"] .issue-card,
+[data-theme="dark"] .update-card,
+[data-theme="dark"] .wave-item,
+[data-theme="dark"] .slide,
+[data-theme="dark"] .table-wrap,
+[data-theme="dark"] .code-block,
+[data-theme="dark"] .install-block,
+[data-theme="dark"] .enforcement-block{
+  background:linear-gradient(180deg,#0e1a28 0%,#091421 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+}
+
+[data-theme="dark"] .callout,
+[data-theme="dark"] .callout-info,
+[data-theme="dark"] .callout-tip,
+[data-theme="dark"] .callout-warn,
+[data-theme="dark"] .callout-stop{
+  background:linear-gradient(135deg,rgba(17,31,47,.88),var(--accent-a07) 52%,rgba(38,52,70,.52));
+}
+
+.help-card,
+.quick-link,
+.sr-item,
+.card,
+.benefit-card,
+.score-card,
+.when-card,
+.step-card,
+.issue-card,
+.update-card,
+.wave-item,
+.slide,
+.table-wrap,
+.code-block,
+.install-block,
+.enforcement-block,
+.callout{
+  text-align:left;
+}
+
+.help-card .card-icon,
+.feature-icon,
+.benefit-icon{
+  margin-left:0;
+  margin-right:0;
+}
+
+.callout .callout-icon{
+  display:flex;
+  width:100%;
+  justify-content:center;
+  text-align:center;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+body *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab){
+  border-width:0 !important;
+}
