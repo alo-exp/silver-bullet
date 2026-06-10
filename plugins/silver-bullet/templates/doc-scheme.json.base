@@ -11,7 +11,7 @@
   "mandatory_updated_docs": [
     "docs/CHANGELOG.md",
     "docs/knowledge/YYYY-MM.md",
-    "docs/lessons/YYYY-MM.md",
+    "docs/learnings/YYYY-MM.md",
     "docs/task-doc-checklist.json"
   ],
   "required_docs": [
@@ -26,7 +26,7 @@
       "required_sections": []
     },
     {
-      "key": "docs/lessons/YYYY-MM.md",
+      "key": "docs/learnings/YYYY-MM.md",
       "mandatory_updated": true,
       "required_sections": []
     },

@@ -32,7 +32,7 @@ SB is an enforcement and orchestration layer that sits on top of GSD. It owns:
 - The Claude Code **hook layer**: PostToolUse / PreToolUse / SessionStart / Stop hooks that gate commits, releases, and conversation-end on required-skill discipline
 - **Composed-workflow tracking**: per-instance `.planning/workflows/<id>.md` files plus the `SB_WORKFLOW_ID` strict gate that refuses delivery until every flow row is `complete`
 - **Flow skills** (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast`) — orchestrators that sequence GSD commands, Superpowers skills, and quality skills into a single named workflow
-- **Item-capture skills** (`silver:add`, `silver:remove`, `silver:rem`, `silver:scan`) for tracking deferred items, knowledge, and lessons across sessions
+- **Item-capture skills** (`silver:add`, `silver:remove`, `silver:rem`, `silver:scan`) for tracking deferred items, knowledge, and learnings across sessions
 - **Session-handoff skill** (`silver:handoff`) for generating reusable, project-level resume prompts between sessions
 - **Quality skills** (`silver:quality-gates`, `silver:blast-radius`, `devops-quality-gates`)
 - **Pre-release quality gate** (4 stages: SB+GSD review stack → consistency audit → public content refresh → SENTINEL security audit)

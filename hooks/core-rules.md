@@ -5,6 +5,7 @@
 ## Non-Negotiable Rules (Section 3)
 
 You MUST NOT:
+- Invoke helper/plugin skills on your own before Silver Bullet routing or active workflow guidance has selected them
 - Skip a required skill because "it's simple" or "already covered"
 - Combine steps or claim implicit coverage — each Silver Bullet skill MUST be explicitly invoked through the active runtime's SB-recognized skill invocation channel
 - Claim a step is not applicable without explicit user approval
@@ -31,6 +32,10 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 ## Active Workflow (Section 2)
 
 Read `docs/workflows/full-dev-cycle.md` before starting any non-trivial task. If a required skill cannot be invoked, STOP and notify the user — do NOT silently skip.
+
+Silver Bullet owns the agentic loop in SB-activated projects. On every non-trivial user goal, wait for SB route/workflow guidance first, then invoke only the SB/GSD/helper skills that guidance selects. When an SB-launched workflow step completes, return control to the active SB workflow and let it choose the next step until the user goal is achieved or user feedback is required.
+
+Before planning, editing, debugging, reviewing, or shipping, read the relevant project knowledge and learnings that could affect the action. Prefer Graphify when available (`graphify query "<task context>"` from the project root); otherwise read `docs/knowledge/INDEX.md`, current `docs/knowledge/YYYY-MM.md`, current `docs/learnings/YYYY-MM.md`, and any directly referenced docs.
 
 ## Review Loop (Section 3a)
 

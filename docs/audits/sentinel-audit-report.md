@@ -450,14 +450,14 @@ Particularly sensitive paths:
 
 **Description:** Every `silver:feature` workflow ends with:
 ```
-Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and lessons from this feature.
+Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and learnings from this feature.
 ```
 
 Episodic memory stores conversation summaries and "key decisions" — which may include:
 - Design decisions mentioning proprietary algorithms
 - Architecture choices that reveal security posture
 - Bug descriptions that expose vulnerability details
-- Code snippets embedded in "lessons learned"
+- Code snippets embedded in "learnings"
 
 The episodic memory MCP (`mcp__plugin_episodic-memory_episodic-memory__read/search`) is available as a tool and its storage backend is not audited here. If the episodic memory plugin has any data sharing or telemetry, sensitive project information could leave the local environment.
 

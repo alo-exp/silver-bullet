@@ -309,14 +309,14 @@ footer a:hover{color:var(--accent-light)}
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator layer around GSD. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB/GSD/plugin path, and then enforces that the selected path actually runs. GSD remains the lifecycle and execution authority; SB owns routing, composition, quality gates, risk checks, traceability, and recovery.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.22+ exposes the native picker as <code>/Silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.23+ exposes the native picker as <code>/Silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or GSD lifecycle work.</td></tr>
           <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
-          <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/lessons files, task checklist, and related docs.</td></tr>
+          <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
           <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety is added only when the phase includes AI behavior. Failing dimensions become hard requirements.</td></tr>
           <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
@@ -326,8 +326,8 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/verify-tests<span class="badge-small badge-req">Required</span></td><td>Final delivery</td><td>Runs configured verify commands or stack defaults and writes the freshness marker consumed by SB hooks. Required before final delivery/release gates.</td></tr>
           <tr><td>/silver:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
           <tr><td>/silver:remove</td><td>Deferred work</td><td>Removes or retires a tracked work item by ID.</td></tr>
-          <tr><td>/silver:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable lessons into monthly files under <code>docs/knowledge/</code> and <code>docs/lessons/</code>.</td></tr>
-          <tr><td>/silver:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/lesson candidates.</td></tr>
+          <tr><td>/silver:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable learnings into monthly files under <code>docs/knowledge/</code> and <code>docs/learnings/</code>.</td></tr>
+          <tr><td>/silver:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/learning candidates.</td></tr>
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
@@ -578,7 +578,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.37.22"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.37.23"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -668,8 +668,8 @@ Mode: interactive | autonomous
 <span class="comment">## Outcome</span>
 {what was achieved}
 
-<span class="comment">## Knowledge and lessons additions</span>
-updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
+<span class="comment">## Knowledge and learnings additions</span>
+updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 
 <span class="comment">## Runtime/cost note</span>
 {host runtime, rough usage/cost estimate if available}</div>
@@ -728,7 +728,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
           <tr><td>docs/task-doc-checklist.json</td><td>Per-task documentation coverage checklist.</td></tr>
           <tr><td>docs/knowledge/INDEX.md</td><td>Gateway index for project-scoped knowledge.</td></tr>
           <tr><td>docs/knowledge/YYYY-MM.md</td><td>Monthly project-specific intelligence: architecture patterns, gotchas, key decisions, recurring patterns, open questions.</td></tr>
-          <tr><td>docs/lessons/YYYY-MM.md</td><td>Monthly portable lessons using the strict domain/stack/practice/devops/design taxonomy.</td></tr>
+          <tr><td>docs/learnings/YYYY-MM.md</td><td>Monthly portable learnings using the strict domain/stack/practice/devops/design taxonomy.</td></tr>
           <tr><td>docs/CHANGELOG.md</td><td>Newest-first task/release changelog.</td></tr>
           <tr><td>docs/specs/</td><td>Detailed design specs and source-linked specs.</td></tr>
           <tr><td>docs/workflows/</td><td>Active workflow files such as <code>full-dev-cycle.md</code> and <code>devops-cycle.md</code>.</td></tr>
@@ -782,7 +782,7 @@ updated docs/knowledge/YYYY-MM.md or docs/lessons/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.37.22</div>
+/silver:release v0.37.23</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>

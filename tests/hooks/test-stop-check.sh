@@ -173,7 +173,7 @@ seed_doc_scheme_marker() {
 
 | Event | What updates |
 |---|---|
-| Every task | CHANGELOG.md, knowledge/YYYY-MM.md, lessons/YYYY-MM.md |
+| Every task | CHANGELOG.md, knowledge/YYYY-MM.md, learnings/YYYY-MM.md |
 EOF
   cat > "$TMPDIR_TEST/docs/doc-scheme.json" << 'EOF'
 {
@@ -189,13 +189,13 @@ EOF
   "mandatory_updated_docs": [
     "docs/CHANGELOG.md",
     "docs/knowledge/YYYY-MM.md",
-    "docs/lessons/YYYY-MM.md",
+    "docs/learnings/YYYY-MM.md",
     "docs/task-doc-checklist.json"
   ],
   "required_docs": [
     { "key": "docs/CHANGELOG.md", "mandatory_updated": true, "required_sections": [] },
     { "key": "docs/knowledge/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
-    { "key": "docs/lessons/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
+    { "key": "docs/learnings/YYYY-MM.md", "mandatory_updated": true, "required_sections": [] },
     { "key": "docs/task-doc-checklist.json", "mandatory_updated": true, "required_sections": [] },
     { "key": "docs/doc-scheme.md", "mandatory_updated": false, "required_sections": [] },
     { "key": "docs/doc-scheme.json", "mandatory_updated": false, "required_sections": [] }
@@ -208,15 +208,15 @@ EOF
 
 seed_doc_scheme_targets_current_month() {
   local month="$1"
-  mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+  mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/learnings"
   cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
 # Changelog
 EOF
   cat > "$TMPDIR_TEST/docs/knowledge/${month}.md" << EOF
 # Knowledge ${month}
 EOF
-  cat > "$TMPDIR_TEST/docs/lessons/${month}.md" << EOF
-# Lessons ${month}
+  cat > "$TMPDIR_TEST/docs/learnings/${month}.md" << EOF
+# Learnings ${month}
 EOF
 }
 
@@ -230,7 +230,7 @@ seed_doc_scheme_checklist_current_month() {
   "docs": {
     "docs/CHANGELOG.md": "updated",
     "docs/knowledge/YYYY-MM.md": "updated",
-    "docs/lessons/YYYY-MM.md": "updated",
+    "docs/learnings/YYYY-MM.md": "updated",
     "docs/task-doc-checklist.json": "updated",
     "docs/doc-scheme.md": "not-needed: scheme unchanged for this task",
     "docs/doc-scheme.json": "not-needed: scheme contract unchanged for this task",
@@ -702,15 +702,15 @@ git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
 date +%s > "$SESSION_START_FILE"
 current_month=$(date '+%Y-%m')
-mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/learnings"
 cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
 # Changelog
 EOF
 cat > "$TMPDIR_TEST/docs/knowledge/${current_month}-a.md" << EOF
 # Knowledge ${current_month}
 EOF
-cat > "$TMPDIR_TEST/docs/lessons/${current_month}-b.md" << EOF
-# Lessons ${current_month}
+cat > "$TMPDIR_TEST/docs/learnings/${current_month}-b.md" << EOF
+# Learnings ${current_month}
 EOF
 seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook)
@@ -725,15 +725,15 @@ git -C "$TMPDIR_TEST" add wip.txt
 seed_doc_scheme_marker
 date +%s > "$SESSION_START_FILE"
 current_month=$(date '+%Y-%m')
-mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/lessons"
+mkdir -p "$TMPDIR_TEST/docs/knowledge" "$TMPDIR_TEST/docs/learnings"
 cat > "$TMPDIR_TEST/docs/CHANGELOG.md" << 'EOF'
 # Changelog
 EOF
 cat > "$TMPDIR_TEST/docs/knowledge/${current_month}.md" << EOF
 # Knowledge ${current_month}
 EOF
-cat > "$TMPDIR_TEST/docs/lessons/${current_month}.md" << EOF
-# Lessons ${current_month}
+cat > "$TMPDIR_TEST/docs/learnings/${current_month}.md" << EOF
+# Learnings ${current_month}
 EOF
 cat > "$TMPDIR_TEST/docs/EXTRA.md" << 'EOF'
 # Extra governed doc

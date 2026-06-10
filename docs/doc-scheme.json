@@ -14,7 +14,7 @@
   "mandatory_updated_docs": [
     "docs/CHANGELOG.md",
     "docs/knowledge/YYYY-MM.md",
-    "docs/lessons/YYYY-MM.md",
+    "docs/learnings/YYYY-MM.md",
     "docs/task-doc-checklist.json"
   ],
   "required_docs": [
@@ -29,7 +29,7 @@
       "required_sections": []
     },
     {
-      "key": "docs/lessons/YYYY-MM.md",
+      "key": "docs/learnings/YYYY-MM.md",
       "mandatory_updated": true,
       "required_sections": []
     },
@@ -339,7 +339,7 @@
       "required_sections": []
     },
     {
-      "key": "docs/specs/2026-04-13-knowledge-lessons-split-design.md",
+      "key": "docs/specs/2026-04-13-knowledge-learnings-split-design.md",
       "mandatory_updated": false,
       "required_sections": []
     },

@@ -156,7 +156,7 @@ if [[ -n "$existing" ]]; then
       "## Active Intent Ledger" "(filled during the session as active requests are intercepted)"
   fi
   if ! grep -q "^## Items Filed$" "$existing" 2>/dev/null; then
-    _insert_before "$existing" "## Knowledge & Lessons additions" \
+    _insert_before "$existing" "## Knowledge & Learnings additions" \
       "## Items Filed" "(none)"
   fi
 
@@ -281,7 +281,7 @@ cat > "$log_file" << LOGEOF
 
 (none)
 
-## Knowledge & Lessons additions
+## Knowledge & Learnings additions
 
 (filled at documentation step)
 LOGEOF

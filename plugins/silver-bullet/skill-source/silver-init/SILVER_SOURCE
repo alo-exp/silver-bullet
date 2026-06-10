@@ -104,6 +104,27 @@ Then ask the user directly:
 If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
+### 1.1a Graphify
+
+Graphify is required for SB's retrieval-oriented project memory. It lets SB query code,
+docs, knowledge, and learnings before planning or editing. Existing projects can fall
+back to direct docs reads when Graphify is temporarily unavailable, but new SB setup
+must confirm the dependency.
+
+Run via Bash tool:
+```
+command -v graphify
+```
+
+If the command fails (exit code non-zero), ask the user directly:
+- Question: "❌ **Graphify is not installed.** Silver Bullet uses Graphify for project memory retrieval before planning, editing, debugging, review, and shipping.\n\nInstall one of:\n\n```\nuv tool install graphifyy\n```\n\nor:\n\n```\npip install graphifyy\n```\n\nReady to continue?"
+- Options:
+  - "A. Yes, I've installed Graphify — continue"
+  - "B. Stop for now"
+
+If A: re-run `command -v graphify`. If still not found, STOP with: `❌ Graphify still not found. Please install it and re-run /silver:init.`
+If B: STOP.
+
 ### 1.2 Superpowers plugin
 
 Use the Glob tool to search for:

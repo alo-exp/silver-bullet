@@ -52,7 +52,7 @@ Build a short prioritized list (3-6 paths max) from existing files, preferring:
 3. `docs/TESTING.md`
 4. `docs/CHANGELOG.md`
 5. `docs/knowledge/INDEX.md`
-6. latest monthly knowledge/lessons files (`docs/knowledge/YYYY-MM*.md`, `docs/lessons/YYYY-MM*.md`)
+6. latest monthly knowledge/learnings files (`docs/knowledge/YYYY-MM*.md`, `docs/learnings/YYYY-MM*.md`)
 7. `docs/doc-scheme.md` (if docs governance matters)
 
 Only include files that actually exist.

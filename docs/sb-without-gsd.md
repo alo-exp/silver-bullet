@@ -78,7 +78,7 @@ fully without a GSD install.
 | `/silver-forensics` | Structured root-cause investigation for failed or stalled sessions; handles session-level issues directly, routes GSD-workflow-level issues to `/gsd:forensics` if GSD is installed |
 | `/silver-add` | Classify and file an issue or backlog item to GitHub Issues + project board, or to local `docs/issues/` |
 | `/silver-remove` | Remove an issue or backlog item by ID |
-| `/silver-rem` | Capture a knowledge or lessons-learned insight into monthly docs (`docs/knowledge/` or `docs/lessons/`) |
+| `/silver-rem` | Capture a knowledge or learning insight into monthly docs (`docs/knowledge/` or `docs/learnings/`) |
 | `/silver-scan` | Retrospective session scanner — detects deferred items and insights from session logs, files survivors via `/silver-add` and `/silver-rem` |
 | `/silver-handoff` | Generates a reusable project-level handoff prompt for session continuation |
 | `/verify-tests` | Test execution gate — runs configured verify commands or stack defaults and writes the freshness marker required by final delivery hooks |

@@ -343,10 +343,10 @@ resolve_doc_key_state() {
       done
       shopt -u nullglob
       ;;
-    "docs/lessons/YYYY-MM.md")
-      DOC_KEY_LABEL="docs/lessons/${month}*.md"
+    "docs/learnings/YYYY-MM.md")
+      DOC_KEY_LABEL="docs/learnings/${month}*.md"
       shopt -s nullglob
-      for f in "$repo_root/docs/lessons/${month}"*.md; do
+      for f in "$repo_root/docs/learnings/${month}"*.md; do
         [[ -f "$f" && ! -L "$f" ]] || continue
         m=$(_mtime_epoch "$f")
         if (( m > DOC_KEY_MTIME )); then
@@ -384,7 +384,7 @@ build_doc_scheme_checklist_keys() {
   DOC_SCHEME_CHECKLIST_KEYS=(
     "docs/CHANGELOG.md"
     "docs/knowledge/YYYY-MM.md"
-    "docs/lessons/YYYY-MM.md"
+    "docs/learnings/YYYY-MM.md"
   )
 
   if [[ -d "$repo_root/docs" && ! -L "$repo_root/docs" ]]; then
@@ -394,7 +394,7 @@ build_doc_scheme_checklist_keys() {
       if [[ "$rel" =~ ^docs/knowledge/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
         continue
       fi
-      if [[ "$rel" =~ ^docs/lessons/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
+      if [[ "$rel" =~ ^docs/learnings/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
         continue
       fi
       # Ignore placeholder files that are not real documentation content.
@@ -429,7 +429,7 @@ build_doc_scheme_checklist_keys() {
 #   - required-updated entries:
 #       docs/CHANGELOG.md
 #       docs/knowledge/YYYY-MM.md
-#       docs/lessons/YYYY-MM.md
+#       docs/learnings/YYYY-MM.md
 #   - complete checklist coverage for governed docs.
 run_doc_scheme_task_gate() {
   local repo_root="$1"

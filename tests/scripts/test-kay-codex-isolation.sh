@@ -94,8 +94,8 @@ mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpower
 cat > "$ORIGINAL_HOME/.kay/auth.json" <<'EOF'
 {
   "provider_credentials": {
-    "opencode-go": {
-      "api_key": "test-opencode-go-key"
+    "minimax": {
+      "api_key": "test-minimax-key"
     }
   }
 }
@@ -230,8 +230,8 @@ assert_eq "runtime-paths resolves Codex home under isolated Kay root" "$KAY_HOME
 assert_eq "runtime-paths resolves Codex state under isolated Kay root" "$KAY_HOME/.codex/.silver-bullet" "$SB_RUNTIME_STATE_DIR"
 assert_eq "Kay CLI resolves from original home when PATH omits kay" "$PATHLESS_ORIGINAL_HOME/.local/bin/kay" "$PATHLESS_RESOLVED"
 assert_eq "Kay live harness disables exec_command tool mode" "false" "$CODEX_EXPERIMENTAL_USE_EXEC_COMMAND_TOOL"
-assert_eq "OpenCode-Go key is sourced from original Kay auth" "test-opencode-go-key" "$OPENCODE_GO_API_KEY"
-assert_eq "MiniMax key stays unset for Kay OCG runs" "" "${MINIMAX_API_KEY:-}"
+assert_eq "MiniMax key is sourced from original Kay auth" "test-minimax-key" "$MINIMAX_API_KEY"
+assert_eq "OpenCode-Go key stays unset for Kay MiniMax runs" "" "${OPENCODE_GO_API_KEY:-}"
 assert_eq "Kay/Codex binary is preserved" "$FAKE_BIN" "$CODEX_BIN"
 case "$KAY_HOME" in
   /var/*|/private/var/*)
@@ -244,8 +244,8 @@ case "$KAY_HOME" in
     ;;
 esac
 assert_file_contains "Projected Kay config enables plugin hooks" "$KAY_HOME/.kay/config.toml" 'plugin_hooks = true'
-assert_file_contains "Isolated Kay config pins OpenCode-Go provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "opencode-go"'
-assert_file_contains "Isolated Kay config pins DeepSeek V4 Flash" "$KAY_HOME/.kay/config.toml" 'model = "deepseek-v4-flash"'
+assert_file_contains "Isolated Kay config pins MiniMax provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "minimax"'
+assert_file_contains "Isolated Kay config pins MiniMax M3" "$KAY_HOME/.kay/config.toml" 'model = "MiniMax-M3"'
 assert_file_contains "Isolated Kay config pins low reasoning" "$KAY_HOME/.kay/config.toml" 'model_reasoning_effort = "low"'
 assert_file_contains "Projected Kay config keeps trusted projects" "$KAY_HOME/.kay/config.toml" '[projects."/Users/shafqat/projects/silver-bullet"]'
 assert_file_contains "Projected Kay config keeps trusted project level" "$KAY_HOME/.kay/config.toml" 'trust_level = "trusted"'
@@ -274,7 +274,7 @@ PY
 )"
 assert_eq "Silver Bullet install path rewrites to isolated cache" "$KAY_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" "$ISOLATED_SB_INSTALL_PATH"
 case "$SB_LIVE_CODEX_ISOLATED_PROMPT_GUARD" in
-  *"opencode-go"*"deepseek-v4-flash"*"reasoning effort low"*"Do not call agent"*"Do not call browser"*"split argv array"*)
+  *"minimax"*"MiniMax-M3"*"reasoning effort low"*"Do not call agent"*"Do not call browser"*"split argv array"*)
     echo "PASS: isolated Kay prompt guard constrains provider, model, reasoning, agents, browser tools, and command arrays"
     (( PASS++ )) || true
     ;;

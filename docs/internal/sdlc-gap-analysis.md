@@ -272,7 +272,7 @@ That shifts today's highest-priority SB gaps toward outcome verification rather 
 | 1 | Security scanner gate | No built-in `security-scan` / scanner integration | SB still relies on design-time review instead of actual vulnerability detection |
 | 2 | Post-deploy verification | No `post-deploy-check` / production health gate | The workflow still ends before SB verifies the shipped system is healthy in the real environment |
 | 3 | Requirements validation | No `requirements-review` / acceptance-criteria gate | SB can still optimize the wrong work if discovery remains conversation-only |
-| 4 | Incident feedback loop | `incident-response` exists, but there is no mandatory PIR / runbook / tech-debt closure path | The system can handle an incident without feeding the lessons back into the process |
+| 4 | Incident feedback loop | `incident-response` exists, but there is no mandatory PIR / runbook / tech-debt closure path | The system can handle an incident without feeding the learnings back into the process |
 | 5 | Performance verification | No load / soak / benchmark gate | SB can approve work that looks scalable on paper but has not been exercised under load |
 
 Secondary watchlist:
