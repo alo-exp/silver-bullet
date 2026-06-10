@@ -327,6 +327,7 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
   display:inline-flex;
   align-items:flex-start;
   justify-content:center;
+  margin-top:.34em !important;
 }
 
 .doc-content .step-num,
