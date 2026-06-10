@@ -203,6 +203,24 @@ body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-b
 code,kbd,pre,samp{font-family:var(--font-mono)}
 code,kbd,samp{font-size:1em !important;line-height:inherit}
 
+:where(p,li,td,th,span,strong,em,.subtitle,.section-desc,.callout-body,.step-desc,.card,.help-card,.quick-link,.update-card,.issue-card,.when-card,.benefit-card) :where(code,kbd,samp){
+  font-size:1em !important;
+}
+
+.ref-table td:first-child,
+.pref-table td:first-child,
+.feat-table td:nth-child(2),
+.cat-table td.score-cell,
+.step-card .step-output,
+.wave-item .wave-num,
+.sb-gsd-proof-row strong{
+  font-size:inherit !important;
+}
+
+.prereq-card .install-cmd{
+  font-size:.9rem !important;
+}
+
 [data-theme="dark"] body{
   background:linear-gradient(180deg,#02060c 0%,#010409 100%);
 }
