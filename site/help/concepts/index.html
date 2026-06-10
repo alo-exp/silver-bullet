@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../../tokens.css?v=s3-site-align">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-fonts">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
@@ -192,12 +192,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>How Skills Are Stored</h3>
       <p>Skills live in host-specific locations:</p>
       <ul>
-        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — native host skill mirror. In Codex, SB mirrors internal <code>skill-source/</code> files here so the picker shows a single <code>/Silver:</code> namespace.</li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — native host skill mirror. In Codex, SB mirrors internal <code>skill-source/</code> files here so the picker shows a single <code>/silver:</code> namespace.</li>
         <li><code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> — plugin cache. Claude plugin skills can live under plugin <code>skills/</code>; the Codex SB package deliberately keeps internal skill sources under <code>skill-source/</code> to avoid duplicate plugin-prefixed picker entries.</li>
       </ul>
 
       <h3>How Skills Are Invoked</h3>
-      <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/Silver:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
+      <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/silver:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
       <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
 <span class="cmd">/requesting-code-review</span>  <span class="comment"># frames review; may dispatch helper reviewer</span>

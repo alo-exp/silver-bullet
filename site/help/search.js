@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or the public alo-labs/codex-plugins Codex marketplace package. The checkout installer ./scripts/install-codex.sh --purge-legacy-skills is for Silver Bullet development. Codex exposes native /Silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or the public alo-labs/codex-plugins Codex marketplace package. The checkout installer ./scripts/install-codex.sh --purge-legacy-skills is for Silver Bullet development. Codex exposes native /silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -36,7 +36,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /Silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
   },
   {
     "page": "Core Concepts",

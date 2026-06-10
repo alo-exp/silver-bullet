@@ -192,6 +192,9 @@ body{
 h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
 code,kbd,pre,samp{font-family:var(--font-mono)}
 code,kbd,samp{font-size:1em !important;line-height:inherit}
+:where(p,li,td,th,span,strong,em,.subtitle,.section-desc,.callout-body,.step-desc,.card,.help-card,.quick-link,.update-card,.issue-card,.when-card,.benefit-card) :where(code,kbd,samp){
+  font-size:1em !important;
+}
 
 /* ───── UTILITIES ───── */
 .container{max-width:1200px;margin:0 auto;padding:0 24px}
@@ -760,7 +763,7 @@ section:nth-child(even){background:var(--section-alt)}
 }
 .sb-gsd-proof-row:last-child{border-bottom:0;padding-bottom:0}
 @media(max-width:600px){.sb-gsd-proof-row{grid-template-columns:1fr;gap:4px}}
-.sb-gsd-proof-row strong{font-size:.82rem;color:var(--accent-light);font-family:var(--font-mono)}
+.sb-gsd-proof-row strong{font-size:.9rem;color:var(--accent-light);font-family:var(--font-mono)}
 .sb-gsd-proof-row span{font-size:.9rem;color:var(--text-secondary);line-height:1.5}
 
 /* ───── CALLOUT ───── */
@@ -969,7 +972,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/Silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1969,7 +1972,7 @@ img{max-width:100%;height:auto}
   <div class="container text-center">
     <div class="section-label">Installation</div>
     <h2 class="section-title">Get Started in Two Minutes</h2>
-    <p class="section-desc centered">Install Silver Bullet from the supported host marketplace, initialize your project, then use <code>/silver</code> or Codex's native <code>/Silver:</code> picker when you want SB to compose the right workflow for the task.</p>
+    <p class="section-desc centered">Install Silver Bullet from the supported host marketplace, initialize your project, then use <code>/silver</code> or Codex's native <code>/silver:</code> picker when you want SB to compose the right workflow for the task.</p>
 
     <div class="install-block mt-4 fade-in">
       <div class="install-code">
@@ -1978,7 +1981,7 @@ img{max-width:100%;height:auto}
         <div>&nbsp;</div>
         <div><span class="comment"># Install or refresh Silver Bullet (Codex)</span></div>
         <div><span class="cmd">Use the public alo-labs/codex-plugins marketplace package</span></div>
-        <div><span class="comment"># Codex exposes native /Silver: entries and hides internal skill-source files</span></div>
+        <div><span class="comment"># Codex exposes native /silver: entries and hides internal skill-source files</span></div>
         <div>&nbsp;</div>
         <div><span class="comment"># Initialize your project</span></div>
         <div><span class="cmd">/silver:init</span></div>
