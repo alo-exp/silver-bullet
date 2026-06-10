@@ -243,6 +243,20 @@ html[data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon svg{
   display:block;
 }
 
+html[data-neutral-variant="s3"] .callout .callout-icon{
+  display:flex;
+  width:100%;
+  justify-content:center;
+  text-align:center;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+html[data-neutral-variant="s3"] .callout .callout-icon svg{
+  margin-left:auto;
+  margin-right:auto;
+}
+
 html[data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab){
   border-width:0 !important;
 }
