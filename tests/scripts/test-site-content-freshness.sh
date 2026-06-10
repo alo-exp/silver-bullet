@@ -49,6 +49,9 @@ assert_contains "package metadata includes Codex support" "Claude Code and Codex
 assert_contains "Help Center search indexes Graphify project memory" "Graphify project memory|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/search.js"
 assert_contains "Documentation scheme explains Graphify retrieval" "Graphify Retrieval|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/concepts/documentation.html"
 assert_contains "Getting Started links Graphify dependency docs" "Graphify Retrieval|python3\\.12 -m pip install graphifyy|uv tool install graphifyy" "$REPO_ROOT/site/help/getting-started/index.html"
+assert_not_contains "site HTML defaults to light theme" "<html[^>]+data-theme=\"dark\"" "$REPO_ROOT/site"
+assert_not_contains "site startup scripts do not default silver-bullet-theme to dark" "silver-bullet-theme'\\)==='light'\\?'light':'dark'|applyTheme\\(s==='light'\\?false:true\\)|saved \\? saved === 'dark' : true" "$REPO_ROOT/site"
+assert_not_contains "site startup scripts do not default sb-theme to dark" "localStorage\\.getItem\\('sb-theme'\\)[[:space:]]*\\|\\|[[:space:]]*'dark'" "$REPO_ROOT/site"
 
 while IFS= read -r html_file; do
   rel="${html_file#$REPO_ROOT/site}"

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -302,7 +302,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <script src="../search.js"></script>
 <script>
 (function(){
-  var t = localStorage.getItem('sb-theme') || 'dark';
+  var t = localStorage.getItem('sb-theme') || 'light';
   document.documentElement.setAttribute('data-theme', t);
   function applyIcons(theme) {
     var sun = document.getElementById('icon-sun');
@@ -313,7 +313,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   }
   applyIcons(t);
   window.toggleTheme = function() {
-    var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
     var next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('sb-theme', next);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -720,7 +720,7 @@ function applyTheme(dark){
   localStorage.setItem('silver-bullet-theme',dark?'dark':'light');
 }
 function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')!=='dark')}
-(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='light'?false:true)})();
+(function(){const s=localStorage.getItem('silver-bullet-theme');applyTheme(s==='dark')})();
 const headings=document.querySelectorAll('.doc-content h2[id]');
 const links=document.querySelectorAll('.sidebar-nav a');
 window.addEventListener('scroll',()=>{let curr='';headings.forEach(h=>{if(window.scrollY>=h.offsetTop-100)curr=h.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+curr)})},{passive:true});
