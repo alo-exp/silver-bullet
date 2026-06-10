@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-neutral-variant="s3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -235,6 +235,12 @@ nav .nav-links a{
   font-weight:500;transition:color .2s;
 }
 nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-help{
+  color:var(--text-secondary);text-decoration:none;font-size:.875rem;
+  font-weight:600;transition:color .2s;white-space:nowrap;
+  margin-right:14px;
+}
+nav .nav-help:hover{color:var(--text-primary)}
 nav .nav-cta{
   background:linear-gradient(135deg,var(--grad-1),var(--grad-2));
   color:#fff;padding:8px 20px;border-radius:999px;
@@ -907,6 +913,7 @@ img{max-width:100%;height:auto}
   .workflow-table td,.workflow-table th{font-size:.7rem;padding:6px 7px}
 }
 </style>
+<link rel="stylesheet" href="neutral-variants.css?v=s3-home">
 </head>
 <body>
 
@@ -919,16 +926,12 @@ img{max-width:100%;height:auto}
       <li><a href="#problem">Problem</a></li>
       <li><a href="#solution">How It Works</a></li>
       <li><a href="#ecosystem">Ecosystem</a></li>
-      <li><a href="#sb-vs-gsd">SB vs GSD</a></li>
-      <li><a href="#quality-gates">Quality Gates</a></li>
-      <li><a href="#enforcement">Enforcement</a></li>
-      <li><a href="#operational-efficiency">Efficiency</a></li>
-      <li><a href="#workflow">Workflow</a></li>
+      <li><a href="#workflow">Workflows</a></li>
       <li><a href="#install">Install</a></li>
-      <li><a href="compare/">Compare</a></li>
       <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a></li>
     </ul>
     <div style="display:flex;align-items:center;gap:10px">
+      <a href="help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="
         width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
         background:var(--bg-card);color:var(--text-secondary);font-size:1.1rem;
