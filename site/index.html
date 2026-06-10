@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='light'?'light':'dark');</script>
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="shortcut icon" href="favicon.ico">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
@@ -2035,7 +2035,7 @@ function toggleTheme() {
 }
 (function(){
   const saved = localStorage.getItem('silver-bullet-theme');
-  applyTheme(saved ? saved === 'dark' : true);
+  applyTheme(saved ? saved === 'dark' : false);
 })();
 
 // ── Scroll-triggered fade-in ──
