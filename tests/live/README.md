@@ -1,8 +1,8 @@
 # Silver Bullet Live AI E2E Tests
 
 These tests invoke the **real Kay-backed agent** with the Silver Bullet plugin
-loaded and stored credentials. The standard path uses Kay's `opencode-go`
-provider credentials with `deepseek-v4-flash` and low reasoning for isolated
+loaded and stored credentials. The standard path uses Kay's MiniMax.io
+provider credentials with `MiniMax-M3` and low reasoning for isolated
 live testing. They verify that SB enforcement hooks
 (dev-cycle-check, record-skill, stop-check, compliance-status, forbidden-skill-check)
 actually work when the live agent triggers them via real tool usage.
@@ -10,7 +10,7 @@ actually work when the live agent triggers them via real tool usage.
 ## Prerequisites
 
 - Kay `v0.9.6` available in `PATH` for Kay-agent runs
-- `opencode-go` credentials available through the user's Kay config
+- MiniMax.io credentials available through the user's Kay config
 - Authenticated with valid credentials for the Kay profile you plan to run
 - `jq` installed (`brew install jq`)
 - Git available
@@ -52,7 +52,7 @@ bash tests/live/test-live-full-scenario.sh
 | test-live-enforcement.sh | S1-S4 | HARD STOP blocking, planning gate, forbidden skills, stop-check |
 | test-live-skill-recording.sh | S5-S6 | Skill recording to state file, compliance-status output |
 | test-live-full-scenario.sh | S7-S8 | Session initialization, abbreviated SDLC lifecycle |
-| test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/lessons updates, filename conventions |
+| test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/learnings updates, filename conventions |
 | test-silver-init-migration.sh | Init docs bootstrap | `silver:init` Step 3.5.5 delegation to `silver:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
 
 ## Isolation
@@ -62,7 +62,7 @@ Each agent run uses:
 - Isolated state files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-state-{PID}`
 - Isolated trivial files: `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/live-test-trivial-{PID}`
 - For Kay-agent runs, an isolated temporary `KAY_HOME` root backed by Kay's
-  `opencode-go` provider path so the test installer never rewrites the user's
+  MiniMax.io provider path so the test installer never rewrites the user's
   real `~/.codex` hook cache.
 - Native Codex isolated runs use Codex's supported
   `--dangerously-bypass-hook-trust` flag and auto-accept the one-time hook

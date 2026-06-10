@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Documentation Scheme — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet organizes project documentation: three layers, five scalability patterns, knowledge vs lessons, and the non-redundancy contract.">
+<meta name="description" content="How Silver Bullet organizes project documentation: three layers, five scalability patterns, knowledge vs learnings, and the non-redundancy contract.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -144,7 +144,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#scalability">Scalability Patterns</a></li>
         <li class="sidebar-section">Project Docs</li>
         <li><a href="#core-files">Core Files</a></li>
-        <li><a href="#knowledge-lessons">Knowledge &amp; Lessons</a></li>
+        <li><a href="#knowledge-learnings">Knowledge &amp; Learnings</a></li>
         <li><a href="#optional-files">Optional Files</a></li>
         <li class="sidebar-section">Rules</li>
         <li><a href="#size-caps">Size Caps</a></li>
@@ -186,7 +186,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <span class="layer-num">2</span>
           <div>
             <h4>Project Docs &mdash; <code>docs/</code></h4>
-            <p>Architecture, testing strategy, changelog, knowledge, lessons. Durable across milestones. Updated during the Documentation step of every task finalization.</p>
+            <p>Architecture, testing strategy, changelog, knowledge, learnings. Durable across milestones. Updated during the Documentation step of every task finalization.</p>
           </div>
         </div>
         <div class="layer-card">
@@ -232,8 +232,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="knowledge-lessons">Knowledge &amp; Lessons</h2>
-      <p>Project intelligence is split into two directories to separate project-specific knowledge from portable lessons.</p>
+      <h2 id="knowledge-learnings">Knowledge &amp; Learnings</h2>
+      <p>Project intelligence is split into two directories to separate project-specific knowledge from portable learnings.</p>
 
       <h3><code>docs/knowledge/</code> &mdash; Project-Scoped Intelligence</h3>
       <p>Things learned about <strong>this project</strong>: architecture patterns discovered, gotchas encountered, key decisions made, recurring patterns, and open questions. Not redundant with <code>ARCHITECTURE.md</code> (which captures current state, not journey) or phase <code>CONTEXT.md</code> files (which are single-phase and archived).</p>
@@ -243,8 +243,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Gateway:</strong> <code>knowledge/INDEX.md</code> lists all project docs with paths and purposes</li>
       </ul>
 
-      <h3><code>docs/lessons/</code> &mdash; Portable Lessons Learned</h3>
-      <p>General lessons applicable beyond this project. Written as if explaining to someone who has never seen this codebase. No project-specific file paths, feature names, or requirement IDs.</p>
+      <h3><code>docs/learnings/</code> &mdash; Portable Learnings</h3>
+      <p>General learnings applicable beyond this project. Written as if explaining to someone who has never seen this codebase. No project-specific file paths, feature names, or requirement IDs.</p>
       <ul>
         <li><strong>File convention:</strong> <code>YYYY-MM.md</code> &mdash; same monthly segmentation</li>
         <li><strong>Category taxonomy:</strong></li>
@@ -253,7 +253,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <table class="doc-table">
         <thead><tr><th>Prefix</th><th>Covers</th><th>Example</th></tr></thead>
         <tbody>
-          <tr><td><code>domain:</code></td><td>Business domain lessons</td><td>Regulations, patterns, terminology</td></tr>
+          <tr><td><code>domain:</code></td><td>Business domain learnings</td><td>Regulations, patterns, terminology</td></tr>
           <tr><td><code>stack:</code></td><td>Language/framework/tool</td><td>Bash quirks, React patterns</td></tr>
           <tr><td><code>practice:</code></td><td>Software engineering</td><td>Config management, testing strategy</td></tr>
           <tr><td><code>devops:</code></td><td>CI, deployment, infra</td><td>Pipeline design, monitoring</td></tr>
@@ -263,7 +263,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Portability rule.</strong> Lessons files must never contain project-specific references. If you can't explain the lesson without naming a project file or feature, it belongs in <code>knowledge/</code> instead.</div>
+        <div class="callout-body"><strong>Portability rule.</strong> Learnings files must never contain project-specific references. If you can't explain the learning without naming a project file or feature, it belongs in <code>knowledge/</code> instead.</div>
       </div>
 
       <div class="divider"></div>
@@ -293,7 +293,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <tbody>
           <tr><td><code>docs/*.md</code></td><td>500 lines</td><td>Artifact reviewer flags for splitting</td></tr>
           <tr><td><code>docs/knowledge/*.md</code></td><td>300 lines</td><td>Split into <code>YYYY-MM-a.md</code> / <code>YYYY-MM-b.md</code></td></tr>
-          <tr><td><code>docs/lessons/*.md</code></td><td>300 lines</td><td>Split into <code>YYYY-MM-a.md</code> / <code>YYYY-MM-b.md</code></td></tr>
+          <tr><td><code>docs/learnings/*.md</code></td><td>300 lines</td><td>Split into <code>YYYY-MM-a.md</code> / <code>YYYY-MM-b.md</code></td></tr>
           <tr><td><code>.planning/</code> active files</td><td>300 lines</td><td>Milestone completion archives and resets</td></tr>
         </tbody>
       </table>
@@ -305,7 +305,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <table class="doc-table">
         <thead><tr><th>Event</th><th>What Updates</th></tr></thead>
         <tbody>
-          <tr><td>Every task (finalization step)</td><td><code>CHANGELOG.md</code>, <code>knowledge/YYYY-MM.md</code>, <code>lessons/YYYY-MM.md</code></td></tr>
+          <tr><td>Every task (finalization step)</td><td><code>CHANGELOG.md</code>, <code>knowledge/YYYY-MM.md</code>, <code>learnings/YYYY-MM.md</code></td></tr>
           <tr><td>Architecture changes</td><td><code>ARCHITECTURE.md</code> (rewritten)</td></tr>
           <tr><td>Test infrastructure changes</td><td><code>TESTING.md</code></td></tr>
           <tr><td>Docs added or removed</td><td><code>knowledge/INDEX.md</code></td></tr>
@@ -321,14 +321,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li><code>.planning/</code> artifacts are the source of truth during active development &mdash; <code>docs/</code> files are derived summaries</li>
         <li><code>knowledge/</code> captures intelligence <strong>not derivable</strong> from code or git history</li>
-        <li><code>lessons/</code> captures portable learnings &mdash; never duplicates project-specific knowledge</li>
+        <li><code>learnings/</code> captures portable learnings &mdash; never duplicates project-specific knowledge</li>
         <li><code>ARCHITECTURE.md</code> is high-level design only &mdash; detailed phase designs stay in <code>.planning/phases/</code></li>
         <li><code>CHANGELOG.md</code> is the task log &mdash; git log is the commit log (different granularity, no overlap)</li>
       </ol>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Never duplicate between layers.</strong> If content exists in <code>.planning/REQUIREMENTS.md</code>, don't copy it into <code>docs/</code>. Reference it. If a lesson applies beyond this project, put it in <code>lessons/</code>, not <code>knowledge/</code>. The artifact reviewer checks for cross-document duplication.</div>
+        <div class="callout-body"><strong>Never duplicate between layers.</strong> If content exists in <code>.planning/REQUIREMENTS.md</code>, don't copy it into <code>docs/</code>. Reference it. If a learning applies beyond this project, put it in <code>learnings/</code>, not <code>knowledge/</code>. The artifact reviewer checks for cross-document duplication.</div>
       </div>
 
       <div class="divider"></div>

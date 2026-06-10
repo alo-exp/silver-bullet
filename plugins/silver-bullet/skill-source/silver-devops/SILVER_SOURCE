@@ -242,7 +242,7 @@ Before deploying, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the infrastructure change (newest-first). If missing, write it now.
 2. **`docs/knowledge/YYYY-MM.md`** (current month) — append IaC patterns, provider quirks, and config gotchas encountered.
-3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable DevOps lessons learned.
+3. **`docs/learnings/YYYY-MM.md`** (current month) — append portable DevOps learnings.
 4. Update any additional docs changed by the work (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
 5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 

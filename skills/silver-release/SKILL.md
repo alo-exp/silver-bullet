@@ -293,7 +293,7 @@ git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bu
 
 **Trigger:** Execute this step only after Step 9 (`silver:create-release`) has completed and the release tag is published.
 
-Generate a consolidated summary of all items filed and knowledge/lessons recorded during this milestone.
+Generate a consolidated summary of all items filed and knowledge/learnings recorded during this milestone.
 
 ### Step 9b.1: Determine milestone window
 
@@ -345,7 +345,7 @@ No items were recorded during this milestone via /silver:add or /silver:rem.
 
 If `items_filed` is non-empty, separate items by prefix:
 - Lines starting with `- SB-` or `- #` → filed via /silver:add (issues/backlog)
-- Lines starting with `- [knowledge]:` or `- [lessons]:` → recorded via /silver:rem
+- Lines starting with `- [knowledge]:` or `- [learnings]:` → recorded via /silver:rem
 
 Output a formatted summary:
 ```
@@ -356,8 +356,8 @@ Session logs scanned: {sessions_scanned} (from {MILESTONE_START} to today)
 Issues & Backlog filed via /silver:add:
 {list of SB-/# lines, or "(none)"}
 
-Knowledge & Lessons recorded via /silver:rem:
-{list of [knowledge]/[lessons] lines, or "(none)"}
+Knowledge & Learnings recorded via /silver:rem:
+{list of [knowledge]/[learnings] lines, or "(none)"}
 
-Total: {N} issues/backlog items, {M} knowledge/lessons entries
+Total: {N} issues/backlog items, {M} knowledge/learnings entries
 ```

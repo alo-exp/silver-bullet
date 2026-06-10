@@ -366,14 +366,14 @@ PY
 
 ensure_monthly_note_exists() {
   local month="$1"
-  local lesson_file="${WORK_DIR}/docs/lessons/${month}.md"
+  local learning_file="${WORK_DIR}/docs/learnings/${month}.md"
   local knowledge_file="${WORK_DIR}/docs/knowledge/${month}.md"
-  if [[ -f "$lesson_file" || -f "$knowledge_file" ]]; then
+  if [[ -f "$learning_file" || -f "$knowledge_file" ]]; then
     return 0
   fi
-  mkdir -p "${WORK_DIR}/docs/lessons"
-  cat > "$lesson_file" <<EOF
-# Lessons - ${month}
+  mkdir -p "${WORK_DIR}/docs/learnings"
+  cat > "$learning_file" <<EOF
+# Learnings - ${month}
 
 - Inline live journeys need deterministic recovery when an agent loses a turn after tool-call failures.
 EOF
@@ -818,14 +818,14 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-journey_turn "silver:rem" "capture a durable lesson from the run" "no" "rem turn recorded" "$(skill_prompt 'silver:rem' 'Capture one durable lesson from the inline todo-app journey in the monthly knowledge or lessons docs.')"
+journey_turn "silver:rem" "capture a durable learning from the run" "no" "rem turn recorded" "$(skill_prompt 'silver:rem' 'Capture one durable learning from the inline todo-app journey in the monthly knowledge or learnings docs.')"
 wait_for_state_contains "silver:rem recorded in workflow state" "silver:rem"
 
 month="$(date +%Y-%m)"
-lesson_file="${WORK_DIR}/docs/lessons/${month}.md"
+learning_file="${WORK_DIR}/docs/learnings/${month}.md"
 knowledge_file="${WORK_DIR}/docs/knowledge/${month}.md"
 ensure_monthly_note_exists "$month"
-if [[ -f "$lesson_file" || -f "$knowledge_file" ]]; then
+if [[ -f "$learning_file" || -f "$knowledge_file" ]]; then
   echo "PASS: silver:rem wrote a durable monthly note"
   PASS=$((PASS + 1))
 else

@@ -18,7 +18,8 @@ STATE_DIR = ".silver-bullet"
 STATE_FILE = "scan-state.json"
 LOCAL_ISSUES_DIR = Path("docs/issues")
 KNOWLEDGE_DIR = Path("docs/knowledge")
-LESSONS_DIR = Path("docs/lessons")
+LEARNINGS_DIR = Path("docs/learnings")
+LEGACY_LESSONS_DIR = Path("docs/lessons")
 
 SECTION_DEFERRED = {
     "needs human review",
@@ -30,6 +31,8 @@ SECTION_AUTONOMOUS = {
     "autonomous decision",
 }
 SECTION_KNOWLEDGE = {
+    "knowledge & learnings additions",
+    "knowledge and learnings additions",
     "knowledge & lessons additions",
     "knowledge and lessons additions",
 }
@@ -479,7 +482,7 @@ def classify_insight(text: str, root: Path, config: dict[str, Any]) -> tuple[str
         return "knowledge", "high"
     if re.search(r"(/|\.md\b|\.sh\b|\.json\b|docs/|src/)", lowered):
         return "knowledge", "high"
-    return "lesson", "medium"
+    return "learning", "medium"
 
 
 def build_candidate(
@@ -572,6 +575,7 @@ def local_tracker_text(root: Path) -> str:
         "docs/issues/ISSUES.md",
         "docs/issues/BACKLOG.md",
         "docs/knowledge/*.md",
+        "docs/learnings/*.md",
         "docs/lessons/*.md",
     ]:
         for path in sorted(root.glob(pattern)):
@@ -687,7 +691,11 @@ def parse_candidates(root: Path, source: dict[str, Any], config: dict[str, Any],
             for _line_no, block_text in blocks:
                 text = strip_prefix(block_text).strip()
                 normalized = normalize_text(text)
-                if text.lower().startswith("- [knowledge]:") or text.lower().startswith("- [lessons]:"):
+                if (
+                    text.lower().startswith("- [knowledge]:")
+                    or text.lower().startswith("- [learnings]:")
+                    or text.lower().startswith("- [lessons]:")
+                ):
                     recorded_insights.add(normalized)
             continue
 
@@ -887,7 +895,7 @@ def record_target_month_file(root: Path, candidate: dict[str, Any]) -> tuple[Pat
     month = local_month()
     if candidate["classification"] == "knowledge":
         return root / KNOWLEDGE_DIR / f"{month}.md", True
-    return root / LESSONS_DIR / f"{month}.md", False
+    return root / LEARNINGS_DIR / f"{month}.md", False
 
 
 def ensure_knowledge_index(root: Path, month: str, kind: str) -> None:
@@ -916,7 +924,7 @@ def ensure_knowledge_index(root: Path, month: str, kind: str) -> None:
                     "| Git Repo | {{GIT_REPO}} | — |",
                     "",
                     "Latest knowledge: `(none)`",
-                    "Latest lessons: `(none)`",
+                    "Latest learnings: `(none)`",
                     "",
                 ]
             ),
@@ -929,11 +937,11 @@ def ensure_knowledge_index(root: Path, month: str, kind: str) -> None:
             content = content.replace("| Git Repo | {{GIT_REPO}} | — |\n", "| Git Repo | {{GIT_REPO}} | — |\n" + row + "\n")
         content = re.sub(r"^Latest knowledge: .*?$", f"Latest knowledge: `docs/knowledge/{month}.md`", content, flags=re.M)
     else:
-        content = re.sub(r"^Latest lessons: .*?$", f"Latest lessons: `docs/lessons/{month}.md`", content, flags=re.M)
+        content = re.sub(r"^Latest learnings: .*?$", f"Latest learnings: `docs/learnings/{month}.md`", content, flags=re.M)
     atomic_write(index, content if content.endswith("\n") else content + "\n")
 
 
-def lesson_category(text: str) -> str:
+def learning_category(text: str) -> str:
     lowered = normalize_text(text)
     if any(token in lowered for token in ("bash", "shell", "jq", "git", "grep", "tmpfile", "atomic", "cli")):
         return "stack:bash"
@@ -983,11 +991,11 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
                     [
                         "---",
                         f"period: {month}",
-                        "type: lessons",
+                        "type: learnings",
                         "categories: []",
                         "---",
                         "",
-                        f"# Lessons Learned - {month}",
+                        f"# Learnings - {month}",
                         "",
                         "## domain:{area}",
                         "",
@@ -1008,7 +1016,7 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
     if is_knowledge:
         heading = {
             "knowledge": "## Architecture Patterns",
-            "lesson": "## Architecture Patterns",
+            "learning": "## Architecture Patterns",
         }.get(candidate["classification"], "## Architecture Patterns")
         lower = normalize_text(candidate["context"])
         if "question" in lower or "open question" in lower:
@@ -1033,7 +1041,7 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
         atomic_write(target, content if content.endswith("\n") else content + "\n")
         ensure_knowledge_index(root, month, "knowledge")
     else:
-        heading = lesson_category(candidate["context"])
+        heading = learning_category(candidate["context"])
         entry = f"{local_date()} - {candidate['context']} [candidate-id:{candidate['candidate_id']}]"
         if f"## {heading}" not in content:
             content = content.rstrip() + f"\n\n## {heading}\n\n{entry}\n"
@@ -1046,7 +1054,7 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
                     content = "\n".join(lines).rstrip() + "\n"
                     break
         atomic_write(target, content if content.endswith("\n") else content + "\n")
-        ensure_knowledge_index(root, month, "lessons")
+        ensure_knowledge_index(root, month, "learnings")
 
 
 def record_candidate(root: Path, candidate: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -1167,8 +1175,12 @@ def parse_candidate_stream(root: Path, source: dict[str, Any], config: dict[str,
         if title in SECTION_ITEMS_FILED:
             for _line_no, block_text in blocks:
                 text = strip_prefix(block_text).strip()
-                if text.lower().startswith("- [knowledge]:") or text.lower().startswith("- [lessons]:"):
-                    recorded_insights.add(normalize_text(re.sub(r"^- \[(knowledge|lessons)\]:\s*", "", text, flags=re.I)))
+                if (
+                    text.lower().startswith("- [knowledge]:")
+                    or text.lower().startswith("- [learnings]:")
+                    or text.lower().startswith("- [lessons]:")
+                ):
+                    recorded_insights.add(normalize_text(re.sub(r"^- \[(knowledge|learnings|lessons)\]:\s*", "", text, flags=re.I)))
             continue
         if title not in SECTION_DEFERRED and title not in SECTION_AUTONOMOUS and title not in SECTION_KNOWLEDGE:
             continue

@@ -43,7 +43,7 @@ assert_json_eq() {
 
 make_workspace() {
   WORKDIR="$(mktemp -d)"
-  mkdir -p "$WORKDIR/docs/sessions" "$WORKDIR/docs/issues" "$WORKDIR/docs/knowledge" "$WORKDIR/docs/lessons"
+  mkdir -p "$WORKDIR/docs/sessions" "$WORKDIR/docs/issues" "$WORKDIR/docs/knowledge" "$WORKDIR/docs/learnings"
   cat > "$WORKDIR/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -97,7 +97,7 @@ cat > "$WORKDIR/docs/sessions/2026-05-12-alpha.md" <<'EOF'
 
 - Investigate flaky CI on release branch
 
-## Knowledge & Lessons additions
+## Knowledge & Learnings additions
 
 - Atomic tmpfile+mv keeps JSON writes safe.
 EOF

@@ -248,6 +248,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           </div>
         </div>
         <div class="prereq-card">
+          <div class="prereq-icon"><i data-lucide="network"></i></div>
+          <div>
+            <h4>Graphify <span class="tag tag-required">Required</span></h4>
+            <p>Project-memory retrieval used before planning, editing, debugging, review, and release. SB falls back to direct docs reads only as a degraded path.</p>
+            <div class="install-cmd">uv tool install graphifyy<br>pip install graphifyy</div>
+          </div>
+        </div>
+        <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="zap"></i></div>
           <div>
             <h4>Superpowers <span class="tag tag-required">Required for SB helper gates</span></h4>
@@ -281,7 +289,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Silver Bullet supports Claude Code and Codex host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.37.22, the Codex package installs SB-owned skills as internal <code>skill-source/</code> files and mirrors only the native <code>/Silver:</code> picker surface, avoiding duplicate <code>/Silver Bullet:</code> listings.</p>
+      <p>Silver Bullet supports Claude Code and Codex host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.37.23, the Codex package installs SB-owned skills as internal <code>skill-source/</code> files and mirrors only the native <code>/Silver:</code> picker surface, avoiding duplicate <code>/Silver Bullet:</code> listings.</p>
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager, then install the required dependency plugins from their official sources.</p>
@@ -474,7 +482,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>In Silver Bullet, you don't need to memorize the workflow catalog. Use <code>/silver</code> with a plain work request and SB composes the right workflow path for the task.</p>
 
       <h3>How it works</h3>
-      <p><code>/silver</code> classifies complexity, checks task intent, and routes to the right orchestration workflow. Some host runtimes may support plain-request interception, but explicit <code>/silver</code> invocation is the portable behavior across supported hosts.</p>
+      <p><code>/silver</code> classifies complexity, checks task intent, reads relevant knowledge and learnings, and routes to the right orchestration workflow. Some host runtimes may support plain-request interception, but explicit <code>/silver</code> invocation is the portable behavior across supported hosts.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="zap"></i></span>

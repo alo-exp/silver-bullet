@@ -28,7 +28,7 @@ The strongest SB-over-GSD benefits are:
 6. **Quality gates:** SB adds product, security, test, release, and DevOps gates outside GSD's core execution loop.
 7. **DevOps safety:** SB adds blast-radius analysis, incident paths, environment promotion, and deployment safeguards.
 8. **Release governance:** SB adds release-gate architecture around GSD milestone completion; the full 4-stage gate is currently specific to this Claude/Codex plugin project and should be generalized later.
-9. **Continuity and memory:** SB captures issues, deferred items, knowledge, lessons, handoffs, session logs, and session forensics.
+9. **Continuity and memory:** SB captures issues, deferred items, knowledge, learnings, handoffs, session logs, and session forensics.
 10. **Boundary protection:** SB protects planning artifacts, SB state files, instruction files, third-party plugin files, and legacy bypass markers from unsafe edits.
 
 ---
@@ -65,7 +65,7 @@ SB owns:
 - spec, ingestion, validation, UAT, and PR traceability gates
 - artifact-review orchestration and analytics
 - docs governance
-- issue, knowledge, lesson, and handoff capture
+- issue, knowledge, learning, and handoff capture
 - session supervision and anti-stall checks
 - cross-plugin sequencing
 
@@ -106,7 +106,7 @@ This report counts only the behaviors SB adds or enforces beyond plain GSD.
 | Commit/PR/deploy/release safety | Mostly operator discipline plus GSD workflow | Mechanical gates on tool use and delivery commands |
 | Delivery traceability | Can be represented manually in artifacts | PR descriptions and `SPEC.md` implementation links are updated from captured spec session state |
 | Cross-plugin integration | Mostly outside GSD | Explicit sequencing of GSD, SB gates, and selected helper plugins |
-| Session continuity | GSD state and artifacts | GSD state plus SB state, session logs, issue capture, knowledge, lessons, handoff, anti-stall warnings, and forensics |
+| Session continuity | GSD state and artifacts | GSD state plus SB state, session logs, issue capture, knowledge, learnings, handoff, anti-stall warnings, and forensics |
 | DevOps workflow | GSD can execute infra tasks | SB adds infra-specific risk, promotion, incident, and deploy gates |
 
 ---
@@ -452,7 +452,7 @@ SB gives planning and requirements artifacts the same kind of review discipline 
 
 ---
 
-## Benefit 12: SB Adds Issue, Backlog, Knowledge, And Lesson Capture
+## Benefit 12: SB Adds Issue, Backlog, Knowledge, And Learning Capture
 
 ### Plain GSD
 
@@ -464,7 +464,7 @@ SB adds:
 
 - `/silver-add`: classify and file issue/backlog items
 - `/silver-remove`: remove tracked items
-- `/silver-rem`: capture project knowledge and portable lessons into monthly docs
+- `/silver-rem`: capture project knowledge and portable learnings into monthly docs
 - `/silver-scan`: retrospectively scan session logs for deferred items and unrecorded insights
 - `/silver-handoff`: produce a reusable project continuation prompt
 
@@ -474,11 +474,11 @@ The documentation scheme distinguishes:
 - `docs/`: durable project docs
 - `README.md`: public project overview
 - `docs/knowledge/`: project-specific intelligence
-- `docs/lessons/`: portable lessons
+- `docs/learnings/`: portable learnings
 
 ### Practical benefit
 
-SB turns session residue into durable project memory. Deferred items, decisions, gotchas, and lessons do not depend on the active agent remembering them.
+SB turns session residue into durable project memory. Deferred items, decisions, gotchas, and learnings do not depend on the active agent remembering them.
 
 ---
 
@@ -599,7 +599,7 @@ Two SB-bearing agents can work on different phases without accidentally modifyin
 
 ### Plain GSD
 
-GSD owns `.planning/` artifacts. It does not provide SB's complete docs governance scheme for durable project docs, public docs, knowledge, lessons, and task-level doc checklists.
+GSD owns `.planning/` artifacts. It does not provide SB's complete docs governance scheme for durable project docs, public docs, knowledge, learnings, and task-level doc checklists.
 
 ### Silver Bullet addition
 
@@ -702,7 +702,7 @@ The follow-up codebase pass found several SB capabilities that the earlier repor
 | Artifact protection | Files and state can be edited directly | Planning, state, trivial-bypass, instruction, and plugin-boundary guards | Less state corruption |
 | Traceability and preservation | Artifact drift and phase-clear data loss are possible | Roadmap freshness, PR traceability, spec implementation links, phase archive | More reliable milestone and PR evidence |
 | Artifact review governance | Artifact review is not a general analytics-backed framework | Reviewer orchestration, assessor triage, review rounds, review analytics | Higher-quality specs and planning artifacts |
-| Knowledge capture | Planning memory is not session memory | Issues, lessons, knowledge, scans, handoff | Better continuity |
+| Knowledge capture | Planning memory is not session memory | Issues, learnings, knowledge, scans, handoff | Better continuity |
 | Session forensics | GSD focuses on workflow artifacts | SB handles stalls, hooks, timeouts, wrong output | Better failure analysis |
 | Prompt and stall reinforcement | Long sessions can drift or loop | Missing-skill reminders, semantic compression, session logs, anti-stall warnings | Better process recall and fewer abandoned sessions |
 | Compliance visibility | Need to inspect state | Progress on every tool use | Clear next action |

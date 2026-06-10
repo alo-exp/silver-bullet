@@ -41,7 +41,7 @@ git commits.
 | Blast radius assessment | `/silver-blast-radius` — maps scope, dependencies, failure scenarios, rollback plan | None |
 | Release creation | `/silver-create-release` — generates release notes and creates GitHub Release | `/gsd:ship` — phase-level merge and tag (different level; SB disambiguates at routing time) |
 | Session forensics | `/silver-forensics` — investigates SB enforcement failures and session-level issues | `/gsd:forensics` — plan-drift, execution anomalies, stuck loops, missing artifacts |
-| Knowledge capture | `/silver-rem` — captures insights into monthly `docs/knowledge/` or `docs/lessons/` docs | None |
+| Knowledge capture | `/silver-rem` — captures insights into monthly `docs/knowledge/` or `docs/learnings/` docs | None |
 | Issue filing | `/silver-add`, `/silver-remove` — GitHub Issues + project board or local `docs/issues/` | None |
 | Retrospective scanning | `/silver-scan` — detects deferred items and insights from session logs | None |
 | Skill recording | `record-skill.sh` tracks all skill invocations to a branch-scoped state file | Tracks GSD-specific skill usage as `gsd-*` markers in the SB state file |
@@ -90,7 +90,7 @@ This table shows exactly where Silver Bullet hands off to GSD inside each compos
 - **Post-session skill checklist** — `stop-check.sh` blocks task-complete if required skills are missing, and survives context compaction
 - **Prompt re-injection** — `prompt-reminder.sh` re-injects the missing-skill list before every user message, preventing drift in long sessions
 - **Blast radius assessment** — `/silver-blast-radius` maps DevOps change scope, dependencies, failure scenarios, and rollback plan before any infrastructure work begins
-- **Knowledge and lessons capture** — `/silver-rem` and `/silver-scan` build a persistent knowledge base from session observations
+- **Knowledge and learnings capture** — `/silver-rem` and `/silver-scan` build a persistent knowledge base from session observations
 - **GitHub Issue filing and board management** — `/silver-add` and `/silver-remove` file and manage backlog items directly from the Claude session
 - **Session forensics for enforcement failures** — `/silver-forensics` investigates SB-specific issues (timeouts, stalls, hook failures); routes GSD-workflow-level anomalies to `/gsd:forensics`
 - **CI gate on commit operations** — `ci-status-check.sh` blocks push and PR creation when CI is red; GSD has no CI enforcement

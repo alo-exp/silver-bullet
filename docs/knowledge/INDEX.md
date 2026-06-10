@@ -29,4 +29,4 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Git Repo | https://github.com/alo-exp/silver-bullet.git | — |
 
 Latest knowledge: `docs/knowledge/2026-06.md`
-Latest lessons: `docs/lessons/2026-06.md`
+Latest learnings: `docs/learnings/2026-06.md`

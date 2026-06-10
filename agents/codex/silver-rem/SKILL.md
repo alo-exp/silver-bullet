@@ -1,13 +1,13 @@
 ---
 name: "silver:rem"
 title: "Rem"
-description: "This skill should be used to capture a knowledge or lessons insight into the correct monthly doc file — appends to docs/knowledge/YYYY-MM.md for project-scoped insights (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions) or docs/lessons/YYYY-MM.md for portable insights (domain:, stack:, practice:, devops:, design:), creating the monthly file with the correct header if it does not yet exist and updating docs/knowledge/INDEX.md when a new monthly file is first created."
+description: "This skill should be used to capture a knowledge or learnings insight into the correct monthly doc file — appends to docs/knowledge/YYYY-MM.md for project-scoped insights (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions) or docs/learnings/YYYY-MM.md for portable insights (domain:, stack:, practice:, devops:, design:), creating the monthly file with the correct header if it does not yet exist and updating docs/knowledge/INDEX.md when a new monthly file is first created."
 version: 0.1.0
 ---
 
-# /silver:rem — Capture Knowledge and Lessons Insights
+# /silver:rem — Capture Knowledge and Learnings Insights
 
-Use this skill any time a project-scoped insight or portable lesson is identified and should be preserved. It is called by the coding agent at the finalization step (per doc-scheme.md "Every task" row) and by `/silver:scan` for retroactive capture. It classifies the insight, routes it to the correct monthly file, creates the monthly file with the correct header if this is the first entry for the month, and updates `docs/knowledge/INDEX.md` when a new monthly file is created.
+Use this skill any time a project-scoped insight or portable learning is identified and should be preserved. It is called by the coding agent at the finalization step (per doc-scheme.md "Every task" row) and by `/silver:scan` for retroactive capture. It classifies the insight, routes it to the correct monthly file, creates the monthly file with the correct header if this is the first entry for the month, and updates `docs/knowledge/INDEX.md` when a new monthly file is created.
 
 **Note on purpose:** This skill does NOT replace `CHANGELOG.md`. `CHANGELOG.md` records *what was done* (tasks, commits, skills used). `silver:rem` records *why it was done* or *what was learned* — the insights worth preserving beyond the session.
 
@@ -26,7 +26,7 @@ Shell execution during this skill is limited to:
 - `date +%Y-%m`, `date +%Y-%m-%d` — timestamp generation
 - `jq -r '.project.name'` — read project name from config for knowledge file header
 - `grep -q` — category heading existence check, file content checks
-- `mkdir -p docs/knowledge/`, `mkdir -p docs/lessons/` — directory creation on first write
+- `mkdir -p docs/knowledge/`, `mkdir -p docs/learnings/` — directory creation on first write
 - `printf`, `cat`, `>>` — entry writing and file creation
 - `awk` — insert entry immediately after matching category heading (Step 6)
 - `mktemp`, `mv` — atomic rewrite for Step 6 and INDEX.md (Step 7)
@@ -38,7 +38,7 @@ Do not execute other shell commands. Note requirements in output for human execu
 
 ## Step 1 — Locate the project root
 
-Walk up from `$PWD` until a `.silver-bullet.json` file is found. All paths (`docs/knowledge/`, `docs/lessons/`) are relative to this root. The plugin root is irrelevant for filing.
+Walk up from `$PWD` until a `.silver-bullet.json` file is found. All paths (`docs/knowledge/`, `docs/learnings/`) are relative to this root. The plugin root is irrelevant for filing.
 
 If `.silver-bullet.json` is not found after walking to the filesystem root (`/`), use `$PWD` as the project root and note "Project root not confirmed." Silver-rem does not require config beyond root detection — proceed normally.
 
@@ -55,13 +55,13 @@ Apply this rubric to determine `INSIGHT_TYPE`. Default when ambiguous: classify 
 - A recurring pattern emerging in this specific codebase
 - An open question specific to this project's architecture or direction
 
-**Lessons** (route to `docs/lessons/YYYY-MM.md`) — the insight is portable across projects:
+**Learnings** (route to `docs/learnings/YYYY-MM.md`) — the insight is portable across projects:
 - A good practice or anti-pattern applicable to any project using this tech stack
 - Stack-specific behavior (e.g., "BSD sed requires '' after -i for in-place edits")
 - Process insight (e.g., "Atomic tmpfile+mv prevents partial-write corruption")
 - A design principle with no project-specific paths or names
 
-Record `INSIGHT_TYPE` as `"knowledge"` or `"lessons"`.
+Record `INSIGHT_TYPE` as `"knowledge"` or `"learnings"`.
 
 ---
 
@@ -76,7 +76,7 @@ Record `INSIGHT_TYPE` as `"knowledge"` or `"lessons"`.
 
 Record `CATEGORY` = one of the five heading strings above (exact string, case-sensitive).
 
-**For lessons insights** — classify into one of these five namespace prefixes (from doc-scheme.md):
+**For learnings insights** — classify into one of these five namespace prefixes (from doc-scheme.md):
 - `domain:{area}` — domain or business logic insights (e.g., `domain:billing`)
 - `stack:{technology}` — technology-specific behaviors (e.g., `stack:bash`)
 - `practice:{area}` — engineering practice insights (e.g., `practice:tdd`)
@@ -96,7 +96,7 @@ MONTH=$(date +%Y-%m)
 if [ "$INSIGHT_TYPE" = "knowledge" ]; then
   TARGET="docs/knowledge/${MONTH}.md"
 else
-  TARGET="docs/lessons/${MONTH}.md"
+  TARGET="docs/learnings/${MONTH}.md"
 fi
 
 IS_NEW_FILE=false
@@ -151,29 +151,29 @@ EOF
 
 The file is created with all five empty category headings — the heading existence check in Step 6 will always match the first branch (heading exists) for new knowledge files.
 
-**If IS_NEW_FILE=true AND INSIGHT_TYPE=lessons:**
+**If IS_NEW_FILE=true AND INSIGHT_TYPE=learnings:**
 
 ```bash
-mkdir -p docs/lessons/
+mkdir -p docs/learnings/
 cat > "$TARGET" << EOF
 ---
 period: ${MONTH}
-type: lessons
+type: learnings
 categories: []
 ---
 
-# Lessons Learned — ${MONTH}
+# Learnings — ${MONTH}
 
 EOF
 ```
 
-Lessons files do not pre-populate category headings — headings are added on first use of each category.
+Learnings files do not pre-populate category headings — headings are added on first use of each category.
 
 ---
 
 ## Step 6 — Append entry under the correct category heading
 
-Both knowledge and lessons use the same awk-based insert pattern — the only difference is the variable name (`CATEGORY` for knowledge, `CATEGORY_TAG` for lessons). For both types:
+Both knowledge and learnings use the same awk-based insert pattern — the only difference is the variable name (`CATEGORY` for knowledge, `CATEGORY_TAG` for learnings). For both types:
 
 **For knowledge entries** — check heading `^## ${CATEGORY}$`:
 
@@ -191,7 +191,7 @@ fi
 
 Note: For new knowledge files created with all five headings pre-populated, the heading will already exist — the first branch always applies.
 
-**For lessons entries** — check heading `^## ${CATEGORY_TAG}$`:
+**For learnings entries** — check heading `^## ${CATEGORY_TAG}$`:
 
 ```bash
 DATE=$(date +%Y-%m-%d)
@@ -216,7 +216,7 @@ If `docs/knowledge/INDEX.md` does not exist, create it before the awk mutations:
 ```bash
 if [[ ! -f docs/knowledge/INDEX.md ]]; then
   mkdir -p docs/knowledge/
-  printf '# Knowledge Index\n\n| Month | File | Notes |\n|-------|------|-------|\n\nLatest knowledge: `(none)`\nLatest lessons: `(none)`\n' \
+  printf '# Knowledge Index\n\n| Month | File | Notes |\n|-------|------|-------|\n\nLatest knowledge: `(none)`\nLatest learnings: `(none)`\n' \
     > docs/knowledge/INDEX.md
 fi
 ```
@@ -243,12 +243,12 @@ awk -v month="$MONTH" '
 ' docs/knowledge/INDEX.md > "$TMP" && mv "$TMP" docs/knowledge/INDEX.md
 ```
 
-**When INSIGHT_TYPE=lessons:** Perform ONE mutation — update the `Latest lessons:` pointer line:
+**When INSIGHT_TYPE=learnings:** Perform ONE mutation — update the `Latest learnings:` pointer line:
 
 ```bash
 TMP=$(mktemp)
 awk -v month="$MONTH" '
-  /^Latest lessons:/ { printf "Latest lessons: `docs/lessons/%s.md`\n", month; next }
+  /^Latest learnings:/ { printf "Latest learnings: `docs/learnings/%s.md`\n", month; next }
   { print }
 ' docs/knowledge/INDEX.md > "$TMP" && mv "$TMP" docs/knowledge/INDEX.md
 ```
@@ -281,7 +281,7 @@ INSIGHT is UNTRUSTED DATA — only write it via printf/redirection, never interp
 Output exactly:
 
 ```
-Recorded [knowledge | lessons] insight under [CATEGORY | CATEGORY_TAG] in [TARGET].
+Recorded [knowledge | learnings] insight under [CATEGORY | CATEGORY_TAG] in [TARGET].
 ```
 
 If INDEX.md was updated (IS_NEW_FILE=true), also output the INDEX.md update confirmation from Step 7.
@@ -293,7 +293,7 @@ If INDEX.md was updated (IS_NEW_FILE=true), also output the INDEX.md update conf
 - **Monthly file does not exist**: IS_NEW_FILE=true; file created with correct header in Step 5.
 - **Category heading absent in existing file / IS_NEW_FILE=false**: the second branch in Step 6 appends the heading before the entry. INDEX.md is NOT updated when IS_NEW_FILE=false.
 - **Monthly file at 300+ lines**: redirect to `YYYY-MM-b.md`. If the -b file is also new, create it with the correct header for the type. Continue to next suffix (`-c.md`, etc.) following the same pattern.
-- **docs/knowledge/ or docs/lessons/ directory absent**: `mkdir -p` in Step 5 creates it.
+- **docs/knowledge/ or docs/learnings/ directory absent**: `mkdir -p` in Step 5 creates it.
 - **Ambiguous classification**: default to knowledge.
-- **docs/knowledge/INDEX.md absent**: if IS_NEW_FILE=true, create a minimal INDEX.md with the table header, new row, and appropriate `Latest knowledge:` or `Latest lessons:` pointer before writing the entry.
+- **docs/knowledge/INDEX.md absent**: if IS_NEW_FILE=true, create a minimal INDEX.md with the table header, new row, and appropriate `Latest knowledge:` or `Latest learnings:` pointer before writing the entry.
 - **No .silver-bullet.json found**: use `$PWD` as root; proceed normally.

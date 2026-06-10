@@ -35,7 +35,7 @@ for f in \
   docs/doc-scheme.json \
   docs/knowledge/INDEX.md \
   docs/knowledge/$current_month.md \
-  docs/lessons/$current_month.md; do
+  docs/learnings/$current_month.md; do
   if [[ -f "$f" ]]; then
     pass "$f exists"
   else
@@ -47,7 +47,7 @@ done
 
 section "Required directories exist"
 
-for d in docs/audits docs/internal docs/knowledge docs/lessons docs/specs docs/sessions docs/workflows; do
+for d in docs/audits docs/internal docs/knowledge docs/learnings docs/specs docs/sessions docs/workflows; do
   if [[ -d "$d" ]]; then
     pass "$d/ exists"
   else
@@ -62,7 +62,7 @@ section "Templates exist"
 for f in \
   templates/knowledge/INDEX.md.base \
   templates/knowledge/YYYY-MM.md.base \
-  templates/lessons/YYYY-MM.md.base \
+  templates/learnings/YYYY-MM.md.base \
   templates/task-doc-checklist.json.base \
   templates/doc-scheme.md.base \
   templates/doc-scheme.json.base \
@@ -144,9 +144,9 @@ if (( over_cap == 0 )); then
   pass "All docs/ files under 500-line cap"
 fi
 
-section "Knowledge/lessons file size caps (< 300 lines)"
+section "Knowledge/learnings file size caps (< 300 lines)"
 
-for f in docs/knowledge/*.md docs/lessons/*.md; do
+for f in docs/knowledge/*.md docs/learnings/*.md; do
   [[ -f "$f" ]] || continue
   lines=$(wc -l < "$f")
   if (( lines > 300 )); then
@@ -179,21 +179,21 @@ for f in docs/knowledge/2*.md; do
   fi
 done
 
-# ─── Section 8: Lessons file frontmatter and portability ───
+# ─── Section 8: Learnings file frontmatter and portability ───
 
-section "Lessons file frontmatter validation"
+section "Learnings file frontmatter validation"
 
-for f in docs/lessons/2*.md; do
+for f in docs/learnings/2*.md; do
   [[ -f "$f" ]] || continue
   if head -1 "$f" | grep -q "^---"; then
     pass "$f has frontmatter"
   else
     fail "$f missing frontmatter"
   fi
-  if grep -q "^type: lessons" "$f"; then
-    pass "$f has type: lessons"
+  if grep -q "^type: learnings" "$f"; then
+    pass "$f has type: learnings"
   else
-    fail "$f missing type: lessons"
+    fail "$f missing type: learnings"
   fi
   if grep -q "^categories:" "$f"; then
     pass "$f has categories field"
@@ -202,11 +202,11 @@ for f in docs/lessons/2*.md; do
   fi
 done
 
-section "Lessons portability check (no project-specific leakage)"
+section "Learnings portability check (no project-specific leakage)"
 
-for f in docs/lessons/2*.md; do
+for f in docs/learnings/2*.md; do
   [[ -f "$f" ]] || continue
-  # Check for project-specific references that shouldn't be in portable lessons
+  # Check for project-specific references that shouldn't be in portable learnings
   leaks=$(grep -n "silver-bullet\|\.silver-bullet\|silver_bullet\|\.planning/" "$f" 2>/dev/null || true)
   if [[ -z "$leaks" ]]; then
     pass "$f has no project-specific references"
@@ -235,7 +235,7 @@ done < docs/knowledge/INDEX.md
 
 # ─── Section 10: Workflow Documentation step references ───
 
-section "Workflow files reference knowledge/lessons (not KNOWLEDGE.md)"
+section "Workflow files reference knowledge/learnings (not KNOWLEDGE.md)"
 
 for f in docs/workflows/full-dev-cycle.md docs/workflows/devops-cycle.md; do
   if grep -q "docs/knowledge/YYYY-MM.md" "$f"; then
@@ -243,10 +243,10 @@ for f in docs/workflows/full-dev-cycle.md docs/workflows/devops-cycle.md; do
   else
     fail "$f missing docs/knowledge/ reference"
   fi
-  if grep -q "docs/lessons/YYYY-MM.md" "$f"; then
-    pass "$f references docs/lessons/"
+  if grep -q "docs/learnings/YYYY-MM.md" "$f"; then
+    pass "$f references docs/learnings/"
   else
-    fail "$f missing docs/lessons/ reference"
+    fail "$f missing docs/learnings/ reference"
   fi
 done
 

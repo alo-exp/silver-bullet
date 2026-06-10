@@ -287,13 +287,13 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>/silver:quality-gates</code> again for the full 8-core-dimension sweep plus conditional AI/LLM and DevOps gates. Pre-ship quality gates are <strong>non-skippable</strong>.</p>
 
       <h3>Step 13b — Doc-scheme compliance (conditional)</h3>
-      <p>If <code>docs/doc-scheme.md</code> exists, verify documentation freshness before PR/ship: update the changelog, current-month knowledge and lessons files, any affected durable docs, and <code>docs/task-doc-checklist.json</code>. If the scheme is missing or incomplete, recover it with <code>/silver:ensure-docs --recover-scheme</code> before proceeding.</p>
+      <p>If <code>docs/doc-scheme.md</code> exists, verify documentation freshness before PR/ship: update the changelog, current-month knowledge and learnings files, any affected durable docs, and <code>docs/task-doc-checklist.json</code>. If the scheme is missing or incomplete, recover it with <code>/silver:ensure-docs --recover-scheme</code> before proceeding.</p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
       <p>Invoke <code>/finishing-a-development-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
 
       <h3>Step 16 — Episodic memory</h3>
-      <p>Invoke <code>episodic-memory:remembering-conversations</code> to record key decisions and lessons from this feature.</p>
+      <p>Invoke <code>episodic-memory:remembering-conversations</code> to record key decisions and learnings from this feature.</p>
 
       <h3>Step 17 — Milestone completion (last phase only)</h3>
       <p>If this is the last phase of the milestone: run <code>gsd:audit-uat</code> → <code>gsd:audit-milestone</code> → gap-closure loop (max 2 iterations) → <code>gsd:complete-milestone</code>.</p>
