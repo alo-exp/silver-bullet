@@ -323,7 +323,7 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
   line-height:1;
 }
 
-.prereq-card .prereq-icon{
+.doc-content .prereq-card .prereq-icon{
   display:inline-flex;
   align-items:flex-start;
   justify-content:center;
