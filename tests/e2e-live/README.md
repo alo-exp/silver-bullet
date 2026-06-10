@@ -7,8 +7,8 @@ against the todo app fixture. The journey starts with install UX, moves through
 discovery, feature delivery, defect repair, cleanup, and release prep, and
 captures any real dissatisfaction through `silver:add` with `todo-app` tagging.
 
-The Kay path uses the `opencode-go` provider credential path with
-`deepseek-v4-flash` and low reasoning.
+The Kay path uses the MiniMax.io provider credential path with `MiniMax-M3`
+and low reasoning.
 
 It is intentionally separate from `tests/live/run-live-tests.sh`:
 
@@ -43,6 +43,6 @@ Each scenario starts from a fresh workspace copied from the standalone sibling `
 cleaned up after completion.
 
 For Kay-agent runs, the suite uses an isolated temporary `KAY_HOME` root
-backed by Kay's `opencode-go` provider path before bootstrapping the SB Codex
+backed by Kay's MiniMax.io provider path before bootstrapping the SB Codex
 package. That keeps live E2E installs from changing the user's real `~/.codex`
 hook cache.

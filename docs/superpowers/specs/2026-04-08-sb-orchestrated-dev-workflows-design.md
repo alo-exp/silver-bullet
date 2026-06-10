@@ -383,7 +383,7 @@ When user expresses a preference:
 | Product Management (`/product-brainstorming`) | PM lens | Problem definition, user value, personas, success metrics, scope boundaries |
 | Engineering (`/documentation`, `/testing-strategy`) | Engineering practices | Documentation generation (`/documentation`), test strategy planning (`/testing-strategy`) |
 | Context7 | Live documentation | Library/framework docs during planning and implementation — invoked by GSD executors inline, not orchestrated by SB |
-| Episodic Memory | Cross-session recall | Past decisions, lessons learned — passive SessionStart hook, not orchestrated by SB |
+| Episodic Memory | Cross-session recall | Past decisions, learnings — passive SessionStart hook, not orchestrated by SB |
 | LSP plugins | Language intelligence | Code intelligence — auto-activated by Claude Code, not orchestrated by SB |
 
 ---

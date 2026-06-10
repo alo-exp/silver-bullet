@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.22-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.22)
+[![version](https://img.shields.io/badge/version-v0.37.23-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.23)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -175,7 +175,7 @@ guidance, but hard blocks depend on host support.
 |---------|--------|-------|
 | Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
 | Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
-| Kay | Tested agent for isolated live testing | Used for isolated live testing via the `opencode-go` provider path |
+| Kay | Tested agent for isolated live testing | Used for isolated live testing via MiniMax.io with `MiniMax-M3` |
 
 Silver Bullet's Codex package intentionally contains only SB-owned surfaces:
 skills, hooks, templates, commands, and helper scripts. GSD, Superpowers, and
@@ -197,6 +197,7 @@ sudo apt install jq
 Install Silver Bullet and its required helper dependencies:
 
 ```text
+/shell uv tool install graphifyy
 /plugin install alo-exp/silver-bullet
 /plugin install obra/superpowers
 /plugin install anthropics/knowledge-work-plugins/tree/main/engineering
@@ -247,8 +248,8 @@ The installer:
 - seeds Codex hook trust from the installed plugin manifest instead of
   duplicating SB hooks into the user's global hook cache
 
-For isolated Codex-compatible live testing, Kay `v0.9.6` plus the
-`opencode-go` provider path is the tested route. The live harness creates a
+For isolated Codex-compatible live testing, Kay `v0.9.6` plus MiniMax.io
+with `MiniMax-M3` is the tested route. The live harness creates a
 temporary `KAY_HOME` root so tests do not rewrite the user's real Kay or Codex
 hook cache.
 
@@ -284,7 +285,7 @@ It will:
 - reconcile existing host instruction files (`CLAUDE.md` in Claude, `AGENTS.md`
   in Codex) without overwriting user-owned content
 - copy workflow docs into `docs/workflows/`
-- scaffold the documentation scheme and durable knowledge/lessons folders
+- scaffold the documentation scheme and durable knowledge/learnings folders
 - initialize or connect GSD planning artifacts
 - set up enforcement state paths under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`
 
@@ -311,7 +312,7 @@ After that, use `/silver` for normal work.
 | `/silver:scan` | Retrospective session scan for deferred issues and insights |
 | `/silver:add` | File an issue or backlog item |
 | `/silver:remove` | Remove or close an issue/backlog item |
-| `/silver:rem` | Capture knowledge or lessons learned |
+| `/silver:rem` | Capture knowledge or learnings |
 | `/silver:handoff` | Create a project-level handoff prompt |
 | `/silver:forensics` | Reconstruct failed, stalled, or abandoned sessions |
 | `/silver:quality-gates` | Product/software quality assessment |
@@ -454,8 +455,8 @@ SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
 SB_E2E_LIVE_RUNTIMES=codex bash tests/e2e-live/run-e2e-live-tests.sh
 ```
 
-Codex-compatible live tests use Kay `v0.9.6` and the `opencode-go` provider
-path when configured.
+Codex-compatible live tests use Kay `v0.9.6` with the MiniMax.io provider and
+`MiniMax-M3` when configured.
 SB tests should not be run against the upstream `codex` binary directly.
 The harness isolates config roots so live tests do not mutate the user's normal
 Codex hook cache.
@@ -509,6 +510,7 @@ runtime state are not treated as plugin package content.
 | `/silver` not available in Claude Code | Install the plugin and restart/reload the Claude Code session |
 | `/Silver:` entries not available in Codex | Refresh the public Codex marketplace install, or run `./scripts/install-codex.sh --purge-legacy-skills` from a repo checkout when developing SB itself |
 | GSD skills missing | Repair or reinstall GSD with `npx get-shit-done-cc@latest` |
+| Graphify missing | Install with `uv tool install graphifyy` or `pip install graphifyy`; SB falls back to direct docs reads only as a degraded path |
 | Superpowers helper missing | Repair or reinstall `obra/superpowers`; SB uses it only at selected helper boundaries |
 | Engineering helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/engineering` |
 | Design helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/design` |
@@ -522,12 +524,13 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.22`
-- Release: [v0.37.22](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.22)
+- Version: `0.37.23`
+- Release: [v0.37.23](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.23)
 - Notable changes:
-  - The Codex package no longer exposes a plugin-owned `skills/` directory, preventing `/Silver Bullet:` duplicate picker entries.
-  - The Codex installer maps internal `skill-source/` files into the native `~/.codex/skills` mirror so the picker-facing surface remains `/Silver:`.
-  - Public-release refresh removes stale cached `plugins/silver-bullet/skills` trees and verifies the native SB mirror.
+  - SB now owns first routing in activated projects, including helper-skill selection and workflow loop continuation.
+  - Documentation terminology moved from Lessons to Learnings, with migration support in `/silver:migrate`.
+  - Graphify is a setup dependency for retrieval-oriented project memory, with direct docs reads as the degraded fallback.
+  - Kay live-test defaults now use MiniMax.io with `MiniMax-M3`.
 
 ## License
 

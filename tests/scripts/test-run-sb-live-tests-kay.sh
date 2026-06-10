@@ -42,17 +42,17 @@ WRAPPER="$REPO_ROOT/scripts/run-sb-live-tests-kay.sh"
 
 echo "=== Kay-only SB live test wrapper checks ==="
 assert_executable "wrapper is executable" "$WRAPPER"
-assert_file_contains "wrapper skips direct MiniMax.io tests" "$WRAPPER" 'SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-1}"'
-assert_file_contains "wrapper pins OpenCode-Go provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"'
-assert_file_contains "wrapper pins DeepSeek V4 Flash" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"'
+assert_file_contains "wrapper enables direct MiniMax.io tests" "$WRAPPER" 'SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-0}"'
+assert_file_contains "wrapper pins MiniMax provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"'
+assert_file_contains "wrapper pins MiniMax M3" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M3}"'
 assert_file_contains "wrapper pins low reasoning" "$WRAPPER" 'SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"'
 assert_file_contains "wrapper forwards low reasoning to Kay" "$WRAPPER" 'CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-$SB_LIVE_CODEX_REASONING_EFFORT}"'
 assert_file_contains "wrapper targets kay runtime for live suite" "$WRAPPER" 'SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-kay}"'
 assert_file_contains "wrapper targets kay runtime for todo-app suite" "$WRAPPER" 'SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-kay}"'
 assert_file_contains "wrapper runs live agent suite" "$WRAPPER" 'tests/live/run-live-tests.sh'
 assert_file_contains "wrapper runs todo-app suite" "$WRAPPER" 'tests/e2e-live/run-e2e-live-tests.sh'
-assert_file_not_contains "wrapper no longer pins direct MiniMax provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"'
-assert_file_not_contains "wrapper no longer pins MiniMax model" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M2.7}"'
+assert_file_not_contains "wrapper no longer pins OpenCode-Go provider" "$WRAPPER" 'SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-opencode-go}"'
+assert_file_not_contains "wrapper no longer pins DeepSeek V4 Flash" "$WRAPPER" 'SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-deepseek-v4-flash}"'
 assert_file_not_contains "wrapper has no Forge test toggle" "$WRAPPER" 'SB_DISABLE_FORGE_TESTS'
 
 assert_file_not_contains "kay isolation helper does not fall back to codex" "$REPO_ROOT/tests/live/lib/kay-codex-isolation.sh" 'command -v codex'

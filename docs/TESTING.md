@@ -101,12 +101,12 @@ Not part of CI — run manually with real model/API usage via
 | `tests/live/test-live-enforcement.sh` | S1-S4 enforcement scenarios (blocking, planning gate, forbidden skills, stop-check) |
 | `tests/live/test-live-skill-recording.sh` | S5-S6 skill recording and compliance-status output |
 | `tests/live/test-live-full-scenario.sh` | S7-S8 session initialization and abbreviated SDLC lifecycle |
-| `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, lessons portability, monthly boundary freeze |
-| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/lessons split |
+| `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, learnings portability, monthly boundary freeze |
+| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/learnings split |
 
 The suite invokes Kay through the Codex-compatible adapter in
 `tests/live/agents/` by default. The standard combination is
-`opencode-go` + `deepseek-v4-flash` + low reasoning in isolated envs.
+MiniMax.io + `MiniMax-M3` + low reasoning in isolated envs.
 Claude or native Codex runs are optional diagnostics only when explicitly
 requested.
 

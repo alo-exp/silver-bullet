@@ -257,7 +257,7 @@ Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for this fix (newest-first). If missing, write it now.
 2. **`docs/knowledge/YYYY-MM.md`** (current month) — append root-cause patterns, gotchas, and decisions found during diagnosis.
-3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned during diagnosis.
+3. **`docs/learnings/YYYY-MM.md`** (current month) — append portable learnings during diagnosis.
 4. Update any additional docs changed by the fix (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
 5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 

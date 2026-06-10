@@ -1,18 +1,18 @@
-# Design: Knowledge & Lessons Directory Split
+# Design: Knowledge & Learnings Directory Split
 
 **Date:** 2026-04-13
 **Replaces:** `docs/KNOWLEDGE.md` (single-file accumulated intelligence)
 
 ## Problem
 
-KNOWLEDGE.md mixes two concerns: project-specific intelligence and portable engineering/domain lessons. It's also a single append-only file with no scalability enforcement, destined to exceed LLM context limits on long-lived projects.
+KNOWLEDGE.md mixes two concerns: project-specific intelligence and portable engineering/domain learnings. It's also a single append-only file with no scalability enforcement, destined to exceed LLM context limits on long-lived projects.
 
 ## Solution
 
 Split into two directories with monthly file segmentation:
 
 - `docs/knowledge/` — project-scoped intelligence (architecture patterns, gotchas, decisions, open questions)
-- `docs/lessons/` — portable lessons learned (tech stack, engineering practices, DevOps, domain knowledge)
+- `docs/learnings/` — portable learnings (tech stack, engineering practices, DevOps, domain knowledge)
 
 ## `docs/knowledge/` — Project-Scoped Intelligence
 
@@ -29,13 +29,13 @@ Split into two directories with monthly file segmentation:
 
 **Gateway:** `docs/knowledge/INDEX.md` replaces KNOWLEDGE.md Part 1 (doc path table).
 
-## `docs/lessons/` — Portable Lessons Learned
+## `docs/learnings/` — Portable Learnings
 
-**Content:** General lessons applicable beyond this project. Written as if explaining to someone who has never seen this codebase. No project-specific file paths, feature names, requirement IDs, or entity references.
+**Content:** General learnings applicable beyond this project. Written as if explaining to someone who has never seen this codebase. No project-specific file paths, feature names, requirement IDs, or entity references.
 
 **Category taxonomy (extensible):**
-- `domain:{area}` — business domain lessons (regulations, industry patterns, terminology)
-- `stack:{technology}` — language/framework/tool-specific lessons
+- `domain:{area}` — business domain learnings (regulations, industry patterns, terminology)
+- `stack:{technology}` — language/framework/tool-specific learnings
 - `practice:{area}` — software engineering practices (testing, review, architecture, security)
 - `devops:{area}` — CI, deployment, monitoring, infrastructure
 - `design:{area}` — UI, UX, accessibility patterns
@@ -52,7 +52,7 @@ Split into two directories with monthly file segmentation:
 
 ## Lifecycle
 
-| Event | knowledge/ | lessons/ |
+| Event | knowledge/ | learnings/ |
 |-------|-----------|----------|
 | Documentation step | Append to current month | Append to current month |
 | New month begins | New file on first entry | New file on first entry |
@@ -63,7 +63,7 @@ Split into two directories with monthly file segmentation:
 
 1. Create `docs/knowledge/INDEX.md` from KNOWLEDGE.md Part 1
 2. Create `docs/knowledge/2026-04.md` from KNOWLEDGE.md Part 2 entries
-3. Extract portable lessons into `docs/lessons/2026-04.md`
+3. Extract portable learnings into `docs/learnings/2026-04.md`
 4. Delete `docs/KNOWLEDGE.md`
 5. Update workflow Documentation step references
 6. Update templates

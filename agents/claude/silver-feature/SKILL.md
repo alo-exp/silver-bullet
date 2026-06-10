@@ -423,7 +423,7 @@ Before raising the PR, verify documentation is up to date per the scheme:
 
 1. **`docs/CHANGELOG.md`** — must have an entry for the phase just completed (newest-first). If missing, write it now: one entry summarising what shipped.
 2. **`docs/knowledge/YYYY-MM.md`** (current month) — append task-specific patterns, gotchas, and key decisions.
-3. **`docs/lessons/YYYY-MM.md`** (current month) — append portable lessons learned.
+3. **`docs/learnings/YYYY-MM.md`** (current month) — append portable learnings.
 4. Update any additional docs changed by the phase (`ARCHITECTURE.md`, `TESTING.md`, runbooks, workflows, etc.) so content matches current behavior.
 5. **`docs/task-doc-checklist.json`** — must include `task_granularity` and full status coverage for every key in `docs/doc-scheme.json -> required_docs`, plus any required section entries declared under `required_sections`.
 
@@ -452,7 +452,7 @@ Invoke `gsd-ship` via the Skill tool. Purpose: push branch, create PR, prepare f
 
 ## Step 16: Episodic Memory
 
-Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and lessons from this feature.
+Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and learnings from this feature.
 
 ## Step 17: Milestone Completion (last phase of milestone only)
 

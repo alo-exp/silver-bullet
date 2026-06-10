@@ -139,7 +139,7 @@ echo "--- Test 2: Mode command with existing session log ---"
 setup
 today=$(date '+%Y-%m-%d')
 existing_log="${SESSION_LOG_DIR}/${today}-00-00-00.md"
-printf '# Session Log\n\n**Date:** %s\n**Mode:** interactive\n\n## Pre-answers\n\n(n/a)\n\n## Task\n\n(n/a)\n\n## Approach\n\n(n/a)\n\n## Files changed\n\n(n/a)\n\n## Skills invoked\n\n(n/a)\n\n## Skills flagged at discovery\n\n(n/a)\n\n## Skill gap check (post-plan)\n\n(n/a)\n\n## Active Intent Ledger\n\n(filled during the session as active requests are intercepted)\n\n## Agent Teams dispatched\n\n(n/a)\n\n## Autonomous decisions\n\n(none)\n\n## Needs human review\n\n(none)\n\n## Outcome\n\n(n/a)\n\n## Knowledge & Lessons additions\n\n(n/a)\n' "$today" > "$existing_log"
+printf '# Session Log\n\n**Date:** %s\n**Mode:** interactive\n\n## Pre-answers\n\n(n/a)\n\n## Task\n\n(n/a)\n\n## Approach\n\n(n/a)\n\n## Files changed\n\n(n/a)\n\n## Skills invoked\n\n(n/a)\n\n## Skills flagged at discovery\n\n(n/a)\n\n## Skill gap check (post-plan)\n\n(n/a)\n\n## Active Intent Ledger\n\n(filled during the session as active requests are intercepted)\n\n## Agent Teams dispatched\n\n(n/a)\n\n## Autonomous decisions\n\n(none)\n\n## Needs human review\n\n(none)\n\n## Outcome\n\n(n/a)\n\n## Knowledge & Learnings additions\n\n(n/a)\n' "$today" > "$existing_log"
 out=$(run_hook "$MODE_CMD_JSON")
 assert_valid_json "existing log: output is valid JSON" "$out"
 assert_contains "existing log: message mentions 'already exists'" "$out" "already exists"
@@ -178,7 +178,7 @@ setup
 today=$(date '+%Y-%m-%d')
 # The hook uses basename of the existing log file in its message; test that result is valid JSON
 existing_log="${SESSION_LOG_DIR}/${today}-10-30-00.md"
-printf '# Session Log\n\n**Date:** %s\n**Mode:** interactive\n\n## Pre-answers\n\n(n/a)\n\n## Task\n\n(n/a)\n\n## Approach\n\n(n/a)\n\n## Files changed\n\n(n/a)\n\n## Skills invoked\n\n(n/a)\n\n## Skills flagged at discovery\n\n(n/a)\n\n## Skill gap check (post-plan)\n\n(n/a)\n\n## Active Intent Ledger\n\n(filled during the session as active requests are intercepted)\n\n## Agent Teams dispatched\n\n(n/a)\n\n## Autonomous decisions\n\n(none)\n\n## Needs human review\n\n(none)\n\n## Outcome\n\n(n/a)\n\n## Knowledge & Lessons additions\n\n(n/a)\n' "$today" > "$existing_log"
+printf '# Session Log\n\n**Date:** %s\n**Mode:** interactive\n\n## Pre-answers\n\n(n/a)\n\n## Task\n\n(n/a)\n\n## Approach\n\n(n/a)\n\n## Files changed\n\n(n/a)\n\n## Skills invoked\n\n(n/a)\n\n## Skills flagged at discovery\n\n(n/a)\n\n## Skill gap check (post-plan)\n\n(n/a)\n\n## Active Intent Ledger\n\n(filled during the session as active requests are intercepted)\n\n## Agent Teams dispatched\n\n(n/a)\n\n## Autonomous decisions\n\n(none)\n\n## Needs human review\n\n(none)\n\n## Outcome\n\n(n/a)\n\n## Knowledge & Learnings additions\n\n(n/a)\n' "$today" > "$existing_log"
 out=$(run_hook "$MODE_CMD_JSON")
 assert_valid_json "date-formatted filename: output is valid JSON" "$out"
 # The message should reference the filename or today's date

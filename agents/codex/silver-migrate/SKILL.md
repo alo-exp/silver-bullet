@@ -1,31 +1,75 @@
 ---
 name: "silver:migrate"
 title: "Migrate"
-description: "This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from the retired single-file WORKFLOW.md model to per-instance `.planning/workflows/<id>.md` tracking."
-version: 0.2.0
+description: "This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking and Learnings documentation terminology."
+version: 0.3.0
 ---
 
 # silver:migrate
 
-Migrates an older mid-milestone project to the current composed-workflow tracker.
+Migrates an older mid-milestone project to the current composed-workflow tracker and current documentation terminology.
 
 The legacy `.planning/WORKFLOW.md` file is retired. Do not create or update it.
+The legacy `docs/lessons/` path and "Lessons" terminology are retired. Use `docs/learnings/` and "Learnings" instead.
 
 ## When to Use
 
 - `.planning/` exists with GSD state artifacts.
 - The project was started before per-instance workflow tracking.
 - The user explicitly runs `/silver:migrate` or asks to migrate workflow tracking.
+- The project has older `docs/lessons/` files, doc-scheme entries, checklist keys, or docs text that still says "Lessons".
 
 ## Prerequisites
 
 - `.planning/STATE.md` must exist.
 - `scripts/workflows.sh` must be available from the project root or plugin install.
-- If `.planning/workflows/*.md` already contains an active workflow, report the active id and stop; migration is unnecessary.
+- If `.planning/workflows/*.md` already contains an active workflow, report the active id and skip only the workflow-tracker migration. Still run the documentation terminology migration below.
 
 ## Steps
 
+### Step 0: Migrate Documentation Terminology
+
+Run this step before workflow-tracker checks so projects with current workflow files still receive the doc migration.
+
+1. If `docs/lessons/` exists and `docs/learnings/` does not exist, move the directory:
+
+   ```bash
+   mv docs/lessons docs/learnings
+   ```
+
+2. If both directories exist, merge files conservatively:
+   - For each file that exists only in `docs/lessons/`, move it to `docs/learnings/`.
+   - For each file that exists in both, append the old `docs/lessons/` content under a `## Migrated from docs/lessons/` heading in the matching `docs/learnings/` file, then remove the old file only after confirming the content is preserved.
+   - Remove `docs/lessons/` only when empty.
+
+3. Update documentation scheme files and checklist keys:
+   - `docs/doc-scheme.md`
+   - `docs/doc-scheme.json`
+   - `docs/task-doc-checklist.json`
+   - `docs/knowledge/INDEX.md`
+   - project docs that reference `docs/lessons/`, `lessons/YYYY-MM.md`, "Lessons", or "lessons"
+
+   Required replacements:
+   - `docs/lessons/` -> `docs/learnings/`
+   - `lessons/YYYY-MM.md` -> `learnings/YYYY-MM.md`
+   - `type: lessons` -> `type: learnings`
+   - "Lessons" -> "Learnings"
+   - "lessons" -> "learnings"
+   - "lesson" -> "learning" only when it refers to the documentation category, not normal prose unrelated to SB docs
+
+4. Update monthly learnings files:
+   - Frontmatter must use `type: learnings`.
+   - Title should be `# Learnings - YYYY-MM` or `# Learnings — YYYY-MM`.
+   - Category headings remain `domain:{area}`, `stack:{technology}`, `practice:{area}`, `devops:{area}`, and `design:{area}`.
+
+5. Report the documentation migration separately:
+   - files moved
+   - files updated
+   - any `docs/lessons/` files left for manual review
+
 ### Step 1: Scan Existing Artifacts
+
+If an active `.planning/workflows/*.md` file exists, report the active id and skip to Step 4 after Step 0. Workflow migration is unnecessary, but the documentation migration remains valid.
 
 Read `.planning/STATE.md` to identify the current milestone, phase, and status.
 
@@ -97,6 +141,7 @@ Leave the first uncertain or unfinished flow pending. Do not mark execution, rev
 
 Report:
 
+- documentation terminology/path migration result
 - workflow id
 - inferred complete flows with evidence
 - pending next flow
@@ -105,9 +150,12 @@ Report:
 ## Produces
 
 - `.planning/workflows/<id>.md` — active per-instance workflow tracker
+- `docs/learnings/` — current portable learnings path
+- updated `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` keys when present
 
 ## Notes
 
 - Do not create `.planning/WORKFLOW.md`.
 - If a legacy `.planning/WORKFLOW.md` exists, leave it untouched and treat it as historical evidence only.
 - If inferred state is ambiguous, choose the safer pending status and let GSD resume from `.planning/STATE.md`.
+- Do not leave new writes pointed at `docs/lessons/`. Read legacy `docs/lessons/` only as migration input.

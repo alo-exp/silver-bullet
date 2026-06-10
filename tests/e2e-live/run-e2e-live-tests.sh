@@ -39,7 +39,7 @@ runtime_model_provider() {
   if [[ -n "${SB_LIVE_CODEX_MODEL_PROVIDER:-}" ]]; then
     printf '%s\n' "$SB_LIVE_CODEX_MODEL_PROVIDER"
   elif [[ "$runtime" == "kay" ]]; then
-    printf 'opencode-go\n'
+    printf 'minimax\n'
   fi
 }
 
@@ -48,7 +48,7 @@ runtime_model() {
   if [[ -n "${SB_LIVE_CODEX_MODEL:-}" ]]; then
     printf '%s\n' "$SB_LIVE_CODEX_MODEL"
   elif [[ "$runtime" == "kay" ]]; then
-    printf 'deepseek-v4-flash\n'
+    printf 'MiniMax-M3\n'
   fi
 }
 
@@ -82,7 +82,7 @@ echo "  Silver Bullet Live Todo-App E2E Suite"
 echo "========================================"
 echo ""
 echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the todo-app fixture."
-echo "Default provider/model: runtime-aware (Kay: opencode-go / deepseek-v4-flash; Codex: native config)."
+echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: native config)."
 echo ""
 
 if [[ -n "$E2E_LIVE_MATRIX_FILE" ]]; then

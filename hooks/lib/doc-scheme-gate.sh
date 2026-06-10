@@ -63,10 +63,10 @@ sb_doc_scheme__key_state() {
       done
       shopt -u nullglob
       ;;
-    "docs/lessons/YYYY-MM.md")
-      SB_DOC_KEY_LABEL="docs/lessons/${month}*.md"
+    "docs/learnings/YYYY-MM.md")
+      SB_DOC_KEY_LABEL="docs/learnings/${month}*.md"
       shopt -s nullglob
-      for f in "$repo_root/docs/lessons/${month}"*.md; do
+      for f in "$repo_root/docs/learnings/${month}"*.md; do
         [[ -f "$f" && ! -L "$f" ]] || continue
         m=$(sb_doc_scheme__mtime_epoch "$f")
         if (( m > SB_DOC_KEY_MTIME )); then

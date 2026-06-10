@@ -43,7 +43,7 @@ The April 2026-04-05 log lists one open question explicitly deferred as tech deb
 - `test-timeout-check.sh` T2-1 "expected 'Check-in', got: " — **pre-existing**, not a regression from recent work. Root cause not yet investigated.
 
 ### Missing artifacts
-- `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md` entries were reported in session logs but not clearly recorded in the doc updates for that run.
+- `docs/knowledge/YYYY-MM.md` and `docs/learnings/YYYY-MM.md` entries were reported in session logs but not clearly recorded in the doc updates for that run.
 - `.planning/knowledge/` monthly artifacts were also not clearly referenced in the same run.
 
 ### Planning artifacts
@@ -85,7 +85,7 @@ ROOT CAUSE: Systematic absence of post-work capture — deferred items were note
 | 2 | `diff` CI step for docs/workflows/ vs templates/workflows/ parity | docs/tech-debt.md Phase 2 | Still relevant — template drift has caused bugs |
 | 3 | Derive `finalization_skills` from `.silver-bullet.json` at runtime | docs/tech-debt.md Phase 2 | Still relevant — hardcoded at hook line 371 |
 | 4 | Investigate and fix T2-1 test failure in test-timeout-check.sh | pre-existing test | Still relevant — 1 test failing in suite |
-| 5 | `docs/knowledge/YYYY-MM.md` and `docs/lessons/YYYY-MM.md` updates were missing from session capture | session log ref + item 9 | Still relevant — knowledge capture not working |
+| 5 | `docs/knowledge/YYYY-MM.md` and `docs/learnings/YYYY-MM.md` updates were missing from session capture | session log ref + item 9 | Still relevant — knowledge capture not working |
 | 6 | No test for roadmap-freshness hook: missing ROADMAP.md path (review finding #1) | code review of aeda816 | Still relevant — edge case untested |
 | 7 | Regex convention drift in roadmap-freshness.sh causes silent pass (review finding #2) | code review of aeda816 | Still relevant — false passes possible |
 

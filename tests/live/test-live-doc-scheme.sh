@@ -21,7 +21,7 @@ PY
 
 # Helper: seed standard doc scaffold into WORK_DIR
 seed_doc_scheme() {
-  mkdir -p "$WORK_DIR/docs/knowledge" "$WORK_DIR/docs/lessons"
+  mkdir -p "$WORK_DIR/docs/knowledge" "$WORK_DIR/docs/learnings"
 
   # INDEX.md from template
   sed 's|{{GIT_REPO}}|https://github.com/test/test.git|g' \
@@ -35,10 +35,10 @@ seed_doc_scheme() {
     "$SB_ROOT/templates/knowledge/YYYY-MM.md.base" \
     > "$WORK_DIR/docs/knowledge/$current_month.md"
 
-  # lessons/current_month.md from template
+  # learnings/current_month.md from template
   sed "s|{{YYYY-MM}}|$current_month|g" \
-    "$SB_ROOT/templates/lessons/YYYY-MM.md.base" \
-    > "$WORK_DIR/docs/lessons/$current_month.md"
+    "$SB_ROOT/templates/learnings/YYYY-MM.md.base" \
+    > "$WORK_DIR/docs/learnings/$current_month.md"
 
   git -C "$WORK_DIR" add -A
   git -C "$WORK_DIR" commit -q -m "seed docs"
@@ -80,32 +80,32 @@ Do not pass the command as a single string. Do not inspect files first. Do not e
   printf '%s' "$response"
 }
 
-# --- S1: Doc scheme scaffold — knowledge and lessons files created from scratch ---
+# --- S1: Doc scheme scaffold — knowledge and learnings files created from scratch ---
 echo "--- S1: Doc scheme scaffold creates all required files ---"
 live_setup
 disable_codex_guard
 seed_stage_c
 response=$(run_doc_step "#!/usr/bin/env bash
 set -euo pipefail
-mkdir -p docs/knowledge docs/lessons
+mkdir -p docs/knowledge docs/learnings
 sed 's|{{GIT_REPO}}|https://github.com/test/test.git|g' '$SB_ROOT/templates/knowledge/INDEX.md.base' > docs/knowledge/INDEX.md
 sed -e 's|{{PROJECT_NAME}}|live-test|g' -e 's|{{YYYY-MM}}|$current_month|g' '$SB_ROOT/templates/knowledge/YYYY-MM.md.base' > docs/knowledge/$current_month.md
-sed 's|{{YYYY-MM}}|$current_month|g' '$SB_ROOT/templates/lessons/YYYY-MM.md.base' > docs/lessons/$current_month.md")
+sed 's|{{YYYY-MM}}|$current_month|g' '$SB_ROOT/templates/learnings/YYYY-MM.md.base' > docs/learnings/$current_month.md")
 assert_file_exists "S1: knowledge INDEX exists" "$WORK_DIR/docs/knowledge/INDEX.md"
 assert_file_exists "S1: knowledge monthly exists" "$WORK_DIR/docs/knowledge/$current_month.md"
-assert_file_exists "S1: lessons monthly exists" "$WORK_DIR/docs/lessons/$current_month.md"
-assert_file_contains "S1: INDEX references knowledge or lessons" "$WORK_DIR/docs/knowledge/INDEX.md" "knowledge|lessons"
+assert_file_exists "S1: learnings monthly exists" "$WORK_DIR/docs/learnings/$current_month.md"
+assert_file_contains "S1: INDEX references knowledge or learnings" "$WORK_DIR/docs/knowledge/INDEX.md" "knowledge|learnings"
 assert_file_contains "S1: knowledge has section headers" "$WORK_DIR/docs/knowledge/$current_month.md" "Architecture Patterns|Known Gotchas"
 live_teardown
 
-# --- S2: Finalization step appends to knowledge/lessons ---
-echo "--- S2: Finalization appends to knowledge and lessons ---"
+# --- S2: Finalization step appends to knowledge/learnings ---
+echo "--- S2: Finalization appends to knowledge and learnings ---"
 live_setup
 disable_codex_guard
 seed_stage_c
 seed_doc_scheme
 k_mtime=$(capture_mtime "$WORK_DIR/docs/knowledge/$current_month.md")
-l_mtime=$(capture_mtime "$WORK_DIR/docs/lessons/$current_month.md")
+l_mtime=$(capture_mtime "$WORK_DIR/docs/learnings/$current_month.md")
 sleep 2
 response=$(run_doc_step "#!/usr/bin/env bash
 set -euo pipefail
@@ -113,20 +113,20 @@ python3 - <<'PY'
 from pathlib import Path
 
 knowledge = Path('docs/knowledge/$current_month.md')
-lessons = Path('docs/lessons/$current_month.md')
+learnings = Path('docs/learnings/$current_month.md')
 k_text = knowledge.read_text()
 k_text = k_text.replace('## Architecture Patterns\\n\\n*(none yet)*', '## Architecture Patterns\\n\\n$current_month-15 — Use a cache-aside strategy for Redis-backed API response caching.')
 k_text = k_text.replace('## Known Gotchas\\n\\n*(none yet)*', '## Known Gotchas\\n\\n$current_month-15 — Redis connection pooling needs explicit limits to avoid exhausting client connections.')
 knowledge.write_text(k_text)
-l_text = lessons.read_text()
+l_text = learnings.read_text()
 l_text = l_text.replace('categories: []', 'categories: [practice:architecture]')
 l_text = l_text.replace('## practice:{area}\\n\\n> Software engineering practices — testing, review, architecture, security.', '## practice:{area}\\n\\n$current_month-15 — Cache invalidation strategies should be designed alongside the cache write path, not after stale data appears.\\n\\n> Software engineering practices — testing, review, architecture, security.')
-lessons.write_text(l_text)
+learnings.write_text(l_text)
 PY")
 assert_file_modified "S2: knowledge file modified" "$WORK_DIR/docs/knowledge/$current_month.md" "$k_mtime"
-assert_file_modified "S2: lessons file modified" "$WORK_DIR/docs/lessons/$current_month.md" "$l_mtime"
+assert_file_modified "S2: learnings file modified" "$WORK_DIR/docs/learnings/$current_month.md" "$l_mtime"
 assert_file_contains "S2: knowledge mentions caching" "$WORK_DIR/docs/knowledge/$current_month.md" "cache|Redis|caching"
-assert_file_contains "S2: lessons mentions cache" "$WORK_DIR/docs/lessons/$current_month.md" "cache|invalidation"
+assert_file_contains "S2: learnings mentions cache" "$WORK_DIR/docs/learnings/$current_month.md" "cache|invalidation"
 live_teardown
 
 # --- S3: CHANGELOG.md gets prepended with correct task entry ---
@@ -156,14 +156,14 @@ tmp=\$(mktemp)
   printf -- '- **Commits:** abc1234\\n'
   printf -- '- **Skills:** silver-quality-gates, gsd-code-review\\n'
   printf -- '- **Knowledge:** Architecture Patterns\\n'
-  printf -- '- **Lessons:** stack, practice\\n\\n'
+  printf -- '- **Learnings:** stack, practice\\n\\n'
   tail -n +3 docs/CHANGELOG.md
 } > \"\$tmp\"
 mv \"\$tmp\" docs/CHANGELOG.md")
 assert_file_contains "S3: new entry has slug" "$WORK_DIR/docs/CHANGELOG.md" "redis-cache"
 assert_file_contains "S3: new entry has date" "$WORK_DIR/docs/CHANGELOG.md" "$current_month"
 assert_file_contains "S3: entry has Knowledge ref" "$WORK_DIR/docs/CHANGELOG.md" "Knowledge|knowledge"
-assert_file_contains "S3: entry has Lessons ref" "$WORK_DIR/docs/CHANGELOG.md" "Lessons|lessons"
+assert_file_contains "S3: entry has Learnings ref" "$WORK_DIR/docs/CHANGELOG.md" "Learnings|learnings"
 assert_file_contains "S3: old entry preserved" "$WORK_DIR/docs/CHANGELOG.md" "initial-setup"
 live_teardown
 
@@ -198,8 +198,8 @@ assert_file_contains "S4: INDEX has SECURITY" "$WORK_DIR/docs/knowledge/INDEX.md
 assert_file_contains "S4: INDEX still has Architecture" "$WORK_DIR/docs/knowledge/INDEX.md" "Architecture|ARCHITECTURE"
 live_teardown
 
-# --- S5: Non-redundancy — lessons must be portable ---
-echo "--- S5: Lessons are portable (no project-specific names) ---"
+# --- S5: Non-redundancy — learnings must be portable ---
+echo "--- S5: Learnings are portable (no project-specific names) ---"
 live_setup
 disable_codex_guard
 seed_stage_c
@@ -209,15 +209,15 @@ set -euo pipefail
 python3 - <<'PY'
 from pathlib import Path
 
-path = Path('docs/lessons/$current_month.md')
+path = Path('docs/learnings/$current_month.md')
 text = path.read_text()
 text = text.replace('categories: []', 'categories: [practice:workflow]')
 text = text.replace('## practice:{area}\\n\\n> Software engineering practices — testing, review, architecture, security.', '## practice:{area}\\n\\n$current_month-15 — Pre-commit hook enforcement works best when checks are fast, deterministic, and paired with clear remediation messages.\\n\\n> Software engineering practices — testing, review, architecture, security.')
 path.write_text(text)
 PY")
-assert_file_contains "S5: lesson content added" "$WORK_DIR/docs/lessons/$current_month.md" "hook|enforcement|pre-commit"
-assert_file_not_contains "S5: no silver-bullet mention" "$WORK_DIR/docs/lessons/$current_month.md" "silver-bullet|silver bullet"
-assert_file_not_contains "S5: no specific hook names" "$WORK_DIR/docs/lessons/$current_month.md" "spec-floor-check|dev-cycle-check|completion-audit"
+assert_file_contains "S5: learning content added" "$WORK_DIR/docs/learnings/$current_month.md" "hook|enforcement|pre-commit"
+assert_file_not_contains "S5: no silver-bullet mention" "$WORK_DIR/docs/learnings/$current_month.md" "silver-bullet|silver bullet"
+assert_file_not_contains "S5: no specific hook names" "$WORK_DIR/docs/learnings/$current_month.md" "spec-floor-check|dev-cycle-check|completion-audit"
 live_teardown
 
 # --- S6: Monthly file boundary — new month gets fresh file ---

@@ -206,6 +206,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>The /silver Router</h3>
       <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB, GSD, and plugin workflow path for the work at hand. GSD has its own <code>/gsd:do</code> router; Silver Bullet's added value is broader dynamic workflow composition plus enforcement around GSD-backed execution.</p>
 
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="route"></i></span>
+        <div class="callout-body"><strong>SB-first authority.</strong> In an SB-activated project, the agent waits for SB routing before invoking Superpowers or any other helper skill. When a workflow step completes, control returns to SB so it can select the next step until the goal is done or user feedback is needed.</div>
+      </div>
+
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
         <div class="callout-body"><strong>Implicit coverage does not count.</strong> The enforcement hooks track actual supported skill invocation receipts. Saying "I already covered this while writing the code" is not valid — each required skill must be explicitly invoked through the active host channel. This is intentional: the hooks can only measure what actually happened, not what the runtime claims happened.</div>
@@ -266,7 +271,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="superpowers">Superpowers Helpers</h2>
-      <p><strong>Superpowers</strong> is used by Silver Bullet only at explicit helper boundaries selected by the active workflow. GSD remains the lifecycle authority for planning, execution, verification, code-review artifacts, and shipping. SB may call Superpowers-backed helpers for TDD discipline, review framing/triage, verification-before-completion, and branch finishing.</p>
+      <p><strong>Superpowers</strong> is used by Silver Bullet only at explicit helper boundaries selected by the active workflow. Agents must not invoke Superpowers first and then let SB catch up. GSD remains the lifecycle authority for planning, execution, verification, code-review artifacts, and shipping. SB may call Superpowers-backed helpers for TDD discipline, review framing/triage, verification-before-completion, and branch finishing.</p>
 
       <h3>Key Superpowers-backed Helpers Used in Silver Bullet</h3>
       <ul>
@@ -326,7 +331,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.37.22 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.37.23 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
@@ -425,8 +430,8 @@ docs/
   knowledge/                 <span class="comment"># Project-scoped intelligence (monthly files)</span>
     INDEX.md                 <span class="comment"># Gateway doc index</span>
     YYYY-MM.md               <span class="comment"># Monthly knowledge entries</span>
-  lessons/                   <span class="comment"># Portable lessons learned (monthly files)</span>
-    YYYY-MM.md               <span class="comment"># Monthly lessons by category</span>
+  learnings/                 <span class="comment"># Portable learnings (monthly files)</span>
+    YYYY-MM.md               <span class="comment"># Monthly learnings by category</span>
   specs/                     <span class="comment"># Optional detailed design records (SB/GSD)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span></div>
@@ -435,17 +440,17 @@ docs/
 
       <h2 id="documentation">Documentation Scheme</h2>
       <p>Silver Bullet scaffolds a bounded, non-redundant documentation architecture for every project. Documentation lives in three layers: <strong>planning</strong> (<code>.planning/</code>, ephemeral per-milestone), <strong>project docs</strong> (<code>docs/</code>, durable across milestones), and <strong>public</strong> (<code>README.md</code>). Every document uses one of five scalability patterns &mdash; snapshot, capped table, rotation, summary+archive, or fixed &mdash; so no file grows unbounded.</p>
-      <p>Project intelligence is split into <code>docs/knowledge/</code> (project-specific patterns, gotchas, decisions) and <code>docs/lessons/</code> (portable lessons with a strict category taxonomy). Both use monthly files (<code>YYYY-MM.md</code>) that freeze after their month ends.</p>
+      <p>Project intelligence is split into <code>docs/knowledge/</code> (project-specific patterns, gotchas, decisions) and <code>docs/learnings/</code> (portable learnings with a strict category taxonomy). Both use monthly files (<code>YYYY-MM.md</code>) that freeze after their month ends. SB prefers Graphify retrieval for this context and falls back to direct docs reads when Graphify is unavailable.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="file-text"></i></div>
           <h4><a href="documentation.html" style="color:var(--accent-light);text-decoration:none">Documentation Scheme &rarr;</a></h4>
-          <p>Three layers, five scalability patterns, knowledge vs lessons, size caps, update timing, and the non-redundancy contract.</p>
+          <p>Three layers, five scalability patterns, knowledge vs learnings, size caps, update timing, and the non-redundancy contract.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
-          <h4>Knowledge vs Lessons</h4>
-          <p>Knowledge is project-scoped intelligence. Lessons are portable &mdash; written as if explaining to someone who has never seen the codebase. No project-specific references leak into lessons.</p>
+          <h4>Knowledge vs Learnings</h4>
+          <p>Knowledge is project-scoped intelligence. Learnings are portable &mdash; written as if explaining to someone who has never seen the codebase. No project-specific references leak into learnings.</p>
         </div>
       </div>
 

@@ -469,10 +469,10 @@ of the project after this milestone's work.
   as applicable. If the file doesn't exist yet, create it from
   `templates/knowledge/YYYY-MM.md.base`. Resolved questions: append
   `[RESOLVED YYYY-MM-DD]: <resolution>` below original.
-- Update `docs/lessons/YYYY-MM.md` (current month's file): append any portable lessons
+- Update `docs/learnings/YYYY-MM.md` (current month's file): append any portable learnings
   learned — tech stack, engineering practices, DevOps, domain knowledge, or design patterns.
   Write as if explaining to someone who has never seen this project. If the file doesn't
-  exist yet, create it from `templates/lessons/YYYY-MM.md.base`.
+  exist yet, create it from `templates/learnings/YYYY-MM.md.base`.
 - Update `docs/knowledge/INDEX.md` if any new docs were created or removed.
 - Update `docs/CHANGELOG.md`: prepend a new entry (newest first):
   ```
@@ -482,14 +482,14 @@ of the project after this milestone's work.
   **Skills run**: <list>
   **Virtual cost**: ~$X.XX (Model, complexity)
   **Knowledge**: updated knowledge/YYYY-MM.md (<sections>) | no changes
-  **Lessons**: updated lessons/YYYY-MM.md (<categories>) | no changes
+  **Learnings**: updated learnings/YYYY-MM.md (<categories>) | no changes
   ```
   Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
   medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
   Host execution tier is the base rate; host high/top tiers are progressively more expensive.
 - Complete the session log: read path from `$HOME/.codex/.silver-bullet/session-log-path`,
   edit that file to fill in Task, Approach, Files changed, Skills invoked,
-  Active Intent Ledger, Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/lessons additions,
+  Active Intent Ledger, Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/learnings additions,
   Model, Virtual cost. If `$HOME/.codex/.silver-bullet/session-log-path` is missing,
   create `docs/sessions/<today>-manual.md` from the session log template.
 - Documentation agents writing to `docs/` run in the **main worktree only**

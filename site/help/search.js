@@ -92,7 +92,7 @@ var IDX = [
     "url": "/help/concepts/documentation.html",
     "anchor": "overview",
     "title": "Documentation scheme",
-    "text": "Silver Bullet uses a bounded docs scheme with ARCHITECTURE.md, TESTING.md, doc-scheme.md/json, task checklist, CHANGELOG, monthly docs/knowledge and docs/lessons, specs, workflows, and sessions."
+    "text": "Silver Bullet uses a bounded docs scheme with ARCHITECTURE.md, TESTING.md, doc-scheme.md/json, task checklist, CHANGELOG, monthly docs/knowledge and docs/learnings, specs, workflows, and sessions."
   },
   {
     "page": "Reference",
@@ -225,14 +225,14 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.37.22, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.37.23, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "docs-files",
     "title": "Docs files",
-    "text": "Documentation files include PRD-Overview.md, ARCHITECTURE.md, TESTING.md, docs/internal/CICD.md, doc-scheme.md, doc-scheme.json, task-doc-checklist.json, CHANGELOG, monthly knowledge and lessons, specs, workflows, sessions, and issues."
+    "text": "Documentation files include PRD-Overview.md, ARCHITECTURE.md, TESTING.md, docs/internal/CICD.md, doc-scheme.md, doc-scheme.json, task-doc-checklist.json, CHANGELOG, monthly knowledge and learnings, specs, workflows, sessions, and issues."
   },
   {
     "page": "Troubleshooting",

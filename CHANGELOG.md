@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.37.23] — 2026-06-10
+
+## Features
+
+- `feat(orchestration): keep SB in control of helper skill selection and workflow loop continuation`
+- `feat(docs): migrate Lessons terminology to Learnings across the documentation scheme`
+- `feat(memory): require Graphify-backed retrieval before planning and execution where available`
+
+## Bug Fixes
+
+- `fix(kay): default Codex-compatible live testing to MiniMax.io with MiniMax-M3`
+
+## Documentation
+
+- `docs(site): refresh public website and help center for SB-first orchestration, Graphify, Learnings, and Kay MiniMax-M3 testing`
+
+## Tests
+
+- `test(docs): verify Learnings doc scheme and template migration`
+- `test(kay): verify MiniMax-M3 wrapper and isolated Kay config defaults`
+- `test(runtime): verify Claude hook/runtime parity for workflow guards and session logging`
+
+---
+
 ## [0.37.22] — 2026-06-09
 
 ## Bug Fixes
@@ -97,7 +121,7 @@
 ## Documentation
 
 - `docs: refresh website and Help Center for the current Codex package model`
-- `docs: record June 2026 Codex picker and runtime path lessons`
+- `docs: record June 2026 Codex picker and runtime path learnings`
 
 ---
 
@@ -370,7 +394,7 @@
 - Silver Bullet now intercepts non-trivial SDLC intent, composes clarify and GSD handoffs around it, and keeps the orchestration boundary inside SB rather than ad hoc freestyle work.
 - `silver:clarify` now behaves as a merged clarification front-end that absorbs Product Management framing and Superpowers brainstorming, then hands milestone creation to GSD when appropriate.
 - Session logs now carry an `## Active Intent Ledger` section, and the request/completion hooks keep that ledger in sync even when skill state is already present from earlier runs.
-- Release-prep docs, help surfaces, and month-level knowledge/lessons were updated to reflect the new orchestration model.
+- Release-prep docs, help surfaces, and month-level knowledge/learnings were updated to reflect the new orchestration model.
 
 ## [0.36.2] — 2026-05-17
 
@@ -651,7 +675,7 @@
 
 ## SB templates port
 
-- All `templates/*` copied to `forge/templates/`: `silver-bullet.md.base`, `workflow.md.base`, `silver-bullet.config.json.default`, `CHANGELOG-project.md.base`, `doc-scheme.md.base`, `CLAUDE.md.base`, plus subdirs (`knowledge/`, `lessons/`, `sessions/`, `specs/`, `workflows/`).
+- All `templates/*` copied to `forge/templates/`: `silver-bullet.md.base`, `workflow.md.base`, `silver-bullet.config.json.default`, `CHANGELOG-project.md.base`, `doc-scheme.md.base`, `CLAUDE.md.base`, plus subdirs (`knowledge/`, `learnings/`, `sessions/`, `specs/`, `workflows/`).
 - `forge-sb-install.sh` now installs templates → `~/forge/silver-bullet/templates/` — closes the broken `silver-init` (forge edition) bootstrap path.
 - `forge/AGENTS.project.template` enriched with adapted `CLAUDE.md.base` override directive.
 
@@ -940,14 +964,14 @@ bash silver-bullet/forge-sb-install.sh
 
 ## [0.25.0] — 2026-04-24
 
-**Issue Capture & Retrospective Scan milestone.** Closes the loop on deferred-item capture: two new filing skills (`/silver-add`, `/silver-remove`), a knowledge/lessons capture skill (`/silver-rem`), mandatory auto-capture enforcement in all orchestrator skills, a forensics audit (13 gaps fixed, 100% equivalence with gsd-forensics), a marketplace-based update overhaul (`silver-update`), and a retrospective session scanner (`/silver-scan`).
+**Issue Capture & Retrospective Scan milestone.** Closes the loop on deferred-item capture: two new filing skills (`/silver-add`, `/silver-remove`), a knowledge/learnings capture skill (`/silver-rem`), mandatory auto-capture enforcement in all orchestrator skills, a forensics audit (13 gaps fixed, 100% equivalence with gsd-forensics), a marketplace-based update overhaul (`silver-update`), and a retrospective session scanner (`/silver-scan`).
 
 ### New Skills (FEAT)
 
-- **FEAT-SCAN** (`3679980`, `5e434e3`): `/silver-scan` — retrospective session scanner. Globs `docs/sessions/*.md`, detects deferred items and knowledge/lessons insights, cross-references git log / CHANGELOG / GitHub Issues to exclude already-addressed items, Y/n human gate per candidate (20-cap per pass), files via `/silver-add` and `/silver-rem`.
+- **FEAT-SCAN** (`3679980`, `5e434e3`): `/silver-scan` — retrospective session scanner. Globs `docs/sessions/*.md`, detects deferred items and knowledge/learnings insights, cross-references git log / CHANGELOG / GitHub Issues to exclude already-addressed items, Y/n human gate per candidate (20-cap per pass), files via `/silver-add` and `/silver-rem`.
 - **FEAT-ADD** (Phase 49): `/silver-add` — classify-and-file skill for issues and backlog items. Routes to GitHub Issues + project board or local `docs/issues/ISSUES.md` / `BACKLOG.md`. Assigns IDs, caches board discovery, rate-limit resilient.
 - **FEAT-REMOVE** (Phase 50): `/silver-remove` — removes issues/backlog items by ID. Closes GitHub issues as "not planned" or inline-marks `[REMOVED]` in local docs.
-- **FEAT-REM** (Phase 50): `/silver-rem` — captures knowledge or lessons insights into `docs/knowledge/YYYY-MM.md` or `docs/lessons/YYYY-MM.md` per doc-scheme. Updates `docs/knowledge/INDEX.md` on new monthly file creation.
+- **FEAT-REM** (Phase 50): `/silver-rem` — captures knowledge or learnings insights into `docs/knowledge/YYYY-MM.md` or `docs/learnings/YYYY-MM.md` per doc-scheme. Updates `docs/knowledge/INDEX.md` on new monthly file creation.
 
 ### Enforcement (CAPT)
 
@@ -963,9 +987,9 @@ bash silver-bullet/forge-sb-install.sh
 
 - Fixed `silver-bullet.md` and template §5.1 to check `silver-bullet@alo-labs` registry key first (fallback to legacy key) — post-marketplace-update the legacy key is deleted.
 - Fixed `silver-rem` hardcoded "Silver Bullet" project name in knowledge frontmatter; now reads from `.project.name` in config.
-- Fixed `silver-rem` knowledge/lessons entries to insert immediately after the category heading (not at EOF).
+- Fixed `silver-rem` knowledge/learnings entries to insert immediately after the category heading (not at EOF).
 - Fixed `silver-rem` overflow (-b) files missing YAML frontmatter and category headings on creation.
-- Fixed `silver-scan` Step 7b missing `-F` flag on knowledge/lessons cross-reference grep (untrusted session log content).
+- Fixed `silver-scan` Step 7b missing `-F` flag on knowledge/learnings cross-reference grep (untrusted session log content).
 - Fixed `silver-scan` `CANDIDATE_COUNT` now counts all presented candidates (Y+n), not just filed items.
 - Fixed `silver-add` Step 4e rate-limit path now proceeds to session log (Step 6) before output step.
 - Fixed `silver-release` Step 9b.2 `(none)` grep to use `-F` (portable fixed-string match).
@@ -975,7 +999,7 @@ bash silver-bullet/forge-sb-install.sh
 - Fixed template §9 section: cleared live Silver Bullet project preferences from Mode Preferences table; corrected §10 cross-references to §9 within template.
 - Bumped `version` and `config_version` in `templates/silver-bullet.config.json.default` to `0.25.0`.
 - Fixed all 9 orchestrator skills pre-flight grep to use `[0-9]\+\.` instead of `10\.` when reading User Workflow Preferences — the section is §10 in the SB dev repo but §9 in every template-installed user project.
-- Fixed `silver-rem` Step 6 `awk -v ins="${INSIGHT}"` injection vector (issue #57): insight text now passed via `ENVIRON["INSIGHT"]` to bypass awk's backslash-sequence interpretation of `-v` assignment values. Applies to both knowledge and lessons entry insertion.
+- Fixed `silver-rem` Step 6 `awk -v ins="${INSIGHT}"` injection vector (issue #57): insight text now passed via `ENVIRON["INSIGHT"]` to bypass awk's backslash-sequence interpretation of `-v` assignment values. Applies to both knowledge and learnings entry insertion.
 
 ## [0.24.0] — 2026-04-24
 
@@ -1027,7 +1051,7 @@ bash silver-bullet/forge-sb-install.sh
 
 ### Skills — doc-scheme compliance gate (#33)
 
-- **DOC-SCH-01**: Added Step 13b to `silver-feature/SKILL.md` — before raising a PR, check whether `docs/doc-scheme.md` exists; if it does, gate on 4 doc updates (CHANGELOG entry, ARCHITECTURE current state, `knowledge/`, `lessons/`) before proceeding to Step 14 (finishing branch). Missing entries are treated as pre-ship defects.
+- **DOC-SCH-01**: Added Step 13b to `silver-feature/SKILL.md` — before raising a PR, check whether `docs/doc-scheme.md` exists; if it does, gate on 4 doc updates (CHANGELOG entry, ARCHITECTURE current state, `knowledge/`, `learnings/`) before proceeding to Step 14 (finishing branch). Missing entries are treated as pre-ship defects.
 - **DOC-SCH-02**: Added a `## Documentation` section to the `writing-plans` PLAN.md template so the doc-scheme obligation is visible at plan-writing time, not just at ship time.
 
 ### Skills — enforcement cleanup (#30)

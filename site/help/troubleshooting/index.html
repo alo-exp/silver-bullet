@@ -209,6 +209,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall GSD with <code>npx get-shit-done-cc@latest</code>.</p>
       </div>
 
+      <div class="issue-card">
+        <h4>"Graphify is not installed"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet uses Graphify for project-memory retrieval before planning, editing, debugging, review, and shipping.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install it with <code>uv tool install graphifyy</code> or <code>pip install graphifyy</code>, then rerun <code>/silver:init</code>.</p>
+      </div>
+
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
         <div class="callout-body"><strong>Skill discovery:</strong> At the start of each workflow phase, Silver Bullet scans <code>${SB_RUNTIME_HOME_ROOT}/skills/</code> and <code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> to find all available skills. If a skill was recently installed, start a new session for it to be discovered.</div>

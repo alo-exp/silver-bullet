@@ -11,7 +11,7 @@ Your project documentation lives in three layers:
 | Layer | Location | Lifespan | What goes here |
 |-------|----------|----------|---------------|
 | **Planning** | `.planning/` | Per-milestone (archived on completion) | Specs, plans, reviews, verification — the work-in-progress trail |
-| **Project docs** | `docs/` | Durable across milestones | Architecture, testing strategy, changelog, knowledge, lessons |
+| **Project docs** | `docs/` | Durable across milestones | Architecture, testing strategy, changelog, knowledge, learnings |
 | **Public** | `README.md` | Permanent | Project overview for external readers |
 
 ---
@@ -81,18 +81,18 @@ Use this map when adding or reorganizing docs.
 | `doc-scheme.md` | This file — documentation architecture reference |
 | `doc-scheme.json` | Machine-enforced contract used by hooks (`required_docs`, sections, granularity, mappings, archive history) |
 
-### Knowledge & Lessons (created during development)
+### Knowledge & Learnings (created during development)
 
 | Directory | Purpose | Portability |
 |-----------|---------|-------------|
 | `docs/knowledge/` | Project-scoped intelligence — architecture patterns, gotchas, key decisions, recurring issues | **Project-specific** — references this codebase directly |
-| `docs/lessons/` | Portable lessons learned — things useful beyond this project | **Portable** — no project-specific file paths or feature names |
+| `docs/learnings/` | Portable learnings — things useful beyond this project | **Portable** — no project-specific file paths or feature names |
 
 Both use monthly files (`YYYY-MM.md`). Each month's file is append-only during that month, then frozen.
 
 **Knowledge categories:** Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions
 
-**Lessons categories:** `domain:{area}`, `stack:{technology}`, `practice:{area}`, `devops:{area}`, `design:{area}`
+**Learnings categories:** `domain:{area}`, `stack:{technology}`, `practice:{area}`, `devops:{area}`, `design:{area}`
 
 ### Optional files (created when relevant)
 
@@ -140,7 +140,7 @@ Every document has a growth limit:
 | Location | Cap | Enforcement |
 |----------|-----|-------------|
 | `docs/*.md` | 500 lines | Artifact reviewer flags violations |
-| `docs/knowledge/*.md`, `docs/lessons/*.md` | 300 lines | Split into `YYYY-MM-a.md` / `YYYY-MM-b.md` if exceeded |
+| `docs/knowledge/*.md`, `docs/learnings/*.md` | 300 lines | Split into `YYYY-MM-a.md` / `YYYY-MM-b.md` if exceeded |
 | `.planning/` active files | 300 lines | Milestone completion archives and resets |
 | Quick tasks table in `STATE.md` | 20 rows | Oldest archived when exceeded |
 
@@ -150,7 +150,7 @@ Every document has a growth limit:
 
 | Event | What updates |
 |-------|-------------|
-| **Every task** (finalization step) | `CHANGELOG.md`, `knowledge/YYYY-MM.md`, `lessons/YYYY-MM.md` |
+| **Every task** (finalization step) | `CHANGELOG.md`, `knowledge/YYYY-MM.md`, `learnings/YYYY-MM.md` |
 | **Architecture changes** | `ARCHITECTURE.md` (rewritten) |
 | **Test infrastructure changes** | `TESTING.md` |
 | **Docs added or removed** | `knowledge/INDEX.md` |
@@ -200,7 +200,7 @@ When a brownfield project switches from a pre-existing user doc structure to SB 
 |-----------|---------------|----------------|
 | `README.md`, `ARCHITECTURE.md`, `TESTING.md` | Current maintainer or phase owner | At every release |
 | `CHANGELOG.md` | Task owner | Every task |
-| `knowledge/YYYY-MM.md`, `lessons/YYYY-MM.md` | Task owner | Every task + month-end cleanup |
+| `knowledge/YYYY-MM.md`, `learnings/YYYY-MM.md` | Task owner | Every task + month-end cleanup |
 | `CICD.md`, `DEPLOYMENT.md`, `SECURITY.md` | Release/operator owner | Every release touching ops |
 | `RUNTIME-COMPATIBILITY.md` *(plugin-dev only)* | Runtime owner | Every runtime-impacting change |
 
@@ -209,7 +209,7 @@ When a brownfield project switches from a pre-existing user doc structure to SB 
 1. If code and docs disagree, update docs before merge (or block delivery intentionally with an ADR).
 2. Mark deprecated docs with a clear header and replacement link.
 3. If a recurring decision appears in monthly knowledge more than once, promote it to `docs/ADR/`.
-4. Resolve contradictory docs by precedence: ADR > architecture/reference docs > monthly knowledge > lessons.
+4. Resolve contradictory docs by precedence: ADR > architecture/reference docs > monthly knowledge > learnings.
 
 ---
 
@@ -236,7 +236,7 @@ Use terms consistently.
 | **Planning artifact** | Temporary work-in-progress document under `.planning/` |
 | **Project doc** | Durable document under `docs/` |
 | **Knowledge** | Project-specific intelligence not derivable from code alone |
-| **Lesson** | Portable guidance that generalizes beyond this repo |
+| **Learning** | Portable guidance that generalizes beyond this repo |
 | **Task** | One unit of completed implementation or change work |
 | **Milestone** | Group of tasks delivered and archived together |
 | **ADR** | Architecture Decision Record for durable technical decisions |
@@ -251,7 +251,7 @@ If terms drift or multiply, create/update `docs/GLOSSARY.md` and link it from `k
 
 1. `docs/` files summarize — `.planning/` artifacts are the source of truth during development.
 2. `knowledge/` captures intelligence not derivable from code or git history.
-3. `lessons/` captures portable learnings — never duplicates project-specific knowledge.
+3. `learnings/` captures portable learnings — never duplicates project-specific knowledge.
 4. `ARCHITECTURE.md` is high-level design — detailed phase designs stay in `.planning/phases/`.
 5. `CHANGELOG.md` is the task log — git log is the commit log (different granularity).
 6. Compose docs by linking; avoid cloning the same content across multiple pages.

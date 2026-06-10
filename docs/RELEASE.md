@@ -48,7 +48,7 @@ todo-app suite is now one inline full-surface journey and also writes an
 `inline-e2e-matrix` marker so the end-user plugin bootstrap path and the
 follow-on development flow are both proven before release.
 The standard release gate now uses the Kay-backed Codex-compatible path only:
-`opencode-go` + `deepseek-v4-flash` + low reasoning in isolated envs. Those
+MiniMax.io + `MiniMax-M3` + low reasoning in isolated envs. Those
 runs write `matrix=codex-only` markers, and those markers are the normal
 release prerequisite. A full Claude/native-Codex matrix remains optional
 diagnostic coverage only when explicitly requested.

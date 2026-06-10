@@ -43,7 +43,7 @@
 **Skills run**: silver:clarify, silver:init, silver:feature, verification-before-completion
 **Virtual cost**: ~$0.40 (high complexity — hooks, docs, tests, and package sync)
 **KNOWLEDGE.md**: updated (intent ledger coupling, request/completion consistency, release-prep orchestration)
-**Lessons**: updated (request/completion coupling, dedup-safe ledger updates)
+**Learnings**: updated (request/completion coupling, dedup-safe ledger updates)
 
 ## 2026-05-14 — sb-gsd-alignment
 **What**: Re-aligned Silver Bullet around GSD as the lifecycle authority, making SB the Agentic Process Orchestrator that composes pre-execution quality checks, GSD execution, and final delivery gates without blocking implementation on post-execution markers.
@@ -74,7 +74,7 @@
 **KNOWLEDGE.md**: updated (doc gate contract, checklist semantics, stale-artifact test hardening)
 
 ## 2026-05-07 — codex-docs-coverage
-**What**: Brought the project docs up to date with the current Codex packaging split, shared marketplace boundary, dual-runtime live matrix, and the May knowledge/lessons files.
+**What**: Brought the project docs up to date with the current Codex packaging split, shared marketplace boundary, dual-runtime live matrix, and the May knowledge/learnings files.
 **Commits**: —
 **Skills run**: gsd:docs-update
 **Virtual cost**: ~$0.12 (low complexity — docs sweep + verification)
