@@ -65,7 +65,7 @@ if [[ ${#RUNTIMES[@]} -eq 2 ]]; then
   has_codex=false
   for runtime in "${RUNTIMES[@]}"; do
     [[ "$runtime" == "claude" ]] && has_claude=true
-    [[ "$runtime" == "codex" ]] && has_codex=true
+    [[ "$runtime" == "codex" || "$runtime" == "kay" ]] && has_codex=true
   done
   if [[ "$has_claude" == true && "$has_codex" == true ]]; then
     full_matrix_requested=true
