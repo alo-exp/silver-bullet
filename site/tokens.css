@@ -27,10 +27,10 @@
   --radius:12px;
   --radius-lg:20px;
   --radius-sm:8px;
-  --font-heading:'Space Grotesk',system-ui,sans-serif;
-  --font-body:'Roboto',system-ui,sans-serif;
+  --font-heading:'IBM Plex Sans',system-ui,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
   --font-sans:var(--font-body);
-  --font-mono:'Roboto Mono',monospace;
+  --font-mono:'IBM Plex Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
   --nav-bg:rgba(246,244,240,.92);
@@ -191,3 +191,5 @@
 body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-block,.arch-diagram,.callout,.comparison-table td,.comparison-table th,.enforcement-block{
   transition:background .25s,background-color .25s,border-color .25s,color .25s,box-shadow .25s;
 }
+
+code,kbd,pre,samp{font-family:var(--font-mono)}
