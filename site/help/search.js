@@ -25,6 +25,13 @@ var IDX = [
     "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then uses GSD for planning execution verification and ship with quality gates and review around it."
   },
   {
+    "page": "Help Center",
+    "url": "/help/",
+    "anchor": "",
+    "title": "Silver Bullet Help Center",
+    "text": "Help Center landing page for Silver Bullet concepts, getting started, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+  },
+  {
     "page": "Core Concepts",
     "url": "/help/concepts/",
     "anchor": "skills",
@@ -95,6 +102,34 @@ var IDX = [
     "text": "Silver Bullet uses a bounded docs scheme with ARCHITECTURE.md, TESTING.md, doc-scheme.md/json, task checklist, CHANGELOG, monthly docs/knowledge and docs/learnings, specs, workflows, and sessions."
   },
   {
+    "page": "Core Concepts",
+    "url": "/help/concepts/documentation.html",
+    "anchor": "graphify-retrieval",
+    "title": "Graphify project memory",
+    "text": "Graphify is SB's preferred project-memory retrieval layer before planning, editing, debugging, review, documentation, shipping, and release. Run graphify update . --no-cluster to build graphify-out/graph.json, then query it with task and file context. SB falls back to docs/knowledge, docs/learnings, and direct project docs reads only when Graphify is unavailable or returns no useful context."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/composable-workflow.html",
+    "anchor": "overview",
+    "title": "Composable workflow orchestration",
+    "text": "Silver Bullet replaces fixed pipelines with an 18-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each path, updates .planning/workflows/<id>.md after every completion, and returns control to SB until the user goal is achieved or feedback is required."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/artifact-review-assessor.html",
+    "anchor": "overview",
+    "title": "Artifact review assessor",
+    "text": "artifact-review-assessor triages reviewer findings into MUST-FIX, NICE-TO-HAVE, or DISMISS by comparing each finding against the artifact contract. It prevents subjective preferences from becoming blockers while preserving required artifact quality gates."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/cost-optimization.html",
+    "anchor": "what-it-means",
+    "title": "Operational efficiency and cost optimization",
+    "text": "Silver Bullet keeps process proportional by composing the smallest safe workflow for the task. Fast-path work stays lightweight, risky work keeps spec, review, test, DevOps, and release gates, and required dependencies fail closed instead of pretending a gate ran."
+  },
+  {
     "page": "Reference",
     "url": "/help/reference/index.html",
     "anchor": "session-log",
@@ -114,6 +149,13 @@ var IDX = [
     "anchor": "overview",
     "title": "Orchestration workflows",
     "text": "Workflow catalog includes /silver:clarify, /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:research, /silver:release, /silver:fast, /silver:spec, /silver:ingest, and /silver:validate."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-clarify.html",
+    "anchor": "overview",
+    "title": "/silver:clarify",
+    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes .planning/CLARIFY.md, and hands off to gsd:discuss-phase when the brief is decision-ready."
   },
   {
     "page": "Workflows",
