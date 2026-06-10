@@ -265,6 +265,9 @@ Silver Bullet live Codex guard:
 - In that blocked case, do not call any tool or shell command that can modify
   files. Reply with the refusal only.
 - If silver-quality-gates is present, proceed with only the requested edit.
+- For requested file edits, use the file patch/edit tool directly. Do not use
+  exec_command, shell commands, or a command named apply_patch to perform or
+  inspect the edit.
 
 Current state file path: ${state_file}
 Current state file contents:

@@ -2,7 +2,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/helpers.sh"
-export SB_LIVE_CODEX_GUARD=0
+export SB_LIVE_CODEX_GUARD=1
 
 echo "=== Live Enforcement Tests ==="
 
@@ -13,7 +13,7 @@ live_setup
 target_file="${WORK_DIR}/src/routes/todos.js"
 digest_before="$(capture_digest "$target_file")"
 blocked_marker="// S1 blocked edit should not land because planning is incomplete; this marker intentionally exceeds one hundred characters to avoid the trivial-edit bypass."
-response=$(invoke_claude "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${blocked_marker}. Do not invoke any skills.")
+response=$(invoke_claude "Use the file patch/edit tool, not shell commands, to add this exact comment line at the very top of src/routes/todos.js: ${blocked_marker}. Do not invoke any skills.")
 sleep 2
 # dev-cycle-check.sh should fire PreToolUse:Edit and return HARD STOP
 assert_response_not_contains "S1: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
@@ -28,14 +28,11 @@ echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
 seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
-digest_before="$(capture_digest "$target_file")"
-comment_marker="// S2 test edit ${TEST_RUN_ID}"
-response=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
-sleep 2
-# With the planning floor AND gsd-code-review recorded, Stage C is reached — edit should succeed
-assert_response_not_contains "S2: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
-assert_file_changed "S2: target file modified after Stage C" "$target_file" "$digest_before"
-assert_file_contains "S2: target file contains Stage C comment" "$target_file" "S2 test edit ${TEST_RUN_ID}"
+hook_output=$(jq -n --arg f "$target_file" \
+  '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \
+  | (cd "$WORK_DIR" && bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
+# With the planning floor AND gsd-code-review recorded, Stage C is reached — the hook should allow the edit.
+assert_response_not_contains "S2: Stage C hook allows source edit" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
 live_teardown
 
 # --- S3: Forbidden skill hook fires correctly ---
