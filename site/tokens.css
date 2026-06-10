@@ -303,13 +303,15 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
 }
 
 .doc-content .callout .callout-icon{
-  margin-top:.12em;
+  margin-top:0 !important;
 }
 
 .callout .callout-icon svg,
 .prereq-card .prereq-icon svg,
 .quick-link .ql-icon svg,
-.help-card .card-icon svg{
+.help-card .card-icon svg,
+.doc-content .layer-num svg,
+.doc-content .step-num svg{
   display:block;
   width:1em;
   height:1em;
@@ -325,6 +327,24 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
   display:inline-flex;
   align-items:flex-start;
   justify-content:center;
+}
+
+.doc-content .step-num,
+.doc-content .layer-num{
+  margin-top:0 !important;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.doc-content .wave-item{
+  align-items:flex-start !important;
+}
+
+.doc-content .wave-num{
+  line-height:1.2;
+  margin-top:0 !important;
 }
 
 .help-card,
