@@ -29,9 +29,11 @@ agent_invoke() {
   local output
   local permission_mode
   local continue_flag
+  local timeout_seconds
 
   cli="$(agent_cli_path)"
   permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
+  timeout_seconds="${CLAUDE_INTERACTIVE_TIMEOUT:-${CODEX_INTERACTIVE_TIMEOUT:-300}}"
   : "${CLAUDE_PROMPT_COUNT:=0}"
   if [[ "$mode" == "permissive" ]]; then
     permission_mode="bypassPermissions"
@@ -42,20 +44,55 @@ agent_invoke() {
     continue_flag=1
   fi
 
-  output=$(cd "$WORK_DIR" && \
-    {
-      local args=(
-        --print
-        --model "${CLAUDE_MODEL:-haiku}"
-        --effort "${CLAUDE_EFFORT:-low}"
-        --permission-mode "$permission_mode"
-        --verbose
-      )
-      if [[ "$continue_flag" == "1" ]]; then
-        args+=(--continue)
-      fi
-      "$cli" "${args[@]}" "$prompt"
-    } 2>&1) || true
+  output=$(
+    cd "$WORK_DIR" && \
+      CLAUDE_LIVE_CLI="$cli" \
+      CLAUDE_LIVE_PROMPT="$prompt" \
+      CLAUDE_LIVE_PERMISSION_MODE="$permission_mode" \
+      CLAUDE_LIVE_CONTINUE="$continue_flag" \
+      CLAUDE_LIVE_TIMEOUT="$timeout_seconds" \
+      python3 - <<'PY'
+import os
+import subprocess
+import sys
+
+cli = os.environ["CLAUDE_LIVE_CLI"]
+prompt = os.environ["CLAUDE_LIVE_PROMPT"]
+timeout = int(os.environ.get("CLAUDE_LIVE_TIMEOUT") or "300")
+args = [
+    cli,
+    "--print",
+    "--model",
+    os.environ.get("CLAUDE_MODEL", "haiku"),
+    "--effort",
+    os.environ.get("CLAUDE_EFFORT", "low"),
+    "--permission-mode",
+    os.environ["CLAUDE_LIVE_PERMISSION_MODE"],
+    "--verbose",
+]
+if os.environ.get("CLAUDE_LIVE_CONTINUE") == "1":
+    args.append("--continue")
+args.append(prompt)
+
+try:
+    result = subprocess.run(
+        args,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout,
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    sys.exit(result.returncode)
+except subprocess.TimeoutExpired as exc:
+    if exc.stdout:
+        sys.stdout.write(exc.stdout if isinstance(exc.stdout, str) else exc.stdout.decode(errors="replace"))
+    sys.stdout.write(f"\nERROR: timed out waiting for Claude prompt to complete after {timeout}s\n")
+    sys.exit(124)
+PY
+  ) || true
 
   printf '%s' "$output"
 

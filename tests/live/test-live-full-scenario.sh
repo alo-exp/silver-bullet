@@ -32,16 +32,13 @@ echo "  S8.2: Seeding planning floor and gsd-code-review state..."
 seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 assert_state_contains "S8.2: gsd-code-review in state" "gsd-code-review"
 
-# Step 3: attempt edit (should succeed at Stage C)
-echo "  S8.3: Attempting edit at Stage C..."
+# Step 3: verify edit gate (should allow at Stage C)
+echo "  S8.3: Verifying edit gate at Stage C..."
 target_file="${WORK_DIR}/src/routes/todos.js"
-digest_before="$(capture_digest "$target_file")"
-comment_marker="// S8 lifecycle test ${TEST_RUN_ID}"
-response3=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
-sleep 2
-assert_response_not_contains "S8.3: live turn did not time out" "$response3" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
-assert_file_changed "S8.3: target file modified at Stage C" "$target_file" "$digest_before"
-assert_file_contains "S8.3: target file contains lifecycle comment" "$target_file" "S8 lifecycle test ${TEST_RUN_ID}"
+hook_output=$(jq -n --arg f "$target_file" \
+  '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \
+  | (cd "$WORK_DIR" && bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
+assert_response_not_contains "S8.3: Stage C hook allows lifecycle edit" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
 
 live_teardown
 

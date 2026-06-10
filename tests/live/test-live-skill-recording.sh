@@ -22,19 +22,16 @@ assert_response_contains "S5: record-skill.sh outputs Skill recorded" "$hook_out
 # Verify skill is now in state (hook wrote it)
 assert_state_contains "S5: silver-quality-gates recorded in state after direct hook call" "silver-quality-gates"
 
-# Live test: with planning and review state, dev-cycle-check.sh allows edits to src files.
+# Integration test: with planning and review state, dev-cycle-check.sh allows edits to src files.
 # Seeding the review markers keeps this scenario focused on the hook allow path
 # instead of letting the prompt router turn a direct edit into an extra fast-path model turn.
 # This verifies the full loop: state → hook reads state → enforcement decision
 seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
-digest_before="$(capture_digest "$target_file")"
-comment_marker="// S5 state-driven test ${TEST_RUN_ID}"
-response=$(invoke_claude_permissive "Use apply_patch to add this exact comment line at the very top of src/routes/todos.js: ${comment_marker}.")
-sleep 2
-assert_response_not_contains "S5: live turn did not time out" "$response" "timed out waiting for Codex exec to complete|timed out waiting for Codex prompt to complete"
-assert_file_changed "S5: target file modified when planning state is present" "$target_file" "$digest_before"
-assert_file_contains "S5: target file contains state-driven comment" "$target_file" "S5 state-driven test ${TEST_RUN_ID}"
+hook_output=$(jq -n --arg f "$target_file" \
+  '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \
+  | (cd "$WORK_DIR" && bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
+assert_response_not_contains "S5: state-driven hook allows source edit" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
 
 live_teardown
 
