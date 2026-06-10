@@ -374,3 +374,21 @@ body .callout{
   border-width:0 !important;
   border-color:transparent !important;
 }
+
+body .help-theme-btn{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:34px !important;
+  height:34px !important;
+  padding:0 !important;
+  line-height:1 !important;
+}
+
+body .help-theme-btn svg{
+  display:block;
+}
+
+.doc-content [id]{
+  scroll-margin-top:96px;
+}
