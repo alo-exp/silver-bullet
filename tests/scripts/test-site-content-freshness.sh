@@ -46,6 +46,27 @@ assert_contains "homepage documents Codex public marketplace package" "public al
 assert_contains "Help Center documents Codex public marketplace package" "public <code>alo-labs/codex-plugins</code> marketplace package" "$REPO_ROOT/site/help/getting-started/index.html"
 assert_contains "search index documents Codex public marketplace package" "public alo-labs/codex-plugins Codex marketplace package" "$REPO_ROOT/site/help/search.js"
 assert_contains "package metadata includes Codex support" "Claude Code and Codex" "$REPO_ROOT/package.json"
+assert_contains "Help Center search indexes Graphify project memory" "Graphify project memory|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/search.js"
+assert_contains "Documentation scheme explains Graphify retrieval" "Graphify Retrieval|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/concepts/documentation.html"
+assert_contains "Getting Started links Graphify dependency docs" "Graphify Retrieval|python3\\.12 -m pip install graphifyy|uv tool install graphifyy" "$REPO_ROOT/site/help/getting-started/index.html"
+
+while IFS= read -r html_file; do
+  rel="${html_file#$REPO_ROOT/site}"
+  if [[ "$rel" == */index.html ]]; then
+    url="${rel%index.html}"
+  else
+    url="${rel%.html}.html"
+  fi
+  url="${url%/}"
+  if [[ "$url" == "/help" ]]; then
+    pattern='"url": "/help/"'
+  elif [[ "$url" == *.html ]]; then
+    printf -v pattern '"url": "%s"' "$url"
+  else
+    printf -v pattern '"url": "%s(/|/index.html)?"' "$url"
+  fi
+  assert_contains "Help Center search indexes ${rel#/}" "$pattern" "$REPO_ROOT/site/help/search.js"
+done < <(find "$REPO_ROOT/site/help" -name '*.html' -print | sort)
 
 assert_not_contains "public site does not mention stale v0.37.16" "v?0\\.37\\.16" "$REPO_ROOT/site"
 assert_not_contains "Help Center install docs do not advertise retired runtime installer paths" "forge-sb-install|silver-init|Forge Runtime" "$REPO_ROOT/site/help"

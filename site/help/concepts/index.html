@@ -434,7 +434,10 @@ docs/
     YYYY-MM.md               <span class="comment"># Monthly learnings by category</span>
   specs/                     <span class="comment"># Optional detailed design records (SB/GSD)</span>
   workflows/                 <span class="comment"># Active workflow files</span>
-  sessions/                  <span class="comment"># Per-session logs</span></div>
+  sessions/                  <span class="comment"># Per-session logs</span>
+graphify-out/                <span class="comment"># Local Graphify retrieval index (generated, ignored)</span>
+  graph.json                 <span class="comment"># Queryable project memory graph</span>
+raw/                         <span class="comment"># Optional fetched corpus for Graphify add (generated, ignored)</span></div>
 
       <div class="divider"></div>
 
@@ -451,6 +454,11 @@ docs/
           <div class="cc-icon"><i data-lucide="layers"></i></div>
           <h4>Knowledge vs Learnings</h4>
           <p>Knowledge is project-scoped intelligence. Learnings are portable &mdash; written as if explaining to someone who has never seen the codebase. No project-specific references leak into learnings.</p>
+        </div>
+        <div class="concept-card">
+          <div class="cc-icon"><i data-lucide="network"></i></div>
+          <h4><a href="documentation.html#graphify-retrieval" style="color:var(--accent-light);text-decoration:none">Graphify Retrieval &rarr;</a></h4>
+          <p>SB queries Graphify before planning, editing, debugging, review, documentation, and release, then falls back to direct docs reads only when the graph is unavailable.</p>
         </div>
       </div>
 

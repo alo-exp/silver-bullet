@@ -52,6 +52,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .doc-content li{margin-bottom:6px;line-height:1.7}
 .doc-content strong{color:var(--text-primary)}
 .doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 22px;font-family:var(--font-mono);font-size:.9rem;line-height:1.8;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
 .callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
 .callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
 .callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
@@ -145,6 +146,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li class="sidebar-section">Project Docs</li>
         <li><a href="#core-files">Core Files</a></li>
         <li><a href="#knowledge-learnings">Knowledge &amp; Learnings</a></li>
+        <li><a href="#graphify-retrieval">Graphify Retrieval</a></li>
         <li><a href="#optional-files">Optional Files</a></li>
         <li class="sidebar-section">Rules</li>
         <li><a href="#size-caps">Size Caps</a></li>
@@ -265,6 +267,17 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
         <div class="callout-body"><strong>Portability rule.</strong> Learnings files must never contain project-specific references. If you can't explain the learning without naming a project file or feature, it belongs in <code>knowledge/</code> instead.</div>
       </div>
+
+      <div class="divider"></div>
+
+      <h2 id="graphify-retrieval">Graphify Retrieval</h2>
+      <p>Graphify is Silver Bullet's preferred project-memory retrieval layer. After <code>/silver:init</code>, SB expects Graphify to be available so agents can query the local knowledge graph before work that benefits from project context: planning, editing, debugging, review, documentation, shipping, and release.</p>
+      <p>The no-key refresh path builds a local graph from the repository without semantic LLM extraction:</p>
+      <div class="code-block">graphify update . --no-cluster
+graphify query "task context plus relevant files" --graph graphify-out/graph.json --budget 2000</div>
+      <p>Agents should query with concrete task and file context, then inspect the returned nodes before acting. Broad words can match workflow or documentation nodes first, so the useful query usually names the current file, hook, skill, or artifact type.</p>
+      <p>If Graphify is missing, stale, or returns no relevant context, SB falls back to direct reads of <code>docs/knowledge/INDEX.md</code>, the current monthly <code>docs/knowledge/YYYY-MM.md</code>, the current monthly <code>docs/learnings/YYYY-MM.md</code>, and any directly referenced project docs. That fallback is degraded behavior: it preserves correctness, but Graphify remains the required default for SB-activated projects.</p>
+      <p><code>graphify-out/</code> and <code>raw/</code> are generated local state and are ignored by default. Full semantic extraction and optional surfaces such as MCP or database-backed storage can be enabled separately when the project has the required keys and services.</p>
 
       <div class="divider"></div>
 
