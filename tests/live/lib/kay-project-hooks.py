@@ -64,6 +64,7 @@ def build_bridge_env_inline_table(plugin_root: str, home_root: str) -> str:
         ("CLAUDE_PLUGIN_ROOT", plugin_root),
         ("HOME", home_root),
         ("KAY_HOME", home_root),
+        ("SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK", "1"),
     ]
 
     for key in BRIDGE_ENV_KEYS:

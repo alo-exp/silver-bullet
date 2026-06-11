@@ -1024,7 +1024,7 @@ verify_runtime_hook_delivery() {
   : > "$STATE_FILE"
   digest_before="$(capture_digest "$target_file")"
 
-  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> src/routes/todos.js\` and do not do anything else." >/dev/null || true
+  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null || true
 
   digest_after="$(capture_digest "$target_file")"
   if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
