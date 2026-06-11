@@ -60,13 +60,18 @@ nav .logo{font-weight:800;font-size:1.1rem;color:var(--text-primary);letter-spac
 nav .nav-links{display:flex;gap:24px;list-style:none}
 nav .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s}
 nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-help{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:600;transition:color .2s;margin-right:16px}
+nav .nav-help:hover{color:var(--text-primary)}
 nav .nav-cta{background:linear-gradient(135deg,var(--grad-1),var(--grad-2));color:#fff;padding:8px 20px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
 .nav-toggle{display:none;background:none;border:none;color:var(--text-primary);font-size:1.5rem;cursor:pointer}
+.mobile-only{display:none}
 @media(max-width:820px){
   nav .nav-links{display:none}
   .nav-toggle{display:block}
   nav .nav-links.active{display:flex;flex-direction:column;position:absolute;top:64px;left:0;right:0;background:var(--nav-mobile-bg);padding:20px 24px;gap:16px;border-bottom:1px solid var(--border)}
   nav .nav-cta{display:none}
+  nav .nav-help{margin-right:0}
+  .mobile-only{display:block}
 }
 .hero{background:var(--bg-hero);padding:118px 0 80px;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
 .hero .container{position:relative;z-index:1}
@@ -148,15 +153,17 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <nav>
   <div class="nav-inner">
     <a href="../" class="logo">Silver Bullet</a>
-    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
     <ul class="nav-links">
-      <li><a href="#summary">Overview</a></li>
-      <li><a href="#benefits">Benefits</a></li>
-      <li><a href="#governance">Ownership</a></li>
-      <li><a href="#when">When To Use</a></li>
-      <li><a href="../compare/">Compare</a></li>
+      <li><a href="../#problem">Problem</a></li>
+      <li><a href="../#solution">How It Works</a></li>
+      <li><a href="../#ecosystem">Ecosystem</a></li>
+      <li><a href="../#workflow">Workflows</a></li>
+      <li><a href="../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
     <div style="display:flex;align-items:center;gap:10px">
+      <a href="../help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0">
         <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span><span id="icon-moon"><i data-lucide="moon"></i></span>
       </button>
@@ -471,8 +478,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="footer-credit">Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
       </div>
       <div class="footer-links">
-        <a href="../">Home</a>
-        <a href="../help/">Help</a>
+        <a href="../#install">Install</a>
+        <a href="../help/">Help Center</a>
         <a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>

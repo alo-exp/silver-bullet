@@ -201,6 +201,7 @@ The homepage starts with the actual product, not a landing-page abstraction:
 - Hero first viewport shows the bullet image, `Silver Bullet`, alpha badge, APO version badge, Fred Brooks reference, product tagline, primary CTAs, and workflow pills.
 - Main nav uses a reduced menu: `Problem`, `How It Works`, `Ecosystem`, `Workflows`, `Install`.
 - `Help Center` sits at the top right, immediately left of the icon theme selector, with enough spacing that it does not feel attached to the button.
+- Non-Help pages use the same site chrome: reduced homepage menu, `Help Center` immediately left of the icon theme selector, GitHub CTA on desktop, GitHub in the collapsed mobile menu, and footer links for `Install`, `Help Center`, and `GitHub`.
 - The theme selector is icon-only sun/moon, not a textual `Theme` button.
 - Cards and repeated items are dense but readable, with left-aligned content and no decorative nested-card treatment.
 - The `DevOps Enrichment` plugin boxes do not show `Optional` capsules.
@@ -331,6 +332,7 @@ Only the top nav breadcrumb is used on Help pages. Do not add a second breadcrum
 - Keep Help Center pages on the common skeleton.
 - Use exact command casing such as `/silver:init`.
 - Keep TOC scrolling above the target heading.
+- Align the first Help content heading optically with the first TOC item; the shared CSS uses a 2px first-heading top padding to match painted glyph tops.
 
 ### Don't
 
@@ -369,3 +371,4 @@ This DESIGN.md captures the final state after the following session-level decisi
 - Added TOC/hash scroll offset so headings remain visible.
 - Removed `Optional` capsules from the homepage DevOps Enrichment plugin boxes.
 - Aligned Help callout and content-card icons to the painted glyph top.
+- Optically aligned the first Help page content heading with the first TOC label.

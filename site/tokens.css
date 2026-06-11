@@ -331,7 +331,7 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
 }
 
 .doc-content h2:first-child{
-  padding-top:4px !important;
+  padding-top:2px !important;
 }
 
 .doc-content .step-num,

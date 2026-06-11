@@ -46,6 +46,29 @@
     letter-spacing: 0.04em;
   }
   .nav-btns { display: flex; gap: 10px; align-items: center; }
+  .site-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    margin-right: 12px;
+  }
+  .site-link:hover { color: var(--text-primary); }
+  .deck-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .deck-brand a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
   svg.lucide { display:inline-block; vertical-align:middle; width:1em; height:1em; stroke-width:1.5; stroke:currentColor; fill:none; stroke-linecap:round; stroke-linejoin:round; }
   .theme-btn {
     background: none;
@@ -716,6 +739,28 @@
     border-radius: 1px;
     transition: width 0.3s ease;
   }
+  .site-footer {
+    width: var(--slide-w);
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 24px;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+  .site-footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .site-footer a:hover { color: var(--text-primary); }
+  .site-footer-links {
+    display: flex;
+    gap: 24px;
+  }
 
   /* FOOTNOTE */
   .footnote {
@@ -732,8 +777,12 @@
 <body>
 
 <div class="nav">
-  <span class="slide-counter" id="counter">Slide 1 / 11</span>
+  <div class="deck-brand">
+    <a href="../">Silver Bullet</a>
+    <span class="slide-counter" id="counter">Slide 1 / 11</span>
+  </div>
   <div class="nav-btns">
+    <a href="../help/" class="site-link">Help Center</a>
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle light/dark theme">
       <span id="icon-moon"><i data-lucide="moon"></i></span>
       <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
@@ -1242,6 +1291,15 @@
 </div><!-- /deck -->
 
 <div class="progress"><div class="progress-fill" id="progress-fill"></div></div>
+
+<footer class="site-footer">
+  <div><strong>Silver Bullet</strong> &middot; Agentic Process Orchestrator</div>
+  <div class="site-footer-links">
+    <a href="../#install">Install</a>
+    <a href="../help/">Help Center</a>
+    <a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
 
 <script>
   const slides = document.querySelectorAll('.slide');
