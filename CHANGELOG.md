@@ -8,6 +8,7 @@
 
 ## Bug Fixes
 
+- `fix: require verify marker for release live matrix` (cbceb83)
 - `fix: preserve verify marker across live release gates` (504ff02)
 - `fix: infer host runtime for live release markers` (3c94285)
 - `fix: mirror live release markers to host state` (b1c5c7c)
