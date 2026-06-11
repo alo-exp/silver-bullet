@@ -21,6 +21,9 @@ E2E_LIVE_MATRIX_FILE=""
 INLINE_E2E_MATRIX_FILE=""
 HOST_E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 HOST_INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
+HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
+HOST_VERIFY_TESTS_BACKUP_FILE=""
+HOST_VERIFY_TESTS_HAD_FILE=false
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-hook-failures.sh"
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
@@ -89,6 +92,25 @@ echo ""
 
 rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
 rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
+
+if [[ -f "$HOST_VERIFY_TESTS_STATE_FILE" ]]; then
+  HOST_VERIFY_TESTS_HAD_FILE=true
+  HOST_VERIFY_TESTS_BACKUP_FILE="$(mktemp "${TMPDIR:-/tmp}/sb-e2e-live-verify-tests-state.XXXXXX")"
+  cp "$HOST_VERIFY_TESTS_STATE_FILE" "$HOST_VERIFY_TESTS_BACKUP_FILE"
+fi
+
+restore_host_verify_tests_state() {
+  local rc=$?
+  if [[ "$HOST_VERIFY_TESTS_HAD_FILE" == true && -n "$HOST_VERIFY_TESTS_BACKUP_FILE" && -f "$HOST_VERIFY_TESTS_BACKUP_FILE" ]]; then
+    mkdir -p "$(dirname "$HOST_VERIFY_TESTS_STATE_FILE")"
+    cp "$HOST_VERIFY_TESTS_BACKUP_FILE" "$HOST_VERIFY_TESTS_STATE_FILE"
+    rm -f "$HOST_VERIFY_TESTS_BACKUP_FILE"
+  elif [[ "$HOST_VERIFY_TESTS_HAD_FILE" == false ]]; then
+    rm -f "$HOST_VERIFY_TESTS_STATE_FILE"
+  fi
+  return "$rc"
+}
+trap restore_host_verify_tests_state EXIT
 
 TOTAL_FAIL=0
 TOTAL_PASS=0
