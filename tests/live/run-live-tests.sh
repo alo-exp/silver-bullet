@@ -5,9 +5,6 @@ CODEX_ISOLATION_HELPER="${LIVE_TEST_ROOT}/lib/codex-cli-isolation.sh"
 KAY_ISOLATION_HELPER="${LIVE_TEST_ROOT}/lib/kay-codex-isolation.sh"
 CODEX_HOOK_TRANSPLANT_HELPER="${LIVE_TEST_ROOT}/lib/codex-hook-transplant.sh"
 
-if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
-  SILVER_BULLET_RUNTIME="claude"
-fi
 if [[ -f "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh"
