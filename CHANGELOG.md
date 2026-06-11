@@ -4,19 +4,47 @@
 
 ## Features
 
-- `feat(lifecycle): absorb SB's explicit GSD, Superpowers, and Anthropic knowledge-work dependencies into SB-owned lifecycle skills`
-- `feat(config): bump the default config schema to 0.38.0 so legacy lifecycle dependency lists normalize to SB-owned gates`
-- `feat(codex): add SB-owned Codex invocation adapter receipts for recorded lifecycle skill evidence`
+- `feat: absorb lifecycle dependencies into Silver Bullet` (7347cc0)
 
 ## Bug Fixes
 
-- `fix(security): treat required-skill and release-gate state markers as literal strings instead of regex patterns`
-- `fix(docs): refresh public Help Center, comparison pages, repository metadata, and marketplace copy for SB-owned lifecycle positioning`
+- `fix: infer host runtime for live release markers` (3c94285)
+- `fix: mirror live release markers to host state` (b1c5c7c)
+- `fix: harden Kay live hook enforcement` (d442853)
 
-## Tests
+## Documentation
 
-- `test(hooks): verify required-skill consistency, dependency compatibility, forbidden skills, workflow admission, completion audit, compliance status, prompt reminders, stop-check, and skill recording`
-- `test(security): run SENTINEL-style release audit with two clean passes after remediation`
+- `docs: refresh release gate evidence for Kay hardening` (85d3031)
+- `docs(site): default visitors to light theme` (483969d)
+- `docs(site): index Graphify help content` (019dc95)
+
+## Other
+
+- `Fix Help Center theme toggle` (13213a4)
+- `Align brute deck with design system` (a88e1d7)
+- `Exclude brute deck from site chrome` (d60b6e1)
+- `Align help TOC and standardize site chrome` (67b4817)
+- `Refine Help icon and TOC alignment` (d7c0b51)
+- `Strengthen Help card glyph alignment rule` (b911273)
+- `Apply glyph alignment to Help content cards` (db3d674)
+- `Align Help callout icons with glyph tops` (7a6884b)
+- `Tune Help callout icon visual alignment` (248ae4a)
+- `Refresh Help callout alignment cache` (4b96d49)
+- `Align Help callout icons to visible text` (633c451)
+- `Top-align Help callout icons` (836696e)
+- `Normalize Help Center page skeleton` (f6d7712)
+- `Remove Help Center content box borders` (60063f5)
+- `Fix workflow help breadcrumb links` (c783aba)
+- `Refine Help Center icon alignment` (68b1457)
+- `Top-align Help Center content icons` (0ade5a9)
+- `Remove DevOps optional badges` (0d6e50d)
+- `Normalize site font and skill command styling` (141d705)
+- `Align help content box icons` (6c3bee5)
+- `Fix help content box formatting` (aa4b1f4)
+- `Apply S3 styling site-wide` (0fbd736)
+- `Switch site fonts to IBM Plex` (120389b)
+- `Center icons in homepage callouts` (40de7d6)
+- `Promote S3 homepage theme` (e9e4071)
 
 ---
 
