@@ -91,13 +91,19 @@ nav .logo{font-weight:800;font-size:1.1rem;color:var(--text-primary);letter-spac
 nav .nav-links{display:flex;gap:28px;list-style:none}
 nav .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:500;transition:color .2s}
 nav .nav-links a:hover{color:var(--text-primary)}
+nav .nav-help{color:var(--text-secondary);text-decoration:none;font-size:.875rem;font-weight:600;transition:color .2s;margin-right:16px}
+nav .nav-help:hover{color:var(--text-primary)}
 nav .nav-cta{background:linear-gradient(135deg,#374151,#6b7280);color:#fff;padding:8px 20px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;transition:all .2s;border:none;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
 nav .nav-cta:hover{background:linear-gradient(135deg,#4b5563,#9ca3af);box-shadow:0 0 20px rgba(200,210,222,.2),inset 0 1px 0 rgba(255,255,255,.2)}
 .nav-toggle{display:none;background:none;border:none;color:var(--text-primary);font-size:1.5rem;cursor:pointer}
+.mobile-only{display:none}
 @media(max-width:768px){
   nav .nav-links{display:none}
   .nav-toggle{display:block}
   nav .nav-links.active{display:flex;flex-direction:column;position:absolute;top:64px;left:0;right:0;background:var(--nav-mobile-bg);padding:20px 24px;gap:16px;border-bottom:1px solid var(--border)}
+  nav .nav-cta{display:none}
+  nav .nav-help{margin-right:0}
+  .mobile-only{display:block}
 }
 
 /* ── HERO ── */
@@ -231,16 +237,17 @@ footer .footer-links{display:flex;gap:24px}
 <nav>
   <div class="nav-inner">
     <a href="../" class="logo">Silver Bullet</a>
-    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu">&#9776;</button>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg></button>
     <ul class="nav-links">
       <li><a href="../#problem">Problem</a></li>
       <li><a href="../#solution">How It Works</a></li>
       <li><a href="../#ecosystem">Ecosystem</a></li>
-      <li><a href="../#workflow">Workflow</a></li>
+      <li><a href="../#workflow">Workflows</a></li>
       <li><a href="../#install">Install</a></li>
-      <li><a href="./" style="color:var(--accent-light)">Compare</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a></li>
     </ul>
     <div style="display:flex;align-items:center;gap:10px">
+      <a href="../help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()" style="width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0"
         onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent-light)'"
         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
@@ -760,10 +767,9 @@ footer .footer-links{display:flex;gap:24px}
         <div class="footer-credit">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;background:var(--chrome-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none">&#256;lo Labs</a></div>
       </div>
       <div class="footer-links">
-        <a href="../">Home</a>
-        <a href="../help/">Help</a>
+        <a href="../#install">Install</a>
+        <a href="../help/">Help Center</a>
         <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
-        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
       </div>
     </div>
   </div>
