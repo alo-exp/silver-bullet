@@ -144,10 +144,13 @@ After gate enforcement, scan the report for any items that:
 - Were advisory suggestions noted during evaluation (not hard failures)
 - Were deferred "nice-to-have" improvements
 
-For each such item, **immediately add it to the GSD backlog** using `/gsd-add-backlog`. Do NOT silently drop suggested items — they must either be implemented now or captured in the backlog.
+For each such item, **immediately capture it in the configured SB backlog**
+instead of silently dropping it. Read `.silver-bullet.json`:
 
-```
-Skill(skill="gsd-add-backlog", args="{item description}")
-```
+- `issue_tracker: "github"` -> create a GitHub Issue with `gh issue create`
+  when the CLI is authenticated.
+- `issue_tracker: "gsd"` or missing -> append the item to
+  `.planning/ROADMAP.md` under a Backlog section, creating the section if
+  needed.
 
 If no items were deferred or suggested, output: "No backlog items to capture from this quality review."

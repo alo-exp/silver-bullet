@@ -2,7 +2,7 @@
 
 This suite runs the real Kay-backed agent by default
 against an isolated copy of the
-standalone sibling `test-todo-app` repo and drives one inline full-surface development journey
+standalone sibling `todo-app` repo and drives one inline full-surface development journey
 against the todo app fixture. The journey starts with install UX, moves through
 discovery, feature delivery, defect repair, cleanup, and release prep, and
 captures any real dissatisfaction through `silver:add` with `todo-app` tagging.
@@ -39,7 +39,7 @@ Fast preflight:
 
 `run-e2e-live-tests.sh` calls both preflights automatically before the scenario matrix. A runtime must pass plugin-access preflight and hook-delivery preflight before the longer journeys are allowed to run.
 
-Each scenario starts from a fresh workspace copied from the standalone sibling `test-todo-app` repo and is
+Each scenario starts from a fresh workspace copied from the standalone sibling `todo-app` repo and is
 cleaned up after completion.
 
 For Kay-agent runs, the suite uses an isolated temporary `KAY_HOME` root

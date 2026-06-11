@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
+DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/todo-app"
 MAX_BUDGET="1.00"
 PASS=0
 FAIL=0

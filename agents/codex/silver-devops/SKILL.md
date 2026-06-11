@@ -2,14 +2,14 @@
 name: "silver:devops"
 title: "DevOps"
 description: >
-  This skill should be used for SB-orchestrated infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → GSD plan/execute/verify → review → secure → ship
+  This skill should be used for SB-owned infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → SB plan/execute/verify → review → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
 
 # /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow
 
-SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work. GSD remains the lifecycle authority for phase planning, execution, verification, and ship.
+SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work. SB owns phase planning, execution, verification, review, security, and ship. Provider/tool-specific DevOps plugins remain optional enrichment through `devops-skill-router`.
 
 **Key design principles:**
 - No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
@@ -48,7 +48,7 @@ Check the following artifacts and set skip/include flags:
 | Artifact | Signal | Action |
 |----------|--------|--------|
 | `.planning/` directory exists | Project already bootstrapped | Skip FLOW 1 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip FLOW 1 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | SB state present | Skip FLOW 1 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
@@ -154,13 +154,13 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `security` (Step 3b), `devops-quality-gates` pre-ship (Step 10), `gsd-verify-work` (Step 9).
+**Non-skippable gates:** `security` (Step 3b), `devops-quality-gates` pre-ship (Step 10), `silver:verify` (Step 9).
 
 ## Step 0: Codebase Intel
 
-Invoke `gsd-scan` through the active runtime's SB-recognized skill invocation channel. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
-If no current codebase mapping exists and infra topology is non-trivial, invoke `gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel.
+If no current codebase mapping exists and infra topology is non-trivial, run a deeper `silver:scan` pass focused on IaC, CI/CD, deployment, secrets, and rollback surfaces.
 
 ## Step 1: Blast Radius Analysis
 
@@ -182,30 +182,30 @@ Invoke `security` through the active runtime's SB-recognized skill invocation ch
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: DevOps phase context → CONTEXT.md with locked decisions for the planner.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: DevOps phase context, assumptions, rollback expectations, and locked decisions for the planner.
 
 ## Step 5: Plan Phase
 
-Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md for the infrastructure change.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md for the infrastructure change, including validation, rollback, policy, and observability evidence.
 
 ## Step 6: Execute Phase (IaC validation, not app TDD)
 
-If mode is Interactive: invoke `gsd-execute-phase` through the active runtime's SB-recognized skill invocation channel.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` through the active runtime's SB-recognized skill invocation channel.
+If mode is Interactive: invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel.
+If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode context.
 
 **Application TDD is explicitly skipped for pure infra plans.** Infrastructure and configuration work is declarative; use provider plan/dry-run, policy-as-code, security scans, drift checks, and rollback verification. Do not invoke `tdd` unless the DevOps phase includes behavior-changing application code.
 
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel.
-2. Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. If issues found: invoke `gsd-code-review-fix`.
-3. For architecturally significant infra changes: invoke `gsd-review --all` through the active runtime's SB-recognized skill invocation channel (fans out to all available external CLIs for cross-AI review).
-4. Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel.
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. If issues are found, fix through `silver:execute` and re-review.
+3. For architecturally significant infra changes: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
+4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 8: IaC Security + Secrets Verification
 
-Invoke `gsd-secure-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -224,7 +224,7 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 9: Deployment Verification
 
-Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
@@ -252,4 +252,4 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 11: Ship / Deploy
 
-Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.

@@ -10,6 +10,12 @@ WORKFLOWS_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/workflows.sh"
 PASS=0
 FAIL=0
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
@@ -93,27 +99,33 @@ assert_passes() {
 
 echo "=== workflow-chain-guard.sh tests ==="
 
-# Feature workflow: missing pre-execution SB+GSD markers should block implementation edits.
+# Feature workflow: missing pre-execution SB markers should block implementation edits.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:feature" "feature gate test" "bootstrap,design,execute,verify"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:feature blocks without SB+GSD pre-execution markers" "$out"
+assert_blocks "silver:feature blocks without SB pre-execution markers" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:feature passes after SB-owned pre-execution markers exist" "$out"
 write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:feature passes after SB+GSD pre-execution markers exist" "$out"
+assert_passes "silver:feature legacy GSD markers satisfy SB-owned aliases" "$out"
 teardown
 
-# UI workflow: UI-specific pre-execution SB+GSD markers must be present.
+# UI workflow: UI-specific pre-execution SB markers must be present.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:ui" "ui gate test" "orient,design,plan,execute,review,verify"
 write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:ui blocks until UI pre-execution markers are present" "$out"
+write_state_markers silver-quality-gates silver-context silver-ui-contract silver-plan
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:ui passes after SB-owned UI pre-execution markers exist" "$out"
 write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:ui passes after UI pre-execution markers exist" "$out"
+assert_passes "silver:ui legacy GSD UI markers satisfy SB-owned aliases" "$out"
 teardown
 
 # Research workflow: clarify marker is required.

@@ -213,7 +213,7 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
 .cat-table td.score-cell,
 .step-card .step-output,
 .wave-item .wave-num,
-.sb-gsd-proof-row strong{
+.sb-lifecycle-proof-row strong{
   font-size:inherit !important;
 }
 

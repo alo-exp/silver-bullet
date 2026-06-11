@@ -275,7 +275,7 @@ footer a:hover{color:var(--accent-light)}
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
             <h4>Security checks <span class="tag tag-no-skip">Cannot skip</span></h4>
-            <p>Security review is mandatory for every non-trivial change through <code>gsd:secure-phase</code> and the Security dimension inside <code>/silver:quality-gates</code>. It cannot be skipped, deferred, or treated as implicitly covered.</p>
+            <p>Security review is mandatory for every non-trivial change through <code>silver:secure</code> and the Security dimension inside <code>/silver:quality-gates</code>. It cannot be skipped, deferred, or treated as implicitly covered.</p>
           </div>
         </div>
         <div class="step-item">
@@ -288,7 +288,7 @@ footer a:hover{color:var(--accent-light)}
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>gsd:verify-work</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <h4><code>silver:verify</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
             <p>Work verification is required before completion can be declared. The completion audit hook blocks if this step is missing.</p>
           </div>
         </div>

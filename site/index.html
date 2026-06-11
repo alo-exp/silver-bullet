@@ -8,9 +8,9 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="shortcut icon" href="favicon.ico">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
-<meta name="description" content="Silver Bullet is an Agentic Process Orchestrator (APO) around GSD: dynamic workflow composition, cross-plugin sequencing, spec/UAT/PR traceability, artifact review governance, DevOps risk controls, documentation governance, and hook-enforced delivery gates for AI-native software engineering and DevOps.">
+<meta name="description" content="Silver Bullet is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: SB-owned lifecycle workflows, spec/UAT/PR traceability, artifact review governance, DevOps risk controls, documentation governance, and hook-enforced delivery gates.">
 <meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps">
-<meta property="og:description" content="GSD is the execution engine. Silver Bullet is the Agentic Process Orchestrator around it: dynamic /silver workflows, spec-first traceability, artifact review governance, DevOps blast-radius controls, docs governance, and hard delivery gates.">
+<meta property="og:description" content="Silver Bullet owns the AI-native software engineering lifecycle: dynamic /silver workflows, spec-first traceability, artifact review governance, DevOps blast-radius controls, docs governance, and hard delivery gates.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -18,7 +18,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native SE &amp; DevOps">
-<meta name="twitter:description" content="The Agentic Process Orchestrator around GSD: dynamic /silver workflows, spec and UAT gates, artifact review governance, DevOps risk controls, docs governance, and hard delivery gates."  >
+<meta name="twitter:description" content="The Agentic Process Orchestrator for SB-owned /silver workflows, spec and UAT gates, artifact review governance, DevOps risk controls, docs governance, and hard delivery gates."  >
 <meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -713,58 +713,58 @@ section:nth-child(even){background:var(--section-alt)}
 .compare-missing{font-size:.9rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
 
 /* ───── SB VS GSD SECTION ───── */
-.sb-gsd-overview{
+.sb-lifecycle-overview{
   display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);
   gap:28px;align-items:stretch;
 }
-@media(max-width:900px){.sb-gsd-overview{grid-template-columns:1fr}}
-.sb-gsd-panel{
+@media(max-width:900px){.sb-lifecycle-overview{grid-template-columns:1fr}}
+.sb-lifecycle-panel{
   background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04));
   border:1px solid var(--mint-a32);border-radius:var(--radius-lg);
   padding:34px;position:relative;overflow:hidden;
 }
-.sb-gsd-panel h3{font-size:1.15rem;font-weight:800;margin-bottom:12px}
-.sb-gsd-panel p{color:var(--text-secondary);font-size:.96rem;line-height:1.7}
-.sb-gsd-split{
+.sb-lifecycle-panel h3{font-size:1.15rem;font-weight:800;margin-bottom:12px}
+.sb-lifecycle-panel p{color:var(--text-secondary);font-size:.96rem;line-height:1.7}
+.sb-lifecycle-split{
   display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;
 }
-@media(max-width:600px){.sb-gsd-split{grid-template-columns:1fr}}
-.sb-gsd-mini{
+@media(max-width:600px){.sb-lifecycle-split{grid-template-columns:1fr}}
+.sb-lifecycle-mini{
   border:1px solid var(--border);border-radius:var(--radius);padding:18px;
   background:var(--bg-card);
 }
-.sb-gsd-mini .mini-label{
+.sb-lifecycle-mini .mini-label{
   font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
   color:var(--text-dim);margin-bottom:8px;
 }
-.sb-gsd-mini strong{display:block;font-size:1rem;margin-bottom:6px;color:var(--text-primary)}
-.sb-gsd-mini span{font-size:.86rem;color:var(--text-secondary);line-height:1.5}
-.sb-gsd-benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-@media(max-width:900px){.sb-gsd-benefit-grid{grid-template-columns:1fr}}
-@media(min-width:901px) and (max-width:1100px){.sb-gsd-benefit-grid{grid-template-columns:repeat(2,1fr)}}
-.sb-gsd-benefit{
+.sb-lifecycle-mini strong{display:block;font-size:1rem;margin-bottom:6px;color:var(--text-primary)}
+.sb-lifecycle-mini span{font-size:.86rem;color:var(--text-secondary);line-height:1.5}
+.sb-lifecycle-benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.sb-lifecycle-benefit-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.sb-lifecycle-benefit-grid{grid-template-columns:repeat(2,1fr)}}
+.sb-lifecycle-benefit{
   background:var(--bg-card);border:1px solid var(--border);
   border-radius:var(--radius-lg);padding:26px;transition:all .3s;
 }
-.sb-gsd-benefit:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-3px)}
-.sb-gsd-benefit .benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.sb-gsd-benefit .benefit-icon{
+.sb-lifecycle-benefit:hover{border-color:var(--border-hover);box-shadow:var(--shadow-glow);transform:translateY(-3px)}
+.sb-lifecycle-benefit .benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sb-lifecycle-benefit .benefit-icon{
   width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   color:var(--accent-light);background:var(--accent-a12);font-size:1.25rem;flex-shrink:0;
 }
-.sb-gsd-benefit h3{font-size:1rem;font-weight:800;line-height:1.25}
-.sb-gsd-benefit p{font-size:.88rem;color:var(--text-secondary);line-height:1.6}
-.sb-gsd-proof{
+.sb-lifecycle-benefit h3{font-size:1rem;font-weight:800;line-height:1.25}
+.sb-lifecycle-benefit p{font-size:.88rem;color:var(--text-secondary);line-height:1.6}
+.sb-lifecycle-proof{
   display:flex;flex-direction:column;gap:12px;
 }
-.sb-gsd-proof-row{
+.sb-lifecycle-proof-row{
   display:grid;grid-template-columns:136px 1fr;gap:14px;align-items:start;
   border-bottom:1px solid var(--border);padding-bottom:12px;
 }
-.sb-gsd-proof-row:last-child{border-bottom:0;padding-bottom:0}
-@media(max-width:600px){.sb-gsd-proof-row{grid-template-columns:1fr;gap:4px}}
-.sb-gsd-proof-row strong{font-size:.9rem;color:var(--accent-light);font-family:var(--font-mono)}
-.sb-gsd-proof-row span{font-size:.9rem;color:var(--text-secondary);line-height:1.5}
+.sb-lifecycle-proof-row:last-child{border-bottom:0;padding-bottom:0}
+@media(max-width:600px){.sb-lifecycle-proof-row{grid-template-columns:1fr;gap:4px}}
+.sb-lifecycle-proof-row strong{font-size:.9rem;color:var(--accent-light);font-family:var(--font-mono)}
+.sb-lifecycle-proof-row span{font-size:.9rem;color:var(--text-secondary);line-height:1.5}
 
 /* ───── CALLOUT ───── */
 .callout{
@@ -956,7 +956,7 @@ img{max-width:100%;height:auto}
   <div class="container">
     <h1><span class="hero-h1-inner"><img src="silver-bullet.png" alt="" class="hero-bullet" aria-hidden="true"><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></span></h1>
     <p class="hero-tagline-caps">COMPOSE. ENFORCE. TRACE. SHIP.</p>
-    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.37.23</div>
+    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.38.0</div>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
@@ -972,7 +972,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the orchestration and enforcement layer around GSD. <code>/silver</code> composes the right workflow for the task, sequences adjacent plugins, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow for the task, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1032,8 +1032,8 @@ img{max-width:100%;height:auto}
 <section id="solution">
   <div class="container text-center">
     <div class="section-label">The Agentic Process Orchestrator</div>
-    <h2 class="section-title">GSD Executes. Silver Bullet Orchestrates The Delivery System Around It.</h2>
-    <p class="section-desc centered">Plain GSD is the planning and execution engine. Silver Bullet is the APO layer that wraps it with dynamic workflow composition, cross-plugin sequencing, spec/UAT/PR traceability, review governance, documentation governance, DevOps safety, and host hooks that make skipping steps harder.</p>
+    <h2 class="section-title">Silver Bullet Owns The Delivery System.</h2>
+    <p class="section-desc centered">Silver Bullet is the APO layer and lifecycle engine for core software-engineering work: dynamic workflow composition, spec/UAT/PR traceability, review governance, documentation governance, DevOps safety, and host hooks that make skipping steps harder.</p>
 
     <div class="hero-pills mb-4 fade-in">
       <a href="#spec-driven" class="hero-pill">Spec Pipeline</a>
@@ -1045,7 +1045,7 @@ img{max-width:100%;height:auto}
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="git-branch"></i></div>
         <h3>Dynamic Workflow Composition</h3>
-        <p><code>/silver</code> classifies the task and composes the chain it needs: clarify, feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, docs, tracking, or fast path. GSD already has freeform routing; Silver Bullet&rsquo;s value is broader task-shaped orchestration across SB gates and adjacent plugins.</p>
+        <p><code>/silver</code> classifies the task and composes the chain it needs: clarify, feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, docs, tracking, or fast path. Silver Bullet now owns the overlapping lifecycle skills it previously depended on and routes optional extension plugins only when they add specialized value.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="rocket"></i></div>
@@ -1076,7 +1076,7 @@ img{max-width:100%;height:auto}
   <div class="container text-center">
     <div class="section-label">Spec-Driven Development</div>
     <h2 class="section-title">Trace Requirements From Spec To PR</h2>
-    <p class="section-desc centered">Silver Bullet adds the upstream and downstream contract around GSD execution: elicited or ingested specs, explicit assumptions, plan coverage validation, UAT freshness, and PR traceability.</p>
+    <p class="section-desc centered">Silver Bullet owns the upstream and downstream contract around execution: elicited or ingested specs, explicit assumptions, plan coverage validation, UAT freshness, and PR traceability.</p>
     <div class="feature-grid mt-4 fade-in">
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="file-text"></i></div>
@@ -1091,7 +1091,7 @@ img{max-width:100%;height:auto}
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="check-circle"></i></div>
         <h3>Pre-Build Validation <code>silver:validate</code></h3>
-        <p>Compare <code>SPEC.md</code> acceptance criteria against GSD phase plans, surface uncovered criteria, unresolved assumptions, orphan tasks, and open questions, then write machine-readable <code>VALIDATION.md</code> findings.</p>
+        <p>Compare <code>SPEC.md</code> acceptance criteria against SB phase plans, surface uncovered criteria, unresolved assumptions, orphan tasks, and open questions, then write machine-readable <code>VALIDATION.md</code> findings.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="git-merge"></i></div>
@@ -1164,83 +1164,80 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Ecosystem</div>
-      <h2 class="section-title">Silver Bullet Orchestrates the Best</h2>
-      <p class="section-desc centered">Silver Bullet doesn&rsquo;t reinvent what already exists. It treats GSD as the execution engine, then sequences review, design, docs, DevOps, and SB-owned gates around it. Required dependencies fail closed; optional DevOps enrichments are routed when available.</p>
+      <h2 class="section-title">Silver Bullet Owns the Core Lifecycle</h2>
+      <p class="section-desc centered">Silver Bullet has absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. Core software-engineering workflows now run through SB-owned skills; optional DevOps and provider plugins remain extension points.</p>
     </div>
 
     <div class="ecosystem-grid mt-6">
 
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="rocket"></i></div>
-        <div class="plugin-name">GSD</div>
-        <div class="plugin-role">get-shit-done &mdash; Execution Engine</div>
-        <div class="plugin-desc">The most sophisticated agentic execution system in the community. Solves context rot at the architectural level by giving every task a fresh 200K-token context window.</div>
+        <div class="plugin-name">SB Lifecycle</div>
+        <div class="plugin-role">Silver Bullet &mdash; Core Workflow Engine</div>
+        <div class="plugin-desc">The planning, execution, verification, review, security, and ship path is now SB-owned. Legacy GSD markers remain compatibility aliases, not required dependencies.</div>
         <ul class="plugin-features">
-          <li>Wave-based parallel execution with dependency graphs</li>
-          <li>Fresh 200K context per agent &mdash; eliminates context rot</li>
-          <li>Atomic git commit per task with conventional format</li>
-          <li>Requirements traceability with unique IDs</li>
-          <li>Pre-execution plan verification across 8 core dimensions plus conditional gates</li>
-          <li>Brownfield codebase analysis before planning</li>
-          <li>Workflow guard and context monitor hooks</li>
+          <li><code>silver:context</code> and <code>silver:plan</code> for project framing</li>
+          <li><code>silver:execute</code> for checkpointed or autonomous execution</li>
+          <li><code>silver:verify</code>, <code>silver:review</code>, and <code>silver:ship</code></li>
+          <li>Hook-enforced lifecycle markers</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/gsd-build/get-shit-done" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="zap"></i></div>
-        <div class="plugin-name">Superpowers</div>
-        <div class="plugin-role">obra/superpowers &mdash; Dev Skills</div>
-        <div class="plugin-desc">A widely used host-agent skill set for peer review, branch hygiene, and cross-session engineering practices that complement GSD&rsquo;s execution engine.</div>
+        <div class="plugin-name">SB Review Discipline</div>
+        <div class="plugin-role">Absorbed Superpowers Behaviors</div>
+        <div class="plugin-desc">Review framing, review triage, TDD discipline, completion verification, and branch finishing are now represented by SB-owned skills and markers.</div>
         <ul class="plugin-features">
-          <li>Peer code review with dedicated subagent</li>
-          <li>Requesting and receiving external review</li>
-          <li>Development branch finish and merge prep</li>
-          <li>Episodic memory across sessions and projects</li>
+          <li><code>silver-review-request</code> and <code>silver-review-triage</code></li>
+          <li>SB-owned hidden TDD gate</li>
+          <li><code>silver-completion-audit</code> before completion claims</li>
+          <li><code>silver-branch-finish</code> for final branch readiness</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/obra/superpowers" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="hammer"></i></div>
-        <div class="plugin-name">Engineering</div>
-        <div class="plugin-role">Anthropic &mdash; Quality Assurance</div>
-        <div class="plugin-desc">Anthropic&rsquo;s engineering best practices plugin. Covers the quality assurance and deployment gates that complete the post-execution workflow.</div>
+        <div class="plugin-name">SB Engineering Gates</div>
+        <div class="plugin-role">Absorbed Engineering Discipline</div>
+        <div class="plugin-desc">Testing strategy, documentation checks, deployment readiness, and incident learning are expressed as SB quality gates and DevOps extension points.</div>
         <ul class="plugin-features">
           <li>Testing strategy: pyramid, coverage goals, tooling</li>
           <li>Technical documentation (PRD, ADR, CI/CD)</li>
           <li>Pre-deployment verification checklist</li>
           <li>Incident response and post-mortem workflow</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/anthropics/knowledge-work-plugins/tree/main/engineering" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="palette"></i></div>
-        <div class="plugin-name">Design</div>
-        <div class="plugin-role">Anthropic &mdash; UI/UX Validation</div>
-        <div class="plugin-desc">Anthropic&rsquo;s design plugin for UI phases. Invoked conditionally when a phase involves user-facing work, covering design system integrity and UX copy quality.</div>
+        <div class="plugin-name">SB Design Contract</div>
+        <div class="plugin-role">Absorbed UI/UX Validation</div>
+        <div class="plugin-desc">Design-system, UX copy, accessibility, critique, and handoff expectations are captured by SB UI contract and UI review skills.</div>
         <ul class="plugin-features">
           <li>Design system audit: tokens, component reuse</li>
           <li>UX copy review: microcopy, error messages, empty states</li>
           <li>Accessibility review (WCAG 2.1 AA)</li>
           <li>Design critique and handoff specs</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/anthropics/knowledge-work-plugins/tree/main/design" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="clipboard-list"></i></div>
-        <div class="plugin-name">Product Management</div>
-        <div class="plugin-role">Anthropic &mdash; Product Planning</div>
-        <div class="plugin-desc">Anthropic&rsquo;s product-management plugin for specs, roadmaps, research synthesis, stakeholder updates, and competitive briefs around feature work.</div>
+        <div class="plugin-name">SB Product Framing</div>
+        <div class="plugin-role">Absorbed Product Planning</div>
+        <div class="plugin-desc">Spec elicitation, product framing, research synthesis, stakeholder context, and release coordination now live inside SB clarify/spec/release workflows.</div>
         <ul class="plugin-features">
           <li>Feature specs and product briefs</li>
           <li>Roadmap updates and sprint planning</li>
           <li>Research synthesis and competitive analysis</li>
           <li>Stakeholder updates and release coordination</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/anthropics/knowledge-work-plugins/tree/main/product-management" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>
 
     </div>
@@ -1248,7 +1245,7 @@ img{max-width:100%;height:auto}
     <div class="mt-6">
       <div class="callout fade-in">
         <div class="callout-icon"><i data-lucide="globe"></i></div>
-        <p><strong>Silver Bullet is the orchestration and enforcement layer.</strong> GSD owns planning and execution. SB decides which lifecycle route applies, which adjacent plugins must run, which gates are non-skippable, and whether the session is allowed to commit, create a PR, deploy, or release.</p>
+        <p><strong>Silver Bullet is the lifecycle, orchestration, and enforcement layer.</strong> SB owns planning, execution, verification, review, ship, and release gates for core software-engineering work. Optional plugins extend SB into DevOps, providers, data, and other specialized domains without owning the core lifecycle.</p>
       </div>
     </div>
 
@@ -1341,64 +1338,64 @@ img{max-width:100%;height:auto}
 <section id="sb-vs-gsd" style="background:var(--section-alt)">
   <div class="container">
     <div class="text-center">
-      <div class="section-label">Silver Bullet vs Plain GSD</div>
-      <h2 class="section-title">Silver Bullet vs Plain GSD</h2>
-      <p class="section-desc centered">GSD is the planning and execution engine. Silver Bullet is the orchestration, enforcement, traceability, review, DevOps, documentation, and release layer around that engine.</p>
+      <div class="section-label">Absorbed Dependency Boundary</div>
+      <h2 class="section-title">Core Lifecycle Skills Are Now SB-Owned</h2>
+      <p class="section-desc centered">Silver Bullet absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. Those plugins can still be used explicitly, but core SB workflows do not require them.</p>
     </div>
 
-    <div class="sb-gsd-overview mt-6">
-      <div class="sb-gsd-panel fade-in">
-        <h3>Plain GSD helps the agent do the work well. Silver Bullet helps ensure the whole delivery process actually happens.</h3>
-        <p>Silver Bullet does not replace GSD or claim GSD&rsquo;s lifecycle as its own. It composes the right task-shaped workflow, sequences GSD with adjacent plugins, and blocks unsafe progress until the expected evidence exists: spec coverage, UAT, review, fresh tests, docs, CI, DevOps risk controls, and release readiness.</p>
-        <div class="sb-gsd-split">
-          <div class="sb-gsd-mini">
-            <div class="mini-label">Plain GSD</div>
-            <strong>Execution engine</strong>
-            <span>Plans phases, manages <code>.planning/</code>, executes with fresh agent context, verifies work, and ships milestones.</span>
+    <div class="sb-lifecycle-overview mt-6">
+      <div class="sb-lifecycle-panel fade-in">
+        <h3>SB now owns the software-engineering lifecycle it enforces.</h3>
+        <p>Silver Bullet composes the right task-shaped workflow and blocks unsafe progress until the expected evidence exists: spec coverage, UAT, review, fresh tests, docs, CI, DevOps risk controls, and release readiness. Legacy plugin markers remain compatibility aliases, not required dependencies.</p>
+        <div class="sb-lifecycle-split">
+          <div class="sb-lifecycle-mini">
+            <div class="mini-label">Before</div>
+            <strong>Layered plugin model</strong>
+            <span>SB composed around external lifecycle, review, and PM/design skills.</span>
           </div>
-          <div class="sb-gsd-mini">
-            <div class="mini-label">Silver Bullet + GSD</div>
-            <strong>Enforced operating layer</strong>
-            <span>Routes the task, composes cross-plugin steps, preserves traceability, and gates edits, PRs, deploys, and releases.</span>
+          <div class="sb-lifecycle-mini">
+            <div class="mini-label">Now</div>
+            <strong>SB-owned lifecycle</strong>
+            <span>SB routes the task, runs the lifecycle, preserves traceability, and gates edits, PRs, deploys, and releases.</span>
           </div>
         </div>
       </div>
 
-      <div class="sb-gsd-panel fade-in">
-        <h3>The strongest SB-over-GSD benefits</h3>
-        <div class="sb-gsd-proof">
-          <div class="sb-gsd-proof-row"><strong>Enforcement</strong><span>Host hooks block skipped planning, review, verification, docs, CI, and release steps.</span></div>
-          <div class="sb-gsd-proof-row"><strong>Composition</strong><span><code>/silver</code> builds the workflow chain for feature, bugfix, UI, DevOps, research, release, or fast-path work.</span></div>
-          <div class="sb-gsd-proof-row"><strong>Traceability</strong><span>Specs, validation findings, UAT state, PR descriptions, and implementation links stay connected.</span></div>
-          <div class="sb-gsd-proof-row"><strong>Governance</strong><span>Artifact review, DevOps safety, docs freshness, session continuity, and non-skippable gates wrap GSD execution.</span></div>
+      <div class="sb-lifecycle-panel fade-in">
+        <h3>The strongest SB-owned lifecycle benefits</h3>
+        <div class="sb-lifecycle-proof">
+          <div class="sb-lifecycle-proof-row"><strong>Enforcement</strong><span>Host hooks block skipped planning, review, verification, docs, CI, and release steps.</span></div>
+          <div class="sb-lifecycle-proof-row"><strong>Composition</strong><span><code>/silver</code> builds the workflow chain for feature, bugfix, UI, DevOps, research, release, or fast-path work.</span></div>
+          <div class="sb-lifecycle-proof-row"><strong>Traceability</strong><span>Specs, validation findings, UAT state, PR descriptions, and implementation links stay connected.</span></div>
+          <div class="sb-lifecycle-proof-row"><strong>Governance</strong><span>Artifact review, DevOps safety, docs freshness, session continuity, and non-skippable gates are part of the SB lifecycle.</span></div>
         </div>
       </div>
     </div>
 
-    <div class="sb-gsd-benefit-grid mt-6">
-      <div class="sb-gsd-benefit fade-in">
+    <div class="sb-lifecycle-benefit-grid mt-6">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="shield-check"></i></div><h3>Process Becomes Enforced</h3></div>
-        <p>GSD gives the right lifecycle. SB adds hook-level blockers so agents cannot silently edit, commit, PR, deploy, or release before required evidence exists.</p>
+        <p>SB supplies the lifecycle and the hook-level blockers so agents cannot silently edit, commit, PR, deploy, or release before required evidence exists.</p>
       </div>
-      <div class="sb-gsd-benefit fade-in">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="workflow"></i></div><h3>Workflows Are Task-Shaped</h3></div>
-        <p>GSD has <code>gsd:do</code>. SB&rsquo;s extra value is broader workflow composition across SB gates, GSD, and selected helper plugins for review, design, PM, DevOps, and release work.</p>
+        <p><code>/silver</code> classifies the request and composes the workflow across SB gates, optional DevOps extensions, docs, review, and release work.</p>
       </div>
-      <div class="sb-gsd-benefit fade-in">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="network"></i></div><h3>Cross-Plugin Orchestration</h3></div>
-        <p>SB sequences GSD with review, TDD, docs, design, testing, product, DevOps, and release capabilities without pretending those tools are interchangeable.</p>
+        <p>SB sequences context, planning, TDD, review, docs, product framing, DevOps gates, and release capabilities without requiring lifecycle-overlap plugins.</p>
       </div>
-      <div class="sb-gsd-benefit fade-in">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="file-check-2"></i></div><h3>Spec-To-PR Traceability</h3></div>
         <p><code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>, UAT gates, and PR traceability connect accepted requirements to delivered implementation.</p>
       </div>
-      <div class="sb-gsd-benefit fade-in">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="clipboard-check"></i></div><h3>Artifact Review Governance</h3></div>
         <p>SB reviews specs, requirements, design, roadmap, research, ingestion manifests, UAT, and cross-artifact consistency with audit trails and review analytics.</p>
       </div>
-      <div class="sb-gsd-benefit fade-in">
+      <div class="sb-lifecycle-benefit fade-in">
         <div class="benefit-top"><div class="benefit-icon"><i data-lucide="server-cog"></i></div><h3>DevOps And Release Safety</h3></div>
-        <p>Blast-radius analysis, IaC-adapted quality gates, promotion checks, deployment checklists, CI-red blocking, and release gates surround GSD milestone work.</p>
+        <p>Blast-radius analysis, IaC-adapted quality gates, promotion checks, deployment checklists, CI-red blocking, and release gates surround SB milestone work.</p>
       </div>
     </div>
 
@@ -1413,8 +1410,8 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">How It Compares</div>
-      <h2 class="section-title">GSD Executes. Silver Bullet Orchestrates.</h2>
-      <p class="section-desc centered">GSD remains the lifecycle and execution authority. Silver Bullet acts as the Agentic Process Orchestrator around it: composing the right task path, enforcing gates, and bringing in optional plugin helpers only when the selected workflow requires them.</p>
+      <h2 class="section-title">Silver Bullet Executes the Lifecycle.</h2>
+      <p class="section-desc centered">Silver Bullet is now the lifecycle authority for core software-engineering work: composing the right task path, enforcing gates, and using optional extension plugins only when they add domain-specific capability.</p>
     </div>
 
     <div class="compare-grid mt-6">
@@ -1480,7 +1477,7 @@ img{max-width:100%;height:auto}
           <div class="compare-bar-fill" style="width:100%"></div>
         </div>
         <ul class="compare-items">
-          <li><span class="ci ci-yes">✓</span> Orchestrates GSD (execution engine)</li>
+          <li><span class="ci ci-yes">✓</span> Owns the core lifecycle engine</li>
           <li><span class="ci ci-yes">✓</span> Keeps SB in charge before any helper skill runs</li>
           <li><span class="ci ci-yes">✓</span> Twelve enforcement layers plus documentation governance</li>
           <li><span class="ci ci-yes">✓</span> 8 core quality dimensions plus conditional gates + hard-stop gate</li>
@@ -1570,7 +1567,7 @@ img{max-width:100%;height:auto}
         <div class="layer-num">3</div>
         <div>
           <h3>Dependency Gate</h3>
-          <p>Required GSD skills and selected SB helper dependencies must be available. Missing mandatory dependencies fail closed with install-and-retry guidance.</p>
+          <p>Required SB skills and explicitly selected extension plugins must be available. Core lifecycle-overlap plugins are not required.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
@@ -1612,7 +1609,7 @@ img{max-width:100%;height:auto}
         <div class="layer-num">9</div>
         <div>
           <h3>State + Boundary Guards</h3>
-          <p>Direct edits to GSD-owned planning artifacts, SB state files, legacy trivial bypass markers, installed plugin files, and protected instruction surfaces are blocked.</p>
+          <p>Direct edits to SB-owned planning artifacts, SB state files, legacy trivial bypass markers, installed plugin files, and protected instruction surfaces are blocked.</p>
         </div>
       </div>
       <div class="layer-card fade-in">
@@ -1722,7 +1719,7 @@ img{max-width:100%;height:auto}
 
 <span class="dim">Run /silver:quality-gates before</span>
 <span class="dim">editing any source file.</span>
-<span class="dim">Then run /gsd:plan-phase.</span>
+<span class="dim">Then run /silver:plan.</span>
         </div>
       </div>
 
@@ -1740,9 +1737,9 @@ img{max-width:100%;height:auto}
 <span class="stop">&#129521; COMPLETION BLOCKED</span>
 <span class="dim">&mdash; Workflow incomplete.</span>
 
-<span class="cross">&#10007;</span> <span class="accent">/gsd:code-review</span>
-<span class="cross">&#10007;</span> <span class="accent">/requesting-code-review</span>
-<span class="cross">&#10007;</span> <span class="accent">/receiving-code-review</span>
+<span class="cross">&#10007;</span> <span class="accent">/silver:review</span>
+<span class="cross">&#10007;</span> <span class="accent">/silver-review-request</span>
+<span class="cross">&#10007;</span> <span class="accent">/silver-review-triage</span>
 <span class="cross">&#10007;</span> <span class="accent">/verify-tests</span>
 
 <span class="dim">Complete ALL required steps</span>
@@ -1769,7 +1766,7 @@ img{max-width:100%;height:auto}
 <span class="ok">EXECUTE</span>    <span class="accent">1/1</span>  <span class="ok">&#10003;</span>
 <span class="warn">VERIFY</span>     <span class="accent">0/3</span>  <span class="cross">&#10007;</span>
 
-<span class="dim">Next: </span><span class="accent">/gsd:verify-work</span>
+<span class="dim">Next: </span><span class="accent">/silver:verify</span>
         </div>
       </div>
 
@@ -1782,8 +1779,8 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Workflows</div>
-      <h2 class="section-title">Task-Shaped Workflows. GSD-Backed Execution. SB-Enforced Evidence.</h2>
-      <p class="section-desc centered"><code>/silver</code> is the APO router: it classifies the request, composes the smallest safe workflow, delegates lifecycle work to GSD, and wraps execution with the right gates, reviews, documentation, DevOps controls, and release evidence.</p>
+      <h2 class="section-title">Task-Shaped Workflows. SB-Owned Execution. Enforced Evidence.</h2>
+      <p class="section-desc centered"><code>/silver</code> is the APO router: it classifies the request, composes the smallest safe workflow, and runs the lifecycle through SB-owned gates, reviews, documentation, DevOps controls, and release evidence.</p>
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
@@ -1806,26 +1803,26 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
-            <td>orient → clarify/decide if needed → spec/validate as needed → quality gates → GSD discuss/plan/execute/verify → review/secure → ship</td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">gsd:verify-work</span> <span class="step-required">gsd:secure-phase</span></td>
+            <td>orient → clarify/decide if needed → spec/validate as needed → quality gates → silver context/plan/execute/verify → review/secure → ship</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">silver:secure</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
-            <td>triage → systematic debugging or forensics → regression coverage → GSD fix path → review → verify → quality gates → ship</td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">gsd:verify-work</span> <span class="step-required">review loop</span></td>
+            <td>triage → systematic debugging or forensics → regression coverage → SB fix path → review → verify → quality gates → ship</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">review loop</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
-            <td>orient → clarify if needed → UI design contract → GSD execute → UI quality review → verify → quality gates → ship</td>
-            <td><span class="step-required">gsd:ui-phase</span> <span class="step-required">gsd:ui-review</span> <span class="step-required">/silver:quality-gates</span></td>
+            <td>orient → clarify if needed → UI design contract → silver execute → UI quality review → verify → quality gates → ship</td>
+            <td><span class="step-required">silver:ui-contract</span> <span class="step-required">silver:ui-review</span> <span class="step-required">/silver:quality-gates</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
-            <td>orient → blast radius → DevOps skill routing → IaC quality gates → GSD plan/execute/verify → promote → ship</td>
-            <td><span class="step-required">/silver:blast-radius</span> <span class="step-required">/devops-quality-gates</span> <span class="step-required">gsd:verify-work</span></td>
+            <td>orient → blast radius → DevOps skill routing → IaC quality gates → silver plan/execute/verify → promote → ship</td>
+            <td><span class="step-required">/silver:blast-radius</span> <span class="step-required">/devops-quality-gates</span> <span class="step-required">silver:verify</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
@@ -1836,14 +1833,14 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td>quality gates → UAT audit → milestone audit → security hard gate → docs/review/fresh tests → gsd-ship → gsd:complete-milestone → /silver:create-release</td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">gsd-ship</span></td>
+            <td>quality gates → UAT audit → milestone audit → security hard gate → docs/review/fresh tests → silver ship → /silver:create-release</td>
+            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">silver:ship</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Typos, config tweaks, bounded small changes, dependency bumps</td>
-            <td>Tier 1 → gsd:fast; Tier 2 → gsd:quick with flags; Tier 3 → /silver:feature</td>
-            <td><span class="step-required">scope expansion check</span> <span class="step-required">GSD verification</span></td>
+            <td>Tier 1 → direct safe edit; Tier 2 → bounded SB lifecycle slice; Tier 3 → /silver:feature</td>
+            <td><span class="step-required">scope expansion check</span> <span class="step-required">SB verification</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-spec.html" style="color:var(--accent-light);text-decoration:none">/silver:spec</a></td>
@@ -1866,7 +1863,7 @@ img{max-width:100%;height:auto}
         </tbody>
       </table>
       <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
-        Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the route. Use direct <code>/silver:*</code> or <code>/gsd:*</code> commands when you already know the exact step.
+        Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the route. Use direct <code>/silver:*</code> commands when you already know the exact step.
         &nbsp;<a href="help/workflows/" style="color:var(--accent-light)">View full workflow docs &rarr;</a>
       </p>
     </div>
@@ -1884,28 +1881,28 @@ img{max-width:100%;height:auto}
         </thead>
         <tbody>
           <tr><td>1</td><td><span class="phase-badge phase-init">INIT</span></td><td>Worktree decision</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/gsd:new-project</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#8635; Per-phase loop &mdash; repeat for each phase in ROADMAP.md</td></tr>
-          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/gsd:discuss-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/system-design (if architectural)</td><td>Engineering</td><td></td></tr>
-          <tr><td>3b</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/design-system + /ux-copy + /accessibility-review (if UI)</td><td>Design</td><td></td></tr>
+          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context architecture checks</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>3b</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:ui-contract (if UI)</td><td>Silver Bullet</td><td></td></tr>
           <tr><td>4</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/silver:quality-gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>5</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>5</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>5a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>tdd (before writing behavior-changing code)</td><td>Silver Bullet wrapper</td><td><span class="step-required">As needed</span></td></tr>
-          <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:forensics or /gsd:debug (on failure)</td><td>Silver Bullet / GSD</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/gsd:code-review (structured quality review)</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>11</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
-          <tr><td>12</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
+          <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:verify</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:debug (on failure)</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver-review-request</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver-review-triage</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>11</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan (revision)</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>12</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute (revision)</td><td>Silver Bullet</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>13</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:secure-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>14</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:validate-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>13</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:secure</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>14</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:validate</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>15</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>SB-required helper</td><td>Branches only</td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver-branch-finish</td><td>Silver Bullet</td><td>Branches only</td></tr>
+          <tr><td>17</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/silver:ship</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>18</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
         </tbody>
       </table>
@@ -1927,34 +1924,34 @@ img{max-width:100%;height:auto}
           <tr><td>0</td><td><span class="phase-badge phase-incident">INCIDENT</span></td><td>Incident fast path (skip to hotfix)</td><td>Silver Bullet</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Standard flow</td></tr>
           <tr><td>1</td><td><span class="phase-badge phase-init">INIT</span></td><td>Worktree decision</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/gsd:new-project</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#8635; Per-phase loop &mdash; repeat for each phase in ROADMAP.md</td></tr>
-          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/gsd:discuss-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
           <tr><td>4</td><td><span class="phase-badge phase-blast">BLAST RADIUS</span></td><td>/silver:blast-radius</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>5</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/devops-quality-gates (7 dimensions)</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>6</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>6</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>6a</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>7</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>7</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>7a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/gsd:verify-work</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>8</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:verify</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>8a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/requesting-code-review (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/gsd:code-review (authoritative REVIEW.md)</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/receiving-code-review</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/gsd:plan-phase (revision)</td><td>GSD</td><td></td></tr>
-          <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/gsd:execute-phase (revision)</td><td>GSD</td><td></td></tr>
+          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review-request (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review (authoritative REVIEW.md)</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review-triage</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan (revision)</td><td>Silver Bullet</td><td></td></tr>
+          <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute (revision)</td><td>Silver Bullet</td><td></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Environment promotion &mdash; dev &rarr; staging &rarr; prod</td></tr>
           <tr><td>14</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Promote to next environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>15</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Verify promoted environment</td><td>GSD</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>15</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Verify promoted environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:secure-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/gsd:validate-phase</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:secure</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
+          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:validate</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/finishing-a-development-branch</td><td>SB-required helper</td><td>Branches only</td></tr>
+          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:branch-finish</td><td>SB-required helper</td><td>Branches only</td></tr>
           <tr><td>20</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
           <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>22</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/gsd:ship</td><td>GSD</td><td><span class="step-required">Required</span> <span class="step-gsd">GSD</span></td></tr>
+          <tr><td>22</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/silver:ship</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
           <tr><td>23</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
         </tbody>
       </table>
@@ -1991,7 +1988,7 @@ img{max-width:100%;height:auto}
     <div class="mt-6">
       <div class="callout fade-in">
         <div class="callout-icon"><i data-lucide="zap"></i></div>
-        <p><strong>Enforcement starts immediately.</strong> After running <code>/silver:init</code>, hooks are active and the workflow is live. Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the right chain. For app projects, GSD execution anchors the composition. For DevOps projects, blast radius assessment and IaC-adapted quality gates are composed in automatically. Missing required dependencies are detected and fail closed with install-and-retry guidance.</p>
+        <p><strong>Enforcement starts immediately.</strong> After running <code>/silver:init</code>, hooks are active and the workflow is live. Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the right chain. For app projects, SB runs the core lifecycle directly. For DevOps projects, blast radius assessment and IaC-adapted quality gates are composed in automatically. Missing required SB gates fail closed with install-and-retry guidance.</p>
       </div>
     </div>
   </div>
@@ -2001,8 +1998,8 @@ img{max-width:100%;height:auto}
 <section class="cta-section" style="padding:80px 0">
   <div class="container text-center">
     <div class="section-label">Get Started</div>
-    <h2 class="section-title fade-in">The Agentic Process Orchestrator<br>for GSD-backed Delivery.</h2>
-    <p class="section-desc centered fade-in">Stop hoping your AI agent follows the process. Silver Bullet composes the workflow, sequences the right plugins, preserves traceability, enforces the gates, and keeps delivery evidence visible.</p>
+    <h2 class="section-title fade-in">The Agentic Process Orchestrator<br>for SB-Owned Delivery.</h2>
+    <p class="section-desc centered fade-in">Stop hoping your AI agent follows the process. Silver Bullet composes the workflow, preserves traceability, enforces the gates, and keeps delivery evidence visible.</p>
     <a href="#install" class="btn btn-primary fade-in" style="font-size:1rem;padding:16px 36px">Install Silver Bullet &darr;</a>
   </div>
 </section>

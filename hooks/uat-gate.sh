@@ -3,8 +3,9 @@ set -euo pipefail
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
-# UAT GATE — blocks gsd-complete-milestone when UAT.md is missing, has FAIL results,
-# or was run against a stale spec version.
+# UAT GATE — blocks silver:release / milestone completion when UAT.md is missing,
+# has FAIL results, or was run against a stale spec version. Legacy GSD milestone
+# completion aliases remain guarded for migration compatibility.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -29,8 +30,8 @@ emit_block() {
 # Extract skill name from supported skill invocation input
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
-# Only gate on gsd-complete-milestone
-if ! printf '%s' "$skill" | grep -qE 'gsd-complete-milestone|gsd:complete-milestone'; then
+# Only gate on release or milestone completion
+if ! printf '%s' "$skill" | grep -qE 'silver-release|silver:release|gsd-complete-milestone|gsd:complete-milestone'; then
   exit 0
 fi
 
@@ -39,7 +40,7 @@ SPEC=".planning/SPEC.md"
 
 # Check 1: UAT.md must exist (UATG-01)
 if [[ ! -f "$UAT" ]]; then
-  emit_block "UAT GATE: .planning/UAT.md not found. Generate UAT checklist from SPEC.md acceptance criteria before completing milestone. Run /silver:feature Step 17."
+  emit_block "UAT GATE: .planning/UAT.md not found. Generate UAT checklist from SPEC.md acceptance criteria before completing milestone. Run /silver:release."
   exit 0
 fi
 

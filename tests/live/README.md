@@ -90,7 +90,7 @@ stores that `silver-scan` reads.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
 matching `e2e-live-matrix` marker. That suite now runs one inline full-surface
-journey against the standalone sibling `test-todo-app` repo and also writes an `inline-e2e-matrix` marker so the release gate can
+journey against the standalone sibling `todo-app` repo and also writes an `inline-e2e-matrix` marker so the release gate can
 prove the end-user experience actually ran in this session. Both markers must
 be present before a release can proceed.
 

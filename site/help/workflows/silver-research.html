@@ -119,7 +119,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h2 id="overview">Overview</h2>
       <p><code>/silver:research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>.planning/research/</code> and referenced by the receiving workflow.</p>
       <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, runs direct evidence-based research in the current host session by default, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
-      <p><code>silver:research</code> uses <strong>composable flows architecture</strong> — it composes only the flows needed for pre-implementation discovery. Typical path: <strong>FLOW 3 (CLARIFY)</strong> → <strong>FLOW 4 (DECIDE)</strong> → <strong>FLOW 5 (SPECIFY)</strong> when the research should become a spec. After research completes, it can hand off to <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, or <code>gsd:do</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>silver:research</code> uses <strong>composable flows architecture</strong> — it composes only the flows needed for pre-implementation discovery. Typical path: <strong>FLOW 3 (CLARIFY)</strong> → <strong>FLOW 4 (DECIDE)</strong> → <strong>FLOW 5 (SPECIFY)</strong> when the research should become a spec. After research completes, it can hand off to <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, or <code>/silver</code> reclassification. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -194,16 +194,16 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><strong>A. silver:feature</strong> — build a new feature based on research findings</li>
         <li><strong>B. silver:ui</strong> — product or interface work based on research findings</li>
         <li><strong>C. silver:devops</strong> — infrastructure/deployment change based on research findings</li>
-        <li><strong>D. gsd:do</strong> — delegate to GSD for lifecycle-owned project work</li>
+        <li><strong>D. silver:plan</strong> — convert findings into an SB-owned implementation plan</li>
         <li><strong>E. Done</strong> — research-only engagement, no implementation needed</li>
       </ul>
-      <p>If the research continues into implementation, the artifact path (<code>.planning/research/&lt;date&gt;-&lt;topic&gt;/</code>) is passed as context so downstream GSD discussion, planning, and verification can reference it. Research lineage is always preserved.</p>
+      <p>If the research continues into implementation, the artifact path (<code>.planning/research/&lt;date&gt;-&lt;topic&gt;/</code>) is passed as context so downstream SB context, planning, and verification can reference it. Research lineage is always preserved.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:research Should we use React Query or SWR for server state management?</div>
-      <p>Silver Bullet routes to research. <code>/silver:clarify</code> clarifies the question. Path 2b is selected. Direct research produces evidence, comparison criteria, and a recommendation artifact. Optional MultAI augmentation runs only if explicitly requested. <code>/silver:clarify</code> synthesizes the artifact into a decision-ready handoff. The result can then be routed to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/gsd:do</code>.</p>
+      <p>Silver Bullet routes to research. <code>/silver:clarify</code> clarifies the question. Path 2b is selected. Direct research produces evidence, comparison criteria, and a recommendation artifact. Optional MultAI augmentation runs only if explicitly requested. <code>/silver:clarify</code> synthesizes the artifact into a decision-ready handoff. The result can then be routed to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>silver:plan</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

@@ -135,8 +135,8 @@ For the highest-priority available skill:
    an option before continuing.
 
 **Important**: Routed skills are enrichments, not gates. A failed or missing plugin
-skill NEVER blocks the workflow. Only Silver Bullet's own quality gates and GSD
-steps are enforcement gates.
+skill NEVER blocks the workflow. Only Silver Bullet's own quality gates and SB
+lifecycle steps are enforcement gates.
 
 ---
 

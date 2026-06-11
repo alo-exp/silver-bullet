@@ -181,7 +181,7 @@ echo "--- Group 4: Block message contains skill hint ---"
 
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-if printf '%s' "$out" | grep -q "gsd-add-phase\|gsd-roadmapper"; then
+if printf '%s' "$out" | grep -q "silver:plan\|silver:add\|silver:release"; then
   echo "  ✅ ROADMAP block message mentions owning skills"
   PASS=$((PASS + 1))
 else

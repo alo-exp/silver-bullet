@@ -1,7 +1,7 @@
 ---
 name: "silver:remove"
 title: "Remove"
-description: This skill should be used to remove a tracked work item by ID — closes a GitHub Issue as "not planned" with a removed-by-silver-bullet label (when issue_tracker=github), or marks a local SB-I-N or SB-B-N entry with [REMOVED YYYY-MM-DD] inline in docs/issues/ISSUES.md or docs/issues/BACKLOG.md (when issue_tracker=gsd or absent).
+description: This skill should be used to remove a tracked work item by ID — closes a GitHub Issue as "not planned" with a removed-by-silver-bullet label (when issue_tracker=github), or marks a local SB-I-N or SB-B-N entry with [REMOVED YYYY-MM-DD] inline in docs/issues/ISSUES.md or docs/issues/BACKLOG.md (when issue_tracker=local or absent; legacy issue_tracker=gsd is accepted as local).
 version: 0.1.0
 ---
 
@@ -11,7 +11,7 @@ Use this skill any time a tracked work item must be removed. It closes or marks 
 
 For GitHub Issues (`issue_tracker=github`), this skill closes the issue with reason "not planned" and applies the `removed-by-silver-bullet` label. **Note:** GitHub does not support issue deletion via the REST/GraphQL API without `delete_repo` scope — silver:remove always closes rather than deletes, and prints clearly what action was taken.
 
-For local SB-I-N and SB-B-N items (`issue_tracker=gsd` or absent), this skill marks the heading line inline with `[REMOVED YYYY-MM-DD]` in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`. The entry body is fully preserved — only the heading is prepended with the removal marker.
+For local SB-I-N and SB-B-N items (`issue_tracker=local`, legacy `gsd`, or absent), this skill marks the heading line inline with `[REMOVED YYYY-MM-DD]` in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`. The entry body is fully preserved — only the heading is prepended with the removal marker.
 
 ---
 
@@ -44,7 +44,7 @@ Do not execute other shell commands. Note requirements in output for human execu
 
 Walk up from `$PWD` until a `.silver-bullet.json` file is found. All paths (`docs/issues/`) are relative to this root.
 
-If `.silver-bullet.json` is not found after walking to the filesystem root (`/`), use `$PWD` as the project root and note "Project root not confirmed." in output. Default `TRACKER` to `"gsd"`.
+If `.silver-bullet.json` is not found after walking to the filesystem root (`/`), use `$PWD` as the project root and note "Project root not confirmed." in output. Default `TRACKER` to `"local"`.
 
 ---
 
@@ -82,7 +82,7 @@ Then stop.
 ## Step 3 — Read configuration
 
 ```bash
-TRACKER=$(jq -r '.issue_tracker // "gsd"' .silver-bullet.json)
+TRACKER=$(jq -r '.issue_tracker // "local"' .silver-bullet.json)
 ```
 
 Display: "Removing via: [github | local docs/issues/]"
@@ -207,7 +207,7 @@ Output a final confirmation line summarizing the action taken (GitHub close or l
 
 - **ID not recognized format:** exit 1 with message (handled in Step 2).
 - **GitHub issue already closed:** `gh issue close` returns exit 0 (idempotent) — label step still runs.
-- **No `.silver-bullet.json` found:** use `$PWD`, default `TRACKER` to `"gsd"`. Note "Project root not confirmed."
+- **No `.silver-bullet.json` found:** use `$PWD`, default `TRACKER` to `"local"`. Note "Project root not confirmed."
 - **`gh` not authenticated:** output instruction to run `gh auth login`, then stop.
 - **ID not found in local file:** exit 1 with clear message (Step 5c).
-- **Integer ID with issue_tracker=gsd:** error with instruction to use SB-I-N / SB-B-N format.
+- **Integer ID with issue_tracker=local or legacy gsd:** error with instruction to use SB-I-N / SB-B-N format.

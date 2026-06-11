@@ -509,7 +509,18 @@ done
 missing=""
 uninstalled=""
 for skill in $required_skills; do
-  if ! printf '%s\n' "$state_contents" | grep -qx "$skill" 2>/dev/null; then
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    skill_recorded=false
+    if sb_required_skill_is_recorded "$state_contents" "$skill"; then
+      skill_recorded=true
+    fi
+  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+    skill_recorded=true
+  else
+    skill_recorded=false
+  fi
+
+  if [[ "$skill_recorded" != true ]]; then
     if sb_skill_is_installed "$skill"; then
       missing="${missing:+$missing }$skill"
     else

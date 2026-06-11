@@ -163,7 +163,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <p>New to Silver Bullet or AI-assisted development? Start here to go from zero to your first enforced workflow session.</p>
         <ul class="card-topics">
           <li>What AI-driven development is (and isn't)</li>
-          <li>Prerequisites: host coding agent, GSD, and any helper plugins required by the selected workflow</li>
+          <li>Prerequisites: host coding agent and Silver Bullet; optional extension plugins only when a workflow needs their domain capability</li>
           <li>Installing Silver Bullet</li>
           <li>Running your first session</li>
           <li>Choosing Interactive vs Autonomous mode</li>
@@ -171,15 +171,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-cta">Read guide →</div>
       </a>
 
-      <a href="concepts/" class="help-card" data-keywords="concepts skills hooks gsd superpowers quality gates session modes enforcement agents">
+      <a href="concepts/" class="help-card" data-keywords="concepts skills hooks silver bullet lifecycle quality gates session modes enforcement agents">
         <div class="card-icon"><i data-lucide="brain"></i></div>
         <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Fundamentals</span>
         <h3>Core Concepts</h3>
-        <p>Understand the building blocks: APO routing, skills, hooks, GSD lifecycle ownership, cross-plugin orchestration, and why enforcement matters.</p>
+        <p>Understand the building blocks: APO routing, SB-owned lifecycle skills, hooks, optional extension plugins, and why enforcement matters.</p>
         <ul class="card-topics">
           <li>Skills and how they're invoked</li>
           <li>Hooks and automated enforcement</li>
-          <li>SB vs GSD vs Superpowers ownership model</li>
+          <li>Absorbed dependency boundary and SB lifecycle ownership</li>
           <li>8 core quality gates plus conditional gates</li>
           <li>Agent teams and parallelism</li>
         </ul>
@@ -190,10 +190,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="settings"></i></div>
         <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Workflow</span>
         <h3>Software Engineering Workflow</h3>
-        <p>The composed application delivery path, from intent routing and GSD planning through release.</p>
+        <p>The composed application delivery path, from intent routing and SB planning through release.</p>
         <ul class="card-topics">
-          <li>Project initialization with GSD</li>
-          <li>Discuss → Quality Gates → Plan → Execute</li>
+          <li>Project initialization with SB</li>
+          <li>Context -> Quality Gates -> Plan -> Execute</li>
           <li>Verify, Code Review, and acceptance loop</li>
           <li>Finalization, CI/CD, and deployment</li>
           <li>Ship and Release steps</li>
@@ -216,13 +216,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-cta">Read workflow →</div>
       </a>
 
-      <a href="reference/" class="help-card" data-keywords="reference commands gsd skills slash commands config json options file structure">
+      <a href="reference/" class="help-card" data-keywords="reference commands silver bullet skills slash commands config json options file structure">
         <div class="card-icon"><i data-lucide="clipboard-list"></i></div>
         <span class="card-badge" style="background:var(--amber-a12);color:var(--amber)">Reference</span>
         <h3>Command Reference</h3>
-        <p>Every key GSD command, Silver Bullet command, config option, workflow, and file location — all in one place.</p>
+        <p>Every key Silver Bullet command, config option, workflow, and file location — all in one place.</p>
         <ul class="card-topics">
-          <li>All /gsd:* commands with descriptions</li>
+          <li>SB lifecycle commands and compatibility notes</li>
           <li>Silver Bullet skills catalog</li>
           <li>.silver-bullet.json config options</li>
           <li>Recommended project file structure</li>
@@ -233,7 +233,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <a href="workflows/" class="help-card" data-keywords="workflows orchestration silver brainstorm idea concept feature bugfix ui devops research release fast spec ingest validate routing">
         <div class="card-icon"><i data-lucide="git-branch-plus"></i></div>
-        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.37.23</span>
+        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.38.0</span>
         <h3>Orchestration Workflows</h3>
         <p>The named workflows that power Silver Bullet's dynamic routing — from idea clarification and specs to releases.</p>
         <ul class="card-topics">

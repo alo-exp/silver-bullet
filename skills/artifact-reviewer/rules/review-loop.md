@@ -67,7 +67,7 @@ commit_review_trail(artifact_path)  # Commit REVIEW-ROUNDS.md alongside the arti
 clear_review_state(artifact_path)
 
 # Verification gate — no completion claim without fresh evidence
-invoke /superpowers:verification-before-completion
+invoke /silver:completion-audit or /silver:verify as appropriate for the artifact
 # The producing step is NOT done until verification confirms the artifact
 # meets its acceptance criteria with fresh, run-the-command evidence.
 # This prevents "review passed → step complete" shortcuts where the
@@ -81,7 +81,7 @@ invoke /superpowers:verification-before-completion
 - INFO findings do NOT reset the counter (INFO is advisory)
 - The loop is self-limiting: it terminates after 2 consecutive PASS results
 - If the loop reaches 5 rounds without achieving 2 consecutive passes, surface all accumulated findings to the user
-- After the loop completes, `/superpowers:verification-before-completion` MUST be invoked before the producing step is marked done — no completion claim without fresh verification evidence
+- After the loop completes, `silver:completion-audit` or `silver:verify` MUST be invoked before the producing step is marked done — no completion claim without fresh verification evidence
 
 ---
 
@@ -176,7 +176,7 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
 
 REVIEW-ROUNDS.md grows unboundedly across a milestone. To prevent it from exceeding LLM context limits:
 
-- **On milestone completion** (`gsd-complete-milestone`): archive the current REVIEW-ROUNDS.md to `.planning/archive/{milestone-slug}/REVIEW-ROUNDS.md` and start a fresh empty file
+- **On milestone completion** (`silver:release` milestone archive): archive the current REVIEW-ROUNDS.md to `.planning/archive/{milestone-slug}/REVIEW-ROUNDS.md` and start a fresh empty file
 - **Cap**: if REVIEW-ROUNDS.md exceeds 200 lines mid-milestone, archive to `.planning/archive/review-rounds-{YYYY-MM-DD}.md` and start fresh
 - The `record_round()` function checks line count before appending:
 

@@ -54,9 +54,8 @@ case "$_norm_path" in
 esac
 basename_path=$(basename "$_norm_path")
 
-# Check if the file is in the protected set (GSD-managed lifecycle artifacts).
-# SB-owned spec and quality files remain outside this protected set unless they
-# are core GSD planning state files.
+# Check if the file is in the protected set (SB-managed lifecycle artifacts).
+# Legacy GSD-created artifacts remain protected during migration.
 protected=false
 planning_rel=""
 case "$_norm_path" in
@@ -106,7 +105,7 @@ esac
 
 # ── Bypass: env var override ──────────────────────────────────────────────────
 if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
-  _msg="⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning GSD skill."
+  _msg="⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning SB skill."
   printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
   exit 0
 fi
@@ -138,46 +137,46 @@ fi
 skill_hint=""
 case "$basename_path" in
   ROADMAP.md)
-    skill_hint="Use /gsd-add-phase, /gsd-roadmapper, or /gsd-complete-milestone instead."
+    skill_hint="Use /silver:plan, /silver:add, /silver:release, or the owning roadmap workflow instead."
     ;;
   STATE.md)
-    skill_hint="Use /gsd-execute-phase, /gsd-complete-milestone, /gsd-pause-work, or /gsd-resume-work instead."
+    skill_hint="Use /silver:execute, /silver:release, or the owning resume/pause workflow instead."
     ;;
   PROJECT.md)
-    skill_hint="Use /gsd-new-project instead."
+    skill_hint="Use /silver:init instead."
     ;;
   RELEASE.md)
-    skill_hint="Use /silver-release or /silver-create-release instead."
+    skill_hint="Use /silver:release or /silver:create-release instead."
     ;;
   REQUIREMENTS.md)
-    skill_hint="Use /gsd-new-project, /gsd-new-milestone, /gsd-spec-phase, or /gsd-ingest-docs instead. SB specs should live in SB-owned spec artifacts, not overwrite GSD requirements directly."
+    skill_hint="Use /silver:spec, /silver:ingest, /silver:init, or /silver:plan instead. SB requirements should be updated through SB-owned spec and planning workflows."
     ;;
   UAT.md)
-    skill_hint="Use /gsd-verify-work or /gsd-validate-phase instead."
+    skill_hint="Use /silver:verify or /silver:validate instead."
     ;;
   v*-MILESTONE-*.md)
-    skill_hint="Use /gsd-audit-milestone instead."
+    skill_hint="Use /silver:release instead."
     ;;
   *-PLAN.md|PLAN.md)
-    skill_hint="Use /gsd-plan-phase instead."
+    skill_hint="Use /silver:plan instead."
     ;;
   *-SUMMARY.md|SUMMARY.md)
-    skill_hint="Use /gsd-execute-phase, /gsd-milestone-summary, or the relevant GSD phase completion skill instead."
+    skill_hint="Use /silver:execute, /silver:release, or the relevant SB phase completion workflow instead."
     ;;
   *-REVIEW.md|REVIEW.md)
-    skill_hint="Use /gsd-code-review instead."
+    skill_hint="Use /silver:review instead."
     ;;
   *-SECURITY.md|SECURITY.md)
-    skill_hint="Use /gsd-secure-phase instead."
+    skill_hint="Use /silver:secure instead."
     ;;
   *-VERIFICATION.md|VERIFICATION.md)
-    skill_hint="Use /gsd-verify-work or /gsd-validate-phase instead."
+    skill_hint="Use /silver:verify or /silver:validate instead."
     ;;
 esac
 
 msg="🚫 PLANNING FILE GUARD — Direct edits to .planning/${basename_path} are not permitted.
 
-GSD-managed planning artifacts must be modified only through their owning skills.
+SB-managed planning artifacts must be modified only through their owning skills.
 ${skill_hint}
 
 To bypass for a one-off doc fix:

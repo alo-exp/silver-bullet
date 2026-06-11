@@ -453,13 +453,24 @@ run_dev_cycle_bash() {
 
 write_full_config() {
   local workflow="${1:-full-dev-cycle}"
+  local config_version required_planning required_deploy all_tracked
+  config_version=$(jq -r '.config_version' "$DEFAULT_CONFIG_TEMPLATE")
+  if [[ "$workflow" == "devops-cycle" ]]; then
+    required_planning=$(jq -c '.skills.required_planning_devops' "$DEFAULT_CONFIG_TEMPLATE")
+    required_deploy=$(jq -c '.skills.required_deploy_devops' "$DEFAULT_CONFIG_TEMPLATE")
+  else
+    required_planning=$(jq -c '.skills.required_planning' "$DEFAULT_CONFIG_TEMPLATE")
+    required_deploy=$(jq -c '.skills.required_deploy' "$DEFAULT_CONFIG_TEMPLATE")
+  fi
+  all_tracked=$(jq -c '.skills.all_tracked' "$DEFAULT_CONFIG_TEMPLATE")
   cat > "$TMPCFG" << EOCFG
 {
+  "config_version": "${config_version}",
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
-    "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-quality-gates","silver-blast-radius","devops-quality-gates","devops-skill-router","design-system","ux-copy","architecture","system-design","gsd-code-review","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","silver-ensure-docs","modularity","reusability","scalability","security","reliability","usability","testability","extensibility","silver-forensics","silver-init","verification-before-completion","test-driven-development","tech-debt","verify-tests","accessibility-review","incident-response","gsd-new-project","gsd-new-milestone","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship","gsd-debug","gsd-ui-phase","gsd-ui-review","gsd-secure-phase"]
+    "required_planning": ${required_planning},
+    "required_deploy": ${required_deploy},
+    "all_tracked": ${all_tracked}
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }

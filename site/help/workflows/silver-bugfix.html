@@ -157,7 +157,7 @@ footer a:hover{color:var(--accent-light)}
 
 A. Known symptom, unknown fix — I can observe the bug but don't know the root cause
 B. Unknown cause — session history is unclear, need to reconstruct what happened
-C. Failed GSD workflow specifically — a plan, execution phase, or GSD command failed</div>
+C. Failed SB workflow specifically — a plan, execution phase, or SB lifecycle command failed</div>
       <p>The selection routes to one of three paths. All paths converge at Step 2 (TDD).</p>
 
       <div class="divider"></div>
@@ -167,12 +167,12 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <div class="path-block">
         <h4>1A.1 — Systematic debugging hypothesis</h4>
-        <p>Invoke <code>superpowers:systematic-debugging</code>. Purpose: structure the debugging hypothesis before executing investigation — ensures a systematic approach before diving into code. Produces a testable hypothesis with reproduction steps.</p>
+        <p>Invoke <code>silver:debug</code> in hypothesis mode. Purpose: structure the debugging hypothesis before executing investigation. Produces a testable hypothesis with reproduction steps.</p>
       </div>
 
       <div class="path-block">
         <h4>1A.2 — Persistent debugging investigation</h4>
-        <p>Invoke <code>gsd:debug</code>. Purpose: execute investigation with persistent state across context resets. After gsd:debug completes, proceed to Step 2 (TDD).</p>
+        <p>Continue in <code>silver:debug</code>. Purpose: execute investigation with persistent state across context resets. After debugging completes, proceed to Step 2 (TDD).</p>
       </div>
 
       <div class="divider"></div>
@@ -187,19 +187,19 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <div class="divider"></div>
 
-      <h2 id="path-1c">Path 1C — Failed GSD workflow</h2>
-      <p>Invoked when triage selects C — a GSD plan, execution phase, or GSD command failed.</p>
+      <h2 id="path-1c">Path 1C — Failed SB workflow</h2>
+      <p>Invoked when triage selects C — an SB plan, execution phase, or lifecycle command failed.</p>
 
       <div class="path-block">
-        <h4>1C.1 — GSD-specific post-mortem</h4>
-        <p>Invoke <code>gsd:forensics</code>. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Produces a diagnosis of what went wrong in the GSD layer. After gsd:forensics completes: hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).</p>
+        <h4>1C.1 — SB workflow post-mortem</h4>
+        <p>Invoke <code>silver:forensics</code>. Purpose: SB-owned post-mortem for failed workflows (failed plans, broken state, incomplete phases). Produces a diagnosis of what went wrong in the workflow layer. After forensics completes: hand off to Path 1A with the diagnosis context.</p>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="tdd-regression">Step 2 — TDD regression test (all paths converge here)</h2>
       <p>All three paths converge at this step. Before writing any fix code:</p>
-      <p>Invoke the SB <code>tdd</code> gate. Purpose: write a failing regression test first — RED must appear before writing any fix. The SB wrapper delegates to the Superpowers TDD skill only at this execution boundary, so bugfix work stays routed through SB+GSD while preserving failing-test-first discipline.</p>
+      <p>Invoke the SB <code>tdd</code> gate. Purpose: write a failing regression test first — RED must appear before writing any fix. The absorbed TDD boundary keeps bugfix work routed through SB while preserving failing-test-first discipline.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">⚠</div>
@@ -209,16 +209,16 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
       </div>
 
       <h3>Step 3 — Plan the fix</h3>
-      <p>Invoke <code>gsd:plan-phase</code> (lightweight — 1–2 tasks only. This is a fix, not a feature).</p>
+      <p>Invoke <code>silver:plan</code> (lightweight — 1–2 tasks only. This is a fix, not a feature).</p>
 
       <h3>Step 4 — Execute fix and verify green</h3>
-      <p>Invoke <code>gsd:execute-phase --tdd</code>. After execution, verify the regression test from Step 2 is now green.</p>
+      <p>Invoke <code>silver:execute --tdd</code>. After execution, verify the regression test from Step 2 is now green.</p>
 
       <h3>Step 5 — Code review</h3>
-      <p>Run the full review sequence in order: <code>/requesting-code-review</code> (superpowers:requesting-code-review) → <code>gsd:code-review</code> → <code>/receiving-code-review</code> (superpowers:receiving-code-review).</p>
+      <p>Run the full review sequence in order: <code>silver:review-request</code> → <code>silver:review</code> → <code>silver:review-triage</code>.</p>
 
       <h3>Step 6 — Verify work</h3>
-      <p>Invoke <code>gsd:verify-work</code>. Purpose: confirm fix, zero regression. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>silver:verify</code>. Purpose: confirm fix, zero regression. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 7 — Security-sensitive review</h3>
       <p>Check the fix through the security criteria used by code review and the Security dimension of <code>/silver:quality-gates</code>. Security is enforced as part of the review and quality-gate path.</p>
@@ -227,7 +227,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
       <p>Invoke <code>/silver:quality-gates</code> for affected quality dimensions of the changed code. <strong>Non-skippable.</strong></p>
 
       <h3>Step 8 — Ship</h3>
-      <p>Invoke <code>gsd:ship</code>. Purpose: push branch, create PR.</p>
+      <p>Invoke <code>silver:ship</code>. Purpose: push branch, create PR.</p>
 
       <div class="divider"></div>
 
@@ -239,7 +239,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
           <ul style="margin-top:8px">
             <li>Security dimension inside <code>/silver:quality-gates</code> (Step 7b)</li>
             <li><code>/silver:quality-gates</code> pre-ship (Step 7b)</li>
-            <li><code>gsd:verify-work</code> (Step 6)</li>
+            <li><code>silver:verify</code> (Step 6)</li>
           </ul>
         </div>
       </div>
@@ -248,7 +248,7 @@ C. Failed GSD workflow specifically — a plan, execution phase, or GSD command 
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:bugfix Login form throws 500 on empty password field</div>
-      <p>Silver Bullet presents triage options. You select A (known symptom, unknown fix). SB invokes systematic-debugging to form a hypothesis, then gsd:debug to investigate. Root cause found → write failing regression test → plan fix → execute → review → verify → ship.</p>
+      <p>Silver Bullet presents triage options. You select A (known symptom, unknown fix). SB invokes silver:debug to form and test a root-cause hypothesis. Root cause found → write failing regression test → plan fix → execute → review → verify → ship.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

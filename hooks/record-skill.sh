@@ -185,7 +185,7 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
       [[ "$token" == *"SKILL.md"* ]] || continue
 
       # Prefer deriving the skill from the directory name so we can record the
-      # canonical hyphenated marker (e.g. silver-init, gsd-discuss-phase).
+      # canonical hyphenated marker (e.g. silver-init, silver-context).
       if [[ "$token" =~ /skills/([^/]+)/SKILL\.md$ ]]; then
         skills_to_record+=("loaded:${BASH_REMATCH[1]}")
       fi
@@ -245,7 +245,7 @@ if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
 fi
 
 # --- Tracked skills list ---
-# GSD command phases (tracked as gsd-* markers for compliance visibility)
+# SB lifecycle phases (tracked as silver-* markers; legacy gsd-* aliases remain compatible)
 # Prefer the canonical tracked list from the packaged config template so
 # bootstrap skills like silver:init are still recorded before a project-level
 # .silver-bullet.json exists. Fall back to a small hardcoded list only if the
@@ -255,7 +255,7 @@ if [[ -n "${_repo_dir:-}" && -f "${_repo_dir}/templates/silver-bullet.config.jso
   DEFAULT_TRACKED=$(jq -r '(.skills.all_tracked // []) | join(" ")' "${_repo_dir}/templates/silver-bullet.config.json.default" 2>/dev/null || true)
 fi
 if [[ -z "$DEFAULT_TRACKED" ]]; then
-  DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router design-system ux-copy architecture system-design gsd-code-review code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist silver-create-release silver-ensure-docs silver-forensics silver-init silver-add silver-remove silver-rem silver-scan gsd-scan verify-tests verification-before-completion test-driven-development tech-debt accessibility-review incident-response modularity reusability scalability security reliability usability testability extensibility gsd-new-project gsd-new-milestone gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
+  DEFAULT_TRACKED="silver-quality-gates silver-blast-radius devops-quality-gates devops-skill-router silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-ui-contract silver-ui-review silver-debug silver-review-request silver-review-triage silver-branch-finish silver-completion-audit silver-tdd silver-create-release silver-ensure-docs silver-forensics silver-init silver-add silver-remove silver-rem silver-scan verify-tests security reliability usability testability extensibility modularity reusability scalability ai-llm-safety gsd-code-review code-review requesting-code-review receiving-code-review finishing-a-development-branch verification-before-completion test-driven-development gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-debug gsd-ui-phase gsd-ui-review gsd-secure-phase"
 fi
 
 tracked_list="$DEFAULT_TRACKED"
@@ -314,7 +314,7 @@ for raw in "${skills_to_record[@]}"; do
     mkdir -p "$(dirname "$loaded_file")" 2>/dev/null || true
     sb_guard_nofollow "$loaded_file"
     touch -- "$loaded_file"
-    if ! grep -qx "$skill" "$loaded_file" 2>/dev/null; then
+    if ! grep -Fqx -- "$skill" "$loaded_file" 2>/dev/null; then
       printf '%s\n' "$skill" >> "$loaded_file"
     fi
     continue
@@ -327,7 +327,7 @@ for raw in "${skills_to_record[@]}"; do
   # SEC-02: refuse to write through a symlink at STATE_FILE
   sb_guard_nofollow "$STATE_FILE"
   touch -- "$STATE_FILE"
-  if ! grep -qx "$skill" "$STATE_FILE" 2>/dev/null; then
+  if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >> "$STATE_FILE"
     recorded_any=true
   fi

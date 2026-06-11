@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Software Engineering Workflow — Silver Bullet Help</title>
-<meta name="description" content="The Silver Bullet software engineering workflow composition: intent routing, quality gates, GSD planning and execution, verification, code review, docs, CI, ship, and release.">
+<meta name="description" content="The Silver Bullet software engineering workflow composition: intent routing, quality gates, SB planning and execution, verification, code review, docs, CI, ship, and release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -135,7 +135,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Software Engineering Workflow</h1>
-    <p>The complete SB-composed application development cycle: route intent, clarify/spec when needed, plan and execute with GSD, verify, review, run fresh tests, update docs, ship, and release.</p>
+    <p>The complete SB-composed application development cycle: route intent, clarify/spec when needed, plan and execute with SB, verify, review, run fresh tests, update docs, ship, and release.</p>
   </div>
 </div>
 
@@ -172,7 +172,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/silver &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB, GSD, and plugin path.</div>
+        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/silver &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB workflow path.</div>
       </div>
 
       <h2 id="overview">How the Workflow Loop Works</h2>
@@ -187,7 +187,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Lost track of where you are?</strong> Type <code>/gsd:next</code> at any point. GSD reads the current state from <code>.planning/</code> and tells you exactly which step to do next.</div>
+        <div class="callout-body"><strong>Lost track of where you are?</strong> Ask <code>/silver</code> for current status and the next required step. SB reads <code>.planning/</code> and the active workflow tracker.</div>
       </div>
 
       <div class="divider"></div>
@@ -224,7 +224,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">2</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:new-project</span><span class="badge badge-gsd">GSD</span></div>
+          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-gsd">SB</span></div>
           <p class="step-desc">Kicks off with clarifying questions, ecosystem research, requirements scoping, and roadmap generation. This is where you define what you're building and how it's broken into phases.</p>
           <div class="step-output">→ Produces: .planning/PROJECT.md, .planning/REQUIREMENTS.md, .planning/ROADMAP.md</div>
         </div>
@@ -242,7 +242,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0891b2)">3</div>
         <div>
-          <div class="step-meta"><span class="step-title" id="discuss">/gsd:discuss-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title" id="discuss">/silver:context</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Captures implementation decisions, gray areas, and preferences for this specific phase before any planning begins. The host runtime asks targeted questions about this phase — not the whole project.</p>
           <div class="step-output">→ Produces: .planning/{phase}-CONTEXT.md</div>
         </div>
@@ -280,8 +280,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">5</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:plan-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">GSD researches the implementation space, then creates a detailed task-level plan. The quality gate report feeds in as hard requirements. After the plan is written, the runtime cross-references installed skills against the plan content to flag any skill gaps.</p>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">SB researches the implementation space, then creates a detailed task-level plan. The quality gate report feeds in as hard requirements. After the plan is written, the runtime cross-references installed skills against the plan content to flag any skill gaps.</p>
           <div class="step-output">→ Produces: .planning/{phase}-RESEARCH.md, .planning/{phase}-{N}-PLAN.md</div>
         </div>
       </div>
@@ -292,15 +292,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">6</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Wave-based parallel execution. GSD splits the plan into waves of independent tasks, dispatches each task as a separate agent in an isolated worktree, then runs a merge gate after each wave before the next begins. <strong>Before writing implementation code: invoke <code>tdd</code> (required) — red-green-refactor discipline per task.</strong> One atomic commit per task.</p>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Plan-driven execution. SB follows the plan in checkpointed or autonomous waves, records deviations, and preserves verification evidence. <strong>Before writing behavior-changing implementation code: invoke <code>tdd</code> when applicable.</strong></p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
       </div>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Never use <code>superpowers:subagent-driven-development</code> here.</strong> GSD's wave-based execution is the only valid execution mechanism. It tracks commits, enforces atomic changes, and feeds into the verification step.</div>
+        <div class="callout-body"><strong>Never bypass SB execution for project work.</strong> External execution helpers can operate outside SB enforcement. Use <code>silver:execute</code> or the active SB workflow so commits, reviews, and verification remain traceable.</div>
       </div>
 
       <!-- VERIFY -->
@@ -309,8 +309,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">7</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:verify-work</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/silver:forensics</code> or <code>/gsd:debug</code> depending on whether the failure is workflow/session-level or an active bug. If root cause is implementation, re-run execute/verify only. If root cause is design or plan, return to discussion/planning.</p>
+          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/silver:forensics</code> or <code>/silver:debug</code> depending on whether the failure is workflow/session-level or an active bug.</p>
           <div class="step-output">→ Produces: .planning/{phase}-VERIFICATION.md, .planning/{phase}-UAT.md</div>
         </div>
       </div>
@@ -321,16 +321,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
-          <div class="step-meta"><span class="step-title">/requesting-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Frames review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper discipline. This helper does not replace GSD's authoritative code-review artifact.</p>
+          <div class="step-meta"><span class="step-title">/silver:review-request</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Frames review scope, changed files, risks, and blockers before review begins.</p>
         </div>
       </div>
 
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:code-review</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Produces the authoritative <code>REVIEW.md</code> through GSD reviewer agents. Distinct from GSD's goal verification — this reviews the code itself, not whether it achieves the goal.</p>
+          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Produces the authoritative <code>REVIEW.md</code>. Distinct from goal verification — this reviews the code itself, not whether it achieves the goal.</p>
         </div>
       </div>
 
@@ -342,7 +342,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
-          <div class="step-meta"><span class="step-title">/receiving-code-review</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:review-triage</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Triages all feedback from Step 9. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 11–12).</p>
         </div>
       </div>
@@ -355,7 +355,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">11</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:plan-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Creates a plan to address the accepted review items. Same planning rigor as Step 5.</p>
         </div>
       </div>
@@ -363,7 +363,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">12</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:execute-phase</span><span class="badge badge-gsd">GSD</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implements the review-driven plan with atomic commits. Same execution model as Step 6.</p>
         </div>
       </div>
@@ -401,7 +401,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">15</div>
         <div>
-          <div class="step-meta"><span class="step-title">/documentation</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:ensure-docs</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Update or create project documentation according to the SB doc scheme: README, docs/PRD-Overview.md when applicable, docs/ARCHITECTURE.md, docs/TESTING.md, docs/internal/CICD.md when relevant, docs/doc-scheme.md/json, task doc checklist, docs/CHANGELOG.md, and monthly knowledge/learnings files. <strong>README must be updated before release can proceed.</strong> Also required: complete the session log file (path stored at <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>) — fill in Task, Approach, Files changed, Skills invoked, Active Intent Ledger, Agent Teams dispatched, Autonomous decisions, Outcome, Knowledge and learnings additions, and runtime/cost note when available. If the path file is missing, create <code>docs/sessions/&lt;today&gt;-manual.md</code> from the session log template.</p>
         </div>
       </div>
@@ -409,7 +409,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">16</div>
         <div>
-          <div class="step-meta"><span class="step-title">/finishing-a-development-branch</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:branch-finish</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Branch rebase, cleanup, and merge preparation. Ensures the branch is ready to ship: rebased on main, no merge conflicts, commits squashed if needed. <strong>Skipped automatically when working directly on <code>main</code>/<code>master</code>.</strong></p>
         </div>
       </div>
@@ -446,7 +446,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)" id="deploy-check">18</div>
         <div>
-          <div class="step-meta"><span class="step-title">/deploy-checklist</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/devops-quality-gates</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Pre-deployment verification gate. A structured checklist run before any deployment — confirms rollback plan, monitoring, and stakeholder sign-off are in place.</p>
         </div>
       </div>
@@ -459,7 +459,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">19</div>
         <div>
-          <div class="step-meta"><span class="step-title">/gsd:ship</span><span class="badge badge-gsd">GSD</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request from the verified, deployed work. The PR body is auto-generated with phase summaries and requirement coverage. Includes links to verification and UAT results.</p>
           <div class="step-output">→ Produces: pull request with phase summaries and requirement coverage</div>
         </div>
@@ -474,7 +474,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">20</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Runs the milestone-level release workflow when the work is ready to publish: release quality gates, UAT and milestone audits, security hard gate, documentation checks, cross-artifact review, <code>/verify-tests</code>, <code>gsd-ship</code>, <code>gsd:complete-milestone</code>, <code>/silver:create-release</code>, then the post-release items summary.</p>
+          <p class="step-desc">Runs the milestone-level release workflow when the work is ready to publish: release quality gates, UAT and milestone audits, security hard gate, documentation checks, cross-artifact review, <code>/verify-tests</code>, <code>silver:ship</code>, milestone archive, <code>/silver:create-release</code>, then the post-release items summary.</p>
           <div class="step-output">→ Produces: completed milestone, git tag, GitHub Release, structured release notes</div>
         </div>
       </div>

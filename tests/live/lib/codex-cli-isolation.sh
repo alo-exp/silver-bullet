@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
-# Isolated native Codex CLI setup for live tests.
+# Isolated native Codex CLI setup for live tests. The isolated registry keeps
+# Silver Bullet enabled and prunes dependency-plugin entries so live tests prove
+# SB can run without overlapping GSD/Superpowers/Anthropic plugins.
 
 set -euo pipefail
 
@@ -100,11 +102,6 @@ hook_state_blocks = [
 
 allowed_plugins = (
     "silver-bullet@alo-labs-codex",
-    "engineering@alo-labs-codex",
-    "design@alo-labs-codex",
-    "product-management@alo-labs-codex",
-    "gsd@get-shit-done-marketplace",
-    "superpowers@superpowers-marketplace",
 )
 enabled_plugins = []
 if registry_path.is_file():
@@ -135,14 +132,6 @@ config_parts.extend(
         "[marketplaces.alo-labs-codex]",
         'source_type = "local"',
         f'source = "{marketplace_root / "alo-labs-codex"}"',
-        "",
-        "[marketplaces.get-shit-done-marketplace]",
-        'source_type = "local"',
-        f'source = "{marketplace_root / "get-shit-done-marketplace"}"',
-        "",
-        "[marketplaces.superpowers-marketplace]",
-        'source_type = "local"',
-        f'source = "{marketplace_root / "superpowers-marketplace"}"',
         "",
         "[features]",
         "plugin_hooks = true",
@@ -208,13 +197,7 @@ sb_root = pathlib.Path(sys.argv[5])
 original_cache_root = original_home / "plugins" / "cache"
 allowed_plugins = {
     "silver-bullet@alo-labs-codex",
-    "engineering@alo-labs-codex",
-    "design@alo-labs-codex",
-    "product-management@alo-labs-codex",
-    "gsd@get-shit-done-marketplace",
-    "superpowers@superpowers-marketplace",
 }
-thin_manifest_only_plugins = {"engineering", "design", "product-management"}
 
 def version_sort_key(path: pathlib.Path):
     import re
@@ -227,14 +210,6 @@ def is_valid_version_dir(path: pathlib.Path) -> bool:
             manifest = json.loads(manifest_path.read_text())
         except Exception:
             return False
-
-        # These helper packages are thin Codex wrappers around upstream
-        # knowledge-work plugins. Some live environments have the package
-        # manifest installed before optional upstream skills are hydrated.
-        # Preserve the manifest surface so dependency preflights can verify the
-        # package registration instead of deleting the version dir.
-        if path.parent.name in thin_manifest_only_plugins:
-            return True
 
         for key in ("hooks", "skills", "commands"):
             rel_path = manifest.get(key)
@@ -369,9 +344,7 @@ cache_root = pathlib.Path(sys.argv[1])
 marketplaces_root = pathlib.Path(sys.argv[2])
 repo_sb_package_root = pathlib.Path(sys.argv[3])
 mapping = {
-    "alo-labs-codex": ("silver-bullet", "engineering", "design", "product-management"),
-    "get-shit-done-marketplace": ("gsd",),
-    "superpowers-marketplace": ("superpowers",),
+    "alo-labs-codex": ("silver-bullet",),
 }
 
 if marketplaces_root.exists():
@@ -556,9 +529,6 @@ PY
   export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="${SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT:-$SB_LIVE_COMMAND_VERSION_BASE}"
   export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="$(normalize_codex_path "$SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT")"
 
-  if [[ ! -e "${CODEX_HOME}/get-shit-done" && -e "${SB_LIVE_ORIGINAL_CODEX_HOME}/get-shit-done" ]]; then
-    ln -sfn "${SB_LIVE_ORIGINAL_CODEX_HOME}/get-shit-done" "${CODEX_HOME}/get-shit-done"
-  fi
 }
 
 teardown_codex_cli_isolation() {

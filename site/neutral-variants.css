@@ -71,8 +71,8 @@ html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .devops-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .layer-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .compare-card,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-mini,
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit,
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-mini,
 html[data-theme="dark"][data-neutral-variant="s3"] .workflow-tab:not(.active){
   background:linear-gradient(180deg,#0e1a28 0%,#091421 100%);
   border-color:#2c4058;
@@ -84,7 +84,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .devops-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .layer-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .compare-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit:hover{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
   border-color:#4d6884;
 }
 
@@ -93,9 +93,9 @@ html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .devops-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .layer-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .compare-card,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-panel,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-mini,
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-panel,
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit,
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-mini,
 html[data-theme="dark"][data-neutral-variant="s3"] .callout,
 html[data-theme="dark"][data-neutral-variant="s3"] .install-block,
 html[data-theme="dark"][data-neutral-variant="s3"] .code-block,
@@ -109,19 +109,19 @@ html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .devops-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .layer-card:hover,
 html[data-theme="dark"][data-neutral-variant="s3"] .compare-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit:hover{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
   border-color:transparent;
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card .feature-icon,
 html[data-theme="dark"][data-neutral-variant="s3"] .callout .callout-icon,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   margin-left:0;
   margin-right:0;
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card .feature-icon,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   width:auto;
   min-width:0;
   height:auto;
@@ -134,13 +134,13 @@ html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card .feature-icon svg,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon svg{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon svg{
   display:block;
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card.primary-plugin,
 html[data-theme="dark"][data-neutral-variant="s3"] .compare-card.winner,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-panel{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-panel{
   background:linear-gradient(160deg,#0f1c2a 0%,var(--mint-a07) 44%,rgba(40,55,74,.34) 100%);
   border-color:rgba(118,140,164,.42);
 }
@@ -167,7 +167,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] .workflow-table th{
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .workflow-table td,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-gsd-proof-row{
+html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-proof-row{
   border-bottom-color:#25384f;
 }
 
@@ -198,9 +198,9 @@ html[data-neutral-variant="s3"] .ecosystem-card,
 html[data-neutral-variant="s3"] .devops-card,
 html[data-neutral-variant="s3"] .layer-card,
 html[data-neutral-variant="s3"] .compare-card,
-html[data-neutral-variant="s3"] .sb-gsd-panel,
-html[data-neutral-variant="s3"] .sb-gsd-benefit,
-html[data-neutral-variant="s3"] .sb-gsd-mini,
+html[data-neutral-variant="s3"] .sb-lifecycle-panel,
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit,
+html[data-neutral-variant="s3"] .sb-lifecycle-mini,
 html[data-neutral-variant="s3"] .callout,
 html[data-neutral-variant="s3"] .install-block,
 html[data-neutral-variant="s3"] .code-block,
@@ -214,19 +214,19 @@ html[data-neutral-variant="s3"] .ecosystem-card:hover,
 html[data-neutral-variant="s3"] .devops-card:hover,
 html[data-neutral-variant="s3"] .layer-card:hover,
 html[data-neutral-variant="s3"] .compare-card:hover,
-html[data-neutral-variant="s3"] .sb-gsd-benefit:hover{
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
   border-color:transparent;
 }
 
 html[data-neutral-variant="s3"] .feature-card .feature-icon,
 html[data-neutral-variant="s3"] .callout .callout-icon,
-html[data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon{
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   margin-left:0;
   margin-right:0;
 }
 
 html[data-neutral-variant="s3"] .feature-card .feature-icon,
-html[data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon{
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   width:auto;
   min-width:0;
   height:auto;
@@ -239,7 +239,7 @@ html[data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon{
 }
 
 html[data-neutral-variant="s3"] .feature-card .feature-icon svg,
-html[data-neutral-variant="s3"] .sb-gsd-benefit .benefit-icon svg{
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon svg{
   display:block;
 }
 

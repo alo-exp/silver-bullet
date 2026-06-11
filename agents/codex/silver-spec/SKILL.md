@@ -69,38 +69,30 @@ Ask the PM/BA for the following in a single prompt. Mark required items clearly;
 
 If any URL is provided in A, B, or C, note it internally for artifact injection in Step 4.
 
-## Step 2: Invoke product-management:write-spec
+## Step 2: Build SB Spec Scaffold
 
-Invoke `product-management:write-spec` through the active runtime's SB-recognized skill invocation channel. This generates a formal PM spec scaffold that provides structure for the Socratic dialogue to fill in.
+Build the formal spec scaffold directly in SB. This step absorbs the useful
+Product Management `write-spec` behavior SB previously depended on: problem
+framing, audience/value capture, acceptance criteria structure, assumptions, and
+requirements traceability.
 
-If the skill is unavailable (invocation fails, times out, or the skill is not
-discoverable), first repair the missing dependency from its marketplace source,
-then retry the invocation before considering any degraded path.
+Read `templates/specs/SPEC.md.template` if present and use it as the canonical
+shape. If the template is missing, continue with this minimum scaffold in working
+notes so Step 7 can write the file:
 
-Dependency repair sequence:
+- Overview
+- Users and goals
+- User stories
+- UX or workflow flows
+- Acceptance criteria
+- Requirements
+- Assumptions
+- Open questions
+- Out of scope
+- Source artifacts
 
-1. Tell the user the dependency skill is missing and that SB will install or
-   repair the Product Management plugin before continuing.
-2. Use the host runtime's plugin installation mechanism when available. For this
-   dependency, the canonical marketplace source is:
-   `/plugin install anthropics/knowledge-work-plugins/tree/main/product-management`
-3. In Codex installs, also accept the SB-managed shared marketplace wrapper
-   `product-management@alo-labs-codex`; if the wrapper/cache is stale, repair by
-   rerunning the SB Codex public installer/update path, then retry.
-4. Re-run discovery for `product-management:write-spec` and retry the skill
-   invocation.
-
-Only if the marketplace-backed install/repair attempt fails, is unavailable in
-the current host, or the user explicitly declines installation may SB continue
-with the built-in scaffold path. Record this line in the working notes:
-
-`[SB-FALLBACK: product-management:write-spec unavailable; using silver:spec built-in SPEC.md scaffold]`
-
-The built-in scaffold path MUST still produce `.planning/SPEC.md` and
-`.planning/REQUIREMENTS.md`. Use `templates/specs/SPEC.md.template` as the
-canonical structure, ask the same Socratic questions below, and explicitly add
-the fallback note to the generated spec frontmatter or assumptions section. Do
-not leave `.planning/SPEC.md` missing after an attempted dependency repair.
+This is not a fallback path. Do not install or invoke Product Management plugins
+for core SB spec elicitation.
 
 ## Step 3: Socratic Elicitation Dialogue
 
@@ -162,7 +154,7 @@ For each URL provided:
 1. Display the URL and describe what will be extracted.
 2. Attempt extraction:
    - **Google Doc or PPT URL:** attempt text extraction via WebFetch tool. If accessible, show a 3-bullet summary of extracted content. If inaccessible, record the URL in `source-artifacts:` frontmatter for Phase 13 MCP ingestion.
-   - **Figma URL:** record the URL in `figma-url:` frontmatter. Invoke `design:user-research` through the active runtime's SB-recognized skill invocation channel for design context. If the skill is unavailable, STOP and notify the user. Offer install-and-retry first; only continue without design context if the user explicitly approves the degraded path.
+   - **Figma URL:** record the URL in `figma-url:` frontmatter. Extract visible intent manually from accessible metadata or user-provided context. If inaccessible, keep the URL as a source artifact and ask for the minimum design context needed to proceed.
 3. Ask: "A. Incorporate this content into the spec  B. Skip"
 
 If user selects A: incorporate the relevant content into the appropriate sections during Step 7.
@@ -186,13 +178,22 @@ Update the `Status:` field of each assumption block accordingly:
 
 If no assumptions were surfaced, note this and ask: "Before we write the spec, are there any open questions or unknowns you want to flag?"
 
-## Step 6: Invoke design:design-critique (conditional)
+## Step 6: SB Design Context Check (conditional)
 
 Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
 
-Invoke `design:design-critique` through the active runtime's SB-recognized skill invocation channel. If the skill is unavailable,
-STOP and notify the user. Offer install-and-retry first; only continue without
-design critique if the user explicitly approves the degraded path.
+Perform the design context check directly in SB. This absorbs the design critique
+behavior SB requires for spec quality without requiring the external Design
+plugin.
+
+Capture concise findings for:
+
+- primary user flow and entry/exit states
+- information architecture or component implications
+- accessibility or copy risks that affect requirements
+- open design questions that must be resolved before implementation
+
+Add any design-affecting assumptions to the assumption list before Step 7.
 
 ## Step 7: Write .planning/SPEC.md
 

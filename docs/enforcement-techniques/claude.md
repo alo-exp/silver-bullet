@@ -48,7 +48,7 @@ strongest. The table below shows Silver Bullet's implementation status for each 
 | 6 | Separate instruction file (CLAUDE.local.md) | N/A | `silver-bullet.md` achieves the same separation from project-specific CLAUDE.md |
 | 7 | Anti-rationalization language | Implemented | Explicit "Anti-Skip" blocks in `silver-bullet.md` and workflow files name the violation pattern |
 | 8 | compactPrompt override | Implemented | `.silver-bullet.json` `compactPrompt` key tells the compaction LLM to preserve rules verbatim |
-| 9 | Plan Mode enforcement | Deferred | GSD planning phases (via `gsd-*` skill markers) compensate |
+| 9 | Plan Mode enforcement | Implemented | SB planning markers (`silver-context`, `silver-plan`) compensate |
 | 10 | Stop hook (completion gate) | Implemented | `hooks/stop-check.sh` — blocks final response if required skills missing |
 | 11 | UserPromptSubmit (context re-injection) | Implemented | `hooks/prompt-reminder.sh` — injects compact reminder before every user prompt |
 
@@ -71,7 +71,7 @@ before reaching Claude's execution.
 │  ┌─────────────────────────────────────────────────────────────┐  │
 │  │  [SessionStart]  session-start                              │  │
 │  │  Resets branch state on branch change.                      │  │
-│  │  Injects "superpowers" context for autonomous mode.         │  │
+│  │  Injects SB lifecycle context for autonomous mode.           │  │
 │  │                                                             │  │
 │  │  ┌───────────────────────────────────────────────────────┐  │  │
 │  │  │  silver-bullet.md  (documentation layer)              │  │  │
@@ -133,7 +133,7 @@ before reaching Claude's execution.
 **What it does:** Fires at session start and after `/compact` or `/clear`. Reads the
 current git branch and compares it to the branch stored in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`.
 If the branch has changed, it resets the state file so skills from the previous branch
-do not carry over. Also injects "superpowers" context for autonomous mode sessions.
+do not carry over. Also injects SB lifecycle context for autonomous mode sessions.
 
 **What it blocks:** Does not block — informational/setup only.
 
@@ -161,9 +161,9 @@ skills are recorded in the state file before allowing source file edits.
 | Stage | Condition | Action |
 |-------|-----------|--------|
 | A | Planning skills missing | HARD STOP — deny/block |
-| B | Planning done, no `gsd-code-review` | Allow implementation edits; final delivery remains gated |
-| — | Phase skip detected (finalization before gsd-code-review) | Warn but allow fixes |
-| C | `gsd-code-review` done, finalization not yet started | Allow with reminder |
+| B | Planning done, no `silver-review` | Allow implementation edits; final delivery remains gated |
+| — | Phase skip detected (finalization before `silver-review`) | Warn but allow fixes |
+| C | `silver-review` done, finalization not yet started | Allow with reminder |
 | D | All phases complete | Allow |
 
 **Additional protections in this hook (sub-sections):**
@@ -232,11 +232,11 @@ only (`required_planning`). Blocked with "COMMIT BLOCKED".
 **§9 pre-release gate:** `gh release create` additionally requires
 `quality-gate-stage-1` through `quality-gate-stage-4` in the state file.
 
-**Ordering enforcement:** Checks that `requesting-code-review` frames review before
-`gsd-code-review`, and that `receiving-code-review` runs after review output exists.
+**Ordering enforcement:** Checks that `silver-review-request` frames review before
+`silver-review`, and that `silver-review-triage` runs after review output exists.
 Out-of-order invocation is flagged.
 
-**Main branch handling:** On `main`/`master`, `finishing-a-development-branch` is
+**Main branch handling:** On `main`/`master`, `silver-branch-finish` is
 removed from the required list.
 
 **DevOps workflow:** `silver-blast-radius` and `devops-quality-gates` replace `silver-quality-gates`
@@ -331,7 +331,7 @@ block. Runs async so it never delays Claude's next action.
 
 **Output format:**
 ```json
-{"hookSpecificOutput":{"message":"Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/3 | FINALIZATION 0/4 | Next: /requesting-code-review"}}
+{"hookSpecificOutput":{"message":"Silver Bullet: 3 steps | PLANNING 1/1 | REVIEW 1/3 | FINALIZATION 0/4 | Next: /silver:review-request"}}
 ```
 
 **Config keys read:** `skills.required_deploy`, `state.state_file`
@@ -407,7 +407,7 @@ done.
 
 **Output format (allow):** Silent exit 0 (no output).
 
-**Main branch handling:** `finishing-a-development-branch` is removed from the required
+**Main branch handling:** `silver-branch-finish` is removed from the required
 list when on `main` or `master` branch (same rule as completion-audit.sh).
 
 **Config keys read:** `skills.required_deploy`, `project.active_workflow`,
@@ -603,7 +603,7 @@ techniques that are insufficient on their own:
 | `project.src_pattern` | string | `/src/` | Path prefix that triggers stage enforcement in `dev-cycle-check.sh` |
 | `project.src_exclude_pattern` | string | `__tests__\|\.test\.` | Regex: files matching this skip enforcement (test files) |
 | `project.active_workflow` | string | `full-dev-cycle` | Sets skill lists for intermediate and final delivery checks |
-| `skills.required_planning` | string[] | `["silver-quality-gates", "gsd-discuss-phase", "gsd-plan-phase"]` | Skills required before any source edit (Stage A gate) |
+| `skills.required_planning` | string[] | `["silver-quality-gates", "silver-context", "silver-plan"]` | Skills required before any source edit (Stage A gate) |
 | `skills.required_deploy` | string[] | (12-skill default list) | Skills required before PR/deploy/release commands and before Stop hook allows completion |
 | `state.state_file` | string | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Path to the skill recording state file |
 | `state.trivial_file` | string | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Path to the trivial bypass marker file |
@@ -615,20 +615,20 @@ One skill name per line, appended by `record-skill.sh` after each Skill invocati
 
 ```
 silver-quality-gates
-requesting-code-review
-gsd-code-review
-receiving-code-review
-gsd-discuss-phase
-gsd-plan-phase
-gsd-execute-phase
-gsd-verify-work
-gsd-ship
-gsd-secure-phase
-gsd-validate-phase
-finishing-a-development-branch
+silver-review-request
+silver-review
+silver-review-triage
+silver-context
+silver-plan
+silver-execute
+silver-verify
+silver-ship
+silver-secure
+silver-validate
+silver-branch-finish
 silver-create-release
-verification-before-completion
-test-driven-development
+silver-completion-audit
+silver-tdd
 verify-tests
 ```
 
@@ -643,20 +643,20 @@ verify-tests
 
 ```
 silver-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
-gsd-execute-phase
-gsd-verify-work
-gsd-ship
-requesting-code-review
-gsd-code-review
-receiving-code-review
-finishing-a-development-branch
+silver-context
+silver-plan
+silver-execute
+silver-verify
+silver-ship
+silver-review-request
+silver-review
+silver-review-triage
+silver-branch-finish
 silver-create-release
-gsd-secure-phase
-gsd-validate-phase
-verification-before-completion
-test-driven-development
+silver-secure
+silver-validate
+silver-completion-audit
+silver-tdd
 verify-tests
 ```
 
@@ -665,20 +665,20 @@ verify-tests
 ```
 silver-blast-radius
 devops-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
-gsd-execute-phase
-gsd-verify-work
-gsd-ship
-requesting-code-review
-gsd-code-review
-receiving-code-review
-finishing-a-development-branch
+silver-context
+silver-plan
+silver-execute
+silver-verify
+silver-ship
+silver-review-request
+silver-review
+silver-review-triage
+silver-branch-finish
 silver-create-release
-gsd-secure-phase
-gsd-validate-phase
-verification-before-completion
-test-driven-development
+silver-secure
+silver-validate
+silver-completion-audit
+silver-tdd
 verify-tests
 ```
 
@@ -688,13 +688,13 @@ The following skills are always appended to the `required_deploy` list and canno
 removed via config:
 
 ```
-finishing-a-development-branch
-verification-before-completion
-test-driven-development
+silver-branch-finish
+silver-completion-audit
+silver-tdd
 verify-tests
 ```
 
-Exception: `finishing-a-development-branch` is dropped when on `main` or `master` branch.
+Exception: `silver-branch-finish` is dropped when on `main` or `master` branch.
 
 ---
 

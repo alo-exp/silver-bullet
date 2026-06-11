@@ -8,13 +8,13 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 |---|-------|-----------|----------|-----------------|
 | 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Claude `Skill` tool calls and Codex `silver-bullet invoke-skill` receipts | Skills invoked through a supported channel but not tracked |
 | 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, MultiEdit, Bash | Code changes before planning is complete. Uses active `.planning/workflows/<id>.md` admission control first, then legacy skill markers when no composed workflow is active. |
-| 3 | **Planning File Guard** | `planning-file-guard.sh` (PreToolUse) | Edit, Write, MultiEdit | Direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of owning GSD skill |
+| 3 | **Planning File Guard** | `planning-file-guard.sh` (PreToolUse) | Edit, Write, MultiEdit | Direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of owning SB workflow |
 | 4 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. Uses `SB_WORKFLOW_ID`-matched `.planning/workflows/<id>.md` first, then legacy fallback when no composed workflow is active. |
 | 5 | **CI Status Check** | `ci-status-check.sh` (PostToolUse) | git commit/push | Committing while CI is red |
 | 6 | **Compliance Score** | `compliance-status.sh` (PostToolUse) | Every tool call | Silent progress — shows path progress (FLOW N/M) or skill count (legacy) |
-| 7 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | `gsd-tools phases clear` | Data loss on milestone clear |
+| 7 | **Phase Archive** | `phase-archive.sh` (PreToolUse) | phase/archive commands | Data loss on milestone clear |
 | 8 | **Stop Hook** | `stop-check.sh` (Stop/SubagentStop) | Task-complete declaration | Declaring done before required planning skills are in state |
-| 9 | **Prompt Recorder + Reminder** | `record-requested-skill.sh` + `prompt-reminder.sh` (UserPromptSubmit) | Every user message | Requested SB/GSD routes are recorded before the next turn; missing skills are re-injected |
+| 9 | **Prompt Recorder + Reminder** | `record-requested-skill.sh` + `prompt-reminder.sh` (UserPromptSubmit) | Every user message | Requested SB routes and legacy aliases are recorded before the next turn; missing skills are re-injected |
 | 10 | **Forbidden Skill Gate** | `forbidden-skill-check.sh` (PreToolUse/Skill) | Every Claude Skill invocation | Deprecated/forbidden skills (`executing-plans`, `subagent-driven-development`) |
 | 11 | **ROADMAP Freshness Gate** | `roadmap-freshness.sh` (PreToolUse/Bash) | git commit | Committing SUMMARY.md without ticking the corresponding ROADMAP.md checkbox |
 | 12 | **Redundant Instructions** | `silver-bullet.md` + optional project instruction file (`CLAUDE.md` / `AGENTS.md`, if present) | Every session | Same rules enforced across multiple surfaces for defense-in-depth |
@@ -25,10 +25,10 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 
 | Stage | Requires | Blocks Until |
 |-------|----------|-------------|
-| A — Planning Floor | `required_planning` skills in state | SB/GSD pre-execution gates complete |
+| A — Planning Floor | `required_planning` skills in state | SB pre-execution gates complete |
 | B — Implementation Window | Planning floor complete | Source edits are allowed; review/verify/ship remain final-delivery gates |
-| C — Review Recorded | `gsd-code-review` in state | Source edits still allowed; finalization remains gated |
-| D — Finalization | All `required_deploy` skills plus expected GSD artifacts | Final delivery commands allowed |
+| C — Review Recorded | `silver-review` in state | Source edits still allowed; finalization remains gated |
+| D — Finalization | All `required_deploy` skills plus expected SB artifacts | Final delivery commands allowed |
 
 ## Composed-Workflow-First Enforcement Pattern
 
@@ -51,7 +51,7 @@ Detection: hooks check for `.planning/workflows/` existence and active `.md` fil
 | `all_tracked` | Discovery — hooks record invocation | Observability only |
 | `required_deploy` | Hard gate — must be in state before shipping | `completion-audit.sh` blocks commit/push/release |
 
-Current `required_deploy` (canonical source: `templates/silver-bullet.config.json.default`) includes SB quality gates, core GSD lifecycle markers (`gsd-discuss-phase`, `gsd-plan-phase`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship`, review/security/validation), review framing, finalization, release creation, verification-before-completion, TDD where applicable, and `verify-tests`.
+Current `required_deploy` (canonical source: `templates/silver-bullet.config.json.default`) includes SB quality gates, SB lifecycle markers (`silver-context`, `silver-plan`, `silver-execute`, `silver-verify`, `silver-ship`, review/security/validation), review framing, finalization, release creation, completion audit, TDD where applicable, and `verify-tests`. Legacy GSD/Superpowers marker names are accepted only as compatibility aliases during migration.
 
 Conditional skills (NOT in `required_deploy`): `accessibility-review` (UI only), `incident-response` (DevOps only)
 
@@ -66,7 +66,7 @@ Before any release, 4 stages must pass in the current session:
 | 3 | Public-Facing Content Refresh | All user surfaces current |
 | 4 | Security Audit (SENTINEL) | Two consecutive clean passes |
 
-Each stage requires explicit `superpowers:verification-before-completion` invocation because the release gate document requires it. The quality-gate file is cleared on session start — no stale markers.
+Each stage requires explicit SB completion evidence through `silver:completion-audit` or `silver:verify`, as appropriate for the stage. The quality-gate file is cleared on session start — no stale markers.
 
 For the Silver Bullet plugin repo, the release live matrix wrapper (`scripts/run-release-live-matrix.sh`) and the todo-app live E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) are additional mandatory release prerequisites. Downstream projects use the generic release profile unless their `.silver-bullet.json` opts into plugin-runtime release matrices. The stage markers and the mandatory post-gate full-suite rerun marker live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`. The full-suite rerun itself runs through `verify-tests`, which also writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state` so final delivery can detect stale source changes.
 
