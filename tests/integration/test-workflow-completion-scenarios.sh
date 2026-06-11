@@ -45,7 +45,7 @@ integration_setup
 write_default_config
 
 # Step 1: With the current planning floor, commit allowed
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$TMPSTATE"
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.1: commit allowed with planning only" "$out"
 
@@ -81,38 +81,38 @@ assert_allowed "S3.2: release allowed with all skills" "$out"
 
 integration_teardown
 
-# Scenario 4: Main branch exemption for finishing-a-development-branch
-echo "--- Scenario 4: Main branch finishing exemption ---"
+# Scenario 4: Main branch exemption for silver-branch-finish
+echo "--- Scenario 4: Main branch branch-finish exemption ---"
 integration_setup
 write_default_config
 
-# All skills except finishing-a-development-branch
+# All skills except silver-branch-finish
 write_all_skills
-# Remove finishing-a-development-branch from state
-grep -v '^finishing-a-development-branch$' "$TMPSTATE" > "${TMPSTATE}.tmp" && mv "${TMPSTATE}.tmp" "$TMPSTATE"
+# Remove silver-branch-finish from state
+grep -v '^silver-branch-finish$' "$TMPSTATE" > "${TMPSTATE}.tmp" && mv "${TMPSTATE}.tmp" "$TMPSTATE"
 
 # Seed discovery with a temporary invocable finishing skill so the hook
 # enforces the missing-state case on feature branches, but still exempts it
 # on main/master when the branch filter drops the requirement.
 INSTALLED_SKILL_ROOT="${TMPDIR_TEST}/installed-skills"
-mkdir -p "$INSTALLED_SKILL_ROOT/skills/finishing-a-development-branch"
-cat > "$INSTALLED_SKILL_ROOT/skills/finishing-a-development-branch/SKILL.md" <<'EOF'
+mkdir -p "$INSTALLED_SKILL_ROOT/skills/silver-branch-finish"
+cat > "$INSTALLED_SKILL_ROOT/skills/silver-branch-finish/SKILL.md" <<'EOF'
 ---
-name: finishing-a-development-branch
+name: silver-branch-finish
 ---
 EOF
 export SILVER_BULLET_SKILL_ROOTS="$INSTALLED_SKILL_ROOT"
 
-# On feature branch: blocked (finishing-a-development-branch missing)
+# On feature branch: blocked (silver-branch-finish missing)
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
-assert_blocked "S4.1: PR blocked on feature branch without finishing" "$out"
+assert_blocked "S4.1: PR blocked on feature branch without branch finish" "$out"
 
 # Switch to main branch
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 
-# On main: allowed (finishing-a-development-branch not required on main)
+# On main: allowed (silver-branch-finish not required on main)
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'hotfix'")
-assert_allowed "S4.2: PR allowed on main without finishing" "$out"
+assert_allowed "S4.2: PR allowed on main without branch finish" "$out"
 
 unset SILVER_BULLET_SKILL_ROOTS
 
@@ -123,23 +123,23 @@ echo "--- Scenario 5: Skill ordering enforcement ---"
 integration_setup
 write_default_config
 
-# Write all skills but with gsd-code-review before requesting-code-review.
+# Write all skills but with silver-review before silver-review-request.
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
-gsd-execute-phase
-gsd-verify-work
-gsd-ship
-gsd-secure-phase
-gsd-validate-phase
-gsd-code-review
-requesting-code-review
-receiving-code-review
-finishing-a-development-branch
+silver-context
+silver-plan
+silver-execute
+silver-verify
+silver-ship
+silver-secure
+silver-validate
+silver-review
+silver-review-request
+silver-review-triage
+silver-branch-finish
 silver-create-release
-verification-before-completion
-test-driven-development
+silver-completion-audit
+silver-tdd
 verify-tests
 EOF
 date +%s > "$VERIFY_TESTS_FILE"

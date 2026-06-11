@@ -376,15 +376,6 @@ PY
   seed_kay_codex_runtime_config
   setup_kay_shell_profile_bridge
 
-  # Silver:init still probes the GSD home using the historical ~/.codex path.
-  # The isolated agent keeps the real install under the Kay root, so mirror the
-  # entrypoint there to make the Kay live harness look like a native install.
-  if [[ ! -e "${KAY_HOME}/.codex/get-shit-done" ]]; then
-    if [[ -e "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" ]]; then
-      ln -sfn "${SB_LIVE_ORIGINAL_HOME}/.codex/get-shit-done" "${KAY_HOME}/.codex/get-shit-done"
-    fi
-  fi
-
   seed_kay_codex_dependency_cache
 }
 
@@ -414,8 +405,6 @@ kay_register_silver_bullet_project_hooks() {
 }
 
 seed_kay_codex_dependency_cache() {
-  local isolated_cache="${KAY_HOME}/.codex/plugins/cache"
-  local alias_src alias_target alias_parent
   local registry_file="${KAY_HOME}/.codex/plugins/installed_plugins.json"
 
   if [[ -f "$registry_file" ]]; then
@@ -478,21 +467,6 @@ if changed:
 PY
   fi
 
-  # The live Kay agent still probes a few legacy alias layouts directly in
-  # the cache tree. Seed the expected aliases so SB init can discover the
-  # upstream helpers without requiring a host-side re-install.
-  local alias_specs=(
-    "obra/superpowers:../superpowers-marketplace/superpowers"
-    "anthropics/knowledge-work-plugins:../alo-labs-codex"
-  )
-  for spec in "${alias_specs[@]}"; do
-    alias_src="${spec%%:*}"
-    alias_target="${spec#*:}"
-    alias_parent="${isolated_cache}/$(dirname "$alias_src")"
-    mkdir -p "$alias_parent"
-    rm -rf "${isolated_cache}/${alias_src}"
-    ln -sfn "$alias_target" "${isolated_cache}/${alias_src}"
-  done
 }
 
 teardown_kay_codex_isolation() {

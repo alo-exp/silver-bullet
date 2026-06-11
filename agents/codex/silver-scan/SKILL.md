@@ -9,7 +9,7 @@ version: 0.1.0
 
 Use this skill when you want to review completed work and surface loose ends that were mentioned in prior sessions but never filed or recorded. This is the retrospective catch-up workflow, not a codebase-orientation workflow.
 
-Do not use `/silver:scan` for brownfield orientation or structure discovery. For that, use `gsd-scan` or `gsd-map-codebase`.
+Do not use `/silver:scan` for brownfield orientation or structure discovery. For that, use `/silver:context` or route through `/silver` so SB can compose the appropriate orientation flow.
 
 ## What it does
 

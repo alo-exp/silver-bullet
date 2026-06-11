@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Core Concepts — Silver Bullet Help</title>
-<meta name="description" content="Understand Silver Bullet's core concepts: skills, hooks, GSD, Superpowers, quality gates, enforcement layers, and session modes.">
+<meta name="description" content="Understand Silver Bullet's core concepts: skills, hooks, absorbed lifecycle dependencies, quality gates, enforcement layers, and session modes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -141,7 +141,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Core Concepts</h1>
-    <p>The mental models that make Silver Bullet understandable: APO routing, skills, hooks, quality gates, GSD lifecycle execution, and cross-plugin orchestration.</p>
+    <p>The mental models that make Silver Bullet understandable: APO routing, SB-owned lifecycle skills, hooks, quality gates, optional extension plugins, and enforced delivery evidence.</p>
   </div>
 </div>
 
@@ -152,8 +152,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul class="sidebar-nav">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#hooks">Hooks</a></li>
-        <li><a href="#gsd">GSD — Lifecycle Engine</a></li>
-        <li><a href="#superpowers">Superpowers</a></li>
+        <li><a href="#absorbed-boundary">Absorbed Dependency Boundary</a></li>
         <li><a href="#ownership">Ownership Model</a></li>
         <li><a href="#quality-gates">Quality Gates</a></li>
         <li><a href="#enforcement">Enforcement Layers</a></li>
@@ -195,16 +194,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>How Skills Are Invoked</h3>
       <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/silver:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
       <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
-<span class="cmd">/gsd:discuss-phase</span>       <span class="comment"># invokes GSD's discuss-phase command</span>
-<span class="cmd">/requesting-code-review</span>  <span class="comment"># frames review; may dispatch helper reviewer</span>
+<span class="cmd">/silver:context</span>        <span class="comment"># captures phase context and assumptions</span>
+<span class="cmd">/silver:review-request</span> <span class="comment"># frames review scope and blockers</span>
 <span class="cmd">/silver</span> quality review   <span class="comment"># routes to the right skill automatically</span></div>
 
       <h3>The /silver Router</h3>
-      <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB, GSD, and plugin workflow path for the work at hand. GSD has its own <code>/gsd:do</code> router; Silver Bullet's added value is broader dynamic workflow composition plus enforcement around GSD-backed execution.</p>
+      <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB workflow path for the work at hand. Optional external plugins are used only when they add specialized capability and the active workflow selects them.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="route"></i></span>
-        <div class="callout-body"><strong>SB-first authority.</strong> In an SB-activated project, the agent waits for SB routing before invoking Superpowers or any other helper skill. When a workflow step completes, control returns to SB so it can select the next step until the goal is done or user feedback is needed.</div>
+        <div class="callout-body"><strong>SB-first authority.</strong> In an SB-activated project, the agent waits for SB routing before invoking external helper skills. When a workflow step completes, control returns to SB so it can select the next step until the goal is done or user feedback is needed.</div>
       </div>
 
       <div class="callout callout-warn">
@@ -224,7 +223,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul>
         <li><strong>Skill recording</strong> — records actual supported skill invocation receipts; implicit coverage never counts.</li>
         <li><strong>Workflow order</strong> — blocks plan/execute/ship movement when required upstream gates are missing.</li>
-        <li><strong>Planning file ownership</strong> — blocks direct edits to GSD-managed artifacts and forces the owning GSD workflow to make lifecycle changes.</li>
+        <li><strong>Planning file ownership</strong> — blocks direct edits to SB-managed lifecycle artifacts and forces the owning SB workflow to make lifecycle changes.</li>
         <li><strong>Completion and delivery gates</strong> — blocks final delivery commands until the required planning, review, verification, test, CI, and release gates are complete.</li>
         <li><strong>CI freshness</strong> — warns or blocks based on operation type so broken builds do not reach PR/deploy/release steps.</li>
         <li><strong>Prompt reminders</strong> — re-inject missing-step state before user prompts so context compaction cannot erase the workflow contract.</li>
@@ -236,69 +235,65 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3 id="trivial-changes">Trivial Changes</h3>
-      <p>Not every edit needs a full workflow. For trivial edits and bounded medium changes, use <code>/silver:fast</code>. It routes Tier 1 work to <code>gsd:fast</code>, Tier 2 work to <code>gsd:quick</code> with flags, and escalates anything larger into the full Silver Bullet workflow instead of relying on legacy marker files.</p>
+      <p>Not every edit needs a full workflow. For trivial edits and bounded medium changes, use <code>/silver:fast</code>. It keeps Tier 1 and Tier 2 work lightweight, then escalates anything larger into the full Silver Bullet workflow instead of relying on legacy marker files.</p>
 
       <div class="divider"></div>
 
-      <h2 id="gsd">GSD — The Lifecycle Engine</h2>
-      <p><strong>GSD (Get Shit Done)</strong> is the planning and execution engine inside Silver Bullet. SB composes the surrounding workflow; GSD owns requirements, roadmap, per-phase planning, execution, verification, and phase-level ship. It manages the complete lifecycle of a development task — from requirements through shipment — using a structured file-based workflow in the <code>.planning/</code> directory.</p>
+      <h2 id="absorbed-boundary">Absorbed Dependency Boundary</h2>
+      <p>Silver Bullet has absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. SB now owns requirements, roadmap, per-phase context, planning, execution, verification, review, ship, and release lifecycle artifacts in <code>.planning/</code>.</p>
 
-      <h3>What GSD Manages</h3>
+      <h3>What SB Manages</h3>
       <ul>
         <li><code>.planning/PROJECT.md</code> — Project definition and goals</li>
         <li><code>.planning/REQUIREMENTS.md</code> — Authoritative requirements list (single source of truth)</li>
         <li><code>.planning/ROADMAP.md</code> — Phased implementation plan</li>
-        <li><code>.planning/{phase}-CONTEXT.md</code> — Decisions captured in Discuss step</li>
+        <li><code>.planning/{phase}-CONTEXT.md</code> — Decisions captured in SB context step</li>
         <li><code>.planning/{phase}-PLAN.md</code> — Detailed task-level implementation plan</li>
         <li><code>.planning/{phase}-VERIFICATION.md</code> — Goal-backward verification results</li>
       </ul>
 
-      <h3>GSD Commands</h3>
-      <p>GSD is invoked via slash commands that the host coding agent resolves to GSD's installed workflows:</p>
-      <div class="code-block"><span class="cmd">/gsd:new-project</span>       <span class="comment"># Initialize project with requirements + roadmap</span>
-<span class="cmd">/gsd:discuss-phase</span>    <span class="comment"># Capture decisions for the current phase</span>
-<span class="cmd">/gsd:plan-phase</span>       <span class="comment"># Research + create task-level plan</span>
-<span class="cmd">/gsd:execute-phase</span>    <span class="comment"># Wave-based parallel execution</span>
-<span class="cmd">/gsd:verify-work</span>      <span class="comment"># Goal-backward verification</span>
-<span class="cmd">/gsd:ship</span>             <span class="comment"># Create PR with phase summaries</span>
-<span class="cmd">/gsd:next</span>             <span class="comment"># "Where am I?" — advance to next step</span>
-<span class="cmd">/gsd:debug</span>            <span class="comment"># Systematic debugging for any encountered bug</span></div>
+      <h3>SB Lifecycle Commands</h3>
+      <p>SB-owned lifecycle commands are invoked through the host's supported skill or command channel:</p>
+      <div class="code-block"><span class="cmd">/silver:context</span>       <span class="comment"># Capture phase context and assumptions</span>
+<span class="cmd">/silver:plan</span>          <span class="comment"># Create task-level plan</span>
+<span class="cmd">/silver:execute</span>       <span class="comment"># Execute the active plan</span>
+<span class="cmd">/silver:verify</span>        <span class="comment"># Goal-backward verification</span>
+<span class="cmd">/silver:review</span>        <span class="comment"># Authoritative SB review artifact</span>
+<span class="cmd">/silver:ship</span>          <span class="comment"># Phase-level ship readiness</span>
+<span class="cmd">/silver:debug</span>         <span class="comment"># Systematic debugging for active bugs</span></div>
 
-      <div class="divider"></div>
+      <p>Legacy GSD and Superpowers markers are accepted for migration and state normalization only. Ordinary lifecycle requests route to SB-owned skills by default.</p>
 
-      <h2 id="superpowers">Superpowers Helpers</h2>
-      <p><strong>Superpowers</strong> is used by Silver Bullet only at explicit helper boundaries selected by the active workflow. Agents must not invoke Superpowers first and then let SB catch up. GSD remains the lifecycle authority for planning, execution, verification, code-review artifacts, and shipping. SB may call Superpowers-backed helpers for TDD discipline, review framing/triage, verification-before-completion, and branch finishing.</p>
-
-      <h3>Key Superpowers-backed Helpers Used in Silver Bullet</h3>
+      <h3>Absorbed Superpowers-style Discipline</h3>
       <ul>
-        <li><strong><code>tdd</code></strong> — SB wrapper that delegates to Superpowers TDD only before behavior-changing execution</li>
-        <li><strong><code>/requesting-code-review</code></strong> — Frames review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper. It does not replace <code>/gsd:code-review</code>.</li>
-        <li><strong><code>/receiving-code-review</code></strong> — Triage all feedback: accept or reject each item with reasoning before fixing</li>
-        <li><strong><code>/verification-before-completion</code></strong> — Final claim verification helper used by SB release gates</li>
-        <li><strong><code>/finishing-a-development-branch</code></strong> — Branch/PR finishing helper used only at the selected ship boundary</li>
+        <li><strong><code>tdd</code> / <code>silver-tdd</code></strong> — SB-owned red/green/refactor policy before behavior-changing implementation</li>
+        <li><strong><code>/silver:review-request</code></strong> — Frames review scope, files, risks, and blockers</li>
+        <li><strong><code>/silver:review-triage</code></strong> — Triage all feedback with accept/reject rationale before fixing</li>
+        <li><strong><code>/silver:completion-audit</code></strong> — Completion-claim verification gate</li>
+        <li><strong><code>/silver:branch-finish</code></strong> — Branch/PR finishing helper used only at the selected ship boundary</li>
       </ul>
 
       <div class="divider"></div>
 
-      <h2 id="ownership">SB / GSD / Helper Ownership Model</h2>
-      <p>Silver Bullet enforces a strict ownership split to prevent duplicate planning, duplicate review artifacts, and execution outside GSD:</p>
+      <h2 id="ownership">SB / Optional Plugin Ownership Model</h2>
+      <p>Silver Bullet enforces a strict ownership split to prevent duplicate planning, duplicate review artifacts, and execution outside the SB lifecycle:</p>
 
       <table class="ownership-table">
         <thead>
           <tr><th>Concern</th><th>Owner</th><th>Rule</th></tr>
         </thead>
         <tbody>
-          <tr><td>Requirements</td><td><span class="owner-gsd">GSD</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth. Superpowers must not maintain a separate requirements list.</td></tr>
-          <tr><td>Planning</td><td><span class="owner-gsd">GSD</span></td><td>Use <code>/gsd:plan-phase</code> for all plans. SB may run optional helper steps before planning, but they never replace PLAN.md.</td></tr>
-          <tr><td>Execution</td><td><span class="owner-gsd">GSD</span></td><td>Always use <code>/gsd:execute-phase</code> (wave-based). Never use <code>superpowers:subagent-driven-development</code> for project work.</td></tr>
-          <tr><td>Design specs</td><td><span class="owner-gsd">SB/GSD</span></td><td>Use GSD-owned phase artifacts for lifecycle specs and <code>docs/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code> for optional design records.</td></tr>
-          <tr><td>Code review</td><td><span class="owner-gsd">GSD + SB helpers</span></td><td><code>/gsd:code-review</code> owns <code>REVIEW.md</code>. <code>/requesting-code-review</code>, <code>/receiving-code-review</code>, and <code>superpowers:code-reviewer</code> are helper-only and never execute project work.</td></tr>
+          <tr><td>Requirements</td><td><span class="owner-gsd">SB</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth.</td></tr>
+          <tr><td>Planning</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:context</code> and <code>/silver:plan</code> for lifecycle planning.</td></tr>
+          <tr><td>Execution</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:execute</code> or the active SB workflow path for project work.</td></tr>
+          <tr><td>Design specs</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:ui-contract</code>, <code>/silver:ui-review</code>, and design artifacts owned by the active SB workflow.</td></tr>
+          <tr><td>Code review</td><td><span class="owner-gsd">SB</span></td><td><code>/silver:review</code> owns <code>REVIEW.md</code>; external reviewers are supplemental evidence only.</td></tr>
         </tbody>
       </table>
 
       <div class="callout callout-stop">
         <span class="callout-icon"><i data-lucide="ban"></i></span>
-        <div class="callout-body"><strong>Never use <code>subagent-driven-development</code> for project work.</strong> This Superpowers skill is powerful but operates outside GSD's enforcement model. Using it for execution bypasses quality gates, atomic commits, and verification requirements.</div>
+        <div class="callout-body"><strong>Never bypass the SB lifecycle for project work.</strong> External execution helpers can operate outside SB enforcement. Using them as the primary implementation path bypasses quality gates, review, and verification requirements.</div>
       </div>
 
       <div class="divider"></div>
@@ -327,7 +322,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.37.23 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.38.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
@@ -467,7 +462,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <p>The <code>SPEC.md</code> file is the authoritative spec artifact. It holds structured requirements, acceptance criteria, assumption tracking, and a cross-reference to source inputs (JIRA tickets, Figma links, PRD excerpts). All downstream artifacts — REQUIREMENTS.md, ROADMAP.md, DESIGN.md — must stay aligned with SPEC.md.</p>
 
       <h3>silver:spec — Spec Creation</h3>
-      <p><code>/silver:spec</code> runs an AI-driven elicitation session that produces a canonical SPEC.md. It asks structured questions about user stories, acceptance criteria, assumptions, and non-goals, then writes the file in the canonical format. Use it at the start of any feature that needs a formal spec before GSD planning.</p>
+      <p><code>/silver:spec</code> runs an AI-driven elicitation session that produces a canonical SPEC.md. It asks structured questions about user stories, acceptance criteria, assumptions, and non-goals, then writes the file in the canonical format. Use it at the start of any feature that needs a formal spec before SB planning.</p>
 
       <h3>silver:ingest — External Ingestion</h3>
       <p><code>/silver:ingest</code> ingests artifacts from external sources — JIRA epics/issues, Figma files, and Google Docs — via MCP connectors. No custom API code is written; all external data access is delegated to MCP. The output is a structured INGESTION_MANIFEST that maps external inputs to spec sections.</p>
@@ -556,7 +551,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       </ul>
 
       <h3>Verification-Before-Completion in Review Loop</h3>
-      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>gsd:verify-work</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
+      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>silver:verify</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
 
       <div class="divider"></div>
 
@@ -572,7 +567,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
 
       <h3>Where It Runs</h3>
-      <p>The cross-artifact reviewer fires at two points: <strong>Step 17.0b</strong> in <code>silver:feature</code> (after UAT generation/review, before milestone audit) and <strong>Step 6</strong> in <code>silver:release</code> (before <code>gsd-ship</code>, so blocking alignment findings are resolved before ship or milestone archival).</p>
+      <p>The cross-artifact reviewer fires at two points: <strong>Step 17.0b</strong> in <code>silver:feature</code> (after UAT generation/review, before milestone audit) and <strong>Step 6</strong> in <code>silver:release</code> (before <code>silver:ship</code>, so blocking alignment findings are resolved before ship or milestone archival).</p>
 
       <div class="divider"></div>
 
@@ -594,7 +589,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="routing-logic">Routing Logic</h2>
-      <p><code>/silver</code> is the dynamic composition entry point for Silver Bullet work. It classifies complexity and intent, then composes the appropriate path from SB workflows, GSD commands, and supporting plugin skills. In runtimes that support prompt interception, plain work requests may be routed through this layer; explicit <code>/silver</code> invocation remains the portable path.</p>
+      <p><code>/silver</code> is the dynamic composition entry point for Silver Bullet work. It classifies complexity and intent, then composes the appropriate path from SB workflows and optional supporting plugin skills. In runtimes that support prompt interception, plain work requests may be routed through this layer; explicit <code>/silver</code> invocation remains the portable path.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="git-branch"></i></div>
@@ -611,7 +606,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="operational-efficiency">Operational Efficiency</h2>
-      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Small and bounded work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host and GSD configuration; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
+      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Small and bounded work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="cpu"></i></div>
@@ -628,17 +623,17 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="verification">Verification Before Completion</h2>
-      <p><code>gsd:verify-work</code> is a non-skippable gate that runs before any workflow completes. It is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
+      <p><code>silver:verify</code> is a non-skippable gate that runs before any workflow completes. It is a section 3 rule — it cannot be waived via preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="check-circle-2"></i></div>
           <h4><a href="verification.html" style="color:var(--accent-light);text-decoration:none">Verification Before Completion →</a></h4>
-          <p>What gsd:verify-work checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
+          <p>What silver:verify checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="shield-check"></i></div>
           <h4>Non-Skippable Gates</h4>
-          <p>Permanent gates cannot be waived through §10: <code>gsd:verify-work</code>, pre-ship <code>/silver:quality-gates</code>, and secure-phase/security-dimension checks for non-trivial work.</p>
+          <p>Permanent gates cannot be waived through preferences: <code>silver:verify</code>, pre-ship <code>/silver:quality-gates</code>, and secure-phase/security-dimension checks for non-trivial work.</p>
         </div>
       </div>
 

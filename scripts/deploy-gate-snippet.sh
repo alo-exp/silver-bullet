@@ -54,7 +54,7 @@ done
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
-REQUIRED_DEPLOY="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests"
 [[ -n "${DEFAULT_REQUIRED:-}" ]] && REQUIRED_DEPLOY="$DEFAULT_REQUIRED"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
@@ -99,7 +99,7 @@ fi
 # 4. Check required skills
 _missing=()
 for _skill in $REQUIRED_DEPLOY; do
-  if ! grep -qx "$_skill" "$STATE_FILE" 2>/dev/null; then
+  if ! grep -Fqx -- "$_skill" "$STATE_FILE" 2>/dev/null; then
     _missing+=("$_skill")
   fi
 done

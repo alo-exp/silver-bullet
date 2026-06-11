@@ -30,10 +30,10 @@ echo "--- Scenario 2: Planning phase ---"
 integration_setup
 write_default_config
 
-# Record GSD planning phase skills
-run_record_skill "gsd-discuss-phase" >/dev/null
+# Record SB planning phase skills
+run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 
 # Compliance status should show planning progress
 out=$(run_compliance_status)
@@ -41,11 +41,11 @@ assert_contains "S2.1: compliance shows planning progress" "$out" "PLANNING 3/3"
 
 # Stage B allows implementation edits after planning; final delivery remains gated.
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S2.2: edit allowed at Stage B before gsd-code-review" "$out"
+assert_allowed "S2.2: edit allowed at Stage B before silver-review" "$out"
 assert_contains "S2.3: mentions code review remains required" "$out" "Code review"
 
 out=$(run_compliance_status)
-assert_contains "S2.4: GSD phases incrementing" "$out" "GSD"
+assert_contains "S2.4: lifecycle phases incrementing" "$out" "LIFECYCLE"
 
 integration_teardown
 
@@ -54,18 +54,18 @@ echo "--- Scenario 3: Code review unlocks source editing ---"
 integration_setup
 write_default_config
 
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$TMPSTATE"
 
-# Still allowed before gsd-code-review because implementation can continue.
+# Still allowed before silver-review because implementation can continue.
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S3.1: edit allowed before gsd-code-review" "$out"
+assert_allowed "S3.1: edit allowed before silver-review" "$out"
 
 # Record code-review
-run_record_skill "gsd-code-review" >/dev/null
+run_record_skill "silver-review" >/dev/null
 
 # Now allowed at Stage C
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S3.2: edit allowed after gsd-code-review (Stage C)" "$out"
+assert_allowed "S3.2: edit allowed after silver-review (Stage C)" "$out"
 assert_contains "S3.3: compliance shows REVIEW progress" "$(run_compliance_status)" "REVIEW 1/3"
 
 integration_teardown
@@ -75,23 +75,23 @@ echo "--- Scenario 4: Execute phase with atomic commits ---"
 integration_setup
 write_default_config
 
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\ngsd-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review\n' > "$TMPSTATE"
 
 # Intermediate commits allowed with planning only
 out=$(run_completion_audit "PreToolUse" "git commit -m 'feat: add tags'")
 assert_allowed "S4.1: intermediate commit allowed with planning" "$out"
 
 # Record TDD skill
-run_record_skill "test-driven-development" >/dev/null
+run_record_skill "silver-tdd" >/dev/null
 
 # dev-cycle-check PostToolUse on Bash commit is also fine
 out=$(run_dev_cycle_bash "PostToolUse" "git commit -m 'feat: tags'")
 assert_allowed "S4.2: dev-cycle-check allows Bash commit (PostToolUse)" "$out"
 
-# Execute phase GSD skills
-run_record_skill "gsd-execute-phase" >/dev/null
+# Execute phase SB skills
+run_record_skill "silver-execute" >/dev/null
 out=$(run_compliance_status)
-assert_contains "S4.3: compliance shows GSD execute tracked" "$out" "GSD"
+assert_contains "S4.3: compliance shows execute tracked" "$out" "LIFECYCLE"
 
 integration_teardown
 
@@ -100,12 +100,12 @@ echo "--- Scenario 5: Verify and review loop ---"
 integration_setup
 write_default_config
 
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\ngsd-code-review\ntest-driven-development\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review\nsilver-tdd\n' > "$TMPSTATE"
 
-run_record_skill "gsd-verify-work" >/dev/null
-run_record_skill "requesting-code-review" >/dev/null
-run_record_skill "receiving-code-review" >/dev/null
-run_record_skill "verification-before-completion" >/dev/null
+run_record_skill "silver-verify" >/dev/null
+run_record_skill "silver-review-request" >/dev/null
+run_record_skill "silver-review-triage" >/dev/null
+run_record_skill "silver-completion-audit" >/dev/null
 
 # PR create still blocked — missing finalization skills
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
@@ -123,15 +123,15 @@ integration_setup
 write_default_config
 
 # Write all skills except delivery finalization
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\nrequesting-code-review\ngsd-code-review\nreceiving-code-review\ntest-driven-development\nverification-before-completion\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review-request\nsilver-review\nsilver-review-triage\nsilver-tdd\nsilver-completion-audit\n' > "$TMPSTATE"
 
 # PR still blocked
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
 assert_blocked "S6.1: PR create blocked before finalization" "$out"
 
 # Record remaining required deploy skills
-for skill in gsd-execute-phase gsd-verify-work gsd-ship gsd-secure-phase gsd-validate-phase \
-             finishing-a-development-branch silver-create-release verify-tests; do
+for skill in silver-execute silver-verify silver-ship silver-secure silver-validate \
+             silver-branch-finish silver-create-release verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 seed_gsd_lifecycle_artifacts
@@ -153,8 +153,8 @@ write_default_config
 
 write_all_skills
 
-# Record GSD ship
-run_record_skill "gsd-ship" >/dev/null
+# Record SB ship
+run_record_skill "silver-ship" >/dev/null
 
 # Release allowed with all skills
 write_release_live_matrix_marker
@@ -183,7 +183,7 @@ assert_contains "S8.1: PLANNING 3/3 complete" "$out" "PLANNING 3/3"
 assert_contains "S8.2: REVIEW 3/3 complete" "$out" "REVIEW 3/3"
 assert_contains "S8.3: FINALIZATION 4/4 complete" "$out" "FINALIZATION 4/4"
 assert_contains "S8.4: RELEASE 1/1 complete" "$out" "RELEASE 1/1"
-assert_contains "S8.5: GSD phases tracked" "$out" "GSD 5/5"
+assert_contains "S8.5: lifecycle phases tracked" "$out" "LIFECYCLE 5/5"
 
 integration_teardown
 

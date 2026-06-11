@@ -33,6 +33,7 @@ tests/test-app/CLAUDE.md
 tests/test-app/docs/
 tests/test-app/.github/
 plugins/silver-bullet/.generated-skills/
+tests/live/agents/*/transcripts/
 
 # Multi-agent phase coordination — runtime lock state (Phase 70)
 # .phase-locks.json is the live lock state; .lock is the flock(1) sidecar.
@@ -49,3 +50,8 @@ temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
 branch_structure.json
+
+# Graphify local retrieval index and fetched raw corpus.
+# Rebuild with: graphify update . --no-cluster
+graphify-out/
+raw/

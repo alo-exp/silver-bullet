@@ -7,9 +7,9 @@
      When approaching 100 lines, oldest completed Flow Log entries collapse:
      | 1-3 | BOOTSTRAP→ORIENT→PLAN | complete | (see phase dirs) | — |
 
-     GSD isolation (per D-07):
-     - GSD never reads `.planning/workflows/<id>.md`
-     - SB never writes STATE.md directly
+     State isolation (per D-07):
+     - Active workflow composition lives in `.planning/workflows/<id>.md`
+     - SB lifecycle artifacts remain separate from workflow supervision state
      - Bridge: /silver:migrate reads STATE.md to generate `.planning/workflows/<id>.md`
 -->
 
@@ -17,7 +17,7 @@
 
 > Composition state for the active composed workflow. Created by /silver composer, updated by supervision loop.
 > **Size cap:** 100 lines. Truncation: FIFO on completed flows — oldest completed entries collapse to summary line.
-> **GSD isolation:** GSD workflows never read this file. SB orchestration never writes STATE.md directly.
+> **State isolation:** workflow supervision lives here; lifecycle state remains in `.planning/STATE.md` and phase artifacts.
 
 ## Composition
 Intent: "{user's original request}"

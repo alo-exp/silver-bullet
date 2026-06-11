@@ -19,12 +19,12 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 1. **Skill tracker** (Claude Skill events or Codex `silver-bullet invoke-skill`) — records every supported skill invocation to state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
 3. **Compliance status** (PostToolUse/all) — shows workflow progress on every tool use
-4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning GSD skill instead
+4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning SB skill or workflow instead
 5. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
 6. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
 7. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
 8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if required_deploy skills are missing
-9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB/GSD routes and re-injects missing skills before every message
+9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB and optional extension routes and re-injects missing skills before every message
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked
 12. **Redundant instructions** (CLAUDE.md + workflow file) — same rules enforced across multiple surfaces
@@ -33,15 +33,15 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 
 Read `docs/workflows/full-dev-cycle.md` before starting any non-trivial task. If a required skill cannot be invoked, STOP and notify the user — do NOT silently skip.
 
-Silver Bullet owns the agentic loop in SB-activated projects. On every non-trivial user goal, wait for SB route/workflow guidance first, then invoke only the SB/GSD/helper skills that guidance selects. When an SB-launched workflow step completes, return control to the active SB workflow and let it choose the next step until the user goal is achieved or user feedback is required.
+Silver Bullet owns the agentic loop in SB-activated projects. On every non-trivial user goal, wait for SB route/workflow guidance first, then invoke only the SB-owned or optional extension skills that guidance selects. When an SB-launched workflow step completes, return control to the active SB workflow and let it choose the next step until the user goal is achieved or user feedback is required.
 
-Before planning, editing, debugging, reviewing, or shipping, read the relevant project knowledge and learnings that could affect the action. Prefer Graphify when available (`graphify query "<task context>"` from the project root); otherwise read `docs/knowledge/INDEX.md`, current `docs/knowledge/YYYY-MM.md`, current `docs/learnings/YYYY-MM.md`, and any directly referenced docs.
+Before planning, editing, debugging, reviewing, or shipping, read the relevant project knowledge and learnings that could affect the action. Prefer Graphify when available (`graphify query "<task context with concrete files/features>" --graph graphify-out/graph.json` from the project root); inspect the returned nodes for relevance before acting. If the graph is missing, run `graphify update . --no-cluster` as the no-LLM code-index refresh path. If Graphify is unavailable or still has no useful index, read `docs/knowledge/INDEX.md`, current `docs/knowledge/YYYY-MM.md`, current `docs/learnings/YYYY-MM.md`, and any directly referenced docs.
 
 ## Review Loop (Section 3a)
 
 Review loop must produce two consecutive clean passes. Run the audit skill twice in sequence:
 
-1. Invoke the audit skill (e.g. `silver:quality-gates`, `gsd-code-review`, or the applicable review skill)
+1. Invoke the audit skill (e.g. `silver:quality-gates`, `silver:review`, or the applicable review skill)
 2. If issues found: fix them, then re-run
 3. If clean pass: run the audit again immediately (second pass)
 4. If second pass is also clean: two consecutive clean passes confirmed — proceed

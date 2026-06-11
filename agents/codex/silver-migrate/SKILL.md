@@ -14,7 +14,7 @@ The legacy `docs/lessons/` path and "Lessons" terminology are retired. Use `docs
 
 ## When to Use
 
-- `.planning/` exists with GSD state artifacts.
+- `.planning/` exists with older lifecycle state artifacts.
 - The project was started before per-instance workflow tracking.
 - The user explicitly runs `/silver:migrate` or asks to migrate workflow tracking.
 - The project has older `docs/lessons/` files, doc-scheme entries, checklist keys, or docs text that still says "Lessons".
@@ -80,7 +80,7 @@ Then scan for artifacts that indicate flow completion:
 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if all four exist |
 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any exists |
 | CLARIFY | `.planning/phases/*/*-CONTEXT.md` | Complete if context exists; otherwise pending or skipped based on current phase |
-| DECIDE | `.planning/research/*.md`, `.planning/ADR-*.md`, `docs/superpowers/specs/*.md` | Complete if any exists |
+| DECIDE | `.planning/research/*.md`, `.planning/ADR-*.md`, legacy `docs/superpowers/specs/*.md` | Complete if any exists |
 | SPECIFY | `.planning/SPEC.md` | Complete if exists |
 | PLAN | `.planning/phases/*/*-PLAN.md` | Complete if current phase has a plan |
 | EXECUTE | `.planning/phases/*/*-SUMMARY.md` | Complete if current phase has a summary |
@@ -88,15 +88,15 @@ Then scan for artifacts that indicate flow completion:
 | SECURE | `.planning/phases/*/*-SECURITY.md`, `.planning/SECURITY.md` | Complete if any exists |
 | VERIFY | `.planning/UAT.md`, `.planning/phases/*/*-UAT.md`, `.planning/phases/*/*-VERIFICATION.md` | Complete if any exists |
 | QUALITY GATE | SB state marker `silver-quality-gates` | Complete if marker exists |
-| SHIP | GSD state marker `gsd-ship` | Complete if marker exists |
-| DOCUMENT | `gsd-docs-update` marker or docs modified for current phase | Complete if evidence exists |
+| SHIP | SB state marker `silver-ship` or legacy `gsd-ship` marker | Complete if marker exists |
+| DOCUMENT | `silver-ensure-docs` marker, legacy `gsd-docs-update` marker, or docs modified for current phase | Complete if evidence exists |
 | RELEASE | `silver-create-release` marker or current version tag exists | Complete if evidence exists |
 
 ### Step 2: Compose Current Flow List
 
-Include only flows that are relevant to the current project state. Always include the next unfinished GSD lifecycle flow needed to resume safely.
+Include only flows that are relevant to the current project state. Always include the next unfinished SB lifecycle flow needed to resume safely.
 
-Use GSD artifacts for phase position. Use SB markers only for SB compliance progress.
+Use phase artifacts for lifecycle position. Treat legacy GSD/Superpowers markers as historical evidence only; do not generate workflows that depend on those plugins.
 
 ### Step 3: Start Per-Instance Workflow Tracking
 
@@ -135,7 +135,7 @@ For each inferred-complete flow, mark it complete:
 "$SB_WORKFLOWS_BIN" complete-flow "$SB_WORKFLOW_ID" "<flow-name>"
 ```
 
-Leave the first uncertain or unfinished flow pending. Do not mark execution, review, security, verification, or ship complete unless the corresponding GSD artifact exists.
+Leave the first uncertain or unfinished flow pending. Do not mark execution, review, security, verification, or ship complete unless the corresponding SB artifact or legacy migration evidence exists.
 
 ### Step 4: Report Migration
 
@@ -157,5 +157,5 @@ Report:
 
 - Do not create `.planning/WORKFLOW.md`.
 - If a legacy `.planning/WORKFLOW.md` exists, leave it untouched and treat it as historical evidence only.
-- If inferred state is ambiguous, choose the safer pending status and let GSD resume from `.planning/STATE.md`.
+- If inferred state is ambiguous, choose the safer pending status and let SB resume from `.planning/STATE.md`.
 - Do not leave new writes pointed at `docs/lessons/`. Read legacy `docs/lessons/` only as migration input.

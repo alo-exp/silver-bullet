@@ -988,21 +988,18 @@ EOF
 cd "$REPO_ROOT"
 PATH="$BIN_DIR:$PATH" \
 HOME="$HOME_DIR" \
-GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
-CODEX_KW_MARKETPLACE_SOURCE="$FAKE_KW_MARKETPLACE_ROOT" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
 FAKE_LEGACY_CACHE_ROOT="$FAKE_CACHE_ROOT"
 FAKE_CACHE_ROOT="$FAKE_SB_INSTALL_ALIAS"
 
-assert_file_exists "GSD installer created VERSION file" "$HOME_DIR/.codex/get-shit-done/VERSION"
+assert_file_absent "Codex installer does not bootstrap GSD" "$HOME_DIR/.codex/get-shit-done/VERSION"
 assert_not_contains "legacy marketplace removed from config" "[marketplaces.silver-bullet-local]" "$HOME_DIR/.codex/config.toml"
 assert_contains "shared marketplace registered in config" "[marketplaces.alo-labs-codex]" "$HOME_DIR/.codex/config.toml"
 assert_contains "shared marketplace source preserved" 'source = "https://github.com/alo-labs/codex-plugins"' "$HOME_DIR/.codex/config.toml"
-assert_contains "superpowers marketplace registered in config" "[marketplaces.superpowers-marketplace]" "$HOME_DIR/.codex/config.toml"
-assert_contains "superpowers marketplace source preserved" 'source = "https://github.com/obra/superpowers-marketplace.git"' "$HOME_DIR/.codex/config.toml"
-assert_contains "GSD marketplace registered in config" "[marketplaces.get-shit-done-marketplace]" "$HOME_DIR/.codex/config.toml"
-assert_contains "superpowers plugin enabled" '[plugins."superpowers@superpowers-marketplace"]' "$HOME_DIR/.codex/config.toml"
-assert_contains "GSD plugin enabled" '[plugins."gsd@get-shit-done-marketplace"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "superpowers marketplace not registered by default" "[marketplaces.superpowers-marketplace]" "$HOME_DIR/.codex/config.toml"
+assert_not_contains "GSD marketplace not registered by default" "[marketplaces.get-shit-done-marketplace]" "$HOME_DIR/.codex/config.toml"
+assert_not_contains "superpowers plugin not enabled by default" '[plugins."superpowers@superpowers-marketplace"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "GSD plugin not enabled by default" '[plugins."gsd@get-shit-done-marketplace"]' "$HOME_DIR/.codex/config.toml"
 assert_file_absent "legacy SB skill removed" "$HOME_DIR/.agents/skills/silver-feature"
 assert_file_absent "legacy using-silver-bullet skill removed" "$HOME_DIR/.agents/skills/using-silver-bullet"
 assert_file_exists "unrelated skill preserved" "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md"
@@ -1061,8 +1058,8 @@ assert_file_absent "temporary marketplace backup SB picker skill removed" "$FAKE
 assert_file_absent "temporary marketplace backup SB agent skill removed" "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL"
 assert_file_absent "temporary SB live-command picker skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_SKILL"
 assert_file_absent "temporary SB live-command agent skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL"
-assert_command_succeeds "Superpowers cache alias created" test -L "$FAKE_SUPERPOWERS_ALIAS"
-assert_command_succeeds "GSD cache alias created" test -L "$FAKE_GSD_ALIAS"
+assert_command_succeeds "Existing optional Superpowers cache alias preserved" test -L "$FAKE_SUPERPOWERS_ALIAS"
+assert_command_succeeds "Existing optional GSD cache alias preserved" test -L "$FAKE_GSD_ALIAS"
 assert_command_succeeds "Sidekick cache alias created" test -L "$FAKE_SIDEKICK_ALIAS"
 assert_command_succeeds "Engineering cache alias created" test -L "$FAKE_ENGINEERING_ALIAS"
 assert_command_succeeds "Design cache alias created" test -L "$FAKE_DESIGN_ALIAS"
@@ -1139,8 +1136,8 @@ assert_not_contains "SB package does not contain manual routing wording" "Handle
 assert_not_contains "Current cache package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$FAKE_CACHE_ROOT"
 assert_contains "SB package uses HOME-expanded Codex state paths" '$HOME/.codex/.silver-bullet/state' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Current cache uses HOME-expanded Codex state paths" '$HOME/.codex/.silver-bullet/state' "$FAKE_CACHE_ROOT/templates/silver-bullet.md.base"
-assert_contains "SB package tracks gsd-scan in config" '"gsd-scan"' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.config.json.default"
-assert_contains "Current cache tracks gsd-scan in config" '"gsd-scan"' "$FAKE_CACHE_ROOT/templates/silver-bullet.config.json.default"
+assert_contains "SB package tracks SB lifecycle markers in config" '"silver-context"' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.config.json.default"
+assert_contains "Current cache tracks SB lifecycle markers in config" '"silver-context"' "$FAKE_CACHE_ROOT/templates/silver-bullet.config.json.default"
 assert_command_succeeds "Marketplace and SB package hook surfaces are identical" python3 - "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" <<'PY'
 import json
 import pathlib
@@ -1230,9 +1227,9 @@ assert_contains "SB init skill uses silver prefix" "name: \"silver:init\"" "$(sb
 assert_contains "SB ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
 assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 # shellcheck disable=SC2088 # literal tilde is part of the documented Codex cache glob
-assert_contains "SB init skill checks Codex product-management cache" '$HOME/.codex/plugins/cache/*/product-management/skills/' "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
+assert_contains "SB init skill treats legacy plugins as optional" "no longer hard" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_contains "SB init skill keeps the working GSD entrypoint fallback" "prefer the local entrypoint and continue bootstrap instead of failing on wrapper import noise" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
+assert_contains "SB init skill does not fail on flaky legacy GSD" "do not fail bootstrap" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_contains "SB ensure-docs skill runs semantic audits" "semantic freshness audits against the current project state" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
 assert_contains "SB ensure-docs skill avoids placeholder doc keys" "using real governed doc keys only" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
 assert_contains "SB feature skill uses silver prefix" "name: \"silver:feature\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-feature)"
@@ -1241,7 +1238,8 @@ assert_contains "SB handoff skill uses silver prefix" "name: \"silver:handoff\""
 assert_contains "Progressive review loop keeps canonical skill name in source bundle" "name: progressive-review-loop" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" progressive-review-loop)"
 assert_contains "Progressive review loop picker title uses Silver prefix in source bundle" "title: \"Silver: Progressive Review Loop\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" progressive-review-loop)"
 assert_contains "TDD skill hidden from picker in source bundle" "user-invocable: false" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
-assert_contains "TDD skill delegates to Superpowers TDD in source bundle" "superpowers:test-driven-development" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
+assert_contains "TDD skill is SB-owned in source bundle" "SB owns this TDD" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
+assert_not_contains "TDD skill does not delegate to Superpowers in source bundle" "superpowers:test-driven-development" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
 assert_contains "SB scan Codex agent bundle uses silver prefix" "name: \"silver:scan\"" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
 assert_file_absent "SB generated skill package directory absent from source bundle" "$REPO_ROOT/plugins/silver-bullet/.generated-skills"
 assert_contains "Installed SB init skill uses silver prefix" "name: \"silver:init\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-init)"
@@ -1250,14 +1248,15 @@ assert_contains "Installed SB feature skill uses silver prefix" "name: \"silver:
 assert_contains "Installed SB router skill uses silver name" "name: silver" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver)"
 assert_file_absent "Installed SB generated skill package directory absent" "$FAKE_CACHE_ROOT/.generated-skills"
 assert_file_absent "Installed SB agent bundle absent from cache" "$FAKE_CACHE_ROOT/agents"
-assert_contains "Installed SB feature skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
+assert_contains "Installed SB feature skill wires TDD into execute boundary" "SB-owned TDD policy skill" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
 assert_contains "Installed SB feature skill documents hidden TDD gate" "Internal TDD gate" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
-assert_contains "Installed SB UI skill wires TDD into execute boundary" "gsd-execute-phase --tdd" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-ui)"
+assert_contains "Installed SB UI skill wires TDD into execute boundary" "silver:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-ui)"
 assert_contains "Installed SB bugfix skill uses SB TDD wrapper" "Invoke \`tdd\`" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
-assert_contains "Installed SB bugfix skill executes with TDD flag" "gsd-execute-phase --tdd" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
+assert_contains "Installed SB bugfix skill executes through SB execute" "silver:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
 assert_contains "Installed SB bugfix skill resolves packaged workflows helper" 'SB_WORKFLOWS_BIN' "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
 assert_contains "TDD skill hidden from picker in installed package" "user-invocable: false" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
-assert_contains "TDD skill delegates to Superpowers TDD in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
+assert_contains "TDD skill is SB-owned in installed package" "SB owns this TDD" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
+assert_not_contains "TDD skill does not delegate to Superpowers in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 
 LEGACY_GSD_WRAPPERS=(
   gsd-brainstorm
@@ -1279,9 +1278,9 @@ for skill in "${LEGACY_GSD_WRAPPERS[@]}"; do
 done
 
 assert_not_contains "Legacy using-silver-bullet trace removed from marketplace changelog" "using-silver-bullet" "$FAKE_MARKETPLACE_ROOT/CHANGELOG.md"
-assert_contains "Anthropic PM plugin enabled" '[plugins."product-management@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
-assert_contains "Anthropic engineering plugin enabled" '[plugins."engineering@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
-assert_contains "Anthropic design plugin enabled" '[plugins."design@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "Anthropic PM plugin not enabled by default" '[plugins."product-management@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "Anthropic engineering plugin not enabled by default" '[plugins."engineering@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "Anthropic design plugin not enabled by default" '[plugins."design@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
 assert_contains "Codex plugin hooks feature enabled" '[features]' "$HOME_DIR/.codex/config.toml"
 assert_contains "Codex plugin hooks feature flag" 'plugin_hooks = true' "$HOME_DIR/.codex/config.toml"
 assert_contains "SB hook state recorded inside SB root" 'silver-bullet@' "$HOME_DIR/.codex/config.toml"
@@ -1302,13 +1301,13 @@ assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS
 assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Engineering registry install path refreshed" "$FAKE_ENGINEERING_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Engineering stale install path removed" "$FAKE_ENGINEERING_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Engineering helper skill hydrated from knowledge-work marketplace source" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
+assert_file_absent "Engineering helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_ENGINEERING_ROOT/upstream/skills/documentation/SKILL.md"
 assert_contains "Design registry install path refreshed" "$FAKE_DESIGN_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Design stale install path removed" "$FAKE_DESIGN_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Design helper skill hydrated from knowledge-work marketplace source" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
+assert_file_absent "Design helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_DESIGN_ROOT/upstream/skills/design-system/SKILL.md"
 assert_contains "Product-management registry install path refreshed" "$FAKE_PRODUCT_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Product-management stale install path removed" "$FAKE_PRODUCT_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
-assert_file_exists "Product-management helper skill hydrated from knowledge-work marketplace source" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
+assert_file_absent "Product-management helper skill not hydrated from knowledge-work marketplace source by default" "$FAKE_PRODUCT_ROOT/upstream/skills/write-spec/SKILL.md"
 assert_not_contains "legacy SB hooks removed from Codex user config" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "legacy SB hooks removed from Codex user config mirror" "$legacy_sb_hooks_root" "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Requested-skill recorder not merged into native Codex user config" 'record-requested-skill.sh' "$HOME_DIR/.codex/hooks.json"
@@ -1362,7 +1361,7 @@ mkdir -p "$DEFAULT_GSD_HOME/.codex" "$DEFAULT_GSD_WORKDIR"
   HOME="$DEFAULT_GSD_HOME" \
     bash "$SCRIPT" --purge-legacy-skills >/dev/null
 )
-assert_file_exists "default GSD installer path uses non-interactive npx" "$DEFAULT_GSD_HOME/.codex/get-shit-done/VERSION"
+assert_file_absent "default install does not fetch GSD" "$DEFAULT_GSD_HOME/.codex/get-shit-done/VERSION"
 
 NON_SB_HOME="$TMP/no-sb-home"
 NON_SB_WORKDIR="$TMP/non-sb-workdir"
@@ -1371,7 +1370,6 @@ mkdir -p "$NON_SB_HOME/.codex" "$NON_SB_WORKDIR"
   cd "$NON_SB_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
   HOME="$NON_SB_HOME" \
-  GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
     bash "$SCRIPT" --purge-legacy-skills >/dev/null
 )
 
@@ -1398,7 +1396,6 @@ plugin_hooks = true
 EOF
 PATH="$BIN_DIR:$PATH" \
 HOME="$SEED_HOME" \
-GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
 assert_file_exists "Codex marketplace snapshot seeded when missing" "$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
 
@@ -1454,7 +1451,6 @@ cp "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" "$PUBLIC_STALE_PACK
   cd "$PUBLIC_STALE_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
   HOME="$PUBLIC_STALE_HOME" \
-  GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
     bash "$SCRIPT" --public-release >/dev/null
 )
 PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$(jq -r '.version' "$PUBLIC_STALE_PACKAGE/.codex-plugin/plugin.json")"
@@ -1511,7 +1507,6 @@ set +e
   cd "$BROKEN_PUBLIC_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
   HOME="$BROKEN_PUBLIC_HOME" \
-  GSD_INSTALL_CMD="$BIN_DIR/install-gsd" \
     bash "$SCRIPT" --public-release >"$BROKEN_PUBLIC_OUTPUT" 2>&1
 )
 broken_public_status=$?

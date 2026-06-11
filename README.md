@@ -1,22 +1,19 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.37.23-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.23)
+[![version](https://img.shields.io/badge/version-v0.38.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.0)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
 
-Silver Bullet is the orchestration and enforcement layer around
-[GSD](https://github.com/gsd-build/get-shit-done). GSD remains the lifecycle
-engine: project state, roadmaps, phase planning, execution, verification, review,
-ship, and milestone work. Silver Bullet adds the missing operating system around
-that engine: dynamic workflow composition, hook-backed gates, cross-plugin
-sequencing, quality controls, traceability, documentation governance, and release
-discipline.
+Silver Bullet is the lifecycle orchestration and enforcement layer for AI-native
+software engineering. It owns the core project flow: intent routing, context,
+planning, execution, verification, review, security, documentation, shipping,
+and release discipline. Hook-backed gates keep agents from skipping required
+steps before code, PRs, deploys, or releases.
 
 Plain version: describe what you want to do. Start with `/silver`. Silver Bullet
-classifies the task, composes the right workflow for that task, invokes GSD where
-GSD owns the lifecycle, and keeps the agent from skipping required steps before
-code, PRs, deploys, or releases.
+classifies the task, composes the right SB-owned workflow, and records the
+evidence needed to continue safely.
 
 > "There is no single development, in either technology or management technique,
 > which by itself promises even one order-of-magnitude improvement..." -
@@ -28,22 +25,20 @@ operator vigilance.
 
 ## What Silver Bullet Adds
 
-GSD is already a strong planning and execution system. Silver Bullet adds the
-APO layer around it:
+Silver Bullet now absorbs the GSD, Superpowers, and Anthropic knowledge-work
+behaviors it explicitly depended on into SB-owned skills. Optional plugins remain
+useful when they extend SB into DevOps, provider, data, documentation, or
+tool-specific domains, but they are no longer required for the core software
+engineering lifecycle.
 
-| Area | Plain GSD | Silver Bullet + GSD |
-|------|-----------|---------------------|
-| Entry point | `gsd:*` commands and `gsd:do` | `/silver` routes freeform work into a task-shaped SB+GSD workflow |
-| Workflow shape | GSD lifecycle commands | Dynamic composition from 18 atomic flows |
-| Process discipline | Instructional and artifact-driven | Hook-enforced and state-tracked |
-| Cross-plugin work | Manual or ad hoc | Explicit sequencing across GSD, SB gates, and selected helper plugins |
-| Quality | GSD review and verification | Product, security, DevOps, docs, UAT, CI, and release gates |
-| Delivery safety | Operator discipline plus GSD artifacts | Mechanical blocks on unsafe edits, planning-file writes, PRs, deploys, and releases |
-| Continuity | GSD state and phase artifacts | Session logs, handoff, issue capture, knowledge capture, anti-stall checks, and forensics |
-
-The important distinction: Silver Bullet does not replace GSD. It composes around
-GSD and preserves GSD as the authority for `.planning/`, semver-relevant project
-work, execution, verification, review, ship, and milestone lifecycle.
+| Area | Silver Bullet owns |
+|------|--------------------|
+| Entry point | `/silver` routes freeform work into a task-shaped workflow |
+| Workflow shape | Dynamic composition from 18 atomic flows |
+| Process discipline | Hook-enforced, state-tracked lifecycle evidence |
+| Quality | Product, security, DevOps, docs, UAT, CI, and release gates |
+| Delivery safety | Mechanical blocks on unsafe edits, PRs, deploys, and releases |
+| Continuity | Session logs, handoff, issue capture, knowledge capture, anti-stall checks, and forensics |
 
 ## Current Positioning
 
@@ -55,10 +50,10 @@ Silver Bullet is an **Agentic Process Orchestrator (APO)**:
 - **Orchestrator**: chooses and sequences the right tools for the task instead of
   forcing every task through one rigid workflow.
 
-Silver Bullet uses helper plugins only at selected boundaries. Superpowers is
-used for SB-required helper surfaces such as TDD, review framing, review
-receiving, verification-before-completion, and branch finishing when the active
-workflow calls for them. It is not the execution engine; GSD owns execution.
+Silver Bullet can still call optional extension plugins when a selected workflow
+needs a domain-specific capability, especially DevOps/provider tools. It does not
+use GSD, Superpowers, or Anthropic knowledge-work plugins as default lifecycle
+dependencies.
 
 ## How It Works
 
@@ -69,18 +64,18 @@ You normally start with:
 ```
 
 The router classifies the request, displays the selected route, and invokes the
-appropriate SB or GSD workflow. Examples:
+appropriate SB-owned workflow. Examples:
 
 | Intent | Typical route | Why |
 |--------|---------------|-----|
-| Build or enhance a feature | `silver:feature` | Adds SB gates around GSD planning, execution, review, verification, and ship |
+| Build or enhance a feature | `silver:feature` | Runs SB context, planning, execution, review, verification, and ship |
 | Fix a regression | `silver:bugfix` | Inserts debug/TDD before the normal lifecycle |
-| Work on UI | `silver:ui` | Adds design contract and UI quality review around GSD execution |
+| Work on UI | `silver:ui` | Adds SB design contract and UI quality review around execution |
 | Change infrastructure | `silver:devops` | Adds blast radius, IaC gates, promotion, and rollback discipline |
 | Research a decision | `silver:research` | Produces a decision artifact before implementation |
 | Prepare a release | `silver:release` | Runs documentation, UAT, milestone, release, and publication gates |
 | Make a small safe edit | `silver:fast` | Routes low-risk work through a lighter path |
-| Ask GSD to choose a lifecycle action | `gsd:do` | Delegates directly to GSD where GSD owns the decision |
+| Explicit legacy GSD request | SB equivalent by default | Legacy GSD names are compatibility routes unless the user explicitly asks for external GSD |
 
 ### Dynamic Composition, Not A Fixed Script
 
@@ -116,7 +111,7 @@ Common examples:
 
 ```text
 HARD STOP - Planning incomplete.
-Missing: silver-quality-gates, gsd-discuss-phase, gsd-plan-phase
+Missing: silver-quality-gates, silver-context, silver-plan
 Run the missing planning steps before editing source code.
 ```
 
@@ -128,7 +123,7 @@ release readiness, and ship markers before PR/deploy/release commands proceed.
 
 ```text
 Silver Bullet: 8 steps | PLANNING 3/3 | REVIEW 1/3 | FINALIZATION 0/4
-Next: requesting-code-review
+Next: silver-review-request
 ```
 
 ### Two-Tier Delivery Discipline
@@ -136,25 +131,25 @@ Next: requesting-code-review
 Silver Bullet deliberately does not block every useful intermediate commit.
 
 - **Planning floor**: source edits and intermediate development commits require
-  the selected SB+GSD pre-execution chain.
+  the selected SB pre-execution chain.
 - **Final delivery floor**: PR creation, deploy commands, release commands, and
   completion claims require the broader review/security/validation/test/release
   chain.
 
-This keeps GSD's atomic task commits viable while still blocking premature final
+This keeps incremental work viable while still blocking premature final
 delivery.
 
 ### Enforcement Layers
 
 | Layer | Hook or surface | Purpose |
 |-------|-----------------|---------|
-| 1 | `record-skill.sh` | Records completed SB/GSD/helper skill invocations |
-| 2 | `record-requested-skill.sh` | Records requested `/silver` and GSD routes before work starts |
+| 1 | `record-skill.sh` | Records completed SB and optional helper skill invocations |
+| 2 | `record-requested-skill.sh` | Records requested `/silver` routes before work starts |
 | 3 | `prompt-reminder.sh` | Re-injects missing steps and core rules before each user prompt |
 | 4 | `dev-cycle-check.sh` | Blocks source edits before the required planning floor |
-| 5 | `workflow-chain-guard.sh` | Blocks active composed workflows when downstream dependency markers are missing |
-| 6 | `dependency-skill-check.sh` | Fails closed when required dependency skills are unavailable |
-| 7 | `planning-file-guard.sh` | Blocks direct edits to GSD-owned planning artifacts |
+| 5 | `workflow-chain-guard.sh` | Blocks active composed workflows when downstream lifecycle markers are missing |
+| 6 | `dependency-skill-check.sh` | Fails closed when required SB or optional extension skills are unavailable |
+| 7 | `planning-file-guard.sh` | Blocks direct edits to SB-owned planning artifacts |
 | 8 | `completion-audit.sh` | Blocks PR/deploy/release and selected delivery commands when final gates are missing |
 | 9 | `ci-status-check.sh` | Blocks push, PR, and release while CI is red; commit remains warning-only so CI fixes are possible |
 | 10 | `stop-check.sh` | Blocks task-complete declarations when required gates are missing |
@@ -174,13 +169,13 @@ guidance, but hard blocks depend on host support.
 | Runtime | Status | Notes |
 |---------|--------|-------|
 | Claude Code | Primary plugin runtime | Uses Claude plugin skills, commands, and hooks |
-| Codex | Supported package runtime | Uses an SB-only Codex package plus dependency marketplaces |
+| Codex | Supported package runtime | Uses an SB-only Codex package and native `/Silver:` skill mirror |
 | Kay | Tested agent for isolated live testing | Used for isolated live testing via MiniMax.io with `MiniMax-M3` |
 
 Silver Bullet's Codex package intentionally contains only SB-owned surfaces:
-skills, hooks, templates, commands, and helper scripts. GSD, Superpowers, and
-selected helper plugins are installed from their own official sources or via
-thin Codex wrappers in the shared `alo-labs/codex-plugins` marketplace.
+skills, hooks, templates, commands, and helper scripts. Optional extension
+plugins are installed separately only when the user explicitly needs their
+domain-specific capabilities.
 
 ## Install
 
@@ -194,21 +189,11 @@ sudo apt install jq
 
 ### Claude Code
 
-Install Silver Bullet and its required helper dependencies:
+Install Graphify and Silver Bullet:
 
 ```text
 /shell uv tool install graphifyy
 /plugin install alo-exp/silver-bullet
-/plugin install obra/superpowers
-/plugin install anthropics/knowledge-work-plugins/tree/main/engineering
-/plugin install anthropics/knowledge-work-plugins/tree/main/design
-/plugin install anthropics/knowledge-work-plugins/tree/main/product-management
-```
-
-Install GSD:
-
-```bash
-npx get-shit-done-cc@latest
 ```
 
 Then open a project and run:
@@ -235,7 +220,6 @@ The installer:
 
 - syncs the curated SB-only Codex bundle in `plugins/silver-bullet/`
 - registers the shared `alo-labs/codex-plugins` marketplace
-- installs or wires GSD, Superpowers, Engineering, Design, and Product Management from their official sources when needed
 - keeps `/silver` and `/silver:*` in the main Silver Bullet package
 - includes the packaged `scripts/workflows.sh` helper used by composed workflow
   tracking
@@ -243,6 +227,8 @@ The installer:
   required skills can be invoked and recorded without a Claude-only `Skill` tool
 - enables SB only when the current working directory is an actual SB project
   root (`.silver-bullet.json` plus `silver-bullet.md`)
+- does not install or enable GSD, Superpowers, Engineering, Design, or Product
+  Management for core SB workflows
 - purges stale SB user-level hook entries so unrelated Codex projects do not get
   Silver Bullet hooks
 - seeds Codex hook trust from the installed plugin manifest instead of
@@ -286,7 +272,7 @@ It will:
   in Codex) without overwriting user-owned content
 - copy workflow docs into `docs/workflows/`
 - scaffold the documentation scheme and durable knowledge/learnings folders
-- initialize or connect GSD planning artifacts
+- initialize or connect SB planning artifacts
 - set up enforcement state paths under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`
 
 After that, use `/silver` for normal work.
@@ -296,8 +282,8 @@ After that, use `/silver` for normal work.
 | Route or skill | Purpose |
 |----------------|---------|
 | `/silver` | Main natural-language router and APO entry point |
-| `/silver:init` | Project setup, dependency checks, config, workflow docs, doc scheme |
-| `/silver:feature` | Feature workflow around GSD lifecycle |
+| `/silver:init` | Project setup, SB lifecycle checks, config, workflow docs, doc scheme |
+| `/silver:feature` | Feature workflow through SB-owned lifecycle |
 | `/silver:bugfix` | Debug/TDD-oriented bugfix workflow |
 | `/silver:ui` | UI workflow with design contract and UI quality gates |
 | `/silver:devops` | Infrastructure workflow with blast radius and IaC gates |
@@ -306,7 +292,7 @@ After that, use `/silver` for normal work.
 | `/silver:ingest` | External artifact ingestion with manifest review |
 | `/silver:validate` | Gap analysis and validation before implementation or release |
 | `/silver:release` | Release preparation workflow |
-| `/silver:create-release` | Final release artifact creation after GSD release readiness |
+| `/silver:create-release` | Final release artifact creation after SB release readiness |
 | `/silver:fast` | Small, low-risk work through a routed fast path |
 | `/silver:ensure-docs` | Documentation scheme bootstrap, reconciliation, and recovery |
 | `/silver:scan` | Retrospective session scan for deferred issues and insights |
@@ -339,8 +325,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.37.0",
-  "version": "0.37.0",
+  "config_version": "0.38.0",
+  "version": "0.38.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -350,25 +336,25 @@ Minimal shape:
   "skills": {
     "required_planning": [
       "silver-quality-gates",
-      "gsd-discuss-phase",
-      "gsd-plan-phase"
+      "silver-context",
+      "silver-plan"
     ],
     "required_deploy": [
       "silver-quality-gates",
-      "gsd-discuss-phase",
-      "gsd-plan-phase",
-      "gsd-execute-phase",
-      "gsd-verify-work",
-      "gsd-ship",
-      "gsd-code-review",
-      "gsd-secure-phase",
-      "gsd-validate-phase",
-      "requesting-code-review",
-      "receiving-code-review",
-      "finishing-a-development-branch",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
+      "silver-review",
+      "silver-secure",
+      "silver-validate",
+      "silver-review-request",
+      "silver-review-triage",
+      "silver-branch-finish",
       "silver-create-release",
-      "verification-before-completion",
-      "test-driven-development",
+      "silver-completion-audit",
+      "silver-tdd",
       "verify-tests"
     ]
   },
@@ -424,7 +410,7 @@ Useful docs:
 - [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md) -
   canonical flow contracts
 - [docs/internal/sb-benefits-over-plain-gsd.md](docs/internal/sb-benefits-over-plain-gsd.md) -
-  detailed SB-over-GSD analysis
+  legacy comparison retained for migration context
 
 ## Testing
 
@@ -495,7 +481,7 @@ site/                             Public website and Help Center
 plugins/silver-bullet/            Codex package surface, mostly symlinks to source
 tests/                            Unit, integration, live, and E2E harnesses
 .claude-plugin/                   Claude plugin marketplace metadata
-.planning/                        GSD project lifecycle artifacts for this repo
+.planning/                        SB project lifecycle artifacts for this repo
 ```
 
 The Codex package mostly symlinks source-owned assets into `plugins/silver-bullet/`, stores internal generated skill files under `skill-source/`, and mirrors those files into native `~/.codex/skills` during install so the picker exposes only the `/Silver:` namespace.
@@ -509,12 +495,8 @@ runtime state are not treated as plugin package content.
 | `jq not found` | Install `jq` with Homebrew or apt |
 | `/silver` not available in Claude Code | Install the plugin and restart/reload the Claude Code session |
 | `/Silver:` entries not available in Codex | Refresh the public Codex marketplace install, or run `./scripts/install-codex.sh --purge-legacy-skills` from a repo checkout when developing SB itself |
-| GSD skills missing | Repair or reinstall GSD with `npx get-shit-done-cc@latest` |
 | Graphify missing | Install with `uv tool install graphifyy` or `pip install graphifyy`; SB falls back to direct docs reads only as a degraded path |
-| Superpowers helper missing | Repair or reinstall `obra/superpowers`; SB uses it only at selected helper boundaries |
-| Engineering helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/engineering` |
-| Design helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/design` |
-| Product Management helper missing | Repair or reinstall `anthropics/knowledge-work-plugins/tree/main/product-management` |
+| Legacy lifecycle plugin missing | No action needed for core SB workflows; use SB-owned `silver:*` skills |
 | Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` both exist in the project root |
 | Too many files trigger enforcement | Adjust `project.src_pattern` and `project.src_exclude_pattern` |
 | YAML/JSON edits are unexpectedly gated | In `devops-cycle`, YAML/JSON/TOML are infrastructure code and intentionally gated |
@@ -524,13 +506,13 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.37.23`
-- Release: [v0.37.23](https://github.com/alo-exp/silver-bullet/releases/tag/v0.37.23)
+- Version: `0.38.0`
+- Release: [v0.38.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.0)
 - Notable changes:
-  - SB now owns first routing in activated projects, including helper-skill selection and workflow loop continuation.
-  - Documentation terminology moved from Lessons to Learnings, with migration support in `/silver:migrate`.
-  - Graphify is a setup dependency for retrieval-oriented project memory, with direct docs reads as the degraded fallback.
-  - Kay live-test defaults now use MiniMax.io with `MiniMax-M3`.
+  - SB now owns the core context, plan, execute, review, security, verify, ship, TDD, and completion-audit lifecycle skills it enforces.
+  - GSD, Superpowers, and Anthropic knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
+  - Default config schema moved to `0.38.0` so older lifecycle dependency lists are normalized during migration.
+  - Public docs, Help Center, marketplace metadata, and release gates now describe the SB-owned lifecycle model.
 
 ## License
 

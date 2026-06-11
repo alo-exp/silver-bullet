@@ -127,7 +127,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
-      <p><strong>It never implements features directly — it orchestrates only.</strong> Implementation is delegated to GSD for lifecycle execution. SB owns gates and orchestration, and calls Superpowers or other helper plugins only at explicit boundaries selected by the active workflow. This separation keeps the orchestration layer clean and each specialist focused.</p>
+      <p><strong>It never implements features directly — it orchestrates only.</strong> Implementation runs through SB-owned lifecycle skills for context, plan, execution, review, verification, and ship. Optional helper plugins are called only at explicit extension boundaries selected by the active workflow.</p>
       <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow catalog.</p>
 
       <div class="divider"></div>
@@ -218,7 +218,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Classify the request (see table above). If trivial: invoke <code>silver:fast</code> and exit. If fuzzy: proceed to Step 1b. If simple or complex: proceed to Step 1a.</p>
 
       <h3>Step 1a — Codebase orientation</h3>
-      <p>Invoke <code>gsd-scan</code> for rapid SB orientation. If this is a brownfield project or deeper structure mapping is needed, invoke <code>/gsd:map-codebase</code> for GSD-managed codebase mapping.</p>
+      <p>Invoke <code>silver:scan</code> for rapid SB orientation. If this is a brownfield project or deeper structure mapping is needed, invoke <code>silver:context</code> for SB-managed codebase mapping.</p>
 
       <h3>Step 1b — Fuzzy scope clarification (conditional)</h3>
       <p>Only if complexity triage found fuzzy intent or arguments are empty: invoke <code>silver:clarify</code> through the active host's supported skill channel for Socratic framing, option comparison, and decision-ready handoff before structured planning.</p>
@@ -235,7 +235,7 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke the local <code>/writing-plans</code> helper only when SB needs a pre-GSD plan-shaping aid for complex scope. Otherwise, keep implementation planning inside <code>gsd:plan-phase</code>.</p>
+      <p>Invoke <code>silver:plan</code> when SB needs a structured implementation plan. For complex scope, the planning pass includes the absorbed plan-shaping checks before execution begins.</p>
 
       <h3>Step 2.7 — Pre-build validation</h3>
       <p>When a SPEC/PLAN coverage check is needed before implementation, invoke <code>silver:validate</code>. BLOCK findings stop the workflow before quality gates or planning continue; WARN findings must be tracked explicitly.</p>
@@ -243,26 +243,26 @@ B. No — proceed with spec as-is</div>
       <h3>Step 3 — Pre-plan quality gates (8 core dimensions + conditional gates)</h3>
       <p>Invoke <code>/silver:quality-gates</code>. All applicable dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
 
-      <h3>Step 4 — Discuss phase</h3>
-      <p>Invoke <code>gsd:discuss-phase</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
+      <h3>Step 4 — Context phase</h3>
+      <p>Invoke <code>silver:context</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
 
       <h3>Step 5 — Analyze dependencies</h3>
-      <p>Invoke <code>gsd:analyze-dependencies</code>. Maps phase dependencies before GSD creates the plan.</p>
+      <p>Analyze phase dependencies inside the SB planning pass before the plan is finalized.</p>
 
       <h3>Step 6 — Plan phase</h3>
-      <p>Invoke <code>gsd:plan-phase</code>. Produces <code>PLAN.md</code> with verification loop.</p>
+      <p>Invoke <code>silver:plan</code>. Produces <code>PLAN.md</code> with a verification loop.</p>
 
       <h3>Step 7 — Execute phase</h3>
-      <p>In Interactive mode (default): invoke <code>gsd:execute-phase --tdd</code> for implementation plans, or <code>gsd:execute-phase</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e): invoke <code>gsd:autonomous</code> only when the underlying GSD TDD mode is already enabled. For behavior-changing code, the TDD boundary uses <code>tdd</code> before the execution wave starts.</p>
+      <p>In Interactive mode (default): invoke <code>silver:execute --tdd</code> for implementation plans, or <code>silver:execute</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e), continue only when the SB TDD boundary is satisfied. For behavior-changing code, the <code>tdd</code> gate runs before the execution wave starts.</p>
 
       <h3>Step 8 — Verify work</h3>
-      <p>Invoke <code>gsd:verify-work</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>silver:verify</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 8b — Test gap fill (conditional)</h3>
-      <p>Only if gsd:verify-work surfaces coverage gaps: invoke <code>gsd:add-tests</code> to generate tests from UAT criteria.</p>
+      <p>Only if <code>silver:verify</code> surfaces coverage gaps: invoke <code>silver:add-tests</code> or the local test-generation path to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for architecture-significant changes: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>. The review-framing helpers run only because this SB review boundary selects them.</p>
+      <p>Run in order: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant changes: expanded <code>silver:review</code>] → <code>silver:review-triage</code>. The review-framing helpers are absorbed into this SB review boundary.</p>
 
       <h3>Step 9e — Backlog capture from review</h3>
       <p>Capture accepted-but-deferred review findings with <code>/silver:add</code> so they are tracked instead of disappearing after review completion.</p>
@@ -271,10 +271,10 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>security</code>. This is the independent security review gate and is non-skippable regardless of §10 preferences.</p>
 
       <h3>Step 11 — Secure phase</h3>
-      <p>Invoke <code>gsd:secure-phase</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase.</p>
+      <p>Invoke <code>silver:secure</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase.</p>
 
       <h3>Step 12 — Validate phase</h3>
-      <p>Invoke <code>gsd:validate-phase</code> for Nyquist validation gap filling.</p>
+      <p>Invoke <code>silver:validate</code> for validation gap filling.</p>
 
       <h3>Step 12b — Tech debt review</h3>
       <p>Invoke <code>tech-debt</code> when available. Any shortcuts or deferred refactors that cannot be fixed immediately must be captured through <code>/silver:add</code>.</p>
@@ -286,13 +286,13 @@ B. No — proceed with spec as-is</div>
       <p>If <code>docs/doc-scheme.md</code> exists, verify documentation freshness before PR/ship: update the changelog, current-month knowledge and learnings files, any affected durable docs, and <code>docs/task-doc-checklist.json</code>. If the scheme is missing or incomplete, recover it with <code>/silver:ensure-docs --recover-scheme</code> before proceeding.</p>
 
       <h3>Steps 14–15 — Finishing branch and ship</h3>
-      <p>Invoke <code>/finishing-a-development-branch</code> (superpowers:finishing-a-development-branch) → optionally <code>gsd:pr-branch</code> → <code>gsd:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
+      <p>Invoke <code>silver:branch-finish</code> → optionally prepare a clean PR branch → <code>silver:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
 
       <h3>Step 16 — Episodic memory</h3>
       <p>Invoke <code>episodic-memory:remembering-conversations</code> to record key decisions and learnings from this feature.</p>
 
       <h3>Step 17 — Milestone completion (last phase only)</h3>
-      <p>If this is the last phase of the milestone: run <code>gsd:audit-uat</code> → <code>gsd:audit-milestone</code> → gap-closure loop (max 2 iterations) → <code>gsd:complete-milestone</code>.</p>
+      <p>If this is the last phase of the milestone: run <code>silver:release</code> so the SB release workflow performs UAT audit, milestone audit, gap closure, archival, and versioned release steps.</p>
 
       <div class="divider"></div>
 
@@ -302,9 +302,9 @@ B. No — proceed with spec as-is</div>
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>gsd:secure-phase</code> (Step 10)</li>
+            <li><code>silver:secure</code> (Step 10)</li>
             <li><code>/silver:quality-gates</code> pre-ship (Step 13)</li>
-            <li><code>gsd:verify-work</code> (Step 8)</li>
+            <li><code>silver:verify</code> (Step 8)</li>
           </ul>
         </div>
       </div>

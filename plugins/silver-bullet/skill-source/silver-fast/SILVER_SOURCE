@@ -2,7 +2,7 @@
 name: "silver:fast"
 title: "Fast"
 description: >
-  This skill should be used for 3-tier complexity triage: trivial → gsd-fast, medium → gsd-quick with flags, complex → silver:feature escalation.
+  This skill should be used for 3-tier complexity triage: trivial → direct SB edit, medium → SB context/plan/execute/verify, complex → silver:feature escalation.
 argument-hint: "<description of change>"
 version: 0.1.0
 ---
@@ -13,8 +13,8 @@ SB fast-path with 3-tier routing. Classifies work autonomously and routes to the
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
-| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | gsd-fast |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | gsd-quick (with flags) |
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | direct SB edit with verification |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:context` as needed, then `silver:plan`, `silver:execute`, `silver:verify` |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
 > **Note:** This workflow does NOT read §10 prefs or create WORKFLOW.md. The fast path skips all preference and composition overhead by design.
@@ -57,16 +57,16 @@ Display classification:
 
 ```
 Classification: Tier {N} ({Trivial|Medium|Complex})
-Routing to: {gsd-fast|gsd-quick|silver:feature}
+  Routing to: {direct SB edit|SB lifecycle slice|silver:feature}
 ```
 
-## Step 1: Tier 1 — Execute via gsd-fast
+## Step 1: Tier 1 — Execute Directly
 
 **Only reached when Step 0 classifies as Tier 1 (Trivial).**
 
-Invoke `gsd-fast` through the active runtime's SB-recognized skill invocation channel. Pass $ARGUMENTS as the change description.
+Make the small edit directly in the current session. Keep the change to the classified trivial scope and run the smallest relevant verification.
 
-After gsd-fast completes, run scope expansion check (Step 4).
+After the trivial edit and verification complete, run scope expansion check (Step 4).
 
 If scope remained ≤3 files, display completion banner:
 
@@ -75,27 +75,27 @@ SILVER BULLET ► FAST PATH COMPLETE
 
 Change: {$ARGUMENTS}
 Files modified: {count} (confirmed ≤3)
-Status: committed
+Status: verified
 ```
 
-## Step 2: Tier 2 — Detect flags and route to gsd-quick
+## Step 2: Tier 2 — Detect gates and route to SB lifecycle slice
 
 **Only reached when Step 0 classifies as Tier 2 (Medium).**
 
-Before invoking gsd-quick, detect which flags to apply by scanning $ARGUMENTS for signals:
+Before invoking SB lifecycle skills, detect which gates to apply by scanning $ARGUMENTS for signals:
 
 **Signal detection:**
 
-| Flag | Signal words in $ARGUMENTS |
+| Gate | Signal words in $ARGUMENTS |
 |------|---------------------------|
-| `--discuss` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
-| `--research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
-| `--validate` | Change modifies src/, app/, or lib/ directories with logic changes (not just config/comments) |
+| `silver:context` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
+| `silver:research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
+| `silver:validate` | Change modifies src/, app/, or lib/ directories with logic changes (not just config/comments) |
 
-**Flag composition rules:**
-- Any combination is valid (e.g., `--discuss --validate` without `--research`)
-- If no signals detected → invoke bare `gsd-quick` (no flags)
-- If all three signals detected → use `--full` instead of listing all three
+**Gate composition rules:**
+- Any combination is valid.
+- Always invoke `silver:plan`, `silver:execute`, and `silver:verify`.
+- Invoke `silver:context`, `silver:research`, or `silver:validate` only when triggered.
 
 Display detected signals:
 
@@ -104,16 +104,16 @@ Detected signals:
   Ambiguity: {yes/no} {reason if yes}
   Novel domain: {yes/no} {reason if yes}
   Production code: {yes/no} {reason if yes}
-Flags: {--discuss --research --validate | --full | (none)}
+Gates: {silver:context silver:research silver:validate | (none)}
 ```
 
-Invoke `gsd-quick` through the active runtime's SB-recognized skill invocation channel with the composed flags and $ARGUMENTS.
+Invoke the selected SB lifecycle slice with $ARGUMENTS.
 
-After gsd-quick completes, run scope expansion check (Step 4).
+After the SB lifecycle slice completes, run scope expansion check (Step 4).
 
 ### Deferred-Item Capture (Tier 2 only)
 
-After Tier 2 (gsd-quick) execution, any item scoped out during execution MUST be filed via `/silver:add`:
+After Tier 2 execution, any item scoped out during execution MUST be filed via `/silver:add`:
 
 ```
 Skill(skill="silver:add", args="<description of deferred item>")
@@ -139,7 +139,7 @@ Invoke `silver:feature` through the active runtime's SB-recognized skill invocat
 After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the current tier.
 
 **During Tier 1:** If files modified > 3:
-- If 4-10 files → escalate to Tier 2 (gsd-quick, Step 2)
+- If 4-10 files → escalate to Tier 2 (SB lifecycle slice, Step 2)
 - If > 10 files → escalate to Tier 3 (silver:feature, Step 3)
 
 **During Tier 2:** If files modified > 10:
@@ -152,7 +152,7 @@ FAST PATH ESCALATION
 
 Reason: Scope expanded from {original tier} to {new tier}
 Files affected: {count}
-Routing to: {gsd-quick|silver:feature}
+Routing to: {SB lifecycle slice|silver:feature}
 ```
 
 Then invoke the target workflow. On escalation to silver:feature, pass the updated scope description so /silver can classify appropriately.

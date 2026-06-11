@@ -11,26 +11,12 @@ SB_MARKETPLACE_NAME="${SB_MARKETPLACE_NAME:-alo-labs}"
 CLAUDE_SB_MARKETPLACE_SOURCE="${CLAUDE_SB_MARKETPLACE_SOURCE:-$REPO_ROOT}"
 CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE="${CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/claude-plugins.git}"
 CLAUDE_SB_MARKETPLACE_PLUGIN="${CLAUDE_SB_MARKETPLACE_PLUGIN:-silver-bullet}"
-CLAUDE_KW_MARKETPLACE_SOURCE="${CLAUDE_KW_MARKETPLACE_SOURCE:-https://github.com/anthropics/knowledge-work-plugins}"
-CLAUDE_KW_MARKETPLACE_NAME="${CLAUDE_KW_MARKETPLACE_NAME:-knowledge-work-plugins}"
-CLAUDE_KW_MARKETPLACE_PLUGINS=(
-  "engineering"
-  "design"
-  "product-management"
-)
-SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
-SUPERPOWERS_MARKETPLACE_NAME="${SUPERPOWERS_MARKETPLACE_NAME:-superpowers-marketplace}"
-SUPERPOWERS_MARKETPLACE_PLUGIN="${SUPERPOWERS_MARKETPLACE_PLUGIN:-superpowers}"
 LEGACY_PLUGINS=(
   "data-engineering@claude-plugins-official"
   "frontend-design@claude-plugins-official"
   "product-tracking-skills@claude-plugins-official"
 )
 TARGET_PLUGINS=(
-  "superpowers@superpowers-marketplace"
-  "engineering@knowledge-work-plugins"
-  "design@knowledge-work-plugins"
-  "product-management@knowledge-work-plugins"
   "silver-bullet@alo-labs"
 )
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
@@ -39,9 +25,9 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/install-claude.sh [--purge-legacy-plugins] [--public-release]
 
-Registers the Claude knowledge-work marketplaces, refreshes the Silver Bullet
-plugin set, and optionally removes the legacy alias installs previously used
-for Claude.
+Registers the Silver Bullet Claude marketplace, refreshes the Silver Bullet
+plugin set, and optionally removes legacy alias installs previously used for
+Claude.
 
 Options:
   --purge-legacy-plugins  Remove old alias plugin installs from Claude before reinstalling
@@ -274,28 +260,6 @@ refresh_plugin_install() {
   "$CLAUDE_BIN" plugin install "$plugin_id" --scope user >/dev/null
 }
 
-ensure_legacy_skill_alias() {
-  local alias_name="$1"
-  local marketplace="$2"
-  local plugin_name="$3"
-  local cache_root="${HOME}/.claude/plugins/cache"
-  local target_root="${cache_root}/${marketplace}/${plugin_name}"
-  local alias_root="${cache_root}/${alias_name}"
-  local version_dir=""
-
-  if [[ ! -d "$target_root" ]]; then
-    return 0
-  fi
-
-  version_dir="$(find "$target_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-  if [[ -z "$version_dir" || ! -d "${version_dir}/skills" ]]; then
-    return 0
-  fi
-
-  mkdir -p "$alias_root"
-  ln -sfn "${version_dir}/skills" "${alias_root}/skills"
-}
-
 sync_silver_bullet_hook_cache() {
   local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
   local current_version_dir=""
@@ -365,8 +329,6 @@ fi
 
 ensure_github_https_rewrite
 ensure_marketplace_ready "$SB_MARKETPLACE_NAME" "$CLAUDE_SB_MARKETPLACE_SOURCE" "$CLAUDE_SB_MARKETPLACE_PLUGIN"
-ensure_marketplace_ready "$CLAUDE_KW_MARKETPLACE_NAME" "$CLAUDE_KW_MARKETPLACE_SOURCE" "${CLAUDE_KW_MARKETPLACE_PLUGINS[@]}"
-ensure_marketplace_ready "$SUPERPOWERS_MARKETPLACE_NAME" "$SUPERPOWERS_MARKETPLACE_SOURCE" "$SUPERPOWERS_MARKETPLACE_PLUGIN"
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   render_agent_bundle "claude"
   render_agent_bundle "codex"
@@ -386,10 +348,6 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   sync_silver_bullet_hook_cache
   sync_silver_bullet_skill_cache
 fi
-
-ensure_legacy_skill_alias "product-management" "knowledge-work-plugins" "product-management"
-ensure_legacy_skill_alias "engineering" "knowledge-work-plugins" "engineering"
-ensure_legacy_skill_alias "design" "knowledge-work-plugins" "design"
 
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   printf 'Claude marketplace refreshed from public source %s\n' "$CLAUDE_SB_MARKETPLACE_SOURCE"

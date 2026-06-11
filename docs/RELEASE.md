@@ -19,7 +19,7 @@ Four stages must pass in the current session. See `docs/ENFORCEMENT.md` for deta
 | 3 | Public-Facing Content Refresh — all surfaces current |
 | 4 | Security Audit (SENTINEL) — two clean passes |
 
-Each stage requires `/superpowers:verification-before-completion` invocation. Markers cleared on session start.
+Each stage requires `silver:completion-audit` evidence. Markers cleared on session start.
 
 ### 2. Version Bump
 

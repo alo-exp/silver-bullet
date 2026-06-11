@@ -81,14 +81,14 @@ User feedback from 2026-04-24: the Stop hook fires inappropriately in multiple s
 
 ---
 
-### SB-B-8 — feat: wire /verification-before-completion into SB hook enforcement
+### SB-B-8 — feat: wire completion audit into SB hook enforcement
 
 **Type:** enhancement
 **Filed:** 2026-04-25
 **Source:** silver-scan (episodic memory, 2026-04-08)
-**Status:** open
+**Status:** superseded by SB-owned lifecycle absorption
 
-SB should enforce invocation of /verification-before-completion after each task completed by GSD/Superpowers subskills. Currently verification-before-completion is in required_deploy but not enforced at intermediate task boundaries. Needs design and implementation.
+SB should enforce a completion-audit gate after each meaningful task boundary, not only at final delivery. This is now represented by `silver:completion-audit` and the SB-owned lifecycle marker set; remaining work belongs under current hook tests rather than the retired external-helper framing.
 
 ---
 

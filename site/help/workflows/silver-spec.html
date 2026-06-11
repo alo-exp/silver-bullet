@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:spec &mdash; Spec Elicitation Workflow &mdash; Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet spec elicitation workflow: Socratic discovery, assumptions, SPEC.md, REQUIREMENTS.md, optional DESIGN.md, and artifact review before GSD planning.">
+<meta name="description" content="Silver Bullet spec elicitation workflow: Socratic discovery, assumptions, SPEC.md, REQUIREMENTS.md, optional DESIGN.md, and artifact review before SB planning.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -37,12 +37,12 @@ footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);f
 <body>
 <nav><div class="nav-inner"><div style="display:flex;align-items:center;gap:16px"><a href="../../" class="nav-logo">Silver Bullet</a><span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span> Spec</span></div><button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle theme"></button></div></nav>
 <div class="page-hero"><div class="container"><h1>/silver:spec</h1><p>Socratic spec elicitation workflow that produces canonical <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> before implementation begins.</p></div></div>
-<div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On this page</li><li><a href="#overview">Overview</a></li><li><a href="#when-to-use">When to use</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow steps</a></li><li><a href="#non-skippable">Non-skippable gates</a></li><li><a href="#handoff">GSD handoff</a></li><li class="sidebar-section">See also</li><li><a href="./index.html">All workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
+<div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On this page</li><li><a href="#overview">Overview</a></li><li><a href="#when-to-use">When to use</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow steps</a></li><li><a href="#non-skippable">Non-skippable gates</a></li><li><a href="#handoff">SB handoff</a></li><li class="sidebar-section">See also</li><li><a href="./index.html">All workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
 <article class="doc-content">
 <h2 id="overview">Overview</h2>
-<p><code>/silver:spec</code> exists for work where the requirements need to be made explicit before GSD planning. It guides a product-style elicitation session, records assumptions, writes the canonical spec artifacts, and runs artifact review before downstream planning consumes the result.</p>
+<p><code>/silver:spec</code> exists for work where the requirements need to be made explicit before SB planning. It guides a product-style elicitation session, records assumptions, writes the canonical spec artifacts, and runs artifact review before downstream planning consumes the result.</p>
 <p>It does not implement code. Its job is to turn a fuzzy or formal product request into traceable planning inputs.</p>
-<div class="callout callout-info"><div class="callout-body"><strong>Core value:</strong> SB prevents premature implementation by requiring a spec with acceptance criteria, out-of-scope boundaries, assumptions, and source-artifact references before GSD starts planning.</div></div>
+<div class="callout callout-info"><div class="callout-body"><strong>Core value:</strong> SB prevents premature implementation by requiring a spec with acceptance criteria, out-of-scope boundaries, assumptions, and source-artifact references before planning starts.</div></div>
 <div class="divider"></div>
 <h2 id="when-to-use">When to Use</h2>
 <ul>
@@ -63,7 +63,7 @@ footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);f
 <ol>
   <li><strong>Mode detection:</strong> detect greenfield vs augment mode by checking whether <code>.planning/SPEC.md</code> already exists.</li>
   <li><strong>Context gathering:</strong> collect feature name, description, and optional JIRA, Figma, Google Doc, or presentation links.</li>
-  <li><strong>Spec scaffold:</strong> invoke <code>product-management:write-spec</code> when available to establish a formal PM spec structure.</li>
+  <li><strong>Spec scaffold:</strong> use the absorbed SB spec scaffold to establish a formal product spec structure.</li>
   <li><strong>Socratic elicitation:</strong> ask structured questions across problem, user goal, scope boundary, user stories, acceptance criteria, edge cases, error states, data model, and open questions.</li>
   <li><strong>Assumption consolidation:</strong> resolve, accept, or tag every assumption before writing the spec.</li>
   <li><strong>Artifact injection:</strong> incorporate available source artifacts and record inaccessible sources explicitly.</li>
@@ -81,8 +81,8 @@ footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);f
   <li>DESIGN artifact review when DESIGN.md is produced</li>
 </ul>
 <div class="divider"></div>
-<h2 id="handoff">GSD Handoff</h2>
-<p>After <code>/silver:spec</code> completes, use <code>/silver:validate</code> when plans already exist or proceed into the appropriate <code>/silver</code> feature path. GSD planning consumes the spec and requirements as upstream constraints; SB hooks later maintain PR traceability and UAT freshness against the spec version.</p>
+<h2 id="handoff">SB Handoff</h2>
+<p>After <code>/silver:spec</code> completes, use <code>/silver:validate</code> when plans already exist or proceed into the appropriate <code>/silver</code> feature path. SB planning consumes the spec and requirements as upstream constraints; SB hooks later maintain PR traceability and UAT freshness against the spec version.</p>
 <div class="code-block">/silver:spec Add scheduled report exports for admins
 /silver:validate
 /silver Build the scheduled report export feature</div>

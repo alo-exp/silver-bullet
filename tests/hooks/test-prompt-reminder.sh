@@ -35,8 +35,8 @@ cat > "$TMPCFG" << EOF
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch"],
-    "all_tracked": ["silver-quality-gates","code-review"]
+    "required_deploy": ["silver-quality-gates","silver-review","silver-completion-audit","silver-branch-finish"],
+    "all_tracked": ["silver-quality-gates","silver-review","silver-completion-audit","silver-branch-finish"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
 }
@@ -161,10 +161,9 @@ setup
 write_cfg
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
+silver-review
+silver-completion-audit
+silver-branch-finish
 EOF
 out=$(run_hook)
 assert_contains "all skills complete -> contains all-complete message" "$out" "all required skills complete"
@@ -177,7 +176,7 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "missing skills -> output contains 'Missing:'" "$out" "Missing:"
-assert_contains "missing skills -> output contains 'code-review'" "$out" "code-review"
+assert_contains "missing skills -> output contains 'silver-review'" "$out" "silver-review"
 teardown
 
 # Test 4: Missing skills -> output contains count "(N of M complete)"
@@ -208,12 +207,13 @@ setup
 write_cfg
 # Switch to main branch
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
-# Record only silver-quality-gates (leave code-review and others missing) so 'Missing:' appears,
-# but finishing-a-development-branch should be exempt on main and not appear in the list
+# Record only silver-quality-gates (leave review and completion missing) so 'Missing:' appears,
+# but branch finishing should be exempt on main and not appear in the list
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "on main: output contains 'Missing:'" "$out" "Missing:"
 assert_not_contains "on main: finishing-a-development-branch NOT in missing" "$out" "finishing-a-development-branch"
+assert_not_contains "on main: silver-branch-finish NOT in missing" "$out" "silver-branch-finish"
 teardown
 
 # Test 7: Path traversal in CLAUDE_PLUGIN_ROOT -> evil core-rules.md not injected (TD-06)
@@ -250,8 +250,11 @@ setup
 write_legacy_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook 'Add a due date field to todos. Keep it simple.')
-assert_contains "legacy config: inherits current GSD planning gate" "$out" "gsd-discuss-phase"
-assert_contains "legacy config: inherits current GSD execution gate" "$out" "gsd-execute-phase"
+assert_contains "legacy config: inherits current SB planning gate" "$out" "silver-context"
+assert_contains "legacy config: inherits current SB execution gate" "$out" "silver-execute"
+assert_not_contains "legacy config: does not request legacy gsd discuss" "$out" "gsd-discuss-phase"
+assert_not_contains "legacy config: does not request legacy gsd execute" "$out" "gsd-execute-phase"
+assert_not_contains "legacy config: does not request legacy review framing" "$out" "requesting-code-review"
 assert_not_contains "legacy config: does not request retired testing-strategy" "$out" "testing-strategy"
 assert_not_contains "legacy config: does not request retired deploy-checklist" "$out" "deploy-checklist"
 teardown

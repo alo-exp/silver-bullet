@@ -11,7 +11,7 @@ Use this skill when the root cause of a failure is **unknown and must be reconst
 from evidence**. This covers: completed sessions that left things broken, abandoned or
 timed-out sessions, step 7 verification failures, and mid-session stalls.
 
-**If you have an active error with a known cause**, use `/gsd:debug`
+**If you have an active error with a known cause**, use `/silver:debug`
 instead. `/silver:forensics` is for reconstruction, not live debugging.
 
 **In autonomous mode**: skip the user prompt in Step 2a of triage. Classify from evidence
@@ -55,33 +55,29 @@ use `$PWD` as the project root and note "Project root not confirmed" in Evidence
 
 ---
 
-## Step 1b — GSD-Awareness Routing
+## Step 1b — SB Workflow Evidence Routing
 
-Before proceeding to SB's own triage, check whether the issue is better handled by
-GSD's built-in silver:forensics (`/gsd-forensics`).
+Before proceeding to triage, identify which SB workflow layer the failure appears
+to involve. Do not delegate to legacy lifecycle plugins; SB owns workflow-level
+analysis of `.planning/` artifacts and execution patterns.
 
-**Quick-check (run all three in parallel):**
+**Quick-check (run independent reads in parallel when possible):**
 1. Does `.planning/` exist with phase directories?
-2. Does the user description mention: plan drift, execution failure, stuck loop, missing
-   artifacts, scope drift, worktree issues, or a specific phase/plan number?
-3. Are there `.planning/phases/*/SUMMARY.md` files indicating GSD execution happened?
+2. Does the user description mention: plan drift, execution failure, stuck loop,
+   missing artifacts, scope drift, worktree issues, or a specific phase/plan
+   number?
+3. Are there `.planning/phases/*/SUMMARY.md`, `*-PLAN.md`, `*-CONTEXT.md`, or
+   `*-VERIFICATION.md` files indicating SB lifecycle execution happened?
 
 **Routing decision:**
 
 | Evidence | Route to | Reason |
 |----------|----------|--------|
-| Issue mentions a specific GSD phase, plan, or execution anomaly (plan drift, stuck loop, scope drift, missing SUMMARY.md) | `/gsd-forensics` | GSD silver:forensics specializes in workflow-level analysis of `.planning/` artifacts and execution patterns |
-| Issue is about session timeout, stall, SB enforcement failure, or session-level problems | SB silver:forensics (continue to Step 2) | SB silver:forensics handles session-level issues that GSD doesn't track |
-| Issue is about test failures after recent commits, wrong output, or general investigation | SB silver:forensics (continue to Step 2) | General investigation path handles these |
-| Unclear — evidence could go either way | SB silver:forensics (continue to Step 2) | SB's General path (Path 3) can further delegate if GSD-specific patterns emerge |
-
-**If routing to `/gsd-forensics`:**
-> "This looks like a GSD workflow issue (plan drift / execution anomaly / missing artifacts).
-> GSD has specialized silver:forensics for this. Running `/gsd-forensics` instead."
-
-Invoke `/gsd-forensics` through the active runtime's SB-recognized skill invocation channel and stop. Do not proceed to Step 2.
-
-**If routing to SB silver:forensics:** Continue to Step 2.
+| Active known-cause bug or error | `/silver:debug` | Debug owns live diagnosis and fix loops |
+| Plan drift, execution anomaly, missing artifacts, or scope drift | SB workflow forensics (continue to Step 2) | SB owns planning/execution artifact analysis |
+| Session timeout, stall, enforcement failure, or incomplete handoff | SB session forensics (continue to Step 2) | SB owns session integrity analysis |
+| Test failures after recent commits or wrong output | SB task forensics (continue to Step 2) | General task path reconstructs implementation drift |
+| Unclear | SB general forensics (continue to Step 2) | General path can refine classification from evidence |
 
 ---
 
@@ -260,12 +256,12 @@ Based on the root cause classification, use the appropriate follow-up:
 
 | Classification | Next action |
 |----------------|-------------|
-| Pre-answer gap / Plan ambiguity | Return to `/gsd:discuss-phase` to clarify, then re-plan |
-| Implementation drift | Use `/gsd:debug` on the drifted commits, then re-execute |
-| Anti-stall trigger / Genuine blocker | Log under "Needs human review", use `/gsd:resume-work` |
-| Upstream dependency | Resolve dependency, then re-run `/gsd:execute-phase` |
-| Verification gap | Re-run `/gsd:verify-work` with corrected test/check criteria |
-| External kill / Timeout | Use `/gsd:resume-work` to continue from last checkpoint |
+| Pre-answer gap / Plan ambiguity | Return to `/silver:context`, then re-plan with `/silver:plan` |
+| Implementation drift | Use `/silver:debug` on the drifted commits, then re-execute with `/silver:execute` |
+| Anti-stall trigger / Genuine blocker | Log under "Needs human review", then resume from `.planning/STATE.md` with the relevant SB workflow |
+| Upstream dependency | Resolve dependency, then re-run `/silver:execute` for the affected plan |
+| Verification gap | Re-run `/silver:verify` with corrected test/check criteria |
+| External kill / Timeout | Resume from the last checkpoint in `.planning/STATE.md` with the relevant SB workflow |
 | Unknown | Escalate to user with evidence gathered above |
 
 - [ ] <action 1>

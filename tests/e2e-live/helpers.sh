@@ -2,7 +2,7 @@
 # Shared helpers for the live todo-app E2E suite.
 #
 # The suite runs Claude and Codex against an isolated copy of the standalone
-# sibling test-todo-app repo, then resets the workspace after each scenario.
+# sibling todo-app repo, then resets the workspace after each scenario.
 # The real SB state files are backed up and restored around each scenario so
 # the suite can run repeatedly without cross-talk. Claude keeps using
 # the active host runtime state root; Kay uses the temp-root .codex/.silver-bullet tree.
@@ -14,7 +14,7 @@ export PATH
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
-DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/test-todo-app"
+DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/todo-app"
 FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
 AGENT_DIR="${SB_ROOT}/tests/live/agents"
 LIB_DIR="${E2E_ROOT}/lib"
@@ -88,10 +88,6 @@ CLAUDE_LEGACY_PLUGINS=(
 )
 
 CLAUDE_REQUIRED_PLUGINS=(
-  "superpowers@superpowers-marketplace"
-  "engineering@knowledge-work-plugins"
-  "design@knowledge-work-plugins"
-  "product-management@knowledge-work-plugins"
   "silver-bullet@alo-labs"
 )
 
@@ -872,10 +868,20 @@ refresh_runtime_installation() {
 verify_runtime_dependency_access() {
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     assert_command_succeeds "Claude Silver Bullet plugin installed" claude_plugin_installed_in_scope "silver-bullet@alo-labs" "user"
-    assert_command_succeeds "Claude Superpowers plugin installed" claude_plugin_installed_in_scope "superpowers@superpowers-marketplace" "user"
-    assert_command_succeeds "Claude engineering plugin installed" claude_plugin_installed_in_scope "engineering@knowledge-work-plugins" "user"
-    assert_command_succeeds "Claude design plugin installed" claude_plugin_installed_in_scope "design@knowledge-work-plugins" "user"
-    assert_command_succeeds "Claude product-management plugin installed" claude_plugin_installed_in_scope "product-management@knowledge-work-plugins" "user"
+    if claude_plugin_installed "superpowers@superpowers-marketplace"; then
+      echo "FAIL: Claude Superpowers plugin should not be installed by SB"
+      FAIL=$((FAIL + 1))
+    else
+      echo "PASS: Claude Superpowers plugin is not installed by SB"
+      PASS=$((PASS + 1))
+    fi
+    if claude_plugin_installed "engineering@knowledge-work-plugins" || claude_plugin_installed "design@knowledge-work-plugins" || claude_plugin_installed "product-management@knowledge-work-plugins"; then
+      echo "FAIL: Claude Anthropic knowledge-work plugins should not be installed by SB"
+      FAIL=$((FAIL + 1))
+    else
+      echo "PASS: Claude Anthropic knowledge-work plugins are not installed by SB"
+      PASS=$((PASS + 1))
+    fi
     if claude_plugin_installed "using-silver-bullet"; then
       echo "FAIL: legacy using-silver-bullet alias should not be installed"
       FAIL=$((FAIL + 1))
@@ -909,14 +915,14 @@ verify_runtime_dependency_access() {
 
     assert_file_contains "Codex plugin hooks feature enabled" "$config_file" 'plugin_hooks = true'
     assert_file_contains "Codex Silver Bullet marketplace registered" "$config_file" '\[marketplaces\.alo-labs-codex\]'
-    assert_file_contains "Codex GSD marketplace registered" "$config_file" '\[marketplaces\.get-shit-done-marketplace\]'
-    assert_file_contains "Codex Superpowers marketplace registered" "$config_file" '\[marketplaces\.superpowers-marketplace\]'
     assert_command_succeeds "Codex Silver Bullet plugin registered for preflight" codex_plugin_registered "silver-bullet@alo-labs-codex"
-    assert_file_contains "Codex Superpowers plugin enabled" "$config_file" '\[plugins\."superpowers@superpowers-marketplace"\]'
-    assert_file_contains "Codex GSD plugin enabled" "$config_file" '\[plugins\."gsd@get-shit-done-marketplace"\]'
-    assert_file_contains "Codex engineering plugin enabled" "$config_file" '\[plugins\."engineering@alo-labs-codex(-local)?"\]'
-    assert_file_contains "Codex design plugin enabled" "$config_file" '\[plugins\."design@alo-labs-codex(-local)?"\]'
-    assert_file_contains "Codex product-management plugin enabled" "$config_file" '\[plugins\."product-management@alo-labs-codex(-local)?"\]'
+    assert_file_not_contains "Codex GSD marketplace not registered by default" "$config_file" '\[marketplaces\.get-shit-done-marketplace\]'
+    assert_file_not_contains "Codex Superpowers marketplace not registered by default" "$config_file" '\[marketplaces\.superpowers-marketplace\]'
+    assert_file_not_contains "Codex Superpowers plugin not enabled by default" "$config_file" '\[plugins\."superpowers@superpowers-marketplace"\]'
+    assert_file_not_contains "Codex GSD plugin not enabled by default" "$config_file" '\[plugins\."gsd@get-shit-done-marketplace"\]'
+    assert_file_not_contains "Codex engineering plugin not enabled by default" "$config_file" '\[plugins\."engineering@alo-labs-codex(-local)?"\]'
+    assert_file_not_contains "Codex design plugin not enabled by default" "$config_file" '\[plugins\."design@alo-labs-codex(-local)?"\]'
+    assert_file_not_contains "Codex product-management plugin not enabled by default" "$config_file" '\[plugins\."product-management@alo-labs-codex(-local)?"\]'
     assert_not_contains "Codex split silver plugin absent" "$(cat "$config_file" 2>/dev/null)" 'silver@alo-labs-codex'
     assert_file_exists "Codex Silver Bullet package synced" "$marketplace_root/plugins/silver-bullet/.codex-plugin/plugin.json"
     assert_file_absent "Codex Silver Bullet package does not expose plugin picker skills directory" "$marketplace_root/plugins/silver-bullet/skills"
@@ -944,24 +950,14 @@ verify_runtime_dependency_access() {
     assert_command_succeeds "Codex Silver Bullet install path exposes package manifest" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex Silver Bullet managed hook manifest declared" codex_plugin_surface_file_contains_any "silver-bullet@alo-labs-codex" ".codex-plugin/plugin.json" '"hooks": "./hooks/hooks.json"'
     assert_command_succeeds "Codex Silver Bullet install path exposes workflow-chain guard" codex_plugin_surface_exists_any "silver-bullet@alo-labs-codex" -- "hooks/workflow-chain-guard.sh"
-    assert_command_succeeds "Codex Superpowers plugin registered" codex_plugin_registered_any "superpowers@superpowers-marketplace"
-    assert_command_succeeds "Codex Superpowers install path exposes verification skill" codex_plugin_surface_exists_any "superpowers@superpowers-marketplace" -- "skills/verification-before-completion/SKILL.md" "skills/brainstorming/SKILL.md"
-    assert_command_succeeds "Codex GSD plugin registered" codex_plugin_registered_any "gsd@get-shit-done-marketplace"
-    assert_command_succeeds "Codex GSD install path exposes package manifest" codex_plugin_surface_exists_any "gsd@get-shit-done-marketplace" -- ".codex-plugin/plugin.json"
     assert_command_succeeds "Codex hook discovery sees silver-quality-gates as invocable" sb_skill_is_installed "silver-quality-gates"
-    assert_command_succeeds "Codex hook discovery sees gsd-discuss-phase as invocable" sb_skill_is_installed "gsd-discuss-phase"
-    assert_command_succeeds "Codex hook discovery sees gsd-plan-phase as invocable" sb_skill_is_installed "gsd-plan-phase"
-    assert_command_succeeds "Codex hook discovery sees gsd-execute-phase as invocable" sb_skill_is_installed "gsd-execute-phase"
-    assert_command_succeeds "Codex hook discovery sees gsd-verify-work as invocable" sb_skill_is_installed "gsd-verify-work"
-    assert_command_succeeds "Codex hook discovery sees verification-before-completion as invocable" sb_skill_is_installed "verification-before-completion"
-    assert_command_succeeds "Codex hook discovery sees test-driven-development as invocable" sb_skill_is_installed "test-driven-development"
+    assert_command_succeeds "Codex hook discovery sees silver-context as invocable" sb_skill_is_installed "silver-context"
+    assert_command_succeeds "Codex hook discovery sees silver-plan as invocable" sb_skill_is_installed "silver-plan"
+    assert_command_succeeds "Codex hook discovery sees silver-execute as invocable" sb_skill_is_installed "silver-execute"
+    assert_command_succeeds "Codex hook discovery sees silver-verify as invocable" sb_skill_is_installed "silver-verify"
+    assert_command_succeeds "Codex hook discovery sees silver-completion-audit as invocable" sb_skill_is_installed "silver-completion-audit"
+    assert_command_succeeds "Codex hook discovery sees silver-tdd marker as invocable" sb_skill_is_installed "silver-tdd"
     assert_command_succeeds "Codex hook discovery sees verify-tests as invocable" sb_skill_is_installed "verify-tests"
-    assert_command_succeeds "Codex engineering plugin registered" codex_plugin_registered_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local"
-    assert_command_succeeds "Codex engineering install path exposes package manifest" codex_plugin_surface_exists_any "engineering@alo-labs-codex" "engineering@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex design plugin registered" codex_plugin_registered_any "design@alo-labs-codex" "design@alo-labs-codex-local"
-    assert_command_succeeds "Codex design install path exposes package manifest" codex_plugin_surface_exists_any "design@alo-labs-codex" "design@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
-    assert_command_succeeds "Codex product-management plugin registered" codex_plugin_registered_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local"
-    assert_command_succeeds "Codex product-management install path exposes package manifest" codex_plugin_surface_exists_any "product-management@alo-labs-codex" "product-management@alo-labs-codex-local" -- ".codex-plugin/plugin.json"
     assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE" 'name: "silver:init"'
     assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE" 'name: "silver:ensure-docs"'
     assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE" 'name: "silver:feature"'

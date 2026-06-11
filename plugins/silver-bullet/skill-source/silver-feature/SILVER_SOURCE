@@ -2,14 +2,14 @@
 name: "silver:feature"
 title: "Feature"
 description: >
-  This skill should be used for full SB-orchestrated feature development workflow: orient → clarify/decide → silver:quality-gates → GSD plan/execute/verify → ship
+  This skill should be used for full SB-owned feature development workflow: orient → clarify/decide → silver:quality-gates → SB context/plan/execute/verify → ship
 argument-hint: "<feature description>"
 version: 0.1.0
 ---
 
 # /silver:feature — Feature Development Workflow
 
-SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around the GSD phase lifecycle. GSD remains the execution backbone; Superpowers and other dependency plugins are invoked only when a selected SB flow explicitly requires them.
+SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows. Former GSD, Superpowers, and Anthropic knowledge-work behavior is absorbed into SB skills at the points where SB explicitly depends on it.
 
 Never implements features directly — orchestrates only.
 
@@ -17,26 +17,27 @@ Never implements features directly — orchestrates only.
 
 SB separates pre-execution gates from post-execution gates.
 
-Before implementation edits, the execution trace must show only the pre-execution dependency chain that unlocks GSD execution:
+Before implementation edits, the execution trace must show only the pre-execution chain that unlocks SB execution:
 
-1. `gsd-scan` when rapid SB orientation is useful
-2. `gsd-map-codebase` when the project is brownfield or deep codebase mapping is needed
+1. `silver:scan` when rapid SB orientation is useful
+2. `silver:scan` with deeper mapping when the project is brownfield or the codebase is unfamiliar
 3. `silver:clarify` when scope is fuzzy
 4. `silver:research` when FLOW DECIDE is needed for architecture, stack, API, or data-model choices
 5. `silver:quality-gates`
-6. `gsd:discuss-phase`
-7. `gsd:plan-phase`
+6. `silver:context`
+7. `silver:plan`
 
 After implementation, final delivery requires the post-execution chain:
 
-1. `gsd:execute-phase` or `gsd:autonomous`
-2. `gsd:verify-work`
-3. `gsd-code-review` and review triage/fix steps
-4. `gsd-secure-phase`
-5. `gsd-validate-phase`
-6. `gsd-ship`
+1. `silver:execute`
+2. `silver:verify`
+3. `silver:review-request`, `silver:review`, and `silver:review-triage`
+4. `silver:secure`
+5. `silver:validate`
+6. `silver:branch-finish` on feature branches
+7. `silver:ship`
 
-If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
+If any required SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell-only work, direct edits, or weaker fallback work.
 
 The `workflow-chain-guard.sh` hook enforces only the pre-execution chain at edit time. Completion hooks enforce review, security, verification, artifacts, and ship gates before final delivery.
 
@@ -206,7 +207,7 @@ FOR each phase in remaining_phases:
     - Internal TDD gate within FLOW 8 for behavior-changing implementation plans
     - FLOW 15 (DEBUG) dynamically on execution, CI, test, or verification failure
   TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
-    GSD's FLOW 14 (SHIP) handles this as part of phase completion.
+    SB's FLOW 14 (SHIP) handles this as part of phase completion.
     Do NOT use the active runtime file-editing mechanism directly — planning-file-guard.sh will block it.
     If FLOW 14 did not tick the checkbox, use the override bypass:
       touch $HOME/.codex/.silver-bullet/planning-edit-override
@@ -221,7 +222,7 @@ FOR each phase in remaining_phases:
       rm -f $HOME/.codex/.silver-bullet/planning-edit-override
     Then include ROADMAP.md in the phase-completion commit (git add .planning/ROADMAP.md)
     NOTE: The roadmap-freshness hook will BLOCK the commit if this step is skipped.
-  AFTER phase complete: advance to next phase through GSD state
+  AFTER phase complete: advance to next phase through SB state
 END FOR
 ```
 
@@ -246,7 +247,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
-**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `silver:verify`. Refuse skip requests for these regardless of §10.
 
 ## Step 0: Complexity Triage
 
@@ -263,9 +264,9 @@ If trivial: invoke `silver:fast` through the active runtime's SB-recognized skil
 
 ## Step 1a: Codebase Intel
 
-Invoke `gsd-scan` through the active runtime's SB-recognized skill invocation channel for rapid SB orientation.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel for rapid SB orientation.
 
-If no current codebase intel exists and this is a brownfield project, invoke `gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel for deeper GSD-managed mapping.
+If no current codebase intel exists and this is a brownfield project, run a deeper `silver:scan` pass focused on architecture, dependencies, tests, and likely blast radius.
 
 ## Step 1b: Fuzzy Scope Clarification (conditional)
 
@@ -288,15 +289,15 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke the installed multi-AI research/orchestration skill if available. Note: this step informs the spec PRE-implementation. Step 9c (`gsd:review --all`) reviews completed code POST-execution. Both are independent. If no multi-AI skill is installed, continue only if the user approves the degraded path.
+If A: invoke the installed multi-AI research/orchestration skill if available. Note: this step informs the spec PRE-implementation. Step 9c external second-opinion review reviews completed code POST-execution. Both are independent. If no multi-AI skill is installed, continue only if the user approves the degraded path.
 
 ## Step 2: Testing Strategy
 
-Invoke `testing-strategy` through the active runtime's SB-recognized skill invocation channel when the dependency is installed. Purpose: define test levels, tooling, coverage targets before GSD planning. If unavailable, capture test strategy in GSD discuss/plan artifacts instead of inventing an untracked substitute.
+Capture test levels, tooling, and coverage targets inside `silver:plan`. Use `verify-tests` when fresh suite execution is needed. Do not require the old Engineering `testing-strategy` plugin.
 
 ## Step 2.5: Writing Plans
 
-Keep implementation planning inside `gsd:plan-phase` by default. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` through the active runtime's SB-recognized skill invocation channel; SB does not package a local `writing-plans` skill.
+Keep implementation planning inside `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
 
 ## Step 2.7: Pre-Build Validation
 
@@ -321,25 +322,25 @@ Invoke `silver:quality-gates` through the active runtime's SB-recognized skill i
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: adaptive questioning → CONTEXT.md with locked decisions for the planner.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: adaptive questioning, locked decisions, assumptions, dependencies, and CONTEXT.md handoff for the planner.
 
 ## Step 5: Analyze Dependencies
 
-Invoke `gsd-analyze-dependencies` through the active runtime's SB-recognized skill invocation channel. Purpose: map phase dependencies before GSD creates the plan.
+Dependency analysis is part of `silver:plan`. Before invoking it, gather dependency signals from SPEC.md, CONTEXT.md, ROADMAP.md, prior SUMMARY.md files, package manifests, schema/migration files, API boundaries, and touched services.
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md with verification loop.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md with assumptions, dependencies, task waves, TDD policy, acceptance criteria traceability, and verification loop.
 
 ## Step 7: Execute Phase
 
 **If mode is Interactive (default):**
-- For implementation plans, invoke `gsd-execute-phase --tdd` through the active runtime's SB-recognized skill invocation channel.
-- For config-only, docs-only, or infra-only plans, invoke `gsd-execute-phase` without `--tdd`.
+- For implementation plans, invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel. The `tdd` gate runs before code edits.
+- For config-only, docs-only, or infra-only plans, invoke `silver:execute` with the non-application-TDD rationale recorded in SUMMARY.md.
 
-**If mode is Autonomous (§10e):** invoke `gsd-autonomous` through the active runtime's SB-recognized skill invocation channel. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `tdd` gate can run before execution.
+**If mode is Autonomous (§10e):** invoke `silver:execute` with autonomous mode context. Autonomous execution still obeys the same TDD, verification, deferred-item, and artifact gates.
 
-**Internal TDD gate:** `tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It delegates to `superpowers:test-driven-development`, so Superpowers is used only at this explicit SB execution boundary.
+**Internal TDD gate:** `tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It is now an SB-owned TDD policy skill.
 
 **Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` through the active runtime's SB-recognized skill invocation channel for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
@@ -353,37 +354,37 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 8: Verify Work
 
-Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Purpose: UAT, must-haves, artifact checks. Phase is NOT complete until this passes. Non-skippable.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: UAT, must-haves, artifact checks, test freshness, and completion evidence. Phase is NOT complete until this passes. Non-skippable.
 
 ## Step 8b: Test Gap Fill (conditional)
 
-**Only if gsd-verify-work surfaces coverage gaps:**
+**Only if `silver:verify` surfaces coverage gaps:**
 
-Invoke `gsd-add-tests` through the active runtime's SB-recognized skill invocation channel. Purpose: generate tests from UAT criteria to fill gaps identified by verification — runs after gsd-verify-work so gap targets are known.
+Invoke `verify-tests` or return to `silver:execute` with a test-gap task. Purpose: add tests from UAT criteria to fill gaps identified by verification.
 
 ## Step 9a: Request Code Review
 
-Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel. Purpose: frame review scope and focus rigorously before spawning reviewers.
+Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel. Purpose: frame review scope, risks, artifacts, and blocker criteria before review begins.
 
 ## Step 9b: Run Code Review
 
-Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. Purpose: spawn reviewer agents → REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
+Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. Purpose: create or update REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
 
-If issues found in REVIEW.md: invoke `gsd-code-review-fix` through the active runtime's SB-recognized skill invocation channel to auto-fix findings atomically before human review.
+If issues are found in REVIEW.md: fix BLOCK findings through `silver:execute` or the active implementation workflow, then re-run `silver:review`.
 
 ## Step 9c: Cross-AI Review (conditional)
 
 **Only for architecturally significant changes or user request:**
 
-Invoke `gsd-review --all` through the active runtime's SB-recognized skill invocation channel. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code. The `--all` flag fans out to every available external CLI (Gemini, Claude, Codex, OpenCode, Qwen, Cursor).
+Invoke the configured external second-opinion review mechanism only if available and explicitly selected. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code and feeds findings back into REVIEW.md.
 
 ## Step 9d: Receive Review
 
-Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel. Purpose: disciplined response to findings — no blind agreement.
+Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel. Purpose: disciplined response to findings — no blind agreement and no silent dismissal.
 
 ## Step 9e: Backlog capture from review
 
-After receiving review findings, scan REVIEW.md for any low-priority, deferred, or advisory items that were not fixed. **Every such item must be added to the GSD backlog immediately** — do not silently drop them.
+After receiving review findings, scan REVIEW.md for any low-priority, deferred, or advisory items that were not fixed. **Every such item must be added to the SB backlog immediately** — do not silently drop them.
 
 For each unfixed non-blocking finding:
 ```
@@ -398,11 +399,11 @@ Invoke `security` through the active runtime's SB-recognized skill invocation ch
 
 ## Step 11: Secure Phase
 
-Invoke `gsd-secure-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: retroactive threat mitigation verification.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: retroactive threat mitigation verification and security artifact update.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: Nyquist validation gap filling.
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: validation gap filling and pre-ship consistency check.
 
 ## Step 12b: Tech Debt Review
 
@@ -434,7 +435,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `superpowers:finishing-a-development-branch` through the active runtime's SB-recognized skill invocation channel. Purpose: merge / PR / cleanup decision; SB does not package a local `finishing-branch` skill.
+Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel. Purpose: merge / PR / cleanup decision, branch hygiene, and gate readiness.
 
 ## Step 15a: PR Branch (ask user)
 
@@ -442,14 +443,14 @@ Ask user:
 
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
-> A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
+> A. Yes — ask `silver:ship` to prepare a clean PR branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` through the active runtime's SB-recognized skill invocation channel.
+If A: pass the clean-PR-branch preference to `silver:ship`.
 If C: record preference in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 15b: Ship Phase
 
-Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
 
 ## Step 16: Episodic Memory
 
@@ -480,20 +481,17 @@ Write `.planning/UAT.md` using the active runtime file-writing mechanism.
 
 Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` through the active runtime's SB-recognized skill invocation channel.
 
-Do NOT proceed to gsd-audit-uat until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
+Do NOT proceed to `silver:release` until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
 ### Step 17.0b: Cross-Artifact Consistency Review
 
 Invoke `/artifact-reviewer --reviewer review-cross-artifact --artifacts .planning/SPEC.md .planning/REQUIREMENTS.md .planning/ROADMAP.md` (add `.planning/DESIGN.md` if it exists).
 
-Do NOT proceed to gsd-audit-uat until cross-artifact review reports clean pass. If ISSUES_FOUND, the orchestrator applies fixes and re-reviews per the review loop. If unresolvable after 5 rounds, STOP and present to the user.
+Do NOT proceed to `silver:release` until cross-artifact review reports clean pass. If ISSUES_FOUND, the orchestrator applies fixes and re-reviews per the review loop. If unresolvable after 5 rounds, STOP and present to the user.
 
 **Why here:** Cross-artifact alignment must be confirmed before milestone audit begins — auditing against misaligned artifacts wastes effort.
 
-1. Invoke `gsd-audit-uat` through the active runtime's SB-recognized skill invocation channel
-2. Invoke `gsd-audit-milestone` through the active runtime's SB-recognized skill invocation channel
-3. If gaps found (max 2 gap-closure iterations): invoke `gsd-plan-milestone-gaps` → invoke `silver:feature` for gap phases → return to Step 0 of the gap phases. After 2 iterations if gaps remain, surface to user with options.
-4. Invoke `gsd-complete-milestone` through the active runtime's SB-recognized skill invocation channel
+Invoke `silver:release` with milestone-completion context. It owns UAT audit, milestone audit, gap planning, gap phases, archive, changelog, and release publication decisions.
 
 ## Step 18: Post-work backlog capture (mandatory)
 

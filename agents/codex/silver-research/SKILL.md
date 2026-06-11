@@ -15,7 +15,7 @@ SB orchestrator for technology decisions, architecture spikes, tech comparisons,
 
 By default, research runs directly in the current host session using repository context, local artifacts, official docs, primary sources, and other concrete evidence available through the host/runtime. MultAI is optional and is used only when the user explicitly requests multi-AI perspectives in the current task. After research is complete, hand off to the appropriate implementation workflow.
 
-## Mandatory dependency execution
+## Mandatory SB workflow execution
 
 Before any local research write-up or handoff, the execution trace must show the dependency chain for this workflow. At minimum:
 
@@ -24,9 +24,9 @@ Before any local research write-up or handoff, the execution trace must show the
 3. Invoke `silver:clarify`
 4. Handoff to `silver:feature` or `silver:devops` only after the research artifact exists
 
-If any required downstream skill cannot be invoked, stop immediately and notify the user. If the user explicitly requested MultAI and it is unavailable, stop and offer install-and-retry or permission to continue with the default direct-research path. Do not treat missing MultAI as a blocker for the default path. Do not replace missing dependency skills with shell reconnaissance, direct edits, or ad hoc local reasoning.
+If any required downstream SB skill cannot be invoked, stop immediately and notify the user. If the user explicitly requested MultAI and it is unavailable, stop and offer install-and-retry or permission to continue with the default direct-research path. Do not treat missing MultAI as a blocker for the default path. Do not replace missing SB workflow steps with shell reconnaissance, direct edits, or ad hoc local reasoning.
 
-The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, the research chain has not been completed yet.
+The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the required SB workflow markers are actually present in the workflow state. If the guard blocks you, the research chain has not been completed yet.
 
 ## Pre-flight: Load Preferences
 
@@ -68,7 +68,7 @@ Construct the proposed flow chain for research/exploration work. Short chain —
 
 FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → FLOW 5 (SPECIFY) [only when research should become a spec]
 
-No per-phase loop — research is a single-pass engagement that hands off to the appropriate implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`) or to `gsd:do` for GSD-owned lifecycle work.
+No per-phase loop — research is a single-pass engagement that hands off to the appropriate SB implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`, or `silver:plan` when the next step is planning rather than implementation).
 
 ### 3. Display Proposal
 
@@ -257,7 +257,7 @@ Ask:
 > B. silver:devops — infrastructure/deployment change based on research findings
 > C. Done — research-only engagement, no implementation needed
 
-If A: invoke `silver:feature` through the active runtime's SB-recognized skill invocation channel. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so gsd-discuss-phase can reference it.
+If A: invoke `silver:feature` through the active runtime's SB-recognized skill invocation channel. Pass the artifact path (`.planning/research/<date>-<topic>/`) as context argument so `silver:context` and `silver:plan` can reference it.
 
 If B: invoke `silver:devops` through the active runtime's SB-recognized skill invocation channel. Pass the artifact path as context argument.
 

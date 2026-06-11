@@ -1,7 +1,7 @@
 ---
 name: "silver:add"
 title: "Add"
-description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=gsd or absent) — and return a stable, referenceable ID.
+description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=local or absent; legacy issue_tracker=gsd is accepted as local) — and return a stable, referenceable ID.
 version: 0.1.0
 ---
 
@@ -38,21 +38,21 @@ Do not execute other shell commands. Note requirements in output for human execu
 
 Walk up from `$PWD` until a `.silver-bullet.json` file is found. All paths (`docs/issues/`, `docs/sessions/`) are relative to this root. The plugin root (where this SKILL.md lives) is irrelevant for filing.
 
-If `.silver-bullet.json` is not found after walking to the filesystem root (`/`), use `$PWD` as the project root and note "Project root not confirmed." in output. Default `TRACKER` to `"gsd"`.
+If `.silver-bullet.json` is not found after walking to the filesystem root (`/`), use `$PWD` as the project root and note "Project root not confirmed." in output. Default `TRACKER` to `"local"`.
 
 ---
 
 ## Step 2 — Read configuration
 
 ```bash
-TRACKER=$(jq -r '.issue_tracker // "gsd"' .silver-bullet.json)
+TRACKER=$(jq -r '.issue_tracker // "local"' .silver-bullet.json)
 CACHE=$(jq -r '._github_project // empty' .silver-bullet.json)
 ```
 
 Display: "Filing via: [github | local docs/issues/]"
 
 - If `TRACKER` = `"github"` → proceed to Step 4 after classification.
-- If `TRACKER` = `"gsd"` or absent → proceed to Step 5 after classification.
+- If `TRACKER` = `"local"`, legacy `"gsd"`, or absent → proceed to Step 5 after classification.
 
 ---
 
@@ -213,7 +213,7 @@ review.
 
 ## Step 5 — File to local docs/
 
-Execute only when `TRACKER` = `"gsd"` or absent.
+Execute only when `TRACKER` = `"local"`, legacy `"gsd"`, or absent.
 
 ### Step 5a — Ensure directory exists
 
@@ -287,7 +287,7 @@ If board placement was skipped or rate-limited: append a warning note to the out
 
 ## Edge Cases
 
-- **No `.silver-bullet.json` found**: Use `$PWD` as project root. Note "Project root not confirmed." Default `TRACKER` to `"gsd"`.
+- **No `.silver-bullet.json` found**: Use `$PWD` as project root. Note "Project root not confirmed." Default `TRACKER` to `"local"`.
 
 - **gh not authenticated / missing `project` scope**: `gh auth status` returns non-zero or shows no logged-in account → output "gh CLI is not authenticated. Run: `gh auth login` — then retry /silver:add." Stop. Missing `project` scope detected in Step 4a → output instruction to run `gh auth refresh -s project`. Stop.
 

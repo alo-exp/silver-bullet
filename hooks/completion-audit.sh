@@ -78,8 +78,8 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
 fi
 DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
 DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
-DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
-DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
+DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
+DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
@@ -561,13 +561,21 @@ state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
 has_skill() {
-  printf '%s\n' "$state_contents" | grep -qx "$1" 2>/dev/null
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    sb_required_skill_is_recorded "$state_contents" "$1"
+    return $?
+  fi
+  printf '%s\n' "$state_contents" | grep -Fqx -- "$1" 2>/dev/null
 }
 
 # Line number of a skill in the state file (for ordering checks); 0 if absent
 skill_line() {
+  if declare -F sb_required_skill_line >/dev/null 2>&1; then
+    sb_required_skill_line "$state_contents" "$1"
+    return 0
+  fi
   local line
-  line=$(printf '%s\n' "$state_contents" | grep -nx "^${1}$" | head -1 | cut -d: -f1)
+  line=$(printf '%s\n' "$state_contents" | grep -Fnx -- "$1" | head -1 | cut -d: -f1)
   printf '%s' "${line:-0}"
 }
 
@@ -680,7 +688,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
         quality-gate-stage-3 \
         quality-gate-stage-4 \
         full-test-suite-rerun; do
-        if ! grep -qx "$marker" "$quality_gate_state_file" 2>/dev/null; then
+        if ! grep -Fqx -- "$marker" "$quality_gate_state_file" 2>/dev/null; then
           quality_gate_ready=false
           break
         fi
@@ -756,19 +764,19 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/required-skills.sh"
 fi
-DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
-DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates gsd-code-review requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests}"
+DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
+DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 fi
 
-# When on main/master branch, finishing-a-development-branch is not applicable
+# When on main/master branch, branch finishing is not applicable
 if [[ "$on_main" == true ]]; then
   # Remove from DEFAULT_REQUIRED and from any config-supplied required_deploy
-  DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
-  required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
+  DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
+  required_deploy_cfg=$(printf '%s' "$required_deploy_cfg" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
 # Current-version config-supplied required_deploy remains the sole source of
@@ -811,33 +819,33 @@ for skill in $required_skills; do
 done
 
 # ── Check code review ordering ───────────────────────────────────────────────
-# Enforce: requesting-code-review frames the review, gsd-code-review produces
-# REVIEW.md, and receiving-code-review triages findings after review output exists.
+# Enforce: review-request frames the review, silver-review produces REVIEW.md,
+# and review-triage handles findings after review output exists.
 ordering_issues=""
-if has_skill "requesting-code-review" && has_skill "gsd-code-review"; then
-  req_line=$(skill_line "requesting-code-review")
-  cr_line=$(skill_line "gsd-code-review")
+if has_skill "silver-review-request" && has_skill "silver-review"; then
+  req_line=$(skill_line "silver-review-request")
+  cr_line=$(skill_line "silver-review")
   if [[ "$req_line" -gt 0 && "$cr_line" -gt 0 && "$cr_line" -lt "$req_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /gsd:code-review was run BEFORE /requesting-code-review (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review was run BEFORE /silver-review-request (wrong order)\n"
   fi
 fi
-if has_skill "gsd-code-review" && has_skill "receiving-code-review"; then
-  cr_line=$(skill_line "gsd-code-review")
-  recv_line=$(skill_line "receiving-code-review")
+if has_skill "silver-review" && has_skill "silver-review-triage"; then
+  cr_line=$(skill_line "silver-review")
+  recv_line=$(skill_line "silver-review-triage")
   if [[ "$cr_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$cr_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /receiving-code-review was run BEFORE /gsd:code-review (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review (wrong order)\n"
   fi
 fi
-if has_skill "requesting-code-review" && has_skill "receiving-code-review"; then
-  req_line=$(skill_line "requesting-code-review")
-  recv_line=$(skill_line "receiving-code-review")
+if has_skill "silver-review-request" && has_skill "silver-review-triage"; then
+  req_line=$(skill_line "silver-review-request")
+  recv_line=$(skill_line "silver-review-triage")
   if [[ "$req_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$req_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /receiving-code-review was run BEFORE /requesting-code-review (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review-request (wrong order)\n"
   fi
 fi
 
-# ── Artifact existence check (blocking for recorded GSD lifecycle work) ───────
-# Verifies that key GSD phases produced expected output files.
+# ── Artifact existence check (blocking for recorded lifecycle work) ───────────
+# Verifies that key SB lifecycle phases produced expected output files.
 # These checks prove the work was done, not just that the skill was invoked.
 artifact_blocks=""
 project_root=$(dirname "$config_file")
@@ -848,37 +856,37 @@ find_planning_artifact() {
   find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
 }
 
-# gsd-execute-phase should produce .planning/STATE.md
-if has_skill "gsd-execute-phase" && [[ ! -f "$project_root/.planning/STATE.md" ]]; then
-  artifact_blocks="${artifact_blocks}  ❌ /gsd:execute-phase was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
+# silver-execute should produce .planning/STATE.md
+if has_skill "silver-execute" && [[ ! -f "$project_root/.planning/STATE.md" ]]; then
+  artifact_blocks="${artifact_blocks}  ❌ /silver-execute was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
 fi
 
-# gsd-verify-work should produce UAT/verification artifacts.
-if has_skill "gsd-verify-work" && \
+# silver-verify should produce UAT/verification artifacts.
+if has_skill "silver-verify" && \
    [[ ! -f "$project_root/.planning/UAT.md" ]] && \
    ! find_planning_artifact '*-UAT.md' && \
    ! find_planning_artifact '*VERIFICATION.md' && \
    ! find_planning_artifact 'VERIFICATION.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /gsd:verify-work was recorded but no UAT/VERIFICATION artifact was found under .planning/ — was verification actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-verify was recorded but no UAT/VERIFICATION artifact was found under .planning/ — was verification actually completed?\n"
 fi
 
-if has_skill "gsd-code-review" && \
+if has_skill "silver-review" && \
    [[ ! -f "$project_root/.planning/REVIEW.md" ]] && \
    ! find_planning_artifact '*-REVIEW.md' && \
    ! find_planning_artifact 'REVIEW.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /gsd:code-review was recorded but no REVIEW artifact was found under .planning/ — was code review actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-review was recorded but no REVIEW artifact was found under .planning/ — was code review actually completed?\n"
 fi
 
-if has_skill "gsd-secure-phase" && \
+if has_skill "silver-secure" && \
    ! find_planning_artifact '*-SECURITY.md' && \
    ! find_planning_artifact 'SECURITY.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /gsd:secure-phase was recorded but no SECURITY artifact was found under .planning/ — was security verification actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-secure was recorded but no SECURITY artifact was found under .planning/ — was security verification actually completed?\n"
 fi
 
-if has_skill "gsd-validate-phase" && \
+if has_skill "silver-validate" && \
    ! find_planning_artifact '*-VALIDATION.md' && \
    ! find_planning_artifact 'VALIDATION.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /gsd:validate-phase was recorded but no VALIDATION artifact was found under .planning/ — was validation actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-validate was recorded but no VALIDATION artifact was found under .planning/ — was validation actually completed?\n"
 fi
 
 # Fresh test execution marker: if verify-tests is required and has been recorded,
@@ -935,7 +943,7 @@ elif [[ -n "$ordering_issues" ]]; then
   fi
   jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
 elif [[ -n "$artifact_blocks" ]]; then
-  msg=$(printf '🛑 ARTIFACT BLOCKED — GSD lifecycle markers were recorded but expected output files are missing. This may indicate vacuous skill invocation or an incomplete workflow:\n\n%s\nComplete the owning GSD workflow step and produce the artifact before final delivery.' "$artifact_blocks")
+  msg=$(printf '🛑 ARTIFACT BLOCKED — SB lifecycle markers were recorded but expected output files are missing. This may indicate vacuous skill invocation or an incomplete workflow:\n\n%s\nComplete the owning SB workflow step and produce the artifact before final delivery.' "$artifact_blocks")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do

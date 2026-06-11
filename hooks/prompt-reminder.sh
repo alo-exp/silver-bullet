@@ -146,7 +146,7 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   source "$_lib_dir/required-skills.sh"
 else
   # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase requesting-code-review receiving-code-review finishing-a-development-branch silver-create-release verification-before-completion test-driven-development verify-tests"
+  DEFAULT_REQUIRED="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests"
 fi
 if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
   # shellcheck source=lib/prompt-classifier.sh
@@ -163,7 +163,7 @@ fi
 
 # On main/master, finishing-a-development-branch is not applicable
 if [[ "$on_main" == true ]]; then
-  required_skills=$(printf '%s' "$required_skills" | tr ' ' '\n' | grep -v '^finishing-a-development-branch$' | tr '\n' ' ' | sed 's/ $//')
+  required_skills=$(printf '%s' "$required_skills" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
 fi
 
 # ── Compute missing skills ────────────────────────────────────────────────────
@@ -174,7 +174,13 @@ total=0
 completed=0
 for skill in $required_skills; do
   total=$((total + 1))
-  if printf '%s\n' "$state_contents" | grep -qx "$skill" 2>/dev/null; then
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    if sb_required_skill_is_recorded "$state_contents" "$skill"; then
+      completed=$((completed + 1))
+    else
+      missing_list="${missing_list:+$missing_list, }${skill}"
+    fi
+  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
     completed=$((completed + 1))
   else
     missing_list="${missing_list:+$missing_list, }${skill}"
@@ -250,7 +256,7 @@ First action: invoke the Silver router through the Codex SB adapter:
 
 Router context: ${prompt}
 
-Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB/GSD workflow it selects."
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
   fi
 fi
 

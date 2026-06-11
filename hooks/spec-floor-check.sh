@@ -3,8 +3,9 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Bash|Skill)
-# Enforces spec floor — hard-blocks gsd-plan-phase without a minimum viable SPEC.md,
-# and emits an advisory warning for gsd-fast/gsd-quick when no spec exists.
+# Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
+# and emits an advisory warning for silver:fast when no spec exists. Legacy GSD
+# aliases are still detected for migration compatibility.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -72,25 +73,25 @@ else
   esac
 fi
 
-# Detect command type — is this gsd-plan-phase or gsd-fast/gsd-quick?
+# Detect command type — is this silver:plan or silver:fast?
 is_plan_phase=false
 is_fast=false
 
 case "$skill" in
-  gsd:plan-phase|gsd-plan-phase)
+  silver:plan|silver-plan|gsd:plan-phase|gsd-plan-phase)
     is_plan_phase=true
     ;;
-  gsd:fast|gsd-fast|gsd:quick|gsd-quick)
+  silver:fast|silver-fast|gsd:fast|gsd-fast|gsd:quick|gsd-quick)
     is_fast=true
     ;;
 esac
 
 if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   case "$cmd" in
-    gsd-plan-phase|gsd-plan|gsd-plan-phase.sh)
+    silver-plan|silver:plan|gsd-plan-phase|gsd-plan|gsd-plan-phase.sh)
       is_plan_phase=true
       ;;
-    gsd-fast|gsd-quick)
+    silver-fast|silver:fast|gsd-fast|gsd-quick)
       is_fast=true
       ;;
   esac
@@ -100,10 +101,10 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   # Allow direct slash-style strings as a defensive fallback, but only when the
   # first shell token itself is the route. This avoids blocking `sed ... gsd-plan-phase/SKILL.md`.
   case "$cmd" in
-    /gsd:plan-phase|/gsd-plan-phase)
+    /silver:plan|/silver-plan|/gsd:plan-phase|/gsd-plan-phase)
       is_plan_phase=true
       ;;
-    /gsd:fast|/gsd-fast|/gsd:quick|/gsd-quick)
+    /silver:fast|/silver-fast|/gsd:fast|/gsd-fast|/gsd:quick|/gsd-quick)
       is_fast=true
       ;;
   esac
@@ -133,7 +134,7 @@ FAST_SPEC=".planning/SPEC.fast.md"
 if [[ "$is_plan_phase" == true ]]; then
   # HARD BLOCK: SPEC.md must exist with required sections
   if [[ ! -f "$SPEC" ]]; then
-    emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing. Run /silver:spec before planning. gsd-plan-phase requires a minimum viable spec."
+    emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing. Run /silver:spec before planning. silver:plan requires a minimum viable spec."
     exit 0
   fi
   for section in "## Overview" "## Acceptance Criteria"; do

@@ -156,7 +156,7 @@ for raw in "${skills[@]}"; do
   ledger_skills+=("$skill")
 
   # No duplicates.
-  if ! grep -qx "$skill" "$REQUESTED_FILE" 2>/dev/null; then
+  if ! grep -Fqx -- "$skill" "$REQUESTED_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >>"$REQUESTED_FILE" 2>/dev/null || true
   fi
 done

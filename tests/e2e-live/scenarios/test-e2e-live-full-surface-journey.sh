@@ -403,12 +403,12 @@ wait_for_state_contains "silver:init recorded in workflow state" "silver:init"
 # The dedicated hook preflights already verify that missing planning state
 # blocks Codex/Kay correctly. Seed the full canonical planning floor here so
 # the multi-turn journey can complete each turn instead of looping on Stop.
-for planning_skill in silver-quality-gates gsd-discuss-phase gsd-plan-phase; do
+for planning_skill in silver-quality-gates silver-context silver-plan; do
   seed_planning_floor_marker "$planning_skill"
 done
 wait_for_state_contains "planning floor silver-quality-gates marker seeded for multi-turn journey" "silver-quality-gates"
-wait_for_state_contains "planning floor gsd-discuss-phase marker seeded for multi-turn journey" "gsd-discuss-phase"
-wait_for_state_contains "planning floor gsd-plan-phase marker seeded for multi-turn journey" "gsd-plan-phase"
+wait_for_state_contains "planning floor silver-context marker seeded for multi-turn journey" "silver-context"
+wait_for_state_contains "planning floor silver-plan marker seeded for multi-turn journey" "silver-plan"
 
 if [[ -f "${WORK_DIR}/.silver-bullet.json" && -f "${WORK_DIR}/silver-bullet.md" ]]; then
   wait_for_file_exists "silver-bullet config created" "${WORK_DIR}/.silver-bullet.json"
@@ -459,8 +459,8 @@ if [[ "$workflow_docs_present" != true ]]; then
 fi
 
 journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Ingest the todo-app codebase, summarize the current app structure, and note the most relevant files before any changes are made.')"
-journey_turn "gsd-scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'gsd-scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
-wait_for_state_contains "gsd-scan recorded in workflow state" "gsd-scan"
+journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
+wait_for_state_contains "silver:scan recorded in workflow state" "silver:scan"
 research_prompt="$(skill_prompt 'silver:research' 'Research the clearest next enhancement for the todo-app, and explicitly follow the Silver Bullet research chain: invoke silver:clarify first, then summarize the implementation path in a way a teammate could follow. Do not skip the nested skill calls.')"
 journey_turn "silver:research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
 research_log="${TURN_LOG_DIR}/silver-research.txt"
@@ -615,7 +615,7 @@ else
 fi
 ledger_append "$LEDGER_FILE" "silver:add" "file the todo-app enhancement gap" "yes" "issue:$issue_url"
 
-feature_prompt="$(skill_prompt 'silver:feature' 'Implement the Clear completed feature for the todo app. Explicitly follow the Silver Bullet feature chain by invoking the exact skill triggers `$gsd-discuss-phase`, then `$gsd-plan-phase`, then `$gsd-execute-phase`, then `$gsd-verify-work`. Add the DELETE /api/todos/completed endpoint, add a visible Clear completed button in the filter bar, keep the current filter state when clearing, update tests, and stop when the feature is complete. Do not skip the nested GSD steps.')"
+feature_prompt="$(skill_prompt 'silver:feature' 'Implement the Clear completed feature for the todo app. Explicitly follow the Silver Bullet feature chain by invoking the exact skill triggers `silver:context`, then `silver:plan`, then `silver:execute`, then `silver:verify`. Add the DELETE /api/todos/completed endpoint, add a visible Clear completed button in the filter bar, keep the current filter state when clearing, update tests, and stop when the feature is complete. Do not skip the nested SB lifecycle steps.')"
 journey_turn "silver:feature" "implement the clear-completed feature" "no" "feature turn recorded" "$feature_prompt"
 feature_log="${TURN_LOG_DIR}/silver-feature.txt"
 assert_no_local_skill_source_bypass "silver:feature avoided local codex-plugins skill sources" "$feature_log"
@@ -625,7 +625,7 @@ wait_for_file_contains "clear completed button added" "${WORK_DIR}/src/public/in
 wait_for_file_contains "completed delete endpoint added" "${WORK_DIR}/src/routes/todos.js" "router\\.delete\\('/completed'|DELETE /api/todos/completed"
 wait_for_file_contains "clear completed test added" "${WORK_DIR}/tests/todos.test.js" "clear completed|completed todos"
 
-ui_prompt="$(skill_prompt 'silver:ui' 'Refine the Clear completed control so it feels native to the filter bar. Explicitly follow the Silver Bullet UI chain by invoking the exact skill triggers `$gsd-discuss-phase`, then `$gsd-ui-phase`, then `$gsd-plan-phase`, then `$gsd-execute-phase`, then `$gsd-ui-review`, then `$gsd-verify-work`. Add an accessible label or tooltip if useful, and keep the feature behavior unchanged. Do not skip the nested GSD/UI steps.')"
+ui_prompt="$(skill_prompt 'silver:ui' 'Refine the Clear completed control so it feels native to the filter bar. Explicitly follow the Silver Bullet UI chain by invoking the exact skill triggers `silver:context`, then `silver:ui-contract`, then `silver:plan`, then `silver:execute`, then `silver:ui-review`, then `silver:verify`. Add an accessible label or tooltip if useful, and keep the feature behavior unchanged. Do not skip the nested SB UI steps.')"
 journey_turn "silver:ui" "refine the button affordance" "no" "ui turn recorded" "$ui_prompt"
 ui_log="${TURN_LOG_DIR}/silver-ui.txt"
 assert_no_local_skill_source_bypass "silver:ui avoided local codex-plugins skill sources" "$ui_log"

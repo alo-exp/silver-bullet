@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.38.0] — 2026-06-11
+
+## Features
+
+- `feat(lifecycle): absorb SB's explicit GSD, Superpowers, and Anthropic knowledge-work dependencies into SB-owned lifecycle skills`
+- `feat(config): bump the default config schema to 0.38.0 so legacy lifecycle dependency lists normalize to SB-owned gates`
+- `feat(codex): add SB-owned Codex invocation adapter receipts for recorded lifecycle skill evidence`
+
+## Bug Fixes
+
+- `fix(security): treat required-skill and release-gate state markers as literal strings instead of regex patterns`
+- `fix(docs): refresh public Help Center, comparison pages, repository metadata, and marketplace copy for SB-owned lifecycle positioning`
+
+## Tests
+
+- `test(hooks): verify required-skill consistency, dependency compatibility, forbidden skills, workflow admission, completion audit, compliance status, prompt reminders, stop-check, and skill recording`
+- `test(security): run SENTINEL-style release audit with two clean passes after remediation`
+
+---
+
 ## [0.37.23] — 2026-06-10
 
 ## Features

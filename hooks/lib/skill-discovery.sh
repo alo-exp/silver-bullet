@@ -28,6 +28,18 @@ sb_skill_is_installed() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
 
+  if declare -F sb_required_skill_is_virtual_marker >/dev/null 2>&1; then
+    if sb_required_skill_is_virtual_marker "$skill"; then
+      return 0
+    fi
+  else
+    case "$skill" in
+      silver-bootstrap-project|silver-bootstrap-milestone|silver-orient|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-secure|silver-ui-contract|silver-ui-review|silver-debug|silver-review-request|silver-review-triage|silver-branch-finish|silver-completion-audit|silver-tdd)
+        return 0
+        ;;
+    esac
+  fi
+
   local repo_root="${CLAUDE_PLUGIN_ROOT:-$sb_skill_discovery_repo_root}"
   if [[ ! -d "$repo_root/skills" ]]; then
     repo_root="$sb_skill_discovery_repo_root"
@@ -117,8 +129,8 @@ sb_skill_canonical_name() {
       verify-tests) printf 'verify-tests' ;;
       devops-quality-gates) printf 'devops-quality-gates' ;;
       devops-skill-router) printf 'devops-skill-router' ;;
-      request-review) printf 'requesting-code-review' ;;
-      receive-review) printf 'receiving-code-review' ;;
+      request-review) printf 'silver-review-request' ;;
+      receive-review) printf 'silver-review-triage' ;;
       *) printf 'silver-%s' "${skill#silver:}" ;;
     esac
     return 0

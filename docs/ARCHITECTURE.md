@@ -7,14 +7,14 @@ Detailed phase-level designs live in `docs/specs/YYYY-MM-DD-<topic>-design.md`.
 
 Silver Bullet ships two first-class plugin surfaces: a Claude Code plugin (`.claude-plugin/`)
 and a Codex bundle (`plugins/silver-bullet/`). Both are composed of shell hook scripts, slash-command
-markdown files, skill markdown files, JSON configuration, and workflow documentation. SB wraps GSD
-as the lifecycle authority and calls Superpowers, Engineering, Design, and other helper plugins only
-at explicit workflow-selected boundaries. Its enforcement layer prevents the runtime from skipping
-required workflow steps.
+markdown files, skill markdown files, JSON configuration, and workflow documentation. SB owns
+the lifecycle authority for default software-engineering workflows and calls optional provider,
+DevOps, design, research, or issue-tracker plugins only when a selected flow needs their external
+capability. Its enforcement layer prevents the runtime from skipping required workflow steps.
 
 Claude packaging remains the canonical host-integrated surface. The Codex bundle is SB-only and
-is synchronized from the repo root. Third-party plugins that do not publish Codex artifacts are
-represented by thin wrappers in the shared `alo-labs/codex-plugins` marketplace, which fetches
+is synchronized from the repo root. Optional extension plugins that do not publish Codex artifacts
+are represented by thin wrappers in the shared `alo-labs/codex-plugins` marketplace, which fetches
 upstream content at install time instead of vendoring it here.
 
 No server, no database — all state lives in flat files under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
@@ -41,11 +41,11 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 | Hook | Trigger | Behavior |
 |------|---------|----------|
 | `record-skill.sh` | PostToolUse (Claude Skill calls or Codex SB adapter receipts) | Appends normalized skill name to state file |
-| `record-requested-skill.sh` | UserPromptSubmit | Records requested SB/GSD route markers before the next turn starts |
+| `record-requested-skill.sh` | UserPromptSubmit | Records requested SB route markers before the next turn starts |
 | `dev-cycle-check.sh` | PreToolUse (Edit/Write/Bash) | 4-stage gate: blocks source edits if planning incomplete |
 | `compliance-status.sh` | PostToolUse (all tools) | Emits live progress score per tool call |
 | `completion-audit.sh` | PostToolUse (Bash) | Two-tier: blocks `git commit/push` if `required_planning` skills missing; blocks `gh pr create/deploy/gh release` if full `required_deploy` list missing |
-| `planning-file-guard.sh` | PreToolUse (Edit/Write/MultiEdit) | Blocks direct edits to GSD-managed planning artifacts (ROADMAP.md, STATE.md, etc.); requires the owning GSD skill instead |
+| `planning-file-guard.sh` | PreToolUse (Edit/Write/MultiEdit) | Blocks direct edits to guarded planning artifacts (ROADMAP.md, STATE.md, etc.); requires the owning SB workflow path instead |
 | `ci-status-check.sh` | PostToolUse (Bash) | Warns on commit/push if CI is failing |
 | `prompt-reminder.sh` | UserPromptSubmit | Re-injects missing skills list before every user message and surfaces current workflow context |
 | `stop-check.sh` | Stop / SubagentStop | Requires `required_planning` skills (planning floor) before session ends. Full `required_deploy` is enforced by `completion-audit.sh` at delivery commands |
@@ -55,7 +55,7 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 ### Fast Path
 
 Silver Bullet routes trivial changes through `/silver:fast`, which classifies the change
-and dispatches to `gsd-fast` without the full workflow overhead. The legacy touch-file
+and dispatches to SB's fast path without the full workflow overhead. The legacy touch-file
 marker remains only as a compatibility detail for older sessions, not as the supported
 Codex entry point.
 
@@ -71,9 +71,9 @@ Codex entry point.
    writes to it or reads from it can be independently audited.
 6. **Template parity.** `templates/workflows/` must remain byte-identical to `docs/workflows/`
    so new projects get the same enforcement rules as the current project.
-7. **Packaging boundaries.** SB-owned plugin bundles never vendor dependency plugins or project
-   instance artifacts. The Codex bundle stays SB-only; dependency plugins are installed from
-   their official sources, and non-native Codex support lives in the shared marketplace.
+7. **Packaging boundaries.** SB-owned plugin bundles never vendor optional extension plugins or
+   project instance artifacts. The Codex bundle stays SB-only; non-native Codex support for
+   external extensions lives in the shared marketplace.
 
 ### Packaging Boundaries
 
@@ -81,7 +81,7 @@ Codex entry point.
 - `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is a curated Codex snapshot, not a mirror of the whole repository.
 - `commands/` ships inside the SB bundle so Codex sees one Silver Bullet plugin, not a split command plugin.
-- Third-party Codex wrappers belong in the shared marketplace and fetch upstream content at install time.
+- Third-party Codex wrappers for optional extensions belong in the shared marketplace and fetch upstream content at install time.
 
 ## Technology Choices
 

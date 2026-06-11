@@ -91,7 +91,77 @@ sb_required_skills_config_is_legacy() {
   __sb_rs_version_lt "$project_version" "$default_version"
 }
 
-__SB_RS_RETIRED_REQUIRED_SKILLS="code-review testing-strategy documentation deploy-checklist tech-debt"
+__SB_RS_RETIRED_REQUIRED_SKILLS="code-review testing-strategy documentation deploy-checklist tech-debt gsd-new-project gsd-new-milestone gsd-scan gsd-map-codebase gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-autonomous gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase gsd-ui-phase gsd-ui-review requesting-code-review receiving-code-review finishing-a-development-branch verification-before-completion test-driven-development systematic-debugging writing-plans"
+
+sb_required_skill_aliases() {
+  local skill="$1"
+  printf '%s\n' "$skill"
+
+  case "$skill" in
+    silver-bootstrap-project) printf '%s\n' gsd-new-project ;;
+    silver-bootstrap-milestone) printf '%s\n' gsd-new-milestone ;;
+    silver-orient) printf '%s\n' gsd-scan gsd-map-codebase ;;
+    silver-context) printf '%s\n' gsd-discuss-phase ;;
+    silver-plan) printf '%s\n' gsd-plan-phase writing-plans ;;
+    silver-execute) printf '%s\n' gsd-execute-phase gsd-autonomous ;;
+    silver-verify) printf '%s\n' gsd-verify-work ;;
+    silver-ship) printf '%s\n' gsd-ship ;;
+    silver-review) printf '%s\n' gsd-code-review code-review ;;
+    silver-secure) printf '%s\n' gsd-secure-phase security ;;
+    silver-validate) printf '%s\n' gsd-validate-phase ;;
+    silver-ui-contract) printf '%s\n' gsd-ui-phase ;;
+    silver-ui-review) printf '%s\n' gsd-ui-review ;;
+    silver-debug) printf '%s\n' gsd-debug systematic-debugging ;;
+    silver-review-request) printf '%s\n' requesting-code-review ;;
+    silver-review-triage) printf '%s\n' receiving-code-review ;;
+    silver-branch-finish) printf '%s\n' finishing-a-development-branch ;;
+    silver-completion-audit) printf '%s\n' verification-before-completion ;;
+    silver-tdd) printf '%s\n' tdd test-driven-development ;;
+  esac
+}
+
+sb_required_skill_is_virtual_marker() {
+  case "$1" in
+    silver-bootstrap-project|silver-bootstrap-milestone|silver-orient|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-secure|silver-ui-contract|silver-ui-review|silver-debug|silver-review-request|silver-review-triage|silver-branch-finish|silver-completion-audit|silver-tdd)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+sb_required_skill_is_recorded() {
+  local state_contents="$1"
+  local skill="$2"
+  local alias
+
+  while IFS= read -r alias; do
+    [[ -n "$alias" ]] || continue
+    if printf '%s\n' "$state_contents" | grep -Fqx -- "$alias" 2>/dev/null; then
+      return 0
+    fi
+  done < <(sb_required_skill_aliases "$skill")
+
+  return 1
+}
+
+sb_required_skill_line() {
+  local state_contents="$1"
+  local skill="$2"
+  local alias line best_line=0
+
+  while IFS= read -r alias; do
+    [[ -n "$alias" ]] || continue
+    line=$(printf '%s\n' "$state_contents" | grep -Fnx -- "$alias" | head -1 | cut -d: -f1)
+    [[ "$line" =~ ^[0-9]+$ ]] || continue
+    if (( best_line == 0 || line < best_line )); then
+      best_line="$line"
+    fi
+  done < <(sb_required_skill_aliases "$skill")
+
+  printf '%s' "$best_line"
+}
 
 sb_required_skills_filter_retired() {
   local skill retired skip out=""
@@ -153,7 +223,7 @@ sb_required_skills_normalize_configured_list() {
 
 # Fallback used only when default config or jq unavailable. Keep minimal —
 # hooks always enforce at least the planning/quality-gate floor.
-__SB_RS_FALLBACK="silver-quality-gates verification-before-completion verify-tests"
+__SB_RS_FALLBACK="silver-quality-gates silver-completion-audit verify-tests"
 __SB_RS_PLANNING_FALLBACK="silver-quality-gates"
 __SB_RS_DEVOPS_PLANNING_FALLBACK="silver-blast-radius devops-quality-gates"
 

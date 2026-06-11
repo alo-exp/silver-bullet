@@ -1,726 +1,172 @@
-# Full Dev Cycle Workflow
+# Silver Bullet Full Development Cycle
 
-> **NOTE:** This document shows a representative flow composition for feature development.
-> The actual workflow is dynamically composed by `/silver` based on context.
-> See `silver-bullet.md` §2h for the composable flows architecture and
-> `docs/composable-flows-contracts.md` for the full flow catalog.
+Silver Bullet owns the normal software-engineering lifecycle. This workflow is
+the canonical full-dev-cycle procedure for feature work, bugfixes, UI work,
+research-to-build work, and release-adjacent changes that are not primarily
+infrastructure changes.
 
-> **ENFORCED** -- Silver Bullet hooks track supported skill invocation events/receipts for quality gates
-> and gap-filling skills. GSD's own hooks (workflow guard, context monitor) enforce
-> GSD step compliance independently. Both enforcement layers run in parallel.
->
-> Completion audit BLOCKS git commit/push/deploy if required skills are missing.
-> Context monitor warns at <=35% remaining tokens, escalates at <=25%.
+Legacy GSD, Superpowers, and Anthropic knowledge-work markers may still satisfy
+hooks during migration, but new workflow execution must use SB-owned commands.
 
-## Invocation Methods
+## HOST MODEL BOUNDARY
 
-| What | How to invoke |
-|------|---------------|
-| `/silver` smart orchestrator | Slash command -- natural language dispatch to any SB skill or GSD command. Start here when unsure which command to use. |
-| Orchestration workflows | Slash command -- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:research`, `silver:release`, `silver:fast` wrap this cycle for specific task types. |
-| GSD workflow steps (`/gsd:*`) | Slash command -- type `/gsd:new-project`, `/gsd:discuss-phase`, etc. |
-| Silver Bullet skills | Active host skill surface -- `/silver:quality-gates`, `/silver:blast-radius`, etc. Codex uses the native `/Silver:` picker plus SB adapter receipts when recording is required. |
-| Gap-filling skills | Active host skill surface -- `testing-strategy`, `verify-tests`, `documentation`, etc. |
+Silver Bullet does not select models or route host subagents. Use the model and
+execution primitives provided by the active host session. If an optional external
+tool has its own model preferences, configure that tool outside SB workflow
+instructions.
 
-Use `/gsd:next` at any point to auto-advance to the next GSD step if unsure of current state.
+## Entry Points
 
----
+| Intent | Command |
+|---|---|
+| Let SB classify the task | `/silver <request>` |
+| Clarify vague work | `/silver:clarify` |
+| Produce or augment specs | `/silver:spec` or `/silver:ingest` |
+| Build feature work | `/silver:feature` |
+| Fix a bug | `/silver:bugfix` |
+| Build UI work | `/silver:ui` |
+| Run bounded fast-path work | `/silver:fast` |
+| Publish a milestone release | `/silver:release` |
 
-## How This Works
+If unsure, invoke `/silver` with the user request. SB routes to the correct
+workflow and composes only the required paths.
 
-Silver Bullet orchestrates your entire software development lifecycle by guiding you through
-a structured series of steps. Each step uses a GSD (Get Shit Done) command or a Silver Bullet
-skill that handles the heavy lifting -- you provide direction, the active runtime executes.
+## Required Lifecycle
 
-This guide covers the full journey from project setup through release. Every section tells you:
+### 0. Pre-flight
 
-1. **What it does** -- a one-sentence summary of the step
-2. **What to expect** -- what artifacts are produced, what you will see, and roughly how long it takes
-3. **If it fails** -- specific recovery actions so you are never stuck
+- Read `silver-bullet.md`, `.silver-bullet.json`, and the current planning state.
+- Confirm Graphify and core SB hooks are available when the project requires them.
+- Determine whether the request is trivial, simple, fuzzy, complex, UI-focused,
+  bugfix-focused, or release-focused.
 
-You do not need to know GSD internals. Follow this guide top to bottom and you will have a
-fully planned, implemented, tested, reviewed, documented, and deployed project. Each step
-builds on the previous one, and the system tracks your progress so you can pause and resume
-at any point.
+### 1. Spec and clarification
 
-The workflow repeats a core loop (Discuss, Quality Gates, Plan, Execute, Verify, Review) for
-each phase in your roadmap. After all phases complete, finalization, deployment, and release
-wrap everything up.
+- Use `/silver:clarify` when scope, tradeoffs, or user intent are unclear.
+- Use `/silver:spec` when requirements need a canonical `SPEC.md` and
+  `REQUIREMENTS.md` before implementation.
+- Use `/silver:ingest` when source artifacts need to be pulled into the spec.
+- Resolve `silver:validate` BLOCK findings before implementation proceeds.
 
----
+### 2. Context
 
-## STEP 0: SESSION MODE
+Run `/silver:context`.
 
-> Run once at the very start of the session, before any project work.
+Context captures locked decisions, assumptions, constraints, available source
+artifacts, and implementation boundaries. It produces the context the planner
+uses; do not edit protected `.planning/` lifecycle artifacts directly.
 
-**What it does:** Configures whether the active runtime pauses at decision points or drives autonomously
-through the entire workflow.
+### 3. Pre-plan quality gates
 
-**Bypass-permissions detection:** If bypass-permissions is detected (all tool calls
-auto-accepted), skip the mode question AND the pre-answers follow-up. Auto-set
-autonomous mode, use all defaults (host execution tier, main, isolated). Log:
-"Step 0 skipped: bypass-permissions detected, autonomous mode with defaults".
+Run `/silver:quality-gates` before planning. All applicable dimensions must pass:
+modularity, reusability, scalability, security, reliability, usability,
+testability, extensibility, and conditional AI/LLM safety.
 
-Ask:
-> Run this session **interactively** or **autonomously**?
-> - **Interactive** (default) -- I pause at decision points and phase gates
-> - **Autonomous** -- I drive start to finish, surface blockers at the end
+### 4. Plan
 
-Write choice to `$HOME/.codex/.silver-bullet/mode`:
-```bash
-echo "interactive" > $HOME/.codex/.silver-bullet/mode   # or "autonomous"
-```
+Run `/silver:plan`.
 
-**If autonomous was chosen**, ask one follow-up before proceeding:
+The plan must include task waves, acceptance criteria, test strategy, dependency
+ordering, rollback considerations, review expectations, and verification steps.
+If the plan exposes unresolved assumptions, return to `/silver:context`.
 
-> Any decision points you want to pre-answer? Common ones:
-> - Model routing -- Planning phase: host execution tier or host top tier?
-> - Model routing -- Design phase: host execution tier or host high tier?
-> - Worktree: use one for this task, or work on main?
-> - Agent Teams: use worktree isolation, or main worktree throughout?
-> Leave blank to use defaults (host execution tier for both phases, main, isolated).
+### 5. Execute
 
-Write answers into the `## Pre-answers` section of the session log immediately. Format each answer as:
-`- Model routing -- Planning: <value>`
-`- Model routing -- Design: <value>`
-`- Worktree: <value>`
-`- Agent Teams: <value>`
+Run `/silver:execute`.
 
-Omit any key the user left blank (default applies). Read pre-answers mid-session from the log
-at `$HOME/.codex/.silver-bullet/session-log-path`, stripping the leading `- ` before splitting on `:`.
-Log each applied pre-answer under "Autonomous decisions" with note `(pre-answered at Step 0)`.
+For behavior-changing code, the SB TDD gate runs before implementation. Use
+`silver:execute --tdd` when the plan requires red/green/refactor discipline.
+Use ordinary `silver:execute` for docs-only, config-only, or pure layout tasks
+where TDD does not apply.
 
-**Fallback**: if the session log or `## Pre-answers` section is unreadable at any point,
-use defaults: host execution tier for both phases, main, isolated.
+Execution must produce atomic commits or clearly grouped changes and update the
+relevant summary artifacts.
 
----
+### 6. Verify
 
-## STEP 1: PROJECT SETUP
+Run `/silver:verify`.
 
-> Determines your starting point and runs the appropriate initialization workflow.
+Verification is non-skippable. It checks tests, acceptance criteria, artifacts,
+UAT evidence, and regression risk. Run `/verify-tests` after the last source
+change and before PR creation, deployment, or release.
 
-**What it does:** Detects whether this is a brand-new project, an existing project ready for
-a new milestone, or a session that should resume where it left off -- then routes you to the
-correct GSD command.
+If verification identifies test coverage gaps, add the missing tests through the
+SB test-gap path and re-run verification.
 
-**What to expect:** After this step you will have `.planning/PROJECT.md`,
-`.planning/REQUIREMENTS.md`, and `.planning/ROADMAP.md` (or you will resume an existing session).
-Initialization typically takes 10-30 minutes depending on project complexity and whether
-research is included.
+### 7. Review
 
-### Brownfield Detection
+Run the SB review sequence:
 
-Evaluate your project state and follow the matching path:
+1. `/silver:review-request`
+2. `/silver:review`
+3. `/silver:review-triage`
 
-| Condition | Action | What happens |
-|-----------|--------|--------------|
-| No codebase at all | `/gsd:new-project` | Deep questioning about your vision, optional ecosystem research (4 parallel agents), requirements scoping with REQ-IDs, roadmap generation. Produces `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`. |
-| Existing codebase but no `.planning/` directory | `/gsd:map-codebase` then `/gsd:new-project` | Maps your codebase structure into `.planning/codebase/` (7 structured documents covering stack, architecture, patterns, dependencies, etc.), then initializes the project with full context of what already exists. |
-| `.planning/PROJECT.md` exists but no completed milestone | Resume with `/gsd:next` | Detects your current position (which phase, which step) and auto-advances to the next logical action -- no setup needed. |
-| `.planning/PROJECT.md` exists AND has a completed milestone | `/gsd:new-milestone` | Loads previous context, gathers goals for the new milestone through questioning, optionally runs research, defines scoped requirements, and creates a fresh roadmap. Carries forward accumulated context. |
+Review loops must continue until two consecutive clean passes or an explicit
+deferred item is captured with `/silver:add`. Do not silently drop accepted
+findings.
 
-**If it fails:**
-- `/gsd:new-project` errors on init: check that `node` is available and `$HOME/.codex/get-shit-done/` is installed.
-- `/gsd:map-codebase` produces incomplete output: re-run; mapper agents are idempotent.
-- `/gsd:next` cannot detect state: check `.planning/STATE.md` exists. If missing, `/gsd:resume-work` can reconstruct it from existing artifacts.
+### 8. Security and validation
 
-### Worktree Decision
+- Run `security` for an independent security review when the change has security
+  surface, auth surface, data handling, dependency, or deployment impact.
+- Run `/silver:secure` for threat mitigation verification.
+- Run `/silver:validate` when spec/plan/UAT coverage needs another consistency
+  pass.
 
-Before proceeding, decide whether to use a git worktree for this work. If yes, create one
-before any planning begins. Worktrees keep development isolated from your main branch.
+### 9. Pre-ship quality gates
 
----
+Run `/silver:quality-gates` again after execution, verification, review, and
+security-sensitive checks. This pass is non-skippable for non-trivial work.
 
-## STEP 2: PER-PHASE LOOP
+### 10. Documentation
 
-> Repeat these steps for each phase listed in `.planning/ROADMAP.md`.
-> Use `/gsd:next` to confirm which phase is current.
+Run `/silver:ensure-docs` when code, behavior, operations, public docs, or
+release surfaces changed.
 
-This is the core of the development cycle. Each phase goes through: Host Model Boundary, Skill
-Discovery, Discuss, Quality Gates, Plan, Execute, Verify, Code Review, and Post-Review
-Execution. The entire loop enforces a strict order -- you cannot skip ahead.
+At minimum, keep the changelog, durable docs, monthly knowledge/learnings files,
+and task doc checklist current where the project doc scheme requires them.
+Record durable project facts in `docs/knowledge/YYYY-MM.md` and reusable lessons
+in `docs/learnings/YYYY-MM.md`.
 
----
+### 11. Branch finish
 
-### HOST MODEL BOUNDARY (no SB routing)
+Run `/silver:branch-finish` on feature branches. This step is skipped on
+`main`/`master` because there is no feature branch to finish.
 
-**What it does:** Keeps model selection owned by the active host runtime and delegated tools. Silver Bullet does not switch models or silently escalate model tiers.
+### 12. CI and ship
 
-**Default:** active host session model for orchestrator work.
-**Delegated work:** GSD and helper plugins use their own host/tool configuration.
-**Historical hook:** `ensure-model-routing.sh` is disabled and exits as a no-op.
+- Run `/verify-tests`.
+- Check CI. If CI is red, run `/silver:debug`, fix, re-run tests, and re-check CI.
+- Run `/silver:ship` for phase-level PR/merge preparation.
 
-**What to expect:** No model choice prompt from Silver Bullet. Model selection is host-managed, and SB does not auto-route subagents. The orchestrator (this session) stays in the current host session.
+`silver:ship` is a phase-level action. It is not a milestone release.
 
-**Autonomous mode:** Same boundary. If stronger reasoning is needed, record it as a host/tool configuration need rather than silently changing models inside SB.
+### 13. Release when requested
 
----
+Run `/silver:release` only for milestone-level publish/release intent. The
+release workflow owns UAT audit, milestone audit, security hard gate, docs
+readiness, fresh tests, `silver:ship`, milestone archival, and
+`/silver:create-release`.
 
-### SKILL DISCOVERY (once per task, before DISCUSS)
+## Non-Skippable Gates
 
-**What it does:** Scans installed skills and surfaces candidates that may apply to this
-phase's work -- without invoking any of them yet.
+- `/silver:quality-gates` before planning and before ship
+- `/silver:verify`
+- `/verify-tests` before PR, deploy, or release
+- `/silver:review` and `/silver:review-triage`
+- `/silver:secure` when security-sensitive behavior exists
+- `/silver:release` gates before milestone publication
 
-**What to expect:** A list of applicable skills (e.g., `/security` for auth changes,
-`/system-design` for new services) logged to the session log under
-`## Skills flagged at discovery`. This is informational only; skills are invoked at their
-designated points later in the workflow.
+## Optional Extension Plugins
 
-Scan installed skills from two sources:
-1. `$HOME/.codex/skills/` -- flat `.md` files
-2. `$HOME/.codex/plugins/cache/` -- glob `*/*/*/skills/*/SKILL.md` (layout: publisher/plugin/version/skills/skill-name)
+Optional plugins may extend SB when they add domain capability, such as provider
+DevOps checks, browser verification, GitHub operations, docs/spreadsheet/deck
+generation, or explicit multi-agent research. They do not replace SB context,
+plan, execute, verify, review, ship, or release ownership.
 
-Cross-reference the combined list against `all_tracked` in `.silver-bullet.json` and the
-current task description. Surface candidates:
-> Skills that may apply to this task: `/security` -- auth changes; `/system-design` -- new service
+## Legacy Compatibility
 
-If no matches or both directories absent/empty: log "Skill discovery: no candidates surfaced."
-Write results to `## Skills flagged at discovery` in the session log. **Do not invoke yet.**
-
----
-
-### DISCUSS
-
-**What it does:** Captures implementation decisions, gray areas, and user preferences for
-this phase before any planning begins -- so downstream agents (researcher, planner) can act
-on your vision without guessing.
-
-**Command:** `/gsd:discuss-phase`                                                **REQUIRED** -- DO NOT SKIP
-
-**What to expect:** The active runtime identifies phase-specific gray areas (concrete decisions like
-"session handling" or "duplicate detection", not generic categories like "UX") and asks you
-about each one. Your answers become locked decisions. The active runtime acts as a thinking partner --
-you provide vision, the active runtime captures decisions for the builder agents downstream. Expect 5-15
-minutes of focused discussion depending on phase complexity.
-
-Produces: `.planning/phases/{phase}/{phase_num}-CONTEXT.md`
-
-**Conditional sub-steps** (invoke through the active runtime's SB-recognized skill invocation channel if applicable):
-
-- If this phase introduces an **architectural decision**: write an ADR inline
-  (structure: title, status, context, decision, consequences) before moving to PLAN.
-- If this phase introduces a **new service or major component**: `/system-design`
-- If this phase involves **UI work**: `silver:clarify`
-  (consolidated design skill covering design system, UX copy, and accessibility; WCAG 2.1 AA audit included)   **REQUIRED when UI work** -- DO NOT SKIP
-
-**Model routing for Design**: if any design sub-steps apply (design-system, ux-copy,
-architecture, system-design), ask once before beginning them:
-> Entering Design phase. Use the host high tier, or stay on the host execution tier?
-
-**If it fails:** Re-run `/gsd:discuss-phase` with more specific questions. If the active runtime
-identifies the wrong gray areas, provide your own list. The discuss step is idempotent --
-re-running overwrites the CONTEXT.md with fresh decisions.
-
-**Autonomous mode:** Use defaults for all gray areas, apply runtime discretion throughout,
-log all auto-decisions to the session log.
-
----
-
-### QUALITY GATES
-
-**What it does:** Evaluates the current design against 8 core Silver Bullet quality dimensions plus conditional AI/LLM and DevOps gates
-and produces a consolidated pass/fail report. A failure is a hard stop, not a warning.
-
-**Command:** `/silver:quality-gates`                                             **REQUIRED** -- DO NOT SKIP
-
-**What to expect:** 8 core dimensions (modularity, reusability, scalability, security, reliability, usability, testability, extensibility) are evaluated in parallel, with AI/LLM safety added only when the work includes AI behavior and DevOps gates added for infrastructure-touching changes -- one agent per
-dimension. Results are synthesized into a single report. Every dimension must pass. Expect 2-5
-minutes.
-
-**Agent Team dispatch**: Dispatch the applicable quality dimensions as a single parallel Agent Team
-wave -- one agent per dimension, `isolation: "worktree"`. The active runtime synthesizes results.
-Conflict resolution: more conservative/restrictive finding wins; resolution rationale logged
-in session log. **Autonomous mode:** All dispatches use `run_in_background: true`.
-
-**If it fails:** Read the report to identify which dimension(s) failed. Fix the specific
-design issue in your CONTEXT.md or design artifacts, then re-run `/silver:quality-gates`. Do not
-proceed to PLAN until all applicable dimensions pass. Phase order is a hard constraint: do NOT start
-PLAN before `/silver:quality-gates` completes.
-
----
-
-### PLAN
-
-**What it does:** Researches technical approaches, creates detailed executable plans (PLAN.md
-files) with task breakdowns and wave assignments, then verifies plan quality through a checker
-agent with a revision loop.
-
-**Command:** `/gsd:plan-phase`                                                   **REQUIRED** -- DO NOT SKIP
-
-**What to expect:** The pipeline runs in three stages: (1) parallel research agents investigate
-technical approaches and library options, (2) a planner agent creates structured PLAN.md files
-with tasks, waves, dependencies, and verification criteria, and (3) a plan-checker agent
-validates quality. If the checker finds issues, a revision loop runs (max 3 iterations).
-Quality gate results from the previous step feed into the plan as hard requirements. Expect
-5-15 minutes.
-
-Produces: `.planning/phases/{phase}/{phase_num}-RESEARCH.md`,
-`.planning/phases/{phase}/{phase_num}-{N}-PLAN.md`
-
-**Skill gap check (post-plan):** After the plan is written, cross-reference all installed
-skills against the plan content. Flag any skill covering a concern not explicitly in the plan.
-- Interactive: ask whether to add the flagged skill
-- Autonomous: add to plan or log omission as autonomous decision
-Write results to `## Skill gap check (post-plan)` in the session log.
-
-**If it fails:** Check that CONTEXT.md exists and has clear decisions. If the plan is
-incomplete or misaligned, re-run `/gsd:discuss-phase` to clarify, then re-plan. If the
-plan-checker loop exhausts 3 iterations, review the specific issues and provide guidance.
-
----
-
-### EXECUTE
-
-**What it does:** Runs wave-based parallel execution of all plans in the phase, with each
-task producing an atomic git commit and each plan producing a SUMMARY.md.
-
-**Command:** `/gsd:execute-phase`                                                **REQUIRED** -- DO NOT SKIP
-
-**Pre-execution requirement:**
-`tdd` -- Before writing any implementation code:            **REQUIRED** -- DO NOT SKIP
-establish red-green-refactor discipline. Write the failing test first, make it
-pass, then refactor. TDD applies per task within each GSD wave.
-
-**What to expect:** Executor agents are dispatched per plan -- one agent per plan within each
-wave (using worktree isolation for parallel execution). After each wave completes, a merge
-gate runs before the next wave begins. Each task produces one atomic commit. Each plan produces
-a SUMMARY.md documenting what was built. Duration varies from minutes (simple phases) to
-hours (complex multi-plan phases).
-
-Produces: atomic git commits (one per task),
-`.planning/phases/{phase}/{phase_num}-{N}-SUMMARY.md`
-
-Each GSD wave dispatches Agent Teams for independent implementation units
-(`isolation: "worktree"` per agent). Merge gate after each wave before the next begins.
-**Autonomous mode:** All agents use `run_in_background: true`.
-
-**If it fails:** Use `/gsd:debug` to diagnose the issue. Debug spawns parallel agents to
-investigate root causes, produces a structured diagnosis, and suggests fixes. After fixing,
-re-run `/gsd:execute-phase` -- it picks up from incomplete plans automatically (plans with
-existing SUMMARY.md files are skipped).
-
----
-
-### VERIFY
-
-**What it does:** Validates built features through goal-backward verification against
-requirements, then runs user acceptance testing (UAT) with persistent state tracking.
-
-**Command:** `/gsd:verify-work`                                                  **REQUIRED** -- DO NOT SKIP
-
-**What to expect:** The active runtime presents what SHOULD happen for each testable deliverable and
-asks you to confirm reality matches. Tests are presented one at a time. Your responses
-("yes", descriptions of issues, "skip", "blocked") are recorded in a UAT.md file that
-survives session breaks. Severity is inferred automatically from your descriptions -- the active runtime
-never asks "how severe is this?". If issues are found, parallel debug agents diagnose root
-causes and a planner creates fix plans automatically. Expect 10-30 minutes depending on how
-many deliverables need verification.
-
-Produces: `.planning/phases/{phase}/{phase_num}-VERIFICATION.md`,
-`.planning/phases/{phase}/{phase_num}-UAT.md`
-
-**If verification fails or output is suspect:** Invoke `/forensics` before retrying.
-Identify root cause first. Then:
-- If root cause is implementation: re-run EXECUTE + VERIFY only.
-- If root cause is design/plan: return to DISCUSS for the same phase.
-Do not advance to Code Review until verification passes. Blind retries compound failures.
-
-**Agent Team scope for Code Review steps:** The review steps below may use parallel agents
-(security, performance, correctness) with `isolation: "worktree"`.
-`/requesting-code-review` is the SB-required review-framing helper and runs before GSD review.
-**Autonomous mode:** Agent dispatches use `run_in_background: true`.
-
----
-
-### CODE REVIEW
-
-**What it does:** Runs GSD-owned peer code quality review (security, performance,
-correctness, readability -- distinct from GSD's goal verification), with SB-required
-review framing and triage helpers around the authoritative REVIEW.md artifact.
-
-**Commands (all required, in order):**
-
-1. `/security`                                                                   **REQUIRED** -- DO NOT SKIP
-   SENTINEL v2 adversarial security audit. Runs before peer review so security findings
-   are available as inputs to the review. Covers OWASP LLM Top 10, prompt injection,
-   privilege escalation, and data exfiltration patterns.
-
-2. `/requesting-code-review`                                                     **REQUIRED** -- DO NOT SKIP
-   Frames scope and dispatches `superpowers:code-reviewer` only when the active
-   SB workflow selects that helper discipline. This helper does not replace the
-   GSD review artifact.
-
-3. `/gsd:code-review`                                                           **REQUIRED** -- DO NOT SKIP
-   Produces the authoritative REVIEW.md through GSD reviewer agents. Covers SQL
-   injection, XSS, N+1 queries, race conditions, edge cases, and maintainability.
-   **Review loop rule**: re-dispatch reviewer until it returns Approved TWICE IN A ROW.
-   A single clean pass is not sufficient. The loop is self-limiting -- it ends naturally
-   when two consecutive passes are clean. Never stop early on "minor" issues.
-
-4. `/receiving-code-review`                                                      **REQUIRED** -- DO NOT SKIP
-   Triage and accept/reject all items from the review above.
-
-**What to expect:** A thorough multi-pass review process. GSD writes REVIEW.md, the
-framing helper keeps review scope explicit, and all feedback is triaged. Accepted
-items become inputs for the Post-Review Execution step below.
-
-**If review finds issues:** Accepted items flow into the Post-Review Execution step.
-Rejected items are documented with rationale. If the review loop does not converge after
-several iterations, check whether issues are genuine or stylistic disagreements.
-
----
-
-### POST-REVIEW EXECUTION (only if items were accepted in Code Review)
-
-**What it does:** Creates and executes a focused plan to address accepted review items, using
-the same plan-execute pipeline with full quality guarantees.
-
-**Commands:**
-1. `/gsd:plan-phase` -- Create a plan to address accepted review items.
-2. `/gsd:execute-phase` -- Implement the review-driven plan with atomic commits.
-
-**What to expect:** A targeted plan addressing only the accepted review items, followed by
-execution with atomic commits and SUMMARY.md. Same quality guarantees as the main cycle.
-
-**If it fails:** Same recovery as the main PLAN and EXECUTE steps above.
-
-**Backlog enforcement (mandatory):** After receiving review findings, any low-priority or advisory items that are not being fixed MUST be added to the GSD backlog using `/gsd-add-backlog`. Items must not be silently dropped — either fix them now or capture them. If no items were deferred, explicitly note "No deferred review items."
-
----
-
-> **End of per-phase loop.** Return to DISCUSS for the next phase in ROADMAP.md.
-> All phases must complete before moving to FINALIZATION.
-
----
-
-## STEP 3: FINALIZATION
-
-> Run once after all phases are complete.
-
-**What it does:** Wraps up the milestone by defining test strategy, refreshing the test
-execution gate, cataloging tech debt, updating all documentation, and preparing the branch
-for merge. These five skills are always required regardless of project type.
-
----
-
-### Testing Strategy
-
-**Command:** `testing-strategy`                                                 **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Defines the test strategy for the project: test pyramid structure, coverage
-goals, test classification, and tooling decisions.
-
-**What to expect:** A structured test strategy document covering unit, integration, and E2E
-layers with concrete coverage targets and tool recommendations tailored to your stack.
-
-**If it fails:** Re-run with more specific guidance about your testing preferences and
-infrastructure constraints.
-
----
-
-### Test Execution Gate
-
-**Command:** `/verify-tests`                                                 **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Runs the project's configured verify commands or stack defaults, then writes
-the freshness marker that Silver Bullet's final-delivery hooks require.
-
-**What to expect:** The project's test suite runs from the repository root. If `.silver-bullet.json`
-defines `verify_commands`, those commands run in order; otherwise the skill falls back to stack
-defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
-depending on the repo.
-
-**If it fails:** Fix the failing test command, then rerun `/verify-tests` before attempting
-PR creation or release.
-
----
-
-### Tech Debt
-
-**Command:** `tech-debt`                                                        **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Identifies, categorizes, and prioritizes technical debt introduced or
-surfaced during this milestone.
-
-**What to expect:** Structured items appended to `docs/tech-debt.md` in the format:
-`| Item | Severity | Effort | Phase introduced |`. The file is created if it does not exist.
-
-**If it fails:** Review the tech debt items manually. Ensure `docs/tech-debt.md` is writable.
-
----
-
-### Documentation
-
-**Command:** `documentation`                                                    **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Updates or creates all project documentation to reflect the current state
-of the project after this milestone's work.
-
-**What to expect:** The following files are updated or created:
-- `README.md` -- MUST reflect current version, features, and changes before release
-- `docs/ARCHITECTURE.md` -- high-level architecture and principles only;
-  detailed phase designs live in `docs/specs/`
-- `docs/TESTING.md` -- test pyramid, coverage goals, skip policy
-- `docs/CICD.md` -- pipeline stages (if CI exists)
-
-**Additional required updates at this step:**
-- Update `docs/knowledge/YYYY-MM.md` (current month's file): append dated entries to
-  Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions
-  as applicable. If the file doesn't exist yet, create it from
-  `templates/knowledge/YYYY-MM.md.base`. Resolved questions: append
-  `[RESOLVED YYYY-MM-DD]: <resolution>` below original.
-- Update `docs/learnings/YYYY-MM.md` (current month's file): append any portable learnings
-  learned — tech stack, engineering practices, DevOps, domain knowledge, or design patterns.
-  Write as if explaining to someone who has never seen this project. If the file doesn't
-  exist yet, create it from `templates/learnings/YYYY-MM.md.base`.
-- Update `docs/knowledge/INDEX.md` if any new docs were created or removed.
-- Update `docs/CHANGELOG.md`: prepend a new entry (newest first):
-  ```
-  ## YYYY-MM-DD -- <task-slug>
-  **What**: one sentence
-  **Commits**: <hashes>
-  **Skills run**: <list>
-  **Virtual cost**: ~$X.XX (Model, complexity)
-  **Knowledge**: updated knowledge/YYYY-MM.md (<sections>) | no changes
-  **Learnings**: updated learnings/YYYY-MM.md (<categories>) | no changes
-  ```
-  Virtual cost complexity tiers: simple < 5 files / < 300 lines changed;
-  medium 5-15 files or 300-1000 lines; complex > 15 files or architectural.
-  Host execution tier is the base rate; host high/top tiers are progressively more expensive.
-- Complete the session log: read path from `$HOME/.codex/.silver-bullet/session-log-path`,
-  edit that file to fill in Task, Approach, Files changed, Skills invoked,
-  Active Intent Ledger, Agent Teams dispatched, Autonomous decisions, Outcome, knowledge/learnings additions,
-  Model, Virtual cost. If `$HOME/.codex/.silver-bullet/session-log-path` is missing,
-  create `docs/sessions/<today>-manual.md` from the session log template.
-- Documentation agents writing to `docs/` run in the **main worktree only**
-  (no `isolation: "worktree"`). Only implementation-touching agents use worktree isolation.
-
-**If it fails:** Check file permissions on the `docs/` directory. Re-run targeting specific
-files that need updating.
-
----
-
-### Branch Cleanup
-
-**Command:** `/finishing-a-development-branch`                                   **REQUIRED ON BRANCHES** -- DO NOT SKIP
-
-**What it does:** Performs branch rebase, cleanup, and merge preparation so the branch is
-ready for PR creation.
-
-**What to expect:** The development branch is rebased onto the base branch, cleaned up
-(squash fixups, remove WIP commits), and prepared for merge. Any conflicts are surfaced for
-resolution.
-
-**If it fails:** Resolve merge conflicts manually, then re-run. If conflicts are complex,
-consider using `/gsd:debug` to diagnose.
-
----
-
-## STEP 4: DEPLOYMENT
-
-> Run after finalization is complete.
-
-**What it does:** Ensures CI passes and runs pre-deployment verification before the work
-can be shipped. Both steps are required.
-
----
-
-### CI/CD Pipeline
-
-**REQUIRED** -- DO NOT SKIP
-
-Use existing pipeline or set one up before deploying. GitHub repos: use GitHub Actions.
-
-**CI verification gate:**
-- Run `/verify-tests` first (it uses `.silver-bullet.json` `verify_commands` when present,
-  or stack defaults such as `npm test` / `pytest` / `cargo test` / `go test ./...`)
-- Check CI: `gh run list --limit 1 --json status,conclusion`
-- **Autonomous mode**: poll every 30 seconds, up to 20 retries (10 min max).
-  On timeout: log blocker under "Needs human review", surface to user, **STOP
-  deployment steps**. Do NOT proceed to `deploy-checklist` while CI status is unknown.
-- **Interactive mode**: show status. If `in_progress`: inform user, wait for
-  confirmation to re-check or proceed.
-- **CI MUST be green.** If CI is red: invoke `/gsd:debug`, fix the issue, re-push,
-  and re-check CI. Do NOT proceed to `deploy-checklist` while CI is failing.
-  Repeat fix-push-check until CI passes.
-- **Missing ci.yml rule**: if `.github/workflows/ci.yml` is absent at this step,
-  The active runtime must NOT invoke `deploy-checklist`. Log as blocker under "Needs human review",
-  surface missing file to user, stop deployment steps.
-- Race condition: the post-commit hook (ci-status-check.sh) reflects the last
-  *completed* run, not necessarily this push. This polling loop is the authoritative gate.
-
-**If CI fails:** Use `/gsd:debug` to diagnose the failure. Fix the issue, re-push, and
-re-check. Do not proceed until CI is green. Repeat the fix-push-check loop as needed.
-
----
-
-### Deploy Checklist
-
-**Command:** `deploy-checklist`                                                 **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Runs a pre-deployment verification gate covering environment config,
-secrets, database migrations, rollback plan, and monitoring readiness.
-
-**What to expect:** A structured checklist that must be fully satisfied before deployment
-proceeds. Any unchecked items are blockers that must be resolved first.
-
-**If it fails:** Address each failing checklist item individually. Re-run after fixes.
-
----
-
-## STEP 5: SHIP
-
-**Command:** `/gsd:ship`                                                         **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Creates a pull request from verified, deployed work by auto-generating a
-rich PR body from your planning artifacts.
-
-**What to expect:** Preflight checks run first (verification passed, clean working tree,
-correct branch, remote configured, `gh` CLI available and authenticated). The branch is
-pushed to remote and a PR is created with auto-generated sections: Summary (phase goal and
-what was built), Changes (per-plan breakdown with key files), Requirements Addressed
-(REQ-IDs linked to descriptions), Verification (pass/fail status), and Key Decisions.
-
-Produces: pull request with phase summaries and requirement coverage.
-
-**If it fails:**
-- Preflight check fails: fix the specific issue (commit uncommitted changes, switch to feature branch, configure remote).
-- `gh` CLI not authenticated: run `gh auth login`.
-- Push fails: set upstream with `git push --set-upstream origin <branch>`.
-- No verification: go back to VERIFY step.
-
----
-
-## STEP 6: RELEASE
-
-**Command:** `/silver-create-release`                                            **REQUIRED** -- DO NOT SKIP
-
-**What it does:** Generates structured release notes and creates a GitHub Release with a
-git tag.
-
-**What to expect:** Release notes are generated from the milestone's work with sections for
-features, fixes, and breaking changes. For GitHub repos, uses `gh release create`. For
-non-GitHub repos, outputs formatted notes for manual publishing. README must have been
-updated in STEP 3 (Documentation) before this step can proceed.
-
-Produces: git tag, GitHub Release with structured notes.
-
-**If it fails:**
-- README not updated: go back to STEP 3 Documentation and update README first.
-- `gh` CLI errors: check authentication with `gh auth status`.
-- Tag already exists: bump the version or delete the stale tag if it was created in error.
-
-**Autonomous completion cleanup** (run after outputting structured summary):
-```bash
-rm -f $HOME/.codex/.silver-bullet/timeout $HOME/.codex/.silver-bullet/sentinel-pid \
-      $HOME/.codex/.silver-bullet/session-start-time $HOME/.codex/.silver-bullet/timeout-warn-count
-```
-This clears the timeout sentinel so `timeout-check.sh` stops warning.
-
----
-
-## STEP 7: TRANSITION TO DEVOPS
-
-> After RELEASE, Silver Bullet detects whether your project needs deployment infrastructure
-> and offers to transition to the DevOps workflow.
-
-**What it does:** Evaluates infrastructure indicators and offers to switch from the
-development workflow to the DevOps workflow for setting up deployment, monitoring, and
-infrastructure as code.
-
-### Detection Triggers
-
-The transition is offered when ANY of the following are true:
-- **IaC files present**: `*.tf` (Terraform), `Dockerfile`, `docker-compose.yml`, Kubernetes manifests (`k8s/`, `kubernetes/`)
-- **Deploy checklist flagged gaps**: `deploy-checklist` in STEP 4 identified infrastructure gaps that need addressing
-- **User request**: You explicitly ask to set up deployment infrastructure
-
-### What Happens
-
-1. The runtime offers: "Application shipped. Set up deployment infrastructure? This switches to the DevOps workflow."
-2. If you accept: `active_workflow` in `.silver-bullet.json` is updated from `full-dev-cycle` to `devops-cycle`
-3. The DevOps workflow (`docs/workflows/devops-cycle.md`) takes over with infrastructure-specific steps including blast radius analysis, environment promotion, and incident response
-
-### What Is Preserved During Transition
-
-Everything carries forward -- nothing is lost:
-- `.planning/` directory and all artifacts (PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md, all phase artifacts)
-- `.silver-bullet.json` configuration (only `active_workflow` field changes)
-- All committed git history
-- Session state, handoff files, and accumulated decisions
-
-### If You Decline
-
-No changes are made. The dev cycle is complete. Start the next round of feature development
-with `/gsd:new-milestone` when ready.
-
----
-
-## UTILITY COMMANDS REFERENCE
-
-These commands are available throughout the workflow. Use them whenever the situation calls
-for it -- they are not tied to a specific step.
-
-| Command | What it does | When to use |
-|---------|-------------|-------------|
-| `/gsd:debug` | Spawns parallel debug agents to diagnose root causes, produces structured diagnosis with fix suggestions. | When execution fails, tests break, or unexpected behavior occurs during any step. |
-| `/gsd:quick` | Plans and executes small, self-contained tasks with atomic commits and STATE.md tracking. Supports `--full`, `--validate`, `--discuss`, `--research` flags. | For well-defined changes outside the main phase cycle (add a feature flag, fix a specific bug, small enhancements). |
-| `/gsd:fast` | Executes trivial tasks inline -- no PLAN.md, no subagent spawning. Understand, do, commit, log. | For truly trivial changes only: fix a typo, update a config value, add a missing import (3 files or fewer). |
-| `/gsd:resume-work` | Restores full project context from STATE.md and HANDOFF.json, detects incomplete work, and presents next actions. | When starting a new session on an existing project -- "where were we?" |
-| `/gsd:pause-work` | Creates `.planning/HANDOFF.json` and `.continue-here.md` preserving complete work state for clean resume. | Before ending a session -- saves exact position, decisions, blockers, and mental context. |
-| `/gsd:progress` | Shows rich progress report with progress bar, recent work, current position, blockers, and routes to next action. | To check milestone progress at any time -- where you are, what is done, what is next. |
-| `/gsd:next` | Detects current project state and auto-advances to the next logical GSD step without asking. | When unsure what to do next -- zero-friction advancement through the workflow. |
-| `/gsd:add-phase` | Adds a new integer phase to the end of the current milestone in the roadmap. | When you discover new work needed that was not in the original roadmap. |
-| `/gsd:insert-phase` | Inserts a decimal phase between existing phases (e.g., 3.1 between 3 and 4). | For urgent fixes or discoveries that must happen before the next planned phase. |
-| `/gsd:review` | Cross-AI peer review -- invokes external AI CLIs (Gemini, Codex, CodeRabbit) to independently review plans. | For adversarial review before execution -- different AI models catch different blind spots. |
-| `/gsd:audit-milestone` | Aggregates phase verifications, checks cross-phase integration, and assesses overall requirements coverage. | At end of milestone before completing -- ensures everything works together across phases. |
-| `/gsd:autonomous` | Drives all remaining phases autonomously (discuss, plan, execute per phase). Supports `--from N`, `--to N`, `--only N`, `--interactive`. | When you want the active runtime to drive multiple phases end-to-end without manual intervention. |
-| `/gsd:complete-milestone` | Marks milestone complete, creates MILESTONES.md record, archives artifacts, and tags the release in git. | After all phases are verified and shipped -- wraps up the milestone cleanly. |
-| `/gsd:map-codebase` | Orchestrates parallel agents to analyze codebase, producing 7 structured documents in `.planning/codebase/`. | For brownfield projects before `/gsd:new-project` -- gives the active runtime full codebase understanding. |
-
----
-
-## Review Loop Enforcement
-
-Every review loop in this workflow (spec review, plan review, code review, verification) **MUST iterate until the reviewer returns Approved TWICE IN A ROW**. A single clean pass is not sufficient. No exceptions.
-
-- Never stop because "issues are minor" or "close enough"
-- Never accept a partial fix and move on without re-dispatching
-- Never count a loop as done unless the reviewer outputs Approved on two consecutive passes
-- The loop is self-limiting -- it ends naturally when two consecutive passes are clean
-- Surface to the user only if the reviewer raises an issue it cannot resolve
-
----
-
-## Enforcement Rules
-
-- **GSD steps** are enforced by instruction (this file + the host project instruction file) and GSD's own hooks.
-  GSD steps MUST follow DISCUSS -> QUALITY GATES -> PLAN -> EXECUTE -> VERIFY -> CODE REVIEW -> POST-REVIEW EXECUTION order per phase.
-- **Silver Bullet skills** (quality gates + gap-fillers) are enforced by hooks
-  that track supported skill invocation events/receipts. "I already covered this" is NOT valid.
-- Phase order is a hard constraint: do NOT start PLAN before `/silver:quality-gates` completes.
-- For ANY bug encountered during execution: use `/gsd:debug`.
-- For root-cause investigation after a completed, failed, or abandoned session: use `/forensics`.
-- For trivial changes (typos, copy fixes, config tweaks): route through `/silver:fast`
-
----
-
-## GSD / Superpowers Ownership Rules
-
-GSD is the authoritative lifecycle and execution orchestrator. Superpowers is used only
-when an SB workflow explicitly requires a helper boundary such as TDD discipline, review
-framing/triage, verification-before-completion, or branch finishing. Where both tools
-could apply, GSD wins.
-
-| Concern | Owner | Rule |
-|---------|-------|------|
-| Requirements | GSD | `.planning/REQUIREMENTS.md` is the single source of truth. Superpowers must NOT maintain a separate requirements list. |
-| Planning | GSD | Use `/gsd:plan-phase` for all plans. When Superpowers' `brainstorming` skill offers to hand off to `writing-plans`, **redirect to `/gsd:plan-phase` instead**. |
-| Execution | GSD | Always use `/gsd:execute-phase` (wave-based). **NEVER** use `superpowers:subagent-driven-development` or `superpowers:executing-plans` for project work. |
-| Design specs | SB/GSD | Use GSD-owned phase artifacts for lifecycle specs and `docs/specs/YYYY-MM-DD-<topic>-design.md` for optional design records. Superpowers' default path (`docs/superpowers/specs/`) is not authoritative. |
-| Code review | GSD + SB helpers | `/gsd:code-review` owns REVIEW.md. `/requesting-code-review`, `/receiving-code-review`, and `superpowers:code-reviewer` are used only when selected by the SB workflow, never for execution. |
-
-**Override Superpowers defaults in every session:**
-- Spec save path: `docs/specs/` (not `docs/superpowers/specs/`)
-- After brainstorming completes: invoke `/gsd:plan-phase` (not `writing-plans`)
-- For execution: `/gsd:execute-phase` (not `subagent-driven-development`)
+Old GSD/Superpowers/Anthropic marker names may appear in existing project state
+or migration tools. Hooks may count those markers as aliases for SB-owned
+markers, but new workflow instructions must not invoke the old lifecycle
+commands unless the user explicitly asks to run an external legacy plugin.

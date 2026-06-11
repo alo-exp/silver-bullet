@@ -101,6 +101,21 @@ if [[ ${#missing_from_tracked_devops[@]} -gt 0 ]]; then
   for s in "${missing_from_tracked_devops[@]}"; do echo "      - $s"; done
 fi
 
+fresh_external_markers=$(jq -r '
+  [
+    (.skills.required_planning // []),
+    (.skills.required_planning_devops // []),
+    (.skills.required_deploy // []),
+    (.skills.required_deploy_devops // [])
+  ] | add | .[]
+' "$CONFIG" | grep -E '^(gsd-|requesting-code-review|receiving-code-review|finishing-a-development-branch|verification-before-completion|test-driven-development|systematic-debugging|writing-plans)$' || true)
+
+check "fresh required defaults use SB-owned markers only" \
+  test -z "$fresh_external_markers"
+if [[ -n "$fresh_external_markers" ]]; then
+  echo "$fresh_external_markers" | sed 's/^/    /'
+fi
+
 # Legacy project configs should not weaken current gates or force retired skills.
 # This guards the real Codex-TUI failure mode where an old project config caused
 # SB to request missing legacy skills like testing-strategy while omitting current
@@ -116,10 +131,18 @@ cat > "$tmp_legacy_cfg" <<'JSON'
     "required_planning": ["silver-quality-gates"],
     "required_deploy": [
       "silver-quality-gates",
+      "gsd-discuss-phase",
+      "gsd-plan-phase",
+      "gsd-execute-phase",
       "code-review",
+      "requesting-code-review",
+      "receiving-code-review",
       "testing-strategy",
       "documentation",
+      "finishing-a-development-branch",
       "deploy-checklist",
+      "verification-before-completion",
+      "test-driven-development",
       "tech-debt",
       "custom-review"
     ]
@@ -137,7 +160,7 @@ cat > "$tmp_current_cfg" <<JSON
 JSON
 
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-  legacy_deploy=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates code-review testing-strategy documentation deploy-checklist tech-debt custom-review" "$DEFAULT_REQUIRED")
+  legacy_deploy=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt custom-review" "$DEFAULT_REQUIRED")
   legacy_planning=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates" "$DEFAULT_PLANNING")
   current_deploy=$(sb_required_skills_normalize_configured_list "$tmp_current_cfg" "custom-review" "$DEFAULT_REQUIRED")
 else
@@ -146,14 +169,14 @@ else
   current_deploy=""
 fi
 
-check "legacy config deploy list inherits current default deploy gates" \
-  bash -c 'for skill in gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work verify-tests custom-review; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+check "legacy config deploy list inherits current SB-owned deploy gates" \
+  bash -c 'for skill in silver-context silver-plan silver-execute silver-verify verify-tests custom-review; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
 
 check "legacy config deploy list drops retired legacy dependencies" \
-  bash -c 'for skill in code-review testing-strategy documentation deploy-checklist tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+  bash -c 'for skill in gsd-discuss-phase gsd-plan-phase gsd-execute-phase code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
 
-check "legacy config planning list inherits current default planning gates" \
-  bash -c 'for skill in silver-quality-gates gsd-discuss-phase gsd-plan-phase; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_planning"
+check "legacy config planning list inherits current SB-owned planning gates" \
+  bash -c 'for skill in silver-quality-gates silver-context silver-plan; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_planning"
 
 check "current config custom deploy list remains explicit" \
   test "$current_deploy" = "custom-review"

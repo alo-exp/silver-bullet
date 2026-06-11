@@ -131,11 +131,11 @@ else
   (( FAIL++ )) || true
 fi
 
-if jq -e 'has("knowledge-work-plugins")' "$HOME_DIR/.claude/plugins/known_marketplaces.json" >/dev/null 2>&1; then
-  echo "PASS: knowledge-work marketplace added"
+if jq -e 'has("knowledge-work-plugins") | not' "$HOME_DIR/.claude/plugins/known_marketplaces.json" >/dev/null 2>&1; then
+  echo "PASS: knowledge-work marketplace not added by default"
   (( PASS++ )) || true
 else
-  echo "FAIL: knowledge-work marketplace added — missing knowledge-work-plugins entry"
+  echo "FAIL: knowledge-work marketplace should not be added by default"
   (( FAIL++ )) || true
 fi
 
@@ -179,10 +179,10 @@ fi
 
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin list --json | jq -e '
   any(.[]; .id == "silver-bullet@alo-labs" and .scope == "user")
-  and any(.[]; .id == "superpowers@superpowers-marketplace" and .scope == "user")
-  and any(.[]; .id == "engineering@knowledge-work-plugins" and .scope == "user")
-  and any(.[]; .id == "design@knowledge-work-plugins" and .scope == "user")
-  and any(.[]; .id == "product-management@knowledge-work-plugins" and .scope == "user")
+  and all(.[]; .id != "superpowers@superpowers-marketplace")
+  and all(.[]; .id != "engineering@knowledge-work-plugins")
+  and all(.[]; .id != "design@knowledge-work-plugins")
+  and all(.[]; .id != "product-management@knowledge-work-plugins")
   and all(.[]; .id != "data-engineering@claude-plugins-official")
   and all(.[]; .id != "frontend-design@claude-plugins-official")
   and all(.[]; .id != "product-tracking-skills@claude-plugins-official")

@@ -8,7 +8,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "what-is-sb",
     "title": "What Silver Bullet does",
-    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. It wraps GSD with dynamic workflow composition, quality gates, hooks, traceability, and recovery. GSD remains the lifecycle engine; SB routes, composes, and enforces."
+    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. It owns the default lifecycle engine: routing, context, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
   },
   {
     "page": "Getting Started",
@@ -22,7 +22,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "first-run",
     "title": "First workflow run",
-    "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then uses GSD for planning execution verification and ship with quality gates and review around it."
+    "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then runs SB-owned context, planning, execution, verification, review, and ship gates."
   },
   {
     "page": "Help Center",
@@ -36,7 +36,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB, GSD, and selected helper plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB-owned lifecycle flows plus optional extension-plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -48,9 +48,9 @@ var IDX = [
   {
     "page": "Core Concepts",
     "url": "/help/concepts/",
-    "anchor": "gsd",
-    "title": "GSD lifecycle engine",
-    "text": "GSD owns .planning artifacts, requirements, roadmap, discuss, plan, execute, verify, and phase-level ship. SB composes and enforces the workflow around GSD-backed execution."
+    "anchor": "lifecycle",
+    "title": "SB lifecycle engine",
+    "text": "Silver Bullet owns .planning artifacts, requirements, roadmap, context, plan, execute, verify, review, security, and phase-level ship. Legacy GSD markers remain compatibility aliases only."
   },
   {
     "page": "Core Concepts",
@@ -71,14 +71,14 @@ var IDX = [
     "url": "/help/concepts/routing-logic.html",
     "anchor": "overview",
     "title": "Routing logic",
-    "text": "/silver routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the flow catalog. GSD also has /gsd:do; SB adds broader dynamic cross-plugin workflow composition and enforcement."
+    "text": "/silver routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the SB flow catalog with optional extension plugins only where they add non-overlapping capability."
   },
   {
     "page": "Core Concepts",
     "url": "/help/concepts/routing-logic.html",
     "anchor": "complexity-triage",
     "title": "Complexity triage",
-    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify merges PM framing and Superpowers brainstorming before handing off."
+    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify merges product framing and brainstorming before handing off to SB planning."
   },
   {
     "page": "Core Concepts",
@@ -141,7 +141,7 @@ var IDX = [
     "url": "/help/concepts/verification.html",
     "anchor": "overview",
     "title": "Verification before completion",
-    "text": "/gsd:verify-work is goal-backward verification. /verify-tests runs fresh test commands and writes the freshness marker consumed by hooks. Completion claims must be backed by verified behavior."
+    "text": "/silver:verify is goal-backward verification. /verify-tests runs fresh test commands and writes the freshness marker consumed by hooks. Completion claims must be backed by verified behavior."
   },
   {
     "page": "Workflows",
@@ -155,63 +155,63 @@ var IDX = [
     "url": "/help/workflows/silver-clarify.html",
     "anchor": "overview",
     "title": "/silver:clarify",
-    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes .planning/CLARIFY.md, and hands off to gsd:discuss-phase when the brief is decision-ready."
+    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes .planning/CLARIFY.md, and hands off to silver:context when the brief is decision-ready."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-feature.html",
     "anchor": "overview",
     "title": "/silver:feature",
-    "text": "Feature workflow orients in the codebase, clarifies or researches when needed, runs quality gates, delegates discuss plan execute verify to GSD, reviews and secures the work, then ships."
+    "text": "Feature workflow orients in the codebase, clarifies or researches when needed, runs quality gates, performs SB context plan execute verify, reviews and secures the work, then ships."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-bugfix.html",
     "anchor": "overview",
     "title": "/silver:bugfix",
-    "text": "Bugfix workflow is triage-first. It chooses systematic debugging, SB forensics, or GSD forensics depending on the failure type, then adds regression coverage, fixes, verifies, and reviews."
+    "text": "Bugfix workflow is triage-first. It chooses SB debugging or SB forensics depending on the failure type, then adds regression coverage, fixes, verifies, and reviews."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-ui.html",
     "anchor": "overview",
     "title": "/silver:ui",
-    "text": "UI workflow adds UI design contract and UI quality review around the feature skeleton. It uses gsd:ui-phase and gsd:ui-review plus accessibility and visual quality checks."
+    "text": "UI workflow adds SB UI design contract and SB UI quality review around the feature skeleton, including accessibility and visual quality checks."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-devops.html",
     "anchor": "overview",
     "title": "/silver:devops",
-    "text": "DevOps workflow uses gsd-scan, /silver:blast-radius, devops skill routing, /devops-quality-gates, GSD plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
+    "text": "DevOps workflow uses silver:scan, /silver:blast-radius, optional DevOps skill routing, /devops-quality-gates, SB plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-research.html",
     "anchor": "overview",
     "title": "/silver:research",
-    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, uses optional MultAI only when explicitly requested, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, /gsd:do, or stops as research-only."
+    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, uses optional MultAI only when explicitly requested, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, silver:plan, or stops as research-only."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-release.html",
     "anchor": "overview",
     "title": "/silver:release",
-    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs quality gates, UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, gsd-ship, gsd:complete-milestone, /silver:create-release, then a post-release items summary."
+    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs quality gates, UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, silver:ship, milestone archival, /silver:create-release, then a post-release items summary."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-fast.html",
     "anchor": "overview",
     "title": "/silver:fast",
-    "text": "Fast path handles Tier 1 trivial work through gsd:fast, Tier 2 bounded medium work through gsd:quick with flags, and Tier 3 escalation to silver:feature. It avoids legacy marker-file bypasses."
+    "text": "Fast path handles Tier 1 trivial work and Tier 2 bounded medium work through SB fast-path handling, with Tier 3 escalation to silver:feature. It avoids legacy marker-file bypasses."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-spec.html",
     "anchor": "overview",
     "title": "/silver:spec",
-    "text": "Spec workflow creates a canonical SPEC.md with requirements, acceptance criteria, assumptions, source links, and artifact review before GSD planning."
+    "text": "Spec workflow creates a canonical SPEC.md with requirements, acceptance criteria, assumptions, source links, and artifact review before SB planning."
   },
   {
     "page": "Workflows",
@@ -232,7 +232,7 @@ var IDX = [
     "url": "/help/dev-workflow/",
     "anchor": "overview",
     "title": "Software engineering workflow",
-    "text": "Application workflow routes intent, clarifies or specs when needed, discusses and plans with GSD, executes in waves, verifies, reviews, runs /verify-tests, updates docs, checks CI, ships, and releases."
+    "text": "Application workflow routes intent, clarifies or specs when needed, builds SB context and plans, executes in waves, verifies, reviews, runs /verify-tests, updates docs, checks CI, ships, and releases."
   },
   {
     "page": "DevOps Workflow",
@@ -258,16 +258,16 @@ var IDX = [
   {
     "page": "Reference",
     "url": "/help/reference/",
-    "anchor": "gsd-commands",
-    "title": "GSD commands",
-    "text": "GSD commands include /gsd:do, /gsd:fast, /gsd:quick, /gsd:new-project, /gsd:discuss-phase, /gsd:plan-phase, /gsd:execute-phase, /gsd:verify-work, /gsd:code-review, /gsd:secure-phase, /gsd:ship, /gsd:complete-milestone, /gsd:next, and /gsd:debug."
+    "anchor": "lifecycle-commands",
+    "title": "SB lifecycle commands",
+    "text": "SB lifecycle commands include /silver, /silver:context, /silver:plan, /silver:execute, /silver:verify, /silver:review-request, /silver:review, /silver:review-triage, /silver:secure, /silver:ship, /silver:release, and /silver:debug."
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.37.23, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.38.0, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",
@@ -288,7 +288,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "skills",
     "title": "Skill not found",
-    "text": "Install required dependencies: GSD via npx get-shit-done-cc@latest plus the selected helper plugins SB needs for your workflows. Start a new session after installing skills."
+    "text": "Install or refresh Silver Bullet first. Optional DevOps/provider plugins are only needed when a workflow explicitly uses those domain extensions. Start a new session after installing skills."
   },
   {
     "page": "Troubleshooting",
@@ -302,7 +302,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "recovery",
     "title": "Failed session recovery",
-    "text": "Use /gsd:next to resume persisted planning state. Use /silver:forensics for session or workflow reconstruction and /gsd:debug for active reproducible bugs."
+    "text": "Use /silver to resume persisted planning state. Use /silver:forensics for session or workflow reconstruction and /silver:debug for active reproducible bugs."
   },
   {
     "page": "Troubleshooting",

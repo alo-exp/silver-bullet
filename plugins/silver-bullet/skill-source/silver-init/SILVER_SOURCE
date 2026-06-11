@@ -125,76 +125,36 @@ If the command fails (exit code non-zero), ask the user directly:
 If A: re-run `command -v graphify`. If still not found, STOP with: `❌ Graphify still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
-### 1.2 Superpowers plugin
+### 1.2 Optional legacy plugin discovery
 
-Use the Glob tool to search for:
-```
-$HOME/.codex/plugins/cache/*/superpowers/*/skills/brainstorming/SKILL.md
-```
-Expand `~` to the user's home directory (use `$HOME` via Bash if needed).
+GSD, Superpowers, and Anthropic Knowledge Work plugins are no longer hard
+requirements for SB initialization. SB absorbs the explicitly required behavior
+from those plugins into SB-owned lifecycle markers and workflows.
 
-If no files found, ask the user directly:
-- Question: "❌ **Superpowers plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install obra/superpowers\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed it — continue"
-  - "B. Stop for now"
+Optionally record whether legacy/core dependency plugins are present for
+migration diagnostics only. Do not stop when they are missing.
 
-If A: re-run the Glob check. If still not found, STOP with: `❌ Superpowers plugin still not found. Please install it and re-run /silver:init.`
-If B: STOP.
-
-### 1.3 Design plugin
-
-Use the Glob tool to search for Design plugin skills in these paths:
-- `$HOME/.codex/plugins/cache/*/design/*/skills/design-system/SKILL.md`
-- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md`
-
-Expand `~` to the user's home directory.
-
-If no files found in any of those patterns, try invoking `/design:design-system` through the active runtime's SB-recognized skill invocation channel as a fallback check. If that also fails, ask the user directly:
-- Question: "❌ **Design plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/design\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed it — continue"
-  - "B. Stop for now"
-
-If A: re-run the Glob check. If still not found, STOP with: `❌ Design plugin still not found. Please install it and re-run /silver:init.`
-If B: STOP.
-
-### 1.4 Engineering plugin
-
-Use the Glob tool to search for Engineering plugin skills in these paths:
-- `$HOME/.codex/plugins/cache/*/engineering/*/skills/documentation/SKILL.md`
-- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/documentation/SKILL.md`
-- `$HOME/.codex/plugins/cache/engineering/skills/`
-- `$HOME/.codex/plugins/cache/*/knowledge-work-plugins/*/engineering/skills/`
-
-Expand `~` to the user's home directory.
-
-If no files found in any of those patterns, try invoking `/engineering:documentation` through the active runtime's SB-recognized skill invocation channel as a fallback check. If that also fails, ask the user directly:
-- Question: "❌ **Engineering plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/engineering\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed it — continue"
-  - "B. Stop for now"
-
-If A: re-run the Glob check. If still not found, STOP with: `❌ Engineering plugin still not found. Please install it and re-run /silver:init.`
-If B: STOP.
-
-### 1.5 GSD plugin
-
-Use the Bash tool to check if GSD is installed (checks both legacy and current install paths):
+Use the Bash tool to run:
 ```bash
-{ test -f "$HOME/.codex/get-shit-done/workflows/new-project.md" || test -f "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.codex/commands/gsd/new-project.md"; } && echo "EXISTS" || echo "NOT_FOUND"
+printf 'Superpowers: '
+test -f "$HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/current/skills/brainstorming/SKILL.md" || \
+  find "$HOME/.codex/plugins/cache" -path '*/superpowers/*/skills/brainstorming/SKILL.md' -print -quit 2>/dev/null | grep -q .
+printf '%s\n' "$?"
+
+printf 'GSD: '
+{ test -f "$HOME/.codex/get-shit-done/workflows/new-project.md" || test -f "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.codex/commands/gsd/new-project.md"; }
+printf '%s\n' "$?"
+
+printf 'Anthropic knowledge-work: '
+find "$HOME/.codex/plugins/cache" \( -path '*/knowledge-work-plugins/*/engineering/skills/*' -o -path '*/knowledge-work-plugins/*/design/skills/*' -o -path '*/knowledge-work-plugins/*/product-management/skills/*' \) -print -quit 2>/dev/null | grep -q .
+printf '%s\n' "$?"
 ```
 
-If `NOT_FOUND`, ask the user directly:
-- Question: "❌ **GSD plugin is not installed.** GSD is a hard requirement — Silver Bullet wraps GSD's planning and execution commands and cannot function without it.\n\nPlease run this command in your terminal to repair or reinstall it, then come back:\n\n```\nnpx get-shit-done-cc@latest\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed GSD — continue"
-  - "B. Stop for now"
+Interpret exit status `0` as present and non-zero as absent. If absent, continue.
+At most output a short note:
 
-If A: re-run the Bash check. If still `NOT_FOUND`, STOP with: `❌ GSD still not found. Please install it and re-run /silver:init.`
-If B: STOP.
-
-**Do NOT proceed past this check without GSD confirmed present.**
+> Legacy dependency plugins not detected. Continuing with SB-owned lifecycle
+> behavior; optional DevOps/enrichment plugins can still be installed later.
 
 ### 1.6 Runtime-aware bootstrap
 
@@ -202,7 +162,8 @@ Keep bootstrap terminology aligned to the current runtime:
 - In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - In Claude, `CLAUDE.md` remains the familiar project instruction filename.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
-- If a working local GSD entrypoint exists but the higher-level wrapper is flaky, prefer the local entrypoint and continue bootstrap instead of failing on wrapper import noise.
+- If legacy GSD is present but flaky, do not fail bootstrap. SB-owned lifecycle
+  behavior is the default path.
 
 ### 1.7 v1 incompatibility check
 
@@ -227,42 +188,20 @@ Ask the user directly:
 
 If user selects A, use the active runtime file-editing mechanism to remove the offending hook entries from `.codex/settings.json`. If user selects B, STOP.
 
-### 1.8 MultAI plugin
+### 1.8 Optional MultAI plugin
 
-Use the Glob tool to search for:
-`$HOME/.codex/plugins/cache/multai/skills/orchestrator/SKILL.md`
-
-If no file found, ask the user directly:
-- Question: "⚠️ **MultAI plugin is not installed.** MultAI is optional — Silver Bullet research works without it. Install it only if you want optional multi-AI / second-opinion perspectives.\n\nInstall command (inside your host coding agent):\n```\n/plugin install\n```\n(search for MultAI in the marketplace)\n\nWould you like to install it now, or continue without it?"
-- Options:
-  - "A. I'll install it now — pause and wait"
-  - "B. Skip it and continue without"
-
-If A: wait, then re-run the Glob check and confirm. Continue regardless of result.
-If B: continue without stopping.
-
-### 1.9 Anthropic Product Management plugin
-
-Use the Glob tool to search for:
-`$HOME/.codex/plugins/cache/*/product-management/*/upstream/skills/write-spec/SKILL.md`
-and `$HOME/.codex/plugins/cache/*/product-management/*/skills/write-spec/SKILL.md`
-and `$HOME/.codex/plugins/cache/*/product-management/skills/`
-in supported Codex cache roots
-
-If no directory found in any supported cache root, ask the user directly:
-- Question: "❌ **Anthropic Product Management plugin is not installed.**\n\nPlease run this command inside your host coding agent to repair or reinstall it, then come back:\n\n```\n/plugin install anthropics/knowledge-work-plugins/tree/main/product-management\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed it — continue"
-  - "B. Stop for now"
-
-If A: re-run the Glob check. If still not found, STOP with: `❌ Product Management plugin still not found. Please install it and re-run /silver:init.`
-If B: STOP.
+MultAI-style second-opinion research remains optional. Do not block
+initialization when it is missing. If the user explicitly asks for multi-AI
+research later, route through the optional plugin discovery/install path at that
+time.
 
 ---
 
 ## Phase 1.5: Version Freshness Check
 
-Run this phase only after all Phase 1 presence checks pass. For each dependency, check if the installed version matches the latest available. If any is outdated, offer to update before proceeding.
+Run this phase only after Phase 1 checks pass. Silver Bullet itself is the only
+required freshness check. Legacy dependency plugins may be reported if present,
+but they are not required and must not block initialization.
 
 ### 1.5.1 Check Silver Bullet version
 
@@ -288,49 +227,25 @@ If user selects A: invoke `/silver:update` through the active runtime's SB-recog
 If user selects B: output "Skipping SB update." and proceed.
 If version check fails (curl error, missing file, or either version is "unknown"): output "Could not check SB version (offline?). Continuing..." and proceed.
 
-### 1.5.2 Check GSD version
-
-Read installed version:
-```bash
-cat "$HOME/.codex/get-shit-done/VERSION" 2>/dev/null || echo "unknown"
-```
-
-Check latest version:
-```bash
-npm view get-shit-done-cc version 2>/dev/null || echo "unknown"
-```
-
-Parse both as semver and compare numerically.
-
-If both versions are known and installed < latest, ask the user directly:
-- Question: "GSD v{installed} is outdated (latest: v{latest}). Update now?"
-- Options:
-  - "A. Yes, update now"
-  - "B. Skip, continue with current version"
-
-If user selects A: invoke `/gsd-update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "GSD updated. Continuing init..." and proceed.
-If user selects B: output "Skipping GSD update." and proceed.
-If either version is "unknown": output "Could not determine GSD version. Continuing..." and proceed.
-
-### 1.5.3 Check Superpowers / Design / Engineering / Product Management plugin versions
+### 1.5.2 Optional legacy plugin version report
 
 Read installed versions from `$HOME/.codex/plugins/installed_plugins.json`. Display the installed version of each plugin found:
 
 ```bash
 cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
   .plugins | to_entries[] |
-  select(.key | test("^(superpowers|design|engineering|product-management)@")) |
+  select(.key | test("^(superpowers|design|engineering|product-management|gsd)@")) |
   "\(.key | split("@")[0]): v\(.value[0].version)"
 ' 2>/dev/null || echo "Could not read plugin registry"
 ```
 
-No automated update skill exists for these plugins. If the user wants to update them:
-> To update Superpowers: `/plugin install obra/superpowers`
-> To update Design: `/plugin install anthropics/knowledge-work-plugins/tree/main/design`
-> To update Engineering: `/plugin install anthropics/knowledge-work-plugins/tree/main/engineering`
-> To update Product Management: `/plugin install anthropics/knowledge-work-plugins/tree/main/product-management`
+If none are present, output:
+> No legacy GSD, Superpowers, or Anthropic dependency plugins detected. Continuing
+> with SB-owned lifecycle behavior.
 
-### 1.5.4 Check MultAI version
+Do not ask to install or update these plugins during init.
+
+### 1.5.3 Check MultAI version
 
 Read installed version:
 ```bash
@@ -398,12 +313,19 @@ test -d ".planning" && echo "EXISTING" || echo "NEW"
 Ask the user directly:
 - Question: "No .planning/ directory found. How would you like to initialize this project?"
 - Options:
-  - "A. New project — scaffold with GSD (creates ROADMAP.md, STATE.md, project structure)"
-  - "B. Existing codebase — map it first before scaffolding"
+  - "A. New project — scaffold SB planning artifacts"
+  - "B. Existing codebase — orient first, then scaffold SB planning artifacts"
   - "C. Skip project initialization — I'll handle it manually"
 
-If A: invoke `/gsd-new-project` through the active runtime's SB-recognized skill invocation channel. After it completes, continue.
-If B: invoke `/gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel, then `/gsd-scan`. After both complete, offer to run `/gsd-new-project`. Then continue.
+If A: create `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`,
+`.planning/ROADMAP.md`, and `.planning/STATE.md` if absent. Use SB-owned
+headings and mark the state as initialized, not complete. Then continue.
+
+If B: read the repository structure, package manifests, and existing docs first.
+Use Graphify when available for retrieval-oriented orientation. Capture the
+orientation summary in `.planning/PROJECT.md` and initialize the same SB-owned
+planning artifacts as option A. Then continue.
+
 If C: continue without project initialization.
 
 **If EXISTING project:**
@@ -413,8 +335,11 @@ test -d ".planning/codebase" && echo "INTEL_EXISTS" || echo "NO_INTEL"
 ```
 
 If NO_INTEL and project appears brownfield (has source files but no .planning/codebase/):
-Display: "No codebase intelligence found. Running gsd-scan to orient planning..."
-Invoke `/gsd-scan` through the active runtime's SB-recognized skill invocation channel. After it completes, continue.
+Display: "No codebase intelligence found. Capturing SB-owned orientation notes..."
+Read package manifests, top-level docs, and source tree shape. Use Graphify when
+available. Continue after writing concise orientation notes to `.planning/PROJECT.md`
+or a dedicated `.planning/research/STACK.md` / `.planning/research/ARCHITECTURE.md`
+file when those directories already exist.
 
 ### 2.2 Detect project name
 
@@ -526,29 +451,29 @@ If the runtime already implies a mode or the user chooses `auto` / confirmed `by
 
 If already set to `auto` or `bypassPermissions` → skip silently.
 
-> **Note on Autonomous mode:** If the user selects Autonomous, SB will invoke `gsd-autonomous` at workflow execution steps rather than `gsd-execute-phase`. `gsd-autonomous` handles full phase execution without checkpoints. This preference is stored in §10e of `silver-bullet.md`.
+> **Note on Autonomous mode:** If the user selects Autonomous, SB uses the `silver:execute` autonomous path for execution steps instead of checkpointed execution. This preference is stored in §10e of `silver-bullet.md`.
 
 ### 2.9 Project management system
 
 Detect from the repo remote and hosting metadata first:
 - GitHub remote or GitHub-hosted repo → `"issue_tracker": "github"`
-- Local-only or non-GitHub repo → `"issue_tracker": "gsd"`
+- Local-only or non-GitHub repo → `"issue_tracker": "local"`
 
 Only ask the user directly if the detection is genuinely ambiguous:
 - Question: "Which project management system should Silver Bullet use when filing issues and backlog items?"
 - Options:
   - "A. GitHub Issues (this repo) — recommended for GitHub-hosted projects"
-  - "B. None / GSD — use GSD's .planning/ROADMAP.md (default, no external system)"
+  - "B. Local docs/issues — use repository-local markdown tracking (default, no external system)"
 
 Record the answer as `issue_tracker` in `.silver-bullet.json`:
 - Option A → `"issue_tracker": "github"`
-- Option B → `"issue_tracker": "gsd"`
+- Option B → `"issue_tracker": "local"`
 
 This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver:feature`, `silver:bugfix`, `silver:devops`, `silver:ui`) read this field and route issue creation accordingly:
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
-- `gsd` → add to `.planning/ROADMAP.md` backlog section as today
+- `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
 
-Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"gsd"` if detection fails or the user skips the prompt.
+Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy `"gsd"` values in existing configs are treated as local tracking by filing/removal skills.
 
 ---
 
@@ -570,14 +495,14 @@ Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, p
 
 See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 
-1. Invoke `superpowers:using-superpowers`.
+1. Refresh the SB-owned lifecycle surface from the bundled `silver:*` skills.
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` (substitute `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` from `.silver-bullet.json`). Safe — Silver Bullet owns this file.
 3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (pre-v0.7.0 migration) and remove the old-style reference line that does not mention `silver-bullet.md`.
 4. If the project instruction file already exists, ensure it has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing. If no project instruction file exists, skip this step.
 5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
 6. Invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
 7. Re-register/refresh SB hooks (step 3.7.5 in the reference).
-8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
+8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 **Template refresh** (only on explicit user request): list files, require "yes", back up workflow files to `*.backup`, overwrite `silver-bullet.md`, carry forward `.silver-bullet.json` customizations. See reference for the full flow.
 
@@ -630,7 +555,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
-- **3.8 Activate plugins**: invoke `superpowers:using-superpowers`. GSD, Engineering, Design, and Product Management are available through their normal skill routes — no activation needed.
+- **3.8 Optional plugin activation**: do not activate GSD, Superpowers, Engineering, Design, or Product Management for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 
 ## Additional Resources

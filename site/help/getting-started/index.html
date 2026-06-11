@@ -188,14 +188,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
-      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> for Claude Code and Codex that wraps GSD with dynamic workflow composition, enforcement hooks, spec-to-PR traceability, artifact review governance, DevOps risk controls, and guided recovery when a workflow stalls. GSD remains the planning and execution engine; Silver Bullet decides which path should run, enforces that required steps actually happened, and keeps the work traceable from spec through review and ship.</p>
+      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> for Claude Code and Codex that provides SB-owned workflow composition, enforcement hooks, spec-to-PR traceability, artifact review governance, DevOps risk controls, and guided recovery when a workflow stalls. SB owns the core planning, execution, verification, review, ship, and release lifecycle; optional plugins extend specialized domains.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="settings"></i></div>
           <div>
             <h4>Software Engineering Workflow</h4>
-            <p>Composed application delivery path. From requirements and GSD planning through code review, testing, CI/CD, and release.</p>
+            <p>Composed application delivery path. From requirements and SB planning through code review, testing, CI/CD, and release.</p>
           </div>
         </div>
         <div class="prereq-card">
@@ -212,7 +212,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="prerequisites">Prerequisites</h2>
-      <p>Silver Bullet builds on top of several tools. Install them in this order.</p>
+      <p>Silver Bullet needs a supported host runtime and a small local toolchain. Domain plugins are optional extensions, not default lifecycle dependencies.</p>
 
       <div class="prereq-grid">
         <div class="prereq-card">
@@ -234,9 +234,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="clipboard-list"></i></div>
           <div>
-            <h4>GSD (Get Shit Done) <span class="tag tag-required">Required</span></h4>
-            <p>The planning and execution framework. Manages .planning/ directory, roadmaps, and per-phase execution.</p>
-            <div class="install-cmd">npx get-shit-done-cc@latest</div>
+            <h4>Legacy GSD <span class="tag tag-optional">Optional compatibility</span></h4>
+            <p>Only install when you explicitly want to run external GSD commands. SB's default lifecycle no longer depends on it.</p>
+            <div class="install-cmd">Optional: install only for legacy projects</div>
           </div>
         </div>
         <div class="prereq-card">
@@ -250,9 +250,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="zap"></i></div>
           <div>
-            <h4>Superpowers <span class="tag tag-required">Required for SB helper gates</span></h4>
-            <p>Helper skills used only where SB requires them: TDD discipline, review framing/triage, branch finishing, and verification-before-completion.</p>
-            <div class="install-cmd">/plugin install obra/superpowers</div>
+            <h4>Superpowers <span class="tag tag-optional">Optional explicit use</span></h4>
+            <p>SB has absorbed the review, TDD, branch finishing, and completion-audit behaviors it depended on. Install only if you explicitly want those external skills too.</p>
+            <div class="install-cmd">Optional: /plugin install obra/superpowers</div>
           </div>
         </div>
         <div class="prereq-card">
@@ -266,22 +266,22 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="palette"></i></div>
           <div>
-            <h4>Engineering, Design, and Product Management Plugins <span class="tag tag-required">Required</span></h4>
-            <p>Required knowledge-work skills for testing strategy, documentation, deploy checklists, design systems, UX copy, accessibility review, product specs, roadmaps, and research synthesis.</p>
-            <div class="install-cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering<br>/plugin install anthropics/knowledge-work-plugins/tree/main/design<br>/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</div>
+            <h4>Engineering, Design, and Product Plugins <span class="tag tag-optional">Optional explicit use</span></h4>
+            <p>SB has absorbed the knowledge-work behaviors it depends on for specs, design contracts, documentation, deploy readiness, and research synthesis. Install only when you want those external plugin surfaces as supplemental tools.</p>
+            <div class="install-cmd">Optional: install through your host plugin manager</div>
           </div>
         </div>
       </div>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>GSD is a hard requirement.</strong> Silver Bullet wraps GSD's planning and execution commands. Without GSD installed, <code>/gsd:*</code> commands won't work and the workflow cannot proceed past planning.</div>
+        <div class="callout-body"><strong>SB-only is the default.</strong> Silver Bullet's core lifecycle workflows no longer install or depend on GSD, Superpowers, or Anthropic knowledge-work plugins. Optional DevOps/provider plugins remain useful when they add domain-specific capability.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Silver Bullet supports Claude Code and Codex host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.37.23, the Codex package installs SB-owned skills as internal <code>skill-source/</code> files and mirrors only the native <code>/silver:</code> picker surface, avoiding duplicate plugin-prefixed listings.</p>
+      <p>Silver Bullet supports Claude Code and Codex host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.38.0, the Codex package installs SB-owned skills as internal <code>skill-source/</code> files and mirrors only the native <code>/silver:</code> picker surface, avoiding duplicate plugin-prefixed listings.</p>
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager, then install the required dependency plugins from their official sources.</p>
@@ -319,7 +319,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB, GSD, and plugin path for the work.</div>
+        <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB workflow path for the work.</div>
       </div>
 
       <div class="divider"></div>
@@ -329,7 +329,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="card">
         <h4>New Project</h4>
-        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/silver:init</code> to scaffold, then start with <code>/silver</code> so SB can route to project setup, spec creation, or GSD planning as needed.</p>
+        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/silver:init</code> to scaffold, then start with <code>/silver</code> so SB can route to project setup, spec creation, or SB planning as needed.</p>
       </div>
       <div class="card">
         <h4>Existing Codebase</h4>
@@ -387,21 +387,21 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">3</div>
           <div class="step-body">
             <h4>Let SB Compose the Pre-Plan Path</h4>
-            <p>For formal work, SB may run <code>/silver:spec</code>, <code>/silver:ingest</code>, <code>/silver:validate</code>, clarification, and quality gates before GSD planning. Product work uses 8 core quality dimensions plus conditional gates where applicable; infrastructure work uses the 7 IaC-adapted gate.</p>
+            <p>For formal work, SB may run <code>/silver:spec</code>, <code>/silver:ingest</code>, <code>/silver:validate</code>, clarification, and quality gates before SB planning. Product work uses 8 core quality dimensions plus conditional gates where applicable; infrastructure work uses the 7 IaC-adapted gate.</p>
           </div>
         </li>
         <li>
           <div class="step-num">4</div>
           <div class="step-body">
-            <h4>Plan with GSD</h4>
-            <p>GSD researches the implementation and creates the detailed task plan. SB feeds spec, validation, quality-gate, and risk findings into the plan as hard requirements.</p>
+            <h4>Plan with SB</h4>
+            <p>SB researches the implementation context and creates the detailed task plan. Spec, validation, quality-gate, and risk findings feed into the plan as hard requirements.</p>
           </div>
         </li>
         <li>
           <div class="step-num">5</div>
           <div class="step-body">
-            <h4>Execute with GSD</h4>
-            <p>Execution happens in parallel waves. Each wave dispatches independent implementation agents, then merges results. Atomic commits are created per task.</p>
+            <h4>Execute with SB</h4>
+            <p>Execution follows the SB plan through checkpointed or autonomous waves. The runtime keeps state, records deviations, and verifies the implementation against the plan.</p>
           </div>
         </li>
         <li>
@@ -415,7 +415,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Lost track of where you are?</strong> Run <code>/gsd:next</code> at any point — it reads the current state and tells you exactly which step to do next.</div>
+        <div class="callout-body"><strong>Lost track of where you are?</strong> Run <code>/silver</code> with a status/progress request or use the active workflow tracker under <code>.planning/workflows/</code> to find the next required step.</div>
       </div>
 
       <div class="divider"></div>
@@ -482,7 +482,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3>What Should Use /silver</h3>
-      <p>Use <code>/silver</code> for work requests, feature requests, bug fixes, deployment work, refactors, release prep, and fuzzy tasks where you are not sure which workflow applies. Use direct <code>/silver:*</code> or <code>/gsd:*</code> commands when you already know the exact workflow step.</p>
+      <p>Use <code>/silver</code> for work requests, feature requests, bug fixes, deployment work, refactors, release prep, and fuzzy tasks where you are not sure which workflow applies. Use direct <code>/silver:*</code> commands when you already know the exact workflow step.</p>
 
       <p>For the full routing behavior, direct-command exemptions, and complete routing table, see <a href="../concepts/routing-logic.html">Routing Logic</a>.</p>
 
@@ -496,7 +496,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="brain"></i></div>
           <div>
             <h4><a href="../concepts/" style="color:var(--accent-light);text-decoration:none">Core Concepts →</a></h4>
-            <p>Understand skills, hooks, quality gates, and the GSD/Superpowers ownership model in depth.</p>
+            <p>Understand skills, hooks, quality gates, and the SB-owned lifecycle model in depth.</p>
           </div>
         </div>
         <div class="prereq-card">

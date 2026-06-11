@@ -23,7 +23,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
-| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `test-todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min |
+| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -38,7 +38,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
 | Live Kay matrix | shared scenarios, isolated Kay adapter, release-gate hook enforcement | 100% (`tests/live/run-live-tests.sh`) |
-| Live todo-app E2E | single inline full-surface journey on the standalone sibling `test-todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
+| Live todo-app E2E | single inline full-surface journey on the standalone sibling `todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 
@@ -59,11 +59,11 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 ```yaml
 - name: Validate required_deploy contents
   run: |
-    jq -e '.skills.required_deploy | contains(["test-driven-development","tech-debt","verify-tests"])' \
+    jq -e '.skills.required_deploy | contains(["silver-tdd","verify-tests"])' \
       .silver-bullet.json
     jq -e '.skills.required_deploy | contains(["accessibility-review"]) | not' \
       .silver-bullet.json
-    jq -e '.skills.all_tracked | contains(["test-driven-development","tech-debt","accessibility-review","incident-response"])' \
+    jq -e '.skills.all_tracked | contains(["silver-tdd","accessibility-review","incident-response"])' \
       .silver-bullet.json
 
 - name: Config template parity
@@ -85,8 +85,8 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 1. Stage A blocks if `quality-gates` is absent from state
 2. Stage A warns and allows when the required skill is unavailable anywhere invocable
 3. Stage A and Stage B both block source edits when planning is incomplete
-4. Phase-skip detection warns when finalization skills appear before `/gsd:code-review` while still allowing fixes
-5. Stage C allows edits once `gsd-code-review` is done and finalization remains
+4. Phase-skip detection warns when finalization skills appear before `/silver:review` while still allowing fixes
+5. Stage C allows edits once `silver-review` is done and finalization remains
 6. Stage D allows edits once all required skills are present
 7. Trivial file bypass never blocks, regardless of state
 8. State tamper, plugin boundary, and devops-cycle regressions are covered in the same suite
@@ -111,7 +111,7 @@ Claude or native Codex runs are optional diagnostics only when explicitly
 requested.
 
 The live todo-app E2E suite is separate. It uses the standalone sibling
-`test-todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
+`todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
 inline full-surface journey that proves install UX, feature delivery,
 bugfixing, issue filing, cleanup, and release prep in one real agent session.
 That journey also verifies the installed command surface (`silver:init`,
@@ -168,8 +168,8 @@ bash tests/scripts/test-sb-skill-scenario-coverage.sh
 | `silver-feature` | "I need to add a feature" |
 | `silver-bugfix` | "The delete button doesn't work" |
 | `tdd` | "Add feature using TDD" |
-| `gsd-execute` | "Implement the endpoint" |
-| `gsd-secure` | "Audit API for vulnerabilities" |
+| `silver-execute` | "Implement the endpoint" |
+| `silver-secure` | "Audit API for vulnerabilities" |
 
 ### Adding New Skill Scenarios
 

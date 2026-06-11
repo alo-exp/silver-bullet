@@ -148,7 +148,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> is Silver Bullet's dynamic workflow composer. It is the portable way to ask SB to classify a task and route it through the right SB, GSD, and plugin path. You can still invoke specific orchestration workflows directly when you know the exact command.</p>
+      <p><code>/silver</code> is Silver Bullet's dynamic workflow composer. It is the portable way to ask SB to classify a task and route it through the right SB lifecycle and optional extension path. You can still invoke specific orchestration workflows directly when you know the exact command.</p>
       <p>Every request passing through <code>/silver</code> goes through two sequential steps before work begins:</p>
       <ol>
         <li><strong>Explicit or host-supported routing</strong> — explicit <code>/silver</code> invocation is always supported; plain-request interception is host/runtime dependent.</li>
@@ -162,7 +162,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Use <code>/silver</code> when you want Silver Bullet to classify a natural-language work request. Some host runtimes may support bare-instruction interception, but explicit invocation is the cross-host behavior to rely on.</p>
 
       <h3>Why interception exists</h3>
-      <p>Without routing through SB, it is easy to accidentally bypass orchestration. If a plain assistant starts writing code immediately, it can skip clarification, spec work, quality gates, GSD planning, review, and verification. <code>/silver</code> makes the workflow decision explicit and traceable.</p>
+      <p>Without routing through SB, it is easy to accidentally bypass orchestration. If a plain assistant starts writing code immediately, it can skip clarification, spec work, quality gates, planning, review, and verification. <code>/silver</code> makes the workflow decision explicit and traceable.</p>
 
       <h3>How it works</h3>
       <ol>
@@ -206,7 +206,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>Slash command</td>
             <td><span class="badge-no">No</span></td>
-            <td><code>/gsd:plan-phase</code>, <code>/silver:fast</code></td>
+            <td><code>/silver:plan</code>, <code>/silver:fast</code></td>
           </tr>
           <tr>
             <td>Pure question</td>
@@ -246,7 +246,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="code-block">Is the change small and bounded enough for fast-path triage?
   YES → <strong>Trivial or bounded medium</strong> → route to silver:fast
-       Tier 1 uses gsd:fast; Tier 2 uses gsd:quick with flags
+       Tier 1 uses the SB fast path; Tier 2 uses bounded SB quick handling with flags
 
 Is the intent vague or scope unclear? Would you need to clarify before planning?
   YES → <strong>Fuzzy</strong> → run silver:clarify first, then re-classify
@@ -272,8 +272,8 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td>Bounded medium</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">4–10 files, small logic change, dependency update, no cross-cutting impact</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:fast</code> → <code>gsd:quick</code></td>
-            <td style="font-family:inherit;font-size:.875rem">Only if <code>gsd:quick</code> flags require it</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>silver:fast</code> Tier 2</td>
+            <td style="font-family:inherit;font-size:.875rem">Only if SB Tier 2 flags require it</td>
           </tr>
           <tr>
             <td>Simple</td>
@@ -298,7 +298,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Fast-path work still has a boundary.</strong> <code>silver:fast</code> routes Tier 1 work to <code>gsd:fast</code> and bounded Tier 2 work to <code>gsd:quick</code> with <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, or <code>--full</code> as needed. If the work grows beyond Tier 2, Silver Bullet escalates to <code>silver:feature</code>. §10 routing preferences are not applied to <code>silver:fast</code> by design.</div>
+        <div class="callout-body"><strong>Fast-path work still has a boundary.</strong> <code>silver:fast</code> routes Tier 1 work through SB fast execution and bounded Tier 2 work through SB quick handling with <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, or <code>--full</code> as needed. If the work grows beyond Tier 2, Silver Bullet escalates to <code>silver:feature</code>. §10 routing preferences are not applied to <code>silver:fast</code> by design.</div>
       </div>
 
       <div class="divider"></div>
@@ -314,27 +314,27 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td><a href="../workflows/silver-clarify.html" style="color:var(--accent-light)">/silver:clarify</a></td>
             <td style="font-family:inherit;font-size:.875rem">"I want to build", "I'm thinking of", "here's my idea", "what if we", "concept:" — when no SPEC.md exists</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:clarify → gsd:discuss-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:clarify → silver:context</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/silver:feature</a></td>
             <td style="font-family:inherit;font-size:.875rem">"add X", "build X", "implement X", "new feature", "enhance X", "extend X"</td>
-            <td style="font-family:inherit;font-size:.875rem">gsd-scan / /gsd:map-codebase → silver:clarify as needed</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:scan / silver:context → silver:clarify as needed</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-bugfix.html" style="color:var(--accent-light)">/silver:bugfix</a></td>
             <td style="font-family:inherit;font-size:.875rem">"bug", "broken", "crash", "error", "regression", "failing test", "not working"</td>
-            <td style="font-family:inherit;font-size:.875rem">SB triage → systematic-debugging → gsd:debug</td>
+            <td style="font-family:inherit;font-size:.875rem">SB triage → silver:debug</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-ui.html" style="color:var(--accent-light)">/silver:ui</a></td>
             <td style="font-family:inherit;font-size:.875rem">"UI", "frontend", "component", "screen", "design", "interface", "page", "layout"</td>
-            <td style="font-family:inherit;font-size:.875rem">gsd-scan → silver:clarify → gsd:ui-phase</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:clarify → silver:ui-contract</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/silver:devops</a></td>
             <td style="font-family:inherit;font-size:.875rem">"infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "cloud", "ops"</td>
-            <td style="font-family:inherit;font-size:.875rem">gsd-scan → silver:blast-radius → /devops-skill-router</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:blast-radius → optional DevOps skill router</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-research.html" style="color:var(--accent-light)">/silver:research</a></td>
@@ -344,12 +344,12 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>
             <td style="font-family:inherit;font-size:.875rem">"release", "publish", "version", "go live", "cut a release", "tag v", "ship to users"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:quality-gates → gsd:audit-uat → gsd:audit-milestone</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:quality-gates → SB UAT audit → SB milestone audit</td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-fast.html" style="color:var(--accent-light)">/silver:fast</a></td>
             <td style="font-family:inherit;font-size:.875rem">"trivial", "quick fix", "typo", "one-liner", "config value", bounded dependency or small logic update</td>
-            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>gsd:fast</code>, <code>gsd:quick</code>, or <code>silver:feature</code></td>
+            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>silver:fast</code> or <code>silver:feature</code></td>
           </tr>
         </tbody>
       </table>
@@ -381,7 +381,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           </tr>
           <tr>
             <td>Active phase in progress, no version signal</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>gsd-ship</code> / <code>/gsd:ship</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>silver:ship</code></td>
             <td style="font-family:inherit;font-size:.875rem">Phase-level merge: push branch, create PR</td>
           </tr>
           <tr>
@@ -394,7 +394,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>These are different scopes.</strong> <code>gsd-ship</code> (shown as <code>/gsd:ship</code> where the host exposes slash commands) runs inside workflows as the final phase-level step (push → PR). <code>silver:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, security review, fresh tests, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/silver</code> disambiguate for you.</div>
+        <div class="callout-body"><strong>These are different scopes.</strong> <code>silver:ship</code> runs inside workflows as the final phase-level step (push → PR). <code>silver:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, security review, fresh tests, archival, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/silver</code> disambiguate for you.</div>
       </div>
 
       <div class="divider"></div>

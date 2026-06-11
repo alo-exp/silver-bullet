@@ -2,14 +2,14 @@
 name: "silver:ui"
 title: "UI"
 description: >
-  This skill should be used for full SB-orchestrated UI/frontend workflow: orient → clarify/decide → testing strategy → gsd-ui-phase → execute+TDD → gsd-ui-review → verify → ship
+  This skill should be used for full SB-owned UI/frontend workflow: orient → clarify/decide → test strategy → silver:ui-contract → execute+TDD → silver:ui-review → verify → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
 
 # /silver:ui — Frontend, Component, Interface Workflow
 
-SB orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. Follows the same skeleton as silver:feature but inserts gsd-ui-phase for design contract and gsd-ui-review post-execution.
+SB orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. Follows the same skeleton as silver:feature but inserts `silver:ui-contract` for design contract and `silver:ui-review` post-execution.
 
 **Routing note:** If an instruction matches both silver:feature and silver:ui, silver:ui wins — UI is more specific. silver:bugfix always takes precedence over both.
 
@@ -17,23 +17,23 @@ Never implements UI directly — orchestrates only.
 
 ## Mandatory dependency execution
 
-Before any local UI implementation work, the execution trace must show the dependency chain for this workflow. At minimum, invoke these downstream skills in order:
+Before any local UI implementation work, the execution trace must show the SB dependency chain for this workflow. At minimum, invoke these downstream skills in order:
 
-1. `gsd-scan` when rapid SB orientation is useful
-2. `gsd-map-codebase` when the project is brownfield or deeper UI pattern mapping is needed
+1. `silver:scan` when rapid SB orientation is useful
+2. `silver:scan` with deeper mapping when the project is brownfield or deeper UI pattern mapping is needed
 3. `silver:clarify`
 4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
 5. `silver:quality-gates`
-6. `gsd:discuss-phase`
-7. `gsd:ui-phase`
-8. `gsd:plan-phase`
-9. `gsd:execute-phase` or `gsd:autonomous`
-10. `gsd:ui-review`
-11. `gsd:verify-work`
+6. `silver:context`
+7. `silver:ui-contract`
+8. `silver:plan`
+9. `silver:execute`
+10. `silver:ui-review`
+11. `silver:verify`
 
-If any required downstream skill cannot be invoked, stop immediately and notify the user. Offer install-and-retry first. Do not replace missing dependency skills with shell reconnaissance, direct edits, or other fallback work.
+If any required downstream SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell reconnaissance, direct edits, or other fallback work.
 
-The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream GSD markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
+The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream SB lifecycle markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
 
 ## Pre-flight: Load Preferences
 
@@ -171,13 +171,13 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `silver:verify`.
 
 ## Step 0: Orient in Codebase
 
-Invoke `gsd-scan` through the active runtime's SB-recognized skill invocation channel to understand existing UI patterns and component hierarchy.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel to understand existing UI patterns and component hierarchy.
 
-If brownfield project and deeper mapping is needed, also invoke `gsd-map-codebase` through the active runtime's SB-recognized skill invocation channel.
+If brownfield project and deeper mapping is needed, run a deeper `silver:scan` pass focused on UI patterns, routes, shared components, styles, and test harnesses.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
@@ -198,11 +198,11 @@ If A: invoke the external `multai:orchestrator` skill via the active host's supp
 
 ## Step 2: Testing Strategy
 
-Invoke `testing-strategy` through the active runtime's SB-recognized skill invocation channel when available. Purpose: define test levels for UI (component, visual, e2e) before GSD planning.
+Invoke `verify-tests` planning guidance or capture the test strategy inside `silver:plan`. Purpose: define test levels for UI (component, visual, e2e) before SB planning.
 
 ## Step 2.5: Writing Plans
 
-Keep the authoritative implementation plan in `gsd-plan-phase`. If the selected SB flow explicitly needs Superpowers plan-writing discipline, invoke `superpowers:writing-plans` through the active runtime's SB-recognized skill invocation channel; SB does not package a local `writing-plans` skill.
+Keep the authoritative implementation plan in `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
 
 ## Step 3: Pre-Plan Quality Gates
 
@@ -210,7 +210,7 @@ Invoke `silver:quality-gates` through the active runtime's SB-recognized skill i
 
 ## Step 4: Discuss Phase
 
-Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: UI phase context → CONTEXT.md with locked decisions.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: UI phase context, assumptions, dependencies, and locked decisions.
 
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
@@ -219,10 +219,10 @@ Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invo
 **Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
 
 **Steps** (all through the active runtime's SB-recognized skill invocation channel):
-1. `design:design-system` (Always)
-2. `design:ux-copy` (As-needed — user-facing copy requires review)
-3. `gsd-ui-phase` (Always — produces UI-SPEC.md)
-4. `design:accessibility-review` (As-needed — WCAG 2.1 AA compliance check)
+1. `silver:ui-contract` (Always — produces UI-SPEC.md)
+2. `review-design` or local design-system review when available
+3. UX copy review inside `silver:ui-contract` for user-facing copy
+4. Accessibility criteria inside `silver:ui-contract` for WCAG-oriented checks
 
 **Iterative:** User can loop steps 1-4. The helper suggests when design contract is solid; the user decides when to exit.
 
@@ -230,24 +230,24 @@ Invoke `gsd-discuss-phase` through the active runtime's SB-recognized skill invo
 
 ## Step 6: Plan Phase
 
-Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of UI-SPEC.md contract.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of the UI-SPEC.md contract.
 
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `gsd-execute-phase --tdd` through the active runtime's SB-recognized skill invocation channel for testable component units (logic, state, interactions). For pure layout/styling tasks, invoke `gsd-execute-phase` without `--tdd`.
-If mode is Autonomous (§10e): invoke `gsd-autonomous` through the active runtime's SB-recognized skill invocation channel. For implementation plans, only use Autonomous when the underlying GSD TDD mode is already enabled; otherwise fall back to Interactive so the internal `tdd` gate can run before execution.
+If mode is Interactive: invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel for component units. The `tdd` gate runs first for logic, state, and interactions. For pure layout/styling tasks, record the non-application-TDD rationale.
+If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode context. Autonomous execution still obeys the same TDD, UI review, verification, and artifact gates.
 
 **Internal TDD gate:**
-`tdd` is hidden from the picker and activates immediately before execution for component logic. It delegates to `superpowers:test-driven-development`, so the execute boundary cannot start until the failing-test-first discipline is in place.
+`tdd` is hidden from the picker and activates immediately before execution for component logic. It is now an SB-owned TDD policy skill, so the execute boundary cannot start until the failing-test-first discipline is in place.
 
 ## Step 8: Code Review
 
 Run review sequence in order:
-1. Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel.
-2. Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues found: invoke `gsd-code-review-fix` through the active runtime's SB-recognized skill invocation channel.
-3. For architecturally significant UI systems: invoke `gsd-review --all` through the active runtime's SB-recognized skill invocation channel (cross-AI adversarial review across all available CLIs).
-3. Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel.
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues are found, fix through `silver:execute` and re-review.
+3. For architecturally significant UI systems: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
+4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
 ## FLOW UI QUALITY — Post-execution UI audit
 
@@ -256,29 +256,28 @@ Run review sequence in order:
 **Note:** Always active in silver:ui (no trigger detection needed).
 
 **Steps** (all through the active runtime's SB-recognized skill invocation channel):
-1. `design:design-critique` (Always)
-2. `gsd-ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
-3. `design:accessibility-review` (Always)
+1. `silver:ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
+2. `review-design` or `usability` when available for additional design/accessibility lenses
 
-**Produces:** UI-REVIEW.md. Fixes route through `gsd-execute-phase --gaps-only`.
+**Produces:** UI-REVIEW.md. Fixes route through `silver:execute` with a gap-fix scope.
 
-**Review Cycle:** UI-REVIEW.md through artifact-review-assessor, fix critical via GSD, re-audit.
+**Review Cycle:** UI-REVIEW.md through artifact-review-assessor, fix critical via `silver:execute`, re-audit.
 
 **Exit Condition:** UI-REVIEW.md exists with no critical findings, or user accepts.
 
 ## Step 10: Frontend Security
 
-Invoke `gsd-secure-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
 
 ## Step 11: Verify Work + Test Gap Fill
 
-Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
 
-If coverage gaps remain after verification: invoke `gsd-add-tests` through the active runtime's SB-recognized skill invocation channel.
+If coverage gaps remain after verification: invoke `verify-tests` or route a test-gap task through `silver:execute`.
 
 ## Step 12: Validate Phase
 
-Invoke `gsd-validate-phase` through the active runtime's SB-recognized skill invocation channel. Purpose: Nyquist gap filling.
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: validation gap filling.
 
 ## Step 12b: Tech Debt Review
 
@@ -325,19 +324,19 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `superpowers:finishing-a-development-branch` through the active runtime's SB-recognized skill invocation channel; SB does not package a local `finishing-branch` skill.
+Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
 >
-> A. Yes — run gsd-pr-branch  B. No — ship as-is  C. Save as permanent preference
+> A. Yes — ask `silver:ship` to prepare a clean PR branch  B. No — ship as-is  C. Save as permanent preference
 
-If A: invoke `gsd-pr-branch` through the active runtime's SB-recognized skill invocation channel.
+If A: pass the clean-PR-branch preference to `silver:ship`.
 If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e, commit both.
 
 ## Step 15: Ship Phase
 
-Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level).
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level).
 
 ## Step 16: Milestone Completion (last phase of milestone only)
 
@@ -346,5 +345,4 @@ Ask user:
 >
 > A. Yes — run milestone completion lifecycle  B. No — done
 
-If A, run in sequence:
-1. `gsd-audit-uat` → `gsd-audit-milestone` → [gaps, max 2 iterations: `gsd-plan-milestone-gaps` → `silver:feature` for gap phases] → `gsd-complete-milestone`
+If A, invoke `silver:release` with milestone-completion context. It owns UAT audit, milestone audit, gap planning, and completion.

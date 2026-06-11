@@ -1,7 +1,7 @@
 ---
 name: devops-quality-gates
 title: "Silver: DevOps Quality Gates"
-description: "This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /gsd:plan-phase in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop."
+description: "This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /silver:plan in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop."
 user-invocable: false
 version: 0.1.0
 ---
@@ -10,7 +10,7 @@ version: 0.1.0
 
 Applies 7 quality dimensions adapted for infrastructure-as-code, CI/CD pipelines,
 and DevOps workflows. Every dimension must pass before the current IaC change
-proceeds to `/gsd:plan-phase`. A ❌ is a hard stop — redesign before continuing.
+proceeds to `silver:plan`. A ❌ is a hard stop — redesign before continuing.
 
 **Plugin root**: Determine `PLUGIN_ROOT` from this file's path. This file lives at
 `${PLUGIN_ROOT}/skills/devops-quality-gates/SKILL.md`, so the plugin root is two
@@ -133,9 +133,9 @@ Output a report in this format:
 
 ## Step 5: Gate enforcement
 
-- If **all applicable dimensions pass** → output "DevOps quality gates passed. Proceed to `/gsd:plan-phase`."
+- If **all applicable dimensions pass** → output "DevOps quality gates passed. Proceed to `silver:plan`."
 - If **any dimension fails** → output "DevOps quality gates FAILED. Redesign required before planning."
   List each failure with the specific rule and required corrective action.
-  Do NOT proceed to `/gsd:plan-phase` until all failures are resolved and this skill is re-run.
+  Do NOT proceed to `silver:plan` until all failures are resolved and this skill is re-run.
 
 **There are no exceptions.** A ❌ is a hard stop, not a warning.

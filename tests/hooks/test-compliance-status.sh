@@ -34,8 +34,8 @@ cat > "$TMPCFG" << EOF
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release"],
-    "all_tracked": ["silver-quality-gates","code-review"]
+    "required_deploy": ["silver-quality-gates","silver-review","silver-completion-audit","silver-branch-finish","silver-create-release"],
+    "all_tracked": ["silver-quality-gates","silver-review","silver-completion-audit","silver-branch-finish","silver-create-release"]
   },
   "state": { "state_file": "${TMPSTATE}" }
 }
@@ -120,7 +120,7 @@ write_cfg
 out=$(run_hook)
 assert_contains "no state file -> Silver Bullet prefix" "$out" "Silver Bullet"
 assert_contains "no state file -> PLANNING 0/" "$out" "PLANNING 0/"
-assert_contains "no state file -> GSD 0/5" "$out" "GSD 0/5"
+assert_contains "no state file -> LIFECYCLE 0/5" "$out" "LIFECYCLE 0/5"
 assert_contains "no state file -> REVIEW 0/3" "$out" "REVIEW 0/3"
 teardown
 
@@ -137,18 +137,18 @@ teardown
 echo "--- Test 4: Review skills complete -> REVIEW 3/3 ---"
 setup
 write_cfg
-printf 'silver-quality-gates\nrequesting-code-review\ngsd-code-review\nreceiving-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-review-request\nsilver-review\nsilver-review-triage\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "review skills complete -> REVIEW 3/3" "$out" "REVIEW 3/3"
 teardown
 
-# Test 5: GSD skills present -> GSD count increments
-echo "--- Test 5: GSD skills increment GSD counter ---"
+# Test 5: legacy GSD skills present -> LIFECYCLE count increments through aliases
+echo "--- Test 5: legacy GSD skills increment LIFECYCLE counter ---"
 setup
 write_cfg
 printf 'gsd-discuss-phase\ngsd-plan-phase\ngsd-execute-phase\n' > "$TMPSTATE"
 out=$(run_hook)
-assert_contains "3 gsd skills -> GSD 3/5" "$out" "GSD 3/5"
+assert_contains "3 legacy gsd skills -> LIFECYCLE 3/5" "$out" "LIFECYCLE 3/5"
 teardown
 
 # Test 6: Next skill shown for first missing planning skill
@@ -169,7 +169,7 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook)
 # Planning done; next should be in review phase
-assert_contains "planning done -> Next: requesting-code-review" "$out" "requesting-code-review"
+assert_contains "planning done -> Next: silver-review-request" "$out" "silver-review-request"
 teardown
 
 # Test 8: Mode file respected — autonomous mode shown in output
@@ -209,7 +209,7 @@ teardown
 echo "--- Test 11: Finalization phase counts ---"
 setup
 write_cfg
-printf 'finishing-a-development-branch\nverification-before-completion\ntest-driven-development\nverify-tests\n' > "$TMPSTATE"
+printf 'silver-branch-finish\nsilver-completion-audit\nsilver-tdd\nverify-tests\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "4 finalization skills -> FINALIZATION 4/4" "$out" "FINALIZATION 4/4"
 teardown

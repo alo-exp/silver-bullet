@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
-  "version": "0.37.23",
-  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, and templates only; GSD and selected helper plugins are installed from their official sources.",
+  "version": "0.38.0",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, templates, and lifecycle workflows; optional extension plugins are installed from their official sources.",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
@@ -13,7 +13,6 @@
     "silver-bullet",
     "enforcement",
     "orchestrator",
-    "gsd",
     "devops",
     "quality-gates",
     "deploy-gate",
@@ -23,8 +22,8 @@
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Silver Bullet",
-    "shortDescription": "SB+GSD Agentic Process Orchestrator",
-    "longDescription": "Silver Bullet layers SB-owned skills, hooks, and workflow assets onto Codex and Claude Code to compose task-shaped workflows around GSD. Third-party dependencies are installed from their own sources rather than vendored into the SB Codex bundle.",
+    "shortDescription": "SB-owned lifecycle orchestrator",
+    "longDescription": "Silver Bullet layers SB-owned skills, hooks, workflow assets, and lifecycle gates onto Codex and Claude Code to compose task-shaped workflows. Optional extension plugins are installed from their own sources rather than vendored into the SB Codex bundle.",
     "developerName": "Alo Labs",
     "category": "Development",
     "capabilities": [
@@ -36,7 +35,7 @@
     "defaultPrompt": [
       "Start a Silver Bullet workflow for this repo.",
       "Review this codebase with Silver Bullet.",
-      "Help me ship this change with GSD discipline."
+      "Help me ship this change with Silver Bullet discipline."
     ],
     "brandColor": "#0F172A"
   }

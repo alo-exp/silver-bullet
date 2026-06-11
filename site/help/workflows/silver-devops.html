@@ -164,7 +164,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
       <h3>Step 0 — Codebase and infrastructure orientation</h3>
-      <p>Invoke <code>gsd-scan</code> to understand current infra topology before blast-radius analysis. If deeper mapping is needed, invoke <code>/gsd:map-codebase</code>.</p>
+      <p>Invoke <code>silver:scan</code> to understand current infra topology before blast-radius analysis. If deeper mapping is needed, invoke <code>silver:context</code>.</p>
 
       <h3>Step 1 — Blast radius analysis</h3>
       <p>Invoke <code>/silver:blast-radius</code>. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. <strong>This step replaces the product/engineering brainstorm for devops workflows.</strong> Produces a LOW/MEDIUM/HIGH/CRITICAL rating (see table below).</p>
@@ -176,32 +176,32 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>Invoke <code>/devops-quality-gates</code>. All 7 IaC-adapted dimensions run as the pre-plan gate. <strong>Not</strong> the standard product/software <code>/silver:quality-gates</code> — the devops workflow uses <code>/devops-quality-gates</code> exclusively at both quality gate positions.</p>
 
       <h3>Step 3b — Infrastructure security (mandatory, non-skippable)</h3>
-      <p>Review the security findings from <code>/devops-quality-gates</code> before planning. Secrets, IAM permissions, network exposure, and data handling must be addressed as design requirements before <code>gsd:plan-phase</code> runs.</p>
+      <p>Review the security findings from <code>/devops-quality-gates</code> before planning. Secrets, IAM permissions, network exposure, and data handling must be addressed as design requirements before <code>silver:plan</code> runs.</p>
 
-      <h3>Step 4 — Discuss phase</h3>
-      <p>Invoke <code>gsd:discuss-phase</code>. DevOps phase context → <code>CONTEXT.md</code> with locked decisions for the planner.</p>
+      <h3>Step 4 — Context phase</h3>
+      <p>Invoke <code>silver:context</code>. DevOps phase context → <code>CONTEXT.md</code> with locked decisions for the planner.</p>
 
       <h3>Step 5 — Plan phase</h3>
-      <p>Invoke <code>gsd:plan-phase</code>. Produces <code>PLAN.md</code> for the infrastructure change.</p>
+      <p>Invoke <code>silver:plan</code>. Produces <code>PLAN.md</code> for the infrastructure change.</p>
 
       <h3>Step 6 — Execute phase (TDD skipped)</h3>
-      <p>Invoke <code>gsd:execute-phase</code> (Interactive) or <code>gsd:autonomous</code> (Autonomous §10e).</p>
+      <p>Invoke <code>silver:execute</code> (Interactive) or the SB autonomous path when §10e allows it.</p>
       <p><strong>TDD is explicitly skipped for infra plans — not applicable.</strong> Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No <code>tdd</code> invocation.</p>
 
       <h3>Step 7 — Code review (IaC review)</h3>
-      <p>Run review sequence: <code>/requesting-code-review</code> → <code>gsd:code-review</code> → [if issues: <code>gsd:code-review-fix</code>] → [for arch-significant infra: <code>gsd:review --all</code>] → <code>/receiving-code-review</code>.</p>
+      <p>Run review sequence: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant infra: expanded <code>silver:review</code>].</p>
 
       <h3>Step 8 — IaC security and secrets verification</h3>
-      <p>Invoke <code>gsd:secure-phase</code>. Confirms no credentials in code, correct IAM boundaries, secure defaults.</p>
+      <p>Invoke <code>silver:secure</code>. Confirms no credentials in code, correct IAM boundaries, secure defaults.</p>
 
       <h3>Step 9 — Deployment verification</h3>
-      <p>Invoke <code>gsd:verify-work</code>. Deployment verification and UAT. <strong>Non-skippable gate.</strong></p>
+      <p>Invoke <code>silver:verify</code>. Deployment verification and UAT. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 10 — Pre-ship DevOps quality gates (7 IaC dimensions)</h3>
       <p>Invoke <code>/devops-quality-gates</code> again. Final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. <strong>Non-skippable gate.</strong></p>
 
       <h3>Step 11 — Ship / deploy</h3>
-      <p>Invoke <code>gsd:ship</code>. Push branch, deploy, create PR.</p>
+      <p>Invoke <code>silver:ship</code>. Push branch, deploy, create PR.</p>
 
       <div class="divider"></div>
 
@@ -244,7 +244,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <ul style="margin-top:8px">
             <li>Security dimension inside <code>/devops-quality-gates</code> (Step 3b)</li>
             <li><code>/devops-quality-gates</code> pre-ship (Step 10)</li>
-            <li><code>gsd:verify-work</code> (Step 9)</li>
+            <li><code>silver:verify</code> (Step 9)</li>
           </ul>
         </div>
       </div>

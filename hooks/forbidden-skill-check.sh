@@ -68,7 +68,7 @@ fi
 # ── Check against hardcoded forbidden list ────────────────────────────────────
 for entry in $FORBIDDEN_HARDCODED; do
   if [[ "$skill_name" == "$entry" ]]; then
-    reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /gsd:execute-phase for execution and /gsd:plan-phase for planning. See silver-bullet.md section 6."
+    reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /silver:execute for execution and /silver:plan for planning. See silver-bullet.md section 6."
     json_reason=$(printf '%s' "$reason" | jq -Rs '.')
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
     exit 0

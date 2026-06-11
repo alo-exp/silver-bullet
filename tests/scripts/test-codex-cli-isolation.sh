@@ -66,7 +66,7 @@ trap 'rm -rf "$TMP"' EXIT
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIGINAL_HOME="$TMP/original-home"
 FAKE_BIN="$TMP/bin/codex"
-mkdir -p "$ORIGINAL_HOME/.codex/agents" "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/skills/gsd-discuss-phase" "$ORIGINAL_HOME/.agents/skills/gsd-plan-phase" "$(dirname "$FAKE_BIN")"
+mkdir -p "$ORIGINAL_HOME/.codex/agents" "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/skills/silver-context" "$ORIGINAL_HOME/.agents/skills/silver-plan" "$(dirname "$FAKE_BIN")"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/hooks"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/scripts"
@@ -99,27 +99,27 @@ hooks = true
 [plugins."silver-bullet@alo-labs-codex"]
 enabled = true
 
-[agents.gsd-planner]
-config_file = "${ORIGINAL_HOME}/.codex/agents/gsd-planner.toml"
+[agents.sb-planner]
+config_file = "${ORIGINAL_HOME}/.codex/agents/sb-planner.toml"
 
 [projects."/Users/shafqat/projects/silver-bullet"]
 trust_level = "trusted"
 EOF
 
-cat > "$ORIGINAL_HOME/.codex/agents/gsd-planner.toml" <<'EOF'
+cat > "$ORIGINAL_HOME/.codex/agents/sb-planner.toml" <<'EOF'
 model = "gpt-5.5"
 EOF
-cat > "$ORIGINAL_HOME/.codex/skills/gsd-discuss-phase/SKILL.md" <<'EOF'
+cat > "$ORIGINAL_HOME/.codex/skills/silver-context/SKILL.md" <<'EOF'
 ---
-name: "gsd-discuss-phase"
----
-EOF
-cat > "$ORIGINAL_HOME/.agents/skills/gsd-plan-phase/SKILL.md" <<'EOF'
----
-name: "gsd:plan-phase"
+name: "silver:context"
 ---
 EOF
-cat > "$ORIGINAL_HOME/.codex/hooks/gsd-check-update.js" <<'EOF'
+cat > "$ORIGINAL_HOME/.agents/skills/silver-plan/SKILL.md" <<'EOF'
+---
+name: "silver:plan"
+---
+EOF
+cat > "$ORIGINAL_HOME/.codex/hooks/sb-check-update.js" <<'EOF'
 console.log("check-update");
 EOF
 cat > "$ORIGINAL_HOME/.codex/hooks.json" <<'EOF'
@@ -130,7 +130,7 @@ cat > "$ORIGINAL_HOME/.codex/hooks.json" <<'EOF'
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
-            "command": "\"__ORIGINAL_HOME__/.codex/hooks/gsd-check-update.js\""
+            "command": "\"__ORIGINAL_HOME__/.codex/hooks/sb-check-update.js\""
           }
         ]
       }
@@ -276,23 +276,23 @@ assert_file_contains "Isolated Codex config preserves reasoning when unspecified
 assert_file_contains "Isolated Codex config forces approval never" "$CODEX_HOME/config.toml" 'approval_policy = "never"'
 assert_file_contains "Isolated Codex config forces danger-full-access" "$CODEX_HOME/config.toml" 'sandbox_mode = "danger-full-access"'
 assert_file_contains "Isolated Codex config rewrites alo-labs marketplace to a local isolation root" "$CODEX_HOME/config.toml" "source = \"${NORMALIZED_CODEX_HOME}/.tmp/marketplaces/alo-labs-codex\""
-assert_file_contains "Isolated Codex config rewrites GSD marketplace to a local isolation root" "$CODEX_HOME/config.toml" "source = \"${NORMALIZED_CODEX_HOME}/.tmp/marketplaces/get-shit-done-marketplace\""
-assert_file_contains "Isolated Codex config rewrites Superpowers marketplace to a local isolation root" "$CODEX_HOME/config.toml" "source = \"${NORMALIZED_CODEX_HOME}/.tmp/marketplaces/superpowers-marketplace\""
+assert_file_not_contains "Isolated Codex config does not add GSD marketplace" "$CODEX_HOME/config.toml" "get-shit-done-marketplace"
+assert_file_not_contains "Isolated Codex config does not add Superpowers marketplace" "$CODEX_HOME/config.toml" "superpowers-marketplace"
 assert_file_contains "Isolated Codex config keeps only required Silver Bullet plugin enablement" "$CODEX_HOME/config.toml" '[plugins."silver-bullet@alo-labs-codex"]'
 assert_file_contains "Isolated Codex config keeps existing trusted projects" "$CODEX_HOME/config.toml" '[projects."/Users/shafqat/projects/silver-bullet"]'
 assert_file_contains "Isolated Codex config keeps trusted project level" "$CODEX_HOME/config.toml" 'trust_level = "trusted"'
-assert_file_exists "Isolated Codex env mirrors host Codex skill roots" "$CODEX_HOME/skills/gsd-discuss-phase/SKILL.md"
-assert_file_exists "Isolated Codex env mirrors host .agents skill roots" "$HOME/.agents/skills/gsd-plan-phase/SKILL.md"
-assert_command_succeeds "Isolated Codex hook discovery resolves gsd-discuss-phase" sb_skill_is_installed "gsd-discuss-phase"
-assert_command_succeeds "Isolated Codex hook discovery resolves gsd-plan-phase" sb_skill_is_installed "gsd-plan-phase"
-if [[ ! -e "$CODEX_HOME/agents/gsd-planner.toml" ]]; then
+assert_file_exists "Isolated Codex env mirrors host Codex skill roots" "$CODEX_HOME/skills/silver-context/SKILL.md"
+assert_file_exists "Isolated Codex env mirrors host .agents skill roots" "$HOME/.agents/skills/silver-plan/SKILL.md"
+assert_command_succeeds "Isolated Codex hook discovery resolves silver-context" sb_skill_is_installed "silver-context"
+assert_command_succeeds "Isolated Codex hook discovery resolves silver-plan" sb_skill_is_installed "silver-plan"
+if [[ ! -e "$CODEX_HOME/agents/sb-planner.toml" ]]; then
   echo "PASS: isolated Codex env does not mirror host agent-role files"
   (( PASS++ )) || true
 else
   echo "FAIL: isolated Codex env unexpectedly mirrored host agent-role files"
   (( FAIL++ )) || true
 fi
-if [[ ! -e "$CODEX_HOME/hooks/gsd-check-update.js" ]]; then
+if [[ ! -e "$CODEX_HOME/hooks/sb-check-update.js" ]]; then
   echo "PASS: isolated Codex env does not mirror host user hook scripts"
   (( PASS++ )) || true
 else

@@ -29,7 +29,7 @@ rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode"
 integration_teardown
 
 # ── S2: Cross-session skill accumulation ──────────────────────────────────────
-# session-start resets gsd- markers but KEEPS skill records
+# session-start keeps skill records for the same branch.
 # for the same branch. Verify silver-quality-gates persists after run_session_start.
 echo "--- S2: Cross-session skill accumulation ---"
 integration_setup
@@ -37,7 +37,7 @@ write_default_config
 
 # Record skills
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-code-review"   >/dev/null
+run_record_skill "silver-review"     >/dev/null
 
 # Confirm skills are present before simulated session restart
 assert_contains "S2.1: silver-quality-gates recorded before restart" \
@@ -50,42 +50,42 @@ run_session_start >/dev/null 2>&1 || true
 state_after=$(cat "$TMPSTATE" 2>/dev/null || echo "")
 assert_contains "S2.2: silver-quality-gates persists after session restart (same branch)" \
   "$state_after" "silver-quality-gates"
-assert_contains "S2.3: gsd-code-review persists after session restart (same branch)" \
-  "$state_after" "gsd-code-review"
+assert_contains "S2.3: silver-review persists after session restart (same branch)" \
+  "$state_after" "silver-review"
 
 integration_teardown
 
 # ── S3: Post-review execution gate ────────────────────────────────────────────
 # completion-audit blocks until all required_deploy skills are present.
-# Verify that missing verification-before-completion causes a block, then clears.
+# Verify that missing silver-completion-audit causes a block, then clears.
 echo "--- S3: Post-review execution gate ---"
 integration_setup
 write_default_config
 
-# Record all required_deploy skills EXCEPT verification-before-completion
+# Record all required_deploy skills EXCEPT silver-completion-audit
 while IFS= read -r skill; do
-  [[ "$skill" == "verification-before-completion" ]] && continue
+  [[ "$skill" == "silver-completion-audit" ]] && continue
   run_record_skill "$skill" >/dev/null
 done < <(emit_required_deploy_skills required_deploy)
 
-# Provide a local invocable copy of the verifier skill so completion-audit
+# Provide a local invocable copy of the completion-audit marker skill so completion-audit
 # treats it as installed in CI even though the repo does not vendor that skill.
 installed_skill_root="${TMPDIR_TEST}/installed-skills"
-mkdir -p "${installed_skill_root}/verification-before-completion"
-cat > "${installed_skill_root}/verification-before-completion/SKILL.md" <<'EOF'
+mkdir -p "${installed_skill_root}/silver-completion-audit"
+cat > "${installed_skill_root}/silver-completion-audit/SKILL.md" <<'EOF'
 ---
-name: verification-before-completion
+name: silver-completion-audit
 description: CI fixture for completion-audit integration tests.
 ---
 EOF
 export SILVER_BULLET_SKILL_ROOTS="${installed_skill_root}"
 
-# Should be blocked — verification-before-completion missing
+# Should be blocked — silver-completion-audit missing
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: test'")
-assert_blocked "S3.1: completion-audit blocks when verification-before-completion missing" "$out"
+assert_blocked "S3.1: completion-audit blocks when silver-completion-audit missing" "$out"
 
 # Record the missing skill
-run_record_skill "verification-before-completion" >/dev/null
+run_record_skill "silver-completion-audit" >/dev/null
 seed_gsd_lifecycle_artifacts
 
 # Now should be allowed

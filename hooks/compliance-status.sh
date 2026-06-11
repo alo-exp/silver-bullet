@@ -216,7 +216,7 @@ if [[ ! -f "$state_file" ]]; then
   # Count totals
   plan_total=0
   for _ in $required_planning; do ((plan_total++)) || true; done
-  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | Mode: %s | %s | GSD 0/5 | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
+  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | Mode: %s | %s | LIFECYCLE 0/5 | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
     "$mode" "$path_progress" "$plan_total" \
     "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
   exit 0
@@ -228,7 +228,11 @@ total_steps=$(printf '%s\n' "$state_contents" | grep -c . || true)
 
 # Helper: check if skill is in state
 has_skill() {
-  printf '%s\n' "$state_contents" | grep -qx "$1" 2>/dev/null
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    sb_required_skill_is_recorded "$state_contents" "$1"
+    return $?
+  fi
+  printf '%s\n' "$state_contents" | grep -Fqx -- "$1" 2>/dev/null
 }
 
 # --- PLANNING phase ---
@@ -245,7 +249,7 @@ for skill in $required_planning; do
 done
 
 # --- REVIEW phase ---
-review_skills="requesting-code-review gsd-code-review receiving-code-review"
+review_skills="silver-review-request silver-review silver-review-triage"
 review_done=0
 review_total=0
 for _ in $review_skills; do ((review_total++)) || true; done
@@ -259,7 +263,7 @@ for skill in $review_skills; do
 done
 
 # --- FINALIZATION phase ---
-final_skills="finishing-a-development-branch verification-before-completion test-driven-development verify-tests"
+final_skills="silver-branch-finish silver-completion-audit silver-tdd verify-tests"
 final_done=0
 final_total=0
 for _ in $final_skills; do ((final_total++)) || true; done
@@ -272,14 +276,14 @@ for skill in $final_skills; do
   fi
 done
 
-# --- GSD PHASES (tracked when /gsd:* commands fire through a supported skill invocation channel) ---
-gsd_core_skills="gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-verify-work gsd-ship"
-gsd_done=0
-gsd_total=0
-for _ in $gsd_core_skills; do ((gsd_total++)) || true; done
-for skill in $gsd_core_skills; do
+# --- SB LIFECYCLE PHASES (legacy GSD markers still satisfy these aliases) ---
+lifecycle_skills="silver-context silver-plan silver-execute silver-verify silver-ship"
+lifecycle_done=0
+lifecycle_total=0
+for _ in $lifecycle_skills; do ((lifecycle_total++)) || true; done
+for skill in $lifecycle_skills; do
   if has_skill "$skill"; then
-    ((gsd_done++)) || true
+    ((lifecycle_done++)) || true
   fi
 done
 
@@ -310,7 +314,7 @@ elif [[ -n "$first_missing_release" ]]; then
 fi
 
 # --- Build output ---
-msg="Silver Bullet: ${total_steps} steps | Mode: ${mode} | ${path_progress} | GSD ${gsd_done}/${gsd_total} | PLANNING ${plan_done}/${plan_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total} | RELEASE ${release_done}/${release_total}"
+msg="Silver Bullet: ${total_steps} steps | Mode: ${mode} | ${path_progress} | LIFECYCLE ${lifecycle_done}/${lifecycle_total} | PLANNING ${plan_done}/${plan_total} | REVIEW ${review_done}/${review_total} | FINALIZATION ${final_done}/${final_total} | RELEASE ${release_done}/${release_total}"
 if [[ -n "$next_skill" ]]; then
   msg="${msg} | Next: /${next_skill}"
 fi

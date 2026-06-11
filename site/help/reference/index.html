@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Command Reference — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet command reference: core GSD commands, Silver Bullet skills, .silver-bullet.json config options, file structure, and session log format.">
+<meta name="description" content="Silver Bullet command reference: SB-owned lifecycle commands, .silver-bullet.json config options, file structure, and session log format.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -127,7 +127,7 @@ footer a:hover{color:var(--accent-light)}
 <div class="page-hero">
   <div class="container">
     <h1>Command Reference</h1>
-    <p>Every GSD command, Silver Bullet skill, config option, and planning file — all in one place for quick lookup.</p>
+    <p>Every Silver Bullet command, config option, and planning file — all in one place for quick lookup.</p>
   </div>
 </div>
 
@@ -137,12 +137,12 @@ footer a:hover{color:var(--accent-light)}
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li class="sidebar-section">Commands</li>
-        <li><a href="#gsd-commands">GSD Commands</a></li>
+        <li><a href="#sb-lifecycle-commands">SB Lifecycle Commands</a></li>
         <li><a href="#sb-skills">Silver Bullet Skills</a></li>
         <li><a href="#spec-skills">Spec Pipeline Skills</a></li>
         <li><a href="#quality-review-skills">Quality &amp; Review Skills</a></li>
         <li><a href="#orchestration-workflows">Orchestration Workflows</a></li>
-        <li><a href="#sp-skills">Superpowers Skills</a></li>
+        <li><a href="#absorbed-skills">Absorbed Dependency Skills</a></li>
         <li><a href="#devops-skills">DevOps Skills</a></li>
         <li><a href="#composable-flows">Composable Flows</a></li>
         <li class="sidebar-section">Configuration</li>
@@ -160,143 +160,27 @@ footer a:hover{color:var(--accent-light)}
 
     <article class="doc-content">
 
-      <!-- GSD COMMANDS -->
-      <h2 id="gsd-commands">GSD Commands</h2>
-      <p>GSD commands resolve to GSD's installed workflow files and are invoked through the active host's supported skill or command channel. Claude records Skill-tool events; Codex records native picker or <code>silver-bullet invoke-skill</code> receipts. <code>/gsd:do</code> is GSD's own natural-language router; Silver Bullet uses it when the task is lifecycle-owned by GSD rather than SB-specific orchestration.</p>
+      <!-- SB LIFECYCLE COMMANDS -->
+      <h2 id="sb-lifecycle-commands">SB Lifecycle Commands</h2>
+      <p>Silver Bullet owns the core lifecycle commands. Legacy GSD/Superpowers names are accepted only as compatibility aliases during migration unless the user explicitly asks to run an external plugin.</p>
 
       <table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
         <tbody>
-          <tr>
-            <td>/gsd:new-project</td>
-            <td>Init</td>
-            <td>Kick off a new project: ecosystem research, requirements scoping, roadmap generation. Produces <code>.planning/PROJECT.md</code>, <code>REQUIREMENTS.md</code>, <code>ROADMAP.md</code>.</td>
-          </tr>
-          <tr>
-            <td>/gsd:do</td>
-            <td>Any</td>
-            <td>GSD natural-language router. Use when you want GSD to pick the lifecycle command for status, next step, phase management, or other GSD-owned work.</td>
-          </tr>
-          <tr>
-            <td>/gsd:fast</td>
-            <td>Fast path</td>
-            <td>Executes truly trivial edits with lightweight verification. Invoked by <code>/silver:fast</code> Tier 1.</td>
-          </tr>
-          <tr>
-            <td>/gsd:quick</td>
-            <td>Fast path</td>
-            <td>Executes bounded medium changes with optional <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, or <code>--full</code> flags. Invoked by <code>/silver:fast</code> Tier 2.</td>
-          </tr>
-          <tr>
-            <td>/gsd:map-codebase</td>
-            <td>Orient</td>
-            <td>Maps codebase architecture, patterns, quality concerns, and implementation context for brownfield planning.</td>
-          </tr>
-          <tr>
-            <td>/gsd:discuss-phase</td>
-            <td>Discuss</td>
-            <td>Capture implementation decisions and gray areas for the current phase before planning. Produces <code>.planning/{phase}-CONTEXT.md</code>.</td>
-          </tr>
-          <tr>
-            <td>/gsd:plan-phase</td>
-            <td>Plan</td>
-            <td>Research → task plan → plan verification. Produces <code>.planning/{phase}-RESEARCH.md</code> and <code>.planning/{phase}-{N}-PLAN.md</code>.</td>
-          </tr>
-          <tr>
-            <td>/gsd:execute-phase</td>
-            <td>Execute</td>
-            <td>Wave-based parallel execution with atomic commits per task. Produces <code>.planning/{phase}-{N}-SUMMARY.md</code> and git commits.</td>
-          </tr>
-          <tr>
-            <td>/gsd:verify-work</td>
-            <td>Verify</td>
-            <td>Goal-backward verification against requirements + UAT. Produces <code>.planning/{phase}-VERIFICATION.md</code>.</td>
-          </tr>
-          <tr>
-            <td>/gsd:add-tests</td>
-            <td>Verify</td>
-            <td>Fills validation or UAT coverage gaps with focused tests after implementation or verification exposes missing coverage.</td>
-          </tr>
-          <tr>
-            <td>/gsd:code-review</td>
-            <td>Review</td>
-            <td>Reviews changed source files for bugs, security problems, and quality issues. Produces REVIEW artifacts.</td>
-          </tr>
-          <tr>
-            <td>/gsd:code-review-fix</td>
-            <td>Review</td>
-            <td>Applies accepted review fixes from REVIEW artifacts and commits them atomically.</td>
-          </tr>
-          <tr>
-            <td>/gsd:secure-phase</td>
-            <td>Secure</td>
-            <td>Verifies threat mitigations and security posture for the implemented phase.</td>
-          </tr>
-          <tr>
-            <td>/gsd:validate-phase</td>
-            <td>Validate</td>
-            <td>Audits and fills validation gaps after a phase or when Nyquist-style coverage needs tightening.</td>
-          </tr>
-          <tr>
-            <td>/gsd:ship</td>
-            <td>Ship</td>
-            <td>Create PR with auto-generated body: phase summaries, requirement coverage, verification links.</td>
-          </tr>
-          <tr>
-            <td>/gsd:pr-branch</td>
-            <td>Ship</td>
-            <td>Creates a clean PR branch when planning commits need to be filtered out of the shipping branch.</td>
-          </tr>
-          <tr>
-            <td>/gsd:audit-uat</td>
-            <td>Release</td>
-            <td>Runs cross-phase UAT audit before milestone release.</td>
-          </tr>
-          <tr>
-            <td>/gsd:audit-milestone</td>
-            <td>Release</td>
-            <td>Checks milestone completion against original intent and surfaces release blockers or gaps.</td>
-          </tr>
-          <tr>
-            <td>/gsd:plan-milestone-gaps</td>
-            <td>Release</td>
-            <td>Creates gap-closure phases for unresolved milestone audit findings.</td>
-          </tr>
-          <tr>
-            <td>/gsd:docs-update</td>
-            <td>Docs</td>
-            <td>Updates project documentation and verifies doc claims against the live codebase.</td>
-          </tr>
-          <tr>
-            <td>/gsd:milestone-summary</td>
-            <td>Docs</td>
-            <td>Generates milestone narrative and release-note context from completed GSD artifacts.</td>
-          </tr>
-          <tr>
-            <td>/gsd:complete-milestone</td>
-            <td>Release</td>
-            <td>Archives the completed milestone and prepares the project for the next version cycle.</td>
-          </tr>
-          <tr>
-            <td>/gsd:next</td>
-            <td>Any</td>
-            <td>"Where am I?" — reads current state and advances to the next required step. Use when lost.</td>
-          </tr>
-          <tr>
-            <td>/gsd:debug</td>
-            <td>Any</td>
-            <td>Systematic debugging for any bug encountered during execution. Uses scientific method: hypothesize → test → confirm.</td>
-          </tr>
-          <tr>
-            <td>/gsd:forensics</td>
-            <td>Any</td>
-            <td>Post-mortem diagnosis for failed GSD workflows. SB uses <code>/silver:forensics</code> for SB/session-level reconstruction and delegates GSD failures here.</td>
-          </tr>
-          <tr>
-            <td>/gsd:help</td>
-            <td>Any</td>
-            <td>Displays the complete GSD command reference.</td>
-          </tr>
+          <tr><td>/silver:init</td><td>Init</td><td>Initializes SB project state, config, docs, CI where absent, and host instruction references.</td></tr>
+          <tr><td>/silver</td><td>Any</td><td>Natural-language workflow composer and router.</td></tr>
+          <tr><td>/silver:context</td><td>Context</td><td>Captures phase context, assumptions, decisions, and research inputs.</td></tr>
+          <tr><td>/silver:plan</td><td>Plan</td><td>Creates task-level implementation plans with dependencies, waves, acceptance criteria, and verification strategy.</td></tr>
+          <tr><td>/silver:execute</td><td>Execute</td><td>Executes the active plan through SB checkpointed or autonomous execution.</td></tr>
+          <tr><td>/silver:verify</td><td>Verify</td><td>Goal-backward verification against requirements, plan, tests, UAT, and user-visible behavior.</td></tr>
+          <tr><td>/silver:review-request</td><td>Review</td><td>Frames review scope, files, risks, and ship blockers.</td></tr>
+          <tr><td>/silver:review</td><td>Review</td><td>Produces the authoritative SB review artifact.</td></tr>
+          <tr><td>/silver:review-triage</td><td>Review</td><td>Accepts, rejects, or defers review findings with rationale.</td></tr>
+          <tr><td>/silver:secure</td><td>Secure</td><td>Runs the SB security/threat review gate for the active change.</td></tr>
+          <tr><td>/silver:ship</td><td>Ship</td><td>Handles phase-level branch, PR, CI, deployment-readiness, and traceability duties.</td></tr>
+          <tr><td>/silver:release</td><td>Release</td><td>Owns milestone audits, gap closure, docs, ship readiness, archive, and final release creation.</td></tr>
+          <tr><td>/silver:debug</td><td>Debug</td><td>Systematic debugging for active, reproducible bugs.</td></tr>
+          <tr><td>/silver:forensics</td><td>Forensics</td><td>Post-mortem investigation for failed, abandoned, stalled, or unclear sessions.</td></tr>
         </tbody>
       </table>
 
@@ -304,20 +188,20 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
-      <p>Silver Bullet is the Agentic Process Orchestrator layer around GSD. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB/GSD/plugin path, and then enforces that the selected path actually runs. GSD remains the lifecycle and execution authority; SB owns routing, composition, quality gates, risk checks, traceability, and recovery.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.37.23+ exposes the native picker as <code>/silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
+      <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.38.0+ exposes the native picker as <code>/silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or GSD lifecycle work.</td></tr>
+          <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or SB lifecycle work.</td></tr>
           <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
           <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
           <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety is added only when the phase includes AI behavior. Failing dimensions become hard requirements.</td></tr>
           <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
-          <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for GSD planning or SB gates.</td></tr>
-          <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, or stalled SB sessions. Routes GSD-workflow failures to <code>/gsd:forensics</code> and handles SB/session-level failures directly.</td></tr>
+          <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for SB planning or SB gates.</td></tr>
+          <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, stalled, or unclear SB sessions and workflow artifacts.</td></tr>
           <tr><td>/silver:create-release<span class="badge-small badge-req">Required</span></td><td>Milestone release</td><td>Generates structured release notes, updates release surfaces, creates the final version tag, and publishes the GitHub Release. Runs last inside <code>/silver:release</code>, after ship and milestone archival.</td></tr>
           <tr><td>/verify-tests<span class="badge-small badge-req">Required</span></td><td>Final delivery</td><td>Runs configured verify commands or stack defaults and writes the freshness marker consumed by SB hooks. Required before final delivery/release gates.</td></tr>
           <tr><td>/silver:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
@@ -335,7 +219,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SPEC PIPELINE SKILLS -->
       <h2 id="spec-skills">Spec Pipeline Skills</h2>
-      <p>Three skills that form the spec-driven development pipeline. They run before GSD planning begins — SPEC.md is the upstream input that REQUIREMENTS.md, ROADMAP.md, and DESIGN.md must stay aligned with.</p>
+      <p>Three skills that form the spec-driven development pipeline. They run before SB planning begins — SPEC.md is the upstream input that REQUIREMENTS.md, ROADMAP.md, and DESIGN.md must stay aligned with.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -343,7 +227,7 @@ footer a:hover{color:var(--accent-light)}
           <tr>
             <td>/silver:spec</td>
             <td>Before planning (spec-first projects)</td>
-            <td>AI-driven spec elicitation. Produces a canonical <code>SPEC.md</code> with structured requirements, acceptance criteria, assumption tracking, and source input cross-references. Use before <code>/gsd:new-project</code> or when a formal spec is required before GSD planning.</td>
+            <td>AI-driven spec elicitation. Produces a canonical <code>SPEC.md</code> with structured requirements, acceptance criteria, assumption tracking, and source input cross-references. Use when a formal spec is required before SB planning.</td>
           </tr>
           <tr>
             <td>/silver:ingest</td>
@@ -399,19 +283,19 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Named workflows that <code>/silver</code> can compose after intent classification. They orchestrate; implementation remains delegated to GSD, with Superpowers, SB quality/review skills, and optional external research/provider skills used only at explicit helper boundaries where installed.</p>
+      <p>Named workflows that <code>/silver</code> can compose after intent classification. They run through SB-owned lifecycle skills, with optional external research/provider skills used only at explicit enrichment boundaries where installed.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
         <tbody>
-          <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td><code>silver:clarify</code> (merged PM framing + Superpowers brainstorming) → SB-owned GSD handoff</td></tr>
-          <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage → <code>gsd-scan</code> / <code>/gsd:map-codebase</code> → clarify/research if needed → quality gates → GSD plan/execute/verify → review/ship</td></tr>
+          <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td><code>silver:clarify</code> (absorbed PM framing + brainstorming discipline) -> SB context/plan handoff</td></tr>
+          <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage -> SB orientation -> clarify/research if needed -> quality gates -> SB plan/execute/verify -> review/ship</td></tr>
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td>triage path → systematic debugging or forensics → regression test → fix → verify/review</td></tr>
-          <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation → clarify/research if needed → UI design contract → GSD plan/execute → visual/UI audit → verify/ship</td></tr>
-          <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, deploy, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation → blast radius → DevOps skill routing → IaC quality gates → GSD plan/execute without TDD → review/security/verify/ship</td></tr>
-          <tr><td><a href="../workflows/silver-research.html">/silver:research</a></td><td>how should we, compare X vs Y, spike, architecture decision</td><td>clarify question → direct evidence-based research by default → optional multi-AI only when user-requested → research artifact → handoff to feature/UI/DevOps/GSD or stop</td></tr>
-          <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td>release disambiguation → quality gates → UAT/milestone audits → security hard gate → docs/review/fresh tests → <code>gsd-ship</code> → <code>gsd:complete-milestone</code> → <code>/silver:create-release</code> → post-release summary</td></tr>
-          <tr><td><a href="../workflows/silver-fast.html">/silver:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td>tier triage → <code>gsd:fast</code>, <code>gsd:quick</code> with flags, or escalation to <code>silver:feature</code></td></tr>
+          <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation -> clarify/research if needed -> UI design contract -> SB plan/execute -> visual/UI audit -> verify/ship</td></tr>
+          <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, deploy, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation -> blast radius -> optional DevOps skill routing -> IaC quality gates -> SB plan/execute without TDD -> review/security/verify/ship</td></tr>
+          <tr><td><a href="../workflows/silver-research.html">/silver:research</a></td><td>how should we, compare X vs Y, spike, architecture decision</td><td>clarify question -> direct evidence-based research by default -> optional multi-AI only when user-requested -> research artifact -> handoff to feature/UI/DevOps/SB plan or stop</td></tr>
+          <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td>release disambiguation -> quality gates -> UAT/milestone audits -> security hard gate -> docs/review/fresh tests -> <code>silver:ship</code> -> milestone archive -> <code>/silver:create-release</code> -> post-release summary</td></tr>
+          <tr><td><a href="../workflows/silver-fast.html">/silver:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td>tier triage -> lightweight SB fast path or escalation to <code>silver:feature</code></td></tr>
           <tr><td><a href="../workflows/silver-spec.html">/silver:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td>Socratic elicitation → SPEC.md / REQUIREMENTS alignment → artifact review</td></tr>
           <tr><td><a href="../workflows/silver-ingest.html">/silver:ingest</a></td><td>JIRA, Figma, Google Docs, Confluence, external artifact</td><td>MCP connector check → artifact extraction → manifest/spec draft → ingestion review</td></tr>
           <tr><td><a href="../workflows/silver-validate.html">/silver:validate</a></td><td>validate spec, validate plan, gap analysis, assumption awareness</td><td>read SPEC/PLAN artifacts → BLOCK/WARN/INFO gap analysis → VALIDATION.md</td></tr>
@@ -437,64 +321,27 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Signal</th><th>Route</th></tr></thead>
         <tbody>
           <tr><td>Version number, changelog, release notes, public publish, go live</td><td><code>/silver:release</code></td></tr>
-          <tr><td>Active phase in progress, no version signal</td><td><code>gsd-ship</code> / <code>/gsd:ship</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>silver:ship</code></td></tr>
           <tr><td>No active phase and milestone complete</td><td><code>/silver:release</code></td></tr>
         </tbody>
       </table>
 
       <div class="divider"></div>
 
-      <!-- SUPERPOWERS SKILLS -->
-      <h2 id="sp-skills">Superpowers Skills Used in Silver Bullet</h2>
+      <!-- ABSORBED SKILLS -->
+      <h2 id="absorbed-skills">Absorbed Dependency Skills</h2>
+      <p>SB has absorbed the dependency behaviors it explicitly relied on. These are now represented by SB-owned commands and markers.</p>
 
       <table class="ref-table">
-        <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
+        <thead><tr><th>Old dependency behavior</th><th>SB-owned replacement</th><th>Description</th></tr></thead>
         <tbody>
-          <tr>
-            <td>/brainstorming<span class="badge-small badge-sp">SP</span></td>
-            <td>Before Discuss</td>
-            <td>Explores problem space. After completion, redirect handoff to <code>/gsd:plan-phase</code> — not to <code>writing-plans</code>.</td>
-          </tr>
-          <tr>
-            <td>/system-design<span class="badge-small badge-sp">SP</span><span class="badge-small badge-cond">Cond</span></td>
-            <td>Discuss (new service)</td>
-            <td>Architecture decisions for new services or major components. Required when a phase introduces significant new infrastructure.</td>
-          </tr>
-          <tr>
-            <td>/design-system<span class="badge-small badge-sp">SP</span><span class="badge-small badge-cond">Cond</span></td>
-            <td>Discuss (UI work)</td>
-            <td>UI component and design token decisions. Only required for phases with UI work.</td>
-          </tr>
-          <tr>
-            <td>/ux-copy<span class="badge-small badge-sp">SP</span><span class="badge-small badge-cond">Cond</span></td>
-            <td>Discuss (UI work)</td>
-            <td>User-facing text and messaging decisions. Only required for phases with UI work.</td>
-          </tr>
-          <tr>
-            <td>tdd<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
-            <td>Execute (before writing code)</td>
-            <td>Red-green-refactor discipline. Invoke before writing any implementation code in /gsd:execute-phase. Write a failing test first, then implement until it passes, then refactor. Required for behavior-changing software implementation plans. DevOps/IaC workflows explicitly skip TDD and instead use plan/validate/policy/security/drift checks.</td>
-          </tr>
-          <tr>
-            <td>/requesting-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
-            <td>Code Review</td>
-            <td>Frames the review scope and dispatches <code>superpowers:code-reviewer</code> only when the active SB workflow selects that helper discipline. Does not replace the GSD review artifact.</td>
-          </tr>
-          <tr>
-            <td>/gsd:code-review<span class="badge-small badge-gsd">GSD</span><span class="badge-small badge-req">Required</span></td>
-            <td>Code Review</td>
-            <td>Produces the authoritative <code>REVIEW.md</code> artifact through GSD reviewer agents. Loop until two consecutive clean passes.</td>
-          </tr>
-          <tr>
-            <td>/receiving-code-review<span class="badge-small badge-sp">SP</span><span class="badge-small badge-req">Required</span></td>
-            <td>Code Review</td>
-            <td>Triage all review feedback. Accept or reject each item with reasoning before fixing.</td>
-          </tr>
-          <tr>
-            <td>superpowers:code-reviewer</td>
-            <td>Code Review (via /requesting-code-review)</td>
-            <td>Conditional helper reviewer dispatched by /requesting-code-review when selected by the active SB workflow. Must return <i data-lucide="check-circle" style="color:var(--green);vertical-align:middle"></i> Approved on two consecutive passes before proceeding. Self-limiting — loop ends naturally when two clean passes are produced.</td>
-          </tr>
+          <tr><td>Brainstorming / product framing</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
+          <tr><td>Spec writing</td><td><code>silver:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>
+          <tr><td>Plan writing / phase discussion</td><td><code>silver:context</code>, <code>silver:plan</code></td><td>Context packets, assumptions, task plans, dependency analysis, and verification strategy.</td></tr>
+          <tr><td>TDD discipline</td><td><code>tdd</code> / <code>silver-tdd</code></td><td>SB-owned red/green/refactor policy for behavior-changing software work.</td></tr>
+          <tr><td>Review request / triage</td><td><code>silver:review-request</code>, <code>silver:review-triage</code></td><td>Review framing, finding triage, and fix-loop control.</td></tr>
+          <tr><td>Completion verification</td><td><code>silver:completion-audit</code>, <code>silver:verify</code></td><td>Fresh evidence before completion claims.</td></tr>
+          <tr><td>Branch finishing / ship</td><td><code>silver:branch-finish</code>, <code>silver:ship</code></td><td>Branch hygiene, PR readiness, CI, and traceability.</td></tr>
         </tbody>
       </table>
 
@@ -562,7 +409,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>Steps</strong> — ordered skill invocations (mandatory vs. as-needed)</li>
         <li><strong>Produces</strong> — artifacts created or modified by this path</li>
         <li><strong>Review Cycle</strong> — artifact → reviewer → artifact-review-assessor → fix → 2-pass (or "None")</li>
-        <li><strong>GSD Impact</strong> — which GSD state fields are read/written</li>
+        <li><strong>SB State Impact</strong> — which SB state fields or planning artifacts are read/written</li>
         <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
       </ul>
       <p>The 18 flows are: FLOW 1 BOOTSTRAP · FLOW 2 ORIENT · FLOW 3 CLARIFY · FLOW 4 DECIDE · FLOW 5 SPECIFY · FLOW 6 PLAN · FLOW 7 DESIGN CONTRACT · FLOW 8 EXECUTE · FLOW 9 UI QUALITY · FLOW 10 REVIEW · FLOW 11 SECURE · FLOW 12 VERIFY · FLOW 13 QUALITY GATE · FLOW 14 SHIP · FLOW 15 DEBUG · FLOW 16 DESIGN HANDOFF · FLOW 17 DOCUMENT · FLOW 18 RELEASE.</p>
@@ -574,7 +421,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.37.23"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.38.0"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -582,20 +429,20 @@ footer a:hover{color:var(--accent-light)}
     <span class="key">"active_workflow"</span>: <span class="str">"full-dev-cycle"</span>
   },
   <span class="key">"skills"</span>: {
-    <span class="key">"required_planning"</span>: [<span class="str">"silver-quality-gates"</span>, <span class="str">"gsd-discuss-phase"</span>, <span class="str">"gsd-plan-phase"</span>],
-    <span class="key">"required_planning_devops"</span>: [<span class="str">"silver-blast-radius"</span>, <span class="str">"devops-quality-gates"</span>, <span class="str">"gsd-discuss-phase"</span>, <span class="str">"gsd-plan-phase"</span>],
+    <span class="key">"required_planning"</span>: [<span class="str">"silver-quality-gates"</span>, <span class="str">"silver-context"</span>, <span class="str">"silver-plan"</span>],
+    <span class="key">"required_planning_devops"</span>: [<span class="str">"silver-blast-radius"</span>, <span class="str">"devops-quality-gates"</span>, <span class="str">"silver-context"</span>, <span class="str">"silver-plan"</span>],
     <span class="key">"required_deploy"</span>: [
       <span class="str">"silver-quality-gates"</span>,
-      <span class="str">"gsd-execute-phase"</span>, <span class="str">"gsd-verify-work"</span>, <span class="str">"gsd-ship"</span>,
-      <span class="str">"gsd-code-review"</span>, <span class="str">"gsd-secure-phase"</span>, <span class="str">"gsd-validate-phase"</span>,
-      <span class="str">"code-review"</span>, <span class="str">"requesting-code-review"</span>, <span class="str">"receiving-code-review"</span>,
-      <span class="str">"finishing-a-development-branch"</span>,
+      <span class="str">"silver-execute"</span>, <span class="str">"silver-verify"</span>, <span class="str">"silver-ship"</span>,
+      <span class="str">"silver-review"</span>, <span class="str">"silver-secure"</span>, <span class="str">"silver-validate"</span>,
+      <span class="str">"silver-review-request"</span>, <span class="str">"silver-review-triage"</span>,
+      <span class="str">"silver-branch-finish"</span>,
       <span class="str">"silver-create-release"</span>,
-      <span class="str">"verification-before-completion"</span>,
-      <span class="str">"test-driven-development"</span>,
+      <span class="str">"silver-completion-audit"</span>,
+      <span class="str">"silver-tdd"</span>,
       <span class="str">"verify-tests"</span>
     ],
-    <span class="key">"all_tracked"</span>: [<span class="comment">"silver-quality-gates", "silver-blast-radius", "devops-quality-gates", "verify-tests", "gsd:*", ...</span>]
+    <span class="key">"all_tracked"</span>: [<span class="comment">"silver-quality-gates", "silver-context", "silver-plan", "silver-execute", "verify-tests", ...</span>]
   },
   <span class="key">"release"</span>: {
     <span class="key">"profile"</span>: <span class="str">"generic"</span>,
@@ -615,7 +462,7 @@ footer a:hover{color:var(--accent-light)}
   }
 }</div>
 
-      <p>Two-tier enforcement is intentional: commits and pushes only require the planning floor, while PR creation, deploys, and releases require the full delivery list. That lets GSD make atomic development commits without weakening final delivery gates.</p>
+      <p>Two-tier enforcement is intentional: commits and pushes only require the planning floor, while PR creation, deploys, and releases require the full delivery list. That lets SB make incremental development commits without weakening final delivery gates.</p>
 
       <div class="divider"></div>
 
@@ -689,20 +536,20 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 
       <!-- PLANNING FILES -->
       <h2 id="planning-files">Planning Files (.planning/)</h2>
-      <p>All planning files are managed by GSD. Do not edit them manually unless you know what you're doing.</p>
+      <p>All planning files are managed by SB lifecycle workflows. Do not edit them manually unless you know what you're doing.</p>
 
       <table class="ref-table">
         <thead><tr><th>File</th><th>Created by</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>.planning/PROJECT.md</td><td>/gsd:new-project</td><td>Project goals, scope, metadata, and team context.</td></tr>
-          <tr><td>.planning/REQUIREMENTS.md</td><td>/gsd:new-project</td><td>Authoritative requirements list. Single source of truth. Superpowers must not duplicate this.</td></tr>
-          <tr><td>.planning/ROADMAP.md</td><td>/gsd:new-project</td><td>Phase breakdown with goals and acceptance criteria per phase.</td></tr>
-          <tr><td>.planning/{phase}-CONTEXT.md</td><td>/gsd:discuss-phase</td><td>Decisions and clarifications captured during Discuss for this phase.</td></tr>
-          <tr><td>.planning/{phase}-RESEARCH.md</td><td>/gsd:plan-phase</td><td>Implementation research results — how to build the phase.</td></tr>
-          <tr><td>.planning/{phase}-{N}-PLAN.md</td><td>/gsd:plan-phase</td><td>Task-level execution plan. N is the iteration number.</td></tr>
-          <tr><td>.planning/{phase}-{N}-SUMMARY.md</td><td>/gsd:execute-phase</td><td>Execution summary: what was built, commits made, deviations.</td></tr>
-          <tr><td>.planning/{phase}-VERIFICATION.md</td><td>/gsd:verify-work</td><td>Goal-backward verification results.</td></tr>
-          <tr><td>.planning/{phase}-UAT.md</td><td>/gsd:verify-work</td><td>User acceptance test results (app workflow only).</td></tr>
+          <tr><td>.planning/PROJECT.md</td><td>/silver:init / SB bootstrap</td><td>Project goals, scope, metadata, and team context.</td></tr>
+          <tr><td>.planning/REQUIREMENTS.md</td><td>/silver:spec / SB planning</td><td>Authoritative requirements list. Single source of truth.</td></tr>
+          <tr><td>.planning/ROADMAP.md</td><td>/silver:init / SB planning</td><td>Phase breakdown with goals and acceptance criteria per phase.</td></tr>
+          <tr><td>.planning/{phase}-CONTEXT.md</td><td>/silver:context</td><td>Decisions and clarifications captured for this phase.</td></tr>
+          <tr><td>.planning/{phase}-RESEARCH.md</td><td>/silver:research / /silver:plan</td><td>Implementation research results — how to build the phase.</td></tr>
+          <tr><td>.planning/{phase}-{N}-PLAN.md</td><td>/silver:plan</td><td>Task-level execution plan. N is the iteration number.</td></tr>
+          <tr><td>.planning/{phase}-{N}-SUMMARY.md</td><td>/silver:execute</td><td>Execution summary: what was built, commits made, deviations.</td></tr>
+          <tr><td>.planning/{phase}-VERIFICATION.md</td><td>/silver:verify</td><td>Goal-backward verification results.</td></tr>
+          <tr><td>.planning/{phase}-UAT.md</td><td>/silver:verify</td><td>User acceptance test results (app workflow only).</td></tr>
           <tr><td>.planning/.context-cache/</td><td>semantic-compress.sh</td><td>Cached semantic context chunks. Auto-invalidated on file change.</td></tr>
         </tbody>
       </table>
@@ -763,13 +610,13 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:feature Add audit logging to account settings
 
 <span class="comment"># Continue where you left off</span>
-/gsd:next
+/silver current status and next step
 
 <span class="comment"># Something broke during execution</span>
-/gsd:debug
+/silver:debug
 
 <span class="comment"># Verify, review, and prepare final delivery</span>
-/gsd:verify-work → /requesting-code-review → /gsd:code-review → /receiving-code-review → /verify-tests
+/silver:verify -> /silver:review-request -> /silver:review -> /silver:review-triage -> /verify-tests
 
 <span class="comment"># Route trivial changes through the supported fast path</span>
 /silver:fast
@@ -778,10 +625,10 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.37.23</div>
+/silver:release v0.38.0</div>
 
       <h3>Runtime and Model Boundaries</h3>
-      <p>Silver Bullet does not provide a generic automatic model-routing layer over GSD. Configure model behavior in the active host or in GSD's supported configuration, then let Silver Bullet compose and enforce the workflow around that execution.</p>
+      <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

@@ -40,7 +40,7 @@ Check the following artifacts and set skip/include flags:
 | Artifact | Signal | Action |
 |----------|--------|--------|
 | `.planning/` directory exists | Project already bootstrapped | Skip FLOW 1 (BOOTSTRAP) |
-| `.planning/STATE.md` exists | GSD state present | Skip FLOW 1 (BOOTSTRAP) |
+| `.planning/STATE.md` exists | SB state present | Skip FLOW 1 (BOOTSTRAP) |
 
 ```bash
 # Check for existing planning artifacts
@@ -144,7 +144,7 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, commit both.
 
-**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+**Non-skippable gates:** `security`, `silver:quality-gates` pre-ship, `silver:verify`.
 
 ## Step 0: Triage — Classify Failure Type
 
@@ -154,7 +154,7 @@ Ask the user directly:
 >
 > A. Known symptom, unknown fix — I can observe the bug but don't know the root cause
 > B. Unknown cause — session history is unclear, need to reconstruct what happened
-> C. Failed GSD workflow specifically — a plan, execution phase, or GSD command failed
+> C. Failed SB lifecycle workflow specifically — a plan, execution phase, or SB workflow failed
 
 Wait for selection, then route to the corresponding path below.
 
@@ -163,12 +163,12 @@ Wait for selection, then route to the corresponding path below.
 Invoked when: triage selects A, OR after Path 1B/1C silver:forensics completes and hands off here.
 
 **1A.1 — Systematic debugging hypothesis**
-Invoke `superpowers:systematic-debugging` through the active runtime's SB-recognized skill invocation channel. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
+Invoke `silver:debug` through the active runtime's SB-recognized skill invocation channel. Purpose: structure the debugging hypothesis before executing investigation — ensures systematic approach before diving into code.
 
 **1A.2 — Persistent debugging investigation**
-Invoke `gsd-debug` through the active runtime's SB-recognized skill invocation channel. Purpose: execute investigation with persistent state across context resets.
+Continue in `silver:debug` until root cause, reproduction, and regression guard are evidenced.
 
-After gsd-debug completes, proceed to Step 2 (TDD).
+After `silver:debug` completes, proceed to Step 2 (TDD).
 
 ## Path 1B: Unknown Cause, Needs Reconstruction
 
@@ -180,43 +180,43 @@ Invoke `silver:forensics` through the active runtime's SB-recognized skill invoc
 After silver:forensics completes and outputs the cause classification:
 → Hand off to Path 1A (start at Step 1A.1 with the reconstructed context).
 
-## Path 1C: Failed GSD Workflow
+## Path 1C: Failed SB Lifecycle Workflow
 
 Invoked when: triage selects C.
 
-**1C.1 — GSD-specific post-mortem**
-Invoke `gsd-forensics` through the active runtime's SB-recognized skill invocation channel. Purpose: GSD-owned post-mortem for failed GSD workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
+**1C.1 — SB lifecycle post-mortem**
+Invoke `silver:forensics` through the active runtime's SB-recognized skill invocation channel. Purpose: SB-owned post-mortem for failed lifecycle workflows (failed plans, broken state, incomplete phases). Outputs diagnosis.
 
-After gsd-forensics completes and outputs diagnosis:
-→ Hand off to Path 1A (start at Step 1A.1 with the GSD diagnosis context).
+After `silver:forensics` completes and outputs diagnosis:
+→ Hand off to Path 1A (start at Step 1A.1 with the diagnosis context).
 
 ## Step 2: TDD — Write Regression Test First
 
 All paths converge here. Before writing any fix code:
 
-Invoke `tdd` through the active runtime's SB-recognized skill invocation channel. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden TDD gate before any fix code is written and ensures the bug cannot silently regress. `tdd` delegates to Superpowers only at this explicit SB-required execution boundary.
+Invoke `tdd` through the active runtime's SB-recognized skill invocation channel. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden SB TDD gate before any fix code is written and ensures the bug cannot silently regress.
 
 **Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
 
 ## Step 3: Plan the Fix
 
-Invoke `gsd-plan-phase` through the active runtime's SB-recognized skill invocation channel (lightweight, 1-2 tasks only — this is a fix, not a feature).
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel (lightweight, 1-2 tasks only — this is a fix, not a feature).
 
 ## Step 4: Execute Fix + Verify Green
 
-Invoke `gsd-execute-phase --tdd` through the active runtime's SB-recognized skill invocation channel. Host aliases may expose this as `gsd:execute-phase --tdd`; the required behavior is the same. After execution, verify the regression test from Step 2 is now green.
+Invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel. After execution, verify the regression test from Step 2 is now green.
 
 ## Step 5: Code Review
 
 Run the full review sequence in order:
 
-1. Invoke `requesting-code-review` (superpowers:requesting-code-review) through the active runtime's SB-recognized skill invocation channel.
-2. Invoke `gsd-code-review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it.
-3. Invoke `receiving-code-review` (superpowers:receiving-code-review) through the active runtime's SB-recognized skill invocation channel.
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it.
+3. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 6: Verify Work
 
-Invoke `gsd-verify-work` through the active runtime's SB-recognized skill invocation channel. Purpose: confirm fix, zero regression. Non-skippable.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: confirm fix, zero regression. Non-skippable.
 
 ## Step 7: Security Review
 
@@ -267,4 +267,4 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 8: Ship
 
-Invoke `gsd-ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR.
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR.

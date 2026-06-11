@@ -18,7 +18,7 @@ fi
 
 # PreToolUse + PostToolUse hook (matcher: Bash)
 # Checks last completed CI run status before/after git push and deploy commands.
-# BLOCKING on failure — outputs decision:block and instructs immediate /gsd:debug.
+# BLOCKING on failure — outputs decision:block and instructs immediate /silver:debug.
 # Non-blocking for in_progress (informational only).
 # Scoped to current branch when possible to avoid cross-branch false positives.
 #
@@ -168,7 +168,7 @@ if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
   msg="🛑 CI FAILURE DETECTED — conclusion=${conclusion}.
 
 STOP all other work immediately. Do NOT proceed to any other step.
-Invoke /gsd:debug now to investigate the failing CI run before continuing.
+Invoke /silver:debug now to investigate the failing CI run before continuing.
 Run: gh run list --limit 3 --json status,conclusion,name,headBranch
 Then: gh run view <run-id> --log-failed
 
