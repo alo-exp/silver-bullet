@@ -38,8 +38,13 @@ setup_kay_shell_profile_bridge() {
   local profile_prelude="${KAY_HOME}/.kay/.silver-bullet/profile-prelude.sh"
   local bash_profile="${KAY_HOME}/.bash_profile"
   local bashrc="${KAY_HOME}/.bashrc"
+  local active_prepend="${KAY_HOME}/.kay/.silver-bullet/path-prepend/active"
 
-  mkdir -p "${KAY_HOME}/.kay/.silver-bullet" "${KAY_HOME}/.kay/.silver-bullet/path-prepend"
+  mkdir -p "${KAY_HOME}/.kay/.silver-bullet" "${KAY_HOME}/.kay/.silver-bullet/path-prepend" "$active_prepend"
+  case ":${PATH:-}:" in
+    *":${active_prepend}:"*) ;;
+    *) export PATH="${active_prepend}:${PATH:-}" ;;
+  esac
 
   cat > "$profile_prelude" <<'EOF'
 #!/usr/bin/env bash
@@ -120,7 +125,6 @@ reasoning = sys.argv[9]
 text = source_path.read_text()
 original_codex_home = str(original_home / ".codex")
 isolated_codex_home = str(isolated_home / ".codex")
-text = text.replace(original_codex_home, isolated_codex_home)
 
 def replace_or_insert(text, pattern, replacement, anchor=None):
     if re.search(pattern, text, flags=re.MULTILINE):
@@ -138,16 +142,72 @@ if reasoning:
     reasoning_anchor = f'model_provider = "{model_provider}"' if model_provider else (f'model = "{model}"' if model else None)
     text = replace_or_insert(text, r'^model_reasoning_effort = ".*"$', f'model_reasoning_effort = "{reasoning}"', reasoning_anchor)
     text = replace_or_insert(text, r'^preferred_model_reasoning_effort = ".*"$', f'preferred_model_reasoning_effort = "{reasoning}"', f'model_reasoning_effort = "{reasoning}"')
-text = replace_or_insert(text, r'^approval_policy = ".*"$', 'approval_policy = "never"', f'model_reasoning_effort = "{reasoning}"')
-text = replace_or_insert(text, r'^sandbox_mode = ".*"$', 'sandbox_mode = "danger-full-access"', 'approval_policy = "never"')
 
-if "[features]" not in text:
-    text += "\n[features]\nplugin_hooks = true\nhooks = true\n"
-else:
-    text = replace_or_insert(text, r'(?m)^plugin_hooks = .*$', 'plugin_hooks = true', "[features]")
-    text = replace_or_insert(text, r'(?m)^hooks = .*$', 'hooks = true', 'plugin_hooks = true')
+def top_level_value(key: str, fallback: str) -> str:
+    match = re.search(rf'(?m)^{re.escape(key)} = "(.*)"$', text)
+    return match.group(1) if match else fallback
 
-isolated_codex_config.write_text(text)
+def collect_blocks(prefix: str):
+    blocks = []
+    current_header = None
+    current_lines = []
+    current_allowed = False
+    for raw_line in text.splitlines():
+        if raw_line.startswith("[") and raw_line.endswith("]"):
+            if current_allowed and current_header is not None:
+                blocks.append((current_header, "\n".join(current_lines).rstrip() + "\n"))
+            current_header = raw_line
+            current_lines = [raw_line]
+            current_allowed = raw_line.startswith(prefix)
+        elif current_header is not None:
+            current_lines.append(raw_line)
+    if current_allowed and current_header is not None:
+        blocks.append((current_header, "\n".join(current_lines).rstrip() + "\n"))
+    return blocks
+
+personality = top_level_value("personality", "pragmatic")
+model = model or top_level_value("model", "MiniMax-M3")
+model_provider = model_provider or top_level_value("model_provider", "minimax")
+reasoning = reasoning or top_level_value("model_reasoning_effort", "low")
+
+project_blocks = [
+    block.replace(original_codex_home, isolated_codex_home)
+    for _, block in collect_blocks('[projects."')
+]
+hook_state_blocks = [
+    block.replace(original_codex_home, isolated_codex_home)
+    for header, block in collect_blocks('[hooks.state.')
+    if "trusted_hash" in block
+    and "review_required_hash" not in header
+    and "silver-bullet@alo-labs-codex" in header
+]
+
+marketplace_root = pathlib.Path(isolated_codex_home) / ".tmp" / "marketplaces"
+codex_parts = [
+    f'personality = "{personality}"',
+    f'model = "{model}"',
+    f'model_provider = "{model_provider}"',
+    f'model_reasoning_effort = "{reasoning}"',
+    'approval_policy = "never"',
+    'sandbox_mode = "danger-full-access"',
+    "",
+    "[marketplaces.alo-labs-codex]",
+    'source_type = "local"',
+    f'source = "{marketplace_root / "alo-labs-codex"}"',
+    "",
+    "[features]",
+    "plugin_hooks = true",
+    "hooks = true",
+    "",
+    "[hooks.state]",
+]
+for block in hook_state_blocks:
+    codex_parts.extend(["", block.rstrip()])
+codex_parts.extend(["", '[plugins."silver-bullet@alo-labs-codex"]', "enabled = true"])
+for block in project_blocks:
+    codex_parts.extend(["", block.rstrip()])
+
+isolated_codex_config.write_text("\n".join(codex_parts).rstrip() + "\n")
 
 project_trusts = {}
 project_order = []
@@ -234,6 +294,89 @@ mirror_kay_codex_runtime_surface() {
   if [[ -d "${original_codex_home}/computer-use" && ! -e "${isolated_codex_home}/computer-use" ]]; then
     ln -sfn "${original_codex_home}/computer-use" "${isolated_codex_home}/computer-use"
   fi
+}
+
+seed_kay_codex_local_marketplaces() {
+  if [[ -x "${SB_ROOT}/scripts/sync-codex-package.sh" ]]; then
+    (
+      cd "$SB_ROOT"
+      "${SB_ROOT}/scripts/sync-codex-package.sh" >/dev/null
+    )
+  fi
+
+  python3 - "${KAY_HOME}/.codex/plugins/cache" "${KAY_HOME}/.codex/.tmp/marketplaces" "${SB_ROOT}/plugins/silver-bullet" <<'PY'
+import pathlib
+import shutil
+import sys
+
+cache_root = pathlib.Path(sys.argv[1])
+marketplaces_root = pathlib.Path(sys.argv[2])
+repo_sb_package_root = pathlib.Path(sys.argv[3])
+mapping = {
+    "alo-labs-codex": ("silver-bullet",),
+}
+
+if marketplaces_root.exists():
+    shutil.rmtree(marketplaces_root)
+marketplaces_root.mkdir(parents=True, exist_ok=True)
+
+for marketplace, plugins in mapping.items():
+    source_marketplace_root = cache_root / marketplace
+    target_plugins_root = marketplaces_root / marketplace / "plugins"
+    target_plugins_root.mkdir(parents=True, exist_ok=True)
+    for plugin in plugins:
+        target_path = target_plugins_root / plugin
+        if target_path.exists() or target_path.is_symlink():
+            if target_path.is_dir() and not target_path.is_symlink():
+                shutil.rmtree(target_path)
+            else:
+                target_path.unlink()
+
+        if marketplace == "alo-labs-codex" and plugin == "silver-bullet" and repo_sb_package_root.is_dir():
+            shutil.copytree(repo_sb_package_root, target_path, symlinks=False)
+            continue
+
+        source_plugin_root = source_marketplace_root / plugin
+        if not source_plugin_root.exists():
+            continue
+        current_path = source_plugin_root / "current"
+        if current_path.is_symlink() or current_path.exists():
+            source_path = current_path.resolve()
+        else:
+            version_dirs = sorted([path for path in source_plugin_root.iterdir() if path.is_dir()])
+            if not version_dirs:
+                continue
+            source_path = version_dirs[-1]
+        target_path.symlink_to(source_path)
+PY
+}
+
+seed_kay_codex_cli_shims() {
+  local bin_dir="${KAY_HOME}/.codex/bin"
+  local cli_path="${bin_dir}/silver-bullet"
+  local target_path="${KAY_HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/scripts/silver-bullet"
+  local latest_dir=""
+
+  if [[ ! -f "$target_path" ]]; then
+    latest_dir="$(find "${KAY_HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1 || true)"
+    target_path="${latest_dir}/scripts/silver-bullet"
+  fi
+  if [[ ! -f "$target_path" ]]; then
+    target_path="${KAY_HOME}/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet"
+  fi
+  if [[ ! -f "$target_path" ]]; then
+    target_path="${SB_ROOT}/scripts/silver-bullet"
+  fi
+
+  [[ -f "$target_path" ]] || return 0
+
+  mkdir -p "$bin_dir"
+  cat > "$cli_path" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$target_path" "\$@"
+EOF
+  chmod 700 "$cli_path"
 }
 
 setup_kay_codex_isolation() {
@@ -373,10 +516,15 @@ PY
   # Kay reads ~/.kay/config.toml, so project the installed Codex hook/plugin
   # surface into the isolated Kay home instead of writing a model-only config.
   mirror_kay_codex_runtime_surface
+  seed_kay_codex_dependency_cache
+  seed_kay_codex_local_marketplaces
+  seed_kay_codex_cli_shims
+  case ":${PATH:-}:" in
+    *":${KAY_HOME}/.codex/bin:"*) ;;
+    *) export PATH="${KAY_HOME}/.codex/bin:${PATH:-}" ;;
+  esac
   seed_kay_codex_runtime_config
   setup_kay_shell_profile_bridge
-
-  seed_kay_codex_dependency_cache
 }
 
 kay_silver_bullet_plugin_root() {
@@ -470,10 +618,17 @@ PY
 }
 
 teardown_kay_codex_isolation() {
+  local cleanup_attempt=0
   if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" != "1" ]]; then
     return 0
   fi
   if [[ "${SB_LIVE_KEEP_CODEX_ISOLATION:-0}" != "1" && -n "${SB_LIVE_CODEX_ISOLATION_DIR:-}" ]]; then
+    for cleanup_attempt in 1 2 3; do
+      rm -rf "$SB_LIVE_CODEX_ISOLATION_DIR" 2>/dev/null || true
+      [[ ! -e "$SB_LIVE_CODEX_ISOLATION_DIR" ]] && break
+      rm -rf "${SB_LIVE_CODEX_ISOLATION_DIR}/Library/Caches/com.apple.python" 2>/dev/null || true
+      sleep 0.2
+    done
     rm -rf "$SB_LIVE_CODEX_ISOLATION_DIR"
   fi
   if [[ -n "${SB_LIVE_ORIGINAL_HOME:-}" ]]; then

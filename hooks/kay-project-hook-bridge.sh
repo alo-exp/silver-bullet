@@ -20,6 +20,23 @@ if [[ -n "$bridge_home_root" && -z "${HOME:-}" ]]; then
 fi
 BRIDGE_ROOT="${bridge_home_root}/.kay/.silver-bullet/kay-hook-bridge"
 PATH_PREPEND_ROOT="${bridge_home_root}/.kay/.silver-bullet/path-prepend"
+ACTIVE_PATH_PREPEND_DIR="${PATH_PREPEND_ROOT}/active"
+
+if [[ -n "${PATH:-}" ]]; then
+  _sb_bridge_clean_path=""
+  IFS=':' read -r -a _sb_bridge_path_parts <<<"$PATH"
+  for _sb_bridge_path_part in "${_sb_bridge_path_parts[@]}"; do
+    [[ "$_sb_bridge_path_part" == "$ACTIVE_PATH_PREPEND_DIR" ]] && continue
+    if [[ -z "$_sb_bridge_clean_path" ]]; then
+      _sb_bridge_clean_path="$_sb_bridge_path_part"
+    else
+      _sb_bridge_clean_path="${_sb_bridge_clean_path}:$_sb_bridge_path_part"
+    fi
+  done
+  PATH="$_sb_bridge_clean_path"
+  export PATH
+  unset _sb_bridge_clean_path _sb_bridge_path_parts _sb_bridge_path_part
+fi
 
 if [[ -f "${LIB_DIR}/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
@@ -54,6 +71,14 @@ else
   native_payload='{}'
 fi
 source_call_id="${CODE_HOOK_SOURCE_CALL_ID:-${CODE_HOOK_CALL_ID:-hook}}"
+for _sb_bridge_hook_suffix in \
+  _hook_tool_before_1 \
+  _hook_tool_after_1 \
+  _hook_file_before_write_1 \
+  _hook_file_after_write_1; do
+  source_call_id="${source_call_id%"$_sb_bridge_hook_suffix"}"
+done
+unset _sb_bridge_hook_suffix
 BRIDGE_DEBUG_LOG=""
 if [[ -n "${SB_KAY_HOOK_BRIDGE_DEBUG:-}" ]]; then
   mkdir -p "${BRIDGE_ROOT}/debug"
@@ -301,6 +326,38 @@ collect_shell_write_targets() {
       sb_shell_candidate_write_paths "$shell_script_body" "$shell_script_dir" 2>/dev/null || true
     fi
   fi
+
+  collect_git_commit_write_targets "$command_str"
+}
+
+collect_git_commit_write_targets() {
+  local command_str="$1"
+  local git_dir=""
+
+  printf '%s' "$command_str" | grep -qE '(^|[[:space:];(&|])git[[:space:]]+commit([[:space:]]|$)' || return 0
+  git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
+  [[ -n "$git_dir" ]] || return 0
+  case "$git_dir" in
+    /*) ;;
+    *) git_dir="${PWD}/${git_dir}" ;;
+  esac
+
+  for target in \
+    "$git_dir" \
+    "$git_dir/index" \
+    "$git_dir/HEAD" \
+    "$git_dir/COMMIT_EDITMSG" \
+    "$git_dir/packed-refs" \
+    "$git_dir/objects" \
+    "$git_dir/refs" \
+    "$git_dir/logs"; do
+    [[ -e "$target" ]] && printf '%s\n' "$target"
+  done
+
+  find "$git_dir/objects" "$git_dir/refs" "$git_dir/logs" \
+    -type d -print 2>/dev/null || true
+  find "$git_dir/refs" "$git_dir/logs" \
+    -type f -print 2>/dev/null || true
 }
 
 apply_permission_block() {
@@ -415,6 +472,10 @@ PY
 }
 
 shim_directory_for_call() {
+  if [[ "${SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK:-0}" == "1" ]]; then
+    printf '%s\n' "$ACTIVE_PATH_PREPEND_DIR"
+    return 0
+  fi
   printf '%s\n' "${PATH_PREPEND_ROOT}/${source_call_id}"
 }
 
@@ -425,6 +486,8 @@ ensure_shim_dir() {
   shim_dir="$(shim_directory_for_call)"
   if [[ ! -d "$shim_dir" ]]; then
     mkdir -p "$shim_dir"
+  fi
+  if ! grep -Fqx $'SHIMDIR\t'"${shim_dir}"$'\t0' "$state_path" 2>/dev/null; then
     printf 'SHIMDIR\t%s\t0\n' "$shim_dir" >> "$state_path"
   fi
   printf '%s\n' "$shim_dir"
@@ -440,6 +503,14 @@ printf '%s\n' $(printf '%q' "$reason") >&2
 exit 2
 EOF
   chmod +x "$shim_path"
+}
+
+bridge_block_denied_tool() {
+  local reason="$1"
+
+  [[ -n "$reason" ]] || reason="Silver Bullet blocked this tool call."
+  printf '%s\n' "$reason" >&2
+  exit 2
 }
 
 install_named_command_shim() {
@@ -461,7 +532,7 @@ install_command_shim() {
 
   entry_command="$(extract_shell_entry_command "$command_str")"
   case "$entry_command" in
-    "" ) return 1 ;;
+    ""|bash|sh|zsh|env ) return 1 ;;
   esac
 
   install_named_command_shim "$state_path" "$entry_command" "$reason"
@@ -472,10 +543,6 @@ install_mutation_shims() {
   local reason="$2"
   local command_name
   local command_names=(
-    bash
-    sh
-    zsh
-    env
     chmod
     chflags
     cp
@@ -496,6 +563,7 @@ install_mutation_shims() {
     node
     ruby
     git
+    gh
   )
 
   for command_name in "${command_names[@]}"; do
@@ -571,21 +639,29 @@ main() {
   case "$native_event" in
     tool.before)
       [[ -n "${BRIDGE_BLOCK_REASON:-}" ]] || exit 0
-      : > "$state_path"
-      targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
-      collect_shell_write_targets "$synthetic_payload" | sort -u > "$targets_file"
       bridge_debug "block_reason=${BRIDGE_BLOCK_REASON}"
-      bridge_debug "targets=$(tr '\n' '|' <"$targets_file" 2>/dev/null || true)"
-      if ! apply_permission_block "$state_path" "$targets_file"; then
-        command_str="$(sb_tool_command_string "$synthetic_payload")"
-        bridge_debug "permission_block=failed command_str=${command_str}"
-        install_command_shim "$state_path" "$command_str" "$BRIDGE_BLOCK_REASON" || true
-      else
-        bridge_debug "permission_block=applied state_path=${state_path}"
+      if [[ "${SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK:-0}" == "1" ]]; then
+        : > "$state_path"
+        targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
+        collect_shell_write_targets "$synthetic_payload" | sort -u > "$targets_file"
+        bridge_debug "targets=$(tr '\n' '|' <"$targets_file" 2>/dev/null || true)"
+        if ! apply_permission_block "$state_path" "$targets_file"; then
+          command_str="$(sb_tool_command_string "$synthetic_payload")"
+          bridge_debug "permission_block=failed command_str=${command_str}"
+          install_command_shim "$state_path" "$command_str" "$BRIDGE_BLOCK_REASON" || true
+        else
+          bridge_debug "permission_block=applied state_path=${state_path}"
+        fi
+        install_mutation_shims "$state_path" "$BRIDGE_BLOCK_REASON" || true
+        bridge_debug "shim_dir=$(shim_directory_for_call 2>/dev/null || true)"
+        rm -f -- "$targets_file"
       fi
-      install_mutation_shims "$state_path" "$BRIDGE_BLOCK_REASON" || true
-      bridge_debug "shim_dir=$(shim_directory_for_call 2>/dev/null || true)"
-      rm -f -- "$targets_file"
+      bridge_block_denied_tool "$BRIDGE_BLOCK_REASON"
+      ;;
+    file.before_write)
+      [[ -n "${BRIDGE_BLOCK_REASON:-}" ]] || exit 0
+      bridge_debug "block_reason=${BRIDGE_BLOCK_REASON}"
+      bridge_block_denied_tool "$BRIDGE_BLOCK_REASON"
       ;;
     tool.after|file.after_write)
       restore_block_state

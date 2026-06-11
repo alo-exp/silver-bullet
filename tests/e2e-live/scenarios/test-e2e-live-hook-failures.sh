@@ -23,7 +23,7 @@ mkdir -p "${WORK_DIR}/.hook-probes"
 echo "--- Case 1: dev-cycle-check denies source edit before planning ---"
 clear_hook_audit_log
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`printf '\\n// live hook failure probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\\n' >> src/routes/todos.js\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// live hook failure probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
 assert_file_not_modified "dev-cycle-check keeps source unchanged before planning" "$target_file" "$target_digest"
 wait_for_hook_audit_entry "dev-cycle-check deny recorded" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
 
@@ -54,6 +54,9 @@ echo "--- Case 3: completion-audit denies premature release creation ---"
 clear_hook_audit_log
 rm -rf "${WORK_DIR}/.planning/workflows"
 printf 'silver-quality-gates\n' > "$STATE_FILE"
+printf '1\n' > "${SB_TEST_DIR}/session-start-time"
+mkdir -p "${WORK_DIR}/docs"
+: > "${WORK_DIR}/docs/CHANGELOG.md"
 head_before="$(capture_git_head "$WORK_DIR")"
 run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`gh release create v0.0.0-hook-probe\` and do not do anything else." >/dev/null
 assert_git_head_unchanged "completion-audit blocks release before release gate state exists" "$WORK_DIR" "$head_before"
@@ -90,7 +93,7 @@ clear_hook_audit_log
 rm -rf "${WORK_DIR}/.planning/workflows"
 printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$STATE_FILE"
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> src/routes/todos.js\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
 assert_file_modified "dev-cycle-check allows source edit after planning" "$target_file" "$target_digest"
 wait_for_hook_audit_entry "dev-cycle-check allow recorded" "dev-cycle-check" "allow" 'Planning verified|Implementation edits allowed'
 

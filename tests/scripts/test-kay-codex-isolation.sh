@@ -26,6 +26,17 @@ assert_file_contains() {
   fi
 }
 
+assert_contains() {
+  local desc="$1" haystack="$2" needle="$3"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc — missing [$needle]"
+    (( FAIL++ )) || true
+  fi
+}
+
 assert_file_not_contains() {
   local desc="$1" path="$2" needle="$3"
   if grep -qF "$needle" "$path"; then
@@ -244,6 +255,14 @@ case "$KAY_HOME" in
     ;;
 esac
 assert_file_contains "Projected Kay config enables plugin hooks" "$KAY_HOME/.kay/config.toml" 'plugin_hooks = true'
+assert_file_contains "Projected Kay Codex config enables plugin hooks" "$KAY_HOME/.codex/config.toml" 'plugin_hooks = true'
+assert_file_contains "Projected Kay Codex config registers SB marketplace" "$KAY_HOME/.codex/config.toml" '[marketplaces.alo-labs-codex]'
+assert_file_contains "Projected Kay Codex config enables only SB plugin" "$KAY_HOME/.codex/config.toml" '[plugins."silver-bullet@alo-labs-codex"]'
+assert_file_not_contains "Projected Kay Codex config omits GSD marketplace" "$KAY_HOME/.codex/config.toml" "get-shit-done-marketplace"
+assert_file_not_contains "Projected Kay Codex config omits Superpowers marketplace" "$KAY_HOME/.codex/config.toml" "superpowers-marketplace"
+assert_file_not_contains "Projected Kay Codex config omits Engineering plugin" "$KAY_HOME/.codex/config.toml" '[plugins."engineering@alo-labs-codex"]'
+assert_file_not_contains "Projected Kay Codex config omits Design plugin" "$KAY_HOME/.codex/config.toml" '[plugins."design@alo-labs-codex"]'
+assert_file_not_contains "Projected Kay Codex config omits Product Management plugin" "$KAY_HOME/.codex/config.toml" '[plugins."product-management@alo-labs-codex"]'
 assert_file_contains "Isolated Kay config pins MiniMax provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "minimax"'
 assert_file_contains "Isolated Kay config pins MiniMax M3" "$KAY_HOME/.kay/config.toml" 'model = "MiniMax-M3"'
 assert_file_contains "Isolated Kay config pins low reasoning" "$KAY_HOME/.kay/config.toml" 'model_reasoning_effort = "low"'
@@ -260,6 +279,19 @@ assert_command_succeeds "Isolated Kay hook discovery resolves gsd-discuss-phase"
 assert_command_succeeds "Isolated Kay hook discovery resolves gsd-plan-phase" sb_skill_is_installed "gsd-plan-phase"
 assert_file_exists "Isolated Silver Bullet plugin cache exists" "$KAY_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/.codex-plugin/plugin.json"
 assert_file_exists "Isolated Silver Bullet cache includes Kay hook bridge" "$KAY_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/hooks/kay-project-hook-bridge.sh"
+assert_file_exists "Isolated Silver Bullet marketplace snapshot exists" "$KAY_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
+assert_file_exists "Isolated Silver Bullet CLI shim exists" "$KAY_HOME/.codex/bin/silver-bullet"
+assert_eq "Isolated Silver Bullet CLI shim is first on PATH" "$KAY_HOME/.codex/bin/silver-bullet" "$(command -v silver-bullet)"
+case ":${PATH:-}:" in
+  *":${KAY_HOME}/.kay/.silver-bullet/path-prepend/active:"*)
+    echo "PASS: Isolated Kay active hook shim directory is on PATH"
+    (( PASS++ )) || true
+    ;;
+  *)
+    echo "FAIL: Isolated Kay active hook shim directory is missing from PATH"
+    (( FAIL++ )) || true
+    ;;
+esac
 assert_file_exists "Isolated Kay cache copies dependency plugin versions" "$KAY_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion/SKILL.md"
 assert_file_exists "Isolated Kay state root exists under .kay" "$KAY_HOME/.kay/.silver-bullet"
 assert_eq "Kay state root is explicitly allowlisted" "$KAY_HOME/.kay/.silver-bullet" "$SB_RUNTIME_EXTRA_STATE_ROOTS"
@@ -305,10 +337,12 @@ assert_file_contains "Kay project hook env passes isolated KAY_HOME root" "$KAY_
 assert_file_contains "Kay project hook env passes codex runtime name" "$KAY_HOME/.kay/config.toml" 'SILVER_BULLET_RUNTIME = "codex"'
 assert_file_contains "Kay project hook env passes state allowlist" "$KAY_HOME/.kay/config.toml" "SB_RUNTIME_EXTRA_STATE_ROOTS = \"${KAY_HOME}/.kay/.silver-bullet\""
 assert_file_contains "Kay project hook env passes audit log path" "$KAY_HOME/.kay/config.toml" "SILVER_BULLET_HOOK_AUDIT_LOG = \"${KAY_HOME}/.codex/.silver-bullet/hook-audit.jsonl\""
+assert_file_contains "Kay project hook env enables fallback blockers for Kay" "$KAY_HOME/.kay/config.toml" 'SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK = "1"'
 
 REAL_BRIDGE="$REPO_ROOT/hooks/kay-project-hook-bridge.sh"
 BRIDGE_WORKSPACE="$TMP/bridge-workspace"
 BRIDGE_TARGET="$BRIDGE_WORKSPACE/src/routes/todos.js"
+ACTIVE_SHIM_DIR="$KAY_HOME/.kay/.silver-bullet/path-prepend/active"
 mkdir -p "$(dirname "$BRIDGE_TARGET")" "$KAY_HOME/.codex/.silver-bullet"
 cat > "$BRIDGE_TARGET" <<'EOF'
 export const todos = [];
@@ -334,8 +368,25 @@ run_bridge_event() {
 chmod_probe_command='set +m; chmod u+w src/routes/todos.js && printf '"'"'\n// chmod bridge probe\n'"'"' >> src/routes/todos.js'
 chmod_probe_payload="$(jq -nc --arg command "$chmod_probe_command" '{command:["bash","-lc",$command]}')"
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
-run_bridge_event "tool.before" "call-chmod-probe" "$chmod_probe_payload"
-assert_file_exists "Kay bridge writes per-call shell shims into the active prepend root" "$KAY_HOME/.kay/.silver-bullet/path-prepend/call-chmod-probe/chmod"
+bridge_status=0
+bridge_output="$(run_bridge_event "tool.before" "call-native-deny-probe" "$chmod_probe_payload" 2>&1)" || bridge_status=$?
+assert_eq "Kay bridge returns native deny status for blocked tool.before" "2" "$bridge_status"
+assert_contains "Kay bridge writes native deny reason to stderr" "$bridge_output" "Planning incomplete"
+assert_file_unchanged "Kay bridge native deny leaves target unchanged before execution" "$BRIDGE_TARGET" "$target_digest"
+if [[ -d "$KAY_HOME/.kay/.silver-bullet/path-prepend/call-native-deny-probe" ]]; then
+  echo "FAIL: Kay bridge default deny left stale fallback shims"
+  (( FAIL++ )) || true
+else
+  echo "PASS: Kay bridge default deny avoids stale fallback shims"
+  (( PASS++ )) || true
+fi
+
+target_digest="$(capture_digest "$BRIDGE_TARGET")"
+bridge_status=0
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-chmod-probe" "$chmod_probe_payload" 2>&1)" || bridge_status=$?
+assert_eq "Kay bridge fallback mode still returns native deny status" "2" "$bridge_status"
+assert_contains "Kay bridge fallback mode surfaces planning denial" "$bridge_output" "Planning incomplete"
+assert_file_exists "Kay bridge writes fallback shell shims into the active prepend root" "$ACTIVE_SHIM_DIR/chmod"
 chmod_status=0
 chmod_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
@@ -353,7 +404,10 @@ fi
 python_probe_script='from pathlib import Path; Path("src/routes/todos.js").open("a", encoding="utf-8").write("\n# python bridge probe\n")'
 python_probe_payload="$(jq -nc --arg script "$python_probe_script" '{command:["python3","-c",$script]}')"
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
-run_bridge_event "tool.before" "call-python-probe" "$python_probe_payload"
+bridge_status=0
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-python-probe" "$python_probe_payload" 2>&1)" || bridge_status=$?
+assert_eq "Kay bridge direct-write fallback returns native deny status" "2" "$bridge_status"
+assert_contains "Kay bridge direct-write fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 python_status=0
 python_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
@@ -371,7 +425,10 @@ fi
 shell_probe_command=$'printf \'\\n// shell bridge probe\\n\' >> src/routes/todos.js'
 shell_probe_payload="$(jq -nc --arg command "$shell_probe_command" '{command:["bash","-lc",$command]}')"
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
-run_bridge_event "tool.before" "call-shell-probe" "$shell_probe_payload"
+bridge_status=0
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-shell-probe" "$shell_probe_payload" 2>&1)" || bridge_status=$?
+assert_eq "Kay bridge shell fallback returns native deny status" "2" "$bridge_status"
+assert_contains "Kay bridge shell fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 shell_status=0
 shell_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
@@ -383,6 +440,57 @@ if [[ $shell_status -ne 0 ]]; then
   (( PASS++ )) || true
 else
   echo "FAIL: Kay bridge allowed direct shell redirect while blocked"
+  (( FAIL++ )) || true
+fi
+
+cat > "$BRIDGE_WORKSPACE/.silver-bullet.json" <<'EOF'
+{
+  "state": {
+    "state_file": "~/.codex/.silver-bullet/state",
+    "trivial_file": "~/.codex/.silver-bullet/trivial"
+  },
+  "skills": {
+    "required_planning": ["silver-quality-gates"]
+  },
+  "project": {
+    "active_workflow": "full-dev-cycle"
+  }
+}
+EOF
+printf '# Bridge Fixture\n' > "$BRIDGE_WORKSPACE/silver-bullet.md"
+git -C "$BRIDGE_WORKSPACE" init -q
+git -C "$BRIDGE_WORKSPACE" config user.email "bridge@example.test"
+git -C "$BRIDGE_WORKSPACE" config user.name "Bridge Test"
+git -C "$BRIDGE_WORKSPACE" add src/routes/todos.js
+git -C "$BRIDGE_WORKSPACE" commit -q -m "baseline"
+printf '\n// git bridge probe\n' >> "$BRIDGE_TARGET"
+REAL_GIT_BIN="$(command -v git)"
+git_probe_payload="$(jq -nc '{command:["git","commit","-am","blocked direct git probe"]}')"
+head_before="$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
+bridge_status=0
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-git-probe_hook_tool_before_1" "$git_probe_payload" 2>&1)" || bridge_status=$?
+assert_eq "Kay bridge direct-git fallback returns native deny status" "2" "$bridge_status"
+assert_contains "Kay bridge direct-git fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
+assert_file_exists "Kay bridge writes git shim into the active prepend root" "$ACTIVE_SHIM_DIR/git"
+hash -r 2>/dev/null || true
+git_status=0
+git_output="$(
+  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
+)" || git_status=$?
+run_bridge_event "tool.after" "call-git-probe_hook_tool_after_1" "$(jq -nc --arg stderr "$git_output" --argjson exit_code "$git_status" '{command:["git","commit","-am","blocked direct git probe"], exit_code:$exit_code, stdout:"", stderr:$stderr}')"
+assert_eq "Kay bridge direct-git fallback keeps HEAD unchanged" "$head_before" "$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
+if [[ $git_status -ne 0 ]]; then
+  echo "PASS: Kay bridge blocks direct git through repository write lock"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Kay bridge did not block direct git through repository write lock"
+  (( FAIL++ )) || true
+fi
+if [[ -w "$BRIDGE_WORKSPACE/.git/refs" && -w "$BRIDGE_WORKSPACE/.git/objects" ]]; then
+  echo "PASS: Kay bridge restores repository write locks after Kay-style after hook"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Kay bridge left repository write locks in place after Kay-style after hook"
   (( FAIL++ )) || true
 fi
 
