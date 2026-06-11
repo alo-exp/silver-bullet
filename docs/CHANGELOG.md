@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-11 — kay-live-hook-enforcement-release-fix
+**What**: Hardened the Kay-backed Codex live hook bridge so denied before-hooks return a native block, fallback shims stay scoped to the active Kay hook path, repository write locks block direct `git commit` attempts, and Kay-style before/after hook IDs restore locks correctly.
+**Commits**: d442853
+**Skills run**: silver:quality-gates, silver:review, silver:secure, verify-tests
+**Virtual cost**: ~$0.24 (high complexity — live hook enforcement, isolation, targeted regression tests, full release verification)
+**KNOWLEDGE.md**: updated (Kay hook bridge lock restoration, SB-only isolated runtime)
+**Learnings**: updated (native deny plus fallback locks for runtimes with unreliable hook enforcement)
+
 ## 2026-06-10 — one-index-canonical-flows
 **What**: Renumbered SB's canonical software engineering flows from the former zero-based catalog to `FLOW 1`-`FLOW 18` across the website, flow contracts, skill instructions, packaged sources, templates, hooks, and tests.
 **Commits**: —
