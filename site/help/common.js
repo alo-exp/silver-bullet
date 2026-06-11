@@ -14,7 +14,11 @@
   function applyTheme(theme) {
     var next = theme === 'dark' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('sb-theme', next);
+    try {
+      localStorage.setItem('sb-theme', next);
+    } catch (error) {
+      /* Theme still applies when storage is unavailable. */
+    }
     setIconState(next);
   }
 
@@ -29,6 +33,7 @@
     btn.setAttribute('type', 'button');
     btn.setAttribute('aria-label', 'Toggle theme');
     btn.innerHTML = sunIcon + moonIcon;
+    btn.addEventListener('click', window.toggleTheme);
   }
 
   function scrollToHash(hash, replace) {
@@ -80,7 +85,13 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     normalizeThemeButton();
-    applyTheme(localStorage.getItem('sb-theme') || 'light');
+    var savedTheme = 'light';
+    try {
+      savedTheme = localStorage.getItem('sb-theme') || 'light';
+    } catch (error) {
+      savedTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    }
+    applyTheme(savedTheme);
     initAnchorScroll();
     initSidebarActiveState();
     if (window.lucide && typeof window.lucide.createIcons === 'function') {
