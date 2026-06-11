@@ -18,7 +18,7 @@ Run this before any Silver Bullet release to validate the full workflow works en
 ## 1. SETUP
 
 ```bash
-cd /Users/shafqat/projects/test-todo-app
+cd /Users/shafqat/projects/todo-app
 npm install
 npm test                    # Verify: 28 tests pass
 node src/server.js &        # Verify: "Todo app running at http://localhost:3456"
@@ -40,7 +40,7 @@ git init && git add -A && git commit -m "initial: todo app baseline"
 
 ## 2. INITIALIZE SILVER BULLET
 
-In Claude Code (with CWD = `/Users/shafqat/projects/test-todo-app`):
+In Claude Code (with CWD = `/Users/shafqat/projects/todo-app`):
 
 ```
 /silver:init
@@ -50,7 +50,7 @@ In Claude Code (with CWD = `/Users/shafqat/projects/test-todo-app`):
 - [ ] `.silver-bullet.json` with `src_pattern: "/src/"`
 - [ ] `silver-bullet.md` with enforcement sections §0-§9
 - [ ] No new `CLAUDE.md` is created for Codex init; if the project already had one, it is updated in place
-- [ ] `docs/workflows/full-dev-cycle.md` (688+ lines)
+- [ ] `docs/workflows/full-dev-cycle.md` (SB-owned workflow copy)
 
 ---
 
@@ -166,7 +166,7 @@ The SB-generated artifacts (`.planning/`, `.silver-bullet.json`, `silver-bullet.
 
 To fully reset the test app for another run:
 ```bash
-cd /Users/shafqat/projects/test-todo-app
+cd /Users/shafqat/projects/todo-app
 rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/ node_modules
 git checkout -- .    # Restore original files
 git clean -fd        # Remove untracked files

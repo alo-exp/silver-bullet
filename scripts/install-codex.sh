@@ -18,16 +18,8 @@ else
   MERGE_USER_HOOKS=0
 fi
 CODEX_BIN="${CODEX_BIN:-codex}"
-NPM_BIN="${NPM_BIN:-npx}"
-# `npm exec` / `npx` can prompt for confirmation when installing a fresh
-# package. Force non-interactive mode so release and isolated live tests do not
-# stall waiting for stdin.
-GSD_INSTALL_CMD="${GSD_INSTALL_CMD:-${NPM_BIN} --yes get-shit-done-cc@latest}"
 CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-labs/codex-plugins}"
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
-SUPERPOWERS_MARKETPLACE_SOURCE="${SUPERPOWERS_MARKETPLACE_SOURCE:-https://github.com/obra/superpowers-marketplace.git}"
-GSD_MARKETPLACE_SOURCE="${GSD_MARKETPLACE_SOURCE:-https://github.com/gsd-build/get-shit-done.git}"
-CODEX_KW_MARKETPLACE_SOURCE="${CODEX_KW_MARKETPLACE_SOURCE:-https://github.com/anthropics/knowledge-work-plugins.git}"
 CODEX_HOME_ROOT="${KAY_HOME:-${HOME}}"
 
 resolve_codex_config_file() {
@@ -38,15 +30,6 @@ resolve_codex_config_file() {
     return 0
   fi
   printf '%s\n' "${CODEX_HOME_ROOT}/.codex/config.toml"
-}
-
-resolve_codex_gsd_home() {
-  local gsd_home="${CODEX_HOME_ROOT}/.codex/get-shit-done"
-  if [[ -f "${gsd_home}/VERSION" ]]; then
-    printf '%s\n' "$gsd_home"
-    return 0
-  fi
-  printf '%s\n' "${CODEX_HOME_ROOT}/.codex/get-shit-done"
 }
 
 render_agent_bundle() {
@@ -64,8 +47,7 @@ usage() {
 Usage: scripts/install-codex.sh [--purge-legacy-skills] [--public-release]
 
 Synchronizes the local Codex plugin package and registers the shared
-`alo-labs/codex-plugins` marketplace with Codex. Also ensures the official
-dependency sources are present.
+`alo-labs/codex-plugins` marketplace with Codex.
 
 Options:
   --purge-legacy-skills  Remove SB skill directories already copied into ~/.agents/skills
@@ -1000,131 +982,6 @@ for plugin_id, entries in data.get("plugins", {}).items():
 if changed:
     registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
-}
-
-ensure_codex_dependency_registry_entries() {
-  local registry_file
-  registry_file="${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json"
-
-  python3 - "$registry_file" "$CODEX_HOME_ROOT" <<'PY'
-import datetime
-import json
-import pathlib
-import re
-import shutil
-import sys
-
-registry_path = pathlib.Path(sys.argv[1])
-home = pathlib.Path(sys.argv[2]).expanduser()
-now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-
-plugin_specs = {
-    "superpowers@superpowers-marketplace": ("superpowers-marketplace", "superpowers"),
-    "gsd@get-shit-done-marketplace": ("get-shit-done-marketplace", "gsd"),
-    "engineering@alo-labs-codex": ("alo-labs-codex", "engineering"),
-    "design@alo-labs-codex": ("alo-labs-codex", "design"),
-    "product-management@alo-labs-codex": ("alo-labs-codex", "product-management"),
-}
-
-data = {"version": 2, "plugins": {}}
-if registry_path.is_file():
-    try:
-        data = json.loads(registry_path.read_text())
-    except Exception:
-        pass
-
-plugins = data.setdefault("plugins", {})
-changed = False
-
-def version_sort_key(path: pathlib.Path):
-    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
-
-for plugin_id, (marketplace, plugin_name) in plugin_specs.items():
-    plugin_root = home / ".codex" / "plugins" / "cache" / marketplace / plugin_name
-    if not plugin_root.exists():
-        continue
-
-    version_dirs = sorted(
-        [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
-        key=version_sort_key,
-    )
-    if not version_dirs:
-        continue
-
-    target_path = version_dirs[-1]
-    current_path = plugin_root / "current"
-    if current_path.exists() or current_path.is_symlink():
-        if current_path.is_dir() and not current_path.is_symlink():
-            shutil.rmtree(current_path)
-        else:
-            current_path.unlink()
-    current_path.symlink_to(target_path)
-
-    entry = {
-        "scope": "project",
-        "projectPath": str(home),
-        "installPath": str(current_path),
-        "version": target_path.name,
-        "installedAt": now,
-        "lastUpdated": now,
-    }
-
-    if plugin_id in plugins and plugins[plugin_id]:
-        plugins[plugin_id][0].update(entry)
-    else:
-        plugins[plugin_id] = [entry]
-    changed = True
-
-if changed:
-    registry_path.parent.mkdir(parents=True, exist_ok=True)
-    registry_path.write_text(json.dumps(data, indent=2) + "\n")
-PY
-}
-
-ensure_codex_knowledge_work_dependency_sources() {
-  local source_spec="${CODEX_KW_MARKETPLACE_SOURCE}"
-  local source_root=""
-  local tmp_dir=""
-  local plugin
-  local marketplace
-  local plugin_root
-  local src_skills
-  local version_dir
-
-  if [[ -d "$source_spec" ]]; then
-    source_root="$source_spec"
-  elif command -v git >/dev/null 2>&1; then
-    tmp_dir="$(mktemp -d)"
-    if git clone --depth 1 "$source_spec" "${tmp_dir}/knowledge-work-plugins" >/dev/null 2>&1; then
-      source_root="${tmp_dir}/knowledge-work-plugins"
-    else
-      rm -rf "$tmp_dir"
-      return 0
-    fi
-  else
-    return 0
-  fi
-
-  for plugin in engineering design product-management; do
-    src_skills="${source_root}/${plugin}/skills"
-    [[ -d "$src_skills" ]] || continue
-
-    for marketplace in alo-labs-codex alo-labs-codex-local; do
-      plugin_root="${CODEX_HOME_ROOT}/.codex/plugins/cache/${marketplace}/${plugin}"
-      [[ -d "$plugin_root" ]] || continue
-
-      shopt -s nullglob
-      for version_dir in "${plugin_root}"/*; do
-        [[ -d "$version_dir" ]] || continue
-        [[ "$(basename "$version_dir")" != "current" ]] || continue
-        mkdir -p "${version_dir}/upstream"
-        rsync -a --delete "${src_skills}/" "${version_dir}/upstream/skills/"
-      done
-      shopt -u nullglob
-    done
-  done
-
-  [[ -z "$tmp_dir" ]] || rm -rf "$tmp_dir"
 }
 
 normalize_codex_hook_async_flags() {
@@ -2133,14 +1990,7 @@ rewrite_codex_bundle_host_paths
 sync_codex_installed_plugin_registry_paths
 normalize_codex_hook_async_flags
 ensure_feature_enabled "plugin_hooks"
-ensure_plugin_enabled "superpowers@superpowers-marketplace"
-ensure_plugin_enabled "gsd@get-shit-done-marketplace"
 remove_plugin_enabled "silver@alo-labs-codex"
-ensure_plugin_enabled "product-management@alo-labs-codex"
-ensure_plugin_enabled "engineering@alo-labs-codex"
-ensure_plugin_enabled "design@alo-labs-codex"
-ensure_codex_knowledge_work_dependency_sources
-ensure_codex_dependency_registry_entries
 purge_legacy_silver_bullet_hooks_from_user_config
 
 SB_PROJECT_ROOT=""
@@ -2154,26 +2004,6 @@ if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
 else
   remove_plugin_enabled "silver-bullet@alo-labs-codex"
   printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'
-fi
-
-ensure_marketplace_registered "${SUPERPOWERS_MARKETPLACE_SOURCE}"
-ensure_marketplace_registered "${GSD_MARKETPLACE_SOURCE}" "get-shit-done-marketplace"
-
-GSD_HOME="$(resolve_codex_gsd_home)"
-
-if [[ -f "${GSD_HOME}/VERSION" ]]; then
-  printf 'GSD already installed at %s\n' "${GSD_HOME}/VERSION"
-else
-  if ! command -v "${NPM_BIN}" >/dev/null 2>&1; then
-    printf 'ERROR: npm/npx not found in PATH; cannot install GSD\n' >&2
-    exit 1
-  fi
-  printf 'Installing GSD from official source: %s\n' "${GSD_INSTALL_CMD}"
-  # Avoid eval so the bootstrap path stays predictable and shell-safe.
-  # The command is treated as a simple whitespace-delimited invocation.
-  # Tests can override it with a tiny helper executable.
-  read -r -a GSD_INSTALL_ARGS <<< "${GSD_INSTALL_CMD}"
-  GSD_HOME="$GSD_HOME" "${GSD_INSTALL_ARGS[@]}"
 fi
 
 if [[ -n "$SB_PROJECT_ROOT" ]]; then

@@ -24,7 +24,9 @@ check() {
 # Allowlists
 # ---------------------------------------------------------------------------
 
-# External skills that are NOT in skills/ directory — from GSD, Superpowers, MultAI, design, etc.
+# External skills that are NOT in skills/ directory — optional legacy/provider
+# extension skills or historical aliases. SB-owned lifecycle skills must resolve
+# to local skill directories below.
 EXTERNAL_SKILLS=(
   gsd-intel gsd-scan gsd-map-codebase gsd-explore gsd-discuss-phase gsd-analyze-dependencies
   gsd-plan-phase gsd-execute-phase gsd-autonomous gsd-verify-work gsd-add-tests
@@ -72,11 +74,27 @@ resolve_silver_alias() {
   local cmd="${name%% *}"
   case "$cmd" in
     silver:intel)               echo "gsd-intel" ;;
-    silver:scan)                echo "gsd-scan" ;;
+    silver:scan)                echo "silver-scan" ;;
     silver:clarify)             echo "silver-clarify" ;;
+    silver:context)             echo "silver-context" ;;
+    silver:plan)                echo "silver-plan" ;;
+    silver:execute)             echo "silver-execute" ;;
+    silver:verify)              echo "silver-verify" ;;
+    silver:ship)                echo "silver-ship" ;;
+    silver:review-request)      echo "silver-review-request" ;;
+    silver:review)              echo "silver-review" ;;
+    silver:review-triage)       echo "silver-review-triage" ;;
+    silver:secure)              echo "silver-secure" ;;
+    silver:ui-contract)         echo "silver-ui-contract" ;;
+    silver:ui-review)           echo "silver-ui-review" ;;
+    silver:debug)               echo "silver-debug" ;;
+    silver:completion-audit)    echo "silver-completion-audit" ;;
+    silver:branch-finish)       echo "silver-branch-finish" ;;
+    silver:ensure-docs)         echo "silver-ensure-docs" ;;
+    silver:handoff)             echo "silver-handoff" ;;
     silver:tdd)                 echo "tdd" ;;
-    silver:request-review)      echo "requesting-code-review" ;;
-    silver:receive-review)      echo "receiving-code-review" ;;
+    silver:request-review)      echo "silver-review-request" ;;
+    silver:receive-review)      echo "silver-review-triage" ;;
     silver:multai)              echo "multai:orchestrator" ;;
     silver:quality-gates)       echo "silver-quality-gates" ;;
     silver:silver-quality-gates) echo "silver-quality-gates" ;;
@@ -168,8 +186,8 @@ check "silver-feature: silver-quality-gates listed as non-skippable" \
 check "silver-feature: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-feature: gsd-verify-work listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
+check "silver-feature: silver:verify listed as non-skippable" \
+  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-feature: pre-build validate has NON-SKIPPABLE GATE marker" \
   "$([[ "$(grep -i 'NON-SKIPPABLE GATE' "$SF" | head -1)" ]] && echo pass || echo fail)"
@@ -178,8 +196,8 @@ SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
 check "silver-devops: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-devops: gsd-verify-work listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
+check "silver-devops: silver:verify listed as non-skippable" \
+  "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
 
 check "silver-devops: devops-quality-gates listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'devops-quality-gates' | head -1)" ]] && echo pass || echo fail)"
@@ -191,8 +209,8 @@ check "silver-bugfix: security listed as non-skippable" \
 check "silver-bugfix: silver-quality-gates listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-bugfix: gsd-verify-work listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
+check "silver-bugfix: silver:verify listed as non-skippable" \
+  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
 
 SUI="$SKILLS_DIR/silver-ui/SKILL.md"
 check "silver-ui: security listed as non-skippable" \
@@ -201,8 +219,8 @@ check "silver-ui: security listed as non-skippable" \
 check "silver-ui: silver-quality-gates listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-ui: gsd-verify-work listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'gsd-verify-work' | head -1)" ]] && echo pass || echo fail)"
+check "silver-ui: silver:verify listed as non-skippable" \
+  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
 
 SREL="$SKILLS_DIR/silver-release/SKILL.md"
 check "silver-release: silver-quality-gates listed as non-skippable" \
@@ -225,12 +243,12 @@ line_of() {
 SF="$SKILLS_DIR/silver-feature/SKILL.md"
 
 qg_line=$(grep -n "Invoke \`silver:quality-gates\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-exec_line=$(grep -n "invoke \`gsd-execute-phase\`\|invoke \`gsd-autonomous\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
+exec_line=$(grep -n "invoke \`silver:execute\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-feature: silver-quality-gates step before execute step (line $qg_line < $exec_line)" \
   "$([[ "$qg_line" -gt 0 && "$exec_line" -gt 0 && "$qg_line" -lt "$exec_line" ]] && echo pass || echo fail)"
 
 sec_line=$(grep -n "Invoke \`security\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-ship_line=$(grep -n "Invoke \`gsd-ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
+ship_line=$(grep -n "Invoke \`silver:ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-feature: security step before ship step (line $sec_line < $ship_line)" \
   "$([[ "$sec_line" -gt 0 && "$ship_line" -gt 0 && "$sec_line" -lt "$ship_line" ]] && echo pass || echo fail)"
 
@@ -238,36 +256,36 @@ tdd_line=$(grep -n "^\*\*Internal TDD gate" "$SF" | head -1 | cut -d: -f1 || ech
 check "silver-feature: TDD step after first execute step (line $exec_line < $tdd_line)" \
   "$([[ "$exec_line" -gt 0 && "$tdd_line" -gt 0 && "$exec_line" -lt "$tdd_line" ]] && echo pass || echo fail)"
 
-verify_line=$(grep -n "Invoke \`gsd-verify-work\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-ship_line=$(grep -n "Invoke \`gsd-ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-feature: gsd-verify-work before gsd-ship (line $verify_line < $ship_line)" \
+verify_line=$(grep -n "Invoke \`silver:verify\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
+ship_line=$(grep -n "Invoke \`silver:ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
+check "silver-feature: silver:verify before silver:ship (line $verify_line < $ship_line)" \
   "$([[ "$verify_line" -gt 0 && "$ship_line" -gt 0 && "$verify_line" -lt "$ship_line" ]] && echo pass || echo fail)"
 
 SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
 dev_sec_line=$(grep -n "Invoke \`security\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-dev_ship_line=$(grep -n "gsd-ship" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
+dev_ship_line=$(grep -n "silver:ship" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
 check "silver-devops: security before ship (line $dev_sec_line < $dev_ship_line)" \
   "$([[ "$dev_sec_line" -gt 0 && "$dev_ship_line" -gt 0 && "$dev_sec_line" -lt "$dev_ship_line" ]] && echo pass || echo fail)"
 
-dev_verify_line=$(grep -n "gsd-verify-work" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-check "silver-devops: gsd-verify-work before ship (line $dev_verify_line < $dev_ship_line)" \
+dev_verify_line=$(grep -n "silver:verify" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
+check "silver-devops: silver:verify before ship (line $dev_verify_line < $dev_ship_line)" \
   "$([[ "$dev_verify_line" -gt 0 && "$dev_ship_line" -gt 0 && "$dev_verify_line" -lt "$dev_ship_line" ]] && echo pass || echo fail)"
 
 SBF="$SKILLS_DIR/silver-bugfix/SKILL.md"
 bf_tdd_line=$(grep -n "Invoke \`tdd\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-bf_plan_line=$(grep -n "gsd-plan-phase" "$SBF" | head -1 | cut -d: -f1 || echo 0)
+bf_plan_line=$(grep -n "silver:plan" "$SBF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-bugfix: TDD before plan/execute step (line $bf_tdd_line < $bf_plan_line)" \
   "$([[ "$bf_tdd_line" -gt 0 && "$bf_plan_line" -gt 0 && "$bf_tdd_line" -lt "$bf_plan_line" ]] && echo pass || echo fail)"
 
 bf_sec_line=$(grep -n "Invoke \`security\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-bf_ship_line=$(grep -n "gsd-ship" "$SBF" | head -1 | cut -d: -f1 || echo 0)
+bf_ship_line=$(grep -n "silver:ship" "$SBF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-bugfix: security before ship (line $bf_sec_line < $bf_ship_line)" \
   "$([[ "$bf_sec_line" -gt 0 && "$bf_ship_line" -gt 0 && "$bf_sec_line" -lt "$bf_ship_line" ]] && echo pass || echo fail)"
 
 SREL="$SKILLS_DIR/silver-release/SKILL.md"
 rel_qg_line=$(grep -n "silver:quality-gates" "$SREL" | head -1 | cut -d: -f1 || echo 0)
-# Match the actual invoke line for gsd-ship (case-insensitive, not frontmatter description references)
-rel_ship_line=$(grep -in "invoke \`gsd-ship\`" "$SREL" | head -1 | cut -d: -f1 || echo 0)
+# Match the actual invoke line for silver:ship (case-insensitive, not frontmatter description references)
+rel_ship_line=$(grep -in "invoke \`silver:ship\`" "$SREL" | head -1 | cut -d: -f1 || echo 0)
 check "silver-release: silver-quality-gates before ship (line $rel_qg_line < $rel_ship_line)" \
   "$([[ "$rel_qg_line" -gt 0 && "$rel_ship_line" -gt 0 && "$rel_qg_line" -lt "$rel_ship_line" ]] && echo pass || echo fail)"
 
@@ -407,6 +425,17 @@ ALIAS_NAMES=(
   "silver:devops-quality-gates"
   "silver:silver-create-release"
   "silver:handoff"
+  "silver:context"
+  "silver:plan"
+  "silver:execute"
+  "silver:verify"
+  "silver:ship"
+  "silver:review-request"
+  "silver:review"
+  "silver:review-triage"
+  "silver:secure"
+  "silver:completion-audit"
+  "silver:branch-finish"
 )
 ALIAS_TARGETS=(
   "silver-quality-gates"
@@ -424,6 +453,17 @@ ALIAS_TARGETS=(
   "devops-quality-gates"
   "silver-create-release"
   "silver-handoff"
+  "silver-context"
+  "silver-plan"
+  "silver-execute"
+  "silver-verify"
+  "silver-ship"
+  "silver-review-request"
+  "silver-review"
+  "silver-review-triage"
+  "silver-secure"
+  "silver-completion-audit"
+  "silver-branch-finish"
 )
 
 for i in "${!ALIAS_NAMES[@]}"; do

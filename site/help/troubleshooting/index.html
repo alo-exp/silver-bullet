@@ -176,33 +176,33 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>When the runtime cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
 
       <div class="issue-card">
-        <h4>"Superpowers plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Superpowers plugin is not installed. Silver Bullet requires it for selected helper gates such as review framing/triage, TDD discipline, verification-before-completion, and branch finishing.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall it with <code>/plugin install obra/superpowers</code> in your host coding agent.</p>
+        <h4>"Legacy Superpowers command requested"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external Superpowers request was made, or an older project still references a legacy helper name.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use the SB-owned replacement (<code>silver:review-request</code>, <code>silver:review-triage</code>, <code>silver:completion-audit</code>, <code>silver:branch-finish</code>, or <code>tdd</code>) unless you explicitly want to install and run Superpowers as an external tool.</p>
       </div>
 
       <div class="issue-card">
         <h4>"Engineering plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Engineering plugin provides <code>/testing-strategy</code>, <code>/tech-debt</code>, <code>/documentation</code>, <code>/deploy-checklist</code>, and related engineering support skills.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall it with <code>/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</code>.</p>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external Engineering plugin request was made, or an older workflow still references old knowledge-work skill names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use SB-owned docs, testing, release, and DevOps readiness gates unless you explicitly want the external plugin as supplemental tooling.</p>
       </div>
 
       <div class="issue-card">
         <h4>"Design plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Design plugin provides <code>/design-system</code>, <code>/ux-copy</code>, <code>/accessibility-review</code>, and design critique support for UI work.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall it with <code>/plugin install anthropics/knowledge-work-plugins/tree/main/design</code>.</p>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external Design plugin request was made, or an older workflow still references old design helper names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:ui-contract</code>, <code>silver:ui-review</code>, and <code>review-design</code> for SB-owned UI/design checks unless you explicitly want supplemental external design review.</p>
       </div>
 
       <div class="issue-card">
-        <h4>"Product Management plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> The Product Management plugin provides <code>/product-management:write-spec</code>, roadmap updates, competitive briefs, stakeholder updates, and research synthesis.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall it with <code>/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</code>.</p>
+        <h4>"Legacy Product Management command requested"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external product-management request was made, or an older workflow still references old PM helper names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:clarify</code>, <code>silver:spec</code>, and <code>silver:research</code> for SB-owned product framing and research synthesis unless you explicitly want supplemental external PM tooling.</p>
       </div>
 
       <div class="issue-card">
         <h4>"GSD plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> GSD (Get Shit Done) is the primary execution engine. Without it, no workflow commands work.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Repair or reinstall GSD with <code>npx get-shit-done-cc@latest</code>.</p>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit legacy GSD command was requested, or an older project still has direct GSD references.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/silver</code> or SB-owned lifecycle skills. Install GSD only if you explicitly need to run external GSD commands.</p>
       </div>
 
       <div class="issue-card">
@@ -231,7 +231,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>CI is red and Silver Bullet won't let me proceed</h4>
         <p class="ic-cause"><strong>Cause:</strong> This is intentional. The CI gate emits a hard stop (<code>decision: "block"</code>) when CI is failing.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/gsd:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/silver:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
       </div>
 
       <div class="issue-card">
@@ -249,19 +249,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Session timed out or was interrupted</h4>
         <p class="ic-cause"><strong>Cause:</strong> Context window exhaustion, network interruption, or the autonomous mode timeout sentinel fired.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Start a new session and run <code>/gsd:next</code> to find where you left off. GSD tracks progress in <code>.planning/</code> files that persist across sessions. Then use <code>/silver:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Start a new session and ask <code>/silver</code> for current status or inspect <code>.planning/workflows/</code> and <code>.planning/STATE.md</code>. Then use <code>/silver:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
       </div>
 
       <div class="issue-card">
         <h4>Verification failed and I'm stuck in a loop</h4>
-        <p class="ic-cause"><strong>Cause:</strong> <code>/gsd:verify-work</code> failed and the workflow is retrying steps 6-7 (execute + verify) repeatedly.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/silver:forensics</code> for session/workflow failures or <code>/gsd:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design (not implementation), return to step 3 (discuss) rather than re-executing.</p>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:verify</code> failed and the workflow is retrying execute + verify repeatedly.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/silver:forensics</code> for session/workflow failures or <code>/silver:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design, return to <code>/silver:context</code> or <code>/silver:plan</code> rather than re-executing.</p>
       </div>
 
       <div class="issue-card">
         <h4>.planning/ directory is corrupted or missing files</h4>
         <p class="ic-cause"><strong>Cause:</strong> Manual edits to planning files, or a merge conflict left files in a bad state.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/gsd:next</code> to diagnose the current state. If unrecoverable, delete the phase-specific files (e.g., <code>.planning/phase-1-PLAN.md</code>) and re-run the phase from <code>/gsd:discuss-phase</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>/silver:forensics</code> to diagnose the current state. If unrecoverable, restore or archive the bad phase-specific files and re-run the phase from <code>/silver:context</code> and <code>/silver:plan</code>.</p>
       </div>
 
       <div class="callout callout-info">
@@ -314,13 +314,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"COMPLETION BLOCKED — Workflow incomplete"</h4>
         <p class="ic-cause"><strong>Cause:</strong> You are trying to create a PR, deploy, or create a release before completing all required workflow steps.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing skill explicitly. Use <code>/gsd:next</code> to find the next required step.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing SB skill explicitly, or ask <code>/silver</code> for the next required workflow step.</p>
         <p class="ic-fix"><strong>Note on commits vs releases:</strong> Enforcement uses two tiers. <code>git commit</code> and <code>git push</code> only require quality gates to have run. <code>gh pr create</code>, deploys, and releases require the full required skill list. If commits work but release is blocked, that's expected — you haven't completed the full workflow yet.</p>
       </div>
 
       <div class="issue-card">
-        <h4>"finishing-a-development-branch blocked on main"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> <code>/finishing-a-development-branch</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
+        <h4>"silver:branch-finish blocked on main"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:branch-finish</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
         <p class="ic-fix"><strong>Fix:</strong> This step is automatically skipped when you're on <code>main</code> or <code>master</code>. If enforcement is still blocking, verify your branch name with <code>git branch --show-current</code>.</p>
       </div>
 
@@ -333,7 +333,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Using the fast path for small changes</h4>
         <p class="ic-cause"><strong>Cause:</strong> You need to make a small or bounded fix without running the full composed workflow.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as Tier 1 (<code>gsd:fast</code>), Tier 2 (<code>gsd:quick</code> with flags), or Tier 3 escalation to <code>silver:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as Tier 1 lightweight work, Tier 2 bounded work, or Tier 3 escalation to <code>silver:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
       </div>
 
       <div class="callout callout-warn">

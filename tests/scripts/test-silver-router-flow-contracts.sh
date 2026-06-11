@@ -34,15 +34,15 @@ template="$REPO_ROOT/templates/silver-bullet.md.base"
 root_rules="$REPO_ROOT/silver-bullet.md"
 
 assert_contains "router handles non-trivial bare intent" "most non-trivial bare user" "$router"
-assert_contains "router states GSD lifecycle authority" "GSD remains the lifecycle authority" "$router"
-assert_contains "router delegates GSD lifecycle to gsd:do" "gsd:do" "$router"
-assert_contains "router protects semver via GSD" "semver, milestone, and phase management" "$router"
+assert_contains "router states SB lifecycle authority" "SB is the lifecycle and quality orchestration engine" "$router"
+assert_contains "router lists SB context/plan/execute/verify/ship" "silver:context.*silver:plan.*silver:execute.*silver:verify.*silver:ship" "$router"
+assert_contains "router protects semver through SB workflows" "Do not edit version, ROADMAP, STATE, MILESTONES" "$router"
 
 assert_contains "contracts define atomic flow catalog" "Atomic Flow Catalog" "$contracts"
 assert_contains "contracts canonical FLOW 3 CLARIFY" "FLOW 3[[:space:]]*\\| CLARIFY" "$contracts"
 assert_contains "contracts canonical FLOW 4 DECIDE" "FLOW 4[[:space:]]*\\| DECIDE" "$contracts"
-assert_contains "contracts keep GSD semver ownership" "GSD owns the project lifecycle" "$contracts"
-assert_contains "contracts make release use GSD complete before SB release" "gsd:complete-milestone.*silver:create-release" "$contracts"
+assert_contains "contracts keep SB lifecycle ownership" "Silver Bullet owns the default software-engineering lifecycle" "$contracts"
+assert_contains "contracts make ship use SB branch finish before SB ship" "silver:branch-finish.*silver:ship" "$contracts"
 
 for file in \
   "$REPO_ROOT/skills/silver-feature/SKILL.md" \
@@ -59,8 +59,8 @@ for file in \
 done
 
 for file in "$template" "$root_rules"; do
-  assert_contains "template states GSD authority in ${file#$REPO_ROOT/}" "GSD remains the lifecycle authority" "$file"
-  assert_contains "template uses gsd-scan in ${file#$REPO_ROOT/}" "gsd-scan" "$file"
+  assert_contains "template states SB lifecycle authority in ${file#$REPO_ROOT/}" "Silver Bullet owns the default lifecycle through SB-owned skills" "$file"
+  assert_contains "template uses silver:scan in ${file#$REPO_ROOT/}" "silver:scan" "$file"
   assert_contains "template keeps MultAI optional for research in ${file#$REPO_ROOT/}" "optional multi-AI only when user-requested" "$file"
   assert_not_contains "template has no silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
 done

@@ -8,7 +8,7 @@ This reference expands the steps summarized in `SKILL.md` Phase 3. Follow the su
 
 If Phase 0 determined this is an update:
 
-1. Invoke `superpowers:using-superpowers` through the active runtime's SB-recognized skill invocation channel to activate Superpowers skills.
+1. Refresh the SB-owned lifecycle surface from the bundled `silver:*` skills.
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
@@ -16,7 +16,7 @@ If Phase 0 determined this is an update:
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.codex/settings.json`.
-6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All skills active."
+6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
 
@@ -225,9 +225,11 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INST
 
 Idempotent — re-running `/silver:init` adds no duplicate entries.
 
-### 3.8 Activate plugins
+### 3.8 Optional plugin activation
 
-Invoke `superpowers:using-superpowers` through the active runtime's SB-recognized skill invocation channel. GSD commands (`/gsd:*`) and Design plugin skills (`/design:*`) are available immediately — no activation needed.
+Do not activate GSD, Superpowers, Engineering, Design, or Product Management for
+core SB workflows. If the user explicitly requests an optional enrichment plugin
+later, route through that plugin's own install/activation flow at that time.
 
 ### 3.9 Done
 

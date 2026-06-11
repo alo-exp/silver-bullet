@@ -20,6 +20,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  source "$_lib_dir/required-skills.sh"
+fi
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
@@ -93,13 +97,13 @@ composer_slug="$(composer_slug_from_value "$composer_raw")"
 required_markers=()
 case "$composer_slug" in
   silver-feature)
-    required_markers=(silver-quality-gates gsd-discuss-phase gsd-plan-phase)
+    required_markers=(silver-quality-gates silver-context silver-plan)
     ;;
   silver-ui)
-    required_markers=(silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase)
+    required_markers=(silver-quality-gates silver-context silver-ui-contract silver-plan)
     ;;
   silver-devops)
-    required_markers=(silver-blast-radius devops-quality-gates gsd-discuss-phase gsd-plan-phase)
+    required_markers=(silver-blast-radius devops-quality-gates silver-context silver-plan)
     ;;
   silver-research)
     required_markers=(silver-clarify)
@@ -124,10 +128,15 @@ if ! sb_runtime_path_is_state_scoped "$state_file"; then
 fi
 
 missing_markers=()
+state_contents=""
+[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 for marker in "${required_markers[@]}"; do
-  if ! grep -qx "$marker" "$state_file" 2>/dev/null; then
-    missing_markers+=("$marker")
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    sb_required_skill_is_recorded "$state_contents" "$marker" && continue
+  elif grep -Fqx -- "$marker" "$state_file" 2>/dev/null; then
+    continue
   fi
+  missing_markers+=("$marker")
 done
 
 [[ ${#missing_markers[@]} -eq 0 ]] && exit 0
@@ -137,4 +146,4 @@ for marker in "${missing_markers[@]}"; do
   missing_lines+="  • ${marker}"$'\n'
 done
 
-emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — %s (%s) is active, but the pre-execution dependency chain is not yet recorded.\n\nMissing markers:\n%s\nBefore making implementation edits, complete the missing pre-execution SB/GSD steps. Execute, review, verify, and ship markers are checked later by completion gates, not here.' "$composer_raw" "$workflow_id" "$missing_lines")"
+emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — %s (%s) is active, but the pre-execution SB lifecycle chain is not yet recorded.\n\nMissing markers:\n%s\nBefore making implementation edits, complete the missing pre-execution SB steps. Execute, review, verify, and ship markers are checked later by completion gates, not here.' "$composer_raw" "$workflow_id" "$missing_lines")"

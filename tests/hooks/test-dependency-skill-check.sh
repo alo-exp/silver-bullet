@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests for hooks/dependency-skill-check.sh
-# Verifies that missing dependency skills are blocked and installed skills pass.
+# Verifies absorbed legacy dependency skill surfaces no longer hard-block SB.
 
 set -euo pipefail
 
@@ -83,10 +83,10 @@ EOF
 
 echo "=== dependency-skill-check.sh tests ==="
 
-# Test 1: Missing dependency skill is blocked
+# Test 1: Missing absorbed Product Management dependency passes through
 setup
 out=$(run_hook "product-management:write-spec")
-assert_blocks "missing product-management:write-spec blocked" "$out"
+assert_passes "missing product-management:write-spec passes through" "$out"
 teardown
 
 # Test 2: product-management skill installed in skills/ passes
@@ -124,10 +124,10 @@ out=$(run_hook "gsd:discuss-phase")
 assert_passes "installed gsd:discuss-phase passes" "$out"
 teardown
 
-# Test 7: Bare dependency skill is blocked when missing
+# Test 7: Bare absorbed dependency skill passes through when missing
 setup
 out=$(run_hook "clarify")
-assert_blocks "missing clarify blocked" "$out"
+assert_passes "missing clarify passes through" "$out"
 teardown
 
 # Test 8: Non-dependency skill passes through

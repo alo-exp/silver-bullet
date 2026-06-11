@@ -12,7 +12,7 @@ Every design, plan, and implementation MUST produce components that are written 
 
 **Why this matters:** Duplicated logic drifts over time. When the same concept lives in two places, one gets updated and the other doesn't — causing subtle bugs that are hard to trace. Reusable design prevents this by ensuring every concept has exactly one authoritative implementation.
 
-**When to invoke:** During PLANNING (after `/gsd:discuss-phase`, before `/gsd:plan-phase`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -99,7 +99,7 @@ If it's not documented, it won't be reused — it will be reimplemented.
 
 ## Applying This Skill
 
-### During Planning (/gsd:discuss-phase → /gsd:plan-phase)
+### During Planning (/silver:context -> /silver:plan)
 
 Before finalizing any design or plan, run the **Reusability Checklist**:
 
@@ -113,7 +113,7 @@ Before finalizing any design or plan, run the **Reusability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/gsd:execute-phase)
+### During Implementation (/silver:execute)
 
 As you write code:
 - Before writing new logic, search for existing implementations of the same concept.
@@ -121,7 +121,7 @@ As you write code:
 - If you're copying a function to modify it slightly, parameterize instead.
 - Every new shared module gets a JSDoc/docstring with purpose, params, and example.
 
-### During Review (code-review / receiving-code-review)
+### During Review (silver:review / silver:review-triage)
 
 Verify these as part of every code review:
 - No new duplication of existing logic

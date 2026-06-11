@@ -7,7 +7,10 @@ version: 0.1.0
 
 # /silver:create-release — Release Notes & GitHub Release
 
-Use this skill after the GSD milestone lifecycle has completed. Phase-level shipping belongs to `gsd:ship`; milestone archival belongs to `gsd-complete-milestone`; this skill owns only the final public release artifact: release notes, optional CHANGELOG/README updates, tag, and GitHub Release.
+Use this skill after SB release readiness has completed. Phase-level shipping
+belongs to `silver:ship`; milestone archival belongs to `silver:release`; this
+skill owns only the final public release artifact: release notes, optional
+CHANGELOG/README updates, tag, and GitHub Release.
 
 ## Security Boundary
 

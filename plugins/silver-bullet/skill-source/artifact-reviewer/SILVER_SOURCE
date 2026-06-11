@@ -23,9 +23,9 @@ If `--reviewer` is omitted, the reviewer is auto-detected from the artifact file
 
 | Artifact Pattern | Reviewer Skill | Notes |
 |-----------------|---------------|-------|
-| *-PLAN.md | gsd-plan-checker | Existing GSD reviewer |
-| Code changes | gsd-code-reviewer | Existing GSD reviewer |
-| VERIFICATION.md | gsd-verifier | Existing GSD reviewer |
+| *-PLAN.md | review-plan | SB plan reviewer |
+| Code changes | silver-review | SB code review workflow |
+| VERIFICATION.md | review-verification | SB verification artifact reviewer |
 | Security findings | security | Existing SB reviewer |
 | SPEC.md | review-spec | New SB reviewer |
 | DESIGN.md | review-design | New SB reviewer |
@@ -57,7 +57,7 @@ Review depth is configured per artifact type in `.planning/config.json`:
   "review_depth": {
     "review-spec": "deep",
     "review-roadmap": "quick",
-    "gsd-plan-checker": "standard"
+    "review-plan": "standard"
   }
 }
 ```

@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:fast — Fast Path Triage — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet fast path triage — routes trivial work to gsd:fast, bounded medium work to gsd:quick with flags, and escalates complex work to /silver:feature. §10 preferences not applied.">
+<meta name="description" content="Silver Bullet fast path triage — routes trivial work through SB fast execution, bounded medium work through SB quick handling with flags, and escalates complex work to /silver:feature. §10 preferences not applied.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -86,7 +86,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 <div class="page-hero">
   <div class="container">
     <h1>/silver:fast</h1>
-    <p>Fast path triage for small and bounded work — routes trivial edits to gsd:fast, medium changes to gsd:quick with the right flags, and escalates complex work into the full Silver Bullet workflow chain.</p>
+    <p>Fast path triage for small and bounded work — routes trivial edits through SB fast execution, medium changes through SB quick handling with the right flags, and escalates complex work into the full Silver Bullet workflow chain.</p>
   </div>
 </div>
 
@@ -126,12 +126,12 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <tr>
             <td>Tier 1 — Trivial</td>
             <td>≤3 files, typo, config value, symbol rename, one-liner, comment update</td>
-            <td>Route directly to <code>gsd:fast</code> — one-shot execution, no planning overhead</td>
+            <td>Route directly through SB fast execution — one-shot handling, no planning overhead</td>
           </tr>
           <tr>
             <td>Tier 2 — Medium</td>
             <td>4–10 files, clear scope, limited logic change, no cross-cutting concerns</td>
-            <td>Route to <code>gsd:quick</code> with flag composition: <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, <code>--full</code> as needed</td>
+            <td>Route through SB quick handling with flag composition: <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, <code>--full</code> as needed</td>
           </tr>
           <tr>
             <td>Tier 3 — Complex</td>
@@ -171,7 +171,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
         <div class="callout-body">
-          <strong>silver:fast is not a bypass for complex work.</strong> Tier 1 is limited to ≤3 files with no logic change. Tier 2 can handle 4–10 files, small logic changes, or dependency updates through <code>gsd:quick</code>. Anything cross-cutting, schema-affecting, capability-creating, or larger than 10 files escalates to <code>silver:feature</code>.
+          <strong>silver:fast is not a bypass for complex work.</strong> Tier 1 is limited to ≤3 files with no logic change. Tier 2 can handle 4–10 files, small logic changes, or dependency updates through SB quick handling. Anything cross-cutting, schema-affecting, capability-creating, or larger than 10 files escalates to <code>silver:feature</code>.
         </div>
       </div>
 
@@ -185,20 +185,20 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h3>Step 0 — Autonomous complexity triage</h3>
       <p>SB classifies the request before choosing an execution engine:</p>
       <div class="code-block">Tier 1: ≤3 files AND no logic change
-  → gsd:fast
+  → SB fast execution
 
 Tier 2: 4–10 files OR small logic change OR dependency update
-  → gsd:quick with --discuss, --research, --validate, or --full as needed
+  → SB quick handling with --discuss, --research, --validate, or --full as needed
 
 Tier 3: >10 files OR cross-cutting OR schema change OR new capability
   → silver:feature</div>
       <p>Ambiguity always moves to the safer higher tier. There is no manual step-skip preference loading in this workflow.</p>
 
       <h3>Step 1 — Tier 1 execution</h3>
-      <p>If the request is truly trivial, invoke <code>gsd:fast</code> with the change description. After execution, run the scope expansion check.</p>
+      <p>If the request is truly trivial, invoke SB fast execution with the change description. After execution, run the scope expansion check.</p>
 
       <h3>Step 2 — Tier 2 execution</h3>
-      <p>If the request is bounded but no longer trivial, detect the required <code>gsd:quick</code> flags:</p>
+      <p>If the request is bounded but no longer trivial, detect the required SB quick-handling flags:</p>
       <ul>
         <li><code>--discuss</code> for ambiguity, tradeoffs, or multiple approaches</li>
         <li><code>--research</code> for new libraries, unfamiliar domains, or investigation-heavy work</li>
@@ -212,7 +212,7 @@ Tier 3: >10 files OR cross-cutting OR schema change OR new capability
       <div class="code-block">FAST PATH ESCALATION
 Reason: Scope expanded from {original tier} to {new tier}
 Files affected: {count}
-Routing to: {gsd:quick|silver:feature}</div>
+Routing to: {silver:fast Tier 2|silver:feature}</div>
 
       <h3>Step 4 — Verify and confirm</h3>
       <p>Run the verification command surfaced by the selected GSD path. SB then displays the classification, execution route, files modified, verification result, and commit status.</p>
@@ -235,7 +235,7 @@ Routing to: {gsd:quick|silver:feature}</div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:fast Fix typo in README installation section</div>
-      <p>Silver Bullet classifies this as Tier 1, invokes <code>gsd:fast</code>, verifies the README update, confirms the file count stayed inside the trivial boundary, and commits the change.</p>
+      <p>Silver Bullet classifies this as Tier 1, uses SB fast execution, verifies the README update, confirms the file count stayed inside the trivial boundary, and commits the change.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

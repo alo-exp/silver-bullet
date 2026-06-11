@@ -6,40 +6,29 @@ source "$(dirname "$0")/helpers/common.sh"
 
 echo "=== E2E: Skill Coverage (all tracked skills) ==="
 
-# Tracked skills from .silver-bullet.json all_tracked
-ALL_38_SKILLS=(
-  "silver-quality-gates" "silver-blast-radius" "devops-quality-gates" "devops-skill-router"
-  "design-system" "ux-copy"
-  "architecture" "system-design"
-  "gsd-code-review" "code-review" "requesting-code-review" "receiving-code-review"
-  "testing-strategy" "documentation"
-  "finishing-a-development-branch" "deploy-checklist"
-  "silver-create-release"
-  "modularity" "reusability" "scalability" "security"
-  "reliability" "usability" "testability" "extensibility"
-  "silver-forensics" "silver-init" "silver-ensure-docs"
-  "verification-before-completion"
-  "test-driven-development" "tech-debt" "accessibility-review" "incident-response"
-  "gsd-new-project" "gsd-new-milestone" "gsd-discuss-phase" "gsd-plan-phase"
-  "gsd-execute-phase" "gsd-verify-work" "gsd-ship" "gsd-scan" "gsd-debug"
-  "gsd-ui-phase" "gsd-ui-review" "gsd-secure-phase"
-)
+# Tracked skills from the current packaged config. Keep this dynamic so the
+# coverage test follows SB-owned lifecycle changes without preserving retired
+# dependency-helper names.
+ALL_TRACKED_SKILLS=()
+while IFS= read -r skill; do
+  [[ -n "$skill" ]] || continue
+  ALL_TRACKED_SKILLS+=("$skill")
+done < <(jq -r '.skills.all_tracked[]' "$DEFAULT_CONFIG_TEMPLATE")
 
 # Scenario 1: All tracked skills recorded successfully
 echo "--- Scenario 1: All tracked skills recorded ---"
 integration_setup
 write_full_config
 
-for skill in "${ALL_38_SKILLS[@]}"; do
+for skill in "${ALL_TRACKED_SKILLS[@]}"; do
   run_record_skill "$skill" >/dev/null
 done
 
 # Count lines in state file (each skill = 1 line, no duplicates)
 recorded_count=$(wc -l < "$TMPSTATE" | tr -d ' ')
-# Keep this array in sync with .silver-bullet.json all_tracked.
 # Verify all tracked skills are present
 all_present=true
-for skill in "${ALL_38_SKILLS[@]}"; do
+for skill in "${ALL_TRACKED_SKILLS[@]}"; do
   if ! grep -qx "$skill" "$TMPSTATE" 2>/dev/null; then
     all_present=false
     printf 'FAIL: S1 — skill not recorded: %s\n' "$skill"
@@ -50,11 +39,11 @@ if [[ "$all_present" == true ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S1.1: all tracked skills recorded in state file\n'
 fi
 
-# Verify count stays at or above the historical floor.
-if [[ "$recorded_count" -ge 38 ]]; then
-  PASS=$((PASS + 1)); printf 'PASS: S1.2: state file has %d skills (>= 38)\n' "$recorded_count"
+expected_count="${#ALL_TRACKED_SKILLS[@]}"
+if [[ "$recorded_count" -ge "$expected_count" ]]; then
+  PASS=$((PASS + 1)); printf 'PASS: S1.2: state file has %d skills (>= %d current tracked skills)\n' "$recorded_count" "$expected_count"
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S1.2: state file has %d skills (expected >= 38)\n' "$recorded_count"
+  FAIL=$((FAIL + 1)); printf 'FAIL: S1.2: state file has %d skills (expected >= %d)\n' "$recorded_count" "$expected_count"
 fi
 
 integration_teardown

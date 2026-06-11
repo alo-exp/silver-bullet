@@ -460,7 +460,7 @@ PY
   }
 
   # Current-version configs can explicitly set the planning floor. Legacy
-  # configs are normalized to inherit the current default GSD planning gates.
+  # configs are normalized to inherit the current default SB planning gates.
   default_planning="$DEFAULT_PLANNING"
   if [[ "$active_workflow" == "devops-cycle" ]]; then
     default_planning="$DEVOPS_DEFAULT_PLANNING"
@@ -696,7 +696,11 @@ PY
 
   # Helper: check if a skill is in the completed list
   has_skill() {
-    printf '%s\n' "$completed_skills" | grep -qx "$1" 2>/dev/null
+    if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+      sb_required_skill_is_recorded "$completed_skills" "$1"
+      return $?
+    fi
+    printf '%s\n' "$completed_skills" | grep -Fqx -- "$1" 2>/dev/null
   }
 
   # --- Check required planning skills ---
@@ -752,11 +756,29 @@ PY
 
   # --- Phase skip detection (after HARD STOP so Stage A always fires first) ---
   # Derive post-review/finalization skills from config required_deploy; fall back to
-  # hardcoded defaults. GSD discuss/plan/execute/verify are normal pre-review
+  # hardcoded defaults. Context/plan/execute/verify/review are normal lifecycle
   # lifecycle markers and must not be treated as phase-skip evidence.
-  finalization_skills="finishing-a-development-branch silver-create-release verification-before-completion test-driven-development"
+  finalization_skills="silver-branch-finish silver-create-release silver-completion-audit silver-tdd"
   if [[ -n "$config_file" ]]; then
-    cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(. != "silver-quality-gates" and . != "silver-blast-radius" and . != "devops-quality-gates" and . != "gsd-discuss-phase" and . != "gsd-plan-phase" and . != "gsd-execute-phase" and . != "gsd-verify-work" and . != "gsd-code-review" and . != "requesting-code-review" and . != "receiving-code-review")) | join(" ")' "$config_file" 2>/dev/null || true)
+    cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(
+      . != "silver-quality-gates"
+      and . != "silver-blast-radius"
+      and . != "devops-quality-gates"
+      and . != "silver-context"
+      and . != "silver-plan"
+      and . != "silver-execute"
+      and . != "silver-verify"
+      and . != "silver-review"
+      and . != "silver-review-request"
+      and . != "silver-review-triage"
+      and . != "gsd-discuss-phase"
+      and . != "gsd-plan-phase"
+      and . != "gsd-execute-phase"
+      and . != "gsd-verify-work"
+      and . != "gsd-code-review"
+      and . != "requesting-code-review"
+      and . != "receiving-code-review"
+    )) | join(" ")' "$config_file" 2>/dev/null || true)
     [[ -n "$cfg_finalization" ]] && finalization_skills="$cfg_finalization"
   fi
   has_finalization=false
@@ -767,12 +789,12 @@ PY
     fi
   done
 
-  if ! has_skill "gsd-code-review"; then
+  if ! has_skill "silver-review"; then
     # Stage B: planning done, implementation window open. Code review is a
-    # post-implementation/final-delivery gate and must not block GSD execution.
+    # post-implementation/final-delivery gate and must not block execution.
     if [[ "$has_finalization" == true ]]; then
-      sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified, but finalization markers exist before gsd-code-review." "${file_path:-${command_str:-}}"
-      printf '{"hookSpecificOutput":{"message":"⚠️ Planning verified, but finalization markers exist before gsd-code-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."}}'
+      sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified, but finalization markers exist before silver-review." "${file_path:-${command_str:-}}"
+      printf '{"hookSpecificOutput":{"message":"⚠️ Planning verified, but finalization markers exist before silver-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."}}'
     else
       sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified. Implementation edits allowed." "${file_path:-${command_str:-}}"
       printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Implementation edits allowed. Code review, verification, and finalization remain required before delivery."}}'
@@ -780,10 +802,10 @@ PY
     exit 0
   fi
 
-  if ! has_skill "finishing-a-development-branch"; then
-    # Stage C: has gsd-code-review, finalization remaining
-    sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "GSD code review recorded. Source edits remain allowed." "${file_path:-${command_str:-}}"
-    printf '{"hookSpecificOutput":{"message":"✅ GSD code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."}}'
+  if ! has_skill "silver-branch-finish"; then
+    # Stage C: has silver-review, finalization remaining
+    sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "SB code review recorded. Source edits remain allowed." "${file_path:-${command_str:-}}"
+    printf '{"hookSpecificOutput":{"message":"✅ SB code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."}}'
     exit 0
   fi
 

@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:clarify — Idea Clarification Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated clarification workflow: frame the problem, compare options, converge, and hand off to gsd:discuss-phase.">
+<meta name="description" content="SB-orchestrated clarification workflow: frame the problem, compare options, converge, and hand off to silver:context and silver:plan.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -89,7 +89,7 @@ footer a:hover{color:var(--accent-light)}
 <div class="page-hero">
   <div class="container">
     <h1>/silver:clarify</h1>
-    <p>SB-orchestrated clarification workflow for vague ideas, sketched requirements, or full requirement docs that still need a decision-ready brief before <code>gsd:discuss-phase</code> can pick up.</p>
+    <p>SB-orchestrated clarification workflow for vague ideas, sketched requirements, or full requirement docs that still need a decision-ready brief before <code>silver:context</code> and <code>silver:plan</code> continue.</p>
   </div>
 </div>
 
@@ -113,7 +113,7 @@ footer a:hover{color:var(--accent-light)}
 
     <article class="doc-content">
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:clarify</code> merges product framing, option generation, and convergence into a single workflow. It is the front end of planning: it takes ambiguity, sharpens the problem statement, and produces a handoff that can seed <code>gsd:new-milestone</code> or <code>gsd:discuss-phase</code> without forcing the user to restart the process.</p>
+      <p><code>/silver:clarify</code> merges product framing, option generation, and convergence into a single workflow. It is the front end of planning: it takes ambiguity, sharpens the problem statement, and produces a handoff that can seed <code>silver:context</code> or <code>silver:plan</code> without forcing the user to restart the process.</p>
       <p>It does not implement work or write plans. It helps the user compare options, pressure-test assumptions, and lock a recommendation. If the topic is visual or diagram-heavy, it can offer the browser-based visual companion before the deeper questions begin.</p>
 
       <div class="callout callout-info">
@@ -130,7 +130,7 @@ footer a:hover{color:var(--accent-light)}
         <li>"I want to build..." / "I have an idea..." / "Here's my concept..."</li>
         <li>"What's the best approach for..." / "Should we use X or Y?"</li>
         <li>A requirement doc exists, but the decisions are still scattered or unclear</li>
-        <li>You want a decision-ready brief before entering GSD discuss-phase</li>
+        <li>You want a decision-ready brief before entering SB planning</li>
       </ul>
 
       <div class="divider"></div>
@@ -153,7 +153,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Pick the best path for the current constraints and capture the rationale in a concise decision brief.</p>
 
       <h3>Step 5 — Handoff</h3>
-      <p>Write <code>.planning/CLARIFY.md</code> and hand off to <code>gsd:discuss-phase</code> once the brief is clear enough for phase discussion.</p>
+      <p>Write <code>.planning/CLARIFY.md</code> and hand off to <code>silver:context</code> and <code>silver:plan</code> once the brief is clear enough for phase discussion.</p>
 
       <div class="divider"></div>
 
@@ -162,19 +162,19 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>Interactive</strong> - asks follow-up questions when the input is still fuzzy.</li>
         <li><strong>Autonomous</strong> - applies sensible defaults, logs decisions, and keeps moving until the brief is decision-ready.</li>
         <li><strong>Analyze</strong> - leans harder on context synthesis before asking questions.</li>
-        <li><strong>Chain</strong> - continues directly into <code>gsd:discuss-phase</code> when the handoff is ready.</li>
+        <li><strong>Chain</strong> - continues directly into <code>silver:context</code> and <code>silver:plan</code> when the handoff is ready.</li>
       </ul>
 
       <div class="divider"></div>
 
       <h2 id="output">Output</h2>
-      <p>The main artifact is <code>.planning/CLARIFY.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need GSD discussion.</p>
+      <p>The main artifact is <code>.planning/CLARIFY.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need SB planning.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:clarify I have a rough idea for a todo app feature, but I'm not sure what the exact scope should be.</div>
-      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes <code>.planning/CLARIFY.md</code>, and hands off to <code>gsd:discuss-phase</code>.</p>
+      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes <code>.planning/CLARIFY.md</code>, and hands off to <code>silver:context</code> and <code>silver:plan</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-fast.html">

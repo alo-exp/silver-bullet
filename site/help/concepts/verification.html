@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>Verification Before Completion — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet enforces verification-before-completion: what gsd:verify-work checks, when it fires, and what counts as verified.">
+<title>Verification And Completion Audit — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet enforces silver:verify and silver:completion-audit: what each checks, when they fire, and what counts as verified.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -114,8 +114,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
 <div class="page-hero">
   <div class="container">
-    <h1>Verification Before Completion</h1>
-    <p>Why Silver Bullet enforces <code>gsd:verify-work</code> as a non-skippable gate, what it actually checks, and when it fires.</p>
+    <h1>Verification And Completion Audit</h1>
+    <p>Why Silver Bullet enforces <code>silver:verify</code> and <code>silver:completion-audit</code> as non-skippable gates, what they check, and when they fire.</p>
   </div>
 </div>
 
@@ -135,24 +135,24 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p>Silver Bullet enforces <code>gsd:verify-work</code> as a <strong>non-skippable gate</strong> before any workflow completes. This is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. It applies unconditionally to every non-trivial workflow that produces code changes.</p>
+      <p>Silver Bullet enforces <code>silver:verify</code> as a <strong>non-skippable gate</strong> before any workflow completes. This is a §3 rule — it cannot be waived via §10 preferences or the step-skip protocol. It applies unconditionally to every non-trivial workflow that produces code changes.</p>
       <p>The rule exists because "done" in Silver Bullet means <strong>tests pass and behavior is confirmed</strong> — not "code was written." An implementation that isn't verified isn't done. Shipping unverified work is the most common source of regressions in AI-assisted development, and this gate is the primary defense against it.</p>
 
       <div class="callout callout-stop">
         <span class="callout-icon"><i data-lucide="ban"></i></span>
-        <div class="callout-body"><strong>Non-negotiable.</strong> Silver Bullet's §3 rules explicitly prohibit claiming work is complete without running <code>gsd:verify-work</code>, and prohibit accepting a completion claim from any plugin or skill without invoking <code>/verification-before-completion</code> with that claim. The completion audit hook enforces this mechanically — it blocks git commits and pushes if verification has not run.</div>
+        <div class="callout-body"><strong>Non-negotiable.</strong> Silver Bullet's §3 rules explicitly prohibit claiming work is complete without running <code>silver:verify</code>, and prohibit accepting a completion claim from any skill without passing the SB completion audit. The completion audit hook enforces this mechanically — it blocks git commits and pushes if verification has not run.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="what-verification-means">What Verification Means</h2>
-      <p><code>gsd:verify-work</code> performs goal-backward verification: it checks the actual outcome against the requirements and acceptance criteria defined in the GSD plan, rather than checking whether the code looks correct in isolation.</p>
+      <p><code>silver:verify</code> performs goal-backward verification: it checks the actual outcome against the requirements and acceptance criteria defined in the SB plan, rather than checking whether the code looks correct in isolation.</p>
 
       <h3>What it checks</h3>
       <ul>
         <li><strong>Test suite passes</strong> — the automated tests for the changed code run and pass with no failures</li>
         <li><strong>No regressions</strong> — the existing test suite continues to pass; nothing that worked before is now broken</li>
-        <li><strong>Acceptance criteria met</strong> — the must-have truths from the GSD plan are verified against the actual output</li>
+        <li><strong>Acceptance criteria met</strong> — the must-have truths from the SB plan are verified against the actual output</li>
         <li><strong>Artifacts exist and connect</strong> — files created or modified are in the expected locations and contain expected content</li>
       </ul>
 
@@ -161,7 +161,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>Manual QA or visual sign-off (that's a separate step if required)</li>
         <li>Stakeholder approval</li>
         <li>Performance benchmarking (unless that is an explicit acceptance criterion)</li>
-        <li>Security audit (handled by <code>gsd:secure-phase</code> and the Security dimension inside <code>/silver:quality-gates</code>)</li>
+        <li>Security audit (handled by <code>silver:secure</code> and the Security dimension inside <code>/silver:quality-gates</code>)</li>
       </ul>
 
       <div class="callout callout-warn">
@@ -175,17 +175,17 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Verification fires before final quality, review, and ship boundaries for every workflow that produces code changes:</p>
 
       <ul>
-        <li><strong>silver:feature</strong> — Step 8: gsd:verify-work (must pass before security review, pre-ship quality gates, and ship)</li>
-        <li><strong>silver:bugfix</strong> — after TDD regression test passes, gsd:verify-work confirms full suite</li>
-        <li><strong>silver:ui</strong> — Step 11: gsd:verify-work after implementation; if coverage gaps remain, gsd:add-tests fills them before ship</li>
-        <li><strong>silver:devops</strong> — gsd:verify-work runs against the IaC plan acceptance criteria</li>
+        <li><strong>silver:feature</strong> — Step 8: silver:verify (must pass before security review, pre-ship quality gates, and ship)</li>
+        <li><strong>silver:bugfix</strong> — after TDD regression test passes, silver:verify confirms full suite</li>
+        <li><strong>silver:ui</strong> — Step 11: silver:verify after implementation; if coverage gaps remain, SB test gap handling fills them before ship</li>
+        <li><strong>silver:devops</strong> — silver:verify runs against the IaC plan acceptance criteria</li>
       </ul>
 
       <h3>Workflows where it is exempt or embedded</h3>
       <ul>
-        <li><strong>silver:fast</strong> — exempt from the full verification chain. Tier 1 goes through <code>gsd:fast</code>; Tier 2 goes through <code>gsd:quick</code> with validation flags when needed. Both use lightweight GSD verification appropriate to their bounded scope, and scope expansion escalates to the full workflow.</li>
+        <li><strong>silver:fast</strong> — exempt from the full verification chain. Bounded fast-path work uses lightweight SB verification appropriate to its scope, and scope expansion escalates to the full workflow.</li>
         <li><strong>silver:research</strong> — no code changes are produced; verification is replaced by the research synthesis and recommendation review step.</li>
-        <li><strong>silver:release</strong> — gsd:verify-work still runs, embedded within the milestone audit step. Additionally, the full quality gates suite + UAT audit + milestone audit run as higher-level gates.</li>
+        <li><strong>silver:release</strong> — silver:verify evidence is checked within the milestone audit step. Additionally, the full quality gates suite + UAT audit + milestone audit run as higher-level gates.</li>
       </ul>
 
       <div class="divider"></div>
@@ -194,12 +194,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="example-block">
         <h4>Example 1: silver:feature completes normally</h4>
-        <p>You run <code>/silver:feature Add email notifications for order status changes</code>. The workflow reaches Step 8. <code>gsd:verify-work</code> runs the test suite — all 47 tests pass, including 3 new tests added for the notification feature. Verification produces a VERIFICATION.md file with pass/fail per acceptance criterion. The security review (Step 10) and ship steps are unblocked.</p>
+        <p>You run <code>/silver:feature Add email notifications for order status changes</code>. The workflow reaches Step 8. <code>silver:verify</code> runs the test suite — all 47 tests pass, including 3 new tests added for the notification feature. Verification produces a VERIFICATION.md file with pass/fail per acceptance criterion. The security review (Step 10) and ship steps are unblocked.</p>
       </div>
 
       <div class="example-block">
         <h4>Example 2: silver:bugfix with TDD</h4>
-        <p>You run <code>/silver:bugfix Login form throws 500 on empty password field</code>. After root cause is identified, a failing regression test is written first (TDD). The fix is implemented, the regression test passes. Then <code>gsd:verify-work</code> runs the full suite — no other tests regressed. The fix is considered done and ship is unblocked.</p>
+        <p>You run <code>/silver:bugfix Login form throws 500 on empty password field</code>. After root cause is identified, a failing regression test is written first (TDD). The fix is implemented, the regression test passes. Then <code>silver:verify</code> runs the full suite — no other tests regressed. The fix is considered done and ship is unblocked.</p>
       </div>
 
       <div class="example-block">
@@ -209,7 +209,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Why two-pass review loops also matter.</strong> Verification checks functional correctness. GSD code review, framed by <code>/requesting-code-review</code>, checks code quality, security, and maintainability. Both must complete before ship — they cover different concerns and neither replaces the other.</div>
+        <div class="callout-body"><strong>Why two-pass review loops also matter.</strong> Verification checks functional correctness. <code>silver:review</code>, framed by <code>silver:review-request</code>, checks code quality, security, and maintainability. Both must complete before ship — they cover different concerns and neither replaces the other.</div>
       </div>
 
       <div class="divider"></div>
@@ -217,7 +217,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="composable-flows-context">FLOW 12 VERIFY and Dual-Mode Quality Gates</h2>
       <p>In Silver Bullet's <a href="composable-workflow.html">composable flows architecture</a>, verification maps to two distinct paths:</p>
       <ul>
-        <li><strong>FLOW 12 VERIFY</strong> — the non-skippable verification gate. Runs <code>gsd:verify-work</code>, <code>gsd:add-tests</code> (as-needed for coverage gaps), and <code>superpowers:verification-before-completion</code>. Produces <code>UAT.md</code> and <code>VERIFICATION.md</code>. Cannot be removed from any composition that includes FLOW 8 (EXECUTE).</li>
+        <li><strong>FLOW 12 VERIFY</strong> — the non-skippable verification gate. Runs <code>silver:verify</code>, SB test gap handling as-needed, and the SB completion audit. Produces <code>UAT.md</code> and <code>VERIFICATION.md</code>. Cannot be removed from any composition that includes FLOW 8 (EXECUTE).</li>
         <li><strong>FLOW 13 QUALITY GATE</strong> — dual-mode quality gate that appears <strong>twice</strong> in every composition: once as a <em>design-time checklist</em> before planning (8 core quality dimensions plus conditional gates), and once as an <em>adversarial audit</em> before shipping. The pre-ship instance runs after FLOW 12 VERIFY completes. Both instances must pass — all dimensions must pass in each.</li>
       </ul>
       <p>The dual-mode design separates concerns: FLOW 12 VERIFY confirms functional correctness (tests pass, acceptance criteria met), while FLOW 13 QUALITY GATE pre-ship confirms the full quality posture (security, scalability, maintainability, and 6 other dimensions) before any code reaches production.</p>
@@ -228,7 +228,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul>
         <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — FLOW 12 VERIFY and FLOW 13 QUALITY GATE in the full 18-flow catalog</li>
         <li><a href="preferences.html">User Workflow Preferences</a> — the step-skip protocol and which gates are permanently non-skippable</li>
-        <li><a href="../workflows/silver-feature.html">silver:feature workflow</a> — gsd:verify-work shown in full context</li>
+        <li><a href="../workflows/silver-feature.html">silver:feature workflow</a> — silver:verify shown in full context</li>
         <li><a href="../workflows/silver-bugfix.html">silver:bugfix workflow</a> — TDD regression test before verification</li>
         <li><a href="routing-logic.html">Routing Logic</a> — how /silver classifies requests before composing a path chain</li>
       </ul>

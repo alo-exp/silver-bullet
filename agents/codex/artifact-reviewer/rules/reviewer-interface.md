@@ -116,4 +116,4 @@ After the review loop achieves 2 consecutive clean passes:
 1. Commit `REVIEW-ROUNDS.md` alongside the reviewed artifact
 2. The commit message follows: `docs: review rounds complete for {artifact_filename}`
 
-**Why the orchestrator owns fixes:** The producing step (silver-spec, gsd-planner, etc.) has the domain context to apply changes correctly. The reviewer only has validation context. Separating read (reviewer) from write (orchestrator) prevents reviewers from making changes they cannot validate.
+**Why the orchestrator owns fixes:** The producing step (silver-spec, silver-plan, silver-execute, etc.) has the domain context to apply changes correctly. The reviewer only has validation context. Separating read (reviewer) from write (orchestrator) prevents reviewers from making changes they cannot validate.
