@@ -201,7 +201,7 @@ The homepage starts with the actual product, not a landing-page abstraction:
 - Hero first viewport shows the bullet image, `Silver Bullet`, alpha badge, APO version badge, Fred Brooks reference, product tagline, primary CTAs, and workflow pills.
 - Main nav uses a reduced menu: `Problem`, `How It Works`, `Ecosystem`, `Workflows`, `Install`.
 - `Help Center` sits at the top right, immediately left of the icon theme selector, with enough spacing that it does not feel attached to the button.
-- Non-Help pages use the same site chrome: reduced homepage menu, `Help Center` immediately left of the icon theme selector, GitHub CTA on desktop, GitHub in the collapsed mobile menu, and footer links for `Install`, `Help Center`, and `GitHub`.
+- Standard non-Help marketing/product pages use the same site chrome: reduced homepage menu, `Help Center` immediately left of the icon theme selector, GitHub CTA on desktop, GitHub in the collapsed mobile menu, and footer links for `Install`, `Help Center`, and `GitHub`. Standalone decks such as `/brute/` are intentionally outside this page-template rule.
 - The theme selector is icon-only sun/moon, not a textual `Theme` button.
 - Cards and repeated items are dense but readable, with left-aligned content and no decorative nested-card treatment.
 - The `DevOps Enrichment` plugin boxes do not show `Optional` capsules.
