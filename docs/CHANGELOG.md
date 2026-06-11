@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-11 — release-live-marker-host-state
+**What**: Fixed the Kay/Codex live release runners so successful isolated runtime gates write their completion markers into the host Silver Bullet state directory that `completion-audit.sh` checks before `gh release create`.
+**Commits**: —
+**Skills run**: silver:quality-gates, silver:review, silver:verify, verify-tests
+**Virtual cost**: ~$0.08 (medium complexity - release blocker discovered during live matrix execution)
+**KNOWLEDGE.md**: updated (host-state release markers for isolated runtime gates)
+**Learnings**: updated (release tests must verify marker location, not just suite success)
+
 ## 2026-06-11 — kay-live-hook-enforcement-release-fix
 **What**: Hardened the Kay-backed Codex live hook bridge so denied before-hooks return a native block, fallback shims stay scoped to the active Kay hook path, repository write locks block direct `git commit` attempts, and Kay-style before/after hook IDs restore locks correctly.
 **Commits**: d442853
