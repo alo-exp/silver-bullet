@@ -19,6 +19,7 @@ fi
 
 RUNTIMES=()
 RELEASE_LIVE_MATRIX_FILE=""
+HOST_RELEASE_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 full_matrix_requested=false
 if [[ -n "${SB_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
@@ -76,9 +77,7 @@ echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: n
 echo "Per-turn timeout: ${CODEX_INTERACTIVE_TIMEOUT}s."
 echo ""
 
-if [[ -n "$RELEASE_LIVE_MATRIX_FILE" ]]; then
-  rm -f "$RELEASE_LIVE_MATRIX_FILE"
-fi
+rm -f "$HOST_RELEASE_LIVE_MATRIX_FILE"
 
 TOTAL_FAIL=0
 
@@ -166,6 +165,7 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
+  RELEASE_LIVE_MATRIX_FILE="$HOST_RELEASE_LIVE_MATRIX_FILE"
 done
 
 echo ""
@@ -182,12 +182,12 @@ else
   fi
 
   if [[ -n "$marker" ]]; then
-    mkdir -p "$(dirname "$RELEASE_LIVE_MATRIX_FILE")"
-    cat > "$RELEASE_LIVE_MATRIX_FILE" <<EOF
+    mkdir -p "$(dirname "$HOST_RELEASE_LIVE_MATRIX_FILE")"
+    cat > "$HOST_RELEASE_LIVE_MATRIX_FILE" <<EOF
 matrix=${marker}
 EOF
   else
-    rm -f "$RELEASE_LIVE_MATRIX_FILE"
+    rm -f "$HOST_RELEASE_LIVE_MATRIX_FILE"
     echo "  NOTE: Release marker not written because the full Claude/Codex matrix was not run."
   fi
   echo "  OVERALL: ALL SUITES PASSED"

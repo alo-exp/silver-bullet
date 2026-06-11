@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/codex-cli-isolation.sh"
 KAY_ISOLATION_HELPER="${SCRIPT_DIR}/../live/lib/kay-codex-isolation.sh"
 CODEX_HOOK_TRANSPLANT_HELPER="${SCRIPT_DIR}/../live/lib/codex-hook-transplant.sh"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
@@ -19,6 +19,8 @@ DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 HOOK_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/hook-delivery-preflight.sh"
 E2E_LIVE_MATRIX_FILE=""
 INLINE_E2E_MATRIX_FILE=""
+HOST_E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
+HOST_INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-hook-failures.sh"
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
@@ -85,12 +87,8 @@ echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtim
 echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: native config)."
 echo ""
 
-if [[ -n "$E2E_LIVE_MATRIX_FILE" ]]; then
-  rm -f "$E2E_LIVE_MATRIX_FILE"
-fi
-if [[ -n "$INLINE_E2E_MATRIX_FILE" ]]; then
-  rm -f "$INLINE_E2E_MATRIX_FILE"
-fi
+rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
+rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
 
 TOTAL_FAIL=0
 TOTAL_PASS=0
@@ -251,6 +249,8 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
+  E2E_LIVE_MATRIX_FILE="$HOST_E2E_LIVE_MATRIX_FILE"
+  INLINE_E2E_MATRIX_FILE="$HOST_INLINE_E2E_MATRIX_FILE"
 done
 
 echo ""
@@ -267,16 +267,16 @@ else
   fi
 
   if [[ -n "$marker" ]]; then
-    mkdir -p "$(dirname "$E2E_LIVE_MATRIX_FILE")"
-    cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
+    mkdir -p "$(dirname "$HOST_E2E_LIVE_MATRIX_FILE")"
+    cat > "$HOST_E2E_LIVE_MATRIX_FILE" <<EOF
 matrix=${marker}
 EOF
-    cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+    cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
   else
-    rm -f "$E2E_LIVE_MATRIX_FILE"
-    rm -f "$INLINE_E2E_MATRIX_FILE"
+    rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
+    rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
     echo "  NOTE: E2E release marker not written because the full Claude/Codex matrix was not run."
   fi
   echo "  OVERALL: ALL SCENARIOS PASSED"
