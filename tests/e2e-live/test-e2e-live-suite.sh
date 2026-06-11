@@ -55,6 +55,8 @@ assert_file_contains "suite runner writes inline release marker" "${SCRIPT_DIR}/
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
 assert_file_contains "live suite sets bounded per-turn timeout" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
 assert_file_contains "todo-app e2e suite sets bounded per-turn timeout" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
+assert_file_contains "live suite writes release marker in host state" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'HOST_RELEASE_LIVE_MATRIX_FILE="\$\{SB_RUNTIME_STATE_DIR\}/release-live-matrix"'
+assert_file_contains "todo-app e2e writes release markers in host state" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'HOST_E2E_LIVE_MATRIX_FILE="\$\{SB_RUNTIME_STATE_DIR\}/e2e-live-matrix"'
 assert_file_contains "live suite treats Kay as Codex-compatible full matrix" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
 assert_file_contains "todo-app e2e treats Kay as Codex-compatible full matrix" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
 assert_file_contains "Claude live agent enforces bounded prompt timeout" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'timed out waiting for Claude prompt to complete'
