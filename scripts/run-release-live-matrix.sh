@@ -4,6 +4,33 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+fi
+
+HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
+HOST_VERIFY_TESTS_BACKUP_FILE=""
+
+if [[ ! -f "$HOST_VERIFY_TESTS_STATE_FILE" ]]; then
+  printf 'ERROR: release live matrix requires a fresh verify-tests marker at %s. Run bash scripts/verify-tests.sh before this release gate.\n' "$HOST_VERIFY_TESTS_STATE_FILE" >&2
+  exit 1
+fi
+
+HOST_VERIFY_TESTS_BACKUP_FILE="$(mktemp "${TMPDIR:-/tmp}/sb-release-live-wrapper-verify-tests-state.XXXXXX")"
+cp "$HOST_VERIFY_TESTS_STATE_FILE" "$HOST_VERIFY_TESTS_BACKUP_FILE"
+
+restore_host_verify_tests_state() {
+  local rc=$?
+  if [[ -n "$HOST_VERIFY_TESTS_BACKUP_FILE" && -f "$HOST_VERIFY_TESTS_BACKUP_FILE" ]]; then
+    mkdir -p "$(dirname "$HOST_VERIFY_TESTS_STATE_FILE")"
+    cp "$HOST_VERIFY_TESTS_BACKUP_FILE" "$HOST_VERIFY_TESTS_STATE_FILE"
+    rm -f "$HOST_VERIFY_TESTS_BACKUP_FILE"
+  fi
+  return "$rc"
+}
+trap restore_host_verify_tests_state EXIT
+
 run_in_repo() {
   local description="$1"
   shift
