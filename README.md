@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.38.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.1)
+[![version](https://img.shields.io/badge/version-v0.38.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -324,8 +324,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.38.1",
-  "version": "0.38.1",
+  "config_version": "0.38.2",
+  "version": "0.38.2",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -505,12 +505,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.38.1`
-- Release: [v0.38.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.1)
+- Version: `0.38.2`
+- Release: [v0.38.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.2)
 - Notable changes:
   - SB now owns the core context, plan, execute, review, security, verify, ship, TDD, and completion-audit lifecycle skills it enforces.
   - Legacy knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
-  - Default config schema moved to `0.38.1` so older lifecycle dependency lists are normalized during migration.
+  - Default config schema moved to `0.38.2` so older lifecycle dependency lists are normalized during migration.
   - Public docs, Help Center, marketplace metadata, and release gates now describe the SB-owned lifecycle model.
 
 ## License

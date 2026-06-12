@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.2] — 2026-06-12
+
+## Bug Fixes
+
+- `fix(release): support gh release create stdout capture` (d69ce43)
+
+---
+
 ## [0.38.1] — 2026-06-12
 
 ## Other
