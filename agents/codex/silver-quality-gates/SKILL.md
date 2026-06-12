@@ -97,6 +97,31 @@ Work through all items. For each checklist item mark it:
 
 ---
 
+## Step 2b: Conditional Domain Packs
+
+After the 8 core dimensions, determine whether specialized domain packs apply.
+When any trigger matches, invoke or apply `silver:domain-audit` for the selected
+pack set and include its pack results as conditional rows in the quality report.
+
+| Trigger | Domain packs |
+|---|---|
+| API routes, controllers, SDKs, webhooks, OpenAPI, or auth boundary | `api-contract`, `test-health`, `security` dimension cross-check |
+| Schema, migrations, ORM, SQL, persistence, caches, or backfills | `data-contract`, `performance-resource`, `test-health` |
+| Package manifests, lockfiles, new imports, generated clients, toolchains | `dependency-supply` |
+| Bundle size, latency, memory, queue/job throughput, caching, hot paths | `performance-resource` |
+| Module moves, repo structure, layering, architecture drift | `structure-maintainability`, `architecture-adr` |
+| CI workflows, build scripts, release automation, Docker, deploy scripts | `ci-workflow`, `environment-secrets` |
+| Env vars, config files, secrets, deployment manifests | `environment-secrets`, `runtime-release` |
+| Public site pages, help content, metadata, redirects, docs migration | `content-search`, `accessibility` when user-facing |
+| UI components, layout, forms, keyboard/focus behavior | `ui-system`, `accessibility` |
+| Release/deploy/canary/rollback/incident/retro/benchmark scope | `runtime-release`, `incident-retro`, `benchmark-eval` as applicable |
+
+Domain pack findings use the normalized schema from `silver:domain-audit`.
+Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
+`WARN` findings must be filed through `silver:add` before this gate can pass.
+
+---
+
 ## Step 3: Produce consolidated report
 
 Output a report in this format:
@@ -115,6 +140,7 @@ Output a report in this format:
 | Testability   | ✅/❌  | ...   |
 | Extensibility | ✅/❌  | ...   |
 | AI/LLM Safety | ✅/❌/N/A | included only when applicable |
+| Domain Packs  | ✅/❌/N/A | selected `silver:domain-audit` packs and result |
 
 ### Failures requiring redesign
 [List each ❌ item with the specific rule violated and required fix]

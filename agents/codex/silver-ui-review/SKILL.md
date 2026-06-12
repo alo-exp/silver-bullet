@@ -8,8 +8,8 @@ version: 0.1.0
 
 # /silver:ui-review - UI Quality Review
 
-SB-owned UI quality review. This absorbs the useful behavior SB previously took
-from GSD ui-review and Anthropic Design critique/accessibility skills.
+SB-owned UI quality review audits implemented UI for visual quality,
+accessibility, responsiveness, interaction quality, and performance.
 
 ## Output
 

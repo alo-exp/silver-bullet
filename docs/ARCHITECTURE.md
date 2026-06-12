@@ -24,7 +24,7 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 | Component | Path | Responsibility |
 |-----------|------|----------------|
 | Hook scripts | `hooks/*.sh` | PostToolUse/PreToolUse enforcement — fire on every tool call |
-| Skill files | `skills/*/SKILL.md` | Declarative workflow instructions loaded via the Skill tool |
+| Skill files | `skills/*/SKILL.md` | Declarative workflow instructions loaded through the active host's supported skill channel |
 | Workflow docs | `docs/workflows/` | Full per-session step-by-step procedures (active copies) |
 | Commands | `commands/` | `/silver:*` slash-command wrappers shipped inside the SB Codex bundle |
 | Templates | `templates/` | Bootstrap files copied during `/silver:init` setup |

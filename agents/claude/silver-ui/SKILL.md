@@ -174,14 +174,14 @@ When the user requests skipping any step:
 
 ## Step 0: Orient in Codebase
 
-Invoke `silver:scan` via the Skill tool to understand existing UI patterns and component hierarchy.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel to understand existing UI patterns and component hierarchy.
 
 If brownfield project and deeper mapping is needed, run a deeper `silver:scan` pass focused on UI patterns, routes, shared components, styles, and test harnesses.
 
 ## Step 1a: Fuzzy Clarification (conditional)
 
 **Only if intent is fuzzy or $ARGUMENTS is empty:**
-Invoke `silver:clarify` via the Skill tool for Socratic framing, option comparison, and decision-ready handoff of UI intent.
+Invoke `silver:clarify` through the active runtime's SB-recognized skill invocation channel for Socratic framing, option comparison, and decision-ready handoff of UI intent.
 
 ## Step 1b: MultAI UI Perspectives (conditional)
 
@@ -201,15 +201,16 @@ Invoke `verify-tests` planning guidance or capture the test strategy inside `sil
 
 ## Step 2.5: Writing Plans
 
-Keep the authoritative implementation plan in `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
+Keep the authoritative implementation plan in `silver:plan`. SB planning owns
+task shape, dependencies, verification criteria, and execution handoff.
 
 ## Step 3: Pre-Plan Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: 8 core dimensions with usability + testability emphasis, plus conditional AI/LLM safety where applicable; `security` mandatory.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: 8 core dimensions with usability + testability emphasis, plus conditional AI/LLM safety where applicable; `security` mandatory.
 
 ## Step 4: Discuss Phase
 
-Invoke `silver:context` via the Skill tool. Purpose: UI phase context, assumptions, dependencies, and locked decisions.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: UI phase context, assumptions, dependencies, and locked decisions.
 
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
@@ -217,7 +218,7 @@ Invoke `silver:context` via the Skill tool. Purpose: UI phase context, assumptio
 
 **Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
 
-**Steps** (all via Skill tool):
+**Steps** (all through the active runtime's SB-recognized skill invocation channel):
 1. `silver:ui-contract` (Always — produces UI-SPEC.md)
 2. `review-design` or local design-system review when available
 3. UX copy review inside `silver:ui-contract` for user-facing copy
@@ -229,12 +230,12 @@ Invoke `silver:context` via the Skill tool. Purpose: UI phase context, assumptio
 
 ## Step 6: Plan Phase
 
-Invoke `silver:plan` via the Skill tool. Purpose: implementation PLAN.md built on top of the UI-SPEC.md contract.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of the UI-SPEC.md contract.
 
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
-If mode is Interactive: invoke `silver:execute` via the Skill tool for component units. The `tdd` gate runs first for logic, state, and interactions. For pure layout/styling tasks, record the non-application-TDD rationale.
+If mode is Interactive: invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel for component units. The `tdd` gate runs first for logic, state, and interactions. For pure layout/styling tasks, record the non-application-TDD rationale.
 If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode context. Autonomous execution still obeys the same TDD, UI review, verification, and artifact gates.
 
 **Internal TDD gate:**
@@ -243,10 +244,10 @@ If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode cont
 ## Step 8: Code Review
 
 Run review sequence in order:
-1. Invoke `silver:review-request` via the Skill tool.
-2. Invoke `silver:review` via the Skill tool. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues are found, fix through `silver:execute` and re-review.
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues are found, fix through `silver:execute` and re-review.
 3. For architecturally significant UI systems: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
-4. Invoke `silver:review-triage` via the Skill tool.
+4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
 ## FLOW UI QUALITY — Post-execution UI audit
 
@@ -254,7 +255,7 @@ Run review sequence in order:
 
 **Note:** Always active in silver:ui (no trigger detection needed).
 
-**Steps** (all via Skill tool):
+**Steps** (all through the active runtime's SB-recognized skill invocation channel):
 1. `silver:ui-review` (Always — 6-pillar audit: layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)
 2. `review-design` or `usability` when available for additional design/accessibility lenses
 
@@ -266,21 +267,21 @@ Run review sequence in order:
 
 ## Step 10: Frontend Security
 
-Invoke `silver:secure` via the Skill tool. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
 
 ## Step 11: Verify Work + Test Gap Fill
 
-Invoke `silver:verify` via the Skill tool. Non-skippable.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
 
 If coverage gaps remain after verification: invoke `verify-tests` or route a test-gap task through `silver:execute`.
 
 ## Step 12: Validate Phase
 
-Invoke `silver:validate` via the Skill tool. Purpose: validation gap filling.
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: validation gap filling.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `tech-debt` via the Skill tool when available. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
+Invoke `tech-debt` through the active runtime's SB-recognized skill invocation channel when available. Purpose: identify and document any technical debt introduced during this phase. Items not addressed now MUST be captured via `/silver:add`.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -299,7 +300,7 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 13: Pre-Ship Quality Gates
 
-Invoke `silver:quality-gates` via the Skill tool. Run the 8 core dimensions plus any conditional gates that apply. Non-skippable.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Run the 8 core dimensions plus any conditional gates that apply. Non-skippable.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -323,7 +324,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:branch-finish` via the Skill tool.
+Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?
@@ -335,7 +336,7 @@ If C: record in silver-bullet.md §10e and templates/silver-bullet.md.base §9e,
 
 ## Step 15: Ship Phase
 
-Invoke `silver:ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level).
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level).
 
 ## Step 16: Milestone Completion (last phase of milestone only)
 

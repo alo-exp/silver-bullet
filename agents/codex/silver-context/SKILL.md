@@ -8,12 +8,11 @@ version: 0.1.0
 
 # /silver:context - Phase Context
 
-SB-owned context capture. This absorbs the useful behavior SB previously took
-from GSD discuss-phase: adaptive questioning, locked decisions, assumptions,
-constraints, and planner handoff.
+SB-owned context capture records adaptive questioning, locked decisions,
+assumptions, constraints, and planner handoff.
 
-Do not delegate to GSD or Superpowers. Produce enough context for an SB plan to
-be written without re-asking solved questions.
+Do not delegate core context capture to an external lifecycle plugin. Produce
+enough context for an SB plan to be written without re-asking solved questions.
 
 ## Output
 

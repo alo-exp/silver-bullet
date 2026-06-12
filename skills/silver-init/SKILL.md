@@ -64,7 +64,7 @@ Use the Bash tool to run:
 touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init
 ```
 
-Then invoke `/compact` via the Skill tool to compact the loaded context before proceeding.
+Then use the host-supported context compaction mechanism before proceeding.
 
 ---
 
@@ -126,25 +126,25 @@ If B: STOP.
 
 ### 1.2 Optional legacy plugin discovery
 
-GSD, Superpowers, and Anthropic Knowledge Work plugins are no longer hard
-requirements for SB initialization. SB absorbs the explicitly required behavior
-from those plugins into SB-owned lifecycle markers and workflows.
+Legacy lifecycle-overlap plugins are no longer hard requirements for SB
+initialization. SB implements the required behavior as SB-owned lifecycle
+markers and workflows.
 
 Optionally record whether legacy/core dependency plugins are present for
 migration diagnostics only. Do not stop when they are missing.
 
 Use the Bash tool to run:
 ```bash
-printf 'Superpowers: '
+printf 'legacy-brainstorming-plugin: '
 test -f "${SB_RUNTIME_HOME_ROOT}/plugins/cache/superpowers-marketplace/superpowers/current/skills/brainstorming/SKILL.md" || \
   find "${SB_RUNTIME_HOME_ROOT}/plugins/cache" -path '*/superpowers/*/skills/brainstorming/SKILL.md' -print -quit 2>/dev/null | grep -q .
 printf '%s\n' "$?"
 
-printf 'GSD: '
+printf 'legacy-lifecycle-plugin: '
 { test -f "${SB_RUNTIME_HOME_ROOT}/get-shit-done/workflows/new-project.md" || test -f "${SB_RUNTIME_HOME_ROOT}/get-shit-done/bin/gsd-tools.cjs" || test -f "${SB_RUNTIME_HOME_ROOT}/commands/gsd/new-project.md"; }
 printf '%s\n' "$?"
 
-printf 'Anthropic knowledge-work: '
+printf 'legacy-knowledge-work-plugin: '
 find "${SB_RUNTIME_HOME_ROOT}/plugins/cache" \( -path '*/knowledge-work-plugins/*/engineering/skills/*' -o -path '*/knowledge-work-plugins/*/design/skills/*' -o -path '*/knowledge-work-plugins/*/product-management/skills/*' \) -print -quit 2>/dev/null | grep -q .
 printf '%s\n' "$?"
 ```
@@ -161,7 +161,7 @@ Keep bootstrap terminology aligned to the current runtime:
 - In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - In Claude, `CLAUDE.md` remains the familiar project instruction filename.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
-- If legacy GSD is present but flaky, do not fail bootstrap. SB-owned lifecycle
+- If a legacy lifecycle plugin is present but flaky, do not fail bootstrap. SB-owned lifecycle
   behavior is the default path.
 
 ### 1.7 v1 incompatibility check
@@ -222,7 +222,7 @@ If installed < latest, use AskUserQuestion:
   - "A. Yes, update now"
   - "B. Skip, continue with current version"
 
-If user selects A: invoke `/silver:update` via the Skill tool. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
+If user selects A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
 If user selects B: output "Skipping SB update." and proceed.
 If version check fails (curl error, missing file, or either version is "unknown"): output "Could not check SB version (offline?). Continuing..." and proceed.
 
@@ -239,7 +239,7 @@ cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '
 ```
 
 If none are present, output:
-> No legacy GSD, Superpowers, or Anthropic dependency plugins detected. Continuing
+> No legacy dependency plugins detected. Continuing
 > with SB-owned lifecycle behavior.
 
 Do not ask to install or update these plugins during init.
@@ -499,7 +499,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (pre-v0.7.0 migration) and remove the old-style reference line that does not mention `silver-bullet.md`.
 4. If the project instruction file already exists, ensure it has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing. If no project instruction file exists, skip this step.
 5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
-6. Invoke `silver:ensure-docs --bootstrap` via the Skill tool so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
+6. Invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
 7. Re-register/refresh SB hooks (step 3.7.5 in the reference).
 8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
@@ -550,11 +550,11 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing filename (`CLAUDE.md` or `AGENTS.md`) when writing it back out.
 - **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
-- **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` via the Skill tool. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
+- **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
-- **3.8 Optional plugin activation**: do not activate GSD, Superpowers, Engineering, Design, or Product Management for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
+- **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 
 ## Additional Resources

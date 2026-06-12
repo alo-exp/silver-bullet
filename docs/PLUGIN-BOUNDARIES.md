@@ -2,7 +2,7 @@
 
 Defines what Silver Bullet owns directly and where optional plugins may extend it.
 
-**Last updated:** 2026-06-11
+**Last updated:** 2026-06-12
 
 ## Current Boundary
 
@@ -12,9 +12,10 @@ Silver Bullet owns the core software-engineering lifecycle:
 - Phase planning and wave execution
 - TDD boundary, verification, completion audit, review framing, review triage, and branch finish
 - Security, UI contract, UI review, release readiness, milestone archival, and phase-level ship
+- Domain quality contracts for code/test/API/data/dependency/performance/structure/CI/environment/accessibility/content/search/UI/architecture/runtime/incident/retro/benchmark evidence
 - Hook enforcement, packaging, project templates, and public command surfaces
 
-GSD, Superpowers, and Anthropic knowledge-work behaviors that SB explicitly depended on have been absorbed into SB-owned skills. Legacy marker names may still satisfy hooks during migration, but new SB workflow instructions must use SB lifecycle skills.
+Legacy lifecycle-overlap behaviors that SB explicitly depended on have been absorbed into SB-owned skills. Legacy marker names may still satisfy hooks during migration, but new SB workflow instructions must use SB lifecycle skills.
 
 ## Extension Boundary
 
@@ -35,6 +36,7 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 | Context and planning | **Owns** through `silver:context` and `silver:plan` | No competing phase planner |
 | Execution | **Owns** through `silver:execute` | May run domain commands under SB plan control |
 | Verification and completion audit | **Owns** through `silver:verify` and `silver:completion-audit` | May provide evidence |
+| Domain quality packs | **Owns** through `silver:domain-audit` | May provide command output, traces, screenshots, or provider-specific evidence |
 | TDD boundary | **Owns** through `tdd` / SB marker aliases | No direct required dependency |
 | Review framing and triage | **Owns** through `silver:review-request`, `silver:review`, `silver:review-triage` | May add findings into REVIEW.md |
 | Branch finish and phase ship | **Owns** through `silver:branch-finish` and `silver:ship` | No competing phase ship |
@@ -45,7 +47,7 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 
 1. SB docs describe SB-owned lifecycle behavior, not external plugin mechanics.
 2. Optional plugin docs are referenced only when the plugin adds domain capability outside SB's lifecycle.
-3. Legacy GSD/Superpowers/Anthropic command names may appear only as compatibility aliases, migration notes, or historical records.
+3. Legacy lifecycle command names may appear only as compatibility aliases, migration notes, or historical records.
 4. New runtime instructions, templates, hooks, and public docs must use SB-owned lifecycle skills.
 5. SB plugin packaging never vendors dependency plugins or project-instance artifacts.
 
