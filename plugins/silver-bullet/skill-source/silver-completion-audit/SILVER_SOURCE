@@ -8,8 +8,8 @@ version: 0.1.0
 
 # /silver:completion-audit - Completion Claim Audit
 
-SB-owned completion audit. This absorbs the useful behavior SB previously took
-from Superpowers verification-before-completion.
+SB-owned completion audit verifies completion claims against direct evidence
+before SB accepts them.
 
 ## Process
 

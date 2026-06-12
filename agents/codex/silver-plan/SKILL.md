@@ -8,12 +8,11 @@ version: 0.1.0
 
 # /silver:plan - Phase Plan
 
-SB-owned planning. This absorbs the useful behavior SB previously took from GSD
-plan/discuss/dependency analysis and Superpowers writing-plans: clear tasks,
-small waves, assumptions, dependencies, verification criteria, and explicit
-handoff to execution.
+SB-owned planning creates clear tasks, small waves, assumptions, dependencies,
+verification criteria, and explicit handoff to execution.
 
-Do not delegate to GSD or Superpowers. The PLAN.md artifact is SB-owned.
+Do not delegate core planning to an external lifecycle plugin. The PLAN.md
+artifact is SB-owned.
 
 ## Output
 

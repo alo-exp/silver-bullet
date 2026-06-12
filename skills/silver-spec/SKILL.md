@@ -226,7 +226,7 @@ Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` 
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` via the Skill tool.
+Invoke `/artifact-reviewer .planning/SPEC.md --reviewer review-spec` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -243,7 +243,7 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool.
+Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 9 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 
@@ -259,7 +259,7 @@ Only if a design artifact or Figma URL was provided:
 
 **Only if Step 9 produced a DESIGN.md.**
 
-Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` via the Skill tool.
+Invoke `/artifact-reviewer .planning/DESIGN.md --reviewer review-design` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 10 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 

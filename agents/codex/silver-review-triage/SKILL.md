@@ -8,9 +8,8 @@ version: 0.1.0
 
 # /silver:review-triage - Review Response
 
-SB-owned review response. This absorbs the useful behavior SB previously took
-from Superpowers receiving-code-review: do not blindly accept findings, and do
-not ignore valid ones.
+SB-owned review response rejects weak findings, fixes valid blockers, and
+captures deferred work without blindly accepting or ignoring findings.
 
 ## Output
 

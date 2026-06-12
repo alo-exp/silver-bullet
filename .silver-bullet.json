@@ -59,6 +59,7 @@
     "forbidden": [],
     "all_tracked": [
       "silver-quality-gates",
+      "silver-domain-audit",
       "silver-blast-radius",
       "devops-quality-gates",
       "devops-skill-router",

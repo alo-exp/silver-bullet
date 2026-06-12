@@ -131,7 +131,7 @@ Change exceeds fast-path complexity. Routing to silver:feature.
 Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
 ```
 
-Invoke `silver:feature` via the Skill tool with $ARGUMENTS. Exit silver:fast.
+Invoke `silver:feature` through the active runtime's SB-recognized skill invocation channel with $ARGUMENTS. Exit silver:fast.
 
 ## Step 4: Scope Expansion Check
 

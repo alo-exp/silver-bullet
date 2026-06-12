@@ -8,9 +8,8 @@ version: 0.1.0
 
 # /silver:ui-contract - UI Design Contract
 
-SB-owned UI contract. This absorbs the useful behavior SB previously took from
-GSD ui-phase and Anthropic Design skills such as design-system, ux-copy, and
-accessibility-review.
+SB-owned UI contract defines layout, states, accessibility, copy, tokens, and
+acceptance criteria before UI implementation.
 
 ## Output
 

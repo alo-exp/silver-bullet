@@ -34,6 +34,16 @@ Gap-filling practices promoted from prose into explicit SB workflow gates:
 Legacy aliases remain tracked for migration, but `required_deploy` is SB-owned so `completion-audit.sh`
 blocks delivery when current SB gates are skipped.
 
+### SB-R3: Domain Quality Contract Packs *(Complete — Phase 3)*
+SB provides a single specialized audit surface, `silver:domain-audit`, for
+quality checks that are too domain-specific for the core 8-dimension sweep:
+code health, test health, API contracts, data contracts, dependency and
+supply-chain posture, performance, structure, CI, environment/secrets,
+accessibility, content/search readiness, UI systems, architecture decisions,
+runtime release evidence, incident/retro follow-up, and benchmark/eval evidence.
+The route emits normalized findings that feed back into `silver:quality-gates`,
+`silver:review`, `silver:verify`, `silver:devops`, and `silver:release`.
+
 ## Out of Scope
 
 - Silver Bullet does not modify third-party plugin files. Optional extension plugins are called only

@@ -50,9 +50,10 @@ only supplements the SB review artifact.
    accepted findings in that round.
 8. **Loop**: run rounds until **2 consecutive clean rounds across all active
    review steps**. Match the review cycle discipline used in Stages 2 and 4.
-9. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** via
-   the Skill tool. Running verification commands manually is NOT a substitute
-   for invoking the SB completion gate. You need BOTH: (a) run the actual
+9. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through
+   the active runtime's SB-recognized skill invocation channel. Running
+   verification commands manually is NOT a substitute for invoking the SB
+   completion gate. You need BOTH: (a) run the actual
    verification commands (tests, CI status, lint), AND (b) invoke the SB skill
    so `record-skill.sh` tracks it.
 
@@ -83,7 +84,7 @@ Review the entire plugin for cross-file inconsistencies, redundancies, and contr
      knowledge-work skills
 2. Fix all genuine issues found
 3. **Loop**: repeat until two consecutive audit passes find zero issues
-4. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** via the Skill tool.
+4. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
 
 ---
 
@@ -99,7 +100,7 @@ Verify and update all user-visible surfaces to reflect the current state.
    - Search index (`site/help/search.js`)
    - Compare page (`site/compare/index.html`) if it exists
 2. Fix all discrepancies
-3. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** via the Skill tool.
+3. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
 4. Push and confirm CI green
 
 ---
@@ -112,7 +113,7 @@ Run the SENTINEL v2.3 adversarial security audit against the full plugin.
 2. Fix all findings (Critical, High, Medium; Low at discretion)
 3. Re-run the audit
 4. **Loop**: repeat until two consecutive audit passes find zero issues
-5. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** via the Skill tool.
+5. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
 
 ---
 

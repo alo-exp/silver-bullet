@@ -132,8 +132,11 @@ ISSUE_URL=$(gh issue create \
   --title "$ITEM_TITLE" \
   --body "$BODY" \
   --label "filed-by-silver-bullet" \
-  --label "$ITEM_LABEL" \
-  --json url -q '.url')
+  --label "$ITEM_LABEL")
+if [[ -z "$ISSUE_URL" || "$ISSUE_URL" != https://github.com/*/issues/* ]]; then
+  echo "gh issue create did not return an issue URL. Re-run /silver:add after upgrading gh or create the issue manually." >&2
+  exit 1
+fi
 ISSUE_NUM=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
 ```
 

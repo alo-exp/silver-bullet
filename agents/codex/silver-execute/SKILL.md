@@ -8,11 +8,11 @@ version: 0.1.0
 
 # /silver:execute - Plan Execution
 
-SB-owned execution loop. This absorbs the useful behavior SB previously took
-from GSD execute/autonomous and Superpowers execution discipline, while keeping
-execution inside the current coding agent and SB artifacts.
+SB-owned execution loop keeps implementation inside the current coding agent and
+SB artifacts while enforcing wave discipline, evidence capture, and deferred-item
+tracking.
 
-Do not delegate project execution to GSD or Superpowers.
+Do not delegate core project execution to an external lifecycle plugin.
 
 ## Output
 

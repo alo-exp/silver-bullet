@@ -9,7 +9,7 @@ version: 0.1.0
 
 # /silver:feature — Feature Development Workflow
 
-SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows. Former GSD, Superpowers, and Anthropic knowledge-work behavior is absorbed into SB skills at the points where SB explicitly depends on it.
+SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows.
 
 Never implements features directly — orchestrates only.
 
@@ -297,7 +297,7 @@ Capture test levels, tooling, and coverage targets inside `silver:plan`. Use `ve
 
 ## Step 2.5: Writing Plans
 
-Keep implementation planning inside `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
+Keep implementation planning inside `silver:plan`. SB planning owns task shape, dependencies, verification criteria, and execution handoff.
 
 ## Step 2.7: Pre-Build Validation
 

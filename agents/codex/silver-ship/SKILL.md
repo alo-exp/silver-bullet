@@ -8,8 +8,8 @@ version: 0.1.0
 
 # /silver:ship - Phase Ship
 
-SB-owned phase shipping. This absorbs the useful behavior SB previously took
-from GSD ship and PR branch helpers.
+SB-owned phase shipping handles branch/PR readiness, CI status, deployment
+readiness, docs traceability, and handoff.
 
 This is phase-level ship, not milestone release. Use `silver:release` for
 versioned publication.
@@ -27,6 +27,8 @@ SUMMARY/VERIFICATION, or a PR description draft.
    - `silver:review`;
    - `silver:secure`;
    - `silver:validate` where the workflow requires it;
+   - `silver:domain-audit` where specialized packs were selected by
+     `silver:quality-gates`, review, verification, DevOps, or release scope;
    - `verify-tests` when release or delivery risk requires fresh tests.
 3. Run `silver:branch-finish` on non-main branches.
 4. Check git status and separate unrelated user changes from ship scope.

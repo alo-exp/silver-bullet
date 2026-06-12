@@ -61,7 +61,7 @@ Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included in the
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 14 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions + domain packs) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions + domain packs) → FLOW 14 (SHIP)
 
 Note: FLOW 11 (SECURE) is always included for any infrastructure engagement. FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included.
 
@@ -176,6 +176,11 @@ Invoke `devops-quality-gates` through the active runtime's SB-recognized skill i
 
 Note: this is NOT the standard product `silver:quality-gates` sweep. The devops workflow uses `devops-quality-gates` exclusively at both quality gate positions.
 
+Also invoke or apply `silver:domain-audit` with the affected DevOps packs:
+`ci-workflow`, `environment-secrets`, `runtime-release`, `dependency-supply`,
+and `performance-resource` as applicable. These packs provide specialized
+evidence rows that feed into the DevOps gate result.
+
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
 Invoke `security` through the active runtime's SB-recognized skill invocation channel. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
@@ -229,6 +234,10 @@ Invoke `silver:verify` through the active runtime's SB-recognized skill invocati
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
 Invoke `devops-quality-gates` through the active runtime's SB-recognized skill invocation channel again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+
+Re-run the affected `silver:domain-audit` DevOps packs when CI, environment,
+deployment, rollback, secrets, or performance evidence changed during execution.
+Unresolved `BLOCK` pack findings stop ship.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 

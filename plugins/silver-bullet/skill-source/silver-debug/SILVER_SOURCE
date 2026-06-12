@@ -8,8 +8,8 @@ version: 0.1.0
 
 # /silver:debug - Systematic Debugging
 
-SB-owned debugging. This absorbs the useful behavior SB previously took from
-Superpowers systematic-debugging, GSD debug, and GSD forensics.
+SB-owned debugging structures reproduction, hypotheses, evidence, root cause,
+fix planning, and regression guards.
 
 ## Output
 

@@ -143,7 +143,7 @@ Copy both workflow templates to `docs/workflows/`, backing up any existing file 
 
 `silver:init` no longer performs direct docs migration/scaffolding.
 
-Invoke via the Skill tool:
+Invoke through the active runtime's SB-recognized skill invocation channel:
 ```text
 silver:ensure-docs --bootstrap
 ```
@@ -227,9 +227,9 @@ Idempotent — re-running `/silver:init` adds no duplicate entries.
 
 ### 3.8 Optional plugin activation
 
-Do not activate GSD, Superpowers, Engineering, Design, or Product Management for
-core SB workflows. If the user explicitly requests an optional enrichment plugin
-later, route through that plugin's own install/activation flow at that time.
+Do not activate lifecycle-overlap plugins for core SB workflows. If the user
+explicitly requests an optional enrichment plugin later, route through that
+plugin's own install/activation flow at that time.
 
 ### 3.9 Done
 

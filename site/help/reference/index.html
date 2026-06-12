@@ -197,7 +197,8 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or SB lifecycle work.</td></tr>
           <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
           <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
-          <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety is added only when the phase includes AI behavior. Failing dimensions become hard requirements.</td></tr>
+          <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety and domain packs are added only when the phase scope requires them. Failing dimensions become hard requirements.</td></tr>
+          <tr><td>/silver:domain-audit</td><td>Specialized quality</td><td>Runs SB-owned domain contract packs for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident/retro, and benchmark evidence.</td></tr>
           <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
           <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for SB planning or SB gates.</td></tr>
@@ -251,7 +252,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- QUALITY AND REVIEW SKILLS -->
       <h2 id="quality-review-skills">Quality &amp; Review Skills</h2>
-      <p>These SB-owned skills provide the one-by-one quality dimensions and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are source-owned SB skills and are included in the 51-skill inventory.</p>
+      <p>These SB-owned skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are source-owned SB skills and are included in the skill inventory.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Role</th><th>Description</th></tr></thead>
@@ -265,6 +266,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>testability</td><td>Quality dimension</td><td>Checks whether behavior can be verified with focused, maintainable tests.</td></tr>
           <tr><td>extensibility</td><td>Quality dimension</td><td>Checks future-change seams, compatibility boundaries, and extension risks.</td></tr>
           <tr><td>ai-llm-safety</td><td>Conditional quality dimension</td><td>Applies when the phase includes AI behavior, prompts, retrieval, model outputs, or agentic automation.</td></tr>
+          <tr><td>silver-domain-audit</td><td>Domain quality packs</td><td>Normalizes specialized findings across code/test/API/data/dependency/performance/structure/CI/environment/accessibility/content/search/UI/architecture/runtime/incident/retro/benchmark surfaces.</td></tr>
           <tr><td>artifact-reviewer</td><td>Review orchestrator</td><td>Runs structured artifact review against specs, requirements, UAT, roadmap, context, research, design, and cross-artifact sets.</td></tr>
           <tr><td>artifact-review-assessor</td><td>Review triage</td><td>Classifies findings as MUST-FIX, NICE-TO-HAVE, or DISMISS so review loops can stop safely.</td></tr>
           <tr><td>review-spec</td><td>Artifact reviewer</td><td>Reviews SPEC.md for completeness, ambiguity, assumptions, and acceptance criteria quality.</td></tr>

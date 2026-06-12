@@ -19,7 +19,7 @@ This skill is an internal Silver Bullet policy layer. It is not picker-visible a
 Canonical marker: `silver-tdd`
 
 Before behavior-changing implementation work, follow this red-green-refactor
-cycle directly. Do not invoke Superpowers as a prerequisite; SB owns this TDD
+cycle directly. Do not invoke an external plugin as a prerequisite; SB owns this TDD
 contract.
 
 Activation point: SB workflows invoke this hidden gate immediately before the

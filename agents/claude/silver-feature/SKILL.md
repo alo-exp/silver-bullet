@@ -8,7 +8,7 @@ version: 0.1.0
 
 # /silver:feature — Feature Development Workflow
 
-SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows. Former GSD, Superpowers, and Anthropic knowledge-work behavior is absorbed into SB skills at the points where SB explicitly depends on it.
+SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows.
 
 Never implements features directly — orchestrates only.
 
@@ -259,11 +259,11 @@ Before proceeding, classify the request:
 | Simple | Clear scope, ≤1 phase | Skip Step 1b, go to Step 1a |
 | Complex | Multi-phase, cross-cutting | Full workflow including Step 1b |
 
-If trivial: invoke `silver:fast` via the Skill tool and exit this workflow.
+If trivial: invoke `silver:fast` through the active runtime's SB-recognized skill invocation channel and exit this workflow.
 
 ## Step 1a: Codebase Intel
 
-Invoke `silver:scan` via the Skill tool for rapid SB orientation.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel for rapid SB orientation.
 
 If no current codebase intel exists and this is a brownfield project, run a deeper `silver:scan` pass focused on architecture, dependencies, tests, and likely blast radius.
 
@@ -271,7 +271,7 @@ If no current codebase intel exists and this is a brownfield project, run a deep
 
 **Only if complexity triage found fuzzy intent or $ARGUMENTS is empty:**
 
-Invoke `silver:clarify` via the Skill tool for Socratic framing, option comparison, and decision-ready handoff before planning.
+Invoke `silver:clarify` through the active runtime's SB-recognized skill invocation channel for Socratic framing, option comparison, and decision-ready handoff before planning.
 
 ## Step 1c: MultAI Pre-Spec Review (conditional)
 
@@ -296,13 +296,13 @@ Capture test levels, tooling, and coverage targets inside `silver:plan`. Use `ve
 
 ## Step 2.5: Writing Plans
 
-Keep implementation planning inside `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
+Keep implementation planning inside `silver:plan`. SB planning owns task shape, dependencies, verification criteria, and execution handoff.
 
 ## Step 2.7: Pre-Build Validation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
-Invoke `silver:validate` via the Skill tool.
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
 
 If silver:validate reports any BLOCK findings:
 - STOP. Do not proceed to Step 3.
@@ -315,13 +315,13 @@ WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR 
 
 ## Step 3: Pre-Plan Quality Gates (8 core dimensions + conditional gates)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: 8 core dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility — plus conditional AI/LLM safety when the phase includes AI behavior and `devops-quality-gates` for infra-touching changes.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: 8 core dimensions — reliability, security, scalability, usability, testability, modularity, reusability, extensibility — plus conditional AI/LLM safety when the phase includes AI behavior and `devops-quality-gates` for infra-touching changes.
 
 `security` is always mandatory regardless of §10 preferences. `testability` is embedded in silver:quality-gates (one of the core dimensions — not a separate step).
 
 ## Step 4: Discuss Phase
 
-Invoke `silver:context` via the Skill tool. Purpose: adaptive questioning, locked decisions, assumptions, dependencies, and CONTEXT.md handoff for the planner.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: adaptive questioning, locked decisions, assumptions, dependencies, and CONTEXT.md handoff for the planner.
 
 ## Step 5: Analyze Dependencies
 
@@ -329,19 +329,19 @@ Dependency analysis is part of `silver:plan`. Before invoking it, gather depende
 
 ## Step 6: Plan Phase
 
-Invoke `silver:plan` via the Skill tool. Purpose: PLAN.md with assumptions, dependencies, task waves, TDD policy, acceptance criteria traceability, and verification loop.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md with assumptions, dependencies, task waves, TDD policy, acceptance criteria traceability, and verification loop.
 
 ## Step 7: Execute Phase
 
 **If mode is Interactive (default):**
-- For implementation plans, invoke `silver:execute` via the Skill tool. The `tdd` gate runs before code edits.
+- For implementation plans, invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel. The `tdd` gate runs before code edits.
 - For config-only, docs-only, or infra-only plans, invoke `silver:execute` with the non-application-TDD rationale recorded in SUMMARY.md.
 
 **If mode is Autonomous (§10e):** invoke `silver:execute` with autonomous mode context. Autonomous execution still obeys the same TDD, verification, deferred-item, and artifact gates.
 
 **Internal TDD gate:** `tdd` is hidden from the picker and activates immediately before the execution wave for implementation plans. It is now an SB-owned TDD policy skill.
 
-**Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` via the Skill tool for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
+**Error path:** If execution fails mid-wave, do NOT mark the phase complete. Route to `silver:bugfix` through the active runtime's SB-recognized skill invocation channel for triage (Step 0 classification). Return here only after bugfix confirms the root cause is resolved.
 
 **During-execution deferred capture:** While executing, any item that is skipped, descoped, or explicitly deferred (e.g., "skipping X for now", "out of scope", "future optimization") MUST be added to the backlog before moving to the next task — not at the end of the session. Do not accumulate deferred items silently.
 
@@ -353,7 +353,7 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 8: Verify Work
 
-Invoke `silver:verify` via the Skill tool. Purpose: UAT, must-haves, artifact checks, test freshness, and completion evidence. Phase is NOT complete until this passes. Non-skippable.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: UAT, must-haves, artifact checks, test freshness, and completion evidence. Phase is NOT complete until this passes. Non-skippable.
 
 ## Step 8b: Test Gap Fill (conditional)
 
@@ -363,11 +363,11 @@ Invoke `verify-tests` or return to `silver:execute` with a test-gap task. Purpos
 
 ## Step 9a: Request Code Review
 
-Invoke `silver:review-request` via the Skill tool. Purpose: frame review scope, risks, artifacts, and blocker criteria before review begins.
+Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel. Purpose: frame review scope, risks, artifacts, and blocker criteria before review begins.
 
 ## Step 9b: Run Code Review
 
-Invoke `silver:review` via the Skill tool. Purpose: create or update REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
+Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. Purpose: create or update REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
 
 If issues are found in REVIEW.md: fix BLOCK findings through `silver:execute` or the active implementation workflow, then re-run `silver:review`.
 
@@ -379,7 +379,7 @@ Invoke the configured external second-opinion review mechanism only if available
 
 ## Step 9d: Receive Review
 
-Invoke `silver:review-triage` via the Skill tool. Purpose: disciplined response to findings — no blind agreement and no silent dismissal.
+Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel. Purpose: disciplined response to findings — no blind agreement and no silent dismissal.
 
 ## Step 9e: Backlog capture from review
 
@@ -394,23 +394,23 @@ If all findings were fixed or no advisory items exist, output: "No deferred revi
 
 ## Step 10: Security Review
 
-Invoke `security` via the Skill tool. Non-skippable gate.
+Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable gate.
 
 ## Step 11: Secure Phase
 
-Invoke `silver:secure` via the Skill tool. Purpose: retroactive threat mitigation verification and security artifact update.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: retroactive threat mitigation verification and security artifact update.
 
 ## Step 12: Validate Phase
 
-Invoke `silver:validate` via the Skill tool. Purpose: validation gap filling and pre-ship consistency check.
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: validation gap filling and pre-ship consistency check.
 
 ## Step 12b: Tech Debt Review
 
-Invoke `tech-debt` via the Skill tool when available. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver:add`.
+Invoke `tech-debt` through the active runtime's SB-recognized skill invocation channel when available. Purpose: identify and document any technical debt introduced during this phase — decisions made for speed, known shortcuts, deferred refactors. Items that cannot be addressed now MUST be captured via `/silver:add`.
 
 ## Step 13: Pre-Ship Quality Gates (8 core dimensions + conditional gates)
 
-Invoke `silver:quality-gates` via the Skill tool. Purpose: full 8-core-dimension sweep, plus conditional AI/LLM and DevOps gates where applicable, before shipping. Non-skippable gate.
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: full 8-core-dimension sweep, plus conditional AI/LLM and DevOps gates where applicable, before shipping. Non-skippable gate.
 
 ## Step 13b: Doc-Scheme Compliance (conditional)
 
@@ -434,7 +434,7 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 14: Finishing Branch
 
-Invoke `silver:branch-finish` via the Skill tool. Purpose: merge / PR / cleanup decision, branch hygiene, and gate readiness.
+Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel. Purpose: merge / PR / cleanup decision, branch hygiene, and gate readiness.
 
 ## Step 15a: PR Branch (ask user)
 
@@ -449,11 +449,11 @@ If C: record preference in silver-bullet.md §10e and templates/silver-bullet.md
 
 ## Step 15b: Ship Phase
 
-Invoke `silver:ship` via the Skill tool. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, create PR, prepare for merge (phase-level). This is phase-level merge — not milestone-level publish (that is `silver:release`).
 
 ## Step 16: Episodic Memory
 
-Invoke `episodic-memory:remembering-conversations` via the Skill tool to record key decisions and learnings from this feature.
+Invoke `episodic-memory:remembering-conversations` through the active runtime's SB-recognized skill invocation channel to record key decisions and learnings from this feature.
 
 ## Step 17: Milestone Completion (last phase of milestone only)
 
@@ -478,7 +478,7 @@ Write `.planning/UAT.md` using the Write tool.
 
 ### Step 17.0a: Review UAT.md
 
-Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` via the Skill tool.
+Invoke `/artifact-reviewer .planning/UAT.md --reviewer review-uat` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to `silver:release` until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 

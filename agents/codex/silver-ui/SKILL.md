@@ -202,7 +202,8 @@ Invoke `verify-tests` planning guidance or capture the test strategy inside `sil
 
 ## Step 2.5: Writing Plans
 
-Keep the authoritative implementation plan in `silver:plan`. The useful plan-writing discipline previously provided by Superpowers is absorbed into that SB planning skill.
+Keep the authoritative implementation plan in `silver:plan`. SB planning owns
+task shape, dependencies, verification criteria, and execution handoff.
 
 ## Step 3: Pre-Plan Quality Gates
 

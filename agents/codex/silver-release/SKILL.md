@@ -66,7 +66,7 @@ ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | g
 
 ### Default Flow Chain
 
-QUALITY GATE -> UAT AUDIT -> MILESTONE AUDIT -> SECURITY -> GAP CLOSURE
+QUALITY GATE -> DOMAIN AUDIT -> UAT AUDIT -> MILESTONE AUDIT -> SECURITY -> GAP CLOSURE
 [conditional] -> DESIGN HANDOFF [if UI scope] -> DOCUMENT -> REVIEW -> VERIFY ->
 SHIP -> MILESTONE ARCHIVE -> CREATE RELEASE
 
@@ -138,6 +138,18 @@ Non-skippable release gates:
 
 Invoke `silver:quality-gates`. Purpose: run the release-level 8-dimension quality
 sweep plus conditional AI/LLM safety and DevOps gates where applicable.
+
+## Step 0a: Pre-Release Domain Audit
+
+Invoke or apply `silver:domain-audit --mode release` across release-touched
+surfaces. Select packs for API, data, dependencies, performance, structure,
+CI/workflows, environment/secrets, accessibility, content/search, UI system,
+architecture, runtime-release, incident-retro, and benchmark evidence as
+applicable.
+
+The release cannot proceed with unresolved `BLOCK` domain findings. Deferred
+`WARN` findings must be filed through `silver:add` and referenced in the
+milestone summary.
 
 ## Step 1: Cross-Phase UAT Audit
 
@@ -285,6 +297,8 @@ If the release includes deployment, run SB DevOps readiness:
 - invoke `silver:devops` for infrastructure/deployment changes that still need
   work
 - invoke `devops-quality-gates` for release readiness checks
+- invoke or apply `silver:domain-audit` with `ci-workflow`,
+  `environment-secrets`, and `runtime-release` packs
 - verify rollback plan, environment config, monitoring, alert ownership, and
   deployment command safety
 

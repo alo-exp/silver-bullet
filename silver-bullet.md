@@ -275,7 +275,7 @@ SB utility, or optional external enrichment skill.
 
 **SB-first skill authority:** In an SB-activated project, the active agent MUST wait for
 SB route/workflow guidance before invoking any helper, dependency, or general-purpose
-skill on its own. This includes Superpowers and other helper plugins. SB chooses whether
+skill on its own. This includes optional extension plugins. SB chooses whether
 and when those skills are used inside the composed workflow. After any SB-launched
 workflow step completes, control returns to the active SB workflow, which selects the
 next step until the user goal is achieved or user feedback is required.
@@ -606,7 +606,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 
 ## 3c. Completion Claim Verification
 
-**Rule:** Whenever any plugin, skill, or subagent (GSD, Superpowers, Design, Engineering, or any other) declares a task, plan, phase, or step complete, SB MUST invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
+**Rule:** Whenever any plugin, skill, or subagent declares a task, plan, phase, or step complete, SB MUST invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
 
 **Trigger:** Any of these signals from a plugin/skill/subagent constitutes a completion claim:
 - `## PLANNING COMPLETE`, `## EXECUTION COMPLETE`, `## VERIFICATION COMPLETE`
@@ -740,15 +740,15 @@ See [`docs/RUNTIME-COMPATIBILITY.md`](docs/RUNTIME-COMPATIBILITY.md) for the bou
 
 ---
 
-## 6. Absorbed Dependency Boundary
+## 6. Core Lifecycle Boundary
 
 Silver Bullet is the authoritative software-engineering lifecycle orchestrator.
-The GSD, Superpowers, and Anthropic knowledge-work behaviors SB explicitly
-depended on are absorbed into SB-owned skills. Optional DevOps and provider
-plugins remain external because they extend SB into tool/vendor domains rather
-than duplicating SB's lifecycle scope.
+The lifecycle and knowledge-work behaviors SB explicitly depends on are
+implemented as SB-owned skills. Optional DevOps, provider, connector, and
+research augmentation plugins remain external because they extend SB into
+tool/vendor domains rather than duplicating SB's lifecycle scope.
 
-Legacy GSD/Superpowers markers may satisfy hooks for compatibility, but new
+Legacy lifecycle markers may satisfy hooks for compatibility, but new
 workflow instructions must use SB-owned skills.
 
 **Hard rules — no exceptions:**
@@ -802,7 +802,7 @@ stop, notify the user, and offer remediation in this order:
 
 You MUST NOT:
 - Edit any file under `$HOME/.codex/plugins/cache/` (third-party plugin caches)
-- Modify a Superpowers, Anthropic, Engineering, Design, GSD, or provider skill file to change behavior
+- Modify an optional extension or provider skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
 If an optional third-party skill's behavior needs adjustment, implement the change as:

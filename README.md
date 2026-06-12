@@ -25,8 +25,8 @@ operator vigilance.
 
 ## What Silver Bullet Adds
 
-Silver Bullet now absorbs the GSD, Superpowers, and Anthropic knowledge-work
-behaviors it explicitly depended on into SB-owned skills. Optional plugins remain
+Silver Bullet now owns the knowledge-work and lifecycle behaviors it explicitly
+depends on as SB-owned skills. Optional plugins remain
 useful when they extend SB into DevOps, provider, data, documentation, or
 tool-specific domains, but they are no longer required for the core software
 engineering lifecycle.
@@ -52,8 +52,7 @@ Silver Bullet is an **Agentic Process Orchestrator (APO)**:
 
 Silver Bullet can still call optional extension plugins when a selected workflow
 needs a domain-specific capability, especially DevOps/provider tools. It does not
-use GSD, Superpowers, or Anthropic knowledge-work plugins as default lifecycle
-dependencies.
+use lifecycle-overlap knowledge-work plugins as default lifecycle dependencies.
 
 ## How It Works
 
@@ -75,7 +74,7 @@ appropriate SB-owned workflow. Examples:
 | Research a decision | `silver:research` | Produces a decision artifact before implementation |
 | Prepare a release | `silver:release` | Runs documentation, UAT, milestone, release, and publication gates |
 | Make a small safe edit | `silver:fast` | Routes low-risk work through a lighter path |
-| Explicit legacy GSD request | SB equivalent by default | Legacy GSD names are compatibility routes unless the user explicitly asks for external GSD |
+| Explicit legacy lifecycle request | SB equivalent by default | Legacy lifecycle names are compatibility routes unless the user explicitly asks for an external plugin |
 
 ### Dynamic Composition, Not A Fixed Script
 
@@ -227,8 +226,7 @@ The installer:
   required skills can be invoked and recorded without a Claude-only `Skill` tool
 - enables SB only when the current working directory is an actual SB project
   root (`.silver-bullet.json` plus `silver-bullet.md`)
-- does not install or enable GSD, Superpowers, Engineering, Design, or Product
-  Management for core SB workflows
+- does not install or enable lifecycle-overlap plugins for core SB workflows
 - purges stale SB user-level hook entries so unrelated Codex projects do not get
   Silver Bullet hooks
 - seeds Codex hook trust from the installed plugin manifest instead of
@@ -302,6 +300,7 @@ After that, use `/silver` for normal work.
 | `/silver:handoff` | Create a project-level handoff prompt |
 | `/silver:forensics` | Reconstruct failed, stalled, or abandoned sessions |
 | `/silver:quality-gates` | Product/software quality assessment |
+| `/silver:domain-audit` | Specialized domain quality contracts for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime, incident, retro, and benchmark evidence |
 | `/silver-blast-radius` | DevOps change-impact and rollback assessment |
 | `/devops-quality-gates` | IaC quality assessment |
 | `/devops-skill-router` | Selects optional DevOps plugin skills for the current toolchain |
@@ -510,7 +509,7 @@ runtime state are not treated as plugin package content.
 - Release: [v0.38.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.0)
 - Notable changes:
   - SB now owns the core context, plan, execute, review, security, verify, ship, TDD, and completion-audit lifecycle skills it enforces.
-  - GSD, Superpowers, and Anthropic knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
+  - Legacy knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
   - Default config schema moved to `0.38.0` so older lifecycle dependency lists are normalized during migration.
   - Public docs, Help Center, marketplace metadata, and release gates now describe the SB-owned lifecycle model.
 
