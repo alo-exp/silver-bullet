@@ -20,11 +20,12 @@ Never does implementation itself. Match intent, show the routing decision, then 
 
 SB is the lifecycle and quality orchestration engine for software-engineering work. It owns routing, composition, context, plans, execution gates, reviews, safety checks, verification, and ship/release decisions.
 
-The useful GSD, Superpowers, and Anthropic knowledge-work behaviors SB explicitly depended on are absorbed into SB-owned skills:
+The useful lifecycle and knowledge-work behaviors SB explicitly depends on are owned by SB skills:
 
 - `silver:context`, `silver:plan`, `silver:execute`, `silver:verify`, and `silver:ship`;
 - `silver:review-request`, `silver:review`, and `silver:review-triage`;
 - `silver:secure`, `silver:validate`, `silver:debug`, `silver:ui-contract`, and `silver:ui-review`;
+- `silver:domain-audit` for specialized code, test, API, data, dependency, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime, incident, retro, and benchmark quality contracts;
 - `tdd`, `silver:completion-audit`, and `silver:branch-finish`.
 
 If user intent implies a semver-relevant codebase change, route through an SB workflow. Do not edit version, ROADMAP, STATE, MILESTONES, or phase artifacts directly except through the owning SB workflow and documented override gates.
@@ -36,6 +37,14 @@ Use logical route names in decisions (`silver:feature`, `silver:plan`, `tdd`). A
 - Claude-style slash/skill aliases may expose `silver:feature`.
 - Codex exposes SB skills through the native `/Silver:` picker surface, with logical names such as `silver:feature`.
 - Source repos may show authoring names such as `silver-feature`.
+
+When a workflow says to invoke another SB skill, use the active runtime's
+SB-recognized skill invocation channel. In Claude Code this may be a host skill
+event. In Codex this may be the native skill picker or the SB
+`silver-bullet invoke-skill <name>` adapter when an invocation receipt is
+required. If the host has no callable skill tool, load the target skill's
+instructions and follow them directly, then record degraded invocation evidence
+only when the workflow gate cannot observe a receipt.
 
 If the exact logical skill is unavailable, choose the host-equivalent skill with the same semantic name.
 
@@ -93,7 +102,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; SB debug/plan/execute/verify plus TDD |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | UI-specific composition |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Infra/DevOps composition |
-| "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing + Superpowers brainstorming |
+| "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only |
@@ -104,6 +113,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup/update |
 | "doc scheme", "ensure docs", "docs checklist", "docs gate failed", "reconcile docs", "recover doc scheme" | `silver:ensure-docs` | Doc governance authority |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
+| "API audit", "database audit", "dependency audit", "performance audit", "structure audit", "CI audit", "environment audit", "SEO", "AI search", "content audit", "accessibility audit", "canary", "incident", "retro", "benchmark", "domain audit" | `silver:domain-audit` | Specialized quality contract packs; feeds findings back into the owning SB workflow |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
 | "IaC quality", "devops quality", "terraform quality" | `devops-quality-gates` | DevOps quality audit |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Evidence-based post-mortem |
@@ -111,7 +121,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `verify-tests` | Fresh test gate |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `devops-skill-router` | IaC routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | External artifact ingestion |
-| Any explicit legacy GSD lifecycle request | SB equivalent unless the user explicitly requires GSD | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
+| Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
 
 ### Step 5: Apply ship/release disambiguation
 
@@ -133,7 +143,7 @@ First strong match wins after complexity triage and conflict resolution.
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
 | `silver:devops` + `silver:feature` | Ask user | App vs infra boundary is material |
 | `silver:fast` + domain workflow | Prefer higher rigor if logic/schema/API/public behavior is involved | Avoid under-scoping |
-| Legacy GSD lifecycle signal + SB domain signal | SB workflow | SB owns the lifecycle; legacy names are compatibility aliases |
+| Legacy lifecycle signal + SB domain signal | SB workflow | SB owns the lifecycle; legacy names are compatibility aliases |
 
 ### Step 7: Compose or delegate
 
@@ -180,7 +190,7 @@ SB role:    {lifecycle authority / optional external enrichment / not applicable
 ### Step 10: Invoke chosen skill
 
 - For SB workflow or utility skills: invoke the chosen SB skill with `$ARGUMENTS`.
-- For explicit legacy GSD requests: route to the SB equivalent by default. Invoke GSD only when the user explicitly requires that external plugin and it is available.
+- For explicit legacy lifecycle requests: route to the SB equivalent by default. Invoke an external plugin only when the user explicitly requires it and it is available.
 - For optional dependency-plugin skills inside a composed flow: invoke them only when available and relevant; otherwise continue only if the flow contract marks them optional.
 
 Security note: `/silver` only routes to the skills explicitly listed in this router or in the canonical flow contracts. The forbidden-skill gate enforces tool-layer deny lists independently.

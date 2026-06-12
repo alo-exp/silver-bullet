@@ -8,10 +8,9 @@ version: 0.1.0
 
 # /silver:secure - Security Verification
 
-SB-owned secure phase. This absorbs the useful behavior SB previously took from
-GSD secure-phase and Engineering security review. Use the local `security` skill
-as the core threat-review lens when available, but this skill owns the phase
-artifact and exit decision.
+SB-owned secure phase verifies security and threat-mitigation coverage. Use the
+local `security` skill as the core threat-review lens when available, but this
+skill owns the phase artifact and exit decision.
 
 ## Output
 

@@ -124,7 +124,7 @@ out=$(run_hook "gsd:discuss-phase")
 assert_passes "installed gsd:discuss-phase passes" "$out"
 teardown
 
-# Test 7: Bare absorbed dependency skill passes through when missing
+# Test 7: Bare legacy optional skill passes through when missing
 setup
 out=$(run_hook "clarify")
 assert_passes "missing clarify passes through" "$out"

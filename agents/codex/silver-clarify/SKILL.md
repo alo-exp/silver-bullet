@@ -73,7 +73,9 @@ If the request has product or user-value implications, include a short PM framin
 
 ### 3. Explore
 
-Generate 2-4 distinct framings or directions. Internally apply the PM lens first, then the Superpowers lens, but present the result as one non-redundant clarify flow. Include, when useful:
+Generate 2-4 distinct framings or directions. Internally apply a PM lens first,
+then a structured divergence lens, but present the result as one non-redundant
+clarify flow. Include, when useful:
 
 - a simpler option
 - a more ambitious option

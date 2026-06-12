@@ -25,7 +25,7 @@ At the very start of any new session, perform these steps automatically:
    Compare as semver. If installed < latest, use AskUserQuestion:
    - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
-   If A: invoke `/silver:update` via the Skill tool, then continue.
+   If A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel, then continue.
    If B or check fails (offline/unknown): output "Skipping SB update." and continue.
 
    **5.2 Optional legacy plugins (informational)**
@@ -269,13 +269,13 @@ so the user can follow along without being asked to act.
 ### 2g. Bare Instruction Interception
 
 When the user sends a **bare instruction** — a message that is not a slash command and is
-non-trivial in nature — SB MUST intercept it and invoke `/silver` via the Skill tool before
+non-trivial in nature — SB MUST intercept it and invoke `/silver` through the active runtime's SB-recognized skill invocation channel before
 doing anything else. `/silver` routes the instruction to the correct SB workflow,
 SB utility, or optional external enrichment skill.
 
 **SB-first skill authority:** In an SB-activated project, the active agent MUST wait for
 SB route/workflow guidance before invoking any helper, dependency, or general-purpose
-skill on its own. This includes Superpowers and other helper plugins. SB chooses whether
+skill on its own. This includes optional extension plugins. SB chooses whether
 and when those skills are used inside the composed workflow. After any SB-launched
 workflow step completes, control returns to the active SB workflow, which selects the
 next step until the user goal is achieved or user feedback is required.
@@ -296,7 +296,7 @@ If a reply or attached/pasted artifact introduces new action intent while a work
 **Process:**
 1. Receive bare instruction
 2. Classify: is it non-trivial work? If yes → intercept
-3. Invoke `/silver` via Skill tool, passing the original instruction as arguments
+3. Invoke `/silver` through the active runtime's SB-recognized skill invocation channel, passing the original instruction as arguments
 4. `/silver` handles routing — SB does not do the work directly
 
 > **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver orchestrator exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
@@ -532,19 +532,19 @@ SB skills that produce reviewable artifacts MUST be followed by a review round. 
 
 **After milestone setup completes:**
 
-1. **ROADMAP.md review (WFIN-04):** Invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` via the Skill tool. Do NOT commit the roadmap until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to ROADMAP.md and re-review automatically.
+1. **ROADMAP.md review (WFIN-04):** Invoke `/artifact-reviewer .planning/ROADMAP.md --reviewer review-roadmap` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the roadmap until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to ROADMAP.md and re-review automatically.
 
-2. **REQUIREMENTS.md review (WFIN-05):** Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` via the Skill tool. Do NOT commit requirements until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to REQUIREMENTS.md and re-review automatically.
+2. **REQUIREMENTS.md review (WFIN-05):** Invoke `/artifact-reviewer .planning/REQUIREMENTS.md --reviewer review-requirements` through the active runtime's SB-recognized skill invocation channel. Do NOT commit requirements until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to REQUIREMENTS.md and re-review automatically.
 
 Run these reviews in sequence (ROADMAP first, then REQUIREMENTS) since requirements reference the roadmap.
 
 **After /silver:context completes:**
 
-3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` via the Skill tool. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
+3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
 
 **After /silver:plan researcher step completes (before planning begins):**
 
-4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` via the Skill tool. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
+4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
 
 > **Note:** The `{phase}` placeholder refers to the current phase directory (e.g., `12-spec-foundation`). The artifact-reviewer resolves the absolute path internally.
 
@@ -606,7 +606,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 
 ## 3c. Completion Claim Verification
 
-**Rule:** Whenever any plugin, skill, or subagent (GSD, Superpowers, Design, Engineering, or any other) declares a task, plan, phase, or step complete, SB MUST invoke `/silver:completion-audit` via the Skill tool before accepting that claim and moving on.
+**Rule:** Whenever any plugin, skill, or subagent declares a task, plan, phase, or step complete, SB MUST invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
 
 **Trigger:** Any of these signals from a plugin/skill/subagent constitutes a completion claim:
 - `## PLANNING COMPLETE`, `## EXECUTION COMPLETE`, `## VERIFICATION COMPLETE`
@@ -617,7 +617,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 
 **What to do:**
 1. Identify the specific claim being made (e.g. "Plan 09-01 executed — 2 tasks complete, SUMMARY.md written")
-2. Invoke `/silver:completion-audit` via the Skill tool, passing the claim as context
+2. Invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel, passing the claim as context
 3. Run the verification checks that skill prescribes against the actual artifacts
 4. Only after fresh evidence confirms the claim: accept it and advance to the next step
 
@@ -740,15 +740,15 @@ See [`docs/RUNTIME-COMPATIBILITY.md`](docs/RUNTIME-COMPATIBILITY.md) for the bou
 
 ---
 
-## 6. Absorbed Dependency Boundary
+## 6. Core Lifecycle Boundary
 
 Silver Bullet is the authoritative software-engineering lifecycle orchestrator.
-The GSD, Superpowers, and Anthropic knowledge-work behaviors SB explicitly
-depended on are absorbed into SB-owned skills. Optional DevOps and provider
-plugins remain external because they extend SB into tool/vendor domains rather
-than duplicating SB's lifecycle scope.
+The lifecycle and knowledge-work behaviors SB explicitly depends on are
+implemented as SB-owned skills. Optional DevOps, provider, connector, and
+research augmentation plugins remain external because they extend SB into
+tool/vendor domains rather than duplicating SB's lifecycle scope.
 
-Legacy GSD/Superpowers markers may satisfy hooks for compatibility, but new
+Legacy lifecycle markers may satisfy hooks for compatibility, but new
 workflow instructions must use SB-owned skills.
 
 **Hard rules — no exceptions:**
@@ -802,7 +802,7 @@ stop, notify the user, and offer remediation in this order:
 
 You MUST NOT:
 - Edit any file under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (third-party plugin caches)
-- Modify a Superpowers, Anthropic, Engineering, Design, GSD, or provider skill file to change behavior
+- Modify an optional extension or provider skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
 If an optional third-party skill's behavior needs adjustment, implement the change as:

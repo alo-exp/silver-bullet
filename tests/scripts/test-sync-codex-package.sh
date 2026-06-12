@@ -200,7 +200,7 @@ assert_contains "Silver quality gates repairs missing dimension dependency befor
 assert_contains "Silver quality gates documents Codex package key for dependency repair" "silver-bullet@alo-labs-codex" "$(skill_file silver-quality-gates)"
 assert_contains "Progressive review loop keeps canonical skill name" "name: progressive-review-loop" "$(skill_file progressive-review-loop)"
 assert_contains "Progressive review loop picker title uses Silver prefix" "title: \"Silver: Progressive Review Loop\"" "$(skill_file progressive-review-loop)"
-assert_contains "Progressive review loop documents Claude Anthropic escalation" "Claude uses Anthropic/Claude models" "$(skill_file progressive-review-loop)"
+assert_contains "Progressive review loop documents host-family escalation" "Claude-family hosts use" "$(skill_file progressive-review-loop)"
 assert_contains "Silver scan Codex agent bundle uses silver prefix" "name: \"silver:scan\"" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
 assert_contains "Silver feature skill wires TDD into execute boundary" "SB-owned TDD policy skill" "$(skill_file silver-feature)"
 assert_contains "Silver feature skill documents hidden TDD gate" "Internal TDD gate" "$(skill_file silver-feature)"

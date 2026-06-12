@@ -60,7 +60,7 @@ Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included in the
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions) → FLOW 14 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions + domain packs) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions + domain packs) → FLOW 14 (SHIP)
 
 Note: FLOW 11 (SECURE) is always included for any infrastructure engagement. FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included.
 
@@ -157,39 +157,44 @@ When the user requests skipping any step:
 
 ## Step 0: Codebase Intel
 
-Invoke `silver:scan` via the Skill tool. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
+Invoke `silver:scan` through the active runtime's SB-recognized skill invocation channel. Purpose: orient in the codebase — understand current infra topology before silver:blast-radius analysis.
 
 If no current codebase mapping exists and infra topology is non-trivial, run a deeper `silver:scan` pass focused on IaC, CI/CD, deployment, secrets, and rollback surfaces.
 
 ## Step 1: Blast Radius Analysis
 
-Invoke `silver:blast-radius` via the Skill tool. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
+Invoke `silver:blast-radius` through the active runtime's SB-recognized skill invocation channel. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. This step replaces the product/engineering brainstorm for devops workflows.
 
 ## Step 2: DevOps Skill Router
 
-Invoke `devops-skill-router` via the Skill tool. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
+Invoke `devops-skill-router` through the active runtime's SB-recognized skill invocation channel. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.
 
 ## Step 3: Pre-Plan DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `devops-quality-gates` via the Skill tool. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
+Invoke `devops-quality-gates` through the active runtime's SB-recognized skill invocation channel. Purpose: 7 IaC-adapted quality dimensions (reliability, security, scalability, modularity, testability, observability, change-safety) as the pre-plan gate.
 
 Note: this is NOT the standard product `silver:quality-gates` sweep. The devops workflow uses `devops-quality-gates` exclusively at both quality gate positions.
 
+Also invoke or apply `silver:domain-audit` with the affected DevOps packs:
+`ci-workflow`, `environment-secrets`, `runtime-release`, `dependency-supply`,
+and `performance-resource` as applicable. These packs provide specialized
+evidence rows that feed into the DevOps gate result.
+
 ## Step 3b: Infrastructure Security (mandatory, non-skippable)
 
-Invoke `security` via the Skill tool. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
+Invoke `security` through the active runtime's SB-recognized skill invocation channel. Purpose: infrastructure security hard gate — mandatory independent of §10 preferences. Checks secrets, IAM permissions, network exposure, and data handling.
 
 ## Step 4: Discuss Phase
 
-Invoke `silver:context` via the Skill tool. Purpose: DevOps phase context, assumptions, rollback expectations, and locked decisions for the planner.
+Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: DevOps phase context, assumptions, rollback expectations, and locked decisions for the planner.
 
 ## Step 5: Plan Phase
 
-Invoke `silver:plan` via the Skill tool. Purpose: PLAN.md for the infrastructure change, including validation, rollback, policy, and observability evidence.
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md for the infrastructure change, including validation, rollback, policy, and observability evidence.
 
 ## Step 6: Execute Phase (IaC validation, not app TDD)
 
-If mode is Interactive: invoke `silver:execute` via the Skill tool.
+If mode is Interactive: invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel.
 If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode context.
 
 **Application TDD is explicitly skipped for pure infra plans.** Infrastructure and configuration work is declarative; use provider plan/dry-run, policy-as-code, security scans, drift checks, and rollback verification. Do not invoke `tdd` unless the DevOps phase includes behavior-changing application code.
@@ -197,14 +202,14 @@ If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode cont
 ## Step 7: Code Review (IaC review)
 
 Run review sequence in order:
-1. Invoke `silver:review-request` via the Skill tool.
-2. Invoke `silver:review` via the Skill tool. If issues are found, fix through `silver:execute` and re-review.
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. If issues are found, fix through `silver:execute` and re-review.
 3. For architecturally significant infra changes: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
-4. Invoke `silver:review-triage` via the Skill tool.
+4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
 ## Step 8: IaC Security + Secrets Verification
 
-Invoke `silver:secure` via the Skill tool. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
 ### Deferred-Item Capture (mandatory)
 
@@ -223,11 +228,15 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 ## Step 9: Deployment Verification
 
-Invoke `silver:verify` via the Skill tool. Purpose: deployment verification and UAT. Non-skippable gate.
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 
-Invoke `devops-quality-gates` via the Skill tool again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+Invoke `devops-quality-gates` through the active runtime's SB-recognized skill invocation channel again. Purpose: final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. Non-skippable.
+
+Re-run the affected `silver:domain-audit` DevOps packs when CI, environment,
+deployment, rollback, secrets, or performance evidence changed during execution.
+Unresolved `BLOCK` pack findings stop ship.
 
 ## Step 10b: Doc-Scheme Compliance (conditional)
 
@@ -251,4 +260,4 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 
 ## Step 11: Ship / Deploy
 
-Invoke `silver:ship` via the Skill tool. Purpose: push branch, deploy, create PR.
+Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.

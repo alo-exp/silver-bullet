@@ -8,8 +8,8 @@ version: 0.1.0
 
 # /silver:review-request - Review Framing
 
-SB-owned review framing. This absorbs the useful behavior SB previously took
-from Superpowers requesting-code-review.
+SB-owned review framing defines scope, risk, evidence, and blocker criteria
+before review begins.
 
 ## Output
 

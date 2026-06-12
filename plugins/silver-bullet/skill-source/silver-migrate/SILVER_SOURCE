@@ -96,7 +96,9 @@ Then scan for artifacts that indicate flow completion:
 
 Include only flows that are relevant to the current project state. Always include the next unfinished SB lifecycle flow needed to resume safely.
 
-Use phase artifacts for lifecycle position. Treat legacy GSD/Superpowers markers as historical evidence only; do not generate workflows that depend on those plugins.
+Use phase artifacts for lifecycle position. Treat legacy lifecycle markers as
+historical evidence only; do not generate workflows that depend on external
+lifecycle plugins.
 
 ### Step 3: Start Per-Instance Workflow Tracking
 

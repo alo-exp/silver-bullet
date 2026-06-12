@@ -65,7 +65,7 @@ Use the Bash tool to run:
 touch $HOME/.codex/.silver-bullet/session-init
 ```
 
-Then summarize the loaded context and continue without relying on context compaction.
+Then use the host-supported context compaction mechanism before proceeding.
 
 ---
 
@@ -127,25 +127,25 @@ If B: STOP.
 
 ### 1.2 Optional legacy plugin discovery
 
-GSD, Superpowers, and Anthropic Knowledge Work plugins are no longer hard
-requirements for SB initialization. SB absorbs the explicitly required behavior
-from those plugins into SB-owned lifecycle markers and workflows.
+Legacy lifecycle-overlap plugins are no longer hard requirements for SB
+initialization. SB implements the required behavior as SB-owned lifecycle
+markers and workflows.
 
 Optionally record whether legacy/core dependency plugins are present for
 migration diagnostics only. Do not stop when they are missing.
 
 Use the Bash tool to run:
 ```bash
-printf 'Superpowers: '
+printf 'legacy-brainstorming-plugin: '
 test -f "$HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/current/skills/brainstorming/SKILL.md" || \
   find "$HOME/.codex/plugins/cache" -path '*/superpowers/*/skills/brainstorming/SKILL.md' -print -quit 2>/dev/null | grep -q .
 printf '%s\n' "$?"
 
-printf 'GSD: '
+printf 'legacy-lifecycle-plugin: '
 { test -f "$HOME/.codex/get-shit-done/workflows/new-project.md" || test -f "$HOME/.codex/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.codex/commands/gsd/new-project.md"; }
 printf '%s\n' "$?"
 
-printf 'Anthropic knowledge-work: '
+printf 'legacy-knowledge-work-plugin: '
 find "$HOME/.codex/plugins/cache" \( -path '*/knowledge-work-plugins/*/engineering/skills/*' -o -path '*/knowledge-work-plugins/*/design/skills/*' -o -path '*/knowledge-work-plugins/*/product-management/skills/*' \) -print -quit 2>/dev/null | grep -q .
 printf '%s\n' "$?"
 ```
@@ -162,7 +162,7 @@ Keep bootstrap terminology aligned to the current runtime:
 - In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - In Claude, `CLAUDE.md` remains the familiar project instruction filename.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
-- If legacy GSD is present but flaky, do not fail bootstrap. SB-owned lifecycle
+- If a legacy lifecycle plugin is present but flaky, do not fail bootstrap. SB-owned lifecycle
   behavior is the default path.
 
 ### 1.7 v1 incompatibility check
@@ -240,7 +240,7 @@ cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
 ```
 
 If none are present, output:
-> No legacy GSD, Superpowers, or Anthropic dependency plugins detected. Continuing
+> No legacy dependency plugins detected. Continuing
 > with SB-owned lifecycle behavior.
 
 Do not ask to install or update these plugins during init.
@@ -555,7 +555,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
-- **3.8 Optional plugin activation**: do not activate GSD, Superpowers, Engineering, Design, or Product Management for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
+- **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 
 ## Additional Resources

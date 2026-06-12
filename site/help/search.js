@@ -36,7 +36,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Claude uses the host Skill tool; Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB currently has 51 source skills and /silver is the APO router that classifies complexity and composes SB-owned lifecycle flows plus optional extension-plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB uses host-native invocation receipts where available and /silver is the APO router that classifies complexity and composes SB-owned lifecycle flows plus optional extension-plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -57,7 +57,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "quality-gates",
     "title": "Quality gates",
-    "text": "/silver:quality-gates evaluates product/software work across modularity reusability scalability security reliability usability testability extensibility and AI/LLM safety where applicable. /devops-quality-gates applies 7 IaC-adapted dimensions."
+    "text": "/silver:quality-gates evaluates product/software work across modularity reusability scalability security reliability usability testability extensibility and AI/LLM safety where applicable. /silver:domain-audit adds specialized domain contract packs. /devops-quality-gates applies 7 IaC-adapted dimensions."
   },
   {
     "page": "Core Concepts",
@@ -246,14 +246,14 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "Silver Bullet command reference",
-    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, progressive-review-loop, and more."
+    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:domain-audit, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, progressive-review-loop, and more."
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "quality-review-skills",
     "title": "Quality and review skills",
-    "text": "SB-owned quality and review skills include modularity, reusability, scalability, security, reliability, usability, testability, extensibility, ai-llm-safety, artifact-reviewer, artifact-review-assessor, and review-spec, review-requirements, review-roadmap, review-uat, review-design, review-research, review-context, review-ingestion-manifest, and review-cross-artifact."
+    "text": "SB-owned quality and review skills include modularity, reusability, scalability, security, reliability, usability, testability, extensibility, ai-llm-safety, silver-domain-audit, artifact-reviewer, artifact-review-assessor, and review-spec, review-requirements, review-roadmap, review-uat, review-design, review-research, review-context, review-ingestion-manifest, and review-cross-artifact."
   },
   {
     "page": "Reference",

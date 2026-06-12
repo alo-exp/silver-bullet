@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test-skill-refs.sh — CONS-01 regression guard
 #
-# Scans every skills/**/SKILL.md for 'invoke `X` via the Skill tool' patterns,
+# Scans every skills/**/SKILL.md for host-recognized skill invocation patterns,
 # extracts the skill reference, normalizes it, and verifies each resolves to
 # a real skill in the repo or in the declared external-plugin skill catalog.
 # Also validates any `gsd-review --<flag>` usage against gsd-review's
@@ -162,8 +162,14 @@ while IFS= read -r skill_file; do
         fi
       done < <(extract_flags "$raw")
     fi
-  done < <(grep -oE -i 'invoke `[^`]+` via the Skill tool' "$skill_file" \
-           | sed -E 's/^[Ii]nvoke `([^`]+)` via the Skill tool$/\1/')
+  done < <(
+    {
+      grep -oE -i 'invoke `[^`]+` via the Skill tool' "$skill_file" \
+        | sed -E 's/^[Ii]nvoke `([^`]+)` via the Skill tool$/\1/'
+      grep -oE -i 'invoke `[^`]+` through the active runtime'\''s SB-recognized skill invocation channel' "$skill_file" \
+        | sed -E 's/^[Ii]nvoke `([^`]+)` through the active runtime'\''s SB-recognized skill invocation channel$/\1/'
+    } | sort -u
+  )
 done < <(find "$REPO_ROOT/skills" -name SKILL.md)
 
 echo

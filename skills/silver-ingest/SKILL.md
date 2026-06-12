@@ -434,7 +434,7 @@ On subsequent runs, silver:ingest reads this manifest in Step 0 and skips any `s
 
 **NON-SKIPPABLE GATE.**
 
-Invoke `/artifact-reviewer .planning/INGESTION_MANIFEST.md --reviewer review-ingestion-manifest` via the Skill tool.
+Invoke `/artifact-reviewer .planning/INGESTION_MANIFEST.md --reviewer review-ingestion-manifest` through the active runtime's SB-recognized skill invocation channel.
 
 Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, /artifact-reviewer will apply fixes and re-review automatically. If /artifact-reviewer surfaces an unresolvable issue after 5 rounds, STOP and present it to the user.
 

@@ -120,4 +120,5 @@ Adopt:
 
 Delegation rule:
 - Default: operate as standalone `silver:ensure-docs`.
-- Delegate to `gsd:docs-update` only when the session/repo is explicitly in GSD docs workflow.
+- Delegate to a legacy docs workflow only when the session/repo is explicitly
+  operating in that legacy docs mode.
