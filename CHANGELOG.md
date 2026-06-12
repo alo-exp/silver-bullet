@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.38.1] — 2026-06-12
+
+## Other
+
+- `Add SB domain quality audit packs` (34dab31)
+- `Remove deprecated dependency references from site` (bf4587f)
+- `Fix homepage ecosystem card layout` (9aaa1e0)
+
+---
+
 ## [0.38.0] — 2026-06-11
 
 ## Features

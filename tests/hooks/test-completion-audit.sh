@@ -349,7 +349,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.0",
+  "config_version": "0.38.1",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],
