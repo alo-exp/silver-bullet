@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>/silver:feature — Feature Development Workflow — Silver Bullet Help</title>
-<meta name="description" content="Full SB-orchestrated feature development workflow: orientation → clarify when needed → quality gates → GSD plan/execute/verify → review and ship.">
+<meta name="description" content="Full SB-orchestrated feature development workflow: orientation → clarify when needed → quality gates → SB plan/execute/verify → review and ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -235,7 +235,7 @@ B. No — proceed with spec as-is</div>
       <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
 
       <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>silver:plan</code> when SB needs a structured implementation plan. For complex scope, the planning pass includes the absorbed plan-shaping checks before execution begins.</p>
+      <p>Invoke <code>silver:plan</code> when SB needs a structured implementation plan. For complex scope, the planning pass includes SB plan-shaping checks before execution begins.</p>
 
       <h3>Step 2.7 — Pre-build validation</h3>
       <p>When a SPEC/PLAN coverage check is needed before implementation, invoke <code>silver:validate</code>. BLOCK findings stop the workflow before quality gates or planning continue; WARN findings must be tracked explicitly.</p>
@@ -262,7 +262,7 @@ B. No — proceed with spec as-is</div>
       <p>Only if <code>silver:verify</code> surfaces coverage gaps: invoke <code>silver:add-tests</code> or the local test-generation path to generate tests from UAT criteria.</p>
 
       <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant changes: expanded <code>silver:review</code>] → <code>silver:review-triage</code>. The review-framing helpers are absorbed into this SB review boundary.</p>
+      <p>Run in order: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant changes: expanded <code>silver:review</code>] → <code>silver:review-triage</code>. SB owns review framing and triage at this boundary.</p>
 
       <h3>Step 9e — Backlog capture from review</h3>
       <p>Capture accepted-but-deferred review findings with <code>/silver:add</code> so they are tracked instead of disappearing after review completion.</p>
@@ -323,7 +323,7 @@ B. No — proceed with spec as-is</div>
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:feature Add dark mode toggle to the settings panel</div>
-      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips the extra clarification path, proceeds through orientation, quality gates, GSD discuss/plan/execute, TDD where applicable, review, verify, and ship.</p>
+      <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips the extra clarification path, proceeds through orientation, quality gates, SB context/plan/execute, TDD where applicable, review, verify, and ship.</p>
 
       <div class="divider"></div>
 

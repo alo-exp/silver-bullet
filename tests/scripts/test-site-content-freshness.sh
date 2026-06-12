@@ -39,7 +39,6 @@ assert_not_contains() {
 
 assert_contains "homepage displays current package version" "v${CURRENT_VERSION}" "$REPO_ROOT/site/index.html"
 assert_contains "Help Center displays current package version" "v${CURRENT_VERSION}" "$REPO_ROOT/site/help/index.html"
-assert_contains "SB vs GSD page displays current package version" "v${CURRENT_VERSION}" "$REPO_ROOT/site/sb-vs-gsd/index.html"
 assert_contains "reference config sample uses current package version" "\"version\"</span>: <span class=\"str\">\"${CURRENT_VERSION}\"" "$REPO_ROOT/site/help/reference/index.html"
 assert_contains "search index config entry uses current package version" "version ${CURRENT_VERSION}" "$REPO_ROOT/site/help/search.js"
 assert_contains "homepage documents Codex public marketplace package" "public alo-labs/codex-plugins marketplace package|public alo-labs/codex-plugins Codex marketplace package|public alo-labs/codex-plugins" "$REPO_ROOT/site/index.html"
@@ -52,6 +51,7 @@ assert_contains "Getting Started links Graphify dependency docs" "Graphify Retri
 assert_contains "homepage ecosystem grid uses three desktop columns" "\\.ecosystem-grid\\{display:grid;grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\);gap:24px\\}" "$REPO_ROOT/site/index.html"
 assert_contains "homepage ecosystem feature rows avoid flex text-column overflow" "\\.ecosystem-card \\.plugin-features li\\{[^}]*position:relative;[^}]*padding-left:20px;[^}]*overflow-wrap:break-word" "$REPO_ROOT/site/index.html"
 assert_contains "homepage ecosystem feature command text wraps only at overflow" "\\.ecosystem-card \\.plugin-features code\\{[^}]*white-space:normal;[^}]*overflow-wrap:break-word" "$REPO_ROOT/site/index.html"
+assert_not_contains "public site omits deprecated dependency-comparison language" "[Aa]bsorbed|Dependency Boundary|dependency boundary|[Gg][Ss][Dd]|[Ss]uperpowers|[Aa]nthropic" "$REPO_ROOT/site"
 assert_not_contains "site HTML defaults to light theme" "<html[^>]+data-theme=\"dark\"" "$REPO_ROOT/site"
 assert_not_contains "site startup scripts do not default silver-bullet-theme to dark" "silver-bullet-theme'\\)==='light'\\?'light':'dark'|applyTheme\\(s==='light'\\?false:true\\)|saved \\? saved === 'dark' : true" "$REPO_ROOT/site"
 assert_not_contains "site startup scripts do not default sb-theme to dark" "localStorage\\.getItem\\('sb-theme'\\)[[:space:]]*\\|\\|[[:space:]]*'dark'" "$REPO_ROOT/site"

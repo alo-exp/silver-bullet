@@ -63,7 +63,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .badge-small{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;vertical-align:middle;margin-left:4px}
 .badge-req{background:var(--red-badge-a10);color:var(--red)}
 .badge-cond{background:var(--amber-a10);color:var(--amber)}
-.badge-gsd{background:var(--slate-a12);color:var(--accent-light)}
+.badge-sb{background:var(--slate-a12);color:var(--accent-light)}
 .badge-sp{background:var(--green-warn-a12);color:var(--green)}
 .badge-eng{background:var(--amber-a12);color:var(--amber)}
 .badge-do{background:var(--cyan-discuss-a12);color:var(--cyan)}
@@ -142,7 +142,7 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#spec-skills">Spec Pipeline Skills</a></li>
         <li><a href="#quality-review-skills">Quality &amp; Review Skills</a></li>
         <li><a href="#orchestration-workflows">Orchestration Workflows</a></li>
-        <li><a href="#absorbed-skills">Absorbed Dependency Skills</a></li>
+        <li><a href="#core-lifecycle-skills">Core Lifecycle Skills</a></li>
         <li><a href="#devops-skills">DevOps Skills</a></li>
         <li><a href="#composable-flows">Composable Flows</a></li>
         <li class="sidebar-section">Configuration</li>
@@ -162,7 +162,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- SB LIFECYCLE COMMANDS -->
       <h2 id="sb-lifecycle-commands">SB Lifecycle Commands</h2>
-      <p>Silver Bullet owns the core lifecycle commands. Legacy GSD/Superpowers names are accepted only as compatibility aliases during migration unless the user explicitly asks to run an external plugin.</p>
+      <p>Silver Bullet owns the core lifecycle commands. Use these commands for planning, execution, review, verification, ship, release, and recovery workflows.</p>
 
       <table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
@@ -288,7 +288,7 @@ footer a:hover{color:var(--accent-light)}
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
         <tbody>
-          <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td><code>silver:clarify</code> (absorbed PM framing + brainstorming discipline) -> SB context/plan handoff</td></tr>
+          <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td>Problem framing, option comparison, convergence, and SB context/plan handoff</td></tr>
           <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage -> SB orientation -> clarify/research if needed -> quality gates -> SB plan/execute/verify -> review/ship</td></tr>
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td>triage path → systematic debugging or forensics → regression test → fix → verify/review</td></tr>
           <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation -> clarify/research if needed -> UI design contract -> SB plan/execute -> visual/UI audit -> verify/ship</td></tr>
@@ -328,12 +328,12 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
-      <!-- ABSORBED SKILLS -->
-      <h2 id="absorbed-skills">Absorbed Dependency Skills</h2>
-      <p>SB has absorbed the dependency behaviors it explicitly relied on. These are now represented by SB-owned commands and markers.</p>
+      <!-- CORE LIFECYCLE SKILLS -->
+      <h2 id="core-lifecycle-skills">Core Lifecycle Skills</h2>
+      <p>SB-owned commands and markers cover the core software-engineering lifecycle from problem framing through final delivery.</p>
 
       <table class="ref-table">
-        <thead><tr><th>Old dependency behavior</th><th>SB-owned replacement</th><th>Description</th></tr></thead>
+        <thead><tr><th>Lifecycle concern</th><th>SB-owned command</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>Brainstorming / product framing</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
           <tr><td>Spec writing</td><td><code>silver:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>

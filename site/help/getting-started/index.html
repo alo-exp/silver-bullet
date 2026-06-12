@@ -232,27 +232,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           </div>
         </div>
         <div class="prereq-card">
-          <div class="prereq-icon"><i data-lucide="clipboard-list"></i></div>
-          <div>
-            <h4>Legacy GSD <span class="tag tag-optional">Optional compatibility</span></h4>
-            <p>Only install when you explicitly want to run external GSD commands. SB's default lifecycle no longer depends on it.</p>
-            <div class="install-cmd">Optional: install only for legacy projects</div>
-          </div>
-        </div>
-        <div class="prereq-card">
           <div class="prereq-icon"><i data-lucide="network"></i></div>
           <div>
             <h4>Graphify <span class="tag tag-required">Required</span></h4>
             <p>Project-memory retrieval used before planning, editing, debugging, review, and release. See <a href="../concepts/documentation.html#graphify-retrieval">Graphify Retrieval</a> for SB's query and fallback rules.</p>
             <div class="install-cmd">uv tool install graphifyy<br>python3.12 -m pip install graphifyy</div>
-          </div>
-        </div>
-        <div class="prereq-card">
-          <div class="prereq-icon"><i data-lucide="zap"></i></div>
-          <div>
-            <h4>Superpowers <span class="tag tag-optional">Optional explicit use</span></h4>
-            <p>SB has absorbed the review, TDD, branch finishing, and completion-audit behaviors it depended on. Install only if you explicitly want those external skills too.</p>
-            <div class="install-cmd">Optional: /plugin install obra/superpowers</div>
           </div>
         </div>
         <div class="prereq-card">
@@ -263,19 +247,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
             <div class="install-cmd">brew install gh<br>gh auth login</div>
           </div>
         </div>
-        <div class="prereq-card">
-          <div class="prereq-icon"><i data-lucide="palette"></i></div>
-          <div>
-            <h4>Engineering, Design, and Product Plugins <span class="tag tag-optional">Optional explicit use</span></h4>
-            <p>SB has absorbed the knowledge-work behaviors it depends on for specs, design contracts, documentation, deploy readiness, and research synthesis. Install only when you want those external plugin surfaces as supplemental tools.</p>
-            <div class="install-cmd">Optional: install through your host plugin manager</div>
-          </div>
-        </div>
       </div>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>SB-only is the default.</strong> Silver Bullet's core lifecycle workflows no longer install or depend on GSD, Superpowers, or Anthropic knowledge-work plugins. Optional DevOps/provider plugins remain useful when they add domain-specific capability.</div>
+        <div class="callout-body"><strong>SB-only is the default.</strong> Silver Bullet's core lifecycle workflows install the SB package and use optional DevOps/provider extensions only when they add domain-specific capability.</div>
       </div>
 
       <div class="divider"></div>
@@ -284,17 +260,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Silver Bullet supports Claude Code and Codex host runtimes. The project setup command is the same once the runtime has the plugin available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.38.0, the Codex package installs SB-owned skills as internal <code>skill-source/</code> files and mirrors only the native <code>/silver:</code> picker surface, avoiding duplicate plugin-prefixed listings.</p>
 
       <h3>Claude Code Plugin</h3>
-      <p>Install Silver Bullet from the host plugin manager, then install the required dependency plugins from their official sources.</p>
+      <p>Install Silver Bullet from the host plugin manager.</p>
 <div class="code-label">Claude Code</div>
-<div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span>
-<span class="cmd">/plugin install obra/superpowers</span>
-<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/engineering</span>
-<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/design</span>
-<span class="cmd">/plugin install anthropics/knowledge-work-plugins/tree/main/product-management</span></div>
+<div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span></div>
 
       <h3>Codex Marketplace Package</h3>
       <p>For normal Codex use, install or refresh Silver Bullet from the public <code>alo-labs/codex-plugins</code> marketplace package. The Codex package is SB-only: it keeps internal <code>skill-source/</code> files out of plugin picker discovery, mirrors only the native <code>/silver:</code> picker surface, wires hooks through the package manifest, and installs supported dependencies from their official sources or thin marketplace wrappers.</p>
-      <p>When developing Silver Bullet itself from a repository checkout, use the installer script. It refreshes the curated package from the checkout, registers the shared marketplace, removes stale legacy SB skill copies and old marketplace cache versions, and verifies that the picker exposes only the <code>/silver:</code> namespace.</p>
+      <p>When developing Silver Bullet itself from a repository checkout, use the installer script. It refreshes the curated package from the checkout, registers the shared marketplace, removes stale SB skill copies and old marketplace cache versions, and verifies that the picker exposes only the <code>/silver:</code> namespace.</p>
       <div class="code-label">Development checkout only</div>
       <div class="code-block"><span class="cmd">./scripts/install-codex.sh --purge-legacy-skills</span></div>
       <p>After a public SB release, refresh the local installation from the public marketplace with <code>scripts/post-release-refresh.sh</code>. That wrapper performs a clean Claude and Codex reinstall path and is the supported way to prove your local cache matches the released marketplace version.</p>
@@ -456,7 +428,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">5</div>
           <div class="step-body">
             <h4>Check for updates</h4>
-            <p>Silver Bullet checks its own version, GSD, and installed companion plugins where the host exposes version metadata. Outdated SB/GSD components surface update prompts; companion plugins are reported so you can refresh them through the host plugin manager.</p>
+            <p>Silver Bullet checks its own version and selected extension plugins where the host exposes version metadata. Outdated SB components surface update prompts; extension plugins are reported so you can refresh them through the host plugin manager.</p>
           </div>
         </li>
       </ol>

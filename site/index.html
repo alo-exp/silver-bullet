@@ -655,7 +655,7 @@ section:nth-child(even){background:var(--section-alt)}
   background:var(--red-a12);color:var(--red);
   font-family:var(--font-sans);margin-left:8px;
 }
-.step-gsd{
+.step-sb{
   display:inline-block;padding:2px 8px;border-radius:4px;
   font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
   background:var(--accent-a12);color:var(--accent-light);
@@ -710,7 +710,7 @@ section:nth-child(even){background:var(--section-alt)}
 .ci-no{color:var(--text-dim)}
 .compare-missing{font-size:.9rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
 
-/* ───── SB VS GSD SECTION ───── */
+/* ───── CORE LIFECYCLE SECTION ───── */
 .sb-lifecycle-overview{
   display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);
   gap:28px;align-items:stretch;
@@ -1163,7 +1163,7 @@ img{max-width:100%;height:auto}
     <div class="text-center">
       <div class="section-label">The Ecosystem</div>
       <h2 class="section-title">Silver Bullet Owns the Core Lifecycle</h2>
-      <p class="section-desc centered">Silver Bullet has absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. Core software-engineering workflows now run through SB-owned skills; optional DevOps and provider plugins remain extension points.</p>
+      <p class="section-desc centered">Core software-engineering workflows run through SB-owned skills. Optional DevOps and provider plugins remain extension points for specialized domains.</p>
     </div>
 
     <div class="ecosystem-grid mt-6">
@@ -1172,7 +1172,7 @@ img{max-width:100%;height:auto}
         <div class="plugin-logo"><i data-lucide="rocket"></i></div>
         <div class="plugin-name">SB Lifecycle</div>
         <div class="plugin-role">Silver Bullet &mdash; Core Workflow Engine</div>
-        <div class="plugin-desc">The planning, execution, verification, review, security, and ship path is now SB-owned. Legacy GSD markers remain compatibility aliases, not required dependencies.</div>
+        <div class="plugin-desc">The planning, execution, verification, review, security, and ship path is SB-owned and enforced by the workflow state SB records.</div>
         <ul class="plugin-features">
           <li><code>silver:context</code> and <code>silver:plan</code> for project framing</li>
           <li><code>silver:execute</code> for checkpointed or autonomous execution</li>
@@ -1185,7 +1185,7 @@ img{max-width:100%;height:auto}
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="zap"></i></div>
         <div class="plugin-name">SB Review Discipline</div>
-        <div class="plugin-role">Absorbed Superpowers Behaviors</div>
+        <div class="plugin-role">SB Review Discipline</div>
         <div class="plugin-desc">Review framing, review triage, TDD discipline, completion verification, and branch finishing are now represented by SB-owned skills and markers.</div>
         <ul class="plugin-features">
           <li><code>silver-review-request</code> and <code>silver-review-triage</code></li>
@@ -1199,7 +1199,7 @@ img{max-width:100%;height:auto}
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="hammer"></i></div>
         <div class="plugin-name">SB Engineering Gates</div>
-        <div class="plugin-role">Absorbed Engineering Discipline</div>
+        <div class="plugin-role">SB Engineering Discipline</div>
         <div class="plugin-desc">Testing strategy, documentation checks, deployment readiness, and incident learning are expressed as SB quality gates and DevOps extension points.</div>
         <ul class="plugin-features">
           <li>Testing strategy: pyramid, coverage goals, tooling</li>
@@ -1213,7 +1213,7 @@ img{max-width:100%;height:auto}
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="palette"></i></div>
         <div class="plugin-name">SB Design Contract</div>
-        <div class="plugin-role">Absorbed UI/UX Validation</div>
+        <div class="plugin-role">SB UI/UX Validation</div>
         <div class="plugin-desc">Design-system, UX copy, accessibility, critique, and handoff expectations are captured by SB UI contract and UI review skills.</div>
         <ul class="plugin-features">
           <li>Design system audit: tokens, component reuse</li>
@@ -1227,7 +1227,7 @@ img{max-width:100%;height:auto}
       <div class="ecosystem-card fade-in">
         <div class="plugin-logo"><i data-lucide="clipboard-list"></i></div>
         <div class="plugin-name">SB Product Framing</div>
-        <div class="plugin-role">Absorbed Product Planning</div>
+        <div class="plugin-role">SB Product Planning</div>
         <div class="plugin-desc">Spec elicitation, product framing, research synthesis, stakeholder context, and release coordination now live inside SB clarify/spec/release workflows.</div>
         <ul class="plugin-features">
           <li>Feature specs and product briefs</li>
@@ -1328,175 +1328,6 @@ img{max-width:100%;height:auto}
         <div class="callout-icon"><i data-lucide="plug"></i></div>
         <p><strong>Smart skill routing, not blind fallback.</strong> Silver Bullet&rsquo;s <code>/devops-skill-router</code> maps context such as Terraform authoring, Kubernetes troubleshooting, or AWS deployment to the best available enrichment. Optional enrichments can degrade gracefully; required dependency skills fail closed so the workflow cannot pretend a missing gate ran.</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ────── SB VS GSD ────── -->
-<section id="sb-vs-gsd" style="background:var(--section-alt)">
-  <div class="container">
-    <div class="text-center">
-      <div class="section-label">Absorbed Dependency Boundary</div>
-      <h2 class="section-title">Core Lifecycle Skills Are Now SB-Owned</h2>
-      <p class="section-desc centered">Silver Bullet absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. Those plugins can still be used explicitly, but core SB workflows do not require them.</p>
-    </div>
-
-    <div class="sb-lifecycle-overview mt-6">
-      <div class="sb-lifecycle-panel fade-in">
-        <h3>SB now owns the software-engineering lifecycle it enforces.</h3>
-        <p>Silver Bullet composes the right task-shaped workflow and blocks unsafe progress until the expected evidence exists: spec coverage, UAT, review, fresh tests, docs, CI, DevOps risk controls, and release readiness. Legacy plugin markers remain compatibility aliases, not required dependencies.</p>
-        <div class="sb-lifecycle-split">
-          <div class="sb-lifecycle-mini">
-            <div class="mini-label">Before</div>
-            <strong>Layered plugin model</strong>
-            <span>SB composed around external lifecycle, review, and PM/design skills.</span>
-          </div>
-          <div class="sb-lifecycle-mini">
-            <div class="mini-label">Now</div>
-            <strong>SB-owned lifecycle</strong>
-            <span>SB routes the task, runs the lifecycle, preserves traceability, and gates edits, PRs, deploys, and releases.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="sb-lifecycle-panel fade-in">
-        <h3>The strongest SB-owned lifecycle benefits</h3>
-        <div class="sb-lifecycle-proof">
-          <div class="sb-lifecycle-proof-row"><strong>Enforcement</strong><span>Host hooks block skipped planning, review, verification, docs, CI, and release steps.</span></div>
-          <div class="sb-lifecycle-proof-row"><strong>Composition</strong><span><code>/silver</code> builds the workflow chain for feature, bugfix, UI, DevOps, research, release, or fast-path work.</span></div>
-          <div class="sb-lifecycle-proof-row"><strong>Traceability</strong><span>Specs, validation findings, UAT state, PR descriptions, and implementation links stay connected.</span></div>
-          <div class="sb-lifecycle-proof-row"><strong>Governance</strong><span>Artifact review, DevOps safety, docs freshness, session continuity, and non-skippable gates are part of the SB lifecycle.</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sb-lifecycle-benefit-grid mt-6">
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="shield-check"></i></div><h3>Process Becomes Enforced</h3></div>
-        <p>SB supplies the lifecycle and the hook-level blockers so agents cannot silently edit, commit, PR, deploy, or release before required evidence exists.</p>
-      </div>
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="workflow"></i></div><h3>Workflows Are Task-Shaped</h3></div>
-        <p><code>/silver</code> classifies the request and composes the workflow across SB gates, optional DevOps extensions, docs, review, and release work.</p>
-      </div>
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="network"></i></div><h3>Cross-Plugin Orchestration</h3></div>
-        <p>SB sequences context, planning, TDD, review, docs, product framing, DevOps gates, and release capabilities without requiring lifecycle-overlap plugins.</p>
-      </div>
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="file-check-2"></i></div><h3>Spec-To-PR Traceability</h3></div>
-        <p><code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>, UAT gates, and PR traceability connect accepted requirements to delivered implementation.</p>
-      </div>
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="clipboard-check"></i></div><h3>Artifact Review Governance</h3></div>
-        <p>SB reviews specs, requirements, design, roadmap, research, ingestion manifests, UAT, and cross-artifact consistency with audit trails and review analytics.</p>
-      </div>
-      <div class="sb-lifecycle-benefit fade-in">
-        <div class="benefit-top"><div class="benefit-icon"><i data-lucide="server-cog"></i></div><h3>DevOps And Release Safety</h3></div>
-        <p>Blast-radius analysis, IaC-adapted quality gates, promotion checks, deployment checklists, CI-red blocking, and release gates surround SB milestone work.</p>
-      </div>
-    </div>
-
-    <div class="text-center mt-6 fade-in">
-      <a href="sb-vs-gsd/" class="btn btn-primary">Learn More &rarr;</a>
-    </div>
-  </div>
-</section>
-
-<!-- ────── COMPARE ────── -->
-<section id="compare">
-  <div class="container">
-    <div class="text-center">
-      <div class="section-label">How It Compares</div>
-      <h2 class="section-title">Silver Bullet Executes the Lifecycle.</h2>
-      <p class="section-desc centered">Silver Bullet is now the lifecycle authority for core software-engineering work: composing the right task path, enforcing gates, and using optional extension plugins only when they add domain-specific capability.</p>
-    </div>
-
-    <div class="compare-grid mt-6">
-
-      <div class="compare-card fade-in">
-        <div class="compare-name">GSD</div>
-        <div class="compare-role">Execution Engine</div>
-        <div class="compare-score">
-          <span class="score-num" style="color:var(--text-dim)">52</span>
-          <span class="score-label">/ 295 weighted score</span>
-        </div>
-        <div class="compare-bar-track">
-          <div class="compare-bar-fill" style="width:17.6%;background:linear-gradient(90deg,var(--cyan),#0e7490)"></div>
-        </div>
-        <ul class="compare-items">
-          <li><span class="ci ci-yes">✓</span> Fresh 200K context per agent</li>
-          <li><span class="ci ci-yes">✓</span> Wave-based parallel execution</li>
-          <li><span class="ci ci-yes">✓</span> Atomic per-task commits</li>
-          <li><span class="ci ci-yes">✓</span> Dependency graph for task ordering</li>
-          <li><span class="ci ci-yes">✓</span> Context rot prevention</li>
-          <li><span class="ci ci-no">–</span> No planning / spec skills</li>
-          <li><span class="ci ci-no">–</span> No quality gates or enforcement</li>
-          <li><span class="ci ci-no">–</span> No code review or finalization</li>
-          <li><span class="ci ci-no">–</span> No DevOps / IaC workflow</li>
-          <li><span class="ci ci-no">–</span> No PostToolUse enforcement hooks</li>
-        </ul>
-        <div class="compare-missing">Best for: teams that only need parallel agent execution with no process enforcement.</div>
-      </div>
-
-      <div class="compare-card fade-in">
-        <div class="compare-name">Superpowers</div>
-        <div class="compare-role">Skills Library</div>
-        <div class="compare-score">
-          <span class="score-num" style="color:var(--text-dim)">58</span>
-          <span class="score-label">/ 295 weighted score</span>
-        </div>
-        <div class="compare-bar-track">
-          <div class="compare-bar-fill" style="width:19.7%;background:linear-gradient(90deg,var(--accent3),#9d174d)"></div>
-        </div>
-        <ul class="compare-items">
-          <li><span class="ci ci-yes">✓</span> Brainstorming &amp; spec writing</li>
-          <li><span class="ci ci-yes">✓</span> Implementation plan writing</li>
-          <li><span class="ci ci-yes">✓</span> Structured code review</li>
-          <li><span class="ci ci-yes">✓</span> Testing strategy &amp; documentation</li>
-          <li><span class="ci ci-yes">✓</span> Branch finishing &amp; standup</li>
-          <li><span class="ci ci-no">–</span> No workflow enforcement</li>
-          <li><span class="ci ci-no">–</span> No quality gates or blast radius</li>
-          <li><span class="ci ci-no">–</span> No parallel execution engine</li>
-          <li><span class="ci ci-no">–</span> No DevOps / IaC workflow</li>
-          <li><span class="ci ci-no">–</span> No PostToolUse enforcement hooks</li>
-        </ul>
-        <div class="compare-missing">Best for: teams that want a skills library and are comfortable self-enforcing the process.</div>
-      </div>
-
-      <div class="compare-card winner fade-in">
-        <div class="compare-name" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Silver Bullet</div>
-        <div class="compare-role" style="color:var(--accent-light)">Agentic Process Orchestrator (APO)</div>
-        <div class="compare-score">
-          <span class="score-num" style="background:linear-gradient(135deg,var(--accent-light),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">295</span>
-          <span class="score-label">weighted score</span>
-        </div>
-        <div class="compare-bar-track">
-          <div class="compare-bar-fill" style="width:100%"></div>
-        </div>
-        <ul class="compare-items">
-          <li><span class="ci ci-yes">✓</span> Owns the core lifecycle engine</li>
-          <li><span class="ci ci-yes">✓</span> Keeps SB in charge before any helper skill runs</li>
-          <li><span class="ci ci-yes">✓</span> Twelve enforcement layers plus documentation governance</li>
-          <li><span class="ci ci-yes">✓</span> 8 core quality dimensions plus conditional gates + hard-stop gate</li>
-          <li><span class="ci ci-yes">✓</span> Blast radius assessment</li>
-          <li><span class="ci ci-yes">✓</span> Composable workflow orchestration — dynamic composition per context</li>
-          <li><span class="ci ci-yes">✓</span> Phase gates — no step can be skipped</li>
-          <li><span class="ci ci-yes">✓</span> 5 optional DevOps plugin integrations</li>
-          <li><span class="ci ci-yes">✓</span> SENTINEL-audited, input-sanitized</li>
-          <li><span class="ci ci-yes">✓</span> Automatic project-type detection</li>
-          <li><span class="ci ci-yes">✓</span> Session logging + timeout supervision</li>
-          <li><span class="ci ci-yes">✓</span> /forensics — structured post-mortem investigation</li>
-          <li><span class="ci ci-yes">✓</span> Interactive &amp; autonomous session modes</li>
-          <li><span class="ci ci-yes">✓</span> Proactive skill auto-discovery</li>
-        </ul>
-        <div class="compare-missing" style="border-color:var(--accent-a20);color:var(--accent-light)">The complete enforced system. Everything above, working together.</div>
-      </div>
-
-    </div>
-
-    <div class="text-center mt-6 fade-in">
-      <a href="compare/" class="btn btn-outline">Full Feature Comparison &rarr;</a>
     </div>
   </div>
 </section>
