@@ -242,7 +242,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.0",
+  "config_version": "0.38.1",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -536,7 +536,7 @@ echo "--- Group 7: DevOps workflow ---"
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.0",
+  "config_version": "0.38.1",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -562,7 +562,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.0",
+  "config_version": "0.38.1",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
