@@ -299,13 +299,16 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    ```
    _notes_tmp=$(mktemp)
    printf '%s' "$RELEASE_NOTES_BODY" > "$_notes_tmp"
-   release_url=$(gh release create "$VERSION" \
+   if [ -x /opt/homebrew/bin/gh ]; then GH=/opt/homebrew/bin/gh; else GH=gh; fi
+   release_url=$("$GH" release create "$VERSION" \
      --title "$VERSION" \
-     --notes-file "$_notes_tmp" \
-     --json url -q '.url')
+     --notes-file "$_notes_tmp")
    rm -f -- "$_notes_tmp"
    ```
    Use `/opt/homebrew/bin/gh` if available, fall back to bare `gh`.
+   Capture the command's stdout as the release URL; do not require
+   `gh release create --json`, which is not available in all GitHub CLI
+   versions.
    Using `--notes-file` instead of `--notes "..."` prevents shell command-substitution
    from backtick-wrapped content in the release notes body (security: WR-04).
    `$release_url` is used in the notification sub-step below (sub-item 6 of this step).

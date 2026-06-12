@@ -228,6 +228,8 @@ assert_not_contains "Codex package does not contain /compact commands" "/compact
 assert_not_contains "Codex package does not contain model_profile routing" 'model_profile: "balanced"' "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain auto-routing wording" "auto-select the correct model for the current host" "$PACKAGE_ROOT"
 assert_not_contains "Codex package does not contain manual routing wording" "Handled automatically via \`model_profile: \"balanced\"\`" "$PACKAGE_ROOT"
+assert_not_contains "Source release skill avoids unsupported gh release --json capture" "--json url" "$REPO_ROOT/skills/silver-create-release/SKILL.md"
+assert_not_contains "Codex package release skill avoids unsupported gh release --json capture" "--json url" "$(skill_file silver-create-release)"
 assert_contains "Codex package uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Codex package uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
 assert_contains "Codex generated snippets use quoted HOME paths" '"$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"' "$(skill_file silver-feature)"
