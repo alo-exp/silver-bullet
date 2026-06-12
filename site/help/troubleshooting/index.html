@@ -176,9 +176,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>When the runtime cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
 
       <div class="issue-card">
-        <h4>"Legacy Superpowers command requested"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> An explicit external Superpowers request was made, or an older project still references a legacy helper name.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Use the SB-owned replacement (<code>silver:review-request</code>, <code>silver:review-triage</code>, <code>silver:completion-audit</code>, <code>silver:branch-finish</code>, or <code>tdd</code>) unless you explicitly want to install and run Superpowers as an external tool.</p>
+        <h4>"External review helper requested"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external review-helper request was made, or an older project still references an obsolete helper name.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use the SB-owned replacement (<code>silver:review-request</code>, <code>silver:review-triage</code>, <code>silver:completion-audit</code>, <code>silver:branch-finish</code>, or <code>tdd</code>) unless you explicitly want supplemental external tooling.</p>
       </div>
 
       <div class="issue-card">
@@ -200,9 +200,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <div class="issue-card">
-        <h4>"GSD plugin not found"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> An explicit legacy GSD command was requested, or an older project still has direct GSD references.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/silver</code> or SB-owned lifecycle skills. Install GSD only if you explicitly need to run external GSD commands.</p>
+        <h4>"External lifecycle command not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external lifecycle command was requested, or an older project still has direct references to retired helper commands.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/silver</code> or SB-owned lifecycle skills. Install supplemental tooling only when the selected workflow explicitly needs it.</p>
       </div>
 
       <div class="issue-card">

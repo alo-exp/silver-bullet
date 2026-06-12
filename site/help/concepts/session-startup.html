@@ -159,7 +159,7 @@ footer a:hover{color:var(--accent-light)}
 
       <h2 id="step1">Step 1 — Load the SB Contract</h2>
       <p>The runtime loads <code>silver-bullet.md</code>, core rules, and the relevant host project instruction file. This establishes the enforcement contract: workflow order, non-skippable gates, ownership boundaries, and user workflow preferences.</p>
-      <p>Silver Bullet does not rely on a generic automatic model switch here. Use the active host or GSD configuration for model behavior.</p>
+      <p>Silver Bullet does not rely on a generic automatic model switch here. Use the active host configuration for model behavior.</p>
 
       <h2 id="step2">Step 2 — Read Project Context</h2>
       <p>The active runtime reads the relevant project docs and planning context needed for the requested work. SB prefers Graphify retrieval when available, then falls back to direct docs reads. This gives it access to architecture decisions, requirements, testing strategy, knowledge, learnings, and active planning state before the workflow begins.</p>
@@ -181,7 +181,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Silver Bullet checks the active workflow tracker, requested skills, required gates, phase locks, and any stall or timeout state. If a prior composition exists under <code>.planning/workflows/&lt;id&gt;.md</code>, the runtime can resume from the next required step instead of starting over.</p>
 
       <h2 id="step5">Step 5 — Update checks</h2>
-      <p>Before starting project work, the runtime may run version checks for Silver Bullet, GSD, and installed companion plugins. Each check is independent; a failure in one check does not block the rest of startup.</p>
+      <p>Before starting project work, the runtime may run version checks for Silver Bullet and selected extension plugins. Each check is independent; a failure in one check does not block the rest of startup.</p>
 
       <div class="update-card">
         <h4>5.1 Silver Bullet <span class="badge badge-auto">auto-offer</span></h4>
@@ -195,20 +195,18 @@ footer a:hover{color:var(--accent-light)}
       </div>
 
       <div class="update-card">
-        <h4>5.2 GSD <span class="badge badge-auto">auto-offer</span></h4>
-        <p>Reads the installed GSD version from <code>${SB_RUNTIME_HOME_ROOT}/get-shit-done/VERSION</code> and checks npm for the latest <code>get-shit-done-cc</code> version. If installed &lt; latest:</p>
-        <p><em>"GSD v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
+        <h4>5.2 Selected Extensions <span class="badge badge-info">informational</span></h4>
+        <p>When a selected extension exposes version metadata, SB reports its installed status and continues. Missing required extensions stop only the workflow that selected them.</p>
         <div class="update-options">
-          <span class="update-opt opt-a">A. Yes, update now</span>
-          <span class="update-opt">B. Skip</span>
+          <span class="update-opt">Refresh through the active host plugin manager when needed</span>
         </div>
-        <p style="margin-top:10px">If A: runs <code>/silver:update</code> through the active host's supported skill channel. If B or either version is unknown: skips and continues.</p>
+        <p style="margin-top:10px">If version metadata is unknown, SB reports the unknown status and continues unless the active workflow requires that extension.</p>
       </div>
 
       <div class="update-card">
-        <h4>5.3 Superpowers / plugins <span class="badge badge-info">informational</span></h4>
-        <p>Reads installed versions for Superpowers, Design, and Engineering plugins from the plugin registry and displays them. No automated update skill exists for these — the runtime displays the versions and immediately continues without prompting.</p>
-        <p>If you want to update: use your host's plugin manager to refresh Superpowers, Design, and Engineering plugins. Silver Bullet will display the installed versions and continue without prompting.</p>
+        <h4>5.3 Optional Plugin Status <span class="badge badge-info">informational</span></h4>
+        <p>Reads installed versions for optional plugins from the plugin registry where available. SB displays the versions and immediately continues without prompting.</p>
+        <p>Update optional plugins through your host's plugin manager. SB will display installed versions and continue without prompting.</p>
       </div>
 
       <div class="update-card">

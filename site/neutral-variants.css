@@ -56,7 +56,6 @@ html[data-theme="dark"][data-neutral-variant="s3"] section:nth-child(even):not(.
 
 html[data-theme="dark"][data-neutral-variant="s3"] #spec-driven,
 html[data-theme="dark"][data-neutral-variant="s3"] #review-analytics,
-html[data-theme="dark"][data-neutral-variant="s3"] #sb-vs-gsd,
 html[data-theme="dark"][data-neutral-variant="s3"] #operational-efficiency{
   background:#0a1421 !important;
 }

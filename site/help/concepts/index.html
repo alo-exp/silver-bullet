@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Core Concepts — Silver Bullet Help</title>
-<meta name="description" content="Understand Silver Bullet's core concepts: skills, hooks, absorbed lifecycle dependencies, quality gates, enforcement layers, and session modes.">
+<meta name="description" content="Understand Silver Bullet's core concepts: skills, hooks, SB-owned lifecycle workflows, quality gates, enforcement layers, and session modes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -90,7 +90,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .ownership-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
 .ownership-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
 .ownership-table td:first-child{font-weight:600;color:var(--text-primary)}
-.owner-gsd{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;background:var(--slate-a12);color:var(--accent-light)}
+.owner-sb{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;background:var(--slate-a12);color:var(--accent-light)}
 .owner-sp{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;background:var(--green-warn-a12);color:var(--green)}
 /* PAGE NAV BOTTOM */
 .page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
@@ -152,7 +152,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul class="sidebar-nav">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#hooks">Hooks</a></li>
-        <li><a href="#absorbed-boundary">Absorbed Dependency Boundary</a></li>
+        <li><a href="#core-lifecycle">Core Lifecycle Ownership</a></li>
         <li><a href="#ownership">Ownership Model</a></li>
         <li><a href="#quality-gates">Quality Gates</a></li>
         <li><a href="#enforcement">Enforcement Layers</a></li>
@@ -239,8 +239,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="absorbed-boundary">Absorbed Dependency Boundary</h2>
-      <p>Silver Bullet has absorbed the GSD, Superpowers, and Anthropic knowledge-work behaviors it explicitly depended on. SB now owns requirements, roadmap, per-phase context, planning, execution, verification, review, ship, and release lifecycle artifacts in <code>.planning/</code>.</p>
+      <h2 id="core-lifecycle">Core Lifecycle Ownership</h2>
+      <p>SB owns requirements, roadmap, per-phase context, planning, execution, verification, review, ship, and release lifecycle artifacts in <code>.planning/</code>.</p>
 
       <h3>What SB Manages</h3>
       <ul>
@@ -262,9 +262,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <span class="cmd">/silver:ship</span>          <span class="comment"># Phase-level ship readiness</span>
 <span class="cmd">/silver:debug</span>         <span class="comment"># Systematic debugging for active bugs</span></div>
 
-      <p>Legacy GSD and Superpowers markers are accepted for migration and state normalization only. Ordinary lifecycle requests route to SB-owned skills by default.</p>
+      <p>Ordinary lifecycle requests route to SB-owned skills by default. Optional plugins are used only when the selected workflow needs a specialized extension.</p>
 
-      <h3>Absorbed Superpowers-style Discipline</h3>
+      <h3>Review And Completion Discipline</h3>
       <ul>
         <li><strong><code>tdd</code> / <code>silver-tdd</code></strong> — SB-owned red/green/refactor policy before behavior-changing implementation</li>
         <li><strong><code>/silver:review-request</code></strong> — Frames review scope, files, risks, and blockers</li>
@@ -283,11 +283,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr><th>Concern</th><th>Owner</th><th>Rule</th></tr>
         </thead>
         <tbody>
-          <tr><td>Requirements</td><td><span class="owner-gsd">SB</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth.</td></tr>
-          <tr><td>Planning</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:context</code> and <code>/silver:plan</code> for lifecycle planning.</td></tr>
-          <tr><td>Execution</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:execute</code> or the active SB workflow path for project work.</td></tr>
-          <tr><td>Design specs</td><td><span class="owner-gsd">SB</span></td><td>Use <code>/silver:ui-contract</code>, <code>/silver:ui-review</code>, and design artifacts owned by the active SB workflow.</td></tr>
-          <tr><td>Code review</td><td><span class="owner-gsd">SB</span></td><td><code>/silver:review</code> owns <code>REVIEW.md</code>; external reviewers are supplemental evidence only.</td></tr>
+          <tr><td>Requirements</td><td><span class="owner-sb">SB</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth.</td></tr>
+          <tr><td>Planning</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:context</code> and <code>/silver:plan</code> for lifecycle planning.</td></tr>
+          <tr><td>Execution</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:execute</code> or the active SB workflow path for project work.</td></tr>
+          <tr><td>Design specs</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:ui-contract</code>, <code>/silver:ui-review</code>, and design artifacts owned by the active SB workflow.</td></tr>
+          <tr><td>Code review</td><td><span class="owner-sb">SB</span></td><td><code>/silver:review</code> owns <code>REVIEW.md</code>; external reviewers are supplemental evidence only.</td></tr>
         </tbody>
       </table>
 
@@ -327,7 +327,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
         <div class="layer-card"><div class="layer-num">2</div><div><h4>Dev Cycle Gate</h4><p><code>dev-cycle-check.sh</code> enforces the current composed workflow stage and prevents premature source edits or phase movement.</p></div></div>
-        <div class="layer-card"><div class="layer-num">3</div><div><h4>Planning File Guard</h4><p><code>planning-file-guard.sh</code> blocks direct edits to GSD-managed artifacts such as ROADMAP, STATE, PROJECT, RELEASE, and milestone audit files.</p></div></div>
+        <div class="layer-card"><div class="layer-num">3</div><div><h4>Planning File Guard</h4><p><code>planning-file-guard.sh</code> blocks direct edits to SB-managed artifacts such as ROADMAP, STATE, PROJECT, RELEASE, and milestone audit files.</p></div></div>
         <div class="layer-card"><div class="layer-num">4</div><div><h4>Completion Audit</h4><p><code>completion-audit.sh</code> checks planning-floor and final-delivery requirements before git, PR, deploy, and release operations.</p></div></div>
         <div class="layer-card"><div class="layer-num">5</div><div><h4>CI Status Check</h4><p><code>ci-status-check.sh</code> keeps red CI from reaching PR/deploy/release. Commits can still proceed so CI fixes are not trapped locally.</p></div></div>
         <div class="layer-card"><div class="layer-num">6</div><div><h4>Compliance Score</h4><p><code>compliance-status.sh</code> shows current gate state after tool use so the active runtime and user can see what remains.</p></div></div>
@@ -375,7 +375,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>How It Works</h3>
       <ol>
-        <li>GSD's execute-phase identifies independent tasks within a wave</li>
+        <li>SB identifies independent tasks within a wave</li>
         <li>Each task is dispatched as a separate agent with <code>isolation: "worktree"</code></li>
         <li>All agents run in parallel (with <code>run_in_background: true</code> in Autonomous mode)</li>
         <li>After all agents complete, a merge gate resolves any conflicts before the next wave starts</li>
@@ -402,7 +402,7 @@ CLAUDE.md / AGENTS.md        <span class="comment"># Active workflow + Silver Bu
 .silver-bullet.json          <span class="comment"># Project config (semantic compression, etc.)</span>
 .github/workflows/ci.yml     <span class="comment"># CI pipeline (auto-generated if absent)</span>
 
-<span class="comment"># Planning (managed by GSD)</span>
+<span class="comment"># Planning (managed by SB)</span>
 .planning/
   PROJECT.md                 <span class="comment"># Project goals + metadata</span>
   REQUIREMENTS.md            <span class="comment"># Authoritative requirements</span>
@@ -423,7 +423,7 @@ docs/
     YYYY-MM.md               <span class="comment"># Monthly knowledge entries</span>
   learnings/                 <span class="comment"># Portable learnings (monthly files)</span>
     YYYY-MM.md               <span class="comment"># Monthly learnings by category</span>
-  specs/                     <span class="comment"># Optional detailed design records (SB/GSD)</span>
+  specs/                     <span class="comment"># Optional detailed design records</span>
   workflows/                 <span class="comment"># Active workflow files</span>
   sessions/                  <span class="comment"># Per-session logs</span>
 graphify-out/                <span class="comment"># Local Graphify retrieval index (generated, ignored)</span>
@@ -667,7 +667,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="refresh-cw"></i></div>
           <h4>Automatic Updates</h4>
-          <p>Silver Bullet and GSD are version-checked at session start. Companion plugin versions are surfaced where the host exposes metadata, and optional research/review plugins are reported when installed.</p>
+          <p>Silver Bullet is version-checked at session start. Optional plugin versions are surfaced where the host exposes metadata and the selected workflow needs them.</p>
         </div>
       </div>
 

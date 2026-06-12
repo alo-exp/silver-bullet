@@ -140,7 +140,7 @@ footer a:hover{color:var(--accent-light)}
         <li>"regression" / "failing test" / "not working"</li>
         <li>Any observation that something that used to work has stopped working</li>
         <li>A test that was green is now red</li>
-        <li>A GSD workflow or plan that failed mid-execution</li>
+        <li>An SB workflow or plan that failed mid-execution</li>
       </ul>
       <p><code>silver:bugfix</code> always takes precedence over <code>silver:feature</code> and <code>silver:ui</code> when triggered by a bug report.</p>
 
@@ -199,7 +199,7 @@ C. Failed SB workflow specifically — a plan, execution phase, or SB lifecycle 
 
       <h2 id="tdd-regression">Step 2 — TDD regression test (all paths converge here)</h2>
       <p>All three paths converge at this step. Before writing any fix code:</p>
-      <p>Invoke the SB <code>tdd</code> gate. Purpose: write a failing regression test first — RED must appear before writing any fix. The absorbed TDD boundary keeps bugfix work routed through SB while preserving failing-test-first discipline.</p>
+      <p>Invoke the SB <code>tdd</code> gate. Purpose: write a failing regression test first — RED must appear before writing any fix. The SB TDD boundary keeps bugfix work routed through SB while preserving failing-test-first discipline.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">⚠</div>
