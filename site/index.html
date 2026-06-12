@@ -428,9 +428,9 @@ section:nth-child(even){background:var(--section-alt)}
 .feature-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.6}
 
 /* ───── ECOSYSTEM CARDS ───── */
-.ecosystem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.ecosystem-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 @media(max-width:900px){.ecosystem-grid{grid-template-columns:1fr}}
-@media(min-width:901px) and (max-width:1100px){.ecosystem-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:901px) and (max-width:1100px){.ecosystem-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ecosystem-card{
   background:var(--bg-card);border:1px solid var(--border);
   border-radius:var(--radius-lg);padding:28px;
@@ -462,13 +462,11 @@ section:nth-child(even){background:var(--section-alt)}
   list-style:none;padding:0;margin:0 0 16px;
   display:flex;flex-direction:column;gap:6px;
 }
-.ecosystem-card .plugin-features li{
-  font-size:.9rem;color:var(--text-secondary);
-  display:flex;align-items:flex-start;gap:8px;line-height:1.4;
-}
+.ecosystem-card .plugin-features li{font-size:.9rem;color:var(--text-secondary);position:relative;padding-left:20px;line-height:1.4;min-width:0;overflow-wrap:break-word;word-break:normal}
 .ecosystem-card .plugin-features li::before{
-  content:'→';color:var(--accent-light);font-weight:700;flex-shrink:0;margin-top:1px;
+  content:'→';color:var(--accent-light);font-weight:700;position:absolute;left:0;top:0;
 }
+.ecosystem-card .plugin-features code{white-space:normal;overflow-wrap:break-word;word-break:normal}
 .ecosystem-card .plugin-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
 .plugin-learn-more{font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--accent-light);text-decoration:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;transition:all .2s;}
 .plugin-learn-more:hover{color:var(--accent);border-color:var(--accent-light);background:var(--accent-glow);}
