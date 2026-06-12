@@ -71,7 +71,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .step-card .step-output{font-size:1rem;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .badge-required{background:var(--red-badge-a10);color:var(--red)}
-.badge-gsd{background:var(--slate-a12);color:var(--accent-light)}
+.badge-sb{background:var(--slate-a12);color:var(--accent-light)}
 .badge-sp{background:var(--green-warn-a12);color:var(--green)}
 .badge-eng{background:var(--amber-a12);color:var(--amber)}
 .badge-cond{background:var(--amber-a10);color:var(--amber)}
@@ -180,7 +180,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/silver &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB, GSD, and plugin path.</div>
+        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/silver &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB workflow and optional extension path.</div>
       </div>
 
       <h2 id="overview">How the DevOps Workflow Differs From Dev</h2>
@@ -249,7 +249,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">2</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-gsd">SB</span></div>
+          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-sb">SB</span></div>
           <p class="step-desc">For DevOps projects, the roadmap phases typically map to infrastructure layers. SB will ask about target environments, IaC toolchain, state backend, naming conventions, and tagging strategy.</p>
           <div class="step-output">→ Typical phase order: networking → storage → compute → monitoring → CI/CD</div>
         </div>
@@ -269,7 +269,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">3</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:context</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:context</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Captures implementation decisions for this infra phase. DevOps-specific topics to cover:</p>
           <ul style="margin-top:8px;margin-bottom:0;font-size:.84rem;color:var(--text-secondary)">
             <li>Target environments (dev / staging / prod) and promotion strategy</li>
@@ -341,7 +341,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">6</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Both the blast radius report and the quality gate report feed into the plan as hard requirements. For IaC phases, the wave order follows dependency direction:</p>
           <ul class="wave-list" style="margin-top:12px">
             <li class="wave-item"><span class="wave-num">Wave 1</span><span class="wave-desc">Networking and IAM — no dependencies on other new resources</span></li>
@@ -363,7 +363,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">7</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment only</strong> (dev or equivalent). Higher environments (staging, production) are promoted in the Environment Promotion section (steps 14–15) after all phases complete. <strong>TDD is explicitly skipped for IaC execution. Use plan output, policy checks, validation commands, secrets/IAM review, drift detection, and rollback verification instead of red-green-refactor.</strong> Commit atomically per task.</p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
@@ -377,7 +377,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Infrastructure verification — not UAT. For DevOps phases, verify:</p>
           <ul style="margin-top:8px;margin-bottom:0;font-size:.84rem;color:var(--text-secondary)">
             <li>Health checks passing on all new/modified resources</li>
@@ -407,7 +407,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Produces the authoritative <code>REVIEW.md</code>. For IaC: hardcoded values that should be variables, missing tags/labels, overly permissive security groups, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files.</p>
         </div>
       </div>
@@ -423,7 +423,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">12</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Plan to address accepted review items. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
@@ -431,7 +431,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">13</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implement the review-driven plan with atomic commits. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
@@ -550,7 +550,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">23</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request. For DevOps work, the PR body includes phase summaries, blast radius ratings, requirement coverage, and post-apply drift detection results.</p>
           <div class="step-output">→ Produces: pull request with blast radius ratings and infra coverage</div>
         </div>

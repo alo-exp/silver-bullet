@@ -50,7 +50,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "lifecycle",
     "title": "SB lifecycle engine",
-    "text": "Silver Bullet owns .planning artifacts, requirements, roadmap, context, plan, execute, verify, review, security, and phase-level ship. Legacy GSD markers remain compatibility aliases only."
+    "text": "Silver Bullet owns .planning artifacts, requirements, roadmap, context, plan, execute, verify, review, security, and phase-level ship."
   },
   {
     "page": "Core Concepts",

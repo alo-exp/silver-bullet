@@ -71,7 +71,7 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .step-card .step-output{font-size:1rem;color:var(--text-dim);margin-top:6px;font-family:var(--font-mono)}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .badge-required{background:var(--red-badge-a10);color:var(--red)}
-.badge-gsd{background:var(--slate-a12);color:var(--accent-light)}
+.badge-sb{background:var(--slate-a12);color:var(--accent-light)}
 .badge-sp{background:var(--green-warn-a12);color:var(--green)}
 .badge-eng{background:var(--amber-a12);color:var(--amber)}
 .badge-cond{background:var(--amber-a10);color:var(--amber)}
@@ -224,7 +224,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">2</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-gsd">SB</span></div>
+          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-sb">SB</span></div>
           <p class="step-desc">Kicks off with clarifying questions, ecosystem research, requirements scoping, and roadmap generation. This is where you define what you're building and how it's broken into phases.</p>
           <div class="step-output">→ Produces: .planning/PROJECT.md, .planning/REQUIREMENTS.md, .planning/ROADMAP.md</div>
         </div>
@@ -242,7 +242,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0891b2)">3</div>
         <div>
-          <div class="step-meta"><span class="step-title" id="discuss">/silver:context</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title" id="discuss">/silver:context</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Captures implementation decisions, gray areas, and preferences for this specific phase before any planning begins. The host runtime asks targeted questions about this phase — not the whole project.</p>
           <div class="step-output">→ Produces: .planning/{phase}-CONTEXT.md</div>
         </div>
@@ -280,7 +280,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">5</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">SB researches the implementation space, then creates a detailed task-level plan. The quality gate report feeds in as hard requirements. After the plan is written, the runtime cross-references installed skills against the plan content to flag any skill gaps.</p>
           <div class="step-output">→ Produces: .planning/{phase}-RESEARCH.md, .planning/{phase}-{N}-PLAN.md</div>
         </div>
@@ -292,7 +292,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">6</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Plan-driven execution. SB follows the plan in checkpointed or autonomous waves, records deviations, and preserves verification evidence. <strong>Before writing behavior-changing implementation code: invoke <code>tdd</code> when applicable.</strong></p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
@@ -309,7 +309,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">7</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/silver:forensics</code> or <code>/silver:debug</code> depending on whether the failure is workflow/session-level or an active bug.</p>
           <div class="step-output">→ Produces: .planning/{phase}-VERIFICATION.md, .planning/{phase}-UAT.md</div>
         </div>
@@ -329,7 +329,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Produces the authoritative <code>REVIEW.md</code>. Distinct from goal verification — this reviews the code itself, not whether it achieves the goal.</p>
         </div>
       </div>
@@ -355,7 +355,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">11</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Creates a plan to address the accepted review items. Same planning rigor as Step 5.</p>
         </div>
       </div>
@@ -363,7 +363,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">12</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-gsd">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implements the review-driven plan with atomic commits. Same execution model as Step 6.</p>
         </div>
       </div>
@@ -459,7 +459,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">19</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-gsd">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request from the verified, deployed work. The PR body is auto-generated with phase summaries and requirement coverage. Includes links to verification and UAT results.</p>
           <div class="step-output">→ Produces: pull request with phase summaries and requirement coverage</div>
         </div>
