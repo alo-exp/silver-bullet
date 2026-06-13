@@ -116,7 +116,8 @@ pack set and include its pack results as conditional rows in the quality report.
 | UI components, layout, forms, keyboard/focus behavior | `ui-system`, `accessibility` |
 | Release/deploy/canary/rollback/incident/retro/benchmark scope | `runtime-release`, `incident-retro`, `benchmark-eval` as applicable |
 
-Domain pack findings use the normalized schema from `silver:domain-audit`.
+Domain pack findings use the normalized schema from `docs/evidence-schema.md`
+and `silver:domain-audit`.
 Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
 `WARN` findings must be filed through `silver:add` before this gate can pass.
 

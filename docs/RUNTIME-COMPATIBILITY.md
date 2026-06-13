@@ -20,3 +20,37 @@ Silver Bullet does not provide generic automatic model routing. The historical `
 - Do not require `.planning/config.json` `model_profile` fields as part of Silver Bullet setup.
 - If stronger reasoning is needed, configure that in the host runtime or the delegated tool that owns execution.
 - Treat model choice as an external runtime concern; treat workflow ordering, gates, artifacts, and traceability as Silver Bullet concerns.
+
+## Runtime Capability Tiers
+
+SB documents four capability tiers so users know what enforcement to expect in
+each host environment. Run `bash scripts/sb-diagnostics.sh` for a local probe.
+
+| Tier | Name | What works | Typical host |
+|------|------|------------|--------------|
+| 0 | Guidance-only | Skills, workflows, artifact templates; no hook enforcement | SDK/web sessions without hook config |
+| 1 | State-tracked | Skill markers and state file under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | Partial hook delivery or manual skill invocation |
+| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards | Claude Code CLI, Codex CLI with merged hooks |
+| 3 | Live-tested | Release live matrix, e2e-live scenarios, installed-runtime receipts | CI release gates and local live harness |
+
+Tiers are cumulative: tier 2 includes tier 1 behavior; tier 3 assumes tier 2
+for release work.
+
+### Diagnostics
+
+```bash
+# Human-readable report
+bash scripts/sb-diagnostics.sh
+
+# JSON for automation
+SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
+```
+
+Checks: `jq`, hook config presence, Graphify availability, package version,
+state root, and inferred capability tier.
+
+### Related Docs
+
+- `silver-bullet.md` §11 — hook protocol and SDK workarounds
+- `docs/code-intelligence-contract.md` — code-intelligence tiers (separate from runtime tiers)
+- `skills/silver-init/SKILL.md` — project bootstrap and runtime probe
