@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-14 — v0391-receipt-release-gate
+**What**: Shipped v0.39.1 prep fixes: cross-runtime Codex adapter receipt lookup for `record-skill`, GitHub Release body validation (#217), silver-scan session discovery (#219), and prompt-reminder stdin hang fix; verified full suite (3022), live matrix, and e2e-live gates.
+**Commits**: 62203f2, fe095e5, 45e93aa, ab12e86
+**Skills run**: silver:context, silver:plan, silver:ensure-docs, verify-tests
+**Virtual cost**: ~$0.20 (medium complexity — hook fixes, release gate, doc-scheme remediation)
+**KNOWLEDGE.md**: updated (cross-runtime receipt dirs, release notes validation)
+**Learnings**: updated (hook tests need closed stdin; doc-scheme gate uses session mtime)
+
 ## 2026-06-11 — release-live-marker-host-state
 **What**: Fixed the Kay/Codex live release runners so successful isolated runtime gates write their completion markers into the host Silver Bullet state directory that `completion-audit.sh` checks before `gh release create`.
 **Commits**: —
