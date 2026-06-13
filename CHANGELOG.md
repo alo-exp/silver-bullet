@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.39.1] — 2026-06-14
+
+## Bug Fixes
+- `fix(scan): audit agent session discovery` (ab12e86)
+- `fix(hooks): cross-runtime adapter receipts and validate release notes` (62203f2)
+
+## Tests
+- `test(hooks): avoid prompt-reminder hang on open stdin` (fe095e5)
+- `test(hooks): cover cross-runtime receipt lookup` (62203f2)
+- `test(scripts): validate GitHub Release notes body` (62203f2)
+
+---
+
 ## [0.39.0] — 2026-06-12
 
 ## Features
