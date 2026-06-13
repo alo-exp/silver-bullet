@@ -6,7 +6,7 @@
 - `Close AS1 structural parity gaps with shared contracts and diagnostics.` (97cbce5)
 
 ## Tests
-- `test: redirect stdin in run-all-tests to prevent hook hang` (pending)
+- `test: redirect stdin in run-all-tests to prevent hook hang` (481849d)
 
 ---
 
