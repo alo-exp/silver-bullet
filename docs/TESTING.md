@@ -48,9 +48,19 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 
 - Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
 - The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
-- `tests/run-all-tests.sh` invokes each `test-*.sh` with `</dev/null` so hooks that read stdin do not hang when the runner captures output via command substitution
+- `tests/run-all-tests.sh` invokes each `test-*.sh` with `</dev/null` so hooks that read stdin do not hang when the runner captures output via command substitution (fixed v0.39.2 — without the redirect, `input=$(cat)` in hook tests blocks the full 3000+ test suite indefinitely in agent shells)
 - On success, the skill writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`
 - `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
+
+### `run-all-tests.sh` stdin redirect (v0.39.2)
+
+`tests/run-all-tests.sh` captures per-test output with:
+
+```bash
+output=$(bash "$test_file" </dev/null 2>&1)
+```
+
+Without `</dev/null`, the subshell inherits the parent agent shell's open stdin. Hook tests that read input via `input=$(cat)` block indefinitely and the 3000+ test suite appears hung. Individual hook tests should pipe explicit JSON when exercising stdin paths.
 
 ## Phase 2 — New Test Requirements
 

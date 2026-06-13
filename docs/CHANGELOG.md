@@ -16,13 +16,21 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-14 — v0392-as1-parity-release-gate (session doc-scheme pass)
+**What**: Re-ran doc-scheme gate remediation in a new session — full 79-key checklist, fresh mandated-doc mtimes after session-start-time.
+**Commits**: (this session)
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.02 (gate unblock — checklist regeneration + mandated doc touch)
+**KNOWLEDGE.md**: no changes (AS1 parity entries current)
+**Learnings**: no changes (session mtime pattern documented)
+
 ## 2026-06-14 — v0392-as1-parity-release-gate
-**What**: Shipped v0.39.2 closing AS1 structural parity gaps (evidence schema, code-intelligence contract, external-review policy, backlog fingerprinting, sb-diagnostics, interface STATE template); fixed run-all-tests stdin hang; verified full suite (3034) and pre-release quality gate.
-**Commits**: 97cbce5, (release prep)
-**Skills run**: silver:review, silver:verify, verify-tests, silver:create-release
-**Virtual cost**: ~$0.15 (patch release — docs/contracts + test harness fix)
-**KNOWLEDGE.md**: updated (run-all-tests stdin redirect)
-**Learnings**: updated (run-all-tests command substitution inherits open stdin)
+**What**: Shipped v0.39.2 closing AS1 structural parity gaps — shared `docs/evidence-schema.md`, `docs/code-intelligence-contract.md`, `docs/external-review-policy.md`, backlog fingerprinting in `silver:add`, `scripts/sb-diagnostics.sh` with `tests/scripts/test-sb-diagnostics.sh`, interface `STATE.md` template, and refreshed `docs/sb-vs-as1.md` parity matrix; fixed `tests/run-all-tests.sh` stdin hang (`</dev/null` per test); verified full suite (3034 green) and pre-release quality gate (2 clean rounds).
+**Commits**: 97cbce5, 481849d, 32dadc5
+**Skills run**: silver:review, silver:verify, verify-tests, silver:ensure-docs, silver:create-release
+**Virtual cost**: ~$0.18 (patch release — parity contracts, diagnostics, test harness, doc-scheme gate)
+**KNOWLEDGE.md**: updated (AS1 parity closure, sb-diagnostics, evidence schema, doc-scheme mtime gate)
+**Learnings**: updated (run-all-tests stdin inheritance, doc-scheme full checklist coverage)
 
 ## 2026-06-14 — v0391-receipt-release-gate
 **What**: Shipped v0.39.1 prep fixes: cross-runtime Codex adapter receipt lookup for `record-skill`, GitHub Release body validation (#217), silver-scan session discovery (#219), and prompt-reminder stdin hang fix; verified full suite (3022), live matrix, and e2e-live gates.
