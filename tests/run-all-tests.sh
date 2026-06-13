@@ -46,7 +46,7 @@ run_suite() {
     echo "[ $basename ]"
 
     local output exit_code=0
-    output=$(bash "$test_file" 2>&1) || exit_code=$?
+    output=$(bash "$test_file" </dev/null 2>&1) || exit_code=$?
 
     printf '%s\n' "$output"
 
