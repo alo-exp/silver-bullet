@@ -121,6 +121,12 @@ and `silver:domain-audit`.
 Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
 `WARN` findings must be filed through `silver:add` before this gate can pass.
 
+Validate normalized finding rows when the helper is available:
+
+```bash
+bash scripts/validate-evidence-findings.sh
+```
+
 ---
 
 ## Step 3: Produce consolidated report

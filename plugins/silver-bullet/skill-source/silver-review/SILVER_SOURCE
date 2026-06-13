@@ -38,6 +38,15 @@ but they feed into REVIEW.md and do not replace this SB review artifact.
 
 Normalize imported findings with `docs/evidence-schema.md`.
 
+Before completing review, run when available:
+
+```bash
+bash scripts/validate-evidence-findings.sh
+```
+
+Malformed finding tables surface as delivery warnings (or blocks when strict mode
+is enabled). See `hooks/lib/evidence-schema-gate.sh`.
+
 ## Exit Gate
 
 Review passes only when all BLOCK findings are fixed or explicitly accepted and
