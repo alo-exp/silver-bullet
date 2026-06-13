@@ -151,10 +151,36 @@ def sha256_text(text: str) -> str:
 
 
 def normalize_text(text: str) -> str:
-    text = text.lower().replace("—", "-")
-    text = re.sub(r"`([^`]*)`", r"\1", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip(" \t\r\n-:;,.")
+    try:
+        from pathlib import Path
+        import sys
+
+        lib = Path(__file__).resolve().parent / "lib"
+        if str(lib) not in sys.path:
+            sys.path.insert(0, str(lib))
+        from evidence_common import normalize_text as _shared_normalize  # type: ignore
+
+        return _shared_normalize(text)
+    except Exception:
+        text = text.lower().replace("—", "-")
+        text = re.sub(r"`([^`]*)`", r"\1", text)
+        text = re.sub(r"\s+", " ", text)
+        return text.strip(" \t\r\n-:;,.")
+
+
+def scan_item_fingerprint(title: str, context: str) -> str:
+    try:
+        from pathlib import Path
+        import sys
+
+        lib = Path(__file__).resolve().parent / "lib"
+        if str(lib) not in sys.path:
+            sys.path.insert(0, str(lib))
+        from evidence_common import scan_fingerprint  # type: ignore
+
+        return scan_fingerprint(title, context)
+    except Exception:
+        return sha256_text(f"{normalize_text(title)}\n{normalize_text(context)}")
 
 
 def rel_path(path: Path, root: Path) -> str:
@@ -701,7 +727,7 @@ def build_candidate(
     context = short_context(text)
     source_rel = rel_path(source["path"], root)
     candidate_id = sha256_text(f"{normalize_text(source_rel)}\n{normalize_text(title)}\n{normalize_text(context)}")
-    fingerprint = sha256_text(f"{normalize_text(title)}\n{normalize_text(context)}")
+    fingerprint = scan_item_fingerprint(title, context)
 
     return {
         "candidate_id": candidate_id,
@@ -916,7 +942,7 @@ def parse_candidates(root: Path, source: dict[str, Any], config: dict[str, Any],
         context = short_context("\n".join(lines[max(0, idx - 2) : min(len(lines), idx + 1)]))
         candidate = {
             "candidate_id": sha256_text(f"{normalize_text(rel_path(source['path'], root))}\n{normalize_text(title)}\n{normalize_text(context)}"),
-            "fingerprint": sha256_text(f"{normalize_text(title)}\n{normalize_text(context)}"),
+            "fingerprint": scan_item_fingerprint(title, context),
             "kind": "deferred",
             "classification": classify_deferred(stripped)[0],
             "confidence": classify_deferred(stripped)[1],
@@ -1398,7 +1424,7 @@ def parse_candidate_stream(root: Path, source: dict[str, Any], config: dict[str,
         context = short_context("\n".join(lines[max(0, idx - 2) : min(len(lines), idx + 1)]))
         candidate = {
             "candidate_id": sha256_text(f"{normalize_text(rel_path(source['path'], root))}\n{normalize_text(title)}\n{normalize_text(context)}"),
-            "fingerprint": sha256_text(f"{normalize_text(title)}\n{normalize_text(context)}"),
+            "fingerprint": scan_item_fingerprint(title, context),
             "kind": "deferred",
             "classification": classification,
             "category": classification,
