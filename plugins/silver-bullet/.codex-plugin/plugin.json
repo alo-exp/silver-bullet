@@ -1,6 +1,6 @@
 {
   "name": "silver-bullet",
-  "version": "0.39.2",
+  "version": "0.39.3",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, templates, and lifecycle workflows; optional extension plugins are installed from their official sources.",
   "author": {
     "name": "Alo Labs",

@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-14 — phase-056-zuvo-runtime-parity-release
+**What**: Shipped v0.39.3 runtime-enforced AS1/Zuvo parity — evidence schema validator + delivery gate, `silver-add.sh` fingerprint/dedup/prioritize, interface STATE stamping in `silver:init`, `sb-bootstrap.sh` onboarding probe, Claude agent bundle name rewrite fix; refreshed homepage and Help Center for v0.39.3.
+**Commits**: (this release)
+**Skills run**: silver:review, silver:verify, verify-tests, silver:ensure-docs, silver:create-release
+**Virtual cost**: ~$0.15 (patch release — runtime parity scripts, site refresh, release gate)
+**KNOWLEDGE.md**: updated (runtime parity enforcement, evidence schema gate)
+**Learnings**: updated (Claude agent bundle name rewrite on sync)
+
 ## 2026-06-14 — v0392-as1-parity-release-gate (session doc-scheme pass)
 **What**: Re-ran doc-scheme gate remediation in a new session — full 79-key checklist, fresh mandated-doc mtimes after session-start-time.
 **Commits**: (this session)

@@ -1,7 +1,7 @@
 {
-  "task_id": "v0392-as1-parity-release-gate",
+  "task_id": "phase-056-zuvo-runtime-parity-release",
   "task_granularity": 3,
-  "updated_at": "2026-06-13T20:24:09Z",
+  "updated_at": "2026-06-13T23:13:42Z",
   "docs": {
     "docs/CHANGELOG.md": "updated",
     "docs/knowledge/YYYY-MM.md": "updated",
@@ -76,7 +76,7 @@
     "docs/superpowers/specs/2026-04-02-semantic-context-compression-design.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",
     "docs/superpowers/specs/2026-04-08-sb-orchestrated-dev-workflows-design.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",
     "docs/superpowers/specs/2026-05-08-inline-todo-app-full-surface-e2e-design.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",
-    "docs/task-doc-checklist.json": "updated",
+    "docs/task-doc-checklist.json": "not-needed: reviewed for v0.39.3 runtime parity release; prior update still current",
     "docs/tech-debt.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",
     "docs/workflows/devops-cycle.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",
     "docs/workflows/full-dev-cycle.md": "not-needed: reviewed for v0.39.2 AS1 parity release; no content change",

@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.39.2
-milestone_name: AS1 Structural Parity Closure
+milestone: v0.39.3
+milestone_name: Zuvo Runtime Parity Enforcement
 status: complete
-last_updated: "2026-06-14T18:00:00.000+1000"
+last_updated: "2026-06-14T10:00:00.000+1000"
 last_activity: 2026-06-14
 progress:
   total_phases: 1
@@ -16,15 +16,15 @@ progress:
 # Project State
 
 **Project:** Silver Bullet
-**Current version:** v0.39.2 (release line shipped)
-**Active milestone:** v0.39.2 AS1 Structural Parity Closure complete
+**Current version:** v0.39.3 (release line shipped)
+**Active milestone:** v0.39.3 Zuvo Runtime Parity Enforcement complete
 **Current plan:** none
 
 Last activity: 2026-06-14
 
 ## Project Reference
 
-Silver Bullet shipped `v0.39.2` closing remaining AS1 structural parity gaps: cross-domain evidence schema, code-intelligence contract, external-review policy, backlog fingerprinting in `silver:add`, `sb-diagnostics`, and `templates/interface/STATE.md.base`.
+Silver Bullet shipped `v0.39.3` closing the gap between documented AS1 structural parity and runtime-enforced parity: evidence schema validation, `silver-add.sh` fingerprint CLI, interface STATE stamping, `sb-bootstrap.sh` onboarding, and delivery-hook integration.
 
 See:
 
@@ -33,26 +33,25 @@ See:
 - `.planning/ROADMAP.md`
 - `.planning/MILESTONES.md`
 - `docs/sb-vs-as1.md`
-- `GOAL.md`
+- `.planning/phases/056-zuvo-runtime-parity/056-VERIFICATION.md`
 
 ## Current Position
 
-Phase: AS1 parity closure (complete)
+Phase: 056 Zuvo runtime parity (complete)
 Plan: none
 Status: Released
-Last activity: 2026-06-14 — `v0.39.2` published; GOAL.md marked complete
+Last activity: 2026-06-14 — `v0.39.3` published
 
 ## Completed Work
 
-- Shared evidence schema (`docs/evidence-schema.md`)
-- Code-intelligence tiers (`docs/code-intelligence-contract.md`)
-- External-review policy (`docs/external-review-policy.md`)
-- Backlog fingerprinting in `silver:add`
-- Install/runtime diagnostics (`scripts/sb-diagnostics.sh`)
-- Interface design-state template (`templates/interface/STATE.md.base`)
-- `run-all-tests.sh` stdin redirect fix
+- Shared evidence fingerprints (`scripts/lib/evidence_common.py`)
+- Evidence schema validator + delivery gate (`validate-evidence-findings.py`, `evidence-schema-gate.sh`)
+- `silver-add.sh` fingerprint, dedup, prioritize CLI
+- Interface STATE stamping (`stamp-interface-state.sh`, `silver:init` step 3.2.1)
+- Install onboarding probe (`sb-bootstrap.sh`)
+- Claude agent bundle `silver:*` name rewrite on render
 
 ## Session Continuity
 
 Last session: 2026-06-14
-Stopped at: v0.39.2 release cut
+Stopped at: v0.39.3 release cut

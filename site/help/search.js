@@ -328,9 +328,16 @@ var IDX = [
   {
     "page": "Reference",
     "url": "/help/reference/",
+    "anchor": "runtime-parity",
+    "title": "Runtime parity scripts v0.39.3",
+    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook AS1 Zuvo parity"
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.39.2, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.39.3, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",
