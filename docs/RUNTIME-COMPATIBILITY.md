@@ -24,7 +24,9 @@ Silver Bullet does not provide generic automatic model routing. The historical `
 ## Runtime Capability Tiers
 
 SB documents four capability tiers so users know what enforcement to expect in
-each host environment. Run `bash scripts/sb-diagnostics.sh` for a local probe.
+each host environment. Run `bash scripts/sb-bootstrap.sh` for onboarding
+orientation (jq check, diagnostics, init next steps) or
+`bash scripts/sb-diagnostics.sh` for a capability probe only.
 
 | Tier | Name | What works | Typical host |
 |------|------|------------|--------------|
@@ -39,7 +41,10 @@ for release work.
 ### Diagnostics
 
 ```bash
-# Human-readable report
+# Onboarding probe (jq, diagnostics, init/migrator next steps)
+bash scripts/sb-bootstrap.sh
+
+# Human-readable capability report
 bash scripts/sb-diagnostics.sh
 
 # JSON for automation
