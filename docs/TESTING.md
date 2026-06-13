@@ -48,6 +48,7 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 
 - Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
 - The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
+- `tests/run-all-tests.sh` invokes each `test-*.sh` with `</dev/null` so hooks that read stdin do not hang when the runner captures output via command substitution
 - On success, the skill writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`
 - `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
 

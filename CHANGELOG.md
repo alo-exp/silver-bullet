@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.39.2] — 2026-06-14
+
+## Features
+- `Close AS1 structural parity gaps with shared contracts and diagnostics.` (97cbce5)
+
+## Tests
+- `test: redirect stdin in run-all-tests to prevent hook hang` (pending)
+
+---
+
 ## [0.39.1] — 2026-06-14
 
 ## Bug Fixes
