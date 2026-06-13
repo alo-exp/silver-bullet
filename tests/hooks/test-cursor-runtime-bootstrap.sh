@@ -9,7 +9,10 @@ echo '# SB' > "$TMP_PROJECT/silver-bullet.md"
 cat > "$TMP_PROJECT/.silver-bullet.json" <<EOF
 {"project":{"active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"],"required_deploy":["silver-quality-gates"]},"state":{"state_file":"$TMP_HOME/.cursor/.silver-bullet/state"}}
 EOF
-git -C "$TMP_PROJECT" init -q && git -C "$TMP_PROJECT" add . && git -C "$TMP_PROJECT" commit -q -m init
+git -C "$TMP_PROJECT" init -q
+git -C "$TMP_PROJECT" config user.email "sb-test@example.com"
+git -C "$TMP_PROJECT" config user.name "SB Test"
+git -C "$TMP_PROJECT" add . && git -C "$TMP_PROJECT" commit -q -m init
 out=$(env -u SILVER_BULLET_RUNTIME HOME="$TMP_HOME" bash -c 'source "$HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib/runtime-paths.sh"; printf "%s" "$SILVER_BULLET_RUNTIME"')
 [[ "$out" == cursor ]] && { echo "  PASS: infers cursor"; PASS=$((PASS+1)); } || { echo "  FAIL: runtime $out"; FAIL=$((FAIL+1)); }
 (
