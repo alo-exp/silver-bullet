@@ -53,7 +53,8 @@ PASS / PASS_WITH_WARNINGS / BLOCK
 
 ## Evidence Schema
 
-Every finding must be normalized to this shape:
+Every finding must be normalized to the canonical cross-domain schema in
+`docs/evidence-schema.md`. At minimum each row includes:
 
 | Field | Required content |
 |---|---|

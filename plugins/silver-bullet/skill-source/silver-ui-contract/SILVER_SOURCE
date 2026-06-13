@@ -15,7 +15,8 @@ acceptance criteria before UI implementation.
 
 Write or update `.planning/UI-SPEC.md` or the current phase UI contract.
 When the project has durable UI state or design-system expectations, also write
-or update `.planning/interface/STATE.md`.
+or update `.planning/interface/STATE.md` using `templates/interface/STATE.md.base`
+as the starting shape when the file does not yet exist.
 
 ## Process
 
