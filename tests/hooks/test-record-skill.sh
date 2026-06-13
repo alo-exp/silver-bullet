@@ -356,6 +356,19 @@ assert_in_state "Codex invoke-skill adapter records desktop exec_command cmd pay
 teardown
 
 setup
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+mkdir -p "$HOME/.codex/.silver-bullet/skill-invocations"
+(
+  cd "$TMPDIR_TEST"
+  SILVER_BULLET_RUNTIME=codex bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>&1
+) || true
+input=$(jq -n --arg c "$adapter_cmd" \
+  '{hook_event_name: "PostToolUse", tool_name: "exec_command", tool_input: {cmd: $c}, tool_response: {exit_code: 0}}')
+cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null
+assert_in_state "repo hook records desktop exec_command when adapter receipt lives under ~/.codex" "silver-quality-gates"
+teardown
+
+setup
 adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver-tdd"
 (cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver-tdd >/dev/null 2>/dev/null) || true
 run_hook_bash "$adapter_cmd" >/dev/null

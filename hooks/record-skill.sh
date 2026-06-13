@@ -124,40 +124,47 @@ PY
 invoke_skill_adapter_receipt_is_valid() {
   local raw_skill="$1"
   local canonical_skill="$raw_skill"
-  local receipt_dir="${SB_RUNTIME_STATE_DIR}/skill-invocations"
-  local cwd_real now max_age receipt
+  local receipt_dir cwd_real now max_age receipt
 
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     canonical_skill="$(sb_skill_canonical_name "$raw_skill")"
   fi
 
-  [[ -d "$receipt_dir" && ! -L "$receipt_dir" ]] || return 1
   cwd_real="$(python3 -c 'import pathlib; print(pathlib.Path.cwd().resolve())' 2>/dev/null || printf '%s' "$PWD")"
   now="$(date +%s)"
   max_age="${SILVER_BULLET_INVOKE_SKILL_RECEIPT_MAX_AGE_SECONDS:-300}"
 
-  shopt -s nullglob
-  for receipt in "$receipt_dir"/*.json; do
-    [[ -f "$receipt" && ! -L "$receipt" ]] || continue
-    if jq -e \
-      --arg channel "silver-bullet.invoke-skill" \
-      --arg skill "$canonical_skill" \
-      --arg cwd "$cwd_real" \
-      --argjson now "$now" \
-      --argjson max_age "$max_age" \
-      '.channel == $channel
-        and .status == "loaded"
-        and .canonical_skill == $skill
-        and .cwd == $cwd
-        and ((.timestamp_epoch // 0) >= ($now - $max_age))
-        and (.skill_file | type == "string")
-        and (.script | type == "string")' \
-      "$receipt" >/dev/null 2>&1; then
-      shopt -u nullglob
-      return 0
-    fi
-  done
-  shopt -u nullglob
+  if ! declare -F sb_runtime_skill_receipt_dirs >/dev/null 2>&1; then
+    sb_runtime_skill_receipt_dirs() {
+      printf '%s\n' "${SB_RUNTIME_STATE_DIR}/skill-invocations"
+    }
+  fi
+
+  while IFS= read -r receipt_dir; do
+    [[ -d "$receipt_dir" && ! -L "$receipt_dir" ]] || continue
+    shopt -s nullglob
+    for receipt in "$receipt_dir"/*.json; do
+      [[ -f "$receipt" && ! -L "$receipt" ]] || continue
+      if jq -e \
+        --arg channel "silver-bullet.invoke-skill" \
+        --arg skill "$canonical_skill" \
+        --arg cwd "$cwd_real" \
+        --argjson now "$now" \
+        --argjson max_age "$max_age" \
+        '.channel == $channel
+          and .status == "loaded"
+          and .canonical_skill == $skill
+          and .cwd == $cwd
+          and ((.timestamp_epoch // 0) >= ($now - $max_age))
+          and (.skill_file | type == "string")
+          and (.script | type == "string")' \
+        "$receipt" >/dev/null 2>&1; then
+        shopt -u nullglob
+        return 0
+      fi
+    done
+    shopt -u nullglob
+  done < <(sb_runtime_skill_receipt_dirs)
 
   return 1
 }
