@@ -1,5 +1,22 @@
 # Milestones
 
+## v0.39.3 Zuvo Runtime Parity Enforcement (Shipped: 2026-06-14)
+
+**Type:** Patch release milestone (runtime-enforced AS1/Zuvo parity)
+
+**Goal:** Close the gap between documented structural parity (v0.39.2) and hook-enforced runtime parity for evidence schema, backlog fingerprinting, interface STATE, and install onboarding.
+
+**Status:** complete; release published.
+
+**Completed work:**
+
+- `scripts/lib/evidence_common.py` shared fingerprints
+- `scripts/validate-evidence-findings.py` + `hooks/lib/evidence-schema-gate.sh` delivery integration
+- `scripts/silver-add.sh` fingerprint, dedup, prioritize CLI
+- `scripts/stamp-interface-state.sh` + `silver:init` step 3.2.1
+- `scripts/sb-bootstrap.sh` onboarding probe
+- Claude agent bundle `silver:*` name rewrite on render
+
 ## v0.39.2 AS1 Structural Parity Closure (Shipped: 2026-06-14)
 
 **Type:** Patch release milestone (AS1 parity ledger closure)

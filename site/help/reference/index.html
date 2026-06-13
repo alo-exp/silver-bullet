@@ -367,6 +367,24 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
+      <!-- RUNTIME PARITY (v0.39.3) -->
+      <h2 id="runtime-parity">Runtime Parity Scripts (v0.39.3)</h2>
+      <p>Phase 056 closes the gap between documented AS1/Zuvo structural parity and hook-enforced runtime behavior.</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Script / gate</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>scripts/validate-evidence-findings.py</code></td><td>Validates finding tables in DOMAIN-AUDIT, REVIEW, QUALITY-GATES, SECURITY, VERIFICATION, UI-REVIEW, and TEST-ENGINEERING artifacts.</td></tr>
+          <tr><td><code>hooks/lib/evidence-schema-gate.sh</code></td><td>Warn-first delivery gate on PR/release; set <code>SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1</code> to hard-block.</td></tr>
+          <tr><td><code>scripts/silver-add.sh fingerprint|dedup|prioritize</code></td><td>Stable backlog fingerprints shared with <code>silver:scan</code>; dedup against <code>docs/issues/</code> and scan state.</td></tr>
+          <tr><td><code>scripts/stamp-interface-state.sh</code></td><td>Stamps <code>.planning/interface/STATE.md</code> from template during <code>/silver:init</code> for UI projects.</td></tr>
+          <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>One-command onboarding probe: checks <code>jq</code>, runs diagnostics, prints init/plugin next steps.</td></tr>
+          <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Install/runtime diagnostics for migrators and support.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
       <!-- DEVOPS PLUGIN SKILLS -->
       <h2 id="devops-skills">DevOps Plugin Skills (Contextual Enrichment)</h2>
       <p>These skills are optional enrichment — not enforcement gates. They're invoked when a matching DevOps plugin is installed and the IaC toolchain matches.</p>
@@ -441,7 +459,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.39.2"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.39.3"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,

@@ -954,7 +954,7 @@ img{max-width:100%;height:auto}
   <div class="container">
     <h1><span class="hero-h1-inner"><img src="silver-bullet.png" alt="" class="hero-bullet" aria-hidden="true"><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></span></h1>
     <p class="hero-tagline-caps">COMPOSE. ENFORCE. TRACE. SHIP.</p>
-    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.39.2</div>
+    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.39.3</div>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
@@ -970,7 +970,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow for the task, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 77 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until required evidence exists. v0.39.3 closes the AS1/Zuvo runtime parity gap with hook-backed evidence validation, backlog fingerprinting in <code>silver:add</code>, durable UI interface state, and install probes via <code>sb-bootstrap</code> and <code>sb-diagnostics</code>. SB ships 77 source skills, twelve enforcement layers, and a Codex package surface with native <code>/silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -982,6 +982,7 @@ img{max-width:100%;height:auto}
       <a href="#artifact-review" class="hero-pill">Artifact Review Governance</a>
       <a href="#workflow-orch" class="hero-pill">Dynamic Workflow Composition</a>
       <a href="#enforcement" class="hero-pill">Hook-Enforced Gates</a>
+      <a href="#enforcement" class="hero-pill">Runtime Parity (v0.39.3)</a>
     </div>
   </div>
 </section>
@@ -1539,8 +1540,8 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">Live Enforcement</div>
-      <h2 class="section-title">See It in Action</h2>
-      <p class="section-desc centered">These are the kinds of messages the active runtime receives from enforcement hooks. Blocks are mechanical, not advisory.</p>
+      <h2 class="section-title">Runtime Parity You Can Enforce</h2>
+      <p class="section-desc centered">v0.39.3 turns documented AS1/Zuvo structural parity into hook-checked runtime behavior: normalized evidence tables, backlog deduplication, UI interface state, and install diagnostics.</p>
     </div>
 
     <div class="grid grid-3 mt-6">
@@ -1590,10 +1591,10 @@ img{max-width:100%;height:auto}
         </div>
       </div>
 
-      <!-- Block 3: Progress Tracking -->
+      <!-- Block 3: Evidence Schema Gate -->
       <div class="enforcement-block fade-in">
         <div class="enforcement-header">
-          <span class="block-title">Progress Tracking</span>
+          <span class="block-title">Evidence Schema Gate</span>
           <div class="block-dots">
             <span style="background:#ef4444"></span>
             <span style="background:#f59e0b"></span>
@@ -1601,15 +1602,14 @@ img{max-width:100%;height:auto}
           </div>
         </div>
         <div class="enforcement-body">
-<span class="ok">Silver Bullet:</span> <span class="warn">phase 2/3</span>
+<span class="warn">&#9888; EVIDENCE SCHEMA</span> <span class="dim">&mdash; delivery warning.</span>
 
-<span class="ok">DISCUSS</span>    <span class="accent">1/1</span>  <span class="ok">&#10003;</span>
-<span class="ok">QUALITY</span>    <span class="accent">1/1</span>  <span class="ok">&#10003;</span>
-<span class="ok">PLAN</span>       <span class="accent">1/1</span>  <span class="ok">&#10003;</span>
-<span class="ok">EXECUTE</span>    <span class="accent">1/1</span>  <span class="ok">&#10003;</span>
-<span class="warn">VERIFY</span>     <span class="accent">0/3</span>  <span class="cross">&#10007;</span>
+<span class="dim">validate-evidence-findings.py found</span>
+<span class="dim">malformed finding rows in REVIEW.md</span>
 
-<span class="dim">Next: </span><span class="accent">/silver:verify</span>
+<span class="dim">Fix tables or set</span>
+<span class="accent">SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1</span>
+<span class="dim">to hard-block PR/release.</span>
         </div>
       </div>
 
