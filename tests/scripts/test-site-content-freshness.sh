@@ -44,7 +44,7 @@ assert_contains "search index config entry uses current package version" "versio
 assert_contains "homepage documents Codex public marketplace package" "public alo-labs/codex-plugins marketplace package|public alo-labs/codex-plugins Codex marketplace package|public alo-labs/codex-plugins" "$REPO_ROOT/site/index.html"
 assert_contains "Help Center documents Codex public marketplace package" "public <code>alo-labs/codex-plugins</code> marketplace package" "$REPO_ROOT/site/help/getting-started/index.html"
 assert_contains "search index documents Codex public marketplace package" "public alo-labs/codex-plugins Codex marketplace package" "$REPO_ROOT/site/help/search.js"
-assert_contains "package metadata includes Codex support" "Claude Code and Codex" "$REPO_ROOT/package.json"
+assert_contains "package metadata includes supported host runtimes" "Claude Code, Codex, and Cursor" "$REPO_ROOT/package.json"
 assert_contains "Help Center search indexes Graphify project memory" "Graphify project memory|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/search.js"
 assert_contains "Documentation scheme explains Graphify retrieval" "Graphify Retrieval|graphify update \\. --no-cluster|graphify-out/graph\\.json" "$REPO_ROOT/site/help/concepts/documentation.html"
 assert_contains "Getting Started links Graphify dependency docs" "Graphify Retrieval|python3\\.12 -m pip install graphifyy|uv tool install graphifyy" "$REPO_ROOT/site/help/getting-started/index.html"

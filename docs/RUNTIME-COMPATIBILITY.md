@@ -8,7 +8,7 @@ Silver Bullet does not provide generic automatic model routing. The historical `
 
 | Surface | Model owner | Silver Bullet responsibility |
 |---------|-------------|------------------------------|
-| Current Claude or Codex session | User and host configuration | Compose workflow, enforce gates, record skill progress |
+| Current Claude, Codex, or Cursor session | User and host configuration | Compose workflow, enforce gates, record skill progress |
 | GSD subagents or GSD-managed work | GSD and host agent configuration | Delegate to GSD at the correct lifecycle boundary |
 | Design, Engineering, Product Management, Superpowers, MultAI | The invoked plugin/tool and current host session | Sequence the helper only when the SB workflow calls for it |
 | Hooks and shell helpers | No model selection | Validate state, command intent, and artifact freshness |
@@ -32,7 +32,7 @@ orientation (jq check, diagnostics, init next steps) or
 |------|------|------------|--------------|
 | 0 | Guidance-only | Skills, workflows, artifact templates; no hook enforcement | SDK/web sessions without hook config |
 | 1 | State-tracked | Skill markers and state file under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | Partial hook delivery or manual skill invocation |
-| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards | Claude Code CLI, Codex CLI with merged hooks |
+| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards | Claude Code CLI, Codex CLI, Cursor with `~/.cursor/hooks.json` |
 | 3 | Live-tested | Release live matrix, e2e-live scenarios, installed-runtime receipts | CI release gates and local live harness |
 
 Tiers are cumulative: tier 2 includes tier 1 behavior; tier 3 assumes tier 2
@@ -52,7 +52,7 @@ SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
 ```
 
 Checks: `jq`, hook config presence, Graphify availability, package version,
-state root, and inferred capability tier.
+state root, inferred runtime name (`claude`, `codex`, or `cursor`), and capability tier.
 
 ### Related Docs
 

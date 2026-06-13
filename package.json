@@ -1,7 +1,7 @@
 {
   "name": "silver-bullet",
   "version": "0.39.3",
-  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned hook-enforced workflows for Claude Code and Codex with optional DevOps extension points.",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned hook-enforced workflows for Claude Code, Codex, and Cursor with optional DevOps extension points.",
   "author": "Alo Labs <info@alolabs.dev>",
   "license": "MIT",
   "repository": {
