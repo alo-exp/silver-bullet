@@ -8,7 +8,7 @@ sb_tool_name() {
 sb_tool_is_shell_like() {
   local tool_name="${1:-}"
   case "$tool_name" in
-    Bash|shell|exec_command) return 0 ;;
+    Bash|Shell|shell|exec_command) return 0 ;;
     *) return 1 ;;
   esac
 }
