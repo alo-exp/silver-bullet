@@ -90,7 +90,7 @@ run_hook() {
     input=$(jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}')
     ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
   else
-    ( cd "$TMPDIR_TEST" && bash "$HOOK" 2>/dev/null )
+    ( cd "$TMPDIR_TEST" && printf '{}' | bash "$HOOK" 2>/dev/null )
   fi
 }
 
@@ -225,7 +225,7 @@ echo "silver-quality-gates" > "$TMPSTATE"
 evil_dir=$(mktemp -d)
 echo "CANARY_EVIL_RULES" > "$evil_dir/core-rules.md"
 # Set CLAUDE_PLUGIN_ROOT to the evil dir and run hook
-out=$(cd "$TMPDIR_TEST" && CLAUDE_PLUGIN_ROOT="$evil_dir" bash "$HOOK" 2>/dev/null)
+out=$(cd "$TMPDIR_TEST" && printf '{}' | CLAUDE_PLUGIN_ROOT="$evil_dir" bash "$HOOK" 2>/dev/null)
 assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANARY_EVIL_RULES"
 rm -rf "$evil_dir"
 teardown
