@@ -24,6 +24,17 @@ CODEX_TITLE_WORD_OVERRIDES = {
     "uat": "UAT",
 }
 
+CURSOR_REPLACEMENTS = [
+    ("${CLAUDE_PLUGIN_ROOT}", "${CURSOR_PLUGIN_ROOT}"),
+    ("Claude Code", "Cursor"),
+    ("Claude settings", "Cursor hooks.json"),
+    (".claude/settings.json", ".cursor/hooks.json"),
+    ("merge-hooks.py", "merge-cursor-hooks.py"),
+    ("PostToolUse/Skill or Codex `silver-bullet invoke-skill`", "PostToolUse/Skill (Cursor Skill tool) or `silver-bullet invoke-skill`"),
+    ("`/compact`", "context compaction"),
+    ("AskUserQuestion", "direct user interaction"),
+]
+
 CODEX_REPLACEMENTS = [
     ("PostToolUse/Skill or Codex `silver-bullet invoke-skill`", "Claude Skill event or Codex `silver-bullet invoke-skill`"),
     ("`PostToolUse/Skill` does not fire", "No supported skill invocation event/receipt is observed"),
@@ -190,27 +201,44 @@ def ensure_codex_picker_title(text: str) -> str:
 
 
 def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
-    # These substitutions often land inside quoted shell snippets. Use $HOME
-    # rather than "~" so fallback paths still expand when quoted.
     current_home = f"$HOME/.{agent}"
-    opposite = "claude" if agent == "codex" else "codex"
-    opposite_home = f"$HOME/.{opposite}"
+    others = [name for name in ("claude", "codex", "cursor") if name != agent]
 
-    return [
+    pairs: list[tuple[str, str]] = [
         ("${SB_RUNTIME_HOME_ROOT}", current_home),
         ("${SB_RUNTIME_STATE_DIR}", f"{current_home}/.silver-bullet"),
         ("${SB_RUNTIME_PLUGIN_CACHE_ROOT}", f"{current_home}/plugins/cache"),
-        (os.path.join("~", f".{opposite}") + "/", f"{current_home}/"),
-        (os.path.join("~", f".{opposite}"), current_home),
-        (f"{opposite_home}/", f"{current_home}/"),
-        (opposite_home, current_home),
-        (f"$HOME/.{opposite}/", f"$HOME/.{agent}/"),
-        (f"$HOME/.{opposite}", f"$HOME/.{agent}"),
-        (f"${{HOME}}/.{opposite}/", f"${{HOME}}/.{agent}/"),
-        (f"${{HOME}}/.{opposite}", f"${{HOME}}/.{agent}"),
-        (f".{opposite}/", f".{agent}/"),
-        (f".{opposite}", f".{agent}"),
+        (f"$HOME/.{agent}/", f"{current_home}/"),
+        (f"$HOME/.{agent}", current_home),
+        (f"${{HOME}}/.{agent}/", f"${{HOME}}/.{agent}/"),
+        (f"${{HOME}}/.{agent}", f"${{HOME}}/.{agent}"),
+        (f".{agent}/", f".{agent}/"),
+        (f".{agent}", f".{agent}"),
     ]
+    for opposite in others:
+        opposite_home = f"$HOME/.{opposite}"
+        pairs.extend(
+            [
+                (os.path.join("~", f".{opposite}") + "/", f"{current_home}/"),
+                (os.path.join("~", f".{opposite}"), current_home),
+                (f"{opposite_home}/", f"{current_home}/"),
+                (opposite_home, current_home),
+                (f"$HOME/.{opposite}/", f"$HOME/.{agent}/"),
+                (f"$HOME/.{opposite}", f"$HOME/.{agent}"),
+                (f"${{HOME}}/.{opposite}/", f"${{HOME}}/.{agent}/"),
+                (f"${{HOME}}/.{opposite}", f"${{HOME}}/.{agent}"),
+                (f".{opposite}/", f".{agent}/"),
+                (f".{opposite}", f".{agent}"),
+            ]
+        )
+    return pairs
+
+
+def sanitize_cursor_text(text: str) -> str:
+    updated = text
+    for old, new in CURSOR_REPLACEMENTS:
+        updated = updated.replace(old, new)
+    return updated
 
 
 def sanitize_codex_text(text: str) -> str:
@@ -221,7 +249,9 @@ def sanitize_codex_text(text: str) -> str:
 
 
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
-    updated = rewrite_names(text)
+    updated = text
+    if agent in {"claude", "codex"}:
+        updated = rewrite_names(updated)
     if agent == "codex":
         updated = ensure_codex_picker_title(updated)
         updated = quote_codex_frontmatter_scalars(updated)
@@ -230,6 +260,8 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
             updated = updated.replace(old, new)
     if agent == "codex":
         updated = sanitize_codex_text(updated)
+    elif agent == "cursor":
+        updated = sanitize_cursor_text(updated)
     return updated
 
 
@@ -282,7 +314,7 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
 
     dest_root.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source_root, dest_root, symlinks=False)
-    if agent == "claude":
+    if agent in {"claude", "cursor"}:
         for metadata in dest_root.glob("*/agents/openai.yaml"):
             metadata.unlink()
     sanitize_root(dest_root, agent)
@@ -291,7 +323,7 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("render", "sanitize"))
-    parser.add_argument("--agent", required=True, choices=("claude", "codex"))
+    parser.add_argument("--agent", required=True, choices=("claude", "codex", "cursor"))
     parser.add_argument("--source-root")
     parser.add_argument("--dest-root")
     parser.add_argument("--root")
