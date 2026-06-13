@@ -3,8 +3,9 @@
 **Date:** 2026-06-14 (parity closure pass)
 **Scope:** Public AS1 product site, public AS1 skill directory, public AS1 repository overview, and current SB repository state.
 **Naming constraint:** This document uses the alias `AS1` for the external reference product. Implementation surfaces must not use the external product name.
+**Runtime parity:** Phase 056 planned — [`.planning/phases/056-zuvo-runtime-parity/PLAN.md`](../.planning/phases/056-zuvo-runtime-parity/PLAN.md) lands hook/script enforcement for contracts documented in v0.39.2.
 
-**Parity status:** SB is a functional superset for the capability families in the ledger below. Structural parity contracts (evidence schema, backlog fingerprinting, interface state, external-review policy, code-intelligence tiers, install diagnostics) are implemented in-repo — see [Parity Closure Evidence](#parity-closure-evidence).
+**Parity status:** SB is a functional superset for the capability families in the ledger below. Structural parity contracts (evidence schema, backlog fingerprinting, interface state, external-review policy, code-intelligence tiers, install diagnostics) are documented in-repo; runtime enforcement for validator, fingerprint CLI, interface STATE init, and install bootstrap is tracked in phase 056 — see [Parity Closure Evidence](#parity-closure-evidence).
 
 ## Executive Summary
 
