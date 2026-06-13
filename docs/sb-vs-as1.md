@@ -3,9 +3,9 @@
 **Date:** 2026-06-14 (parity closure pass)
 **Scope:** Public AS1 product site, public AS1 skill directory, public AS1 repository overview, and current SB repository state.
 **Naming constraint:** This document uses the alias `AS1` for the external reference product. Implementation surfaces must not use the external product name.
-**Runtime parity:** Phase 056 planned — [`.planning/phases/056-zuvo-runtime-parity/PLAN.md`](../.planning/phases/056-zuvo-runtime-parity/PLAN.md) lands hook/script enforcement for contracts documented in v0.39.2.
+**Runtime parity:** Phase 056 implemented — scripts, hook gates, and tests on `main` enforce structural contracts documented in v0.39.2.
 
-**Parity status:** SB is a functional superset for the capability families in the ledger below. Structural parity contracts (evidence schema, backlog fingerprinting, interface state, external-review policy, code-intelligence tiers, install diagnostics) are documented in-repo; runtime enforcement for validator, fingerprint CLI, interface STATE init, and install bootstrap is tracked in phase 056 — see [Parity Closure Evidence](#parity-closure-evidence).
+**Parity status:** SB is a functional superset for the capability families in the ledger below. Structural parity contracts (evidence schema, backlog fingerprinting, interface state, external-review policy, code-intelligence tiers, install diagnostics) are **runtime-enforced** via phase 056 scripts and delivery gates — see [Parity Closure Evidence](#parity-closure-evidence).
 
 ## Executive Summary
 
@@ -272,14 +272,14 @@ Historical gaps from the 2026-06-12 analysis and their current SB posture:
 
 ## Parity Closure Evidence
 
-| Structural contract | Evidence in repository |
+| Structural contract | Runtime evidence in repository |
 |---|---|
-| Cross-domain evidence schema | `docs/evidence-schema.md`; referenced by `silver:domain-audit`, `silver:quality-gates`, `silver:review`, `silver:test` |
-| Backlog fingerprinting and prioritization | `skills/silver-add/SKILL.md` (Structured Audit Findings); `scripts/silver-scan.py` fingerprints for scan dedup |
-| Durable interface/design state | `templates/interface/STATE.md.base`; `silver:ui-contract`, `silver:ui-review` |
+| Cross-domain evidence schema | `docs/evidence-schema.md`; `scripts/validate-evidence-findings.{py,sh}`; `hooks/lib/evidence-schema-gate.sh` + `completion-audit.sh` delivery gate; `tests/scripts/test-validate-evidence-findings.sh`; `tests/hooks/test-completion-audit.sh` (tests 24–25) |
+| Backlog fingerprinting and prioritization | `scripts/lib/evidence_common.py`; `scripts/silver-add.sh` (`fingerprint`, `dedup`, `prioritize`); `scripts/silver-scan.py` shared `scan_fingerprint`; `tests/scripts/test-silver-add-fingerprint.sh` |
+| Durable interface/design state | `templates/interface/STATE.md.base`; `scripts/stamp-interface-state.sh`; `silver:init` step 3.2.1; `tests/scripts/test-stamp-interface-state.sh` |
 | External-review policy | `docs/external-review-policy.md`; `silver:review`, `silver-bullet.md` §6 |
 | Code-intelligence contract | `docs/code-intelligence-contract.md`; `silver:scan`, Graphify docs |
-| Install/update diagnostics and runtime tiers | `scripts/sb-diagnostics.sh`, `tests/scripts/test-sb-diagnostics.sh`; `docs/RUNTIME-COMPATIBILITY.md` |
+| Install/update diagnostics and runtime tiers | `scripts/sb-diagnostics.sh`, `scripts/sb-bootstrap.sh`; `tests/scripts/test-sb-diagnostics.sh`, `tests/scripts/test-sb-bootstrap.sh`; `docs/RUNTIME-COMPATIBILITY.md` |
 
 ## Mutual Gaps And Opportunities (Historical Analysis)
 
