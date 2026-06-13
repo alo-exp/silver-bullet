@@ -190,7 +190,7 @@ If the commit fails due to a pre-commit hook, read the error, fix the issue, re-
 
 ### 3.7.5 Register SB hooks in the host settings file
 
-Merges the SB hook entries from `hooks/hooks.json` into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host's settings path.
+Merges the SB hook entries into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host's settings path (`$HOME/.codex/settings.json` for Claude, `$HOME/.codex/hooks.json` for Cursor via `merge-cursor-hooks.py`, Codex native plugin hooks when applicable).
 
 **Resolve the plugin install path:**
 
@@ -217,7 +217,11 @@ If `INSTALL_PATH` is empty, skip this step silently and continue.
 **Merge hooks idempotently:**
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
+  python3 "${CURSOR_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"
+else
+  python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
+fi
 ```
 
 `scripts/merge-hooks.py` substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
