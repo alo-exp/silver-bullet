@@ -34,7 +34,13 @@ Update the root `CHANGELOG.md` with features, fixes, and breaking changes. `docs
 ```bash
 git tag vX.Y.Z
 gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
+bash scripts/validate-github-release-notes.sh --tag vX.Y.Z
 ```
+
+After `gh release create`, run `scripts/validate-github-release-notes.sh` to reject
+generic bodies such as `See CHANGELOG.md for details.` Release notes must include
+categorized sections (Features, Fixes, and so on) directly in the GitHub Release
+artifact. The `silver:create-release` skill runs this validation in Step 7b.
 
 Before the tag is created, the release commit must already be green. The
 `silver:create-release` skill waits for `bash scripts/verify-release-commit-ci.sh`
