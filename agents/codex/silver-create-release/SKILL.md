@@ -35,7 +35,7 @@ Shell execution is limited to:
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
 - `bash scripts/sync-release-marketplace-versions.sh` (sync Claude + Codex marketplace manifests before tagging — Step 5b.1)
 - `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
-- `bash scripts/verify-release-commit-ci.sh` (wait for release commit CI to go green before tagging — Step 6b)
+- `bash scripts/validate-github-release-notes.sh` (validate GitHub Release body after creation — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
 - `bash scripts/post-release-refresh.sh` (cleanly uninstall and freshly reinstall SB after release — Step 7.6)
@@ -312,6 +312,18 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    Using `--notes-file` instead of `--notes "..."` prevents shell command-substitution
    from backtick-wrapped content in the release notes body (security: WR-04).
    `$release_url` is used in the notification sub-step below (sub-item 6 of this step).
+
+   **Step 7b — Validate published release body (#217):** Immediately after
+   `gh release create`, validate the published body. A generic fallback such as
+   `See CHANGELOG.md for details.` must fail the release gate.
+
+   ```bash
+   bash scripts/validate-github-release-notes.sh --tag "$VERSION"
+   ```
+
+   If validation fails, delete or edit the release before announcing it. Detailed
+   categorized release notes must live in the GitHub Release itself; CHANGELOG.md
+   is supplemental only.
 
 5. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."
