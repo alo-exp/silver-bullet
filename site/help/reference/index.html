@@ -178,9 +178,13 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:review-triage</td><td>Review</td><td>Accepts, rejects, or defers review findings with rationale.</td></tr>
           <tr><td>/silver:secure</td><td>Secure</td><td>Runs the SB security/threat review gate for the active change.</td></tr>
           <tr><td>/silver:ship</td><td>Ship</td><td>Handles phase-level branch, PR, CI, deployment-readiness, and traceability duties.</td></tr>
+          <tr><td>/silver:deploy</td><td>Deploy</td><td>Handles platform detection, deploy command safety, health checks, rollback evidence, and runtime handoff.</td></tr>
+          <tr><td>/silver:canary</td><td>Canary</td><td>Runs post-deploy runtime watch checks across HTTP, browser, logs, metrics, and rollback readiness.</td></tr>
           <tr><td>/silver:release</td><td>Release</td><td>Owns milestone audits, gap closure, docs, ship readiness, archive, and final release creation.</td></tr>
           <tr><td>/silver:debug</td><td>Debug</td><td>Systematic debugging for active, reproducible bugs.</td></tr>
           <tr><td>/silver:forensics</td><td>Forensics</td><td>Post-mortem investigation for failed, abandoned, stalled, or unclear sessions.</td></tr>
+          <tr><td>/silver:incident</td><td>Incident</td><td>Coordinates incident response, postmortem, recovery verification, and corrective-action tracking.</td></tr>
+          <tr><td>/silver:retro</td><td>Retro</td><td>Builds engineering retrospectives from release, CI, git, issue, review, and session evidence.</td></tr>
         </tbody>
       </table>
 
@@ -189,7 +193,7 @@ footer a:hover{color:var(--accent-light)}
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.38.2+ exposes the native picker as <code>/silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.39.0+ exposes the native picker as <code>/silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -203,6 +207,11 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
           <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for SB planning or SB gates.</td></tr>
           <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, stalled, or unclear SB sessions and workflow artifacts.</td></tr>
+          <tr><td>/silver:test</td><td>Testing</td><td>SB-owned test engineering for test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge workflows.</td></tr>
+          <tr><td>/silver:refactor</td><td>Refactor</td><td>Behavior-preserving refactor workflow with baseline tests, structure/code-health packs, and proof of no regression.</td></tr>
+          <tr><td>/silver:worktree</td><td>Git isolation</td><td>Creates or finishes isolated git worktrees with branch state, verification, merge/PR, and cleanup safety.</td></tr>
+          <tr><td>/silver:content</td><td>Content/search</td><td>Public content, docs, migration, SEO/AI-search, optimization, article, metadata, link, and render workflow.</td></tr>
+          <tr><td>/silver:benchmark</td><td>Evaluation</td><td>Repeatable benchmark workflow for agents, models, providers, prompts, or implementation approaches.</td></tr>
           <tr><td>/silver:create-release<span class="badge-small badge-req">Required</span></td><td>Milestone release</td><td>Generates structured release notes, updates release surfaces, creates the final version tag, and publishes the GitHub Release. Runs last inside <code>/silver:release</code>, after ship and milestone archival.</td></tr>
           <tr><td>/verify-tests<span class="badge-small badge-req">Required</span></td><td>Final delivery</td><td>Runs configured verify commands or stack defaults and writes the freshness marker consumed by SB hooks. Required before final delivery/release gates.</td></tr>
           <tr><td>/silver:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
@@ -294,8 +303,17 @@ footer a:hover{color:var(--accent-light)}
           <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td>triage -> SB orientation -> clarify/research if needed -> quality gates -> SB plan/execute/verify -> review/ship</td></tr>
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td>triage path → systematic debugging or forensics → regression test → fix → verify/review</td></tr>
           <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td>orientation -> clarify/research if needed -> UI design contract -> SB plan/execute -> visual/UI audit -> verify/ship</td></tr>
-          <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, deploy, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation -> blast radius -> optional DevOps skill routing -> IaC quality gates -> SB plan/execute without TDD -> review/security/verify/ship</td></tr>
+          <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td>orientation -> blast radius -> optional DevOps skill routing -> IaC quality gates -> SB plan/execute without TDD -> review/security/verify/ship</td></tr>
+          <tr><td>/silver:deploy</td><td>deploy, deployment, production deploy, staging deploy, rollout</td><td>platform detection -> blast radius/DevOps gates -> deploy command safety -> health checks -> rollback evidence -> canary handoff</td></tr>
+          <tr><td>/silver:canary</td><td>canary, post-deploy, production watch, runtime watch, health watch</td><td>target selection -> HTTP/browser/log/metric checks -> runtime-release audit -> pass/block recommendation</td></tr>
           <tr><td><a href="../workflows/silver-research.html">/silver:research</a></td><td>how should we, compare X vs Y, spike, architecture decision</td><td>clarify question -> direct evidence-based research by default -> optional multi-AI only when user-requested -> research artifact -> handoff to feature/UI/DevOps/SB plan or stop</td></tr>
+          <tr><td>/silver:test</td><td>write tests, E2E, Playwright, fix tests, test audit, mutation, slow tests</td><td>mode selection -> testability -> test-health/domain packs -> RED/GREEN or baseline evidence -> verify-tests</td></tr>
+          <tr><td>/silver:refactor</td><td>refactor, rename, split, extract, move files, simplify</td><td>evaluate scope -> baseline tests -> plan slices -> execute -> domain audit -> prove no regression</td></tr>
+          <tr><td>/silver:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td>create/finish mode -> git safety checks -> verification -> branch finish -> merge/PR/cleanup decision</td></tr>
+          <tr><td>/silver:content</td><td>content, SEO, AI search, article, blog, migration, metadata, links</td><td>content inventory -> content-search pack -> safe/moderate/high-risk edits -> build/link/render verification</td></tr>
+          <tr><td>/silver:benchmark</td><td>benchmark, compare agents, compare models, provider comparison</td><td>fixture/rubric -> candidate runs -> cost/latency/quality evidence -> benchmark-eval pack -> decision</td></tr>
+          <tr><td>/silver:incident</td><td>incident, outage, production regression, postmortem</td><td>impact/timeline -> mitigation/rollback -> forensics/domain audit -> recovery verification -> corrective actions</td></tr>
+          <tr><td>/silver:retro</td><td>retro, retrospective, release metrics, process review</td><td>range selection -> git/CI/release/issue/session evidence -> trend findings -> actions via silver:add/rem</td></tr>
           <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td>release disambiguation -> quality gates -> UAT/milestone audits -> security hard gate -> docs/review/fresh tests -> <code>silver:ship</code> -> milestone archive -> <code>/silver:create-release</code> -> post-release summary</td></tr>
           <tr><td><a href="../workflows/silver-fast.html">/silver:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td>tier triage -> lightweight SB fast path or escalation to <code>silver:feature</code></td></tr>
           <tr><td><a href="../workflows/silver-spec.html">/silver:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td>Socratic elicitation → SPEC.md / REQUIREMENTS alignment → artifact review</td></tr>
@@ -423,7 +441,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.38.2"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.39.0"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -627,7 +645,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.38.2</div>
+/silver:release v0.39.0</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>

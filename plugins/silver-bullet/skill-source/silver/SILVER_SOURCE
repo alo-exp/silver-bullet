@@ -26,6 +26,7 @@ The useful lifecycle and knowledge-work behaviors SB explicitly depends on are o
 - `silver:review-request`, `silver:review`, and `silver:review-triage`;
 - `silver:secure`, `silver:validate`, `silver:debug`, `silver:ui-contract`, and `silver:ui-review`;
 - `silver:domain-audit` for specialized code, test, API, data, dependency, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime, incident, retro, and benchmark quality contracts;
+- `silver:test`, `silver:refactor`, `silver:worktree`, `silver:deploy`, `silver:canary`, `silver:incident`, `silver:retro`, `silver:benchmark`, and `silver:content` for SB-owned specialized workflows that remain attached to the lifecycle evidence chain;
 - `tdd`, `silver:completion-audit`, and `silver:branch-finish`.
 
 If user intent implies a semver-relevant codebase change, route through an SB workflow. Do not edit version, ROADMAP, STATE, MILESTONES, or phase artifacts directly except through the owning SB workflow and documented override gates.
@@ -100,12 +101,21 @@ First strong match wins after complexity triage and conflict resolution.
 | "what if", "I'm thinking about", "not sure how to", "help me think", unclear goal | `silver:clarify` | Fuzzy intent first |
 | "add", "build", "implement", "new feature", "enhance", "extend" | `silver:feature` | Core dev path; SB owns context/plan/execute/verify |
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; SB debug/plan/execute/verify plus TDD |
+| "write tests", "add tests", "generate tests", "E2E", "Playwright", "fix tests", "test audit", "mutation", "slow tests", "test performance" | `silver:test` | SB-owned test engineering; feeds `test-health`, `verify-tests`, and `silver:verify` |
+| "refactor", "rename", "split", "extract", "move files", "simplify", "untangle" | `silver:refactor` | Behavior-preserving change path with baseline proof |
+| "worktree", "isolated branch", "branch workspace", "finish worktree", "cleanup worktree" | `silver:worktree` | Git isolation and structured finish path |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | UI-specific composition |
-| "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Infra/DevOps composition |
+| "infra", "CI/CD", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Infra/DevOps composition |
+| "deploy", "deployment", "roll out", "production deploy", "staging deploy" | `silver:deploy` | Deployment orchestration; invokes DevOps/release gates as needed |
+| "canary", "post-deploy", "production watch", "health watch", "runtime watch" | `silver:canary` | Post-deploy runtime confidence gate |
+| "incident", "outage", "production regression", "postmortem", "customer-impacting failure" | `silver:incident` | Incident response and corrective action path |
+| "retro", "retrospective", "release metrics", "delivery metrics", "process review" | `silver:retro` | Engineering retrospective path |
+| "benchmark", "compare agents", "compare models", "provider comparison", "agent quality" | `silver:benchmark` | Repeatable evaluation and adversarial benchmark path |
+| "content", "SEO", "GEO", "AI search", "article", "blog", "migration", "metadata", "link health" | `silver:content` | Public content/search workflow; docs governance still uses `silver:ensure-docs` |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
-| "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only |
+| "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users" | `silver:release` | Milestone-level only |
 | "merge this", "push this PR", "ship this feature" with active phase context and no version signal | `silver:ship` | Phase-level ship |
 | "where are we", "what's left", "show progress", "current status" | SB status/progress path | Read SB planning state and workflow trackers |
 | "pick up", "resume", "continue where", "next step" | `silver:handoff` or active SB workflow | Resume from SB state and handoff artifacts |

@@ -82,41 +82,41 @@ fi
 
 integration_teardown
 
-# Scenario 4: Namespace stripping for superpowers: prefix
-echo "--- Scenario 4: Namespace stripping (superpowers:) ---"
+# Scenario 4: Namespace stripping for a generic prefix
+echo "--- Scenario 4: Namespace stripping (generic prefix) ---"
 integration_setup
 write_full_config
 
-# Directly pipe the input with superpowers: prefix
-input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "superpowers:code-review"}}')
+# Directly pipe the input with a generic prefix
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "external:silver-test"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
-if grep -qx "code-review" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S4.1: superpowers:code-review stripped to code-review\n'
+if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S4.1: external:silver-test stripped to silver-test\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S4.1: code-review not found in state after superpowers: prefix\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S4.1: silver-test not found in state after generic prefix\n'
 fi
 
-if ! grep -q "superpowers" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S4.2: superpowers prefix not in state\n'
+if ! grep -q "external:" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S4.2: generic prefix not in state\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S4.2: superpowers prefix should not be in state\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S4.2: generic prefix should not be in state\n'
 fi
 
 integration_teardown
 
-# Scenario 5: GSD namespace conversion (gsd: to gsd-)
-echo "--- Scenario 5: GSD namespace conversion ---"
+# Scenario 5: Retired namespace markers are not default-recordable
+echo "--- Scenario 5: retired namespace marker is not recorded by fresh defaults ---"
 integration_setup
 write_full_config
 
 input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "gsd:discuss-phase"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
-if grep -qx "gsd-discuss-phase" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S5.1: gsd:discuss-phase converted to gsd-discuss-phase\n'
+if ! grep -qx "gsd-discuss-phase" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S5.1: retired gsd marker is not recorded by fresh defaults\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S5.1: gsd-discuss-phase not found in state\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S5.1: retired gsd marker should not be recorded by fresh defaults\n'
 fi
 
 integration_teardown
@@ -126,16 +126,16 @@ echo "--- Scenario 6: Double namespace stripping ---"
 integration_setup
 write_full_config
 
-input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "engineering:superpowers:code-review"}}')
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "engineering:external:silver-test"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
-if grep -qx "code-review" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S6.1: double namespace stripped to code-review\n'
+if grep -qx "silver-test" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S6.1: double namespace stripped to silver-test\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S6.1: code-review not found after double namespace strip\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S6.1: silver-test not found after double namespace strip\n'
 fi
 
-if ! grep -qE "^(engineering|superpowers)" "$TMPSTATE" 2>/dev/null; then
+if ! grep -qE "^(engineering|external)" "$TMPSTATE" 2>/dev/null; then
   PASS=$((PASS + 1)); printf 'PASS: S6.2: no namespace prefixes in state\n'
 else
   FAIL=$((FAIL + 1)); printf 'FAIL: S6.2: namespace prefixes found in state\n'

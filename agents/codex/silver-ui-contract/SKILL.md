@@ -14,6 +14,8 @@ acceptance criteria before UI implementation.
 ## Output
 
 Write or update `.planning/UI-SPEC.md` or the current phase UI contract.
+When the project has durable UI state or design-system expectations, also write
+or update `.planning/interface/STATE.md`.
 
 ## Process
 
@@ -28,9 +30,13 @@ Write or update `.planning/UI-SPEC.md` or the current phase UI contract.
    - copy requirements;
    - accessibility criteria;
    - visual consistency constraints and reusable components;
+   - interface-state updates: design tokens, components, interaction patterns,
+     accessibility decisions, screenshots, and open design debt;
    - screenshot or Playwright verification needs.
 4. Add acceptance criteria that `silver:execute`, `silver:ui-review`, and
    `silver:verify` can check.
+5. Invoke or apply `silver:domain-audit --pack ui-system` and `accessibility`
+   for public or reusable UI surfaces.
 
 ## Exit Gate
 

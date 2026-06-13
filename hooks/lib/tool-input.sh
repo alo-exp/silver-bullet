@@ -30,6 +30,8 @@ if not isinstance(tool_input, dict):
     raise SystemExit(0)
 
 command = tool_input.get("command")
+if command is None:
+    command = tool_input.get("cmd")
 if isinstance(command, str):
     sys.stdout.write(command)
 elif isinstance(command, list):

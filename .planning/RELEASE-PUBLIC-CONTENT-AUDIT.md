@@ -1,7 +1,7 @@
 ---
 audit: pre-release-public-content
-date: 2026-06-11
-release_candidate: v0.38.0
+date: 2026-06-12
+release_candidate: v0.39.0
 status: PASS
 objective_review: PASS_AFTER_FIXES
 ---
@@ -97,3 +97,11 @@ The following references are intentional and not dependency evidence:
 PASS. The release candidate fulfills the dependency-absorption objective on
 active code, configuration, package, installer, workflow, and public content
 surfaces.
+
+## 2026-06-12 Refresh
+
+The homepage card layout and Help Center content were refreshed again for the
+v0.39.0 candidate. The active public content scan now covers the landing page,
+Help Center pages, search index, Open Graph card, README, and comparison page.
+The landing-page lifecycle cards render as three desktop cards per row and a
+single mobile column without overflowing bullet text.

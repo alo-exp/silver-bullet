@@ -954,7 +954,7 @@ img{max-width:100%;height:auto}
   <div class="container">
     <h1><span class="hero-h1-inner"><img src="silver-bullet.png" alt="" class="hero-bullet" aria-hidden="true"><span class="logo-wrapper"><span class="gradient">Silver Bullet</span><span class="alpha-badge">ALPHA</span></span></span></h1>
     <p class="hero-tagline-caps">COMPOSE. ENFORCE. TRACE. SHIP.</p>
-    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.38.2</div>
+    <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator (APO) for AI-native Software Engineering &amp; DevOps &nbsp;&middot;&nbsp; v0.39.0</div>
 
     <div class="brooks-block">
       <img src="fred-brooks.jpg" alt="Fred Brooks" class="brooks-photo">
@@ -970,7 +970,7 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow for the task, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 51 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow for the task, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until the required evidence exists. Current SB ships 77 source skills, twelve enforcement layers, and a Codex package surface that exposes only native <code>/silver:</code> picker entries.</p>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1043,7 +1043,7 @@ img{max-width:100%;height:auto}
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="git-branch"></i></div>
         <h3>Dynamic Workflow Composition</h3>
-        <p><code>/silver</code> classifies the task and composes the chain it needs: clarify, feature, bugfix, UI, DevOps, release, research, spec, ingest, validate, docs, tracking, or fast path. Silver Bullet now owns the overlapping lifecycle skills it previously depended on and routes optional extension plugins only when they add specialized value.</p>
+        <p><code>/silver</code> classifies the task and composes the chain it needs: clarify, feature, bugfix, UI, DevOps, deploy, canary, test, refactor, worktree, content, benchmark, incident, retro, release, research, spec, ingest, validate, docs, tracking, or fast path. Silver Bullet routes optional extension plugins only when they add specialized value.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><i data-lucide="rocket"></i></div>
@@ -1200,12 +1200,26 @@ img{max-width:100%;height:auto}
         <div class="plugin-logo"><i data-lucide="hammer"></i></div>
         <div class="plugin-name">SB Engineering Gates</div>
         <div class="plugin-role">SB Engineering Discipline</div>
-        <div class="plugin-desc">Testing strategy, documentation checks, deployment readiness, and incident learning are expressed as SB quality gates and DevOps extension points.</div>
+        <div class="plugin-desc">Testing strategy, documentation checks, deployment readiness, and incident learning are expressed as SB quality gates and runtime evidence workflows.</div>
         <ul class="plugin-features">
-          <li>Testing strategy: pyramid, coverage goals, tooling</li>
+          <li><code>silver:test</code> for tests, E2E, repair, performance, mutation</li>
           <li>Technical documentation (PRD, ADR, CI/CD)</li>
-          <li>Pre-deployment verification checklist</li>
-          <li>Incident response and post-mortem workflow</li>
+          <li><code>silver:deploy</code> and <code>silver:canary</code> runtime evidence</li>
+          <li><code>silver:incident</code> and <code>silver:retro</code> learning loops</li>
+        </ul>
+        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="scan-search"></i></div>
+        <div class="plugin-name">SB Domain Packs</div>
+        <div class="plugin-role">SB Specialized Quality</div>
+        <div class="plugin-desc">Domain-specific code, test, API, data, dependency, performance, content, runtime, and benchmark checks run through one SB evidence schema.</div>
+        <ul class="plugin-features">
+          <li><code>silver:domain-audit</code> for specialized packs</li>
+          <li><code>silver:content</code> for docs, search, migration, articles</li>
+          <li><code>silver:refactor</code> for behavior-preserving change</li>
+          <li><code>silver:benchmark</code> for repeatable agent or approach evals</li>
         </ul>
         <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
       </div>

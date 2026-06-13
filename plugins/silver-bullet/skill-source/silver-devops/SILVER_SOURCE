@@ -262,3 +262,12 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 ## Step 11: Ship / Deploy
 
 Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.
+
+If this workflow performs or prepares an environment rollout, invoke
+`silver:deploy` before or inside ship according to the release plan. The deploy
+artifact must record platform detection, command safety, artifact identity,
+health checks, rollback readiness, and monitoring evidence.
+
+If the rollout reaches a live runtime, invoke `silver:canary` after deployment
+or record why canary evidence is unavailable. Runtime confidence requires live
+or post-deploy evidence; green CI alone is insufficient.

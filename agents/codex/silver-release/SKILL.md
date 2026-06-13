@@ -68,7 +68,8 @@ ls .planning/phases/*/UI-SPEC.md .planning/phases/*/UI-REVIEW.md 2>/dev/null | g
 
 QUALITY GATE -> DOMAIN AUDIT -> UAT AUDIT -> MILESTONE AUDIT -> SECURITY -> GAP CLOSURE
 [conditional] -> DESIGN HANDOFF [if UI scope] -> DOCUMENT -> REVIEW -> VERIFY ->
-SHIP -> MILESTONE ARCHIVE -> CREATE RELEASE
+SHIP -> DEPLOYMENT READINESS -> CANARY [if deployed] -> RETRO ITEMS ->
+MILESTONE ARCHIVE -> CREATE RELEASE
 
 Display the proposed chain and skipped flows before starting. In autonomous mode,
 auto-confirm the composition and record the decision.
@@ -296,6 +297,8 @@ If the release includes deployment, run SB DevOps readiness:
 
 - invoke `silver:devops` for infrastructure/deployment changes that still need
   work
+- invoke `silver:deploy` when a deployment command, platform, environment, or
+  production/staging rollout is part of the release
 - invoke `devops-quality-gates` for release readiness checks
 - invoke or apply `silver:domain-audit` with `ci-workflow`,
   `environment-secrets`, and `runtime-release` packs
@@ -304,6 +307,10 @@ If the release includes deployment, run SB DevOps readiness:
 
 Provider/tool-specific DevOps plugins remain optional enrichment through SB's
 DevOps router. Do not require external Engineering plugins for release.
+
+If the release deploys to a live runtime, invoke `silver:canary` after the
+deployment or record why canary evidence is unavailable. A release cannot claim
+runtime confidence from CI alone.
 
 ## Step 9: Mandatory Verification
 
@@ -388,6 +395,9 @@ Report:
 - issues and backlog items filed via `silver:add`
 - knowledge and learnings recorded via `silver:rem`
 - release URL or manual publication note
+
+For major releases, incident-heavy ranges, or releases that changed delivery
+process, invoke `silver:retro` or create a `.planning/RETRO.md` action summary.
 
 ## Completion
 

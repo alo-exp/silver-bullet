@@ -105,6 +105,15 @@ resolve_silver_alias() {
     silver:bugfix)              echo "silver-bugfix" ;;
     silver:research)            echo "silver-research" ;;
     silver:release)             echo "silver-release" ;;
+    silver:test)                echo "silver-test" ;;
+    silver:deploy)              echo "silver-deploy" ;;
+    silver:canary)              echo "silver-canary" ;;
+    silver:incident)            echo "silver-incident" ;;
+    silver:retro)               echo "silver-retro" ;;
+    silver:benchmark)           echo "silver-benchmark" ;;
+    silver:content)             echo "silver-content" ;;
+    silver:refactor)            echo "silver-refactor" ;;
+    silver:worktree)            echo "silver-worktree" ;;
     silver:forensics)           echo "silver-forensics" ;;
     silver:silver-forensics)    echo "silver-forensics" ;;
     silver:validate)            echo "silver-validate" ;;

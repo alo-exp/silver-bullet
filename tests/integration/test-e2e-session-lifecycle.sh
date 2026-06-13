@@ -39,12 +39,12 @@ echo "--- Scenario 3: State reset clears enforcement ---"
 integration_setup
 write_default_config
 
-# Record skills NOT including the planning floor (silver-quality-gates).
+# Record current tracked skills NOT including the planning floor.
 # v0.30.0 #85: Stop now enforces required_planning only — having
 # silver-quality-gates would satisfy it, so the test must record skills
 # that leave the planning floor missing for the block path to fire.
-run_record_skill "gsd-code-review" >/dev/null
-run_record_skill "documentation" >/dev/null
+run_record_skill "silver-review" >/dev/null
+run_record_skill "silver-test" >/dev/null
 
 # stop-check still blocks (planning floor missing)
 out=$(run_stop_check "Stop")

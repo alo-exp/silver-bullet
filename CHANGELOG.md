@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.39.0] — 2026-06-12
+
+## Features
+
+- `feat: absorb lifecycle parity into Silver Bullet`
+- `feat: add SB-owned release, deploy, canary, incident, retro, benchmark, content, refactor, worktree, and test workflows`
+- `feat: extend domain audit, verification, security, UI, and DevOps contracts for AS1 parity`
+
+## Bug Fixes
+
+- `fix(live): require route-smoke turns to invoke the SB adapter directly`
+- `fix(site): keep homepage lifecycle cards to three columns without bullet overflow`
+
+## Documentation
+
+- `docs(site): remove legacy dependency positioning from public website and Help Center`
+- `docs: refresh release audit evidence for v0.39.0`
+
+## Tests
+
+- `test(live): fail Codex and Kay route-smoke checks when transcripts bypass the SB adapter`
+- `test(release): refresh public-content and lifecycle parity coverage`
+
+---
+
 ## [0.38.2] — 2026-06-12
 
 ## Bug Fixes

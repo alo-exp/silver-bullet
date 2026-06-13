@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.38.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.2)
+[![version](https://img.shields.io/badge/version-v0.39.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.39.0)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -285,6 +285,8 @@ After that, use `/silver` for normal work.
 | `/silver:bugfix` | Debug/TDD-oriented bugfix workflow |
 | `/silver:ui` | UI workflow with design contract and UI quality gates |
 | `/silver:devops` | Infrastructure workflow with blast radius and IaC gates |
+| `/silver:deploy` | Deployment workflow with platform detection, health checks, rollback evidence, and runtime handoff |
+| `/silver:canary` | Post-deploy runtime watch for HTTP/browser/log/metric evidence |
 | `/silver:research` | Research and decision workflow |
 | `/silver:spec` | Spec and requirements elicitation |
 | `/silver:ingest` | External artifact ingestion with manifest review |
@@ -292,6 +294,11 @@ After that, use `/silver` for normal work.
 | `/silver:release` | Release preparation workflow |
 | `/silver:create-release` | Final release artifact creation after SB release readiness |
 | `/silver:fast` | Small, low-risk work through a routed fast path |
+| `/silver:test` | Test writing, E2E discovery, test repair, test audit, test performance, and mutation challenge workflow |
+| `/silver:refactor` | Behavior-preserving refactor workflow with baseline proof |
+| `/silver:worktree` | Isolated git worktree create/finish workflow |
+| `/silver:content` | Public content, docs, migration, SEO/AI-search, optimization, and article workflow |
+| `/silver:benchmark` | Repeatable benchmark workflow for agents, models, providers, prompts, or approaches |
 | `/silver:ensure-docs` | Documentation scheme bootstrap, reconciliation, and recovery |
 | `/silver:scan` | Retrospective session scan for deferred issues and insights |
 | `/silver:add` | File an issue or backlog item |
@@ -299,6 +306,8 @@ After that, use `/silver` for normal work.
 | `/silver:rem` | Capture knowledge or learnings |
 | `/silver:handoff` | Create a project-level handoff prompt |
 | `/silver:forensics` | Reconstruct failed, stalled, or abandoned sessions |
+| `/silver:incident` | Incident response, postmortem, recovery verification, and corrective-action tracking |
+| `/silver:retro` | Engineering retrospective over releases, incidents, dates, or workflow history |
 | `/silver:quality-gates` | Product/software quality assessment |
 | `/silver:domain-audit` | Specialized domain quality contracts for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime, incident, retro, and benchmark evidence |
 | `/silver-blast-radius` | DevOps change-impact and rollback assessment |
@@ -324,8 +333,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.38.2",
-  "version": "0.38.2",
+  "config_version": "0.39.0",
+  "version": "0.39.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -505,12 +514,12 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.38.2`
-- Release: [v0.38.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.38.2)
+- Version: `0.39.0`
+- Release: [v0.39.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.39.0)
 - Notable changes:
   - SB now owns the core context, plan, execute, review, security, verify, ship, TDD, and completion-audit lifecycle skills it enforces.
   - Legacy knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
-  - Default config schema moved to `0.38.2` so older lifecycle dependency lists are normalized during migration.
+  - Default config schema moved to `0.39.0` so older lifecycle dependency lists are normalized during migration.
   - Public docs, Help Center, marketplace metadata, and release gates now describe the SB-owned lifecycle model.
 
 ## License

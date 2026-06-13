@@ -349,7 +349,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.2",
+  "config_version": "CURRENT_CONFIG_VERSION",
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],
@@ -359,7 +359,7 @@ cat > "$TMPCFG" << 'EOF'
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+sed -i.bak "s|CURRENT_CONFIG_VERSION|${CURRENT_CONFIG_VERSION}|g; s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_passes "git commit allowed when required planning skill is uninstalled" "$out"

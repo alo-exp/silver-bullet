@@ -12,6 +12,61 @@ SB is positioned as an agentic process orchestrator. Its strongest differentiato
 
 The most valuable direction for SB is not to clone AS1's many individual command surfaces. SB should remain the orchestrator and become a superset by adding explicit, SB-owned domain quality contracts that can be selected by `/silver` and enforced inside existing SB flows. This gives SB AS1-style breadth while preserving SB's stronger lifecycle, evidence, artifact, and release governance.
 
+## Superset Parity Ledger
+
+The stricter goal is that an AS1 user should not lose a feature, capability, or benefit when moving to SB. SB meets that goal by providing SB-owned routes and evidence artifacts rather than one-command-per-feature clones.
+
+| AS1 capability family | SB-owned route or contract | Evidence artifact | Parity status |
+|---|---|---|---|
+| Brainstorm/problem exploration | `silver:clarify`, `silver:research`, `silver:scan` | `.planning/CLARIFY.md`, research/context artifacts | Superset: SB adds lifecycle handoff and traceability |
+| Plan/TDD task decomposition | `silver:context`, `silver:plan`, `tdd`, `testability` | PLAN, context, TDD evidence | Superset: SB gates plan before execution |
+| Execute with review gates | `silver:execute`, `silver:review`, `silver:review-triage`, `silver:verify` | SUMMARY, REVIEW, VERIFICATION | Superset: SB adds completion-audit and hook-backed markers |
+| Worktree isolation and finish | `silver:worktree`, `silver:branch-finish`, `silver:ship` | `.planning/WORKTREE.md`, branch-finish/ship evidence | Covered by new SB route |
+| Review feedback response | `silver:review-triage` | REVIEW triage notes | Superset: SB rejects weak findings and requires evidence |
+| Scoped small feature build | `silver:fast`, `silver:feature` | fast/feature workflow artifacts | Covered |
+| Refactoring with baseline proof | `silver:refactor`, `silver:test`, `silver:verify` | `.planning/REFACTOR.md`, test evidence | Covered by new SB route |
+| Debug/root cause | `silver:debug`, `silver:bugfix`, `silver:forensics` | DEBUG/forensics/bugfix artifacts | Superset: SB includes session-level forensics |
+| Test writing | `silver:test --mode write` | `.planning/TEST-ENGINEERING.md` | Covered by new SB route |
+| E2E route discovery | `silver:test --mode e2e`, `silver:ui-review` | route inventory, Playwright/browser evidence | Covered by new SB route |
+| Test repair | `silver:test --mode repair`, `silver:verify` | anti-pattern triage and verification | Covered by new SB route |
+| Test audit | `silver:test --mode audit`, `silver:domain-audit --pack test-health` | DOMAIN-AUDIT / TEST-ENGINEERING | Superset: normalized SB findings feed ship gates |
+| Test performance | `silver:test --mode performance`, `performance-resource` pack | timing baseline and compare evidence | Covered by new SB route |
+| Mutation-style test challenge | `silver:test --mode mutation` | mutation plan/result/follow-up | Covered by new SB route |
+| Application security audit | `silver:secure`, `security`, domain packs | `.planning/SECURITY.md`, DOMAIN-AUDIT | Superset: process and release security gates included |
+| Penetration-test-style checks | `silver:secure` authorized live/static mode | SECURITY with exact command/evidence | Covered inside security contract |
+| Accessibility audit | `silver:ui-review`, `silver:domain-audit --pack accessibility` | UI-REVIEW / DOMAIN-AUDIT | Covered |
+| Code audit | `silver:domain-audit --pack code-health`, `silver:review` | DOMAIN-AUDIT / REVIEW | Superset: findings route to owning workflow |
+| API audit | `silver:domain-audit --pack api-contract` | DOMAIN-AUDIT | Covered |
+| Database/data audit | `silver:domain-audit --pack data-contract` | DOMAIN-AUDIT | Covered |
+| Dependency audit | `silver:domain-audit --pack dependency-supply`, `silver:secure` | DOMAIN-AUDIT / SECURITY | Covered |
+| Performance audit | `silver:domain-audit --pack performance-resource` | DOMAIN-AUDIT | Covered |
+| Structure audit | `silver:domain-audit --pack structure-maintainability` | DOMAIN-AUDIT | Covered |
+| CI audit | `silver:domain-audit --pack ci-workflow`, `devops-quality-gates` | DOMAIN-AUDIT / DevOps gate artifact | Superset for DevOps scope |
+| Environment/secrets audit | `silver:domain-audit --pack environment-secrets`, `silver:secure` | DOMAIN-AUDIT / SECURITY | Covered |
+| SEO/GEO/search audit and fixes | `silver:content`, `content-search` pack | `.planning/CONTENT.md`, DOMAIN-AUDIT | Covered by new SB route |
+| Content audit/fix/migration/optimization | `silver:content` | CONTENT, docs/build/link evidence | Covered by new SB route |
+| Article/help content writing | `silver:content --mode write` | CONTENT with sources/frontmatter/review | Covered by new SB route |
+| Design and design review | `silver:ui`, `silver:ui-contract`, `silver:ui-review` | UI-SPEC, UI-REVIEW | Superset through UI lifecycle gates |
+| Durable design/interface state | `silver:ui-contract`, `silver:ui-review` | `.planning/interface/STATE.md` | Covered by updated SB UI contract |
+| Architecture review/ADR | `silver:research`, `silver:domain-audit --pack architecture-adr` | decision artifact / DOMAIN-AUDIT | Covered |
+| Ship/pre-merge release path | `silver:ship`, `silver:release`, `silver:create-release` | ship/release artifacts and GitHub Release | Superset: stronger release governance |
+| Platform-aware deployment | `silver:deploy`, `silver:devops` | `.planning/DEPLOYMENT.md` | Covered by new SB route |
+| Post-deploy canary | `silver:canary` | `.planning/CANARY.md` | Covered by new SB route |
+| Release documentation sync | `silver:ensure-docs`, `silver:release` | docs checklist, changelog, release summary | Superset: governed doc scheme |
+| Engineering retrospective | `silver:retro` | `.planning/RETRO.md` | Covered by new SB route |
+| Docs utility | `silver:ensure-docs`, `silver:content` | governed docs/content artifacts | Superset for project docs |
+| Backlog/deferred work | `silver:add`, `silver:remove`, domain-audit backlog decisions | GitHub/local issue ID | Superset when configured with GitHub project |
+| Incident workflow | `silver:incident`, `silver:forensics`, `silver:canary` | `.planning/INCIDENT.md` | Covered by new SB route |
+| Provider/task benchmark | `silver:benchmark` | `.planning/BENCHMARK.md` | Covered by new SB route |
+| Agent self-quality benchmark | `silver:benchmark`, `progressive-review-loop` | BENCHMARK / review loop evidence | Covered |
+| Knowledge store/project memory | docs/knowledge, docs/learnings, Graphify retrieval, session logs | monthly knowledge/learnings and graph evidence | Superset: SB separates project knowledge from portable learnings |
+| Session recovery | `silver:handoff`, workflow tracker, session logs, `silver:forensics` | handoff and `.planning/workflows/` state | Superset: recovery tied to workflow evidence |
+| Cross-provider adversarial review | `silver:review`, optional external enrichment, `silver:benchmark` | REVIEW / BENCHMARK | Superset when optional providers are installed; SB review remains authoritative |
+| Code intelligence | `silver:scan`, Graphify retrieval, direct shell/file evidence | scan/context artifacts | Covered with explicit fallback tiers |
+| Auto-routing benefit | `/silver` router plus prompt reminders and skill tracking | route banner, requested skill markers | Covered with more auditable activation discipline |
+| Stack-aware rules | `silver:domain-audit`, `devops-quality-gates`, `verify-tests` | selected pack and command evidence | Covered |
+| Evidence requirements | all SB workflows, completion audit, domain evidence schema | artifacts, command output, markers | Superset: completion remains unproven until audited |
+
 ## High-Level Strengths: AS1 Compared To SB
 
 1. **Broader visible skill catalog.**
@@ -426,4 +481,3 @@ To become a clear superset without copying AS1:
 10. Add content/search-readiness packs for public docs/sites.
 11. Improve install/update diagnostics and runtime capability documentation.
 12. Preserve SB's key superiority: enforceability, artifact traceability, release governance, and no dependency-plugin ownership leakage.
-
