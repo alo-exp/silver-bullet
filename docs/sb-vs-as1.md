@@ -1,8 +1,10 @@
 # SB vs AS1 Analysis
 
-**Date:** 2026-06-12
+**Date:** 2026-06-14 (parity closure pass)
 **Scope:** Public AS1 product site, public AS1 skill directory, public AS1 repository overview, and current SB repository state.
 **Naming constraint:** This document uses the alias `AS1` for the external reference product. Implementation surfaces must not use the external product name.
+
+**Parity status:** SB is a functional superset for the capability families in the ledger below. Structural parity contracts (evidence schema, backlog fingerprinting, interface state, external-review policy, code-intelligence tiers, install diagnostics) are implemented in-repo — see [Parity Closure Evidence](#parity-closure-evidence).
 
 ## Executive Summary
 
@@ -249,235 +251,119 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
 
 ## High-Level Weaknesses: SB Compared To AS1
 
-1. **Specialized audit breadth is under-exposed.**
-   SB has quality dimensions but lacks a single discoverable domain-audit matrix for API, DB, dependency, performance, structure, CI, env, SEO/GEO, content, accessibility, and architecture.
+Historical gaps from the 2026-06-12 analysis and their current SB posture:
 
-2. **File-level quality rule vocabulary is less concrete.**
-   SB's quality gates are principled but not as visibly enumerated for production files and test files.
+1. **Specialized audit breadth is under-exposed.** Addressed — `silver:domain-audit` pack matrix and site capability matrix.
+2. **File-level quality rule vocabulary is less concrete.** Addressed — domain critical gate catalog in `silver:domain-audit`.
+3. **Test ecosystem coverage is thinner.** Addressed — `silver:test` modes (write, e2e, repair, audit, performance, mutation).
+4. **Post-deploy monitoring is partial.** Addressed — `silver:canary` and `runtime-release` pack.
+5. **Backlog persistence is not as productized.** Addressed — `silver:add` structured audit intake with fingerprint, dedup, and prioritization score (`skills/silver-add/SKILL.md`).
+6. **Session recovery is less visibly packaged.** Addressed — `silver:handoff`, workflow tracker, `silver:scan`, `silver:forensics`; public help surfaces document recovery.
+7. **Cross-provider adversarial review is optional and under-documented.** Addressed — `docs/external-review-policy.md`; SB review remains authoritative.
+8. **Design-state persistence is weaker.** Addressed — `.planning/interface/STATE.md` via `silver:ui-contract` / `silver:ui-review` and `templates/interface/STATE.md.base`.
+9. **Content/search readiness is narrower.** Addressed — `silver:content` and `content-search` pack.
+10. **Architecture review is not a first-class public skill.** Addressed — `architecture-adr` pack and research/plan integration.
+11. **Provider/runtime benchmarking is not a user-facing capability.** Addressed — `silver:benchmark` and `benchmark-eval` pack.
+12. **Stack-aware defaults are less explicit.** Partially addressed — domain packs, `verify-tests`, and DevOps gates; stack rules remain host/project specific.
+13. **Install story is heavier.** Addressed for diagnostics — `scripts/sb-diagnostics.sh` and runtime tier docs in `docs/RUNTIME-COMPATIBILITY.md`; install remains intentionally explicit for safety.
+14. **Public docs still carry historical dependency language outside the cleaned website/help surfaces.** Ongoing hygiene — website/help are clean; repo docs may still mention legacy plugins in historical specs.
+15. **Quality-gate output is less normalized across domains.** Addressed — `docs/evidence-schema.md` shared across domain audit, quality gates, review, test, and UI review.
 
-3. **Test ecosystem coverage is thinner.**
-   SB lacks explicit mutation testing, test performance audit, E2E generation from route discovery, and test anti-pattern repair surfaces.
+## Parity Closure Evidence
 
-4. **Post-deploy monitoring is partial.**
-   SB can require verification and DevOps evidence, but does not own a named canary/watch workflow.
+| Structural contract | Evidence in repository |
+|---|---|
+| Cross-domain evidence schema | `docs/evidence-schema.md`; referenced by `silver:domain-audit`, `silver:quality-gates`, `silver:review`, `silver:test` |
+| Backlog fingerprinting and prioritization | `skills/silver-add/SKILL.md` (Structured Audit Findings); `scripts/silver-scan.py` fingerprints for scan dedup |
+| Durable interface/design state | `templates/interface/STATE.md.base`; `silver:ui-contract`, `silver:ui-review` |
+| External-review policy | `docs/external-review-policy.md`; `silver:review`, `silver-bullet.md` §6 |
+| Code-intelligence contract | `docs/code-intelligence-contract.md`; `silver:scan`, Graphify docs |
+| Install/update diagnostics and runtime tiers | `scripts/sb-diagnostics.sh`, `tests/scripts/test-sb-diagnostics.sh`; `docs/RUNTIME-COMPATIBILITY.md` |
 
-5. **Backlog persistence is not as productized.**
-   SB captures deferred work, but audit findings do not all flow into a unified deduplicated backlog with prioritization formula.
+## Mutual Gaps And Opportunities (Historical Analysis)
 
-6. **Session recovery is less visibly packaged.**
-   SB has handoff, workflow tracker, logs, and forensics, but not a simple user-facing "resume after compaction/crash" product story.
+The items below were the 2026-06-12 gap map. Each now has an SB-owned contract
+or route; residual work is hygiene (doc drift, optional stack packs), not missing
+capability families.
 
-7. **Cross-provider adversarial review is optional and under-documented.**
-   SB can allow second-opinion reviewers but has no first-class mode for provider diversity.
+### 1. Domain Quality Contracts — **Closed**
 
-8. **Design-state persistence is weaker.**
-   SB has UI contracts and reviews but not a persistent interface design system state artifact.
+SB exposes `silver:domain-audit` with sixteen packs inside existing workflows.
 
-9. **Content/search readiness is narrower.**
-   SB governs docs but not SEO, GEO, content migration, content optimization, article generation, and content fix workflows.
+### 2. Evidence Schema — **Closed**
 
-10. **Architecture review is not a first-class public skill.**
-    SB handles architecture through context, research, plan, and quality gates, but lacks a named architecture review/ADR mode.
+`docs/evidence-schema.md` standardizes findings across quality surfaces.
 
-11. **Provider/runtime benchmarking is not a user-facing capability.**
-    SB has live tests and release matrices, but not task-level model/provider benchmark reports.
+### 3. Critical-Gate Semantics — **Closed**
 
-12. **Stack-aware defaults are less explicit.**
-    SB detects and verifies through tests/scripts, but user-facing stack rule packs are not as visible.
+`silver:domain-audit` critical gate catalog uses BLOCK/WARN/INFO plus confidence.
 
-13. **Install story is heavier.**
-    SB's safety and boundary controls make install docs more complex.
+### 4. Test Quality Depth — **Closed**
 
-14. **Public docs still carry historical dependency language outside the cleaned website/help surfaces.**
-    This makes SB's current positioning less crisp in the repository docs.
+`silver:test` modes cover audit, E2E discovery, repair, performance, mutation.
 
-15. **Quality-gate output is less normalized across domains.**
-    SB uses PASS/FAIL and BLOCK/WARN/INFO, but not a single scoring/evidence schema for all domain audits.
+### 5. Backlog And Deferred Work — **Closed**
 
-## Mutual Gaps And Opportunities
+`silver:add` structured audit intake: fingerprint, dedup, prioritization score.
 
-### 1. Domain Quality Contracts
+### 6. Post-Deploy Confidence — **Closed**
 
-**AS1 gap:** AS1's domain audits are broad, but they are many separate commands and may fragment lifecycle evidence.
+`silver:canary` and `runtime-release` pack.
 
-**SB gap:** SB does not yet expose all comparable domain audits.
+### 7. Incident And Retro Loops — **Closed**
 
-**Better SB direction:** Add an SB-owned `silver:domain-audit` contract layer that selects applicable packs inside existing workflows:
+`silver:incident`, `silver:retro`, `incident-retro` pack.
 
-- code health
-- test health
-- API behavior
-- database/data access
-- dependency and supply-chain posture
-- performance and resource use
-- structure and maintainability
-- CI/CD workflow health
-- environment and secrets posture
-- accessibility
-- SEO and AI-search readiness
-- content quality and migration
-- architecture and ADR readiness
-- release, deploy, canary, incident, retro evidence
+### 8. Cross-Provider Review — **Closed**
 
-### 2. Evidence Schema
+`docs/external-review-policy.md`; enrichment feeds `REVIEW.md`.
 
-**AS1 gap:** Evidence is visible, but route-specific commands can scatter reports.
+### 9. Code Intelligence — **Closed**
 
-**SB gap:** SB evidence exists in many artifacts but lacks one cross-domain schema.
+`docs/code-intelligence-contract.md` layered tiers 0–3.
 
-**Better SB direction:** Standardize every SB quality finding as:
+### 10. Design System State — **Closed**
 
-- scope
-- domain
-- severity
-- confidence
-- evidence pointer
-- command output or artifact source
-- owner workflow
-- blocking status
-- backlog decision
+`.planning/interface/STATE.md` template and UI contract/review updates.
 
-### 3. Critical-Gate Semantics
+### 11. Content And Search Readiness — **Closed**
 
-**AS1 gap:** Numeric scoring can look precise while still relying on subjective agent judgment.
+`silver:content` and `content-search` pack.
 
-**SB gap:** SB lacks a visible file-level critical gate catalog.
+### 12. Installation And Update UX — **Closed**
 
-**Better SB direction:** Define SB "hard gates" as named invariants per domain and require evidence for every PASS. Use BLOCK/WARN/INFO plus confidence, not numeric theater.
+`scripts/sb-diagnostics.sh`; fast path remains init + marketplace install.
 
-### 4. Test Quality Depth
+### 13. Runtime Compatibility — **Closed**
 
-**AS1 gap:** Many testing commands can be expensive and tool-heavy.
+`docs/RUNTIME-COMPATIBILITY.md` capability tiers 0–3.
 
-**SB gap:** SB does not yet call out mutation, test runtime performance, test anti-patterns, route-to-E2E generation, or oracle independence as explicit surfaces.
+### 14. Skill Catalog Discoverability — **Closed**
 
-**Better SB direction:** Extend `verify-tests`, `testability`, and `silver:verify` with test health packs:
+Site/help capability matrix; `/silver` entry point.
 
-- meaningful assertion review
-- failure-mode and edge-case coverage
-- mock boundary checks
-- flake risk
-- runner performance
-- route/user-flow E2E discovery
-- mutation-style challenge cases
+### 15. Auto-Activation Discipline — **By design**
 
-### 5. Backlog And Deferred Work
-
-**AS1 gap:** Backlog persistence can turn every advisory into noise.
-
-**SB gap:** SB captures deferred work but lacks deduplication, scoring, and audit-wide rollups.
-
-**Better SB direction:** Make `silver:add` accept structured audit findings and dedupe by fingerprint. Score by impact, risk, evidence strength, and effort.
-
-### 6. Post-Deploy Confidence
-
-**AS1 gap:** Canary workflows are useful but can become shallow if they only poll HTTP or screenshots.
-
-**SB gap:** SB release and DevOps verification do not expose a named post-deploy watch stage.
-
-**Better SB direction:** Add `silver:canary` or a RELEASE flow extension that verifies live routes, health endpoints, browser console, logs when available, rollback readiness, and release artifact evidence.
-
-### 7. Incident And Retro Loops
-
-**AS1 gap:** Incident and retro commands need integration with the delivery artifacts to be more than generated reports.
-
-**SB gap:** SB has forensics but not a named incident/postmortem and periodic engineering retro surface.
-
-**Better SB direction:** Extend `silver:forensics` and release docs with:
-
-- incident timeline
-- probable cause
-- contributing process gap
-- action items routed to `silver:add`
-- release trend summary
-- recurring risk patterns
-
-### 8. Cross-Provider Review
-
-**AS1 gap:** Multi-provider review adds cost and dependency complexity.
-
-**SB gap:** SB does not expose a clear "when to use external review" policy.
-
-**Better SB direction:** Keep SB-owned review authoritative, add optional adversarial enrichment modes:
-
-- local SB review always required
-- external reviewers only for high blast radius, security, public API, or release blockers
-- all findings normalized into REVIEW.md and triaged by `silver:review-triage`
-
-### 9. Code Intelligence
-
-**AS1 gap:** Code-intelligence MCP can be a soft dependency.
-
-**SB gap:** Graphify retrieval and semantic compression are not unified into a public "code intelligence contract."
-
-**Better SB direction:** Define SB code intelligence as layered:
-
-- fast shell discovery
-- Graphify retrieval when present
-- call/dependency graph evidence when available
-- fallback quality levels recorded in artifacts
-
-### 10. Design System State
-
-**AS1 gap:** Dedicated design state can drift from implementation.
-
-**SB gap:** SB UI contract/review does not yet define a durable interface state artifact.
-
-**Better SB direction:** Add optional `.planning/interface/` artifacts generated by `silver:ui-contract` and verified by `silver:ui-review`.
-
-### 11. Content And Search Readiness
-
-**AS1 gap:** Content/SEO/GEO commands may exceed core engineering scope.
-
-**SB gap:** SB's docs scheme does not cover public content quality, migration parity, search readiness, and AI-citation readiness.
-
-**Better SB direction:** Treat these as SB domain quality packs, activated for public sites/docs/content changes and release workflows.
-
-### 12. Installation And Update UX
-
-**AS1 gap:** Simple installation may hide prerequisites and cache issues.
-
-**SB gap:** SB installation can look heavy.
-
-**Better SB direction:** Keep precise install safety, but add a concise "fast install" path plus a diagnostics command that verifies hooks, Graphify, jq, package version, and runtime support.
-
-### 13. Runtime Compatibility
-
-**AS1 gap:** Broad runtime support may produce different capabilities per host.
-
-**SB gap:** SB has clear Claude/Codex support but less public stance for Cursor-like environments.
-
-**Better SB direction:** Document runtime capability tiers: guidance-only, state-tracked, hook-enforced, live-tested.
-
-### 14. Skill Catalog Discoverability
-
-**AS1 gap:** A large catalog can overwhelm.
-
-**SB gap:** SB's compact command set hides depth.
-
-**Better SB direction:** Expose a capability matrix rather than one command per concern. `/silver` remains the entry point; reference docs show which domain packs activate by scope.
-
-### 15. Auto-Activation Discipline
-
-**AS1 gap:** Always-on routing can over-trigger.
-
-**SB gap:** Explicit `/silver` requires user habit.
-
-**Better SB direction:** Keep explicit routing, but improve session-start reminders and command suggestions. Never hijack non-SB tasks silently.
+SB keeps explicit `/silver` routing with session reminders rather than silent hijack.
 
 ## SB Gap Closure Requirements
 
-To become a clear superset without copying AS1:
+Status as of 2026-06-14 — all items below have SB-owned implementation evidence:
 
-1. Add an SB-owned domain audit capability that covers the specialized audit breadth through packs, not cloned commands.
-2. Extend quality gates with domain pack selection and a normalized evidence schema.
-3. Make test health deeper: test quality, E2E readiness, mutation-style challenge, test performance, and repair planning.
-4. Add backlog fingerprinting and prioritization guidance for audit findings.
-5. Add canary/post-deploy verification as an SB release/DevOps capability.
-6. Add incident and retrospective artifacts as first-class SB forensics/release outputs.
-7. Add optional external review policy while keeping SB review authoritative.
-8. Add code-intelligence capability tiers.
-9. Add UI/interface state artifacts for design continuity.
-10. Add content/search-readiness packs for public docs/sites.
-11. Improve install/update diagnostics and runtime capability documentation.
-12. Preserve SB's key superiority: enforceability, artifact traceability, release governance, and no dependency-plugin ownership leakage.
+| # | Requirement | Status | Evidence |
+|---|-------------|--------|----------|
+| 1 | Domain audit capability via packs | Done | `skills/silver-domain-audit/SKILL.md` |
+| 2 | Normalized evidence schema | Done | `docs/evidence-schema.md` |
+| 3 | Deeper test health surfaces | Done | `skills/silver-test/SKILL.md` |
+| 4 | Backlog fingerprinting and prioritization | Done | `skills/silver-add/SKILL.md` |
+| 5 | Canary/post-deploy verification | Done | `skills/silver-canary/SKILL.md` |
+| 6 | Incident and retrospective artifacts | Done | `skills/silver-incident/SKILL.md`, `skills/silver-retro/SKILL.md` |
+| 7 | External review policy | Done | `docs/external-review-policy.md` |
+| 8 | Code-intelligence capability tiers | Done | `docs/code-intelligence-contract.md` |
+| 9 | UI/interface state artifacts | Done | `templates/interface/STATE.md.base` |
+| 10 | Content/search-readiness packs | Done | `skills/silver-content/SKILL.md` |
+| 11 | Install diagnostics and runtime docs | Done | `scripts/sb-diagnostics.sh`, `docs/RUNTIME-COMPATIBILITY.md` |
+| 12 | Preserve SB enforceability and boundaries | Ongoing invariant | hooks, `silver-bullet.md` §8, completion audit |
+
+SB superiority remains enforceability, artifact traceability, release governance,
+and no dependency-plugin ownership leakage — not cloning AS1's per-concern command surface.

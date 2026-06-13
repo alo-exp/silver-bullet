@@ -29,7 +29,7 @@ The report must include:
 - scope and selected mode;
 - discovered production targets and risk ranking;
 - test strategy and generated/changed test files;
-- quality findings using `test-health` evidence schema;
+- quality findings using `test-health` rows from `docs/evidence-schema.md`;
 - commands run and timing where relevant;
 - unresolved gaps filed through `silver:add`.
 

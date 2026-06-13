@@ -32,9 +32,11 @@ Write or update `.planning/REVIEW.md`.
 
 ## Optional Review Enrichment
 
-External second-opinion reviewers may be used when the user requests them or the
-change is architecturally significant, but they feed into REVIEW.md and do not
-replace this SB review artifact.
+Follow `docs/external-review-policy.md`. External second-opinion reviewers may
+be used when the user requests them or the change is architecturally significant,
+but they feed into REVIEW.md and do not replace this SB review artifact.
+
+Normalize imported findings with `docs/evidence-schema.md`.
 
 ## Exit Gate
 

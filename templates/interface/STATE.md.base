@@ -1,0 +1,46 @@
+---
+updated: 2026-06-14
+scope: interface-design-state
+---
+
+# Interface Design State
+
+Persistent UI contract continuity artifact. Updated by `silver:ui-contract` at
+design time and `silver:ui-review` after implementation establishes reusable
+patterns.
+
+## Design Tokens
+
+| Token | Value | Usage notes |
+|-------|-------|-------------|
+| | | |
+
+## Components
+
+| Component | Location | States covered | Reuse notes |
+|-----------|----------|----------------|-------------|
+| | | | |
+
+## Interaction Patterns
+
+| Pattern | Keyboard | Screen reader | Open debt |
+|---------|----------|---------------|-----------|
+| | | | |
+
+## Accessibility Decisions
+
+| Decision | Rationale | Verified in |
+|----------|-----------|-------------|
+| | | |
+
+## Screenshots / References
+
+| Surface | Path or URL | Date |
+|---------|-------------|------|
+| | | |
+
+## Open Design Debt
+
+| Item | Severity | Filed ID |
+|------|----------|----------|
+| | | |

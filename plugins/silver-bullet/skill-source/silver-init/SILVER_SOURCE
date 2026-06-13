@@ -125,6 +125,19 @@ If the command fails (exit code non-zero), ask the user directly:
 If A: re-run `command -v graphify`. If still not found, STOP with: `❌ Graphify still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
+### 1.1b Install diagnostics (advisory)
+
+After core dependencies are confirmed, run the SB diagnostics probe when the
+script is available in the plugin or repo:
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
+  bash scripts/sb-diagnostics.sh 2>/dev/null || true
+```
+
+Surface WARN/FAIL lines to the user. Capability tier and hook presence are
+documented in `docs/RUNTIME-COMPATIBILITY.md`.
+
 ### 1.2 Optional legacy plugin discovery
 
 Legacy lifecycle-overlap plugins are no longer hard requirements for SB

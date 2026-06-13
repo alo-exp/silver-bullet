@@ -77,6 +77,54 @@ Apply this rubric to the user's description to determine `ITEM_TYPE` and `ITEM_L
 
 **Default when ambiguous:** classify as backlog. Do not file: transient exploration notes, one-line TODOs without context, or items already addressed in the current session.
 
+---
+
+## Structured Audit Findings
+
+When filing from `silver:domain-audit`, `silver:review`, `silver:quality-gates`,
+or other normalized finding tables, use structured intake:
+
+### Fingerprint
+
+Compute a stable fingerprint before filing:
+
+```text
+sha256(normalize(domain) + "\n" + normalize(scope) + "\n" + normalize(finding))
+```
+
+Use the same normalization as `scripts/silver-scan.py` (trim, collapse
+whitespace, lowercase for comparison). Include the fingerprint in the filed
+description and session log entry.
+
+### Deduplication
+
+Before creating a new item, search in order:
+
+1. Current session `## Items Filed` section
+2. `docs/issues/ISSUES.md` and `docs/issues/BACKLOG.md` for the fingerprint or
+   near-duplicate title
+3. GitHub issues when `issue_tracker=github`
+4. `.silver-bullet/scan-state.json` fingerprints when present
+
+If a match exists, return the existing ID instead of creating a duplicate.
+
+### Prioritization Score
+
+When multiple deferred findings compete, rank by score (higher = sooner):
+
+| Factor | Weight | Guidance |
+|--------|--------|----------|
+| Impact | 1–5 | user-visible breakage, data loss, security exposure |
+| Risk | 1–5 | likelihood without action |
+| Evidence strength | 1–3 | HIGH=3, MEDIUM=2, LOW=1 |
+| Effort | 1–5 subtracted | estimated fix cost |
+
+`priority_score = impact + risk + evidence_strength - effort`
+
+Record the score in the filed item body when filing from audit findings.
+
+---
+
 **In autonomous mode:** classify from the description alone without asking the user.
 
 **If ambiguous and NOT in autonomous mode:** ask one clarifying question: "Is this blocking current work? (yes = issue, no = backlog)"
