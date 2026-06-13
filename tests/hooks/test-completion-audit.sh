@@ -162,6 +162,46 @@ seed_doc_scheme_checklist_current_month() {
 EOF
 }
 
+seed_evidence_validator_scripts() {
+  mkdir -p "$TMPDIR_TEST/scripts/lib"
+  cp "$REPO_ROOT/scripts/validate-evidence-findings.py" "$TMPDIR_TEST/scripts/"
+  cp "$REPO_ROOT/scripts/validate-evidence-findings.sh" "$TMPDIR_TEST/scripts/"
+  cp "$REPO_ROOT/scripts/lib/evidence_common.py" "$TMPDIR_TEST/scripts/lib/"
+  chmod +x "$TMPDIR_TEST/scripts/validate-evidence-findings.sh"
+}
+
+seed_malformed_evidence_artifact() {
+  mkdir -p "$TMPDIR_TEST/.planning/phases/056-test"
+  cat > "$TMPDIR_TEST/.planning/phases/056-test/DOMAIN-AUDIT.md" <<'EOF'
+# Domain Audit
+
+## Findings
+
+| domain | scope | severity | confidence | evidence | finding |
+|--------|-------|----------|------------|----------|---------|
+| code-health | src/app.ts | BLOCK | HIGH | src/app.ts:1 | missing required columns |
+EOF
+}
+
+seed_delivery_ready_state() {
+  cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+requesting-code-review
+gsd-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+verify-tests
+EOF
+  write_verify_tests_state
+}
+
 add_contract_required_key() {
   local key="$1"
   python3 - "$TMPDIR_TEST/docs/doc-scheme.json" "$key" <<'PY'
@@ -995,6 +1035,26 @@ seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "doc-scheme gate blocks when a concrete docs file is missing from checklist" "$out"
 assert_contains "missing checklist entry names extra doc" "$out" "docs/EXTRA.md"
+teardown
+
+# Test 24: evidence schema gate warns on delivery when finding tables drift (warn-first)
+setup
+seed_delivery_ready_state
+seed_evidence_validator_scripts
+seed_malformed_evidence_artifact
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_passes "evidence schema gate allows delivery with warnings by default" "$out"
+assert_contains "evidence schema warn message present" "$out" "EVIDENCE SCHEMA"
+teardown
+
+# Test 25: evidence schema strict mode blocks delivery
+setup
+seed_delivery_ready_state
+seed_evidence_validator_scripts
+seed_malformed_evidence_artifact
+out=$(SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1 run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "evidence schema strict mode blocks delivery on drift" "$out"
+assert_contains "evidence schema strict block label" "$out" "EVIDENCE SCHEMA GATE"
 teardown
 
 # ── Composed-workflow gate (Pass 1: deferred — gate falls through to legacy) ──
