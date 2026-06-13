@@ -7,6 +7,11 @@ Silver Bullet enforces workflow compliance through 12 independent layers. No sin
 | # | Layer | Mechanism | Fires On | What It Prevents |
 |---|-------|-----------|----------|-----------------|
 | 1 | **Skill Recording** | `record-skill.sh` (PostToolUse) | Claude `Skill` tool calls and Codex `silver-bullet invoke-skill` receipts | Skills invoked through a supported channel but not tracked |
+
+`record-skill.sh` searches every candidate receipt directory from
+`sb_runtime_skill_receipt_dirs()` (Claude and Codex homes). Codex adapter receipts
+land under `~/.codex/.silver-bullet/skill-invocations`; repo-source hooks must not
+assume the Claude runtime when `CLAUDE_PLUGIN_ROOT` resolves under `/.codex/`.
 | 2 | **Dev Cycle Gate** | `dev-cycle-check.sh` (PreToolUse) | Edit, Write, MultiEdit, Bash | Code changes before planning is complete. Uses active `.planning/workflows/<id>.md` admission control first, then legacy skill markers when no composed workflow is active. |
 | 3 | **Planning File Guard** | `planning-file-guard.sh` (PreToolUse) | Edit, Write, MultiEdit | Direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of owning SB workflow |
 | 4 | **Completion Audit** | `completion-audit.sh` (PostToolUse) | git commit/push/deploy/release | Shipping without required paths/skills. Uses `SB_WORKFLOW_ID`-matched `.planning/workflows/<id>.md` first, then legacy fallback when no composed workflow is active. |
