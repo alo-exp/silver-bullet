@@ -70,6 +70,15 @@ Every finding must be normalized to the canonical cross-domain schema in
 Do not accept generic claims such as "looks good" or "tests pass" without the
 specific evidence pointer that made the claim true.
 
+After writing findings, validate the artifact when the helper is available:
+
+```bash
+bash scripts/validate-evidence-findings.sh
+```
+
+Delivery hooks warn on schema drift (strict block when
+`SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1`). See `docs/evidence-schema.md`.
+
 ## Pack Selection
 
 Select packs by changed files, user intent, and release scope. Use `--pack all`

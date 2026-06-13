@@ -36,6 +36,12 @@ if [[ -f "$_lib_dir/doc-scheme-gate.sh" ]]; then
   source "$_lib_dir/doc-scheme-gate.sh"
 fi
 
+# shellcheck source=lib/evidence-schema-gate.sh
+if [[ -f "$_lib_dir/evidence-schema-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/evidence-schema-gate.sh"
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -112,6 +118,15 @@ emit_block() {
   else
     printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_reason" "$json_reason"
   fi
+}
+
+emit_warn() {
+  local reason="$1"
+  jq -n --arg m "$reason" '{"hookSpecificOutput":{"message":$m}}'
+}
+
+capture_evidence_warn() {
+  EVIDENCE_SCHEMA_WARN="$1"
 }
 
 # Extract the command being run
@@ -544,6 +559,16 @@ run_doc_scheme_delivery_gate() {
   return 0
 }
 
+# ── Evidence schema delivery gate (warn-first) ───────────────────────────────
+run_evidence_schema_delivery_gate() {
+  local repo_root="$1"
+  EVIDENCE_SCHEMA_WARN=""
+  if declare -f sb_evidence_schema_gate_enforce >/dev/null 2>&1; then
+    sb_evidence_schema_gate_enforce "delivery" "$repo_root" "capture_evidence_warn" "emit_block"
+  fi
+  return 0
+}
+
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -649,6 +674,7 @@ project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
 run_workflow_strict_gate "$project_root"
 run_doc_scheme_delivery_gate "$project_root"
+run_evidence_schema_delivery_gate "$project_root"
 
 release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
@@ -960,6 +986,12 @@ else
       ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
     done
     msg=$(printf '✅ Workflow compliance verified. Proceed.\n\nIgnored required skills:\n%s' "$ignored_lines")
+    if [[ -n "${EVIDENCE_SCHEMA_WARN:-}" ]]; then
+      msg=$(printf '%s\n\n%s' "$msg" "$EVIDENCE_SCHEMA_WARN")
+    fi
+    jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
+  elif [[ -n "${EVIDENCE_SCHEMA_WARN:-}" ]]; then
+    msg=$(printf '✅ Workflow compliance verified. Proceed.\n\n%s' "$EVIDENCE_SCHEMA_WARN")
     jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
   else
     printf '{"hookSpecificOutput":{"message":"✅ Workflow compliance verified. Proceed."}}'
