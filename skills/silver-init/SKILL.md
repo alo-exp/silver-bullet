@@ -559,6 +559,18 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
 
   **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no project instruction file section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
 - **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows`.
+- **3.2.1 Interface design state (UI/frontend projects)**: when the detected
+  stack or workflow indicates a UI surface (React/Vue/Angular/Svelte/Flutter,
+  `silver-ui` workflow, or similar), stamp durable interface state:
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
+  bash scripts/stamp-interface-state.sh "$PWD" 2>/dev/null || true
+```
+
+This creates `.planning/interface/STATE.md` from
+`templates/interface/STATE.md.base` when absent. `silver:ui-contract` maintains
+it thereafter.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing filename (`CLAUDE.md` or `AGENTS.md`) when writing it back out.
 - **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value.
