@@ -3,19 +3,22 @@
 #
 # Codex sessions should use the Codex runtime home root for SB state and
 # plugin caches. Claude sessions should use the Claude runtime home root.
-# Tests can force either host by exporting SILVER_BULLET_RUNTIME.
+# Cursor sessions should use the Cursor runtime home root (~/.cursor).
+# Tests can force any host by exporting SILVER_BULLET_RUNTIME.
 
 if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
   _sb_runtime_source="${BASH_SOURCE[0]:-$0}"
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" || "$_sb_runtime_source" == *"/.codex/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ) ]]; then
     SILVER_BULLET_RUNTIME="codex"
+  elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" || "$_sb_runtime_source" == *"/.cursor/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ) ]]; then
+    SILVER_BULLET_RUNTIME="cursor"
   else
     SILVER_BULLET_RUNTIME="claude"
   fi
 fi
 
 case "$SILVER_BULLET_RUNTIME" in
-  claude|codex) ;;
+  claude|codex|cursor) ;;
   *) SILVER_BULLET_RUNTIME="claude" ;;
 esac
 
@@ -76,7 +79,7 @@ sb_runtime_skill_receipt_dirs() {
 
   for base_home in "$HOME" "${KAY_HOME:-}"; do
     [[ -n "$base_home" ]] || continue
-    for runtime in codex claude; do
+    for runtime in codex claude cursor; do
       _sb_append_receipt_dir "${base_home}/.${runtime}/.silver-bullet"
     done
   done
