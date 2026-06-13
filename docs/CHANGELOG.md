@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-14 — v0392-as1-parity-release-gate
+**What**: Shipped v0.39.2 closing AS1 structural parity gaps (evidence schema, code-intelligence contract, external-review policy, backlog fingerprinting, sb-diagnostics, interface STATE template); fixed run-all-tests stdin hang; verified full suite (3034) and pre-release quality gate.
+**Commits**: 97cbce5, (release prep)
+**Skills run**: silver:review, silver:verify, verify-tests, silver:create-release
+**Virtual cost**: ~$0.15 (patch release — docs/contracts + test harness fix)
+**KNOWLEDGE.md**: updated (run-all-tests stdin redirect)
+**Learnings**: updated (run-all-tests command substitution inherits open stdin)
+
 ## 2026-06-14 — v0391-receipt-release-gate
 **What**: Shipped v0.39.1 prep fixes: cross-runtime Codex adapter receipt lookup for `record-skill`, GitHub Release body validation (#217), silver-scan session discovery (#219), and prompt-reminder stdin hang fix; verified full suite (3022), live matrix, and e2e-live gates.
 **Commits**: 62203f2, fe095e5, 45e93aa, ab12e86

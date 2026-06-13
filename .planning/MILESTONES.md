@@ -1,5 +1,23 @@
 # Milestones
 
+## v0.39.2 AS1 Structural Parity Closure (Shipped: 2026-06-14)
+
+**Type:** Patch release milestone (AS1 parity ledger closure)
+
+**Goal:** Close remaining AS1 structural parity gaps documented in `docs/sb-vs-as1.md` and `GOAL.md`.
+
+**Status:** complete; release published.
+
+**Completed work:**
+
+- Cross-domain evidence schema (`docs/evidence-schema.md`)
+- Code-intelligence contract and runtime capability tiers
+- External-review policy
+- Backlog fingerprinting in `silver:add`
+- `scripts/sb-diagnostics.sh` install/runtime diagnostics
+- `templates/interface/STATE.md.base` for UI contract continuity
+- `run-all-tests.sh` stdin redirect to prevent hook hang
+
 ## v0.39.1 Receipt Persistence And Scan Discovery Patch (Shipped: 2026-06-14)
 
 **Type:** Patch release milestone (cross-runtime receipt lookup, scan discovery, issue closure)
