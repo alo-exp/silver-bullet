@@ -1,6 +1,7 @@
 {
-  "task_id": "v0391-receipt-release-gate",
-  "updated_at": "2026-06-13T16:04:15Z",
+  "task_id": "release-live-marker-host-state",
+  "task_granularity": 3,
+  "updated_at": "2026-06-14T02:10:00Z",
   "docs": {
     "CHANGELOG.md": "updated",
     "README.md": "not-needed: not a release task",
@@ -85,5 +86,5 @@
     "docs/internal/alo-labs-plugin-installation-playbook.md": "not-needed: reviewed for release live marker host-state fix; no content change required",
     "docs/internal/sb-benefits-over-plain-gsd.md": "not-needed: reviewed for release live marker host-state fix; no content change required"
   },
-  "task_granularity": 3
+  "task_summary": "Kay/Codex live release runners write completion markers to host Silver Bullet state so delivery gate sees codex-only live/e2e success; checklist reconciled for full required_docs coverage (2026-06-14 session)."
 }
