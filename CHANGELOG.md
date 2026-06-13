@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.39.3] — 2026-06-14
+
+## Features
+- `feat(056): runtime-enforced AS1/Zuvo parity — evidence schema validator, silver-add fingerprint CLI, interface STATE stamping, sb-bootstrap onboarding` (70d46b1)
+- `feat(056): evidence schema delivery gate in completion-audit (warn-first; strict via SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1)` (79abf3d)
+- `feat(056): shared evidence fingerprints and silver-scan alignment` (080967a)
+- `fix(release): rewrite silver skill names in Claude agent bundle after sync` (70d46b1)
+
+## Tests
+- `test(056): silver-add fingerprint, evidence validator, interface STATE, sb-bootstrap, completion-audit gate` (bfdf3ad)
+
+---
+
 ## [0.39.2] — 2026-06-14
 
 ## Features
