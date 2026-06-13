@@ -32,12 +32,26 @@ record() {
 }
 
 detect_runtime_home() {
+  if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+    # shellcheck source=../hooks/lib/runtime-paths.sh
+    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+    printf '%s' "${SB_RUNTIME_HOME_ROOT}"
+    return
+  fi
+  if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
+    printf '%s' "${HOME}/.cursor"
+    return
+  fi
   if [[ -n "${CODEX_HOME:-}" && -d "${CODEX_HOME}" ]]; then
     printf '%s' "$CODEX_HOME"
     return
   fi
   if [[ -n "${CLAUDE_CONFIG_DIR:-}" && -d "${CLAUDE_CONFIG_DIR}" ]]; then
     printf '%s' "$CLAUDE_CONFIG_DIR"
+    return
+  fi
+  if [[ -d "${HOME}/.cursor" ]]; then
+    printf '%s' "${HOME}/.cursor"
     return
   fi
   if [[ -d "${HOME}/.codex" ]]; then
@@ -77,11 +91,14 @@ main() {
   fi
 
   runtime_home="$(detect_runtime_home)"
-  state_dir="${runtime_home}/.silver-bullet"
+  state_dir="${SB_RUNTIME_STATE_DIR:-${runtime_home}/.silver-bullet}"
 
   if [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null; then
     hooks_present="yes"
     record pass "hooks" "Silver Bullet hooks referenced in ${runtime_home}/config.toml"
+  elif [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
+    hooks_present="yes"
+    record pass "hooks" "Silver Bullet hooks referenced in Cursor hooks.json"
   elif [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
     hooks_present="yes"
     record pass "hooks" "Silver Bullet hooks referenced in Claude settings"
@@ -104,7 +121,8 @@ main() {
   record pass "package-version" "$sb_version"
 
   capability_tier="$(runtime_tier "$hooks_present" "$state_dir")"
-  record pass "runtime-capability-tier" "$capability_tier (see docs/RUNTIME-COMPATIBILITY.md)"
+  runtime_name="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-unknown}}"
+  record pass "runtime-capability-tier" "$capability_tier (${runtime_name}; see docs/RUNTIME-COMPATIBILITY.md)"
 
   if [[ -d "$state_dir" ]]; then
     record pass "state-root" "$state_dir"
