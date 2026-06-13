@@ -1,7 +1,7 @@
 ---
 audit: pre-release-consistency
-date: 2026-06-11
-release_candidate: v0.38.0
+date: 2026-06-12
+release_candidate: v0.39.0
 status: PASS
 clean_passes: 2
 ---
@@ -47,6 +47,15 @@ Evidence:
 - `tests/hooks/test-required-skills-consistency.sh` passed: 10 passed, 0 failed.
 - Skills hard-dependency scan returned no matches.
 - Active public docs/site stale-reference scan returned no matches.
+- Live route-smoke consistency now verifies transcript command order for
+  Codex/Kay route-smoke turns and fails extra commands or route-smoke timeouts.
+- Codex desktop `exec_command` consistency now reads `tool_input.cmd` for
+  adapter receipt recording, and the `silver-tdd` virtual marker resolves through
+  the hidden `tdd` skill.
+- `bash tests/hooks/test-record-skill.sh` passed with the desktop command and
+  virtual-marker regressions.
+- `bash tests/e2e-live/run-e2e-live-tests.sh` passed with the transcript guard in
+  place.
 - `git diff --check` passed.
 - JSON parse check passed for SB config and plugin manifests.
 

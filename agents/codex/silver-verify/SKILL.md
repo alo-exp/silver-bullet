@@ -23,16 +23,19 @@ Write or update `.planning/phases/<phase>/VERIFICATION.md` or
 3. Check each acceptance criterion and plan task against actual files.
 4. Run fresh tests or invoke `verify-tests` when the verification requires a
    broader test gate.
-5. For behavior-changing, release, API, data, performance, runtime, or
-   benchmark-sensitive work, invoke or apply `silver:domain-audit` with
-   `test-health` plus the affected domain packs. Verification may reuse an
-   existing fresh DOMAIN-AUDIT.md only when it covers the current diff and
-   command evidence.
-6. If coverage gaps are found, add or request missing tests before passing the
+5. For behavior-changing, release, API, data, performance, runtime, content,
+   benchmark, refactor, deployment, canary, incident, or test-engineering work,
+   invoke or apply `silver:domain-audit` with `test-health` plus the affected
+   domain packs. Verification may reuse an existing fresh DOMAIN-AUDIT.md only
+   when it covers the current diff and command evidence.
+6. When verification discovers missing tests, route to `silver:test` instead of
+   accepting coverage as a vague follow-up. Use the relevant mode:
+   `write`, `e2e`, `repair`, `audit`, `performance`, or `mutation`.
+7. If coverage gaps are found, add or request missing tests before passing the
    gate.
-7. Record UAT evidence, commands run, results, unverified claims, and residual
+8. Record UAT evidence, commands run, results, unverified claims, and residual
    risks.
-8. File deferred non-blocking gaps through `silver:add`.
+9. File deferred non-blocking gaps through `silver:add`.
 
 ## Exit Gate
 

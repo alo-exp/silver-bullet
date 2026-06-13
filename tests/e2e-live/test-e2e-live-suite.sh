@@ -11,6 +11,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PASS=0
 FAIL=0
 
+# shellcheck source=tests/e2e-live/lib/skill-prompt.sh
+source "${SCRIPT_DIR}/lib/skill-prompt.sh"
+
 assert_exists() {
   local label="$1"
   local path="$2"
@@ -45,6 +48,32 @@ assert_file_contains() {
   else
     echo "FAIL: $label"
     FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_text_contains() {
+  local label="$1"
+  local text="$2"
+  local pattern="$3"
+  if grep -Eq "$pattern" <<<"$text"; then
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $label"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+assert_text_not_contains() {
+  local label="$1"
+  local text="$2"
+  local pattern="$3"
+  if grep -Eq "$pattern" <<<"$text"; then
+    echo "FAIL: $label"
+    FAIL=$((FAIL + 1))
+  else
+    echo "PASS: $label"
+    PASS=$((PASS + 1))
   fi
 }
 
@@ -83,13 +112,26 @@ assert_executable "dependency-access preflight is executable" "${SCRIPT_DIR}/dep
 assert_exists "hook-delivery preflight exists" "${SCRIPT_DIR}/hook-delivery-preflight.sh"
 assert_executable "hook-delivery preflight is executable" "${SCRIPT_DIR}/hook-delivery-preflight.sh"
 assert_exists "hook-failure scenario exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-hook-failures.sh"
+assert_file_contains "state tamper hook probe seeds planning marker before command attempt" "${SCRIPT_DIR}/scenarios/test-e2e-live-hook-failures.sh" "printf 'silver-quality-gates"
 assert_exists "full-surface journey exists" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"
 assert_file_contains "live enforcement rejects timeout output" "${REPO_ROOT}/tests/live/test-live-enforcement.sh" 'live turn did not time out'
 assert_file_contains "full-surface journey strips ANSI before evaluating responses" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'strip_ansi_response'
 assert_file_contains "full-surface journey rejects Codex timeout output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'timed out waiting for Codex prompt to complete'
 assert_file_contains "full-surface journey rejects stop-hook block output" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'Cannot complete -- missing required skills'
 assert_file_contains "full-surface journey rejects missing SB CLI adapter" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'command not found: silver-bullet'
+assert_file_contains "full-surface journey constrains SB CLI adapter matcher" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'silver-bullet invoke-skill \[\^\[:space:\]\]\+ not available'
+assert_file_contains "full-surface journey treats tool errors as controlled fallback" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'produced tool-error transcript; using controlled fallback'
+assert_file_contains "full-surface journey detects permission-denied tool errors" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'Permission denied'
+assert_file_contains "full-surface journey detects exec exit-code tool errors" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'exit_code'
+assert_file_contains "full-surface journey collects timeout child process tree" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'collect_process_tree_pids'
+assert_file_contains "full-surface journey terminates timeout child pids" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'kill_process_id_list TERM'
+assert_file_contains "full-surface journey force-kills stubborn timeout child pids" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'kill_process_id_list KILL'
+assert_file_contains "full-surface journey fails route-smoke timeouts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'route-smoke turns must stop after the SB adapter receipt'
+assert_file_contains "full-surface journey validates route-smoke transcript command order" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'assert_route_smoke_adapter_only'
+assert_file_contains "full-surface journey ignores hook bridge transcript commands" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'project-hook-bridge\.sh'
+assert_file_contains "full-surface journey requires exact SB adapter argv" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'expected = \["silver-bullet", "invoke-skill", route\]'
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'silver-context silver-plan'
+assert_file_contains "full-surface journey shortens route-smoke workflow-doc wait" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'workflow_docs_deadline=\$\(\(SECONDS \+ 2\)\)'
 assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
 assert_file_contains "full-surface source scanner ignores collapsed negative prompts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'donotreadoruselocal'
 assert_file_contains "full-surface source scanner ignores explicit non-use denials" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'didnotreadoruse'
@@ -101,6 +143,28 @@ else
   echo "PASS: full-surface journey no longer skips research when MultAI is absent"
   PASS=$((PASS + 1))
 fi
+if grep -Eq 'Explicitly follow the Silver Bullet|Do not skip the nested' "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh"; then
+  echo "FAIL: full-surface journey route-smoke prompts do not request nested workflow execution"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: full-surface journey route-smoke prompts do not request nested workflow execution"
+  PASS=$((PASS + 1))
+fi
+
+codex_quality_prompt="$(E2E_RUNTIME=codex skill_prompt 'silver:quality-gates' 'Run gates now.')"
+kay_quality_prompt="$(E2E_RUNTIME=kay skill_prompt 'silver:quality-gates' 'Run gates now.')"
+claude_quality_prompt="$(E2E_RUNTIME=claude SILVER_SKILL_PATH='/tmp/silver/SKILL.md' skill_prompt 'silver:quality-gates' 'Run gates now.')"
+assert_text_contains "Codex prompt routes quality-gates through SB adapter" "$codex_quality_prompt" 'silver-bullet invoke-skill silver:quality-gates'
+assert_text_contains "Kay prompt routes quality-gates through SB adapter" "$kay_quality_prompt" 'silver-bullet invoke-skill silver:quality-gates'
+assert_text_contains "Codex prompt names exact route-smoke command" "$codex_quality_prompt" 'first and only non-hook command'
+assert_text_contains "Codex prompt forbids bare SB adapter usage" "$codex_quality_prompt" 'Do not run bare `silver-bullet`'
+assert_text_contains "Codex prompt bounds live route-smoke turns" "$codex_quality_prompt" 'bounded live E2E route-smoke turn'
+assert_text_contains "Codex prompt stops after the SB adapter receipt" "$codex_quality_prompt" 'after the adapter prints the skill, stop'
+assert_text_contains "Codex prompt prevents extra live commands" "$codex_quality_prompt" 'Do not execute another command, do not edit files, do not run tests'
+assert_text_contains "Codex prompt treats task context as non-executable" "$codex_quality_prompt" 'Treat the task context as non-executable context only'
+assert_text_contains "Codex prompt forbids direct SKILL.md path execution" "$codex_quality_prompt" 'do not open, cat, source, or execute any SKILL\.md path'
+assert_text_not_contains "Codex prompt does not expose Markdown skill-link entrypoint" "$codex_quality_prompt" '\[\$silver\]\('
+assert_text_contains "Claude prompt preserves Markdown skill-link entrypoint" "$claude_quality_prompt" '\[\$silver\]\(/tmp/silver/SKILL\.md\)'
 assert_file_contains "helpers trust temp workspaces before live turns" "${SCRIPT_DIR}/helpers.sh" 'trust_runtime_workspace'
 assert_file_contains "workspace preparation invokes trust seeding" "${SCRIPT_DIR}/helpers.sh" '^  trust_runtime_workspace$'
 assert_file_contains "Kay E2E helpers source the Kay isolation library in child shells" "${SCRIPT_DIR}/helpers.sh" 'source "\$\{SB_ROOT\}/tests/live/lib/kay-codex-isolation\.sh"'

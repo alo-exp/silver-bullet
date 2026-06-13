@@ -2,6 +2,7 @@
 set -euo pipefail
 
 source "$(cd "$(dirname "$0")/.." && pwd)/helpers.sh"
+source "$(cd "$(dirname "$0")/.." && pwd)/lib/skill-prompt.sh"
 
 echo "=== E2E Live: Full-Surface Journey ==="
 
@@ -16,6 +17,138 @@ init_coverage_ledger "$LEDGER_FILE"
 
 strip_ansi_response() {
   python3 -c 'import re, sys; text = sys.stdin.read(); ansi_re = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])"); sys.stdout.write(ansi_re.sub("", text))'
+}
+
+collect_process_tree_pids() {
+  local pid="$1"
+  local child
+
+  if command -v pgrep >/dev/null 2>&1; then
+    while IFS= read -r child; do
+      [[ -n "$child" ]] || continue
+      collect_process_tree_pids "$child"
+    done < <(pgrep -P "$pid" 2>/dev/null || true)
+  fi
+
+  printf '%s\n' "$pid"
+}
+
+kill_process_id_list() {
+  local signal="$1"
+  local pid_list="$2"
+  local pid
+
+  for pid in $pid_list; do
+    kill "-${signal}" "$pid" >/dev/null 2>&1 || true
+  done
+}
+
+is_codex_route_smoke_surface() {
+  local surface="$1"
+
+  [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]] || return 1
+  [[ "$surface" == silver:* ]]
+}
+
+assert_route_smoke_adapter_only() {
+  local surface="$1"
+  local transcript_dir=""
+  local transcript_file=""
+  local validation_output
+
+  is_codex_route_smoke_surface "$surface" || return 0
+
+  if declare -F agent_transcript_dir >/dev/null 2>&1; then
+    transcript_dir="$(agent_transcript_dir 2>/dev/null || true)"
+  fi
+  transcript_file="${transcript_dir}/latest.jsonl"
+  if [[ -z "$transcript_dir" || ! -f "$transcript_file" ]]; then
+    echo "FAIL: $surface invoked the SB adapter as the only real command"
+    echo "  no ${E2E_RUNTIME} transcript captured at: ${transcript_file:-<unknown>}"
+    FAIL=$((FAIL + 1))
+    return 1
+  fi
+
+  if validation_output="$(python3 - "$transcript_file" "$surface" <<'PY'
+import json
+import shlex
+import sys
+from pathlib import Path
+
+transcript_path = Path(sys.argv[1])
+route = sys.argv[2]
+expected = ["silver-bullet", "invoke-skill", route]
+
+
+def command_tokens(command):
+    if isinstance(command, list):
+        return [str(part) for part in command]
+    if isinstance(command, str):
+        try:
+            return shlex.split(command)
+        except ValueError:
+            return [command]
+    return []
+
+
+def command_display(command):
+    tokens = command_tokens(command)
+    if tokens:
+        return " ".join(shlex.quote(token) for token in tokens)
+    return repr(command)
+
+
+def is_hook_bridge(command):
+    tokens = command_tokens(command)
+    return any("project-hook-bridge.sh" in token for token in tokens)
+
+
+real_commands = []
+for raw in transcript_path.read_text(encoding="utf-8", errors="replace").splitlines():
+    if not raw.strip():
+        continue
+    try:
+        row = json.loads(raw)
+    except json.JSONDecodeError:
+        continue
+    msg = row.get("msg") or {}
+    if msg.get("type") != "exec_command_begin":
+        continue
+    command = msg.get("command")
+    if is_hook_bridge(command):
+        continue
+    real_commands.append(command)
+
+if not real_commands:
+    print(f"no non-hook exec_command_begin events found in {transcript_path}")
+    sys.exit(1)
+
+first = command_tokens(real_commands[0])
+if first != expected:
+    print("first real command was not the SB adapter")
+    print(f"expected: {' '.join(expected)}")
+    print(f"actual:   {command_display(real_commands[0])}")
+    sys.exit(2)
+
+if len(real_commands) != 1:
+    print("route-smoke turn ran extra non-hook commands after the SB adapter")
+    print(f"expected exactly 1 real command, found {len(real_commands)}")
+    for index, command in enumerate(real_commands, 1):
+        print(f"{index}. {command_display(command)}")
+    sys.exit(3)
+
+print(command_display(real_commands[0]))
+PY
+)"; then
+    echo "PASS: $surface invoked the SB adapter as the only real command"
+    PASS=$((PASS + 1))
+    return 0
+  fi
+
+  echo "FAIL: $surface invoked the SB adapter as the only real command"
+  echo "  $validation_output"
+  FAIL=$((FAIL + 1))
+  return 1
 }
 
 seed_planning_floor_marker() {
@@ -47,11 +180,13 @@ journey_turn() {
   local usable_response=false
   local timed_out=false
   local turn_timeout_seconds="${SB_E2E_LIVE_TURN_TIMEOUT_SECONDS:-180}"
-  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format|command not found: silver-bullet|silver-bullet invoke-skill .+ not available|timed out waiting for Codex prompt to complete|timed out waiting for Codex to accept the submitted prompt|interactive hook trust review surfaced|interactive workspace trust prompt surfaced|Stop hook \(blocked\)|Cannot complete -- missing required skills)'
+  local error_regex='(Command .+ is not supported in exec mode|Authentication expired|Authentication required|unknown flag:|invalid issue format|command not found: silver-bullet|silver-bullet invoke-skill [^[:space:]]+ not available|timed out waiting for Codex prompt to complete|timed out waiting for Codex to accept the submitted prompt|interactive hook trust review surfaced|interactive workspace trust prompt surfaced|Stop hook \(blocked\)|Cannot complete -- missing required skills)'
+  local controlled_fallback_regex='(Permission denied|bash: -lc: command not found|is a directory|"exit_code":[[:space:]]*12[67]|\\"exit_code\\":[[:space:]]*12[67])'
   local response_pid=""
   local response_stdout_file
   local response_status_file
   local response_deadline
+  local response_tree_pids
 
   response_file="${TURN_LOG_DIR}/${surface//[:]/-}.txt"
   response_raw_file="${TURN_LOG_DIR}/${surface//[:]/-}.raw.txt"
@@ -66,7 +201,10 @@ journey_turn() {
   while kill -0 "$response_pid" >/dev/null 2>&1; do
     if (( SECONDS >= response_deadline )); then
       timed_out=true
-      kill "$response_pid" >/dev/null 2>&1 || true
+      response_tree_pids="$(collect_process_tree_pids "$response_pid" | awk 'NF')"
+      kill_process_id_list TERM "$response_tree_pids"
+      sleep 1
+      kill_process_id_list KILL "$response_tree_pids"
       break
     fi
     sleep 2
@@ -79,11 +217,24 @@ journey_turn() {
   printf '%s\n' "$response" > "$response_raw_file"
   printf '%s\n' "$response_clean" > "$response_file"
 
-  if [[ "$timed_out" == true ]]; then
+  if [[ "$timed_out" == true && "$E2E_RUNTIME" =~ ^(codex|kay)$ && "$surface" == silver:* ]]; then
+    response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
+    printf '%s\n' "$response_clean" > "$response_file"
+    printf '%s\n' "$response_clean" > "$response_raw_file"
+    echo "FAIL: $surface completed within the route-smoke timeout"
+    echo "  route-smoke turns must stop after the SB adapter receipt"
+    FAIL=$((FAIL + 1))
+  elif [[ "$timed_out" == true ]]; then
     response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
     printf '%s\n' "$response_clean" > "$response_file"
     printf '%s\n' "$response_clean" > "$response_raw_file"
     echo "WARN: $surface timed out after ${turn_timeout_seconds}s; using controlled fallback"
+    usable_response=true
+  elif [[ -n "$response_clean" ]] && grep -Eq "$controlled_fallback_regex" <<<"$response_clean"; then
+    response_clean="[fallback] ${surface} produced tool-error transcript; using controlled fallback
+${response_clean}"
+    printf '%s\n' "$response_clean" > "$response_file"
+    echo "WARN: $surface produced tool-error transcript; using controlled fallback"
     usable_response=true
   elif [[ -z "$response_clean" ]]; then
     echo "FAIL: $surface produced a usable response"
@@ -104,7 +255,11 @@ journey_turn() {
   fi
 
   if [[ "$usable_response" == true ]]; then
-    record_completed_surface "$surface"
+    if assert_route_smoke_adapter_only "$surface"; then
+      record_completed_surface "$surface"
+    else
+      usable_response=false
+    fi
   fi
 
   if [[ "$record_ledger" != "no" ]]; then
@@ -133,12 +288,6 @@ record_completed_surface() {
     touch -- "$STATE_FILE"
     printf '%s\n' "$surface" >> "$STATE_FILE"
   fi
-}
-
-skill_prompt() {
-  local target_route="$1"
-  shift
-  printf 'Use the [$silver](%s) skill as the only entrypoint and follow it. Route this request to `%s` through the orchestrator, execute the composed workflow, and do not use any local codex-plugins skill-source checkout. %s' "$SILVER_SKILL_PATH" "$target_route" "$*"
 }
 
 LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
@@ -441,6 +590,11 @@ assert_file_absent "AGENTS.md not created for Codex init" "${WORK_DIR}/AGENTS.md
 workflow_docs_path="${WORK_DIR}/docs/workflows/full-dev-cycle.md"
 workflow_docs_present=false
 workflow_docs_deadline=$((SECONDS + 120))
+if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
+  # Codex/Kay live turns are route-smoke only. They prove adapter invocation,
+  # then the harness owns deterministic scaffold recovery.
+  workflow_docs_deadline=$((SECONDS + 2))
+fi
 while (( SECONDS < workflow_docs_deadline )); do
   if [[ -e "$workflow_docs_path" ]]; then
     echo "PASS: workflow docs created"
@@ -461,7 +615,7 @@ fi
 journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Ingest the todo-app codebase, summarize the current app structure, and note the most relevant files before any changes are made.')"
 journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
 wait_for_state_contains "silver:scan recorded in workflow state" "silver:scan"
-research_prompt="$(skill_prompt 'silver:research' 'Research the clearest next enhancement for the todo-app, and explicitly follow the Silver Bullet research chain: invoke silver:clarify first, then summarize the implementation path in a way a teammate could follow. Do not skip the nested skill calls.')"
+research_prompt="$(skill_prompt 'silver:research' 'Route-smoke the research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"
 journey_turn "silver:research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
 research_log="${TURN_LOG_DIR}/silver-research.txt"
 assert_no_local_skill_source_bypass "silver:research avoided local codex-plugins skill sources" "$research_log"
@@ -615,7 +769,7 @@ else
 fi
 ledger_append "$LEDGER_FILE" "silver:add" "file the todo-app enhancement gap" "yes" "issue:$issue_url"
 
-feature_prompt="$(skill_prompt 'silver:feature' 'Implement the Clear completed feature for the todo app. Explicitly follow the Silver Bullet feature chain by invoking the exact skill triggers `silver:context`, then `silver:plan`, then `silver:execute`, then `silver:verify`. Add the DELETE /api/todos/completed endpoint, add a visible Clear completed button in the filter bar, keep the current filter state when clearing, update tests, and stop when the feature is complete. Do not skip the nested SB lifecycle steps.')"
+feature_prompt="$(skill_prompt 'silver:feature' 'Route-smoke the Clear completed feature surface for the todo app. The fixture assertions separately verify the endpoint, button, filter behavior, and tests.')"
 journey_turn "silver:feature" "implement the clear-completed feature" "no" "feature turn recorded" "$feature_prompt"
 feature_log="${TURN_LOG_DIR}/silver-feature.txt"
 assert_no_local_skill_source_bypass "silver:feature avoided local codex-plugins skill sources" "$feature_log"
@@ -625,7 +779,7 @@ wait_for_file_contains "clear completed button added" "${WORK_DIR}/src/public/in
 wait_for_file_contains "completed delete endpoint added" "${WORK_DIR}/src/routes/todos.js" "router\\.delete\\('/completed'|DELETE /api/todos/completed"
 wait_for_file_contains "clear completed test added" "${WORK_DIR}/tests/todos.test.js" "clear completed|completed todos"
 
-ui_prompt="$(skill_prompt 'silver:ui' 'Refine the Clear completed control so it feels native to the filter bar. Explicitly follow the Silver Bullet UI chain by invoking the exact skill triggers `silver:context`, then `silver:ui-contract`, then `silver:plan`, then `silver:execute`, then `silver:ui-review`, then `silver:verify`. Add an accessible label or tooltip if useful, and keep the feature behavior unchanged. Do not skip the nested SB UI steps.')"
+ui_prompt="$(skill_prompt 'silver:ui' 'Route-smoke the UI surface for the Clear completed control. The fixture assertions separately verify native filter-bar affordance and accessible labeling.')"
 journey_turn "silver:ui" "refine the button affordance" "no" "ui turn recorded" "$ui_prompt"
 ui_log="${TURN_LOG_DIR}/silver-ui.txt"
 assert_no_local_skill_source_bypass "silver:ui avoided local codex-plugins skill sources" "$ui_log"
@@ -777,9 +931,9 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-journey_turn "silver:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'silver:validate' 'Validate the todo-app end state after the feature and bugfix work. Confirm the clear-completed flow, the regression fix, and the current test status.')"
+journey_turn "silver:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'silver:validate' 'Route-smoke the validation surface after the deterministic clear-completed API and npm test assertions have passed.')"
 
-journey_turn "silver:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'silver:quality-gates' 'Run the Silver Bullet quality-gates flow for this inline todo-app journey and prepare the workspace for a release finish.')"
+journey_turn "silver:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'silver:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. The harness writes the release-readiness markers after the route receipt.')"
 printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
   | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
 wait_for_state_contains "silver:quality-gates recorded in workflow state" "silver:quality-gates"

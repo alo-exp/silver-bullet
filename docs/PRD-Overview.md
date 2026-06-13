@@ -31,7 +31,7 @@ Gap-filling practices promoted from prose into explicit SB workflow gates:
 - `silver-completion-audit` — REQUIRED before completion claims and final delivery
 - `silver-review-request`, `silver-review`, `silver-review-triage` — REQUIRED review loop markers
 - `silver-secure`, `silver-validate`, and UI/accessibility-specific SB gates — REQUIRED when selected by scope
-Legacy aliases remain tracked for migration, but `required_deploy` is SB-owned so `completion-audit.sh`
+Legacy aliases remain recognized for migration, but new default tracked and required lists are SB-owned so `completion-audit.sh`
 blocks delivery when current SB gates are skipped.
 
 ### SB-R3: Domain Quality Contract Packs *(Complete — Phase 3)*
@@ -44,11 +44,20 @@ runtime release evidence, incident/retro follow-up, and benchmark/eval evidence.
 The route emits normalized findings that feed back into `silver:quality-gates`,
 `silver:review`, `silver:verify`, `silver:devops`, and `silver:release`.
 
+### SB-R4: Specialized Superset Routes *(Complete — Phase 4)*
+SB exposes SB-owned routes for specialized capabilities that users expect from
+modern AI software-engineering quality layers while preserving one lifecycle
+authority: `silver:test`, `silver:refactor`, `silver:worktree`,
+`silver:deploy`, `silver:canary`, `silver:incident`, `silver:retro`,
+`silver:benchmark`, and `silver:content`. Each route writes an SB artifact and
+feeds findings into the same review, verification, release, and backlog gates.
+
 ## Out of Scope
 
 - Silver Bullet does not modify third-party plugin files. Optional extension plugins are called only
   at explicit SB-selected boundaries when they add a domain capability.
 - Silver Bullet does not implement project-specific business logic. It enforces workflow process
   regardless of the underlying project type or tech stack.
-- Silver Bullet does not replace project-specific production operations, monitoring, or incident
-  response systems.
+- Silver Bullet does not replace project-specific production operations or monitoring systems. It
+  requires deploy/canary/incident evidence and routes corrective actions, but the monitored system
+  still owns alerts, SLOs, and runtime operations.
