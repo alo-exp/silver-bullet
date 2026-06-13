@@ -7,7 +7,7 @@
 
 if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
   _sb_runtime_source="${BASH_SOURCE[0]:-$0}"
-  if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" || "$_sb_runtime_source" == *"/.codex/"* ]]; then
+  if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" || "$_sb_runtime_source" == *"/.codex/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ) ]]; then
     SILVER_BULLET_RUNTIME="codex"
   else
     SILVER_BULLET_RUNTIME="claude"
@@ -56,6 +56,42 @@ sb_runtime_path_is_state_scoped() {
   fi
 
   return 1
+}
+
+sb_runtime_skill_receipt_dirs() {
+  local seen="" candidate base_home runtime extra_root
+
+  _sb_append_receipt_dir() {
+    local state_dir="${1%/}"
+    [[ -n "$state_dir" ]] || return 0
+    candidate="${state_dir}/skill-invocations"
+    case ":${seen}:" in
+      *":${candidate}:"*) return 0 ;;
+    esac
+    seen="${seen:+$seen:}${candidate}"
+    printf '%s\n' "$candidate"
+  }
+
+  _sb_append_receipt_dir "$SB_RUNTIME_STATE_DIR"
+
+  for base_home in "$HOME" "${KAY_HOME:-}"; do
+    [[ -n "$base_home" ]] || continue
+    for runtime in codex claude; do
+      _sb_append_receipt_dir "${base_home}/.${runtime}/.silver-bullet"
+    done
+  done
+
+  if [[ -n "${SB_RUNTIME_EXTRA_STATE_ROOTS:-}" ]]; then
+    IFS=':' read -r -a _sb_extra_state_roots <<< "${SB_RUNTIME_EXTRA_STATE_ROOTS}"
+    for extra_root in "${_sb_extra_state_roots[@]}"; do
+      [[ -n "$extra_root" ]] || continue
+      extra_root="${extra_root%/}"
+      case "$extra_root" in
+        */.silver-bullet) _sb_append_receipt_dir "$extra_root" ;;
+        *) _sb_append_receipt_dir "${extra_root}/.silver-bullet" ;;
+      esac
+    done
+  fi
 }
 
 export SILVER_BULLET_RUNTIME SB_RUNTIME_NAME SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT
