@@ -165,6 +165,47 @@ assert_json_eq "local docs filed" "$docs_filed" '.candidate.status' 'filed'
 
 rm -rf "$WORKDIR"
 make_workspace
+FAKE_RUNTIME="$(mktemp -d)"
+mkdir -p "$FAKE_RUNTIME/sessions/index" "$FAKE_RUNTIME/projects/active" "$FAKE_RUNTIME/sessions/archived"
+
+cat > "$FAKE_RUNTIME/projects/active/matched.jsonl" <<EOF
+{"payload":{"cwd":"$WORKDIR"},"message":{"content":"## Needs human review\n\n- Fix active transcript scan coverage"}}
+EOF
+cat > "$FAKE_RUNTIME/sessions/archived/matched-archived.jsonl" <<EOF
+{"payload":{"git_project_root":"$WORKDIR"},"message":{"content":"## Needs human review\n\n- Fix archived transcript scan coverage"}}
+EOF
+cat > "$FAKE_RUNTIME/projects/active/deleted.jsonl" <<EOF
+{"payload":{"cwd":"$WORKDIR"},"message":{"content":"## Needs human review\n\n- Deleted sessions should not scan"}}
+EOF
+cat > "$FAKE_RUNTIME/projects/active/unmatched.jsonl" <<'EOF'
+{"payload":{"cwd":"/tmp/not-this-project"},"message":{"content":"## Needs human review\n\n- Ignore another project"}}
+EOF
+cat > "$FAKE_RUNTIME/sessions/index/catalog.jsonl" <<EOF
+{"rollout_path":"$FAKE_RUNTIME/projects/active/matched.jsonl","payload":{"cwd":"$WORKDIR"}}
+{"rollout_path":"$FAKE_RUNTIME/projects/active/deleted.jsonl","payload":{"cwd":"$WORKDIR"},"deleted":true}
+{"rollout_path":"$FAKE_RUNTIME/projects/active/unmatched.jsonl","payload":{"cwd":"/tmp/not-this-project"}}
+EOF
+
+preflight="$(cd "$WORKDIR" && KAY_HOME="$FAKE_RUNTIME" "$SCRIPT" scan --agent-env kay --preflight --format json)"
+assert_json_eq "preflight selected explicit kay env" "$preflight" '.preflight.selected_agent_env' 'kay'
+assert_json_eq "preflight skipped deleted catalog row" "$preflight" '.preflight.deleted_skipped_count' '1'
+assert_json_eq "preflight counted one archived source" "$preflight" '.preflight.source_counts.archived' '1'
+assert_json_eq "preflight reports no candidates" "$preflight" '.candidates | length' '0'
+if [[ ! -f "$WORKDIR/.silver-bullet/scan-state.json" ]]; then
+  echo "PASS: preflight has no scan-state side effects"
+  (( PASS++ )) || true
+else
+  echo "FAIL: preflight created scan-state"
+  (( FAIL++ )) || true
+fi
+
+scan="$(cd "$WORKDIR" && KAY_HOME="$FAKE_RUNTIME" "$SCRIPT" scan --agent-env kay --format json)"
+assert_json_eq "scan saw explicit kay env" "$scan" '.preflight.selected_agent_env' 'kay'
+assert_json_eq "scan found active and archived candidates" "$scan" '.summary.total_candidates' '2'
+assert_json_eq "scan kept deleted transcript out" "$scan" '[.candidates[].title | contains("Deleted sessions should not scan")] | any' 'false'
+
+rm -rf "$WORKDIR" "$FAKE_RUNTIME"
+make_workspace
 FAKE_BIN="$(mktemp -d)"
 cat > "$FAKE_BIN/gh" <<'EOF'
 #!/usr/bin/env bash

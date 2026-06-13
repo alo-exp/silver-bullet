@@ -293,37 +293,192 @@ def source_hash(path: Path, text: str) -> str:
     return sha256_text(f"{stat.st_mtime_ns}:{sha256_text(text)}")
 
 
+PROJECT_METADATA_KEYS = {
+    "cwd_real",
+    "cwd_display",
+    "cwd",
+    "git_project_root",
+    "work_dir_real",
+    "work_dir",
+    "project_root",
+}
+
+
+def project_metadata_values(value: Any) -> set[str]:
+    candidates: set[str] = set()
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in PROJECT_METADATA_KEYS and isinstance(child, str):
+                text = child.strip()
+                if text:
+                    candidates.add(text)
+            if isinstance(child, (dict, list)):
+                candidates.update(project_metadata_values(child))
+    elif isinstance(value, list):
+        for item in value:
+            candidates.update(project_metadata_values(item))
+    return candidates
+
+
 def project_matches_source(row: dict[str, Any], root: Path) -> bool:
     root_real = str(root.resolve())
     root_text = str(root)
-    candidates = {
-        str(row.get("cwd_real") or "").strip(),
-        str(row.get("cwd_display") or "").strip(),
-        str(row.get("cwd") or "").strip(),
-        str(row.get("git_project_root") or "").strip(),
-        str(row.get("work_dir_real") or "").strip(),
-        str(row.get("work_dir") or "").strip(),
-        str(row.get("project_root") or "").strip(),
+    candidates = project_metadata_values(row)
+    normalized_candidates = set(candidates)
+    for candidate in candidates:
+        try:
+            normalized_candidates.add(str(Path(candidate).expanduser().resolve()))
+        except Exception:
+            pass
+    return root_real in normalized_candidates or root_text in normalized_candidates
+
+
+def env_path(name: str) -> Path | None:
+    value = os.environ.get(name, "").strip()
+    return Path(value).expanduser() if value else None
+
+
+def infer_agent_env(agent_env: str) -> str:
+    if agent_env != "auto":
+        return agent_env
+    runtime = (os.environ.get("SILVER_BULLET_RUNTIME") or os.environ.get("SB_RUNTIME_NAME") or "").strip().lower()
+    if runtime in {"codex", "claude", "kay"}:
+        return runtime
+    if os.environ.get("KAY_HOME"):
+        return "kay"
+    if os.environ.get("CODEX_HOME") or os.environ.get("CODE_HOME") or os.environ.get("CODEX_SESSION_CATALOG_PATH"):
+        return "codex"
+    if os.environ.get("CLAUDE_HOME"):
+        return "claude"
+    return "auto"
+
+
+def runtime_home_candidates(agent_env: str) -> list[Path]:
+    home = Path.home()
+    candidates: list[Path | None] = []
+    if agent_env in {"auto", "codex"}:
+        candidates.extend([env_path("CODEX_HOME"), env_path("CODE_HOME"), home / ".codex", home / ".code"])
+    if agent_env in {"auto", "claude"}:
+        candidates.extend([env_path("CLAUDE_HOME"), home / ".claude"])
+    if agent_env in {"auto", "kay"}:
+        candidates.extend([env_path("KAY_HOME"), home / ".kay"])
+    candidates.append(env_path("SB_RUNTIME_HOME_ROOT"))
+
+    seen: set[str] = set()
+    result: list[Path] = []
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        key = str(candidate.expanduser())
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(candidate.expanduser())
+    return result
+
+
+def catalog_candidates(agent_env: str, runtime_homes: list[Path]) -> list[Path]:
+    candidates: list[Path | None] = [env_path("CODEX_SESSION_CATALOG_PATH")]
+    for home in runtime_homes:
+        candidates.append(home / "sessions" / "index" / "catalog.jsonl")
+        candidates.append(home / ".kay" / "sessions" / "index" / "catalog.jsonl")
+    seen: set[str] = set()
+    result: list[Path] = []
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(candidate)
+    return result
+
+
+def transcript_store_roots(runtime_homes: list[Path]) -> list[tuple[Path, str]]:
+    roots: list[tuple[Path, str]] = []
+    for home in runtime_homes:
+        roots.extend(
+            [
+                (home / "projects", "active"),
+                (home / "sessions", "active"),
+                (home / "sessions" / "active", "active"),
+                (home / "sessions" / "archive", "archived"),
+                (home / "sessions" / "archived", "archived"),
+                (home / "archive", "archived"),
+                (home / "archived", "archived"),
+            ]
+        )
+    seen: set[str] = set()
+    result: list[tuple[Path, str]] = []
+    for path, state in roots:
+        key = str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append((path, state))
+    return result
+
+
+def classify_source_state(path: Path, fallback: str = "unknown") -> str:
+    lowered = "/".join(part.lower() for part in path.parts)
+    if "archive" in lowered or "archived" in lowered:
+        return "archived"
+    if "active" in lowered or "projects" in lowered or "sessions" in lowered:
+        return "active"
+    return fallback
+
+
+def empty_preflight(requested_agent_env: str, selected_agent_env: str, runtime_homes: list[Path]) -> dict[str, Any]:
+    return {
+        "requested_agent_env": requested_agent_env,
+        "selected_agent_env": selected_agent_env,
+        "resolved_paths": [str(path) for path in runtime_homes],
+        "catalog_paths": [],
+        "store_roots": [],
+        "considered_count": 0,
+        "deleted_skipped_count": 0,
+        "matched_count": 0,
+        "unmatched_count": 0,
+        "unmatched_reasons": {},
+        "duplicate_paths": [],
+        "source_counts": {"active": 0, "archived": 0, "unknown": 0},
     }
-    return root_real in candidates or root_text in candidates
 
 
-def discover_sources(root: Path) -> list[dict[str, Any]]:
+def discover_sources(root: Path, agent_env: str = "auto") -> tuple[list[dict[str, Any]], dict[str, Any]]:
     sources: list[dict[str, Any]] = []
     seen: set[str] = set()
+    selected_agent_env = infer_agent_env(agent_env)
+    runtime_homes = runtime_home_candidates(selected_agent_env)
+    preflight = empty_preflight(agent_env, selected_agent_env, runtime_homes)
+    deleted_transcript_paths: set[str] = set()
 
-    def add(kind: str, path: Path, metadata: dict[str, Any] | None = None) -> None:
+    def record_considered(path: Path, reason: str | None = None) -> None:
+        preflight["considered_count"] += 1
+        if reason:
+            preflight["unmatched_count"] += 1
+            reasons = preflight.setdefault("unmatched_reasons", {})
+            reasons[reason] = reasons.get(reason, 0) + 1
+
+    def add(kind: str, path: Path, metadata: dict[str, Any] | None = None, source_state: str = "unknown") -> None:
         try:
             if not path.is_file():
                 return
             resolved = str(path.resolve())
             if resolved in seen:
+                preflight["duplicate_paths"].append(resolved)
                 return
             text = transcript_text(path)
             stat = path.stat()
         except Exception:
+            record_considered(path, "unreadable")
             return
         seen.add(resolved)
+        preflight["matched_count"] += 1
+        counts = preflight.setdefault("source_counts", {"active": 0, "archived": 0, "unknown": 0})
+        state_key = source_state if source_state in counts else "unknown"
+        counts[state_key] = counts.get(state_key, 0) + 1
         sources.append(
             {
                 "kind": kind,
@@ -331,7 +486,7 @@ def discover_sources(root: Path) -> list[dict[str, Any]]:
                 "text": text,
                 "hash": source_hash(path, text),
                 "mtime_ns": stat.st_mtime_ns,
-                "metadata": metadata or {},
+                "metadata": {**(metadata or {}), "source_state": source_state},
             }
         )
 
@@ -343,38 +498,72 @@ def discover_sources(root: Path) -> list[dict[str, Any]]:
         "*handoff*.md",
     ):
         for path in sorted(root.glob(pattern)):
+            record_considered(path)
             add("markdown-session", path)
 
-    catalog_path = Path.home() / ".code" / "sessions" / "index" / "catalog.jsonl"
-
-    if catalog_path.is_file():
+    catalog_paths = catalog_candidates(selected_agent_env, runtime_homes)
+    preflight["catalog_paths"] = [str(path) for path in catalog_paths]
+    for catalog_path in catalog_paths:
+        if not catalog_path.is_file():
+            continue
         for row in parse_jsonl(catalog_path):
-            if row.get("deleted") or not project_matches_source(row, root):
+            record_considered(catalog_path)
+            if row.get("deleted"):
+                preflight["deleted_skipped_count"] += 1
+                rollout_path = str(row.get("rollout_path") or "").strip()
+                if rollout_path:
+                    rollout_candidate = Path(rollout_path)
+                    if not rollout_candidate.is_absolute():
+                        rollout_candidate = catalog_path.parent.parent.parent / rollout_candidate
+                    try:
+                        deleted_transcript_paths.add(str(rollout_candidate.resolve()))
+                    except Exception:
+                        deleted_transcript_paths.add(str(rollout_candidate))
+                continue
+            if not project_matches_source(row, root):
+                reasons = preflight.setdefault("unmatched_reasons", {})
+                reasons["project-mismatch"] = reasons.get("project-mismatch", 0) + 1
+                preflight["unmatched_count"] += 1
                 continue
             rollout_path = str(row.get("rollout_path") or "").strip()
             if rollout_path:
                 rollout_candidate = Path(rollout_path)
                 if not rollout_candidate.is_absolute():
-                    rollout_candidate = Path.home() / ".code" / rollout_candidate
-                add("codex-transcript", rollout_candidate, row)
+                    rollout_candidate = catalog_path.parent.parent.parent / rollout_candidate
+                add(f"{selected_agent_env}-catalog-transcript", rollout_candidate, row, classify_source_state(rollout_candidate, "active"))
 
-    runtime_name = (
-        os.environ.get("SILVER_BULLET_RUNTIME")
-        or os.environ.get("SB_RUNTIME_NAME")
-        or ("codex" if (os.environ.get("CODEX_CI") or os.environ.get("CODEX_THREAD_ID") or os.environ.get("CODEX_INTERNAL_ORIGINATOR_OVERRIDE")) else "claude")
-    )
-    runtime_home_root = Path(os.environ.get("SB_RUNTIME_HOME_ROOT", str(Path.home() / f".{runtime_name}")))
-    runtime_projects_root = runtime_home_root / "projects"
-    if runtime_projects_root.is_dir():
-        for transcript_path in sorted(runtime_projects_root.rglob("*.jsonl")):
-            try:
-                rows = parse_jsonl(transcript_path)
-            except Exception:
-                continue
-            if any(project_matches_source(row, root) for row in rows):
-                add(f"{runtime_name}-session", transcript_path)
+    stores = transcript_store_roots(runtime_homes)
+    preflight["store_roots"] = [str(path) for path, _state in stores]
+    for store_root, source_state in stores:
+        if store_root.is_dir():
+            for transcript_path in sorted(store_root.rglob("*.jsonl")):
+                if transcript_path.name == "catalog.jsonl":
+                    continue
+                record_considered(transcript_path)
+                try:
+                    transcript_key = str(transcript_path.resolve())
+                except Exception:
+                    transcript_key = str(transcript_path)
+                if transcript_key in deleted_transcript_paths:
+                    continue
+                try:
+                    rows = parse_jsonl(transcript_path)
+                except Exception:
+                    preflight["unmatched_count"] += 1
+                    reasons = preflight.setdefault("unmatched_reasons", {})
+                    reasons["unreadable"] = reasons.get("unreadable", 0) + 1
+                    continue
+                if any(row.get("deleted") for row in rows):
+                    preflight["deleted_skipped_count"] += 1
+                    continue
+                if any(project_matches_source(row, root) for row in rows):
+                    add(f"{selected_agent_env}-session", transcript_path, {"source_state": source_state}, classify_source_state(transcript_path, source_state))
+                else:
+                    preflight["unmatched_count"] += 1
+                    reasons = preflight.setdefault("unmatched_reasons", {})
+                    reasons["project-mismatch"] = reasons.get("project-mismatch", 0) + 1
 
-    return sources
+    return sources, preflight
 
 
 def parse_sections(text: str) -> list[dict[str, Any]]:
@@ -1255,9 +1444,27 @@ def parse_candidate_stream(root: Path, source: dict[str, Any], config: dict[str,
     return final_candidates, duplicate_count
 
 
-def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode: str) -> dict[str, Any]:
+def handle_preflight(root: Path, agent_env: str) -> dict[str, Any]:
+    sources, preflight = discover_sources(root, agent_env)
+    return {
+        "mode": "preflight",
+        "project_root": str(root),
+        "preflight": preflight,
+        "sources": [
+            {
+                "kind": source["kind"],
+                "path": rel_path(source["path"], root),
+                "source_state": source.get("metadata", {}).get("source_state", "unknown"),
+            }
+            for source in sources
+        ],
+        "candidates": [],
+    }
+
+
+def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode: str, agent_env: str) -> dict[str, Any]:
     tracker_text = local_tracker_text(root)
-    sources = discover_sources(root)
+    sources, preflight = discover_sources(root, agent_env)
     summary = {
         "sessions_scanned": 0,
         "sessions_skipped_already_scanned": 0,
@@ -1343,6 +1550,7 @@ def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode:
             for source in sources
         ],
         "candidates": all_candidates,
+        "preflight": preflight,
         "state_path": str(root / STATE_DIR / STATE_FILE),
     }
 
@@ -1371,6 +1579,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     scan = subparsers.add_parser("scan")
     scan.add_argument("--mode", choices=["interactive", "autonomous"], default="interactive")
     scan.add_argument("--format", choices=["json", "text"], default="text")
+    scan.add_argument("--agent-env", choices=["auto", "codex", "claude", "kay"], default="auto")
+    scan.add_argument("--preflight", action="store_true")
 
     file_cmd = subparsers.add_parser("file")
     file_cmd.add_argument("--candidate-id", required=True)
@@ -1395,7 +1605,10 @@ def main(argv: list[str]) -> int:
 
     try:
         if args.command == "scan":
-            result = handle_scan(root, config, state, args.mode)
+            if args.preflight:
+                result = handle_preflight(root, args.agent_env)
+            else:
+                result = handle_scan(root, config, state, args.mode, args.agent_env)
         elif args.command == "file":
             result = handle_file(root, config, state, args.candidate_id)
             save_state(root, state)
