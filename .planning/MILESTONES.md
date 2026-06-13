@@ -1,5 +1,23 @@
 # Milestones
 
+## v0.39.1 Receipt Persistence And Scan Discovery Patch (Shipped: 2026-06-14)
+
+**Type:** Patch release milestone (cross-runtime receipt lookup, scan discovery, issue closure)
+
+**Goal:** Close HANDOFF_v2 `#221` receipt-persistence investigation, ship `ab12e86` scan discovery, and publish `v0.39.1` with issues `#212`–`#221` closed.
+
+**Phases planned:** 055
+
+**Status:** complete; release published at `7365e18`.
+
+**Release:** https://github.com/alo-exp/silver-bullet/releases/tag/v0.39.1
+
+**Completed work:**
+
+- Cross-runtime adapter receipt lookup in `record-skill.sh` / `runtime-paths.sh`.
+- `silver:scan` agent-session discovery shipped.
+- Kay MiniMax exec fix upstream (`992ac6bbf7` on `alo-labs/kay` `main`).
+
 ## v0.37.0 SDLC Interception And Workflow Enforcement (Shipped: 2026-05-19)
 
 **Type:** Orchestration milestone (clarify/front-end enforcement, intent retention, autonomous progress)
