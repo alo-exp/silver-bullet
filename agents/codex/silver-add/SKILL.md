@@ -86,7 +86,17 @@ or other normalized finding tables, use structured intake:
 
 ### Fingerprint
 
-Compute a stable fingerprint before filing:
+Compute a stable fingerprint before filing by invoking the canonical helper:
+
+```bash
+bash scripts/silver-add.sh fingerprint \
+  --domain "<pack-or-surface>" \
+  --scope "<file-route-service-or-artifact>" \
+  --finding "<one-sentence finding>"
+```
+
+Formula (shared with `scripts/lib/evidence_common.py` and `scripts/silver-scan.py`
+normalization):
 
 ```text
 sha256(normalize(domain) + "\n" + normalize(scope) + "\n" + normalize(finding))
@@ -95,6 +105,14 @@ sha256(normalize(domain) + "\n" + normalize(scope) + "\n" + normalize(finding))
 Use the same normalization as `scripts/silver-scan.py` (trim, collapse
 whitespace, lowercase for comparison). Include the fingerprint in the filed
 description and session log entry.
+
+Check for duplicates before filing:
+
+```bash
+bash scripts/silver-add.sh dedup --fingerprint "<fp>"
+```
+
+Returns `unique` or `duplicate:<path>`.
 
 ### Deduplication
 
@@ -120,6 +138,14 @@ When multiple deferred findings compete, rank by score (higher = sooner):
 | Effort | 1–5 subtracted | estimated fix cost |
 
 `priority_score = impact + risk + evidence_strength - effort`
+
+Compute with:
+
+```bash
+bash scripts/silver-add.sh prioritize \
+  --impact <1-5> --risk <1-5> \
+  --evidence-strength <1-3> --effort <1-5>
+```
 
 Record the score in the filed item body when filing from audit findings.
 
