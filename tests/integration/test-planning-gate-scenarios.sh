@@ -25,27 +25,27 @@ assert_contains "S1.2: compliance shows 0 steps" "$out" "0 steps"
 integration_teardown
 
 # Scenario 2: Developer completes planning, then edits source (Stage B gate)
-# Expected: silver-quality-gates recorded -> implementation edit allowed -> record gsd-code-review -> still allowed
+# Expected: silver-quality-gates recorded -> implementation edit allowed -> record silver-review -> still allowed
 echo "--- Scenario 2: Progressive stage unlocking A->B->C ---"
 integration_setup
 write_default_config
 
 # Step 1: Record current planning-floor skills.
-run_record_skill "gsd-discuss-phase"
+run_record_skill "silver-context"
 run_record_skill "silver-quality-gates"
-run_record_skill "gsd-plan-phase"
+run_record_skill "silver-plan"
 
-# Step 2: Try edit — allowed at Stage B (no gsd-code-review yet)
+# Step 2: Try edit — allowed at Stage B (no silver-review yet)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S2.1: edit allowed at Stage B (no gsd-code-review)" "$out"
+assert_allowed "S2.1: edit allowed at Stage B (no silver-review)" "$out"
 assert_contains "S2.1: mentions code review remains required" "$out" "Code review"
 
 # Step 3: Record code-review
-run_record_skill "gsd-code-review"
+run_record_skill "silver-review"
 
-# Step 4: Try edit — allowed at Stage C (gsd-code-review done, finalization remaining)
+# Step 4: Try edit — allowed at Stage C (silver-review done, finalization remaining)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S2.2: edit allowed at Stage C after gsd-code-review" "$out"
+assert_allowed "S2.2: edit allowed at Stage C after silver-review" "$out"
 # Exact string from hooks/dev-cycle-check.sh Stage C message:
 assert_contains "S2.2: mentions finalization remaining" "$out" "finalization"
 
@@ -59,7 +59,7 @@ integration_setup
 write_default_config
 
 # Step 1: Record planning (directly write state — record-skill only records tracked skills)
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\ngsd-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review\n' > "$TMPSTATE"
 
 # Step 2: dev-cycle-check allows edit (Stage C)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -78,13 +78,13 @@ assert_allowed "S3.3: PR create allowed with all skills" "$out"
 
 integration_teardown
 
-# Scenario 4: Phase-skip detection — finalization recorded before gsd-code-review
+# Scenario 4: Phase-skip detection — finalization recorded before silver-review
 echo "--- Scenario 4: Phase skip detection ---"
 integration_setup
 write_default_config
 
-# Record silver-quality-gates then skip to finalization (no gsd-code-review)
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\nsilver-create-release\n' > "$TMPSTATE"
+# Record silver-quality-gates then skip to finalization (no silver-review)
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-create-release\n' > "$TMPSTATE"
 
 # Edit should be allowed so fixes can proceed, while warning that delivery remains blocked.
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")

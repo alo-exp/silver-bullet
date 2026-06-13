@@ -1,6 +1,6 @@
-# Release Security Audit - v0.38.0 Candidate
+# Release Security Audit - v0.39.0 Candidate
 
-Date: 2026-06-11
+Date: 2026-06-12
 Method: SENTINEL-style adversarial audit, two-pass release gate
 Scope: SB-owned lifecycle absorption changes, hook enforcement, skill recording, release gates, installers, public release metadata
 
@@ -35,6 +35,57 @@ Remediation:
 - Replaced marker line lookup with `grep -Fnx --`.
 - Re-ran hook suites that exercise skill recording, required-skill aliasing, release-gate markers, workflow admission, completion audit, prompt reminders, compliance status, and stop-check behavior.
 
+### SEC-2: Live route-smoke accepted adapter bypass evidence
+
+Severity: Medium
+
+Affected files:
+
+- `tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
+- `tests/e2e-live/lib/skill-prompt.sh`
+- `tests/e2e-live/test-e2e-live-suite.sh`
+
+The live E2E release gate validated usable response text and workflow state, but
+did not verify that a Codex/Kay route-smoke turn invoked the SB adapter before
+any other command. A route could therefore do exploratory shell work, then still
+pass when the harness recorded state after the fact. That weakens release-gate
+integrity for the same surface that guards Quality Gates timing.
+
+Remediation:
+
+- Parse the captured JSONL transcript for each Codex/Kay `silver:*`
+  route-smoke turn.
+- Ignore hook bridge commands, then require exactly one real command:
+  `silver-bullet invoke-skill <route>`.
+- Treat route-smoke timeouts as failures rather than controlled fallback passes.
+- Tighten the route-smoke prompt to name the exact first-and-only command.
+
+### SEC-3: Desktop exec_command adapter receipts were not recorded
+
+Severity: Medium
+
+Affected files:
+
+- `hooks/lib/tool-input.sh`
+- `scripts/silver-bullet`
+- `tests/hooks/test-record-skill.sh`
+
+The Codex desktop `exec_command` tool supplies shell text in `tool_input.cmd`,
+but the shared tool-input helper only read `tool_input.command`. As a result,
+`record-skill` was registered for `exec_command` but could not extract
+`bash scripts/silver-bullet invoke-skill <skill>` commands from this environment,
+so fresh adapter receipts were not converted into runtime state. The same
+release run found that required virtual marker `silver-tdd` could not be invoked
+directly through the adapter even though it aliases to hidden skill `tdd`.
+
+Remediation:
+
+- `hooks/lib/tool-input.sh` now reads `tool_input.cmd` as a string or argv list.
+- `scripts/silver-bullet` now resolves required-skill aliases before failing
+  skill lookup, allowing `silver-tdd` to load the hidden `tdd` skill.
+- `tests/hooks/test-record-skill.sh` covers desktop `exec_command` receipt
+  recording and direct `silver-tdd` invocation.
+
 ## Pass 2 Checks
 
 Clean after remediation:
@@ -52,6 +103,8 @@ Clean after remediation:
   - `bash tests/hooks/test-compliance-status.sh`
   - `bash tests/hooks/test-prompt-reminder.sh`
   - `bash tests/hooks/test-stop-check.sh`
+- `bash tests/e2e-live/test-e2e-live-suite.sh`
+- `bash tests/e2e-live/run-e2e-live-tests.sh`
 - Public stale-positioning scan for active release surfaces.
 - Secret-pattern scan found no committed secrets. One historical docs line mentions `ANTHROPIC_API_KEY` by name only.
 
@@ -65,5 +118,6 @@ Local note: `gitleaks` and `semgrep` were not installed in this environment. The
 - Direct writes into third-party plugin cache paths remain blocked by hook guards.
 - State-file paths are scoped to the active runtime state root.
 - Codex `silver-bullet invoke-skill` recording requires a fresh adapter receipt before state is updated.
+- Desktop `exec_command` payloads now feed the same adapter receipt recorder as
+  Bash-shaped payloads.
 - Release creation remains blocked until quality-gate markers, full-suite rerun, live matrices, verify-tests freshness, and release-commit CI are present.
-

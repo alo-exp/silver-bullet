@@ -27,10 +27,15 @@ Write or update `.planning/UI-REVIEW.md`.
    - interaction states and error states;
    - copy clarity;
    - performance and rendering stability;
-   - consistency with local design system.
+   - consistency with local design system;
+   - drift against `.planning/interface/STATE.md` when present.
 4. Use real browser/screenshot evidence for frontend work when a runnable app is
    available.
-5. Classify findings as BLOCK/WARN/INFO and route fixes back to
+5. Invoke or apply `silver:domain-audit` with `ui-system`, `accessibility`, and
+   `performance-resource` packs for reusable or public UI changes.
+6. Update `.planning/interface/STATE.md` when the implementation establishes a
+   reusable token, component, pattern, or design constraint.
+7. Classify findings as BLOCK/WARN/INFO and route fixes back to
    `silver:execute`.
 
 ## Exit Gate

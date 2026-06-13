@@ -242,7 +242,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.2",
+  "config_version": "CURRENT_CONFIG_VERSION",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -252,7 +252,7 @@ cat > "$TMPCFG" << 'EOF'
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+sed -i.bak "s|CURRENT_CONFIG_VERSION|${CURRENT_CONFIG_VERSION}|g; s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "Stage A: uninstalled planning skill warns and allows source edit" "$out"
@@ -536,7 +536,7 @@ echo "--- Group 7: DevOps workflow ---"
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.2",
+  "config_version": "CURRENT_CONFIG_VERSION",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -550,7 +550,7 @@ cat > "$TMPCFG" << 'EOF'
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+sed -i.bak "s|CURRENT_CONFIG_VERSION|${CURRENT_CONFIG_VERSION}|g; s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 # Only silver-quality-gates in state (wrong for devops)
 echo "silver-quality-gates" > "$TMPSTATE"
@@ -562,7 +562,7 @@ teardown
 setup
 cat > "$TMPCFG" << 'EOF'
 {
-  "config_version": "0.38.2",
+  "config_version": "CURRENT_CONFIG_VERSION",
   "project": {
     "src_pattern": "/src/",
     "src_exclude_pattern": "__tests__|\\.test\\.",
@@ -576,7 +576,7 @@ cat > "$TMPCFG" << 'EOF'
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
 EOF
-sed -i.bak "s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
+sed -i.bak "s|CURRENT_CONFIG_VERSION|${CURRENT_CONFIG_VERSION}|g; s|STATEFILE|${TMPSTATE}|g; s|TRIVIALFILE|${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}|g" "$TMPCFG"
 rm -f "${TMPCFG}.bak"
 echo "silver-blast-radius" > "$TMPSTATE"
 echo "devops-quality-gates" >> "$TMPSTATE"

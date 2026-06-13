@@ -37,6 +37,8 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 | Execution | **Owns** through `silver:execute` | May run domain commands under SB plan control |
 | Verification and completion audit | **Owns** through `silver:verify` and `silver:completion-audit` | May provide evidence |
 | Domain quality packs | **Owns** through `silver:domain-audit` | May provide command output, traces, screenshots, or provider-specific evidence |
+| Specialized test/refactor/content/benchmark routes | **Owns** through `silver:test`, `silver:refactor`, `silver:content`, and `silver:benchmark` | May provide tool output only |
+| Deployment, canary, incident, retro loops | **Owns** through `silver:deploy`, `silver:canary`, `silver:incident`, and `silver:retro` | May provide platform, log, metric, or provider evidence |
 | TDD boundary | **Owns** through `tdd` / SB marker aliases | No direct required dependency |
 | Review framing and triage | **Owns** through `silver:review-request`, `silver:review`, `silver:review-triage` | May add findings into REVIEW.md |
 | Branch finish and phase ship | **Owns** through `silver:branch-finish` and `silver:ship` | No competing phase ship |

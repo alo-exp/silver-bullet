@@ -27,10 +27,18 @@ Write or update `.planning/SECURITY.md` or the current phase security section.
    - injection, XSS, CSRF, SSRF, deserialization, and filesystem/network access;
    - data retention, privacy, logging, and telemetry;
    - dependency and supply-chain risk;
-   - infra exposure when relevant.
-4. Invoke `security` for the independent hard gate when available or required
+   - infra exposure when relevant;
+   - runtime exploitability when a live or local target is available.
+4. Invoke or apply `silver:domain-audit` with `dependency-supply`,
+   `environment-secrets`, `api-contract`, `data-contract`, `runtime-release`,
+   or `accessibility` packs as the scope requires.
+5. For penetration-test-style requests, combine white-box source review with
+   black-box checks only against authorized targets, record exact commands and
+   evidence, and stop on any material exploitability finding until fixed or
+   explicitly accepted.
+6. Invoke `security` for the independent hard gate when available or required
    by the workflow.
-5. Record mitigations, residual risks, and BLOCK/WARN/INFO findings.
+7. Record mitigations, residual risks, and BLOCK/WARN/INFO findings.
 
 ## Exit Gate
 

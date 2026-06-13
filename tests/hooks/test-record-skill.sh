@@ -207,10 +207,17 @@ run_hook "silver:scan" >/dev/null
 assert_in_state "default SB route remains recordable when project config has partial all_tracked" "silver-scan"
 teardown
 
-# Test 2c: gsd-scan is recorded by the packaged defaults
+# Test 2c: legacy project config can still record an explicit legacy marker
 setup
+run_hook "gsd-discuss-phase" >/dev/null
+assert_in_state "legacy project config records gsd-discuss-phase when explicitly tracked" "gsd-discuss-phase"
+teardown
+
+# Test 2d: retired dependency-era markers are not in fresh packaged defaults
+setup
+rm -f "$TMPCFG"
 run_hook "gsd-scan" >/dev/null
-assert_in_state "gsd-scan recorded by default tracked list" "gsd-scan"
+assert_not_in_state "fresh packaged defaults do not track gsd-scan" "gsd-scan"
 teardown
 
 # Test 3: Namespace prefix stripped (e.g., superpowers:code-review → code-review)
@@ -337,6 +344,22 @@ adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quali
 run_hook_bash "$adapter_cmd" >/dev/null
 assert_in_state "Codex invoke-skill adapter records completed skill after verified receipt" "silver-quality-gates"
 assert_in_session_log "Codex invoke-skill adapter marks session ledger completed" "  - [x] silver-quality-gates"
+teardown
+
+setup
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>/dev/null) || true
+input=$(jq -n --arg c "$adapter_cmd" \
+  '{hook_event_name: "PostToolUse", tool_name: "exec_command", tool_input: {cmd: $c}, tool_response: {exit_code: 0}}')
+cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null
+assert_in_state "Codex invoke-skill adapter records desktop exec_command cmd payloads" "silver-quality-gates"
+teardown
+
+setup
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver-tdd"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver-tdd >/dev/null 2>/dev/null) || true
+run_hook_bash "$adapter_cmd" >/dev/null
+assert_in_state "Codex invoke-skill adapter resolves virtual silver-tdd marker through hidden tdd skill" "silver-tdd"
 teardown
 
 setup

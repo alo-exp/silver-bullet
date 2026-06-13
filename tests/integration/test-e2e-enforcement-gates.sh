@@ -18,17 +18,17 @@ assert_blocked "S1.1: edit blocked with no planning (Stage A)" "$out"
 assert_contains "S1.2: mentions HARD STOP" "$out" "HARD STOP"
 
 # Record current planning floor: Stage B implementation window
-run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.3: edit allowed after planning, before gsd-code-review (Stage B)" "$out"
+assert_allowed "S1.3: edit allowed after planning, before silver-review (Stage B)" "$out"
 assert_contains "S1.4: mentions code review remains required" "$out" "Code review"
 
 # Record code-review: Stage C — now ALLOWED
-run_record_skill "gsd-code-review" >/dev/null
+run_record_skill "silver-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.5: edit allowed after planning + gsd-code-review (Stage C)" "$out"
+assert_allowed "S1.5: edit allowed after planning + silver-review (Stage C)" "$out"
 
 integration_teardown
 
@@ -42,9 +42,9 @@ out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_blocked "S2.1: commit blocked with no planning" "$out"
 
 # Record current planning floor: commit now ALLOWED
-run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 out=$(run_completion_audit "PreToolUse" "git commit -m 'wip'")
 assert_allowed "S2.2: commit allowed after planning" "$out"
 
@@ -56,9 +56,9 @@ integration_setup
 write_default_config
 
 # Only planning: PR blocked
-run_record_skill "gsd-discuss-phase" >/dev/null
+run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat'")
 assert_blocked "S3.1: PR create blocked with only planning" "$out"
 
@@ -79,20 +79,20 @@ assert_blocked "S5.1: executing-plans is blocked" "$out"
 out=$(run_forbidden_skill "subagent-driven-development")
 assert_blocked "S5.2: subagent-driven-development is blocked" "$out"
 
-out=$(run_forbidden_skill "code-review")
-assert_allowed "S5.3: gsd-code-review is allowed (not forbidden)" "$out"
+out=$(run_forbidden_skill "silver-review")
+assert_allowed "S5.3: silver-review is allowed (not forbidden)" "$out"
 
 integration_teardown
 
 # Scenario 6: Phase-skip detection
-echo "--- Scenario 6: Phase-skip detection (finalization before gsd-code-review) ---"
+echo "--- Scenario 6: Phase-skip detection (finalization before silver-review) ---"
 integration_setup
 write_default_config
 
-# Record current planning + finalization but NOT gsd-code-review
-run_record_skill "gsd-discuss-phase" >/dev/null
+# Record current planning + finalization but NOT silver-review
+run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 run_record_skill "silver-create-release" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S6.1: edit allowed so phase-skip fixes can proceed" "$out"
@@ -126,31 +126,27 @@ assert_allowed "S7.4: stop-check allows SubagentStop with all skills + stages" "
 integration_teardown
 
 # Scenario 8: Code review ordering enforcement
-echo "--- Scenario 8: Code review ordering (requesting before gsd-code-review) ---"
+echo "--- Scenario 8: Code review ordering (requesting before silver-review) ---"
 integration_setup
 write_default_config
 
-# Write state with gsd-code-review BEFORE requesting-code-review
+# Write state with silver-review BEFORE silver-review-request
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
-gsd-execute-phase
-gsd-verify-work
-gsd-ship
-gsd-secure-phase
-gsd-validate-phase
-gsd-code-review
-requesting-code-review
-receiving-code-review
-testing-strategy
-documentation
-finishing-a-development-branch
-deploy-checklist
+silver-context
+silver-plan
+silver-execute
+silver-verify
+silver-ship
+silver-secure
+silver-validate
+silver-review
+silver-review-request
+silver-review-triage
+silver-branch-finish
 silver-create-release
-verification-before-completion
-test-driven-development
-tech-debt
+silver-completion-audit
+silver-tdd
 verify-tests
 EOF
 date +%s > "$VERIFY_TESTS_FILE"

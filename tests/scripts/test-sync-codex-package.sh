@@ -59,6 +59,18 @@ assert_not_symlink() {
   fi
 }
 
+assert_command_succeeds() {
+  local desc="$1"
+  shift
+  if "$@" >/dev/null 2>&1; then
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  else
+    echo "FAIL: $desc"
+    (( FAIL++ )) || true
+  fi
+}
+
 assert_codex_skill_titles_match_picker_namespace() {
   local desc="$1" package_root="$2"
   local output
@@ -237,6 +249,7 @@ assert_contains "Codex package tracks SB lifecycle markers in config" '"silver-c
 assert_contains "TDD skill hidden from picker" "user-invocable: false" "$(skill_file tdd)"
 assert_contains "TDD skill is SB-owned" "SB owns this TDD" "$(skill_file tdd)"
 assert_not_contains "TDD skill does not delegate to Superpowers" "superpowers:test-driven-development" "$(skill_file tdd)"
+assert_command_succeeds "Packaged invoke-skill adapter resolves virtual silver-tdd through hidden tdd source" bash "$PACKAGE_ROOT/scripts/silver-bullet" invoke-skill silver-tdd
 assert_path_absent "Sidekick delegate skills excluded from SB bundle" "$PACKAGE_SKILL_ROOT/codex-delegate"
 assert_path_absent "Superpowers finishing branch skill excluded from SB bundle" "$PACKAGE_SKILL_ROOT/finishing-branch"
 assert_path_absent "Superpowers writing plans skill excluded from SB bundle" "$PACKAGE_SKILL_ROOT/writing-plans"

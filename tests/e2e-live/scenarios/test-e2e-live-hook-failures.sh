@@ -65,6 +65,7 @@ wait_for_hook_audit_entry "completion-audit release deny recorded" "completion-a
 echo "--- Case 4: dev-cycle-check denies state tampering through Bash ---"
 clear_hook_audit_log
 rm -rf "${WORK_DIR}/.planning/workflows"
+printf 'silver-quality-gates\n' > "$STATE_FILE"
 rm -f "${WORK_DIR}/.hook-probes/state-link" "${WORK_DIR}/.hook-probes/probe-state.sh"
 ln -s "$STATE_FILE" "${WORK_DIR}/.hook-probes/state-link"
 cat > "${WORK_DIR}/.hook-probes/probe-state.sh" <<'EOF'

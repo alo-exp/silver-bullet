@@ -116,6 +116,16 @@ if [[ -n "$fresh_external_markers" ]]; then
   echo "$fresh_external_markers" | sed 's/^/    /'
 fi
 
+fresh_tracked_external_markers=$(jq -r '
+  (.skills.all_tracked // []) | .[]
+' "$CONFIG" | grep -E '^(gsd-|code-review|requesting-code-review|receiving-code-review|finishing-a-development-branch|verification-before-completion|test-driven-development|systematic-debugging|writing-plans|design-system|ux-copy|architecture|system-design|accessibility-review|incident-response)$' || true)
+
+check "fresh tracked defaults use SB-owned markers only" \
+  test -z "$fresh_tracked_external_markers"
+if [[ -n "$fresh_tracked_external_markers" ]]; then
+  echo "$fresh_tracked_external_markers" | sed 's/^/    /'
+fi
+
 # Legacy project configs should not weaken current gates or force retired skills.
 # This guards the real Codex-TUI failure mode where an old project config caused
 # SB to request missing legacy skills like testing-strategy while omitting current

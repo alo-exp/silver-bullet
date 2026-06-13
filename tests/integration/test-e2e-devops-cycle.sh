@@ -27,17 +27,17 @@ run_record_skill "silver-blast-radius" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S1.3: edit blocked with only silver-blast-radius (devops-quality-gates missing)" "$out"
 
-# Record devops-quality-gates + GSD planning: Stage B implementation window
+# Record devops-quality-gates + current SB planning: Stage B implementation window
 run_record_skill "devops-quality-gates" >/dev/null
-run_record_skill "gsd-discuss-phase" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-context" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.4: edit allowed after devops planning, before gsd-code-review (Stage B)" "$out"
+assert_allowed "S1.4: edit allowed after devops planning, before silver-review (Stage B)" "$out"
 
 # Record code-review: Stage C — ALLOWED
-run_record_skill "gsd-code-review" >/dev/null
+run_record_skill "silver-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
-assert_allowed "S1.5: edit allowed after silver-blast-radius + devops-quality-gates + gsd-code-review" "$out"
+assert_allowed "S1.5: edit allowed after silver-blast-radius + devops-quality-gates + silver-review" "$out"
 
 integration_teardown
 
@@ -53,8 +53,8 @@ assert_blocked "S2.1: commit blocked without silver-blast-radius" "$out"
 # Record silver-blast-radius + devops-quality-gates: commit ALLOWED
 run_record_skill "silver-blast-radius" >/dev/null
 run_record_skill "devops-quality-gates" >/dev/null
-run_record_skill "gsd-discuss-phase" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
+run_record_skill "silver-context" >/dev/null
+run_record_skill "silver-plan" >/dev/null
 out=$(run_completion_audit "PreToolUse" "git commit -m 'infra: update deploy'")
 assert_allowed "S2.2: commit allowed after devops planning" "$out"
 
@@ -113,14 +113,14 @@ out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/main.tf")
 # also don't match in full-dev-cycle. Either way, enforcement applies.
 assert_blocked "S5.1: .tf edit blocked in devops-cycle (no devops planning)" "$out"
 
-# Record devops planning + gsd-code-review: ALLOWED
+# Record devops planning + silver-review: ALLOWED
 run_record_skill "silver-blast-radius" >/dev/null
 run_record_skill "devops-quality-gates" >/dev/null
-run_record_skill "gsd-discuss-phase" >/dev/null
-run_record_skill "gsd-plan-phase" >/dev/null
-run_record_skill "gsd-code-review" >/dev/null
+run_record_skill "silver-context" >/dev/null
+run_record_skill "silver-plan" >/dev/null
+run_record_skill "silver-review" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/main.tf")
-assert_allowed "S5.2: .tf edit allowed after devops planning + gsd-code-review" "$out"
+assert_allowed "S5.2: .tf edit allowed after devops planning + silver-review" "$out"
 
 integration_teardown
 

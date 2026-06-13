@@ -76,22 +76,71 @@ only for release candidates or broad audits.
 
 | Pack | Trigger signals | Required checks |
 |---|---|---|
-| `code-health` | business logic, shared modules, refactors | correctness edges, coupling, duplicated logic, error handling, maintainability |
-| `test-health` | tests, coverage gaps, bugfixes, behavior changes | failing-test-first evidence, meaningful assertions, fixture realism, slow/flaky risk, mutation-style challenge where practical |
-| `api-contract` | routes, controllers, OpenAPI, SDKs, webhooks | status codes, validation, auth, versioning, error shape, idempotency, compatibility |
-| `data-contract` | schema, migrations, ORM, SQL, persistence | migration safety, rollback, indexes, constraints, data retention, concurrency, backfills |
-| `dependency-supply` | package manifests, lockfiles, imports, toolchain | provenance, license/security posture, version pinning, transitive risk, removal plan |
-| `performance-resource` | latency, memory, bundle size, caching, jobs | hot path, resource ceilings, cache correctness, load assumptions, measurement evidence |
-| `structure-maintainability` | directory moves, boundaries, architecture drift | layering, naming, ownership, discoverability, circular dependency risk |
-| `ci-workflow` | GitHub Actions, build scripts, release checks | required jobs, concurrency, cache invalidation, secrets use, artifact upload, failure visibility |
-| `environment-secrets` | env vars, config, deployment manifests | secret exposure, default safety, environment parity, config validation, rotation notes |
-| `accessibility` | UI, keyboard flows, forms, visual state | semantic HTML, keyboard reachability, focus, labels, contrast, reduced-motion and screen-reader evidence |
-| `content-search` | public pages, docs, metadata, migrations | content accuracy, canonical metadata, headings, redirects, search snippets, AI-search extractability |
-| `ui-system` | components, tokens, layouts, visual polish | design-token use, component reuse, responsive constraints, states, screenshots, browser verification |
-| `architecture-adr` | major design choices, cross-cutting contracts | decision record, alternatives, reversibility, operational impact, extension boundary |
-| `runtime-release` | deploy, canary, rollback, release readiness | deploy command safety, rollback, health checks, monitoring, smoke test, release evidence |
-| `incident-retro` | incident response, postmortem, recurring failure | timeline, root cause, contributing factors, corrective actions, ownership, due dates |
-| `benchmark-eval` | provider/model/tool comparisons, agent routing | repeatable fixture, scoring rubric, cost/latency, regression threshold, data retention |
+| `code-health` | business logic, shared modules, refactors | correctness edges, typed/explicit return contracts, error strategy, secret-safe comparisons, nullability, idempotency, auth/data filtering, resource bounds, cleanup, duplicated guards, maintainability |
+| `test-health` | tests, coverage gaps, bugfixes, behavior changes | failing-test-first evidence, branch/error/edge coverage, assertion strength, mock boundaries, oracle independence, fixture realism, flake risk, cleanup, mutation-style challenge where practical |
+| `api-contract` | routes, controllers, OpenAPI, SDKs, webhooks | status codes, input validation, payload shape, pagination, error shape, caching, HTTP semantics, rate limiting, auth, idempotency, versioning, compatibility |
+| `data-contract` | schema, migrations, ORM, SQL, persistence | migration safety, rollback, indexes, constraints, query bounds, transactions, connection management, retention, concurrency, backfills, data/security posture |
+| `dependency-supply` | package manifests, lockfiles, imports, toolchain | provenance, vulnerability/license posture, version pinning, dead deps, bundle weight, internal coupling, circular dependencies, lock-in/removal plan |
+| `performance-resource` | latency, memory, bundle size, caching, jobs | hot path, rendering/bundle/assets, API/network, algorithmic complexity, memory, DB/cache behavior, concurrency, resource ceilings, measurement evidence |
+| `structure-maintainability` | directory moves, boundaries, architecture drift | directory consistency, naming, folder depth, colocation, file size, dead code, complexity, duplication, ownership, documentation, circular dependency risk, churn hotspots |
+| `ci-workflow` | GitHub Actions, build scripts, release checks | required jobs, caching, parallelism, conditional execution, artifact upload, action pinning, secrets use, timeouts, test integration, speed/failure visibility |
+| `environment-secrets` | env vars, config, deployment manifests | variable completeness, unused vars, startup validation, secret exposure, environment parity, type safety, safe defaults, documentation, rotation notes |
+| `accessibility` | UI, keyboard flows, forms, visual state | semantic HTML, keyboard reachability, focus, labels, ARIA, contrast, media alternatives, zoom/responsive behavior, motion controls, screen-reader evidence |
+| `content-search` | public pages, docs, metadata, migrations | content accuracy, encoding artifacts, markdown/frontmatter quality, link/image health, canonical metadata, structured data, redirects, snippets, AI-search extractability, freshness, chunkability |
+| `ui-system` | components, tokens, layouts, visual polish | design-token use, component reuse, persistent interface state, responsive constraints, states, copy, screenshots, browser verification, performance and rendering stability |
+| `architecture-adr` | major design choices, cross-cutting contracts | decision record, alternatives, reversibility, operational impact, extension boundary, coupling, migration path, threat model, rollout and observability implications |
+| `runtime-release` | deploy, canary, rollback, release readiness | deploy command safety, artifact/tag match, rollback, health checks, browser/runtime smoke, monitoring, alert ownership, canary watch, release evidence |
+| `incident-retro` | incident response, postmortem, recurring failure | impact, timeline, containment, root cause, contributing factors, corrective actions, ownership, due dates, recurrence signals, release/process feedback |
+| `benchmark-eval` | provider/model/tool comparisons, agent routing | repeatable fixture, scoring rubric, correctness, evidence quality, safety, cost, latency, self-eval bias, regression threshold, data retention |
+
+## SB-Owned Capability Routes
+
+These specialized workflows are the user-facing entry points for common domain
+requests. They all write their own artifacts and feed normalized findings back
+into this audit schema:
+
+| Capability request | Route | Domain packs |
+|---|---|---|
+| Test writing, E2E route discovery, test repair, test audit, test runtime, mutation challenge | `silver:test` | `test-health`, plus affected API/data/UI/performance packs |
+| Behavior-preserving refactors | `silver:refactor` | `code-health`, `structure-maintainability`, `test-health`, affected contract packs |
+| Worktree create/finish safety | `silver:worktree` | `structure-maintainability`, `ci-workflow`, `runtime-release` when shipping |
+| Deployment | `silver:deploy` | `ci-workflow`, `environment-secrets`, `runtime-release` |
+| Post-deploy canary/runtime watch | `silver:canary` | `runtime-release`, affected API/UI/performance packs |
+| Incident response and postmortem | `silver:incident` | `incident-retro`, affected runtime/API/data/security packs |
+| Engineering retrospective | `silver:retro` | `incident-retro`, `benchmark-eval` when tool/provider performance matters |
+| Agent/model/provider/approach evaluation | `silver:benchmark` | `benchmark-eval` |
+| Content, SEO, AI-search, migration, optimization, article work | `silver:content` | `content-search`, plus accessibility/UI/performance where rendered |
+
+## Critical Gate Catalog
+
+Use these as named invariants. A critical gate with missing or contradictory
+evidence is a `BLOCK`; do not convert it to a warning without user acceptance
+and a tracked follow-up.
+
+### Code Critical Gates
+
+- errors are narrowed and handled at the boundary that can recover;
+- secrets and credentials are never compared, logged, or serialized unsafely;
+- queries, loops, jobs, and frontend requests have bounded work/time behavior;
+- auth and tenant/data filters cannot be bypassed by caller-controlled input;
+- external input is validated before crossing trust boundaries;
+- PII and sensitive internals are not leaked through logs or API responses.
+
+### Test Critical Gates
+
+- required behavior has failing-test-first or equivalent baseline evidence;
+- error paths, permissions, and edge cases are covered for changed behavior;
+- assertions prove externally observable behavior, not only implementation calls;
+- mocks do not replace the behavior being tested;
+- test oracles are independent of the implementation under test;
+- flaky timing, cleanup, and shared-state risks are controlled.
+
+### Runtime Critical Gates
+
+- deploy artifact maps to the reviewed commit, tag, or build output;
+- health checks cover user-critical paths, not just process liveness;
+- rollback path is known and usable before production exposure;
+- production-impacting failures become `silver:incident`, not hidden warnings.
 
 ## Process
 
