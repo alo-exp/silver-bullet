@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.41.0] — 2026-06-15
+
+## Features
+- `feat(orchestrator-parent): silver-orchestrator skill and worker templates` (48602193)
+- `feat(orchestrator-parent): parent-mode hooks and directive worker templates` (6225e5aa)
+- `feat(launch-remediation): stamp Cursor orchestrator rule on silver:init` (6564ff86)
+- `feat(launch-remediation): tier honesty and artifact substance gates (P1-P4)` (28579fe4)
+- `feat(launch-remediation): orchestrator directive drives next skill (P0/P6)` (18deccdc)
+- `feat(launch-remediation): Wave 0–6 orchestrator + L-02/L-03 hardening` (b9585703)
+
+## Bug Fixes
+- `fix(config): add silver-orchestrator to dogfood all_tracked skills` (c5d91e99)
+- `fix(scripts): sync deploy-gate-snippet REQUIRED_DEPLOY with template` (caef5ffe)
+- `fix(ci): restore hook parity and integration fixture enforcement tier` (641cf423)
+- `fix(kay-bridge): stabilize isolation tests for parent-mode denials` (7729fbee)
+- `fix(orchestrator): rewrite A && B || C patterns for ShellCheck 0.9` (9d418d6a)
+- `fix(orchestrator): resolve ShellCheck warnings on parent-mode hooks` (8f6f7f78)
+- `fix(live-surface): close 100% checklist gap and integration test failures` (4674e66f)
+- `fix(stop-check): add sb_initiated to Test 3b config` (8a00cd1a)
+- `fix(kay): block pre-planning edits via hook bridge (KAY-01)` (e75f54f1)
+- `fix(plugin): restore cursor plugin manifest files` (54bef9a0)
+- `fix(launch-remediation): lead prompt-reminder with orchestrator directive` (04b3f246)
+- `fix(workflows): preserve QUALITY GATE spacing in flow tracker` (9d4d35e9)
+
+## Documentation
+- `docs(orchestrator-parent): full-surface checklist and live test evidence` (cc068e30)
+- `docs(test): orchestrator parent mode docs, tests, migration, plugin sync` (ba8cb0fa)
+- `docs(orchestrator-parent-mode): add three-host live test report` (490194c4)
+- `docs(launch-remediation): P8 dogfood evidence and 10/10 score` (6c9f3f5c)
+- `docs(launch-remediation): 10/10 checklist, CI mirror, live E2E SKIP (P5-P9)` (264767c2)
+
+## Tests
+- `test(integration): force hook-enforced tier in CI fixtures` (fcd4c4d3)
+- `test(skills): add silver-orchestrator scenario coverage file` (5b6bd7c2)
+- `test(session-start): seed canonical plugin cache path for CI` (e7c3aa7f)
+- `test(hooks): mock plugin cache and fix stall/SessionStart CI failures` (04b3e2c0)
+
+## Chores
+- `chore(ci): add optional workflow_dispatch live E2E workflow` (a1e39208)
+
+---
+
 ## [0.40.0] — 2026-06-14
 
 ## Features
