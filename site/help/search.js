@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or alo-labs/claude-plugins marketplace, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Onboarding: bash scripts/sb-bootstrap.sh and bash scripts/sb-diagnostics.sh for capability tier 0-3. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Help Center landing page for Silver Bullet concepts, getting started, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+    "text": "Help Center landing page for Silver Bullet v0.39.3 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
   },
   {
     "page": "Core Concepts",
@@ -71,7 +71,7 @@ var IDX = [
     "url": "/help/concepts/routing-logic.html",
     "anchor": "overview",
     "title": "Routing logic",
-    "text": "/silver routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the SB flow catalog with optional extension plugins only where they add non-overlapping capability."
+    "text": "/silver routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the SB flow catalog. Not always-on session hijack."
   },
   {
     "page": "Core Concepts",
@@ -307,6 +307,20 @@ var IDX = [
   {
     "page": "Reference",
     "url": "/help/reference/",
+    "anchor": "runtime-install",
+    "title": "Three-host runtime install",
+    "text": "Claude Code alo-labs/claude-plugins install-claude.sh Codex alo-labs/codex-plugins install-codex.sh Cursor alo-labs/alo-labs-cursor-marketplace install-cursor.sh hooks.json cursor-hook-bridge sb-bootstrap sb-diagnostics capability tier hook-enforced"
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/",
+    "anchor": "capability-matrix",
+    "title": "Capability matrix parity",
+    "text": "domain-audit silver:test deploy canary silver:add fingerprint backlog handoff forensics interface STATE.md silver:content incident retro benchmark external-review-policy evidence-schema BLOCK WARN INFO no numeric scoring"
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "Silver Bullet command reference",
     "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:domain-audit, /silver:test, /silver:refactor, /silver:worktree, /silver:deploy, /silver:canary, /silver:incident, /silver:retro, /silver:benchmark, /silver:content, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, progressive-review-loop, and more."
@@ -330,7 +344,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "runtime-parity",
     "title": "Runtime parity scripts v0.39.3",
-    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook AS1 Zuvo parity"
+    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
     "page": "Reference",
@@ -351,7 +365,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "hooks",
     "title": "Hook failures",
-    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, stale compliance state, and initialization issues. Run /silver:init to refresh project setup."
+    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, Cursor hooks.json merge, sb-diagnostics capability tier, stale compliance state, and initialization issues. Run /silver:init to refresh project setup."
   },
   {
     "page": "Troubleshooting",
