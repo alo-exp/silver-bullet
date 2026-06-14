@@ -74,7 +74,30 @@ assert_command_succeeds() {
 capture_digest() {
   local path="$1"
   [[ -e "$path" ]] || return 0
+  # Kay bridge denial shims may shadow awk on PATH; prefer system tools for digests.
+  PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
   shasum -a 256 "$path" | awk '{print $1}'
+}
+
+reset_bridge_denial_state() {
+  find "$ACTIVE_SHIM_DIR" -mindepth 1 -delete 2>/dev/null || true
+  if [[ -e "$BRIDGE_TARGET" ]]; then
+    chmod u+w "$BRIDGE_TARGET" 2>/dev/null || true
+    if command -v chflags >/dev/null 2>&1; then
+      chflags nouchg "$BRIDGE_TARGET" 2>/dev/null || true
+    fi
+  fi
+  chmod u+w "$BRIDGE_WORKSPACE" 2>/dev/null || true
+  if command -v chflags >/dev/null 2>&1; then
+    chflags nouchg "$BRIDGE_WORKSPACE" 2>/dev/null || true
+    if [[ -d "$BRIDGE_WORKSPACE/.git" ]]; then
+      chflags -R nouchg "$BRIDGE_WORKSPACE/.git" 2>/dev/null || true
+    fi
+  fi
+  if [[ -d "$BRIDGE_WORKSPACE/.git" ]]; then
+    chmod -R u+w "$BRIDGE_WORKSPACE/.git" 2>/dev/null || true
+  fi
+  : > "$KAY_HOME/.codex/.silver-bullet/state"
 }
 
 assert_file_unchanged() {
@@ -91,7 +114,16 @@ assert_file_unchanged() {
 }
 
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+cleanup_tmp_dir() {
+  if [[ -n "${BRIDGE_WORKSPACE:-}" && -d "${BRIDGE_WORKSPACE:-}" ]]; then
+    chmod -R u+w "$BRIDGE_WORKSPACE" 2>/dev/null || true
+    if command -v chflags >/dev/null 2>&1; then
+      chflags -R nouchg "$BRIDGE_WORKSPACE" 2>/dev/null || true
+    fi
+  fi
+  rm -rf "$TMP"
+}
+trap cleanup_tmp_dir EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIGINAL_HOME="$TMP/original-home"
@@ -369,7 +401,10 @@ chmod_probe_command='set +m; chmod u+w src/routes/todos.js && printf '"'"'\n// c
 chmod_probe_payload="$(jq -nc --arg command "$chmod_probe_command" '{command:["bash","-lc",$command]}')"
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
 bridge_status=0
-bridge_output="$(run_bridge_event "tool.before" "call-native-deny-probe" "$chmod_probe_payload" 2>&1)" || bridge_status=$?
+set +e
+bridge_output="$(run_bridge_event "tool.before" "call-native-deny-probe" "$chmod_probe_payload" 2>&1)"
+bridge_status=$?
+set -e
 assert_eq "Kay bridge returns native deny status for blocked tool.before" "2" "$bridge_status"
 assert_contains "Kay bridge writes native deny reason to stderr" "$bridge_output" "Planning incomplete"
 assert_file_unchanged "Kay bridge native deny leaves target unchanged before execution" "$BRIDGE_TARGET" "$target_digest"
@@ -381,16 +416,23 @@ else
   (( PASS++ )) || true
 fi
 
+reset_bridge_denial_state
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
 bridge_status=0
-bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-chmod-probe" "$chmod_probe_payload" 2>&1)" || bridge_status=$?
+set +e
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-chmod-probe" "$chmod_probe_payload" 2>&1)"
+bridge_status=$?
+set -e
 assert_eq "Kay bridge fallback mode still returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge fallback mode surfaces planning denial" "$bridge_output" "Planning incomplete"
 assert_file_exists "Kay bridge writes fallback shell shims into the active prepend root" "$ACTIVE_SHIM_DIR/chmod"
 chmod_status=0
+set +e
 chmod_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
-)" || chmod_status=$?
+)"
+chmod_status=$?
+set -e
 run_bridge_event "tool.after" "call-chmod-probe" "$(jq -nc --argjson command '["bash","-lc"]' --arg script "$chmod_probe_command" --arg stderr "$chmod_output" --argjson exit_code "$chmod_status" '{command:($command + [$script]), exit_code:$exit_code, stdout:"", stderr:$stderr}')"
 assert_file_unchanged "Kay bridge blocks same-turn chmod retry writes" "$BRIDGE_TARGET" "$target_digest"
 if [[ $chmod_status -ne 0 && "$chmod_output" == *"Planning incomplete"* ]]; then
@@ -403,15 +445,22 @@ fi
 
 python_probe_script='from pathlib import Path; Path("src/routes/todos.js").open("a", encoding="utf-8").write("\n# python bridge probe\n")'
 python_probe_payload="$(jq -nc --arg script "$python_probe_script" '{command:["python3","-c",$script]}')"
+reset_bridge_denial_state
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
 bridge_status=0
-bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-python-probe" "$python_probe_payload" 2>&1)" || bridge_status=$?
+set +e
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-python-probe" "$python_probe_payload" 2>&1)"
+bridge_status=$?
+set -e
 assert_eq "Kay bridge direct-write fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge direct-write fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 python_status=0
+set +e
 python_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
-)" || python_status=$?
+)"
+python_status=$?
+set -e
 run_bridge_event "tool.after" "call-python-probe" "$(jq -nc --arg script "$python_probe_script" --arg stderr "$python_output" --argjson exit_code "$python_status" '{command:["python3","-c",$script], exit_code:$exit_code, stdout:"", stderr:$stderr}')"
 assert_file_unchanged "Kay bridge immutable block stops direct python file writes" "$BRIDGE_TARGET" "$target_digest"
 if [[ $python_status -ne 0 ]]; then
@@ -424,15 +473,22 @@ fi
 
 shell_probe_command=$'printf \'\\n// shell bridge probe\\n\' >> src/routes/todos.js'
 shell_probe_payload="$(jq -nc --arg command "$shell_probe_command" '{command:["bash","-lc",$command]}')"
+reset_bridge_denial_state
 target_digest="$(capture_digest "$BRIDGE_TARGET")"
 bridge_status=0
-bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-shell-probe" "$shell_probe_payload" 2>&1)" || bridge_status=$?
+set +e
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-shell-probe" "$shell_probe_payload" 2>&1)"
+bridge_status=$?
+set -e
 assert_eq "Kay bridge shell fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge shell fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 shell_status=0
+set +e
 shell_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
-)" || shell_status=$?
+)"
+shell_status=$?
+set -e
 run_bridge_event "tool.after" "call-shell-probe" "$(jq -nc --argjson command '["bash","-lc"]' --arg script "$shell_probe_command" --arg stderr "$shell_output" --argjson exit_code "$shell_status" '{command:($command + [$script]), exit_code:$exit_code, stdout:"", stderr:$stderr}')"
 assert_file_unchanged "Kay bridge immutable block stops direct shell redirects from command arrays" "$BRIDGE_TARGET" "$target_digest"
 if [[ $shell_status -ne 0 ]]; then
@@ -443,8 +499,10 @@ else
   (( FAIL++ )) || true
 fi
 
+reset_bridge_denial_state
 cat > "$BRIDGE_WORKSPACE/.silver-bullet.json" <<'EOF'
 {
+  "sb_initiated": true,
   "state": {
     "state_file": "~/.codex/.silver-bullet/state",
     "trivial_file": "~/.codex/.silver-bullet/trivial"
@@ -467,16 +525,23 @@ printf '\n// git bridge probe\n' >> "$BRIDGE_TARGET"
 REAL_GIT_BIN="$(command -v git)"
 git_probe_payload="$(jq -nc '{command:["git","commit","-am","blocked direct git probe"]}')"
 head_before="$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
+reset_bridge_denial_state
 bridge_status=0
-bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-git-probe_hook_tool_before_1" "$git_probe_payload" 2>&1)" || bridge_status=$?
+set +e
+bridge_output="$(SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK=1 run_bridge_event "tool.before" "call-git-probe_hook_tool_before_1" "$git_probe_payload" 2>&1)"
+bridge_status=$?
+set -e
 assert_eq "Kay bridge direct-git fallback returns native deny status" "2" "$bridge_status"
 assert_contains "Kay bridge direct-git fallback surfaces planning denial" "$bridge_output" "Planning incomplete"
 assert_file_exists "Kay bridge writes git shim into the active prepend root" "$ACTIVE_SHIM_DIR/git"
 hash -r 2>/dev/null || true
 git_status=0
+set +e
 git_output="$(
   cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
-)" || git_status=$?
+)"
+git_status=$?
+set -e
 run_bridge_event "tool.after" "call-git-probe_hook_tool_after_1" "$(jq -nc --arg stderr "$git_output" --argjson exit_code "$git_status" '{command:["git","commit","-am","blocked direct git probe"], exit_code:$exit_code, stdout:"", stderr:$stderr}')"
 assert_eq "Kay bridge direct-git fallback keeps HEAD unchanged" "$head_before" "$(git -C "$BRIDGE_WORKSPACE" rev-parse HEAD)"
 if [[ $git_status -ne 0 ]]; then
