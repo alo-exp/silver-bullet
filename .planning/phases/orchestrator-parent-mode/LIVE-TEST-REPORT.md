@@ -12,7 +12,7 @@
 |------|------------|---------------------|-----------------|-------|----------|
 | Cursor CLI | ✅ | ✅ (guard + worker handoff) | ✅ tags v3 | 62 pass | None |
 | Claude local | ✅ | ✅ (hook preflight) | ⏭ (Cursor shipped tags) | hook preflight 2/2 | Full agent journey not run (time) |
-| Kay (MiniMax-M3) | ✅ | ⚠️ partial | ⏭ | hook preflight 1/2 | Pre-planning edit not blocked live |
+| Kay (MiniMax-M3) | ✅ | ✅ (hook preflight 2/2) | ⏭ | hook preflight 2/2 | None |
 
 ## Pre-flight
 
@@ -126,7 +126,7 @@ SB_E2E_LIVE_RUNTIME=claude bash tests/e2e-live/hook-delivery-preflight.sh
 - Pre-planning source edit blocked ✅
 - Dev-cycle deny recorded ✅
 
-**Full agent journey:** Not re-run end-to-end (tags already shipped on Cursor; Claude preflight confirms tier-2 hook enforcement). Orchestrator parent guard covered by SB unit tests.
+**Full agent journey:** Not re-run end-to-end (tags already shipped on Cursor; Claude preflight confirms tier-2 hook enforcement). **Recommend one interactive dogfood session before release** — hooks passed 2/2 but no full orchestrator-parent agent journey was exercised in this pass.
 
 **Verdict:** ✅ Install + hook enforcement OK; full feature journey deferred (shared fixture).
 
@@ -151,18 +151,18 @@ Dependency preflight: **49/49 passed** (plugin mirror, Kay hook config, CLI shim
 
 ### C. Full live test log
 
-**Hook delivery preflight:** **1 passed, 1 failed**
+**Hook delivery preflight:** **2 passed, 0 failed**
 
 | Check | Result |
 |-------|--------|
 | Dev-cycle deny recorded | ✅ PASS |
-| Pre-planning edit blocked | ❌ FAIL — probe append to `src/routes/todos.js` succeeded |
+| Pre-planning edit blocked | ✅ PASS — probe append to `src/routes/todos.js` denied (exit 2 + immutable target) |
 
-Kay transcript shows `exec_command_begin` for the append without a preceding deny — **tier-2 planning guard not enforced** in isolated Kay run.
+Kay transcript shows `tool.before` bridge deny before `exec_command_begin` after KAY-01 fix.
 
-**Full agent journey:** Not started (blocked on hook preflight).
+**Full agent journey:** Not started (preflight green; feature already shipped on Cursor).
 
-**Verdict:** ⚠️ Kay install OK; orchestrator parent mode **not live-ready** until Kay hook bridge delivers dev-cycle / orchestrator guards on Edit.
+**Verdict:** ✅ Kay install + tier-2 hook enforcement OK for orchestrator-parent projects.
 
 ---
 
@@ -170,7 +170,7 @@ Kay transcript shows `exec_command_begin` for the append without a preceding den
 
 | ID | Host | Severity | Description | Fix commit |
 |----|------|----------|-------------|------------|
-| KAY-01 | Kay | High | Hook delivery preflight: pre-planning edit not blocked in isolated Kay agent | **Open** — investigate `kay-project-hook-bridge.sh` + dev-cycle-check delivery |
+| KAY-01 | Kay | High | Hook delivery preflight: pre-planning edit not blocked in isolated Kay agent | **Fixed** — `kay-project-hook-bridge.sh` matches `exec_command`, always applies filesystem deny fallback, `dev-cycle-check` exit 2 under bridge; `tests/hooks/test-kay-project-hook-bridge.sh` |
 
 No SB repo code changes required for Cursor/Claude paths in this session.
 
@@ -182,10 +182,10 @@ No SB repo code changes required for Cursor/Claude paths in this session.
 |------|------------------------------|
 | **Cursor** | **Ready** — tier 2 parent blocks verified; tags feature shipped with full SB surface |
 | **Claude** | **Ready (hooks)** — preflight green; recommend one interactive dogfood session before release |
-| **Kay** | **Not ready** — hook enforcement gap blocks realistic E2E; fix KAY-01 before tier-3 claim |
+| **Kay** | **Ready (hooks)** — preflight 2/2 after KAY-01; full agent journey optional |
 
 **Recommended next steps:**
 
-1. Fix Kay hook bridge so `dev-cycle-check.sh` / `orchestrator-directive-guard.sh` fire on Edit (KAY-01).
-2. Run `cursor agent -p` scripted parent loop against todo-app for tier-3 receipt.
-3. Re-run `SB_E2E_LIVE_RUNTIMES=kay bash tests/e2e-live/run-e2e-live-tests.sh` after KAY-01 fix.
+1. Run `cursor agent -p` scripted parent loop against todo-app for tier-3 receipt.
+2. Optional: one interactive Claude dogfood session (hooks passed 2/2 but no full agent journey in this pass).
+3. Re-run full `SB_E2E_LIVE_RUNTIMES=kay bash tests/e2e-live/run-e2e-live-tests.sh` when journey scenarios are needed.
