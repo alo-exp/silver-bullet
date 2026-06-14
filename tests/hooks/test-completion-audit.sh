@@ -859,7 +859,8 @@ verify-tests
 EOF
 write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_contains "ordering issue detected for wrong sequence" "$out" "wrong order"
+assert_contains "ordering issue blocks wrong sequence" "$out" "ORDERING BLOCKED"
+assert_contains "ordering issue mentions wrong order" "$out" "wrong order"
 teardown
 
 # Test 16: Correct review-stack order passes cleanly
@@ -1082,11 +1083,21 @@ seed_delivery_ready_state
 seed_evidence_validator_scripts
 seed_malformed_evidence_artifact
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
-assert_passes "evidence schema gate allows delivery with warnings by default" "$out"
+assert_blocks "evidence schema gate blocks delivery by default when drift present" "$out"
+assert_contains "evidence schema block label present" "$out" "EVIDENCE SCHEMA GATE"
+teardown
+
+# Test 25: evidence schema warn mode when strict disabled
+setup
+seed_delivery_ready_state
+seed_evidence_validator_scripts
+seed_malformed_evidence_artifact
+out=$(SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=0 run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_passes "evidence schema gate allows delivery with warnings when strict false" "$out"
 assert_contains "evidence schema warn message present" "$out" "EVIDENCE SCHEMA"
 teardown
 
-# Test 25: evidence schema strict mode blocks delivery
+# Test 25b: evidence schema strict env override still blocks
 setup
 seed_delivery_ready_state
 seed_evidence_validator_scripts

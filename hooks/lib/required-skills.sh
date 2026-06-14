@@ -4,6 +4,8 @@
 # Single source of truth: templates/silver-bullet.config.json.default
 #   .skills.required_deploy          -> DEFAULT_REQUIRED
 #   .skills.required_deploy_devops   -> DEVOPS_DEFAULT_REQUIRED
+#   .skills.required_release         -> DEFAULT_RELEASE_REQUIRED
+#   .skills.required_release_devops  -> DEVOPS_DEFAULT_RELEASE_REQUIRED
 #   .skills.required_planning        -> DEFAULT_PLANNING
 #   .skills.required_planning_devops -> DEVOPS_DEFAULT_PLANNING
 #
@@ -256,6 +258,20 @@ __sb_rs_populate() {
   else
     # shellcheck disable=SC2034  # sourced by hook scripts
     DEVOPS_DEFAULT_REQUIRED="${value}"
+  fi
+  value="$(__sb_rs_load required_release || true)"
+  if [ -z "${value}" ]; then
+    DEFAULT_RELEASE_REQUIRED="silver-create-release"
+  else
+    # shellcheck disable=SC2034
+    DEFAULT_RELEASE_REQUIRED="${value}"
+  fi
+  value="$(__sb_rs_load required_release_devops || true)"
+  if [ -z "${value}" ]; then
+    DEVOPS_DEFAULT_RELEASE_REQUIRED="silver-create-release"
+  else
+    # shellcheck disable=SC2034
+    DEVOPS_DEFAULT_RELEASE_REQUIRED="${value}"
   fi
 }
 
