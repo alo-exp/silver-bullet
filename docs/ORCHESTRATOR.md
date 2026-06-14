@@ -1,17 +1,28 @@
 # Silver Bullet Orchestrator Contract
 
-**Status:** In-repo mechanical orchestration (2026-06-14, P0 10/10 program)
+**Status:** Parent-only orchestration (2026-06-14)
 
-Silver Bullet's orchestrator sequences lifecycle work through **directives** and **hooks**, not by auto-invoking the host Skill tool (that remains a host capability).
+Silver Bullet's orchestrator sequences lifecycle work through **directives**, **Task workers**, and **hooks**. The parent session NEVER implements directly — cooperative single-agent mode is removed.
+
+## Execution model
+
+| Role | Session | May implement? | Tools |
+|------|---------|----------------|-------|
+| **Parent** | Main agent / `/silver` | **No** | Task, Read, Grep, Glob; Skill: `silver` / `silver-orchestrator` only |
+| **Worker** | Task subagent per atomic flow | **Yes** (after assigned skill) | Full tool surface per flow contract |
+
+Config: `"orchestrator_mode": "parent"` (only allowed value; default in template).
 
 ## State surfaces
 
 | File | Scope | Purpose |
 |------|-------|---------|
 | `${SB_RUNTIME_STATE_DIR}/orchestrator.json` | Session/branch | Intent, `flow_queue`, `current_flow`, `workflow_id` |
-| `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` | Session/branch | **Mandatory next skill** when `blocking: true` |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` | Session/branch | **Mandatory next skill** + `next_worker_template` when `blocking: true` |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-intent.txt` | Session | Latest user intent (first line) |
-| `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit (M-05) |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-worker-active.json` | Session | Parent Task spawn handoff metadata |
+| `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `silver:init`) |
+| `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
 | `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail |
 
 ## Directive schema (`orchestrator-directive.json`)
@@ -19,6 +30,7 @@ Silver Bullet's orchestrator sequences lifecycle work through **directives** and
 ```json
 {
   "next_skill": "silver-quality-gates",
+  "next_worker_template": "QUALITY-GATE",
   "args": "optional intent snippet",
   "reason": "human-readable why",
   "blocking": true,
@@ -26,63 +38,61 @@ Silver Bullet's orchestrator sequences lifecycle work through **directives** and
 }
 ```
 
-Written by:
+Written by `flow-advance.sh`, `orchestrator-state.sh`, `outcomes-check.sh`. Cleared by `record-skill.sh` or audited `SB OVERRIDE:`.
 
-- `hooks/flow-advance.sh` / `hooks/lib/orchestrator-state.sh` when a flow atom completes
-- `hooks/outcomes-check.sh` when per-prompt outcomes are pending (maps outcome id → skill)
-- `hooks/lib/orchestrator-state.sh` on composer start (first queued flow)
+## Parent loop
 
-Cleared by:
+```
+User intent → /silver or silver-orchestrator
+  → composer spec seeds orchestrator.json + workflows.sh
+  → directive: next_skill + next_worker_template
+  → parent spawns Task with .silver-bullet/orchestrator-workers/<TEMPLATE>.md
+  → worker invokes next_skill → implements flow
+  → SubagentStop clears worker marker
+  → flow-advance writes next directive
+  → repeat until queue empty
+```
 
-- `hooks/record-skill.sh` when the expected skill is recorded
-- User prompt containing `SB OVERRIDE: <reason>` (logged, then cleared)
+## Worker contract
+
+Each worker template (`templates/orchestrator-workers/`) includes:
+
+- Flow contract reference (`docs/composable-flows-contracts.md`)
+- Mandatory skill invocation
+- Acceptance criteria and handoff artifacts
+
+Workers should run with `SB_ORCHESTRATOR_WORKER=1` (set in Task prompt) so hooks apply worker directive-guard semantics.
 
 ## Enforcement (tier ≥ 2)
 
-| Hook | Behavior |
-|------|----------|
-| `orchestrator-directive-guard.sh` | PreToolUse: blocks Edit/Write/Bash until `next_skill` recorded or override |
-| `prompt-reminder.sh` | Injects directive text every user prompt |
-| `session-start` | Re-injects directive + tier banner at session open |
+| Hook | Parent behavior | Worker behavior |
+|------|-----------------|-----------------|
+| `orchestrator-directive-guard.sh` | Blocks Edit/Write/Bash; allows Task; blocks direct flow Skill | Blocks until `next_skill` recorded |
+| `stop-check.sh` | Blocks Stop while `current_flow` pending | SubagentStop clears worker marker |
+| `prompt-reminder.sh` | Injects directive + parent mode banner | Injects directive |
+| `session-start` | Parent mode context | Worker when `SB_ORCHESTRATOR_WORKER=1` |
 
-### Cursor / tier 0–1 substitute
+### Cursor / tier 0–1
 
-Hosts without PreToolUse hooks (tier 0) receive **guidance only** — directives are injected but not mechanically enforced.
+Guidance only — `templates/cursor-rules/silver-orchestrator.mdc` + directive injection. Tier 2+ required for mechanical parent blocks.
 
-On **Cursor with merged hooks** (tier 2): the guard blocks non-skill tools until `PostToolUse/Skill` records the expected skill — the strongest in-repo substitute for auto-invoke.
+## SubagentStop semantics
 
-## Host contract for true auto-invoke (future)
+- **Worker SubagentStop:** Clears `orchestrator-worker-active.json`; does not block (parent continues).
+- **Parent Stop:** Blocked while orchestrator queue has pending `current_flow` — parent must spawn next Task worker.
 
-To reach full autonomous skill execution (not just block-until-invoked):
+## Migration
 
-| Host | Today | Target |
-|------|-------|--------|
-| Claude Code | `PostToolUse/Skill` records; agent must invoke Skill | Session hook reads `orchestrator-directive.json` and schedules Skill tool |
-| Codex | `silver-bullet invoke-skill` adapter + receipt | Same directive → adapter auto-call |
-| Cursor | Skill channel + hooks.json + `.cursor/rules/silver-orchestrator.mdc` (stamped by `silver:init`) | SDK/Cursor automation invokes skill from directive |
-| SDK / web | Tier 0 | Not supported until hook manifest merged |
+Existing projects:
 
-**In-repo Cursor substitute (2026-06-14):** `prompt-reminder.sh` leads with the directive block; `orchestrator-directive-guard.sh` blocks Edit/Write/Bash at tier ≥ 2; `templates/cursor-rules/silver-orchestrator.mdc` tells the agent to invoke `next_skill` before any tool use. This is convention + block until Cursor exposes Skill scheduling.
-
-**Required host behaviors for auto-invoke:**
-
-1. Read `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` after each skill completion
-2. When `blocking: true`, invoke `next_skill` with `args` before any Edit/Write/Bash
-3. Emit `PostToolUse/Skill` so `record-skill.sh` clears the directive
-4. Never skip override audit when user sends `SB OVERRIDE:`
-
-## Flow advance
-
+```bash
+bash scripts/sb-migrate-orchestrator-parent.sh [project-root]
 ```
-User intent → outcomes-check seeds → silver router (skill)
-     → composer skill → flow-advance seeds orchestrator.json + workflows.sh
-     → flow atoms → flow-advance writes directive for next atom
-     → directive-guard blocks edits until next skill invoked
-     → delivery gates (completion-audit, substance, tier)
-```
+
+Sets `orchestrator_mode: parent`, copies worker templates and Cursor rule.
 
 ## Related docs
 
-- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers 0–3
-- `docs/evidence-schema.md` — artifact substance at delivery
-- `.planning/phases/launch-remediation/CHECKLIST-10-10.md` — gap program tracker
+- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers; Cursor tier 2 requires Task/subagent support
+- `docs/composable-flows-contracts.md` — atomic flow catalog
+- `skills/silver-orchestrator/SKILL.md` — parent skill contract

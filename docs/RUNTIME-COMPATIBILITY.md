@@ -32,11 +32,17 @@ orientation (jq check, diagnostics, init next steps) or
 |------|------|------------|--------------|
 | 0 | Guidance-only | Skills, workflows, artifact templates; no hook enforcement | SDK/web sessions without hook config |
 | 1 | State-tracked | Skill markers and state file under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` | Partial hook delivery or manual skill invocation |
-| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards | Claude Code CLI, Codex CLI, Cursor with `~/.cursor/hooks.json` |
+| 2 | Hook-enforced | PreToolUse/PostToolUse/Stop gates, completion audit, planning guards, **orchestrator parent blocks** | Claude Code CLI, Codex CLI, **Cursor with `~/.cursor/hooks.json` + Task/subagent support** |
 | 3 | Live-tested | Release live matrix, e2e-live scenarios, installed-runtime receipts | CI release gates and local live harness |
 
 Tiers are cumulative: tier 2 includes tier 1 behavior; tier 3 assumes tier 2
 for release work.
+
+### Orchestrator parent mode (default)
+
+SB uses **parent-only** orchestration: the parent agent delegates each atomic flow to a **Task worker** (subagent). At tier 2, `orchestrator-directive-guard.sh` blocks parent Edit/Write/Bash; workers implement after recording the assigned skill.
+
+**Cursor requirement:** Tier-2 parent mode needs Cursor's Task/subagent tool and merged hooks. Without subagents, use tier 0–1 guidance-only behavior or migrate hooks per `skills/silver-init/scripts/merge-cursor-hooks.py`. See `docs/ORCHESTRATOR.md`.
 
 ### Diagnostics
 
