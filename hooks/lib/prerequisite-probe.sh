@@ -59,9 +59,16 @@ sb_prereq_run_probe() {
   local repair
   repair="$(sb_prereq_find_repair_script "$repo_root" 2>/dev/null || true)"
   if [[ -n "$repair" ]]; then
-    if "$repair" "$repo_root" 2>/dev/null; then
-      # Re-check jq after repair attempt
-      sb_prereq_check_jq && return 0
+    "$repair" "$repo_root" 2>/dev/null || true
+    # Full re-probe after repair attempt (P4)
+    issues=()
+    sb_prereq_check_jq || issues+=("jq missing")
+    sb_prereq_check_plugin_cache || issues+=("Silver Bullet plugin cache not found")
+    if [[ ! -f "$repo_root/.silver-bullet.json" || ! -f "$repo_root/silver-bullet.md" ]]; then
+      issues+=("SB project files incomplete — run /silver:init")
+    fi
+    if [[ ${#issues[@]} -eq 0 ]]; then
+      return 0
     fi
   fi
 
