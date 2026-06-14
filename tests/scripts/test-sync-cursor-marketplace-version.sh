@@ -30,6 +30,7 @@ jq '.plugins[] |= if .name == "silver-bullet" then .version = "0.0.1" else . end
 mv "$TMP/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
 
 git -C "$MARKETPLACE" init -q
+git -C "$MARKETPLACE" checkout -q -b main
 git -C "$MARKETPLACE" config user.email "tests@example.invalid"
 git -C "$MARKETPLACE" config user.name "Tests"
 git -C "$MARKETPLACE" add .
