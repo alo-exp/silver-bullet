@@ -105,7 +105,7 @@ sb_orchestrator_write_json() {
 sb_orchestrator_seed_intent() {
   local intent="$1"
   local composer="${2:-}"
-  local now pid
+  local now
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   command -v jq >/dev/null 2>&1 || return 0
 
@@ -251,7 +251,7 @@ sb_orchestrator_advance_on_atom() {
     if [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
       # shellcheck source=lib/orchestrator-directive.sh
       source "${_lib_dir}/orchestrator-directive.sh"
-      local next_skill args intent
+      local next_skill intent
       next_skill="$(sb_orchestrator_flow_to_skill "$next_flow")"
       intent="$(jq -r '.active_intent // ""' "$file" 2>/dev/null || true)"
       sb_orchestrator_directive_write "$next_skill" "$intent" "Flow ${atom_skill} complete — orchestrator queued ${next_flow}" true

@@ -4,6 +4,7 @@
 # Hooks normalize legacy gsd-* / gsd:* names to canonical silver-* skills at the
 # matcher boundary. New projects should invoke silver:* routes only.
 
+# shellcheck disable=SC2034  # documented sunset date for downstream tooling
 SB_GSD_ALIAS_SUNSET_DATE="2026-09-01"
 
 sb_legacy_gsd_alias_normalize() {

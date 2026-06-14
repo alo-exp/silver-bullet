@@ -7,6 +7,7 @@ umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh; do
+  # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
 
