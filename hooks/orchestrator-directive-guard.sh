@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh required-skills.sh hook-audit.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh; do
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
 
@@ -36,6 +36,18 @@ emit_block() {
 case "$tool_name" in
   Skill)
     raw_skill="$(printf '%s' "$input" | jq -r '.tool_input.skill // ""' 2>/dev/null || true)"
+    if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
+      if ! sb_orchestrator_parent_skill_allowed "$raw_skill"; then
+        expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
+        tmpl=""
+        if [[ -f "$(sb_orchestrator_directive_file)" ]]; then
+          tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
+        fi
+        emit_block "$(printf '🛑 ORCHESTRATOR PARENT — Do not invoke /%s directly. Spawn a Task worker with template %s.md to run flow atom %s.' "$raw_skill" "${tmpl:-WORKER}" "$expected")"
+        exit 0
+      fi
+      exit 0
+    fi
     expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
     [[ -n "$expected" ]] || exit 0
     skill="$raw_skill"
@@ -51,6 +63,32 @@ case "$tool_name" in
     exit 0
     ;;
 esac
+
+# Parent orchestrator: allow delegation tools; block implementation tools on project source.
+if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
+  case "$tool_name" in
+    Task|Subagent)
+      expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
+      tmpl=""
+      args=""
+      if [[ -f "$(sb_orchestrator_directive_file)" ]]; then
+        tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
+        args="$(jq -r '.args // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
+      fi
+      [[ -n "$expected" ]] && sb_orchestrator_mark_worker_spawn "$expected" "$tmpl" "$args" 2>/dev/null || true
+      exit 0
+      ;;
+  esac
+  if sb_orchestrator_parent_tool_allowed "$tool_name"; then
+    exit 0
+  fi
+  expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
+  tmpl=""
+  [[ -f "$(sb_orchestrator_directive_file)" ]] && \
+    tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
+  emit_block "$(printf '🛑 ORCHESTRATOR PARENT — %s is forbidden in parent mode. Spawn Task worker (%s.md) for /%s, or use read-only tools for state.' "$tool_name" "${tmpl:-WORKER}" "${expected:-next flow}")"
+  exit 0
+fi
 
 case "$tool_name" in
   Edit|Write|MultiEdit|apply_patch|Bash|exec_command) ;;
