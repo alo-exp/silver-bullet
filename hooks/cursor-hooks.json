@@ -135,6 +135,11 @@
         "matcher": "Shell"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+        "timeout": 5,
+        "matcher": "Shell"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
         "timeout": 10,
         "matcher": "Shell"
@@ -222,6 +227,11 @@
         "timeout": 10
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+        "matcher": ".*",
+        "timeout": 5
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
         "matcher": ".*",
         "timeout": 10
@@ -261,6 +271,11 @@
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
         "timeout": 10,
+        "matcher": "Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+        "timeout": 15,
         "matcher": "Shell"
       },
       {
@@ -349,6 +364,11 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
         "matcher": ".*",
         "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+        "matcher": ".*",
+        "timeout": 15
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
