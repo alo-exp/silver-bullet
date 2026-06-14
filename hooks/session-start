@@ -360,7 +360,7 @@ if [[ -f "$core_rules_file" ]]; then
   fi
 fi
 
-# Capability tier honesty (C-05)
+# Capability tier honesty (C-05) + enforcement tier (P1)
 if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
   # shellcheck source=lib/capability-tier.sh
   source "$_lib_dir/capability-tier.sh"
@@ -371,6 +371,50 @@ if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
 ---
 
 }${tier_line}"
+  fi
+fi
+
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck source=lib/enforcement-tier-gate.sh
+  source "$_lib_dir/enforcement-tier-gate.sh"
+  tier_num="$(sb_enforcement_tier_effective "$sb_project_root/.silver-bullet.json")"
+  sb_enforcement_tier_persist "$sb_project_root/.silver-bullet.json" "$tier_num" 2>/dev/null || true
+  et_banner="$(sb_enforcement_tier_session_banner "$tier_num")"
+  combined="${combined:+$combined
+
+---
+
+}${et_banner}"
+fi
+
+# Orchestrator directive at session start (P0)
+if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_lib_dir/orchestrator-directive.sh"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+  fi
+  od_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+  if [[ -n "$od_ctx" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${od_ctx}"
+  fi
+fi
+
+# Cursor host note when tier < 2
+if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
+  if [[ "$(sb_capability_runtime_name 2>/dev/null || echo unknown)" == "cursor" ]] \
+     && [[ "$(sb_capability_tier_number 2>/dev/null || echo 0)" -lt 2 ]]; then
+    combined="${combined:+$combined
+
+---
+
+}Cursor: merge ~/.cursor/hooks.json via skills/silver-init/scripts/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
   fi
 fi
 

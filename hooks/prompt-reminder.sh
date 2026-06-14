@@ -294,6 +294,46 @@ if [[ -n "$bare_prompt_context" ]]; then
 ${msg}"
 fi
 
+# Orchestrator directive injection (P0)
+_od_lib="${_lib_dir}/orchestrator-directive.sh"
+if [[ -f "$_od_lib" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_od_lib"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+  fi
+  if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
+    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
+      sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
+    fi
+  fi
+  directive_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+  if [[ -n "$directive_ctx" ]]; then
+    msg="${directive_ctx}
+
+---
+
+${msg}"
+  fi
+fi
+
+# Enforcement tier honesty (P1) — Cursor and other hosts
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck source=lib/enforcement-tier-gate.sh
+  source "$_lib_dir/enforcement-tier-gate.sh"
+  tier_eff="$(sb_enforcement_tier_effective "$config_file")"
+  tier_line="$(sb_enforcement_tier_session_banner "$tier_eff")"
+  if [[ -n "$tier_line" ]]; then
+    msg="${tier_line}
+
+---
+
+${msg}"
+  fi
+fi
+
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0
