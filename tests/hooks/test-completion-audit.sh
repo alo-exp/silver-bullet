@@ -46,6 +46,7 @@ write_cfg() {
 cat > "$TMPCFG" << EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
@@ -237,6 +238,10 @@ EOF
   cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
 # Review
 
+## Findings
+
+No issues found — review completed with evidence.
+
 status: passed
 EOF
   git -C "$TMPGIT" init -q
@@ -249,6 +254,7 @@ EOF
   git -C "$TMPGIT" checkout -q -b feature/test 2>/dev/null || true
   write_cfg "full-dev-cycle"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE=1
   export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
   export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
@@ -390,6 +396,7 @@ setup
 cat > "$TMPCFG" << 'EOF'
 {
   "config_version": "CURRENT_CONFIG_VERSION",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],

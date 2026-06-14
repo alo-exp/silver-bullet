@@ -41,10 +41,8 @@ sb_project_is_initiated() {
   flag=$(jq -r 'if has("sb_initiated") then (.sb_initiated | tostring) else "absent" end' "$config_file" 2>/dev/null || echo "absent")
   case "$flag" in
     true) return 0 ;;
-    false) return 1 ;;
-    *)
-      jq -e '(.config_version // .version // "") != ""' "$config_file" >/dev/null 2>&1
-      ;;
+    false|absent) return 1 ;;
+    *) return 1 ;;
   esac
 }
 

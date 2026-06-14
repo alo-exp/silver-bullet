@@ -2,6 +2,7 @@
   "config_version": "0.40.0",
   "version": "0.40.0",
   "sb_initiated": false,
+  "sb_enforcement_tier": null,
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -133,6 +134,9 @@
   "hooks": {
     "evidence_schema": {
       "strict": true
+    },
+    "industry_tooling": {
+      "enabled": false
     }
   },
   "devops_plugins": {

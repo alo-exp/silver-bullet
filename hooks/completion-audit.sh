@@ -42,6 +42,18 @@ if [[ -f "$_lib_dir/evidence-schema-gate.sh" ]]; then
   source "$_lib_dir/evidence-schema-gate.sh"
 fi
 
+# shellcheck source=lib/enforcement-tier-gate.sh
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/enforcement-tier-gate.sh"
+fi
+
+# shellcheck source=lib/artifact-substance-gate.sh
+if [[ -f "$_lib_dir/artifact-substance-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/artifact-substance-gate.sh"
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -604,6 +616,36 @@ run_evidence_schema_delivery_gate() {
   return 0
 }
 
+run_enforcement_tier_delivery_gate() {
+  local cfg="${config_file:-}"
+  [[ -n "$cfg" && -f "$cfg" ]] || return 0
+  if [[ "${SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE:-0}" == "1" ]]; then
+    return 0
+  fi
+  if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+    # shellcheck source=lib/sb-project-gate.sh
+    source "$_lib_dir/sb-project-gate.sh"
+    sb_project_is_initiated "$cfg" || return 0
+  fi
+  if declare -f sb_enforcement_tier_delivery_allowed >/dev/null 2>&1; then
+    if ! sb_enforcement_tier_delivery_allowed "$cfg"; then
+      local tier
+      tier="$(sb_enforcement_tier_effective "$cfg")"
+      emit_block "$(sb_enforcement_tier_block_message "$tier")"
+      exit 0
+    fi
+  fi
+  return 0
+}
+
+run_artifact_substance_delivery_gate() {
+  local repo_root="$1"
+  if declare -f sb_artifact_substance_gate_enforce >/dev/null 2>&1; then
+    sb_artifact_substance_gate_enforce "$repo_root" "capture_evidence_warn" "emit_block" "1" "${state_contents:-}"
+  fi
+  return 0
+}
+
 # ── Detect current git branch ─────────────────────────────────────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
@@ -693,6 +735,23 @@ if [[ "$is_intermediate" == true ]]; then
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /silver:completion-audit has not been recorded this session.\n\nRun /silver:completion-audit to verify completion claims, then retry the plan-seal commit.')"
       exit 0
     fi
+    # VFY-01 extension (P3): require silver-verify + non-stale VERIFICATION.md
+    if ! has_skill "silver-verify"; then
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /silver:verify recorded this session.\n\nRun /silver:verify and refresh VERIFICATION.md before plan-seal commit.')"
+      exit 0
+    fi
+    _pr="$(dirname "$config_file")"
+    [[ -z "$_pr" ]] && _pr="$PWD"
+    vfile=""
+    for candidate in "$_pr/.planning/VERIFICATION.md" "$_pr/.planning/phases"/*/*-VERIFICATION.md; do
+      [[ -f "$candidate" && ! -L "$candidate" ]] || continue
+      vfile="$candidate"
+      break
+    done
+    if [[ -z "$vfile" ]]; then
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — No VERIFICATION.md found under .planning/. Run /silver:verify before plan-seal commit.')"
+      exit 0
+    fi
   fi
 
   # Planning is done — intermediate commits are allowed
@@ -715,9 +774,11 @@ fi
 # repo root = directory of the resolved config_file (or $PWD as fallback).
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
+run_enforcement_tier_delivery_gate
 run_workflow_strict_gate "$project_root"
 run_doc_scheme_delivery_gate "$project_root"
 run_evidence_schema_delivery_gate "$project_root"
+run_artifact_substance_delivery_gate "$project_root"
 
 release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
