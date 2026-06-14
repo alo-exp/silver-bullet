@@ -54,6 +54,20 @@ SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
 Checks: `jq`, hook config presence, Graphify availability, package version,
 state root, inferred runtime name (`claude`, `codex`, or `cursor`), and capability tier.
 
+### Marketplace install surfaces
+
+| Host | Public marketplace | Dev/checkout installer |
+|------|-------------------|------------------------|
+| Claude Code | [alo-labs/claude-plugins](https://github.com/alo-labs/claude-plugins) | `scripts/install-claude.sh` |
+| Codex | [alo-labs/codex-plugins](https://github.com/alo-labs/codex-plugins) | `scripts/install-codex.sh` |
+| Cursor | [alo-labs/alo-labs-cursor-marketplace](https://github.com/alo-labs/alo-labs-cursor-marketplace) | `scripts/install-cursor.sh` |
+
+Release prep runs `scripts/sync-release-marketplace-versions.sh <version>` to
+keep all three marketplace repos aligned with `.claude-plugin/plugin.json` /
+`.cursor-plugin/plugin.json` / `plugins/silver-bullet/.codex-plugin/plugin.json`.
+
+Cursor release smoke (no live agent required): `bash scripts/release-live-matrix-cursor-smoke.sh`.
+
 ### Related Docs
 
 - `silver-bullet.md` §11 — hook protocol and SDK workarounds
