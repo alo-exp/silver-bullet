@@ -143,7 +143,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- HOOK FAILURES -->
       <h2 id="hooks">Hook Failures</h2>
-      <p>Silver Bullet hooks fire automatically on every tool use. When a hook fails, you may see errors in the host coding agent output or unexpected behavior.</p>
+      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). When a hook fails, you may see errors in the host coding agent output or unexpected behavior. Start with <code>bash scripts/sb-diagnostics.sh</code> to see capability tier and hook config status.</p>
+
+      <div class="issue-card">
+        <h4>Cursor hooks not merged</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>~/.cursor/hooks.json</code> does not include SB entries, or install used an old checkout path.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>bash scripts/install-cursor.sh --public-release</code>, then <code>bash scripts/sb-diagnostics.sh</code>. Expect tier 2 (hook-enforced) when hooks are present.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Low capability tier (guidance-only)</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Host session lacks hook delivery (tier 0) or skill markers are not recording (tier 1).</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install from the public marketplace for your host, run <code>/silver:init</code>, and use explicit <code>/silver</code> or Skill-tool invocation so <code>record-skill</code> can write state.</p>
+      </div>
 
       <div class="issue-card">
         <h4>"jq: command not found"</h4>
