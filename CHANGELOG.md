@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.39.4] — 2026-06-14
+
+## Features
+- `feat(migrate): upgrade path to latest SB (058 agent-neutral, Cursor, runtime parity)` (47f5b5a)
+
+## Tests
+- `test(migrate): document full upgrade path in test-silver-migrate.sh`
+
+---
+
 ## [0.39.3] — 2026-06-14
 
 ## Features
