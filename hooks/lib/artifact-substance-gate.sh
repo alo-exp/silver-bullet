@@ -21,7 +21,7 @@ _sb_substance_is_stub() {
   local body
   body="$(grep -vE '^#|^$|^\s*$|^\|[-: ]+\|' "$file" 2>/dev/null | tr -d '[:space:]' || true)"
   [[ -z "$body" ]] && return 0
-  grep -qiE 'TODO|FIXME|placeholder|coming soon|not available|lorem ipsum|TBD' "$file" 2>/dev/null && return 0
+  grep -qiE '\bTODO\b|\bFIXME\b|placeholder|coming soon|not available|lorem ipsum|\bTBD\b' "$file" 2>/dev/null && return 0
   return 1
 }
 

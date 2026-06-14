@@ -185,10 +185,9 @@ fi
     # shellcheck source=lib/orchestrator-directive.sh
     source "$lib_dir/orchestrator-directive.sh"
   fi
-  if [[ "$stop_hook_event" == "SubagentStop" ]]; then
-    if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]]; then
-      sb_orchestrator_clear_worker_marker 2>/dev/null || true
-    fi
+  if [[ "$stop_hook_event" == "SubagentStop" ]] \
+    && { [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" ]] || [[ "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]]; }; then
+    sb_orchestrator_clear_worker_marker 2>/dev/null || true
     exit 0
   fi
   if [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] \

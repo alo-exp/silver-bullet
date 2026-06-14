@@ -42,7 +42,22 @@ integration_setup() {
   cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
 # Review
 
+## Findings
+
+No issues found — review completed with evidence.
+
 status: passed
+EOF
+  cat > "$TMPDIR_TEST/.planning/phases/001-test/001-VERIFICATION.md" <<'EOF'
+# Verification
+
+## Command output
+
+```bash
+$ npm test
+PASS tests/todos.test.js
+Tests: 69 passed, 69 total
+```
 EOF
 
   # SB project marker files
@@ -105,6 +120,7 @@ emit_required_deploy_skills() {
   local field="${1:-required_deploy}"
   jq -r ".skills.${field}[]" "$DEFAULT_CONFIG_TEMPLATE" | awk '
     $0 == "gsd-code-review" { pending_gsd = 1; next }
+    $0 == "silver-review" { pending_review = 1; next }
     $0 == "requesting-code-review" {
       print
       if (pending_gsd) {
@@ -113,9 +129,18 @@ emit_required_deploy_skills() {
       }
       next
     }
+    $0 == "silver-review-request" {
+      print
+      if (pending_review) {
+        print "silver-review"
+        pending_review = 0
+      }
+      next
+    }
     { print }
     END {
       if (pending_gsd) print "gsd-code-review"
+      if (pending_review) print "silver-review"
     }
   '
 }
