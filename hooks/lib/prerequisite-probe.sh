@@ -42,7 +42,9 @@ sb_prereq_run_probe() {
 
   # L-02: core-rules integrity pin in plugin hooks directory
   local hooks_dir=""
-  hooks_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd || true)"
+  if _hd="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)"; then
+    hooks_dir="$_hd"
+  fi
   if [[ -n "$hooks_dir" && -f "$hooks_dir/core-rules.md" && -f "$hooks_dir/core-rules.sha256" ]]; then
     if [[ -f "$hooks_dir/lib/core-rules-integrity.sh" ]]; then
       # shellcheck source=lib/core-rules-integrity.sh
