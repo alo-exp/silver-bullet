@@ -7,13 +7,13 @@ argument-hint: "<description of change>"
 version: 0.1.0
 ---
 
-# /silver:fast — 3-Tier Complexity Triage
+# /silver:fast — Complexity Triage (composition spec)
 
-SB fast-path with 3-tier routing. Classifies work autonomously and routes to the appropriate execution engine.
+SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker (not parent edits). Tier 2+ escalates to fuller composer queues.
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
-| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | direct SB edit with verification |
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | parent spawns FAST worker |
 | **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:context` as needed, then `silver:plan`, `silver:execute`, `silver:verify` |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 

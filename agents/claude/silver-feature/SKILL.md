@@ -6,11 +6,11 @@ argument-hint: "<feature description>"
 version: 0.1.0
 ---
 
-# /silver:feature — Feature Development Workflow
+# /silver:feature — Feature Development Workflow (composition spec)
 
-SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows.
+SB **queue builder** for new feature development. The **parent orchestrator** reads this spec to seed `orchestrator.json` and spawn Task workers per atomic flow — it does not execute flows inline.
 
-Never implements features directly — orchestrates only.
+Never implements features directly — defines composition only.
 
 ## Mandatory dependency execution
 

@@ -147,6 +147,8 @@ Confirm Silver Bullet is installed for the active host before project init:
 | Codex | Public `alo-labs/codex-plugins` marketplace via `bash scripts/install-codex.sh --public-release` | `bash scripts/install-codex.sh --purge-legacy-skills` |
 | Cursor | Add marketplace `https://github.com/alo-labs/alo-labs-cursor-marketplace`, install `silver-bullet`, or run `bash scripts/install-cursor.sh --public-release` | `bash scripts/install-cursor.sh` |
 
+**Cursor orchestrator rule:** On init, copy `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1).
+
 After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
 `bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
 runtime tier. Per-host state and hook manifest paths are documented in `docs/RUNTIME-COMPATIBILITY.md`.

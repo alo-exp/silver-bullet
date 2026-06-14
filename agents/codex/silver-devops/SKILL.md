@@ -7,9 +7,9 @@ argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
 
-# /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow
+# /silver:devops — Infrastructure Composition Spec
 
-SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work. SB owns phase planning, execution, verification, review, security, and ship. Provider/tool-specific DevOps plugins remain optional enrichment through `devops-skill-router`.
+SB **queue builder** for infra/CI/CD/IaC work. Parent orchestrator seeds the queue and spawns Task workers — does not execute inline.
 
 **Key design principles:**
 - No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
@@ -18,7 +18,7 @@ SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kub
 
 **The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, observability, change-safety. (Usability omitted because infra has no direct user interface; reusability/extensibility are covered by modularity/change-safety in IaC.)
 
-Never implements infra changes directly — orchestrates only.
+Never implements infra changes directly — composition spec only.
 
 ## Pre-flight: Load Preferences
 
