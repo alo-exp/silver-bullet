@@ -6,10 +6,16 @@
 - `feat(056): runtime-enforced AS1/Zuvo parity — evidence schema validator, silver-add fingerprint CLI, interface STATE stamping, sb-bootstrap onboarding` (70d46b1)
 - `feat(056): evidence schema delivery gate in completion-audit (warn-first; strict via SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1)` (79abf3d)
 - `feat(056): shared evidence fingerprints and silver-scan alignment` (080967a)
+- `feat(057): ship alo-labs Cursor marketplace and first-class Cursor runtime support` (4b55bef)
 - `fix(release): rewrite silver skill names in Claude agent bundle after sync` (70d46b1)
+
+## Bug Fixes
+- `fix(cursor): store forge marketplace template as plain files` (52a36f5)
+- `fix(diagnostics): persist runtime name after subshell path detect` (25781e6)
 
 ## Tests
 - `test(056): silver-add fingerprint, evidence validator, interface STATE, sb-bootstrap, completion-audit gate` (bfdf3ad)
+- `test(057): Cursor runtime bootstrap, hook bridge, and marketplace CI smoke` (4b55bef)
 
 ---
 
