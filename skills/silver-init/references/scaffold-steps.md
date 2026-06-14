@@ -130,7 +130,7 @@ Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write back
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), and write to `.silver-bullet.json`.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`.
 
 ### 3.5 Copy workflow files
 
@@ -138,6 +138,12 @@ Copy both workflow templates to `docs/workflows/`, backing up any existing file 
 
 1. `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` → `docs/workflows/full-dev-cycle.md` (back up existing to `.backup`)
 2. `${PLUGIN_ROOT}/templates/workflows/devops-cycle.md` → `docs/workflows/devops-cycle.md` (back up existing to `.backup`)
+
+Also copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (executable) when absent — required for autonomous `flow-advance` workflow tracking in downstream projects.
+
+### 3.5.6 Copy workflow helper script
+
+Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (create `scripts/` if missing, `chmod +x`). Required for `flow-advance.sh` auto workflow tracker (Wave 0.8).
 
 ### 3.5.5 Documentation bootstrap/reconciliation (all projects)
 
@@ -213,6 +219,20 @@ echo "SB install path: ${INSTALL_PATH:-NOT FOUND}"
 ```
 
 If `INSTALL_PATH` is empty, skip this step silently and continue.
+
+**Verify core-rules integrity pin (L-02):**
+
+After resolving `INSTALL_PATH`, confirm `${INSTALL_PATH}/hooks/core-rules.sha256` matches `${INSTALL_PATH}/hooks/core-rules.md`. If the pin file is missing or mismatched, warn the user to reinstall the plugin from the official marketplace — do not proceed silently on a tampered hooks directory.
+
+```bash
+HOOKS_DIR="${INSTALL_PATH}/hooks"
+if [[ -f "$HOOKS_DIR/core-rules.md" && -f "$HOOKS_DIR/core-rules.sha256" && -f "$HOOKS_DIR/lib/core-rules-integrity.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOOKS_DIR/lib/core-rules-integrity.sh"
+  sb_core_rules_integrity_ok "$HOOKS_DIR/core-rules.md" "$HOOKS_DIR" || \
+    echo "WARN: core-rules.md integrity pin mismatch — reinstall Silver Bullet"
+fi
+```
 
 **Merge hooks idempotently:**
 

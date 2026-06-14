@@ -69,32 +69,14 @@ FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → FLOW 5 (SPECIFY) [only when research sh
 
 No per-phase loop — research is a single-pass engagement that hands off to the appropriate SB implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`, or `silver:plan` when the next step is planning rather than implementation).
 
-### 3. Display Proposal
+### 3. Autonomous composition (default)
 
-Display the composition proposal to the user:
+Do **not** ask `Approve composition?`. Log: `SB ► research composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-```
-SILVER BULLET ► FLOW COMPOSED
-Flows: CLARIFY → DECIDE → SPECIFY (if needed)
-Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only
-Approve composition? [Y/n]
-```
+### 5. Legacy manual workflow start (fallback only)
 
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
-
-Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
-The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
-workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
-`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
-this to verify the active workflow is fully complete before final delivery.
+Resolve the workflow helper only when the hook did not start tracking.
 
 ```bash
 # Build a comma-separated flow list from the confirmed composition (use the

@@ -50,7 +50,11 @@ Heartbeat timestamps use ISO 8601 format (e.g., `2026-04-15T10:30:00Z`).
 
 ## SL-4: Advance (D-07.4)
 
-Move to the next flow in the composition chain.
+**Hook-driven (Wave 0.6):** `flow-advance.sh` advances the orchestrator queue on each
+recorded flow-atom skill completion and emits the next flow. Do not inline agent logic
+to pick the next flow — invoke the skill named in the hook message.
+
+Move to the next flow in the composition chain when the hook does not emit a next-flow message.
 
 ## SL-5: Progress Report (D-09)
 

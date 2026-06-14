@@ -46,6 +46,21 @@ while true; do
 done
 [[ -n "$config_file" ]] || exit 0
 
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_gate_or_exit
+fi
+
+# M-07: intentional no-op — absorbed dependency namespaces exit 0 below.
+# Legacy gsd-* aliases normalize to silver-* via legacy-gsd-alias.sh (sunset 2026-09-01).
+# Hook retained for matcher compatibility; does not block SB-owned workflows.
+if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
+  # shellcheck source=lib/legacy-gsd-alias.sh
+  source "$_lib_dir/legacy-gsd-alias.sh"
+  raw_skill="$(sb_legacy_gsd_alias_normalize "$raw_skill")"
+fi
+
 case "$raw_skill" in
   gsd:*|gsd-*|superpowers:*|design:*|engineering:*|product-management:*|multai:*)
     exit 0

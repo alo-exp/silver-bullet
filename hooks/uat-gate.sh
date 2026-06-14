@@ -19,6 +19,8 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+
 # Emit a block (PreToolUse deny)
 emit_block() {
   local reason="$1"
@@ -30,13 +32,26 @@ emit_block() {
 # Extract skill name from supported skill invocation input
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
-# Only gate on release or milestone completion
-if ! printf '%s' "$skill" | grep -qE 'silver-release|silver:release|gsd-complete-milestone|gsd:complete-milestone'; then
-  exit 0
+if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
+  # shellcheck source=lib/legacy-gsd-alias.sh
+  source "$_lib_dir/legacy-gsd-alias.sh"
+  skill="$(sb_legacy_gsd_alias_normalize "$skill")"
 fi
 
 UAT=".planning/UAT.md"
 SPEC=".planning/SPEC.md"
+
+# Only gate on release, milestone completion, or ship when SPEC defines acceptance criteria
+if ! printf '%s' "$skill" | grep -qE 'silver-release|silver-ship'; then
+  exit 0
+fi
+
+# Ship gate applies only when the project has a spec with acceptance criteria
+if printf '%s' "$skill" | grep -qE 'silver-ship'; then
+  if [[ ! -f "$SPEC" ]]; then
+    exit 0
+  fi
+fi
 
 # Check 1: UAT.md must exist (UATG-01)
 if [[ ! -f "$UAT" ]]; then

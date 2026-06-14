@@ -28,7 +28,12 @@ if [[ "$SB_RUNTIME_NAME" == "codex" && -n "${KAY_HOME:-}" ]]; then
   _sb_runtime_base_home="${KAY_HOME}"
 fi
 SB_RUNTIME_HOME_ROOT="${_sb_runtime_base_home}/.${SB_RUNTIME_NAME}"
-SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+# Tests/hooks may pin state dir via SB_RUNTIME_STATE_DIR when SB_RUNTIME_PRESERVE_STATE_DIR=1.
+if [[ "${SB_RUNTIME_PRESERVE_STATE_DIR:-}" == "1" && -n "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+  :
+else
+  SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+fi
 SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 
 sb_runtime_path_is_state_scoped() {

@@ -214,6 +214,11 @@
         "matcher": "Skill|Shell"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+        "timeout": 15,
+        "matcher": "Skill|Shell"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
         "timeout": 10,
         "matcher": "Shell"
@@ -296,6 +301,11 @@
         "timeout": 10
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+        "matcher": ".*",
+        "timeout": 15
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
         "matcher": ".*",
         "timeout": 10
@@ -368,6 +378,11 @@
         "matcher": ".*"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
         "timeout": 10,
         "matcher": ".*"
@@ -377,6 +392,11 @@
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" subagentStop ${CURSOR_PLUGIN_ROOT}/hooks/stop-check.sh\"",
         "timeout": 15,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" subagentStop ${CURSOR_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+        "timeout": 10,
         "matcher": ".*"
       },
       {
@@ -393,6 +413,11 @@
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/prompt-reminder.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
         "timeout": 10,
         "matcher": ".*"
       }
