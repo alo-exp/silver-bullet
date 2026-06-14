@@ -320,6 +320,7 @@ setup
 cat > "$TMPCFG" << EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["not-a-real-skill"],
