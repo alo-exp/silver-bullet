@@ -30,6 +30,10 @@ emit_block() {
     sb_hook_audit_record "orchestrator-directive-guard" "PreToolUse" "deny" "$reason" ""
   fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  if [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]]; then
+    printf '%s\n' "$reason" >&2
+    exit 2
+  fi
 }
 
 # Skill invocations: allow when matching expected skill; clear directive on match.
