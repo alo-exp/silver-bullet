@@ -16,9 +16,17 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-06-14 — phase-056-zuvo-runtime-parity-release (doc-scheme session pass)
+**What**: Doc-scheme gate remediation for v0.39.3 delivery — full 79-key checklist, fresh mandated-doc mtimes after Cursor session-start-time, TESTING.md phase 057 cursor test matrix.
+**Commits**: (this session)
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.02 (gate unblock)
+**KNOWLEDGE.md**: updated (phase 057 Cursor + site refresh notes)
+**Learnings**: updated (Cursor marketplace plain files, diagnostics subshell)
+
 ## 2026-06-14 — phase-056-zuvo-runtime-parity-release
 **What**: Shipped v0.39.3 runtime-enforced AS1/Zuvo parity — evidence schema validator + delivery gate, `silver-add.sh` fingerprint/dedup/prioritize, interface STATE stamping in `silver:init`, `sb-bootstrap.sh` onboarding probe, Claude agent bundle name rewrite fix; refreshed homepage and Help Center for v0.39.3.
-**Commits**: (this release)
+**Commits**: 967010f7, 8a940ee5, 9d7e3dc2, 4b55bef9, 79abf3d6, 7c613231
 **Skills run**: silver:review, silver:verify, verify-tests, silver:ensure-docs, silver:create-release
 **Virtual cost**: ~$0.15 (patch release — runtime parity scripts, site refresh, release gate)
 **KNOWLEDGE.md**: updated (runtime parity enforcement, evidence schema gate)
