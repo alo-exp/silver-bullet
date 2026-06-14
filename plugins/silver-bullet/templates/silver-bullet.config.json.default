@@ -1,6 +1,6 @@
 {
-  "config_version": "0.40.0",
-  "version": "0.40.0",
+  "config_version": "0.41.0",
+  "version": "0.41.0",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
   "orchestrator_mode": "parent",
