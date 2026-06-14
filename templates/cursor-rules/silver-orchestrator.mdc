@@ -1,0 +1,25 @@
+---
+description: Silver Bullet orchestrator — invoke next_skill from directive before any tool use
+alwaysApply: true
+---
+
+# Silver Bullet Orchestrator (Cursor)
+
+When this project has `sb_initiated: true` in `.silver-bullet.json`, Silver Bullet hooks are active.
+
+## Mandatory next action
+
+1. On every turn, read the **SB ORCHESTRATOR DIRECTIVE** block injected by `prompt-reminder.sh` (or open `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` when hooks did not inject context).
+2. When `blocking: true` and `next_skill` is set, you **MUST** invoke that skill through Cursor's Skill tool **before** any Edit, Write, MultiEdit, or Bash tool call.
+3. After the skill completes, hooks record it via `PostToolUse/Skill` and clear the directive.
+4. To bypass with audit trail, the user must send: `SB OVERRIDE: <reason>` in the prompt.
+
+## Non-negotiable
+
+- Do not implement, edit, test, or commit until the directive skill is recorded (unless user override).
+- Route bare work requests through `/silver` first when no directive is present.
+- Follow `silver-bullet.md` for full workflow ordering and delivery gates.
+
+## Host limitation (honest)
+
+Cursor does not auto-invoke skills from hooks. This rule + `orchestrator-directive-guard.sh` (tier ≥ 2) is the strongest in-repo substitute until a Cursor Skill scheduling API exists. See `docs/ORCHESTRATOR.md`.
