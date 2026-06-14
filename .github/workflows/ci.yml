@@ -98,6 +98,10 @@ jobs:
           sudo apt-get install -y shellcheck
           shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 
+      - name: Validate plugin mirror matches source hooks
+        run: |
+          bash scripts/validate-plugin-mirror.sh
+
       - name: Run hook unit tests
         run: |
           sudo apt-get install -y jq git
