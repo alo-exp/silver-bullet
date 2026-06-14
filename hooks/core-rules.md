@@ -16,7 +16,7 @@ You MUST NOT:
 
 Twelve enforcement layers are active. Hooks are invocation-based — the hooks track supported skill invocation events/receipts, not your judgment:
 
-1. **Skill tracker** (Claude Skill events or Codex `silver-bullet invoke-skill`) — records every supported skill invocation to state file
+1. **Skill tracker** (PostToolUse/Skill or Codex `silver-bullet invoke-skill`) — records every supported skill invocation to state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
 3. **Compliance status** (PostToolUse/all) — shows workflow progress on every tool use
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning SB skill or workflow instead
@@ -27,7 +27,7 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB and optional extension routes and re-injects missing skills before every message
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked
-12. **Redundant instructions** (CLAUDE.md + workflow file) — same rules enforced across multiple surfaces
+12. **Redundant instructions** (project instruction file + workflow file) — same rules enforced across multiple surfaces
 
 ## Active Workflow (Section 2)
 
@@ -50,8 +50,7 @@ Review loop must produce two consecutive clean passes. Run the audit skill twice
 that writes to the host runtime state root or adjacent files. State is recorded automatically
 when skills are invoked through a supported runtime channel:
 
-- Claude Code: the `Skill` tool.
-- Codex: the SB-owned `silver-bullet invoke-skill <name>` adapter, which prints the skill body and emits a hook-validated receipt.
+See `docs/RUNTIME-COMPATIBILITY.md` for per-host channels (including the Codex `silver-bullet invoke-skill <name>` adapter).
 
 Reading `SKILL.md`, editing state files, or manually appending markers never counts.
 

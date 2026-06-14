@@ -196,9 +196,6 @@ done
 # single-user developer systems. File must reside under the same plugin root.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 core_rules_file="${script_dir}/core-rules.md"
-if [[ ! -f "$core_rules_file" ]] && [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
-  core_rules_file="${CLAUDE_PLUGIN_ROOT}/hooks/core-rules.md"
-fi
 # Security: verify core-rules.md is actually within the plugin directory (path traversal defense)
 resolved_rules=""
 if [[ -f "$core_rules_file" ]]; then

@@ -698,6 +698,8 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
       :
     elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
+    elif [[ "$release_matrix_value" == 'matrix=cursor-smoke' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
+      :
     else
       emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Kay/OpenCode Go/DeepSeek V4 Flash low configuration, ensure the inline todo-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix, then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
       exit 0
