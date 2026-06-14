@@ -117,26 +117,53 @@ None — feature scope inferred from codebase + prior dogfood intent; no user ch
 
 ## Multi-session dogfood — todo-app v2 intent (2026-06-14)
 
-**Intent (orchestrator-intent.txt):** Build todo app v2 — filters, persistence, milestone ship  
-**Route:** `silver:spec` → `silver:feature` (full-software queue)
+**Intent (orchestrator-intent.txt):** Build todo app v2 — priority levels (high/medium/low) with API filter and UI badges  
+**Route:** `silver:spec` → `silver:feature` (full-dev-cycle)  
+**Workflow ID:** `20260614T120000Z-priority-silver-feature`
 
-### Session simulation design
+### Session A — spec / plan / orchestrator seed
 
-| Session | Simulated work | Expected persisted state |
-|---------|----------------|------------------------|
-| 1 | User prompt seeds intent; `silver:spec` + `silver:plan` recorded | `orchestrator.json` queue, `orchestrator-directive.json` → next skill |
-| 2 | New SessionStart (branch unchanged) | State + directive survive; `flow-advance` continues queue |
+| Step | Evidence |
+|------|----------|
+| Intent | `.sb-dogfood-state/orchestrator-intent.txt` |
+| Orchestrator queue | `.sb-dogfood-state/orchestrator.json` (`current_flow: silver-execute`) |
+| Directive | `.sb-dogfood-state/orchestrator-directive.json` (`blocking: true`) |
+| Skills recorded | `state`: silver, silver-spec, silver-context, silver-plan |
+| Workflow tracker | `.planning/workflows/20260614T120000Z-priority-silver-feature.md` |
+| Phase artifacts | `.planning/phases/03-priority/{CONTEXT,PLAN,SPEC}.md` |
 
-### Mechanism verified (in-repo)
+### Session B — new SessionStart, execute → verify
 
-- `orchestrator.json` + `orchestrator-directive.json` under `${SB_RUNTIME_STATE_DIR}/` persist across SessionStart when branch unchanged (session-start preserves state on same branch).
-- `prompt-reminder.sh` re-injects directive each turn.
-- `orchestrator-directive-guard.sh` blocks Edit until directive skill recorded.
+| Step | Evidence |
+|------|----------|
+| State preserved | `orchestrator.json`, `orchestrator-directive.json`, `orchestrator-intent.txt` unchanged after `session-start` |
+| Directive re-injected | `prompt-reminder.sh` output leads with `SB ORCHESTRATOR DIRECTIVE` |
+| Guard enforced | `orchestrator-directive-guard.sh` denies Edit until pending outcome/directive skill recorded |
+| Feature shipped | Priority column + API + UI + 56/56 Jest green |
+| Cursor rule | `.cursor/rules/silver-orchestrator.mdc` installed from SB template |
 
-### Live todo-app run
+**State dir (pinned):** `/Users/shafqat/projects/todo-app/.sb-dogfood-state` with `SB_RUNTIME_PRESERVE_STATE_DIR=1`
 
-**Status:** Procedure ready; execute on `/Users/shafqat/projects/todo-app` with `SB_RUNTIME_PRESERVE_STATE_DIR=1` between simulated sessions. Append session logs when run completes.
+### Feature delivered (Session B)
+
+| Layer | Change |
+|-------|--------|
+| DB | `priority TEXT NOT NULL DEFAULT 'medium'` |
+| API | POST/PUT validate; `GET ?priority=high`; sort high → medium → low |
+| UI | Priority select on add/edit; badge on list items |
+| Tests | 56/56 Jest (`tests/todos.test.js` +5 priority cases) |
+
+### Hook commands (repro)
+
+```bash
+export SILVER_BULLET_RUNTIME=cursor SB_RUNTIME_PRESERVE_STATE_DIR=1
+export SB_RUNTIME_STATE_DIR=/Users/shafqat/projects/todo-app/.sb-dogfood-state
+export SILVER_BULLET_STATE_FILE=$SB_RUNTIME_STATE_DIR/state
+cd /Users/shafqat/projects/todo-app
+echo '{"source":"startup"}' | bash $SB_REPO/hooks/session-start
+echo '{"prompt":"continue"}' | bash $SB_REPO/hooks/prompt-reminder.sh
+```
 
 ### Init note (P5)
 
-`silver:init` scaffold (`skills/silver-init/references/scaffold-steps.md`) copies `scripts/workflows.sh` — required for `flow-advance` auto tracker.
+`silver:init` scaffold copies `scripts/workflows.sh` and `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/` (§3.2.1).

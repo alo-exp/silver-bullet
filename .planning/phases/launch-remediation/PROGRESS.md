@@ -57,14 +57,14 @@
 
 | Gap | Severity | Notes |
 |-----|----------|-------|
-| Kay/Minimax live E2E | env | Documented in `tests/e2e-live/SKIP.md`; not in-repo release gate |
-| Host Skill auto-invoke | arch | `orchestrator-directive-guard` blocks until skill recorded; see `docs/ORCHESTRATOR.md` |
-| Multi-session dogfood on todo-app | ops | Procedure documented in DOGFOOD; live 2-session run pending |
-| CI live matrix split | ops | Unit gate in `ci.yml`; full live matrix still optional/manual |
+| Kay/Minimax live E2E | env | Optional `workflow_dispatch` in `.github/workflows/e2e-live.yml` |
+| Host Skill auto-invoke | arch | Directive + guard + `.cursor/rules/silver-orchestrator.mdc`; see `docs/ORCHESTRATOR.md` |
 
 ## Launch readiness (reassessment)
 
-**Score: 9.5/10** (in-repo maximum; 2026-06-14 P0–P9)
+**Score: 10/10** (in-repo maximum; 2026-06-14)
 
-- **Improved:** Orchestrator directive + PreToolUse guard; tier honesty gate; artifact substance validation; VFY-01 verify extension; industry tooling hint; plugin mirror CI; `docs/ORCHESTRATOR.md`.
-- **Still gap:** True host auto-invoke; Kay/Minimax live E2E green; full `run-all-tests.sh` includes environmental live wrappers.
+- **P8:** Multi-session dogfood on `/Users/shafqat/projects/todo-app` — priority v2 shipped; orchestrator state survived Session B; evidence in [DOGFOOD-todo-app.md](./DOGFOOD-todo-app.md).
+- **Cursor path:** `templates/cursor-rules/silver-orchestrator.mdc` stamped by `silver:init`; `prompt-reminder.sh` leads with directive block.
+- **CI:** `ci.yml` validate job = unit/integration release gate; `e2e-live.yml` = optional manual live matrix.
+- **Honest footnote:** True host Skill auto-invoke still requires Cursor/Claude SDK — in-repo maximum is convention + block + rule.

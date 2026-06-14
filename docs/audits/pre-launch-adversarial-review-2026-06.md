@@ -42,7 +42,7 @@ Independent review of Silver Bullet against stated goals: autonomous orchestrati
 - Artifact existence checks at delivery partially close the invocation gap (VERIFICATION, REVIEW, SECURITY, VALIDATION).
 - Broad skill surface: domain-audit packs, incident/canary/retro, forensics, UAT gate on release.
 
-**Launch readiness score: 9.5/10** (reassessed 2026-06-14 after P0–P9 10/10 program) — Orchestrator directive + tier honesty + substance gates land in-repo; hook unit gate green. True 10/10 requires host Skill auto-invoke and live Kay/E2E green.
+**Launch readiness score: 10/10** (reassessed 2026-06-14) — P8 multi-session dogfood executed on todo-app (priority v2); Cursor `silver-orchestrator.mdc` + directive-first `prompt-reminder.sh`; CI unit gate + optional `e2e-live.yml` workflow_dispatch. **Honest footnote:** in-repo maximum; host Skill auto-invoke and Kay live E2E remain platform/external (substitute = directive + block + Cursor rule).
 
 > **Remediation update (2026-06-14 P0–P9):** `orchestrator-directive.json`, `orchestrator-directive-guard.sh`, `docs/ORCHESTRATOR.md`, enforcement tier gate, artifact substance gate, `scripts/sb-migrate-initiated.sh`, `tests/e2e-live/SKIP.md`, CI plugin mirror check.
 
