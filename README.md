@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.41.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.41.0)
+[![version](https://img.shields.io/badge/version-v0.41.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.41.1)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -333,8 +333,8 @@ Minimal shape:
 
 ```json
 {
-  "config_version": "0.39.0",
-  "version": "0.39.0",
+  "config_version": "0.41.0",
+  "version": "0.41.0",
   "project": {
     "name": "my-app",
     "src_pattern": "/src/",
@@ -514,13 +514,11 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.39.0`
-- Release: [v0.39.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.39.0)
+- Version: `0.41.1`
+- Release: [v0.41.1](https://github.com/alo-exp/silver-bullet/releases/tag/v0.41.1)
 - Notable changes:
-  - SB now owns the core context, plan, execute, review, security, verify, ship, TDD, and completion-audit lifecycle skills it enforces.
-  - Legacy knowledge-work skills are compatibility or explicit optional tools, not core runtime dependencies.
-  - Default config schema moved to `0.39.0` so older lifecycle dependency lists are normalized during migration.
-  - Public docs, Help Center, marketplace metadata, and release gates now describe the SB-owned lifecycle model.
+  - Template `config_version` aligned to `0.41.0` for orchestrator-parent-mode schema.
+  - Cursor `cursor-hooks.json` regenerated for `flow-advance` and `industry-tooling-hint` hook parity.
 
 ## License
 
