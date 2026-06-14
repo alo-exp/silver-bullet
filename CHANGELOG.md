@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.41.1] — 2026-06-15
+
+## Bug Fixes
+- `fix(cursor): regenerate cursor-hooks.json for flow-advance and industry-tooling-hint parity with hooks.json` 
+
+## Chores
+- `chore(config): bump template config_version and version to 0.41.0`
+
+---
+
 ## [0.41.0] — 2026-06-15
 
 ## Features
