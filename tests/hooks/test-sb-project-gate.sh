@@ -46,6 +46,13 @@ echo '# x' >"$WORK/silver-bullet.md"
   assert_false "not initiated when absent" sb_project_is_initiated "$cfg"
 )
 
+jq '.config_version = "0.40.0"' "$WORK/.silver-bullet.json" >"$WORK/.silver-bullet.json.tmp" && mv "$WORK/.silver-bullet.json.tmp" "$WORK/.silver-bullet.json"
+(
+  cd "$WORK"
+  cfg="$(sb_find_project_config)"
+  assert_false "not initiated when only config_version (no grandfather)" sb_project_is_initiated "$cfg"
+)
+
 jq '.sb_initiated = true' "$WORK/.silver-bullet.json" >"$WORK/.silver-bullet.json.tmp" && mv "$WORK/.silver-bullet.json.tmp" "$WORK/.silver-bullet.json"
 
 (

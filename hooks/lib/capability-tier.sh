@@ -16,6 +16,35 @@ sb_capability_hooks_present() {
   return 1
 }
 
+sb_capability_runtime_name() {
+  if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
+    printf '%s' "${SILVER_BULLET_RUNTIME}"
+    return 0
+  fi
+  if [[ -f "${HOME}/.cursor/hooks.json" ]]; then
+    printf 'cursor'
+    return 0
+  fi
+  if [[ -f "${SB_RUNTIME_HOME_ROOT:-}/config.toml" ]]; then
+    printf 'codex'
+    return 0
+  fi
+  if [[ -f "${HOME}/.claude/settings.json" ]]; then
+    printf 'claude'
+    return 0
+  fi
+  printf 'unknown'
+}
+
+sb_capability_tier_number() {
+  case "$(sb_capability_tier_name)" in
+    hook-enforced) printf '2' ;;
+    state-tracked) printf '1' ;;
+    live-tested) printf '3' ;;
+    *) printf '0' ;;
+  esac
+}
+
 sb_capability_tier_name() {
   local hooks_present="no"
   local state_dir="${SB_RUNTIME_STATE_DIR:-}"
