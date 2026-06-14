@@ -220,6 +220,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+            "async": false,
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
             "async": false,
             "timeout": 10
@@ -287,6 +293,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
