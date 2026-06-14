@@ -105,7 +105,7 @@ Reviewers are **read-only** — they produce findings but NEVER apply fixes. Fix
 The orchestrator applies fixes using this contract:
 
 1. Read `finding.suggestion` — the reviewer's specific, actionable fix recommendation
-2. If `finding.suggestion` is non-empty: apply the suggested change to `artifact_path` using active runtime file-editing mechanisms, then commit atomically
+2. If `finding.suggestion` is non-empty: apply the suggested change to `artifact_path` using the active runtime file-editing mechanisms, then commit atomically
 3. If `finding.suggestion` is empty or unclear: surface the finding to the user for manual resolution — do NOT guess
 4. After ALL findings in a round are fixed, the review loop re-invokes the reviewer for the next round
 

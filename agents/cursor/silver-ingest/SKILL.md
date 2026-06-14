@@ -384,7 +384,7 @@ created: {today's date — greenfield only; preserve existing value in augment m
 last-updated: {today's date}
 ```
 
-**Write to `.planning/SPEC.md`** using the Write tool.
+**Write to `.planning/SPEC.md`** using the active runtime file-writing mechanism.
 
 Display:
 

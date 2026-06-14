@@ -31,7 +31,7 @@ Change: {$ARGUMENTS or "(not specified)"}
 
 ## Step 0: Complexity Triage
 
-Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no direct user interaction.
+Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no interactive user prompt.
 
 **Tier 1 (Trivial):**
 - ≤3 files AND no logic changes
@@ -145,7 +145,7 @@ After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the c
 **During Tier 2:** If files modified > 10:
 - Escalate to Tier 3 (silver:feature, Step 3)
 
-Escalation is **autonomous** — no direct user interaction needed. Display escalation banner:
+Escalation is **autonomous** — no interactive user prompt needed. Display escalation banner:
 
 ```
 FAST PATH ESCALATION
