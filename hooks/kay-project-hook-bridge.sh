@@ -354,7 +354,7 @@ run_matching_hooks() {
     [[ -n "$spec" ]] || continue
     command="$(printf '%s' "$spec" | jq -r '.command')"
     [[ -n "$command" ]] || continue
-    if printf '%s\n' "${seen_commands[@]}" | grep -Fqx -- "$command"; then
+    if ((${#seen_commands[@]})) && printf '%s\n' "${seen_commands[@]}" | grep -Fqx -- "$command"; then
       continue
     fi
     seen_commands+=("$command")
