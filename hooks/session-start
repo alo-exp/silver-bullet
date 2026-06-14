@@ -396,6 +396,23 @@ if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
     source "$_lib_dir/orchestrator-state.sh"
     sb_orchestrator_sync_directive_from_state 2>/dev/null || true
   fi
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    if sb_orchestrator_is_worker_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_WORKER=1
+    elif sb_orchestrator_is_parent_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_PARENT=1
+      parent_ctx="$(sb_orchestrator_parent_context_block 2>/dev/null || true)"
+      if [[ -n "$parent_ctx" ]]; then
+        combined="${combined:+$combined
+
+---
+
+}${parent_ctx}"
+      fi
+    fi
+  fi
   od_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
   if [[ -n "$od_ctx" ]]; then
     combined="${combined:+$combined

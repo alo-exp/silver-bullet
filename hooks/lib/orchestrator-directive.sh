@@ -35,8 +35,13 @@ sb_orchestrator_directive_write() {
   local args="${2:-}"
   local reason="${3:-Orchestrator queued next flow}"
   local blocking="${4:-true}"
+  local next_worker_template="${5:-}"
   [[ -n "$next_skill" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
+
+  if [[ -z "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_for_skill >/dev/null 2>&1; then
+    next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
+  fi
 
   local now file dir json
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -48,12 +53,14 @@ sb_orchestrator_directive_write() {
     --arg next_skill "$next_skill" \
     --arg args "$args" \
     --arg reason "$reason" \
+    --arg next_worker_template "$next_worker_template" \
     --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
     --arg updated_at "$now" \
     '{
       next_skill: $next_skill,
       args: $args,
       reason: $reason,
+      next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
       blocking: $blocking,
       updated_at: $updated_at
     }' 2>/dev/null || true)"
@@ -108,10 +115,13 @@ sb_orchestrator_directive_context_block() {
     if (.next_skill // "") == "" then empty else
       "SB ORCHESTRATOR DIRECTIVE (mandatory next action)\n" +
       "  next_skill: " + .next_skill + "\n" +
+      (if (.next_worker_template // "") != "" and .next_worker_template != null then
+        "  next_worker_template: " + .next_worker_template + ".md\n"
+      else "" end) +
       (if (.args // "") != "" then "  args: " + .args + "\n" else "" end) +
       "  reason: " + (.reason // "queued flow") + "\n" +
       (if .blocking == true then
-        "  blocking: true — invoke /" + .next_skill + " before Edit/Write/Bash, or reply with SB OVERRIDE: <reason> for audited bypass."
+        "  blocking: true — parent: spawn Task worker with template; worker: invoke /" + .next_skill + " before Edit/Write/Bash. SB OVERRIDE: <reason> for audited bypass."
       else
         "  blocking: false — recommended next skill."
       end)

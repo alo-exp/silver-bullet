@@ -39,8 +39,9 @@ if [[ -f "$_lib_dir_early/jq-gate.sh" ]]; then
   source "$_lib_dir_early/jq-gate.sh"
 fi
 
-# Read JSON from stdin (consumed per hook protocol; content not used by stop-check)
-cat >/dev/null
+# Read JSON from stdin (hook event + optional context)
+stop_input="$(cat 2>/dev/null || true)"
+stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 # Intentionally overrides the silent ERR trap set at line 3 — this hook
@@ -170,6 +171,47 @@ if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
   sb_trivial_bypass "$trivial_file"
+fi
+
+# Orchestrator parent mode — parent Stop blocked while flow queue pending; worker SubagentStop clears marker.
+  if [[ -f "$lib_dir/orchestrator-parent.sh" ]]; then
+  # shellcheck source=lib/orchestrator-parent.sh
+  source "$lib_dir/orchestrator-parent.sh"
+  if [[ -f "$lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$lib_dir/orchestrator-state.sh"
+  fi
+  if [[ -f "$lib_dir/orchestrator-directive.sh" ]]; then
+    # shellcheck source=lib/orchestrator-directive.sh
+    source "$lib_dir/orchestrator-directive.sh"
+  fi
+  if [[ "$stop_hook_event" == "SubagentStop" ]]; then
+    if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]]; then
+      sb_orchestrator_clear_worker_marker 2>/dev/null || true
+    fi
+    exit 0
+  fi
+  if [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] \
+    && sb_orchestrator_is_parent_session 2>/dev/null \
+    && sb_orchestrator_parent_queue_pending 2>/dev/null; then
+    cur_flow=""
+    orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"
+    [[ -f "$orch_file" ]] && cur_flow="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
+    tmpl=""
+    next_skill=""
+    directive_file="$(sb_orchestrator_directive_file 2>/dev/null || true)"
+    if [[ -n "$directive_file" && -f "$directive_file" ]]; then
+      tmpl="$(jq -r '.next_worker_template // ""' "$directive_file" 2>/dev/null || true)"
+      next_skill="$(jq -r '.next_skill // ""' "$directive_file" 2>/dev/null || true)"
+    fi
+    if [[ -z "$next_skill" && -n "$cur_flow" ]]; then
+      next_skill="$(sb_orchestrator_flow_to_skill "$cur_flow" 2>/dev/null || true)"
+    fi
+    parent_reason="Orchestrator parent: flow queue pending (${cur_flow:-unknown}). Spawn Task worker (${tmpl:-WORKER}.md) for /${next_skill:-next-skill} before ending session."
+    json_reason=$(printf '%s' "$parent_reason" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s}' "$json_reason"
+    exit 0
+  fi
 fi
 
 # L-04: block Stop when autonomous stall flag is set (100+ tool calls, no skill progress).

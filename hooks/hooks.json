@@ -106,6 +106,17 @@
         ]
       },
       {
+        "matcher": "Task|Subagent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [
           {
