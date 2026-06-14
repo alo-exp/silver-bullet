@@ -8,7 +8,7 @@
 #     and allow so users do not get stuck behind an impossible gate.
 #
 # The default search order is intentionally broad but cheap:
-#   1. Installed Silver Bullet plugin skills (repo/plugin root or CLAUDE_PLUGIN_ROOT)
+#   1. Installed Silver Bullet plugin skills (repo/plugin root or SB_PLUGIN_ROOT)
 #   2. User skill roots under the active host runtime and ~/.agents/
 #   3. Plugin caches for upstream dependency plugins
 #
@@ -40,7 +40,7 @@ sb_skill_is_installed() {
     esac
   fi
 
-  local repo_root="${CLAUDE_PLUGIN_ROOT:-$sb_skill_discovery_repo_root}"
+  local repo_root="${SB_PLUGIN_ROOT:-$sb_skill_discovery_repo_root}"
   if [[ ! -d "$repo_root/skills" ]]; then
     repo_root="$sb_skill_discovery_repo_root"
   fi

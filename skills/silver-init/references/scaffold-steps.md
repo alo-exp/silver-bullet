@@ -61,7 +61,7 @@ Check if a project instruction file exists in the project root (`CLAUDE.md` or `
 
 Silver Bullet sections are identified by headings matching `## N. <Known SB Title>` where N is 0–9 (including `## 3a.`). Known titles include: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, GSD, File Safety, Third-Party, Pre-Release. These sections start at the heading and end just before the next `## ` heading or end-of-file.
 
-Use the Bash tool to detect SB sections:
+Run via shell to detect SB sections:
 ```bash
 grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|GSD|File Safety|Third-Party|Pre-Release)' CLAUDE.md AGENTS.md 2>/dev/null || echo "NO_SB_SECTIONS"
 ```
@@ -72,7 +72,7 @@ If sections found:
 1. Read the project instruction file fully
 2. Identify each SB section (from `## N.` heading to just before the next `## ` heading or EOF)
 3. Also remove the old-style enforcement reference line if present: `> **Always adhere strictly to this file — it overrides all defaults.**` (note: this is the pre-separation version that does NOT mention silver-bullet.md)
-4. Remove these sections using the Edit tool, preserving all non-SB content (project overview, project-specific rules, user-added sections)
+4. Remove these sections using the active runtime file-editing mechanism, preserving all non-SB content (project overview, project-specific rules, user-added sections)
 5. Clean up any resulting double-blank-lines to single-blank-lines
 
 **Step 2 — Add reference line:**
@@ -95,14 +95,14 @@ Scan the project instruction file for patterns that conflict with `silver-bullet
 4. **Workflow overrides**: regex `(override|replace|ignore).*(workflow|silver.bullet)` on directive-like lines (conflicts with SB Section 2)
 5. **Session mode overrides**: regex `(always|default|must).*(interactive|autonomous).*mode` on directive-like lines (conflicts with SB Section 4)
 
-For each match found, present it to the user interactively using AskUserQuestion:
+For each match found, present it to the user directly:
 - Question: "Potential conflict found in the project instruction file:\n  Line {N}: {matched text}\n  This may conflict with Silver Bullet's {section name}. Remove this line?"
 - Options:
   - "A. Yes, remove this line"
   - "B. No, keep it"
   - "C. Skip all remaining conflict checks"
 
-If user selects A, use Edit tool to remove the line. If user selects B, leave it. If user selects C, stop checking further conflicts.
+If user selects A, use the active runtime file-editing mechanism to remove the line. If user selects B, leave it. If user selects C, stop checking further conflicts.
 
 ### 3.2 Create directories
 
@@ -190,7 +190,7 @@ If the commit fails due to a pre-commit hook, read the error, fix the issue, re-
 
 ### 3.7.5 Register SB hooks in the host settings file
 
-Merges the SB hook entries into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host's settings path (`~/.claude/settings.json` for Claude, `~/.cursor/hooks.json` for Cursor via `merge-cursor-hooks.py`, Codex native plugin hooks when applicable).
+Merges the SB hook entries into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -218,13 +218,13 @@ If `INSTALL_PATH` is empty, skip this step silently and continue.
 
 ```bash
 if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
-  python3 "${CURSOR_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"
+  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"
 else
-  python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
+  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
 fi
 ```
 
-`scripts/merge-hooks.py` substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
+`scripts/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
 > ⚠️  Could not auto-register hooks in the host settings file. Run `/silver:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
 
 Idempotent — re-running `/silver:init` adds no duplicate entries.

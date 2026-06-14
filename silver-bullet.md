@@ -57,7 +57,7 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (Claude Skill events or Codex `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
+1. **Skill tracker** (PostToolUse/Skill or Codex `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
@@ -80,10 +80,7 @@ hook technically but violates the workflow intent and will be caught
 during code review or verification.
 
 **Skill invocation compatibility**: Required workflow skills must be recorded through
-one of SB's supported runtime-native invocation channels:
-
-- Claude Code: `Skill` tool events.
-- Codex: the SB-owned `silver-bullet invoke-skill <name>` adapter, which prints the skill body and emits a hook-validated receipt.
+one of SB's supported runtime-native invocation channels (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 Reading `SKILL.md`, editing state files, or manually appending markers never counts.
 

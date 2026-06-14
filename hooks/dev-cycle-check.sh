@@ -206,21 +206,19 @@ See CLAUDE.md §8 for details."
   fi
 
   # --- Silver Bullet hook self-protection ─────────────────────────────────────
-  # Block edits to SB's own enforcement hooks. If Claude modifies its own hooks,
-  # it disables the very enforcement mechanisms that ensure process compliance.
-  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
-    sb_hooks_dir="${CLAUDE_PLUGIN_ROOT}/hooks"
+  # Block edits to SB's own enforcement hooks when running from an installed plugin copy.
+  _sb_hooks_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]]; then
+    sb_plugin_root="${SB_PLUGIN_ROOT:-$(cd "${_sb_hooks_script}/.." && pwd)}"
+    sb_hooks_dir="${sb_plugin_root}/hooks"
     if [[ -n "$file_path" ]]; then
-      # Edit/Write targeting hooks directory or hooks.json
-      if [[ "$file_path" == "${sb_hooks_dir}/"* ]] || [[ "$file_path" == "${CLAUDE_PLUGIN_ROOT}/hooks.json" ]]; then
+      if [[ "$file_path" == "${sb_hooks_dir}/"* ]] || [[ "$file_path" == "${sb_plugin_root}/hooks.json" ]]; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
       fi
     elif [[ -n "$command_str" ]]; then
-      # Bash write commands targeting hooks directory or hooks.json.
-      # Read-only inspection stays allowed; only write-capable commands are blocked.
-      if shell_writes_under_prefix "$sb_hooks_dir" || shell_writes_to_exact_path "${CLAUDE_PLUGIN_ROOT}/hooks.json" || \
-         { printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${CLAUDE_PLUGIN_ROOT}/hooks\.json)" && \
+      if shell_writes_under_prefix "$sb_hooks_dir" || shell_writes_to_exact_path "${sb_plugin_root}/hooks.json" || \
+         { printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${sb_plugin_root}/hooks\.json)" && \
            printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; then
         emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
         exit 0
@@ -228,25 +226,23 @@ See CLAUDE.md §8 for details."
     fi
   fi
 
-  # Fallback: detect hooks path by pattern if CLAUDE_PLUGIN_ROOT unavailable.
+  # Fallback: detect hooks path by pattern under the host runtime home.
   # IMPORTANT: Only block paths that are provably inside the host runtime root (the installed
   # plugin location). Do NOT use a repo-name pattern — that would also match the silver-
   # bullet source repo's own hooks/ directory and prevent legitimate source edits.
-  if [[ -z "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
-    # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
-    if [[ -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
-      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
-      exit 0
-    fi
-    if [[ -n "$command_str" ]] && { \
-      { shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
-        printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \
-      { printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
-        printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; \
-    }; then
-      emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
-      exit 0
-    fi
+  # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
+  if [[ -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
+    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+    exit 0
+  fi
+  if [[ -n "$command_str" ]] && { \
+    { shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
+      printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \
+    { printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
+      printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; \
+  }; then
+    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+    exit 0
   fi
 
   # --- State file tamper prevention (SB-008) ──────────────────────────────────
