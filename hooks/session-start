@@ -114,6 +114,33 @@ while true; do
 done
 [[ -z "$sb_project_root" ]] && exit 0
 
+# SB-initiated gate (Wave 0.1): only activate enforcement in projects
+# where silver:init set sb_initiated: true.
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  if ! sb_project_is_initiated "$sb_project_root/.silver-bullet.json"; then
+    exit 0
+  fi
+fi
+
+# Prerequisite probe (Wave 0.2): jq + plugin cache; attempt repair or block.
+if [[ -f "$_lib_dir/prerequisite-probe.sh" ]]; then
+  # shellcheck source=lib/prerequisite-probe.sh
+  source "$_lib_dir/prerequisite-probe.sh"
+  prereq_issues=""
+  if ! prereq_issues="$(sb_prereq_run_probe "$sb_project_root" 2>/dev/null)"; then
+    block_msg="$(sb_prereq_blocking_message "$prereq_issues")"
+    if command -v jq >/dev/null 2>&1; then
+      ctx=$(printf '%s' "$block_msg" | jq -Rs '.')
+      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$ctx"
+    else
+      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"Silver Bullet prerequisites missing — run /silver:init"}}'
+    fi
+    exit 0
+  fi
+fi
+
 # Doc-scheme enforcement requires a session marker. Codex live/e2e runs can
 # reach doc gates without first writing the session mode file that triggers
 # session-log-init.sh, so ensure the marker exists from SessionStart itself.
@@ -215,6 +242,25 @@ elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]
 fi
 # `compact` and `resume` fall through with no state mutation.
 
+# M-02: auto-archive stale active workflows (TTL 7 days) on session startup/clear.
+if [[ "$sb_should_mutate" == true ]]; then
+  wf_dir="$sb_project_root/.planning/workflows"
+  if [[ -d "$wf_dir" && ! -L "$wf_dir" ]]; then
+    stale_ttl=604800
+    now_epoch=$(date +%s)
+    shopt -s nullglob
+    for wf in "$wf_dir"/*.md; do
+      [[ -f "$wf" && ! -L "$wf" ]] || continue
+      wf_mtime=$(stat -f %m "$wf" 2>/dev/null || stat -c %Y "$wf" 2>/dev/null || echo 0)
+      age=$((now_epoch - wf_mtime))
+      if [[ "$age" -gt "$stale_ttl" ]]; then
+        mkdir -p "$wf_dir/.archive" 2>/dev/null || true
+        mv -f "$wf" "$wf_dir/.archive/$(basename "$wf")" 2>/dev/null || true
+      fi
+    done
+    shopt -u nullglob
+  fi
+fi
 
 # Clean up trivial-change bypass from previous session
 # Check config for custom trivial_file path, fall back to default
@@ -292,11 +338,101 @@ fi
 
 # Append core enforcement rules so they survive compaction (Tier 2 rule injection)
 if [[ -f "$core_rules_file" ]]; then
+  _cr_content=""
+  if [[ -f "$_lib_dir/core-rules-integrity.sh" ]]; then
+    # shellcheck source=lib/core-rules-integrity.sh
+    source "$_lib_dir/core-rules-integrity.sh"
+    _cr_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
+    if [[ -z "$_cr_content" ]] && [[ -f "${script_dir}/core-rules.sha256" ]]; then
+      _cr_content="$(sb_core_rules_integrity_warning)"
+    elif [[ -z "$_cr_content" ]]; then
+      _cr_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+    fi
+  else
+    _cr_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+  fi
+  if [[ -n "$_cr_content" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${_cr_content}"
+  fi
+fi
+
+# Capability tier honesty (C-05) + enforcement tier (P1)
+if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
+  # shellcheck source=lib/capability-tier.sh
+  source "$_lib_dir/capability-tier.sh"
+  tier_line="$(sb_capability_tier_banner 2>/dev/null || true)"
+  if [[ -n "$tier_line" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${tier_line}"
+  fi
+fi
+
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck source=lib/enforcement-tier-gate.sh
+  source "$_lib_dir/enforcement-tier-gate.sh"
+  tier_num="$(sb_enforcement_tier_effective "$sb_project_root/.silver-bullet.json")"
+  sb_enforcement_tier_persist "$sb_project_root/.silver-bullet.json" "$tier_num" 2>/dev/null || true
+  et_banner="$(sb_enforcement_tier_session_banner "$tier_num")"
   combined="${combined:+$combined
 
 ---
 
-}$(cat "$core_rules_file")"
+}${et_banner}"
+fi
+
+# Orchestrator directive at session start (P0)
+if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_lib_dir/orchestrator-directive.sh"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+  fi
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    if sb_orchestrator_is_worker_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_WORKER=1
+    elif sb_orchestrator_is_parent_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_PARENT=1
+      parent_ctx="$(sb_orchestrator_parent_context_block 2>/dev/null || true)"
+      if [[ -n "$parent_ctx" ]]; then
+        combined="${combined:+$combined
+
+---
+
+}${parent_ctx}"
+      fi
+    fi
+  fi
+  od_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+  if [[ -n "$od_ctx" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${od_ctx}"
+  fi
+fi
+
+# Cursor host note when tier < 2
+if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
+  if [[ "$(sb_capability_runtime_name 2>/dev/null || echo unknown)" == "cursor" ]] \
+     && [[ "$(sb_capability_tier_number 2>/dev/null || echo 0)" -lt 2 ]]; then
+    combined="${combined:+$combined
+
+---
+
+}Cursor: merge ~/.cursor/hooks.json via skills/silver-init/scripts/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
+  fi
 fi
 
 # If nothing found, silent no-op

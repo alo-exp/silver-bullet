@@ -42,6 +42,18 @@ if [[ -f "$_lib_dir/evidence-schema-gate.sh" ]]; then
   source "$_lib_dir/evidence-schema-gate.sh"
 fi
 
+# shellcheck source=lib/enforcement-tier-gate.sh
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/enforcement-tier-gate.sh"
+fi
+
+# shellcheck source=lib/artifact-substance-gate.sh
+if [[ -f "$_lib_dir/artifact-substance-gate.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/artifact-substance-gate.sh"
+fi
+
 # HOOK-04 (informational half): source the phase-path lib for the
 # `_phase_lock_peek_on_exit` EXIT-trap helper. The trap emits a stderr
 # WARN if the phase resolved from $PWD has no active lock or is owned
@@ -95,23 +107,32 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   source "$_lib_dir/tool-input.sh"
 fi
 
-# jq is required — warn visibly if missing
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
-  exit 0
+# jq is required for enforcement — block delivery/intermediate gates when missing
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
 fi
 
 # Read JSON from stdin
 input=$(cat)
 
-# Detect hook event type (PreToolUse vs PostToolUse)
-hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"')
+# Detect hook event type (PreToolUse vs PostToolUse) — best-effort without jq
+hook_event="PostToolUse"
+if command -v jq >/dev/null 2>&1; then
+  hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"')
+fi
 
 # Emit a block in the correct format for the hook event type
 emit_block() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  if command -v jq >/dev/null 2>&1; then
+    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  elif command -v python3 >/dev/null 2>&1; then
+    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
+  else
+    json_reason='"enforcement blocked"'
+  fi
   sb_hook_audit_record "completion-audit" "$hook_event" "deny" "$reason" "${cmd:-}"
   if [[ "$hook_event" == "PreToolUse" ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
@@ -119,6 +140,14 @@ emit_block() {
     printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_reason" "$json_reason"
   fi
 }
+
+if ! command -v jq >/dev/null 2>&1; then
+  if printf '%s' "$input" | grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b'; then
+    sb_jq_enforcement_block "completion-audit" "emit_block"
+  fi
+  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
+  exit 0
+fi
 
 emit_warn() {
   local reason="$1"
@@ -263,6 +292,12 @@ done
 
 # No config → project not set up with Silver Bullet — silent exit
 [[ -z "$config_file" ]] && exit 0
+
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_is_initiated "$config_file" || exit 0
+fi
 
 # ── Read config values ────────────────────────────────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
@@ -563,8 +598,50 @@ run_doc_scheme_delivery_gate() {
 run_evidence_schema_delivery_gate() {
   local repo_root="$1"
   EVIDENCE_SCHEMA_WARN=""
+  local strict="${SILVER_BULLET_EVIDENCE_SCHEMA_STRICT:-}"
+  if [[ -z "$strict" && -n "${config_file:-}" && -f "$config_file" ]]; then
+    strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+  fi
+  if [[ -z "$strict" ]]; then
+    strict="1"
+  fi
+  case "$strict" in
+    1|true|yes|on) strict="1" ;;
+    *) strict="0" ;;
+  esac
+  export SILVER_BULLET_EVIDENCE_SCHEMA_STRICT="$strict"
   if declare -f sb_evidence_schema_gate_enforce >/dev/null 2>&1; then
     sb_evidence_schema_gate_enforce "delivery" "$repo_root" "capture_evidence_warn" "emit_block"
+  fi
+  return 0
+}
+
+run_enforcement_tier_delivery_gate() {
+  local cfg="${config_file:-}"
+  [[ -n "$cfg" && -f "$cfg" ]] || return 0
+  if [[ "${SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE:-0}" == "1" ]]; then
+    return 0
+  fi
+  if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+    # shellcheck source=lib/sb-project-gate.sh
+    source "$_lib_dir/sb-project-gate.sh"
+    sb_project_is_initiated "$cfg" || return 0
+  fi
+  if declare -f sb_enforcement_tier_delivery_allowed >/dev/null 2>&1; then
+    if ! sb_enforcement_tier_delivery_allowed "$cfg"; then
+      local tier
+      tier="$(sb_enforcement_tier_effective "$cfg")"
+      emit_block "$(sb_enforcement_tier_block_message "$tier")"
+      exit 0
+    fi
+  fi
+  return 0
+}
+
+run_artifact_substance_delivery_gate() {
+  local repo_root="$1"
+  if declare -f sb_artifact_substance_gate_enforce >/dev/null 2>&1; then
+    sb_artifact_substance_gate_enforce "$repo_root" "capture_evidence_warn" "emit_block" "1" "${state_contents:-}"
   fi
   return 0
 }
@@ -652,6 +729,31 @@ if [[ "$is_intermediate" == true ]]; then
     exit 0
   fi
 
+  # VFY-01 plan-boundary: block plan-seal commits without completion-audit since last plan work
+  if printf '%s' "$cmd" | grep -qE 'docs\([0-9]+-[0-9]+\): complete'; then
+    if ! has_skill "silver-completion-audit"; then
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /silver:completion-audit has not been recorded this session.\n\nRun /silver:completion-audit to verify completion claims, then retry the plan-seal commit.')"
+      exit 0
+    fi
+    # VFY-01 extension (P3): require silver-verify + non-stale VERIFICATION.md
+    if ! has_skill "silver-verify"; then
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /silver:verify recorded this session.\n\nRun /silver:verify and refresh VERIFICATION.md before plan-seal commit.')"
+      exit 0
+    fi
+    _pr="$(dirname "$config_file")"
+    [[ -z "$_pr" ]] && _pr="$PWD"
+    vfile=""
+    for candidate in "$_pr/.planning/VERIFICATION.md" "$_pr/.planning/phases"/*/*-VERIFICATION.md; do
+      [[ -f "$candidate" && ! -L "$candidate" ]] || continue
+      vfile="$candidate"
+      break
+    done
+    if [[ -z "$vfile" ]]; then
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — No VERIFICATION.md found under .planning/. Run /silver:verify before plan-seal commit.')"
+      exit 0
+    fi
+  fi
+
   # Planning is done — intermediate commits are allowed
   if [[ -n "$ignored_planning" ]]; then
     ignored_lines=""
@@ -672,9 +774,11 @@ fi
 # repo root = directory of the resolved config_file (or $PWD as fallback).
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
+run_enforcement_tier_delivery_gate
 run_workflow_strict_gate "$project_root"
 run_doc_scheme_delivery_gate "$project_root"
 run_evidence_schema_delivery_gate "$project_root"
+run_artifact_substance_delivery_gate "$project_root"
 
 release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
@@ -816,6 +920,30 @@ elif [[ -n "$required_deploy_cfg" ]]; then
   all_skills="$required_deploy_cfg"
 else
   all_skills="$DEFAULT_REQUIRED"
+fi
+
+# Release commands also require release-only skills (e.g. silver-create-release).
+if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+  release_defaults="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
+  if [[ "$active_workflow" == "devops-cycle" ]]; then
+    release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
+  fi
+  release_cfg=""
+  if command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
+    if [[ "$active_workflow" == "devops-cycle" ]]; then
+      release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
+    else
+      release_cfg=$(jq -r '(.skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
+    fi
+  fi
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    release_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$release_cfg" "$release_defaults")"
+  elif [[ -n "$release_cfg" ]]; then
+    release_skills="$release_cfg"
+  else
+    release_skills="$release_defaults"
+  fi
+  all_skills="$all_skills $release_skills"
 fi
 
 # Deduplicate
@@ -961,7 +1089,7 @@ elif [[ -n "$test_freshness_warning" ]]; then
   emit_block "$msg"
   exit 0
 elif [[ -n "$ordering_issues" ]]; then
-  msg=$(printf '⚠️  ORDERING WARNING — All skills recorded but Code Review Triad ran out of order:\n%s\nConsider re-running the triad in the correct sequence before merging.' "$ordering_issues")
+  msg=$(printf '🛑 ORDERING BLOCKED — Code Review Triad ran out of order:\n%s\nRe-run /silver:review-request → /silver:review → /silver:review-triage before delivery.' "$ordering_issues")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
@@ -969,7 +1097,8 @@ elif [[ -n "$ordering_issues" ]]; then
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
-  jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'
+  emit_block "$msg"
+  exit 0
 elif [[ -n "$artifact_blocks" ]]; then
   msg=$(printf '🛑 ARTIFACT BLOCKED — SB lifecycle markers were recorded but expected output files are missing. This may indicate vacuous skill invocation or an incomplete workflow:\n\n%s\nComplete the owning SB workflow step and produce the artifact before final delivery.' "$artifact_blocks")
   if [[ -n "$ignored" ]]; then

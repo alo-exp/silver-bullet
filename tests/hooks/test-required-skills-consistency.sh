@@ -191,6 +191,11 @@ check "legacy config planning list inherits current SB-owned planning gates" \
 check "current config custom deploy list remains explicit" \
   test "$current_deploy" = "custom-review"
 
+CFG_REQUIRED_RELEASE=$(jq -r '.skills.required_release | .[]' "$CONFIG" | sort -u)
+LIB_REQUIRED_RELEASE=$(printf '%s' "${DEFAULT_RELEASE_REQUIRED:-}" | sort_space)
+check "required_release set matches DEFAULT_RELEASE_REQUIRED" \
+  test "$CFG_REQUIRED_RELEASE" = "$LIB_REQUIRED_RELEASE"
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

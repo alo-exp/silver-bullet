@@ -143,7 +143,7 @@ cmd_start() {
   if [[ -n "$flows_csv" ]]; then
     local IFS=','
     for flow in $flows_csv; do
-      flow=$(printf '%s' "$flow" | tr -d ' ')
+      flow=$(printf '%s' "$flow" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
       [[ -z "$flow" ]] && continue
       flow_rows+=$'| '"$n"$' | '"$flow"$' | pending | - | - |\n'
       n=$((n + 1))
@@ -215,12 +215,13 @@ cmd_complete_flow() {
   local tmp
   tmp=$(mktemp "${f}.XXXXXX")
   awk -v flow="$flow" -v now="$now" '
+    function norm(s) { gsub(/ /, "", s); return s }
     BEGIN { FS = "|"; OFS = "|" }
     /^\| [0-9]+ \|/ {
       # Column 3 is the path/skill (after the leading empty + numeric col).
       name = $3
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
-      if (name == flow) {
+      if (name == flow || norm(name) == norm(flow)) {
         # Replace status column 4 → " complete " and completed col 6 → " <now> "
         sub(/\| pending \| - \| - \|$/, "| complete | - | " now " |", $0)
         # Also handle cases where started has been set but completed is still "-"

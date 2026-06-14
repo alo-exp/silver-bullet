@@ -35,6 +35,12 @@ export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
 export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
 export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
 
+# Prerequisite probe (Wave 0.2) requires a silver-bullet plugin cache directory.
+# session-start re-sources runtime-paths.sh and resets SB_RUNTIME_PLUGIN_CACHE_ROOT,
+# so seed the canonical cache path rather than overriding the env var.
+PLUGIN_CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
+mkdir -p "${PLUGIN_CACHE_DIR}/alo-labs/silver-bullet/test"
+
 cleanup_all() {
   rm -f "$TMPSTATE" "$TMPBRANCH" 2>/dev/null || true
   rm -f "${TMPSTATE}.requested" 2>/dev/null || true
@@ -43,6 +49,7 @@ cleanup_all() {
   rm -f "$RELEASE_LIVE_MATRIX_FILE" "$E2E_LIVE_MATRIX_FILE" 2>/dev/null || true
   rm -f "$QUALITY_GATE_FILE" 2>/dev/null || true
   rm -f "$VERIFY_TESTS_FILE" 2>/dev/null || true
+  rm -rf "${PLUGIN_CACHE_DIR}/alo-labs/silver-bullet/test" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
@@ -57,7 +64,7 @@ run_hook() {
     SILVER_BULLET_STATE_FILE="$TMPSTATE" \
     SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
     SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
-    bash "$HOOK" 2>/dev/null ) || true
+    bash "$HOOK" </dev/null 2>/dev/null ) || true
 }
 
 # Create a minimal git repo directory with a commit so HEAD is valid
@@ -68,6 +75,7 @@ make_git_repo() {
   git -C "$dir" -c user.email="test@test.com" -c user.name="Test" commit -q --allow-empty -m "init" 2>/dev/null
   cat > "$dir/.silver-bullet.json" <<EOF
 {
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "state": {
     "state_file": "${TMPSTATE}",
@@ -445,7 +453,7 @@ rm -f "$REAL_STATE_FILE" 2>/dev/null || true
 ( cd "$HOOK_WORKDIR" && \
   SILVER_BULLET_STATE_FILE="$OUTSIDE_PATH" \
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
-  bash "$HOOK" 2>/dev/null ) || true
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
 # The hook must NOT write to the invalid outside path
 if [[ -f "$OUTSIDE_PATH" ]]; then
   echo "  FAIL: hook wrote to path outside ${SB_RUNTIME_HOME_ROOT}/ — security guard bypassed"
@@ -510,7 +518,7 @@ run_hook_source() {
     SILVER_BULLET_STATE_FILE="$TMPSTATE" \
     SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
     SILVER_BULLET_SESSION_SOURCE="$source" \
-    bash "$HOOK" 2>/dev/null ) || true
+    bash "$HOOK" </dev/null 2>/dev/null ) || true
 }
 
 echo "--- Test #87-A: compact source preserves gsd-* markers ---"

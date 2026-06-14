@@ -154,10 +154,19 @@ assert_passes "trivial bypass allows protected file edit" "$out"
 teardown
 
 # File-based override — uses $OVERRIDE_FILE so EXIT trap covers crash-safe cleanup
+# M-03: override applies to PLAN.md only (not ROADMAP.md)
+setup
+mkdir -p "${TMPDIR_TEST}/.planning/phases/launch-remediation"
+touch "$OVERRIDE_FILE"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/launch-remediation/PLAN.md")
+assert_passes "planning-edit-override file allows PLAN.md edit" "$out"
+rm -f "$OVERRIDE_FILE"
+teardown
+
 setup
 touch "$OVERRIDE_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-assert_passes "planning-edit-override file allows protected file edit" "$out"
+assert_blocks "planning-edit-override does not allow ROADMAP.md edit" "$out"
 rm -f "$OVERRIDE_FILE"
 teardown
 

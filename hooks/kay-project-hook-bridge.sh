@@ -102,11 +102,79 @@ hook_event_name_for_native() {
   esac
 }
 
+native_synthetic_tool_name() {
+  python3 - "$native_event" "$native_payload" <<'PY'
+import json
+import sys
+
+native_event = sys.argv[1]
+try:
+    payload = json.loads(sys.argv[2] or "{}")
+except Exception:
+    payload = {}
+
+if not isinstance(payload, dict):
+    payload = {}
+
+if native_event in {"file.before_write", "file.after_write"}:
+    print("Write")
+    raise SystemExit(0)
+
+if native_event not in {"tool.before", "tool.after"}:
+    print("")
+    raise SystemExit(0)
+
+for key in ("tool_name", "tool", "name", "type"):
+    value = payload.get(key)
+    if value in {"exec_command", "Bash", "Shell", "shell"}:
+        print("exec_command" if value == "exec_command" else "Bash")
+        raise SystemExit(0)
+
+command = payload.get("command")
+if command is None:
+    command = payload.get("cmd")
+if command is None:
+    command = payload.get("argv")
+if isinstance(command, list) and command:
+    entry = str(command[0])
+    if entry in {"exec_command"}:
+        print("exec_command")
+        raise SystemExit(0)
+
+print("Bash")
+PY
+}
+
 synthetic_tool_name_for_native() {
+  local detected
+  detected="$(native_synthetic_tool_name 2>/dev/null || true)"
+  if [[ -n "$detected" ]]; then
+    printf '%s\n' "$detected"
+    return 0
+  fi
   case "$1" in
     tool.before|tool.after) printf 'Bash\n' ;;
     file.before_write|file.after_write) printf 'Write\n' ;;
     *) printf '\n' ;;
+  esac
+}
+
+tool_names_for_hook_matching() {
+  local primary="$1"
+  case "$native_event" in
+    tool.before|tool.after)
+      if [[ "$primary" == "exec_command" ]]; then
+        printf '%s\n' exec_command Bash
+      else
+        printf '%s\n' Bash exec_command
+      fi
+      ;;
+    file.before_write|file.after_write)
+      printf '%s\n' Write Edit MultiEdit apply_patch
+      ;;
+    *)
+      [[ -n "$primary" ]] && printf '%s\n' "$primary"
+      ;;
   esac
 }
 
@@ -132,11 +200,22 @@ try:
 except Exception:
     payload = {}
 
+if not isinstance(payload, dict):
+    payload = {}
+
+command = payload.get("command")
+if command is None:
+    command = payload.get("cmd")
+if command is None:
+    command = payload.get("argv")
+if command is None:
+    command = []
+
 out = {
     "hook_event_name": hook_event_name,
     "tool_name": tool_name,
     "tool_input": {
-        "command": payload.get("command", []),
+        "command": command,
     },
 }
 
@@ -265,18 +344,27 @@ run_matching_hooks() {
   local tool_name="$2"
   local payload_json="$3"
   local matched_json spec command stderr_file stdout_file status reason
+  local -a seen_commands=()
 
   matched_json="$(matching_hook_specs "$event_name" "$tool_name")"
   [[ -n "$matched_json" ]] || matched_json='[]'
-  bridge_debug "matched_hooks=${matched_json}"
+  bridge_debug "matched_hooks tool=${tool_name} hooks=${matched_json}"
 
   while IFS= read -r spec; do
     [[ -n "$spec" ]] || continue
     command="$(printf '%s' "$spec" | jq -r '.command')"
+    [[ -n "$command" ]] || continue
+    if ((${#seen_commands[@]})) && printf '%s\n' "${seen_commands[@]}" | grep -Fqx -- "$command"; then
+      continue
+    fi
+    seen_commands+=("$command")
     stderr_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-stderr.XXXXXX")"
     stdout_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-stdout.XXXXXX")"
 
-    if printf '%s' "$payload_json" | CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" bash -lc "$command" >"$stdout_file" 2>"$stderr_file"; then
+    if printf '%s' "$payload_json" | \
+      CLAUDE_PLUGIN_ROOT="$PLUGIN_ROOT" \
+      SB_KAY_HOOK_BRIDGE_INVOKED=1 \
+      bash -lc "$command" >"$stdout_file" 2>"$stderr_file"; then
       status=0
     else
       status=$?
@@ -298,6 +386,18 @@ run_matching_hooks() {
       BRIDGE_BLOCK_REASON="$reason"
     fi
   done < <(printf '%s' "$matched_json" | jq -c '.[]' 2>/dev/null || true)
+}
+
+run_all_matching_hooks() {
+  local event_name="$1"
+  local primary_tool_name="$2"
+  local payload_json="$3"
+  local matcher_tool_name
+
+  while IFS= read -r matcher_tool_name; do
+    [[ -n "$matcher_tool_name" ]] || continue
+    run_matching_hooks "$event_name" "$matcher_tool_name" "$payload_json"
+  done < <(tool_names_for_hook_matching "$primary_tool_name")
 }
 
 collect_shell_write_targets() {
@@ -472,7 +572,7 @@ PY
 }
 
 shim_directory_for_call() {
-  if [[ "${SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK:-0}" == "1" ]]; then
+  if [[ "${SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK:-1}" == "1" ]]; then
     printf '%s\n' "$ACTIVE_PATH_PREPEND_DIR"
     return 0
   fi
@@ -536,6 +636,45 @@ install_command_shim() {
   esac
 
   install_named_command_shim "$state_path" "$entry_command" "$reason"
+}
+
+apply_denial_filesystem_block() {
+  local state_path="$1"
+  local payload_json="$2"
+  local reason="$3"
+  local targets_file command_str
+
+  : > "$state_path"
+  targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
+  collect_shell_write_targets "$payload_json" | sort -u >"$targets_file"
+  bridge_debug "targets=$(tr '\n' '|' <"$targets_file" 2>/dev/null || true)"
+  if ! apply_permission_block "$state_path" "$targets_file"; then
+    command_str="$(sb_tool_command_string "$payload_json")"
+    bridge_debug "permission_block=failed command_str=${command_str}"
+    install_command_shim "$state_path" "$command_str" "$reason" || true
+  else
+    bridge_debug "permission_block=applied state_path=${state_path}"
+  fi
+  install_mutation_shims "$state_path" "$reason" || true
+  bridge_debug "shim_dir=$(shim_directory_for_call 2>/dev/null || true)"
+  rm -f -- "$targets_file"
+}
+
+apply_file_write_block() {
+  local state_path="$1"
+  local payload_json="$2"
+  local reason="$3"
+  local targets_file file_path
+
+  file_path="$(printf '%s' "$payload_json" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
+  [[ -n "$file_path" ]] || return 0
+
+  : > "$state_path"
+  targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
+  printf '%s\n' "$file_path" >"$targets_file"
+  apply_permission_block "$state_path" "$targets_file" || true
+  install_mutation_shims "$state_path" "$reason" || true
+  rm -f -- "$targets_file"
 }
 
 install_mutation_shims() {
@@ -634,33 +773,19 @@ main() {
   bridge_debug "synthetic_payload=${synthetic_payload}"
 
   BRIDGE_BLOCK_REASON=""
-  run_matching_hooks "$hook_event_name" "$tool_name" "$synthetic_payload"
+  run_all_matching_hooks "$hook_event_name" "$tool_name" "$synthetic_payload"
 
   case "$native_event" in
     tool.before)
       [[ -n "${BRIDGE_BLOCK_REASON:-}" ]] || exit 0
       bridge_debug "block_reason=${BRIDGE_BLOCK_REASON}"
-      if [[ "${SB_KAY_HOOK_BRIDGE_LEGACY_FALLBACK:-0}" == "1" ]]; then
-        : > "$state_path"
-        targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
-        collect_shell_write_targets "$synthetic_payload" | sort -u > "$targets_file"
-        bridge_debug "targets=$(tr '\n' '|' <"$targets_file" 2>/dev/null || true)"
-        if ! apply_permission_block "$state_path" "$targets_file"; then
-          command_str="$(sb_tool_command_string "$synthetic_payload")"
-          bridge_debug "permission_block=failed command_str=${command_str}"
-          install_command_shim "$state_path" "$command_str" "$BRIDGE_BLOCK_REASON" || true
-        else
-          bridge_debug "permission_block=applied state_path=${state_path}"
-        fi
-        install_mutation_shims "$state_path" "$BRIDGE_BLOCK_REASON" || true
-        bridge_debug "shim_dir=$(shim_directory_for_call 2>/dev/null || true)"
-        rm -f -- "$targets_file"
-      fi
+      apply_denial_filesystem_block "$state_path" "$synthetic_payload" "$BRIDGE_BLOCK_REASON"
       bridge_block_denied_tool "$BRIDGE_BLOCK_REASON"
       ;;
     file.before_write)
       [[ -n "${BRIDGE_BLOCK_REASON:-}" ]] || exit 0
       bridge_debug "block_reason=${BRIDGE_BLOCK_REASON}"
+      apply_file_write_block "$state_path" "$synthetic_payload" "$BRIDGE_BLOCK_REASON"
       bridge_block_denied_tool "$BRIDGE_BLOCK_REASON"
       ;;
     tool.after|file.after_write)

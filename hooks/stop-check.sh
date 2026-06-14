@@ -32,16 +32,16 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   source "$_lib_dir/runtime-paths.sh"
 fi
 
-# jq is required — warn visibly if missing
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install it: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
-  # Fail-open by design: without jq we cannot parse config; print a visible
-  # warning so the user knows enforcement is off.
-  exit 0
+# jq is required — block Stop enforcement when missing inside SB projects
+_lib_dir_early="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir_early=""
+if [[ -f "$_lib_dir_early/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir_early/jq-gate.sh"
 fi
 
-# Read JSON from stdin (consumed per hook protocol; content not used by stop-check)
-cat >/dev/null
+# Read JSON from stdin (hook event + optional context)
+stop_input="$(cat 2>/dev/null || true)"
+stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 # Intentionally overrides the silent ERR trap set at line 3 — this hook
@@ -66,6 +66,25 @@ done
 # No config → project not set up with Silver Bullet.
 # Fail-open by design: stop-check is a no-op for non-SB projects.
 [[ -z "$config_file" ]] && exit 0
+
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_is_initiated "$config_file" || exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  msg="$(sb_jq_missing_message 2>/dev/null || printf '%s' 'jq required for Silver Bullet enforcement')"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$msg" <<'PY'
+import json, sys
+print(json.dumps({"decision": "block", "reason": sys.argv[1]}))
+PY
+  else
+    printf '{"decision":"block","reason":"jq required for Silver Bullet enforcement"}'
+  fi
+  exit 0
+fi
 
 # ── Read config values ────────────────────────────────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
@@ -152,6 +171,70 @@ if [[ -f "$lib_dir/trivial-bypass.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/trivial-bypass.sh"
   sb_trivial_bypass "$trivial_file"
+fi
+
+# Orchestrator parent mode — parent Stop blocked while flow queue pending; worker SubagentStop clears marker.
+  if [[ -f "$lib_dir/orchestrator-parent.sh" ]]; then
+  # shellcheck source=lib/orchestrator-parent.sh
+  source "$lib_dir/orchestrator-parent.sh"
+  if [[ -f "$lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$lib_dir/orchestrator-state.sh"
+  fi
+  if [[ -f "$lib_dir/orchestrator-directive.sh" ]]; then
+    # shellcheck source=lib/orchestrator-directive.sh
+    source "$lib_dir/orchestrator-directive.sh"
+  fi
+  if [[ "$stop_hook_event" == "SubagentStop" ]] \
+    && { [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" ]] || [[ "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]]; }; then
+    sb_orchestrator_clear_worker_marker 2>/dev/null || true
+    exit 0
+  fi
+  if [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] \
+    && sb_orchestrator_is_parent_session 2>/dev/null \
+    && sb_orchestrator_parent_queue_pending 2>/dev/null; then
+    cur_flow=""
+    orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"
+    [[ -f "$orch_file" ]] && cur_flow="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
+    tmpl=""
+    next_skill=""
+    directive_file="$(sb_orchestrator_directive_file 2>/dev/null || true)"
+    if [[ -n "$directive_file" && -f "$directive_file" ]]; then
+      tmpl="$(jq -r '.next_worker_template // ""' "$directive_file" 2>/dev/null || true)"
+      next_skill="$(jq -r '.next_skill // ""' "$directive_file" 2>/dev/null || true)"
+    fi
+    if [[ -z "$next_skill" && -n "$cur_flow" ]]; then
+      next_skill="$(sb_orchestrator_flow_to_skill "$cur_flow" 2>/dev/null || true)"
+    fi
+    parent_reason="Orchestrator parent: flow queue pending (${cur_flow:-unknown}). Spawn Task worker (${tmpl:-WORKER}.md) for /${next_skill:-next-skill} before ending session."
+    json_reason=$(printf '%s' "$parent_reason" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s}' "$json_reason"
+    exit 0
+  fi
+fi
+
+# L-04: block Stop when autonomous stall flag is set (100+ tool calls, no skill progress).
+stall_block_file="${SB_STATE_DIR}/stall-block"
+if [[ -f "$stall_block_file" && ! -L "$stall_block_file" ]]; then
+  session_start_epoch=""
+  if [[ -n "${SILVER_BULLET_SESSION_START_FILE:-}" && -f "${SILVER_BULLET_SESSION_START_FILE}" ]]; then
+    session_start_epoch=$(cat "${SILVER_BULLET_SESSION_START_FILE}" 2>/dev/null || true)
+  elif [[ -f "${SB_STATE_DIR}/session-start-time" ]]; then
+    session_start_epoch=$(cat "${SB_STATE_DIR}/session-start-time" 2>/dev/null || true)
+  fi
+  stall_mtime=0
+  if [[ "$(uname)" == "Darwin" ]]; then
+    stall_mtime=$(stat -f %m "$stall_block_file" 2>/dev/null || echo 0)
+  else
+    stall_mtime=$(stat -c %Y "$stall_block_file" 2>/dev/null || echo 0)
+  fi
+  if [[ -z "$session_start_epoch" || ! "$session_start_epoch" =~ ^[0-9]+$ || "$stall_mtime" -ge "$session_start_epoch" ]]; then
+    stall_count=$(cat "$stall_block_file" 2>/dev/null || echo "100")
+    stall_reason="Autonomous stall detected: ${stall_count} tool calls without workflow progress. Invoke the next SB skill before declaring done."
+    json_reason=$(printf '%s' "$stall_reason" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s}' "$json_reason"
+    exit 0
+  fi
 fi
 
 # ── Detect current git branch ─────────────────────────────────────────────────
@@ -454,8 +537,12 @@ stored_state_branch=""
 if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
   stored_state_branch=$(head -1 "$sb_branch_file" 2>/dev/null | tr -d '\n' || true)
 fi
+# M-04: branch mismatch — warn visibly instead of silent fail-open.
 if [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
+  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Run a fresh session-start on this branch before declaring done."
+  json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
+  printf '{"decision":"block","reason":%s}' "$json_warn"
   exit 0
 fi
 

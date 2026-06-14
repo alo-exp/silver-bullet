@@ -7,11 +7,11 @@ argument-hint: "<description of the bug or failure>"
 version: 0.1.0
 ---
 
-# /silver:bugfix — Bug, Regression, Test Failure Workflow
+# /silver:bugfix — Bugfix Composition Spec
 
-SB orchestrator for bugs, regressions, crashes, errors, and failing tests. Enforces triage-first discipline: classify the failure type before any investigation begins.
+SB **queue builder** for bugs and regressions. Parent orchestrator spawns Task workers per flow — does not fix inline.
 
-Never implements fixes directly — orchestrates only.
+Never implements fixes directly — composition spec only.
 
 ## Pre-flight: Load Preferences
 
@@ -63,18 +63,12 @@ Display the composition proposal to the user:
 SILVER BULLET ► FLOW COMPOSED
 Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP
 Skipped: BOOTSTRAP — .planning/ exists
-Approve composition? [Y/n]
-```
+### 3. Autonomous composition (default)
 
-### 4. Auto-Confirm in Autonomous Mode
+Do **not** ask `Approve composition?`. Log: `SB ► bugfix composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
+### 5. Legacy manual workflow start (fallback only)
 
 Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
 The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the

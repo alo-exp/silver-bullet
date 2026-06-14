@@ -7,9 +7,9 @@ argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.1.0
 ---
 
-# /silver:devops — Infrastructure, CI/CD, IaC, Cloud Workflow
+# /silver:devops — Infrastructure Composition Spec
 
-SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work. SB owns phase planning, execution, verification, review, security, and ship. Provider/tool-specific DevOps plugins remain optional enrichment through `devops-skill-router`.
+SB **queue builder** for infra/CI/CD/IaC work. Parent orchestrator seeds the queue and spawns Task workers — does not execute inline.
 
 **Key design principles:**
 - No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
@@ -18,7 +18,7 @@ SB Agentic Process Orchestrator for infra, CI/CD, pipelines, Terraform, IaC, Kub
 
 **The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, observability, change-safety. (Usability omitted because infra has no direct user interface; reusability/extensibility are covered by modularity/change-safety in IaC.)
 
-Never implements infra changes directly — orchestrates only.
+Never implements infra changes directly — composition spec only.
 
 ## Pre-flight: Load Preferences
 
@@ -73,18 +73,12 @@ Display the composition proposal to the user:
 SILVER BULLET ► FLOW COMPOSED
 Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP
 Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra
-Approve composition? [Y/n]
-```
+### 3. Autonomous composition (default)
 
-### 4. Auto-Confirm in Autonomous Mode
+Do **not** ask `Approve composition?`. Log: `SB ► devops composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
+### 5. Legacy manual workflow start (fallback only)
 
 Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
 The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the

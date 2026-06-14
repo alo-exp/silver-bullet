@@ -93,7 +93,24 @@
           },
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Task|Subagent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -102,6 +119,12 @@
       {
         "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
@@ -119,6 +142,12 @@
       {
         "matcher": "exec_command",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
@@ -161,6 +190,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+            "async": false,
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
             "async": false,
             "timeout": 10
@@ -183,6 +218,12 @@
       {
         "matcher": "exec_command",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+            "async": false,
+            "timeout": 5
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
@@ -235,6 +276,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -246,6 +293,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -377,6 +430,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
             "async": false,
             "timeout": 10
@@ -393,6 +457,17 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
             "async": false,
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -421,6 +496,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-reminder.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
             "async": false,
             "timeout": 10
           }

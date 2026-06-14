@@ -93,7 +93,7 @@ write_default_config
 run_record_skill "silver-context" >/dev/null
 run_record_skill "silver-quality-gates" >/dev/null
 run_record_skill "silver-plan" >/dev/null
-run_record_skill "silver-create-release" >/dev/null
+run_record_skill "silver-completion-audit" >/dev/null
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_allowed "S6.1: edit allowed so phase-skip fixes can proceed" "$out"
 assert_contains "S6.2: warns final delivery remains blocked" "$out" "final delivery remains blocked"
