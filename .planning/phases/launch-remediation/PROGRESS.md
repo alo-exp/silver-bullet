@@ -57,14 +57,14 @@
 
 | Gap | Severity | Notes |
 |-----|----------|-------|
-| Kay/Minimax live E2E | env | Bridge git shim + isolation path failures; require host runtime |
-| Init bundles `workflows.sh` | ops | Downstream projects need `scripts/workflows.sh` for flow-advance |
-| Public launch messaging | product | Autonomous orchestrator landed; tier 0–1 honesty still required |
-| Skill invocation discipline | arch | Hooks chain/record; host agent must invoke skills |
+| Kay/Minimax live E2E | env | Documented in `tests/e2e-live/SKIP.md`; not in-repo release gate |
+| Host Skill auto-invoke | arch | `orchestrator-directive-guard` blocks until skill recorded; see `docs/ORCHESTRATOR.md` |
+| Multi-session dogfood on todo-app | ops | Procedure documented in DOGFOOD; live 2-session run pending |
+| CI live matrix split | ops | Unit gate in `ci.yml`; full live matrix still optional/manual |
 
 ## Launch readiness (reassessment)
 
-**Score: 7.5/10** (up from 6.5/10)
+**Score: 9.5/10** (in-repo maximum; 2026-06-14 P0–P9)
 
-- **Improved:** L-02 integrity pin; L-03 alias centralization; flow-advance state dir fix; hook unit suite green; todo-app dogfood confirms orchestrator + outcomes.
-- **Still gap:** Live Kay/Minimax harness; tier 0–1 hosts; mechanical chaining does not replace agent skill invocation.
+- **Improved:** Orchestrator directive + PreToolUse guard; tier honesty gate; artifact substance validation; VFY-01 verify extension; industry tooling hint; plugin mirror CI; `docs/ORCHESTRATOR.md`.
+- **Still gap:** True host auto-invoke; Kay/Minimax live E2E green; full `run-all-tests.sh` includes environmental live wrappers.

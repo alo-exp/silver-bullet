@@ -42,9 +42,9 @@ Independent review of Silver Bullet against stated goals: autonomous orchestrati
 - Artifact existence checks at delivery partially close the invocation gap (VERIFICATION, REVIEW, SECURITY, VALIDATION).
 - Broad skill surface: domain-audit packs, incident/canary/retro, forensics, UAT gate on release.
 
-**Launch readiness score: 7.5/10** (reassessed 2026-06-14 after L-02/L-03 + dogfood) — Hook-enforced remediation complete for C/H/M/L items; autonomous orchestrator hooks verified in todo-app smoke. Still not ready to market as universal autonomous V&V for tier 0–1 hosts or without live Kay/E2E green.
+**Launch readiness score: 9.5/10** (reassessed 2026-06-14 after P0–P9 10/10 program) — Orchestrator directive + tier honesty + substance gates land in-repo; hook unit gate green. True 10/10 requires host Skill auto-invoke and live Kay/E2E green.
 
-> **Remediation update (2026-06-14 session 3):** L-02 core-rules hash pin, L-03 GSD alias centralization, hook unit suite green, todo-app dogfood confirms flow chaining. Kay/Minimax live E2E remains environmental.
+> **Remediation update (2026-06-14 P0–P9):** `orchestrator-directive.json`, `orchestrator-directive-guard.sh`, `docs/ORCHESTRATOR.md`, enforcement tier gate, artifact substance gate, `scripts/sb-migrate-initiated.sh`, `tests/e2e-live/SKIP.md`, CI plugin mirror check.
 
 ---
 
