@@ -123,7 +123,7 @@ integration_setup
 write_default_config
 
 # Write all skills except delivery finalization
-printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review-request\nsilver-review\nsilver-review-triage\nsilver-tdd\nsilver-completion-audit\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\nsilver-review-request\nsilver-review\nsilver-review-triage\ntdd\nsilver-completion-audit\n' > "$TMPSTATE"
 
 # PR still blocked
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
@@ -131,7 +131,7 @@ assert_blocked "S6.1: PR create blocked before finalization" "$out"
 
 # Record remaining required deploy skills
 for skill in silver-execute silver-verify silver-ship silver-secure silver-validate \
-             silver-branch-finish silver-create-release verify-tests; do
+             silver-branch-finish verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 seed_gsd_lifecycle_artifacts
@@ -162,6 +162,7 @@ write_e2e_live_matrix_marker
 write_inline_e2e_matrix_marker
 write_quality_gate_state_marker
 write_release_ci_runs_marker
+run_record_skill "silver-create-release" >/dev/null
 out=$(run_completion_audit "PreToolUse" "gh release create v1.0.0")
 assert_allowed "S7.1: release allowed with all skills" "$out"
 
@@ -177,6 +178,7 @@ integration_setup
 write_default_config
 
 write_all_skills
+run_record_skill "silver-create-release" >/dev/null
 
 out=$(run_compliance_status)
 assert_contains "S8.1: PLANNING 3/3 complete" "$out" "PLANNING 3/3"
