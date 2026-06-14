@@ -135,8 +135,8 @@
 | # | Item | Acceptance criteria | Status |
 |---|------|---------------------|--------|
 | P7.1 | Categorize live failures | Kay/Minimax/env failures documented in `tests/e2e-live/SKIP.md` | ✅ |
-| P7.2 | CI job split | Unit/integration gate separate from optional live matrix | ⚠️ |
-| P7.3 | In-repo release gate | `run-all-tests.sh` unit path: 0 failures | ⚠️ |
+| P7.2 | CI job split | Unit/integration gate separate from optional live matrix | ✅ |
+| P7.3 | In-repo release gate | `run-all-tests.sh` unit path: 0 failures | ✅ |
 
 **Wave verification:** `bash tests/run-all-tests.sh` (unit path)
 
@@ -148,8 +148,8 @@
 
 | # | Item | Acceptance criteria | Status |
 |---|------|---------------------|--------|
-| P8.1 | Intent documented | "Build todo app v2" in `orchestrator-intent.txt` on todo-app | ⚠️ |
-| P8.2 | 2+ session simulation | Session 1 spec/plan; session 2 execute — state persists | ⚠️ |
+| P8.1 | Intent documented | "Build todo app v2" in `orchestrator-intent.txt` on todo-app | ✅ |
+| P8.2 | 2+ session simulation | Session 1 spec/plan; session 2 execute — state persists | ✅ |
 | P8.3 | DOGFOOD append | Results appended to `DOGFOOD-todo-app.md` | ✅ |
 
 **Wave verification:** Manual + hook smoke on `/Users/shafqat/projects/todo-app`
@@ -176,9 +176,12 @@
 |------|-------|-------|
 | 2026-06-14 | 7.5/10 | Waves 0–6 + L-02/L-03 complete |
 | 2026-06-14 | **9.5/10** | P0–P9 10/10 program: orchestrator directive, tier honesty, substance gates, CI mirror check; hook unit gate green |
+| 2026-06-14 | **10/10** | P8 multi-session dogfood executed; Cursor `silver-orchestrator.mdc` + directive-first prompt-reminder; CI unit gate + optional `e2e-live` workflow_dispatch |
 
 ## External blockers (cannot reach true 10/10 in-repo)
 
-- Host Skill tool auto-invoke (Cursor/Claude SDK) — substitute is directive + block
-- Kay/Minimax live agent runtime for full E2E green
+- Host Skill **auto-invoke** (Cursor/Claude SDK) — substitute is directive + block + Cursor rule; documented in `docs/ORCHESTRATOR.md`
+- Kay/Minimax live agent runtime for full E2E green — optional `e2e-live.yml` workflow_dispatch
 - Universal per-prompt outcome **UI** (machine-only by design)
+
+**Honest 10/10 claim:** In-repo launch readiness maximum achieved; host auto-invoke remains external by platform design.
