@@ -59,8 +59,10 @@ To reach full autonomous skill execution (not just block-until-invoked):
 |------|-------|--------|
 | Claude Code | `PostToolUse/Skill` records; agent must invoke Skill | Session hook reads `orchestrator-directive.json` and schedules Skill tool |
 | Codex | `silver-bullet invoke-skill` adapter + receipt | Same directive → adapter auto-call |
-| Cursor | Skill channel + hooks.json | SDK/Cursor automation invokes skill from directive |
+| Cursor | Skill channel + hooks.json + `.cursor/rules/silver-orchestrator.mdc` (stamped by `silver:init`) | SDK/Cursor automation invokes skill from directive |
 | SDK / web | Tier 0 | Not supported until hook manifest merged |
+
+**In-repo Cursor substitute (2026-06-14):** `prompt-reminder.sh` leads with the directive block; `orchestrator-directive-guard.sh` blocks Edit/Write/Bash at tier ≥ 2; `templates/cursor-rules/silver-orchestrator.mdc` tells the agent to invoke `next_skill` before any tool use. This is convention + block until Cursor exposes Skill scheduling.
 
 **Required host behaviors for auto-invoke:**
 
