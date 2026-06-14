@@ -91,6 +91,13 @@ main() {
   fi
 
   runtime_home="$(detect_runtime_home)"
+  # detect_runtime_home sources runtime-paths in a subshell when invoked via $();
+  # re-source here so SB_RUNTIME_NAME/SB_RUNTIME_STATE_DIR persist for reporting.
+  if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+    # shellcheck source=../hooks/lib/runtime-paths.sh
+    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+    runtime_home="${SB_RUNTIME_HOME_ROOT}"
+  fi
   state_dir="${SB_RUNTIME_STATE_DIR:-${runtime_home}/.silver-bullet}"
 
   if [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null; then
