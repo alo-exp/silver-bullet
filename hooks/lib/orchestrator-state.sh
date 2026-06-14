@@ -139,6 +139,16 @@ sb_orchestrator_seed_intent() {
       updated_at: $now
     }' 2>/dev/null || true)"
   [[ -n "$doc" ]] && sb_orchestrator_write_json "$doc"
+
+  local _od_lib
+  _od_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-directive.sh"
+  if [[ -f "$_od_lib" ]]; then
+    # shellcheck source=lib/orchestrator-directive.sh
+    source "$_od_lib"
+    local first_skill
+    first_skill="$(sb_orchestrator_flow_to_skill "$(printf '%s' "$queue_csv" | cut -d, -f1)")"
+    sb_orchestrator_directive_write "$first_skill" "$intent" "Composer ${composer} started — invoke first queued flow" true
+  fi
 }
 
 sb_orchestrator_on_composer_start() {
@@ -238,6 +248,28 @@ sb_orchestrator_advance_on_atom() {
 
   if [[ -n "$next_flow" ]]; then
     msg="SB orchestrator ► Next flow: ${next_flow} (auto-chained; invoke without user prompt)"
+    if [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
+      # shellcheck source=lib/orchestrator-directive.sh
+      source "${_lib_dir}/orchestrator-directive.sh"
+      local next_skill args intent
+      next_skill="$(sb_orchestrator_flow_to_skill "$next_flow")"
+      intent="$(jq -r '.active_intent // ""' "$file" 2>/dev/null || true)"
+      sb_orchestrator_directive_write "$next_skill" "$intent" "Flow ${atom_skill} complete — orchestrator queued ${next_flow}" true
+    elif [[ -f "$(dirname "${BASH_SOURCE[0]}")/orchestrator-directive.sh" ]]; then
+      # shellcheck source=lib/orchestrator-directive.sh
+      source "$(dirname "${BASH_SOURCE[0]}")/orchestrator-directive.sh"
+      next_skill="$(sb_orchestrator_flow_to_skill "$next_flow")"
+      intent="$(jq -r '.active_intent // ""' "$file" 2>/dev/null || true)"
+      sb_orchestrator_directive_write "$next_skill" "$intent" "Flow ${atom_skill} complete — orchestrator queued ${next_flow}" true
+    fi
     printf '%s' "$msg"
+  else
+    if [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
+      source "${_lib_dir}/orchestrator-directive.sh"
+      sb_orchestrator_directive_clear
+    elif [[ -f "$(dirname "${BASH_SOURCE[0]}")/orchestrator-directive.sh" ]]; then
+      source "$(dirname "${BASH_SOURCE[0]}")/orchestrator-directive.sh"
+      sb_orchestrator_directive_clear
+    fi
   fi
 }

@@ -93,6 +93,12 @@
           },
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
             "async": false,
             "timeout": 10
@@ -102,6 +108,12 @@
       {
         "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
@@ -159,6 +171,12 @@
       {
         "matcher": "Bash",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
+            "async": false,
+            "timeout": 5
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
