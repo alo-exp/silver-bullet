@@ -22,10 +22,20 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json plugins/silver-bullet/.cursor-plugin/plugin.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
             jq empty "$f" || { echo "Invalid JSON: $f"; exit 1; }
             echo "Valid: $f"
           done
+
+      - name: Check Cursor marketplace.json version matches plugin.json
+        run: |
+          plugin_v=$(jq -r '.version' .cursor-plugin/plugin.json)
+          market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' .cursor-plugin/marketplace.json)
+          if [[ "$plugin_v" != "$market_v" ]]; then
+            echo "::error::Cursor version drift — plugin.json=$plugin_v, marketplace.json=$market_v"
+            exit 1
+          fi
+          echo "Cursor marketplace versions match: $plugin_v"
 
       - name: Check plugin.json version vs latest git tag
         continue-on-error: true
@@ -97,6 +107,13 @@ jobs:
             bash "$f" || { echo "FAILED: $name"; fail=1; }
           done
           exit $fail
+
+      - name: Cursor runtime smoke (install, hooks, diagnostics)
+        run: |
+          bash scripts/release-live-matrix-cursor-smoke.sh
+        env:
+          SILVER_BULLET_RUNTIME: cursor
+          SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER: "0"
 
       - name: Run script unit tests
         run: |
