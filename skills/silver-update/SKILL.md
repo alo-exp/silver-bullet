@@ -103,11 +103,11 @@ Display:
 
 ⚠️  **Note:** The update installs the new release via the active host's marketplace or package manager.
 On Codex, use the repo's Codex package refresh path instead of the Claude marketplace command.
-Your project files (CLAUDE.md, silver-bullet.md, hooks, config) are never
+Your project files (project instruction file, silver-bullet.md, hooks, config) are never
 touched — only the active host's plugin cache and registry are updated.
 ```
 
-Use AskUserQuestion:
+Ask the user directly:
 - Question: "Proceed with update to vA.B.C?"
 - Options:
   - "A. Yes, update now" — install via marketplace and clean up stale entries

@@ -257,7 +257,7 @@ assert_path_absent "Third-party plugins excluded from SB bundle" "$PACKAGE_ROOT/
 assert_path_absent "Project planning tree excluded from SB bundle" "$PACKAGE_ROOT/.planning"
 
 for rel_path in "${SOURCE_ASK_USER_FILES[@]}"; do
-  assert_contains "Source retains AskUserQuestion in $rel_path" "AskUserQuestion" "$REPO_ROOT/$rel_path"
+  assert_not_contains "Canonical source avoids AskUserQuestion in $rel_path" "AskUserQuestion" "$REPO_ROOT/$rel_path"
 done
 
 assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"

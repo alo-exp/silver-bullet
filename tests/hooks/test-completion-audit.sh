@@ -725,6 +725,45 @@ unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
 assert_passes "release passes with codex-only live markers when legacy override is set" "$out"
 teardown
 
+# Test 13c-b: gh release create passes with cursor-smoke release marker + codex-only e2e
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+requesting-code-review
+gsd-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+verify-tests
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=cursor-smoke
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+quality-gate-stage-1
+quality-gate-stage-2
+quality-gate-stage-3
+quality-gate-stage-4
+full-test-suite-rerun
+EOF
+write_verify_tests_state
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "release passes with cursor-smoke live markers" "$out"
+teardown
+
 # Test 13d: gh release create blocked when the latest CI run is still in progress
 setup
 cat > "$TMPSTATE" << 'EOF'
