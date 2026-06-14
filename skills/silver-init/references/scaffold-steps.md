@@ -121,6 +121,17 @@ cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .cursor/rules
 
 Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).
 
+### 3.2.2 Install orchestrator worker templates
+
+Copy worker prompt templates for parent-mode Task delegation:
+
+```bash
+mkdir -p .silver-bullet/orchestrator-workers
+cp -R "${PLUGIN_ROOT}/templates/orchestrator-workers/." .silver-bullet/orchestrator-workers/
+```
+
+Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported mode).
+
 ### 3.2.5 CI setup
 
 Check if a GitHub Actions CI workflow exists:

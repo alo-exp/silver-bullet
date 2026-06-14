@@ -3,6 +3,7 @@
   "version": "0.40.0",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
+  "orchestrator_mode": "parent",
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -106,6 +107,7 @@
       "silver-validate",
       "silver-add",
       "silver-init",
+      "silver-orchestrator",
       "silver-ensure-docs",
       "silver-bootstrap-project",
       "silver-bootstrap-milestone",
