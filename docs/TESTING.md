@@ -210,3 +210,12 @@ Do **not** test:
 - The markdown prose inside workflow/skill files (no executable logic)
 - Third-party plugin hooks (GSD, Superpowers enforce their own behavior)
 - Trivial config scaffolding (placeholder presence is already tested in CI)
+
+## Session note (2026-06-14)
+
+Doc-scheme gate remediation for `phase-056-zuvo-runtime-parity-release` in a Cursor session did not change test commands, harness layout, or coverage targets; prior v0.39.2 `run-all-tests.sh` stdin guidance remains authoritative.
+
+## Doc-scheme session (2026-06-14)
+
+Task `phase-056-zuvo-runtime-parity-release`: v0.39.3 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
+
