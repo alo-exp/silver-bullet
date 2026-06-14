@@ -10,9 +10,10 @@
 |---------|--------------|-------------|
 | Claude Code (with Silver Bullet plugin) | `claude` | Hooks (`hooks/phase-lock-claim.sh` etc.) |
 | Codex-SB | `codex` | Codex hooks and SB package |
+| Cursor-SB | `cursor` | Cursor `hooks.json` bridge + SB package |
 | OpenCode-SB | `opencode` | OpenCode-compatible integration |
 
-Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bullet.json` (default: the three above). Adding a new runtime requires registering its tag and integrating it with the same `phase-lock.sh` helper.
+Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bullet.json` (default: `claude`, `codex`, `cursor`, and `opencode`). Adding a new runtime requires registering its tag and integrating it with the same `phase-lock.sh` helper.
 
 ## Lock state machine
 
