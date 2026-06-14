@@ -138,6 +138,21 @@ bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
 documented in `docs/RUNTIME-COMPATIBILITY.md`.
 
+### 1.1c Host runtime install (advisory)
+
+Confirm Silver Bullet is installed for the active host before project init:
+
+| Host | Normal install | Development checkout |
+|------|----------------|----------------------|
+| Claude Code | Add marketplace `https://github.com/alo-labs/claude-plugins`, then `/plugin install silver-bullet@alo-labs` | `bash scripts/install-claude.sh` |
+| Codex | Public `alo-labs/codex-plugins` marketplace via `bash scripts/install-codex.sh --public-release` | `bash scripts/install-codex.sh --purge-legacy-skills` |
+| Cursor | Add marketplace `https://github.com/alo-labs/alo-labs-cursor-marketplace`, install `silver-bullet`, or run `bash scripts/install-cursor.sh --public-release` | `bash scripts/install-cursor.sh` |
+
+After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
+`bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
+runtime tier. Cursor stores SB state under `$HOME/.codex/.silver-bullet/` and
+merges hooks into `$HOME/.codex/hooks.json`.
+
 ### 1.2 Optional legacy plugin discovery
 
 Legacy lifecycle-overlap plugins are no longer hard requirements for SB
@@ -174,6 +189,7 @@ At most output a short note:
 Keep bootstrap terminology aligned to the current runtime:
 - In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - In Claude, `CLAUDE.md` remains the familiar project instruction filename.
+- In Cursor, hooks live in `$HOME/.codex/hooks.json`; skills are invoked through the Cursor runtime-native skill invocation channel or `silver-bullet invoke-skill`.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
 - If a legacy lifecycle plugin is present but flaky, do not fail bootstrap. SB-owned lifecycle
   behavior is the default path.
@@ -579,7 +595,7 @@ it thereafter.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
-- **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
+- **3.7.5 Register SB hooks in the host settings file**: resolve install path from `installed_plugins.json` or `$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current`, then run `python3 "${CURSOR_PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"` on Cursor or `python3 "${CLAUDE_PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"` on Claude/Codex user-hook surfaces. Idempotent. On nonzero exit, warn but do not stop init. The merge keeps the hooks on the active host settings path and removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
 
@@ -594,3 +610,4 @@ it thereafter.
 ### Scripts
 
 - **`scripts/merge-hooks.py`** — Idempotent hook merge script for Phase 3.7.5 (substitutes CLAUDE_PLUGIN_ROOT, deduplicates entries)
+- **`scripts/merge-cursor-hooks.py`** — Cursor hook merge for `$HOME/.codex/hooks.json` (substitutes CURSOR_PLUGIN_ROOT)

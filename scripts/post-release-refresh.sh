@@ -21,5 +21,7 @@ run_refresh() {
 
 run_refresh "Claude" "$CLAUDE_INSTALL_SCRIPT" --purge-legacy-plugins --public-release
 run_refresh "Codex" "$CODEX_INSTALL_SCRIPT" --purge-legacy-skills --public-release
+CURSOR_INSTALL_SCRIPT="${SB_POST_RELEASE_CURSOR_INSTALL_SCRIPT:-${SCRIPT_DIR}/install-cursor.sh}"
+run_refresh "Cursor" "$CURSOR_INSTALL_SCRIPT" --public-release
 
-printf '[post-release-refresh] ✓ Public marketplace refresh complete for Claude and Codex\n'
+printf '[post-release-refresh] ✓ Public marketplace refresh complete for Claude, Codex, and Cursor\n'

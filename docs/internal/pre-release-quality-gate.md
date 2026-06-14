@@ -172,6 +172,10 @@ the normal release prerequisite. A broader full Claude/native-Codex parity run
 is still accepted when explicitly requested, but it is no longer required to
 cut a release.
 
+Optional Cursor smoke (install, hook merge, diagnostics, cursor hook unit tests;
+no live Cursor agent session): `bash scripts/release-live-matrix-cursor-smoke.sh`
+writes `matrix=cursor-smoke` when enabled. CI runs this smoke path on every push.
+
 If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
 issue, ambiguous design decision), log it under "Needs human review" and surface
 to the user before proceeding to the next stage.

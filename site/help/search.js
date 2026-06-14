@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or the public alo-labs/codex-plugins Codex marketplace package. The checkout installer ./scripts/install-codex.sh --purge-legacy-skills is for Silver Bullet development. Codex exposes native /silver: picker entries and hides packaged skill-source files from duplicate plugin listings. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. After public releases, scripts/post-release-refresh.sh refreshes local installs from public marketplaces. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
