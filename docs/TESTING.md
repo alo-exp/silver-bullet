@@ -219,3 +219,22 @@ Doc-scheme gate remediation for `phase-056-zuvo-runtime-parity-release` in a Cur
 
 Task `phase-056-zuvo-runtime-parity-release`: v0.39.3 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
 
+
+## Cursor runtime bootstrap (v0.39.3 / phase 057)
+
+Phase 057 adds targeted coverage for the Cursor host adapter:
+
+| Area | What it proves | Location |
+|------|----------------|----------|
+| Runtime paths | `$HOME/.cursor/.silver-bullet` state + hook manifest resolution | `tests/hooks/test-runtime-paths.sh` (cursor cases) |
+| Bootstrap / install | Marketplace sync, plain-file template layout, local git identity on CI | `tests/scripts/test-cursor-runtime-bootstrap.sh` |
+| Hook bridge | Cursor `exec_command` / patch events reach SB PreToolUse hooks | `tests/hooks/test-cursor-hook-bridge.sh` |
+
+Run the focused slice before release:
+
+```bash
+bash tests/scripts/test-cursor-runtime-bootstrap.sh
+bash tests/hooks/test-cursor-hook-bridge.sh
+```
+
+Full suite still gates delivery via `/verify-tests` → `tests/run-all-tests.sh` (stdin closed per test).
