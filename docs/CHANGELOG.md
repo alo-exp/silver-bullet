@@ -169,3 +169,21 @@
 **Skills run**: quality-gates, test-driven-development, code-review, requesting-code-review, receiving-code-review, testing-strategy, tech-debt, documentation
 **Virtual cost**: ~$1.20 (Sonnet, complex — 3 review passes, 2 plans, multiple doc updates)
 **KNOWLEDGE.md**: updated (architecture patterns, known gotchas, key decisions, recurring patterns, open questions)
+
+## 2026-06-14 — phase-056-zuvo-runtime-parity-release (cursor doc-scheme)
+**What**: Cursor-session doc-scheme gate pass for v0.39.3 — phases 056+057 runtime parity release artifacts, public site refresh, and Cursor marketplace packaging; checklist and mandated monthly knowledge/learnings touched after `~/.cursor/.silver-bullet/session-start-time`.
+**Commits**: (this session)
+**Skills run**: silver:ensure-docs
+**Virtual cost**: ~$0.02 (gate remediation — checklist + mandated doc mtimes)
+**KNOWLEDGE.md**: updated (Cursor runtime state path for doc-scheme enforcement)
+**Learnings**: updated (session mtime gate under Cursor)
+
+## Doc-scheme session (2026-06-14)
+
+Task `phase-056-zuvo-runtime-parity-release`: v0.39.3 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
+
+
+## Doc-scheme refresh (2026-06-14, Cursor session)
+
+Task `phase-056-zuvo-runtime-parity-release`: v0.39.3 on `main` (phase 056 runtime parity enforcement, phase 057 Cursor marketplace, site refresh). Checklist rebuilt after corrupt empty-key state.
+
