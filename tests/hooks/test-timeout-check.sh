@@ -174,7 +174,7 @@ else
   printf 'FAIL: T2-2: expected "STALL WARNING", got: %s\n' "$out"
 fi
 
-# Test T2-3: 100-call warning fires ("STALL DETECTED" message)
+# Test T2-3: 100-call block fires ("STALL BLOCK" message)
 cleanup_tier2
 mkdir -p "$SB_DIR"
 echo "autonomous"  > "${SB_DIR}/mode"
@@ -183,12 +183,12 @@ echo "99" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
-if printf '%s' "$out" | grep -q "STALL DETECTED"; then
+if printf '%s' "$out" | grep -q "STALL BLOCK"; then
   PASS=$((PASS + 1))
-  printf 'PASS: T2-3: 100 calls since progress → STALL DETECTED fires\n'
+  printf 'PASS: T2-3: 100 calls since progress → STALL BLOCK fires\n'
 else
   FAIL=$((FAIL + 1))
-  printf 'FAIL: T2-3: expected "STALL DETECTED", got: %s\n' "$out"
+  printf 'FAIL: T2-3: expected "STALL BLOCK", got: %s\n' "$out"
 fi
 
 # Test T2-4: 31 calls → silent (not on a threshold boundary)
