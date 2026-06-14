@@ -136,6 +136,31 @@ After each invoked lifecycle skill completes, run `"$SB_WORKFLOWS_BIN" complete-
 
 After the SB lifecycle slice completes, run scope expansion check (Step 4).
 
+### Tier 2 delivery (deploy gap — important)
+
+The Tier 2 slice (`context → plan → execute → verify`) intentionally stops at
+verification. It does **not** record the post-execution deploy chain
+(`silver:review-request`, `silver:review`, `silver:review-triage`, `silver:secure`,
+`silver:validate`, `silver:branch-finish`, `silver:ship`).
+
+Consequences and routing:
+
+- **Local / no-delivery work:** if the Tier 2 change is not being pushed to a PR,
+  release, or deploy, stop at `silver:verify` — the Stop gate only requires the
+  planning floor, so this completes cleanly.
+- **Delivery required (PR / release / deploy):** the completion-audit deploy gate
+  enforces the full `required_deploy` list. A bare Tier 2 slice will be **blocked**
+  at `gh pr create` / `gh release create` / `deploy` because the review, security,
+  validate, branch-finish, and ship markers are missing. Before raising a PR you
+  MUST either:
+  - **(a)** complete the remaining deploy chain in order —
+    `silver:review-request → silver:review → silver:review-triage → silver:secure →
+    silver:validate → silver:branch-finish → silver:ship` — then deliver, or
+  - **(b)** escalate to `silver:feature` (Step 3), which owns the full lifecycle and
+    deploy chain end-to-end.
+
+Do not attempt to bypass the deploy gate by editing state files or skipping skills.
+
 ### Deferred-Item Capture (Tier 2 only)
 
 After Tier 2 execution, any item scoped out during execution MUST be filed via `/silver:add`:

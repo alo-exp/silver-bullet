@@ -1,5 +1,5 @@
 {
-  "config_version": "0.41.0",
+  "config_version": "0.42.0",
   "version": "0.41.0",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
@@ -30,6 +30,7 @@
       "silver-verify",
       "silver-ship",
       "silver-review",
+      "security",
       "silver-secure",
       "silver-validate",
       "silver-review-request",
@@ -51,6 +52,7 @@
       "silver-verify",
       "silver-ship",
       "silver-review",
+      "security",
       "silver-secure",
       "silver-validate",
       "silver-review-request",

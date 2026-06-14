@@ -76,7 +76,7 @@ ls .planning/phases/*/PLAN.md 2>/dev/null | head -1 && echo "SKIP FLOW 6 — PLA
 
 Construct the proposed flow chain for UI work. Default full chain:
 
-FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [always in UI workflow] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [always in UI workflow] → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if interaction/design tradeoff needs research] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [always in UI workflow] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [always in UI workflow] → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
 
 Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are always included — this is a UI-focused workflow.
 
@@ -247,15 +247,17 @@ Run review sequence in order:
 
 **Exit Condition:** UI-REVIEW.md exists with no critical findings, or user accepts.
 
-## Step 10: Frontend Security
+> **Canonical post-execution order:** review (Step 8) → UI quality (Step 9) → verify (Step 10) → security + secure (Step 11) → validate (Step 12) → pre-ship quality gates (Step 13) → ship (Step 15). This sequence matches `silver:feature`, `silver:devops`, and `silver:bugfix` (the optional UI-quality flow is inserted between review and verify).
 
-Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
-
-## Step 11: Verify Work + Test Gap Fill
+## Step 10: Verify Work + Test Gap Fill
 
 Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
 
-If coverage gaps remain after verification: invoke `verify-tests` or route a test-gap task through `silver:execute`.
+**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's test gate and record the freshness marker — it is part of `required_deploy`, so the completion-audit deploy gate blocks delivery until a fresh run is recorded. If coverage gaps remain after verification, route a test-gap task through `silver:execute`, then re-run `verify-tests`.
+
+## Step 11: Frontend Security
+
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
 
 ## Step 12: Validate Phase
 

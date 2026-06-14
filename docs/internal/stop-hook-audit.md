@@ -9,9 +9,12 @@
 
 ## Overview
 
-`hooks/stop-check.sh` fires on every `Stop` and `SubagentStop` event — when Claude
-declares a task complete. It blocks completion if the required deployment skills have
-not been invoked during the session.
+`hooks/stop-check.sh` fires on every `Stop` and `SubagentStop` event — when the agent
+declares a task complete. Under the two-tier model it blocks completion if the
+**`required_planning` floor** skills have not been recorded during the session — it does
+**not** require the full `required_deploy` list (that list is enforced separately by
+`completion-audit.sh` when an actual delivery command runs). See `docs/ENFORCEMENT.md`
+(“Stop vs Delivery (Two-Tier Model)”) for the authoritative description.
 
 This document enumerates every known bail-out path (scenarios where the hook exits 0
 without enforcing), distinguishes deliberate fail-opens from confirmed false-positives,

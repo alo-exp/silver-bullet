@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.42.0] — 2026-06-15
+
+Launch-hardening release. Remediates all blocker/high/medium findings from the pre-launch adversarial review and confirms a clean surface over two consecutive fully-green test rounds (3371 passed, 0 failed; 33/33 hooks covered).
+
+## Features
+- `feat(enforcement): mandatory security + verify-tests delivery gate` — `security` added to `required_deploy` / `required_deploy_devops`; `verify-tests` made a mandatory pre-delivery gate in feature/ui/devops/bugfix/ship.
+- `feat(prompt-reminder): context-aware two-tier compliance display` — shows the planning floor during development and the full delivery list only when the prompt is delivery-adjacent or `silver-execute` has run (`sb_prompt_is_delivery_adjacent`).
+- `feat(flows): unified canonical post-execute order` across feature/ui/devops/bugfix — review triad → verify → secure → validate → quality-gates → ship.
+
+## Bug Fixes
+- `fix(workflow-chain-guard): align silver-bugfix markers with the documented ORIENT → DEBUG → PLAN chain` (`silver-debug silver-plan`).
+- `fix(core-rules): correct Stop-hook description to the two-tier model` (planning floor at Stop, `required_deploy` at delivery); regenerated `core-rules.sha256`.
+- `fix(silver-feature): remove pre-plan validate that ran before PLAN.md existed`; add Step 6b validate after the plan phase.
+- `fix(silver-feature): add explicit silver:spec step for greenfield (FLOW 5) when SPEC.md is absent`.
+- `fix(silver-init): soften the Graphify hard gate to advisory with a documented direct-docs fallback`.
+- `fix(skills): repair corrupted markdown fences in silver-bugfix and silver-devops composition sections`.
+- `fix(silver-quality-gates): correct PLAN glob to PLAN.md (.planning/phases/*/PLAN.md .planning/PLAN.md)`.
+- `fix(silver-spec): populate ## Implementations in SPEC.md`.
+- `fix(silver-update): correct install command to /plugin install alo-exp/silver-bullet`.
+
+## Docs
+- `docs(ENFORCEMENT): add "Stop vs Delivery (Two-Tier Model)" and "Orchestrator Worker SubagentStop" sections`.
+- `docs(internal): correct stop-hook-audit and CICD two-tier descriptions; document silver-release nested-workflow collision guard`.
+
+## Tests
+- `test(hooks): add test-industry-tooling-hint.sh — closes the last hook coverage gap (33/33)`.
+
+## Chores
+- `chore(config): bump template config_version and plugin version to 0.42.0`.
+
+---
+
 ## [0.41.1] — 2026-06-15
 
 ## Bug Fixes

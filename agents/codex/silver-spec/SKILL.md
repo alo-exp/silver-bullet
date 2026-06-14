@@ -211,6 +211,7 @@ Add any design-affecting assumptions to the assumption list before Step 7.
    - `## Assumptions` — all `[ASSUMPTION: ...]` blocks with final Status values from Step 5
    - `## Open Questions` — from Turn 9 and any Follow-up-required assumptions
    - `## Out of Scope` — from Turn 3
+   - `## Implementations` — write the section header with the placeholder comment from the template (`<!-- Populated automatically by pr-traceability.sh hook post-merge. -->`). Leave the body empty; the `pr-traceability.sh` hook appends merged-PR rows here post-merge. The section header MUST be present so the traceability hook has an anchor to append to.
 4. Set frontmatter fields:
    - `spec-version:` — as calculated above
    - `status: Draft`
