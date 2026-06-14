@@ -52,7 +52,7 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-REVIEW|REVIEW|silver-review) printf 'REVIEW' ;;
     FLOW-SECURE|SECURE|silver-secure|security) printf 'SECURE' ;;
     FLOW-VERIFY|VERIFY|silver-verify) printf 'VERIFY' ;;
-    FLOW-QUALITY-GATE|QUALITY-GATE|QUALITY\ GATE|FLOW-QUALITY-GATE|silver-quality-gates|devops-quality-gates) printf 'QUALITY-GATE' ;;
+    FLOW-QUALITY-GATE|QUALITY-GATE|QUALITY\ GATE|silver-quality-gates|devops-quality-gates) printf 'QUALITY-GATE' ;;
     FLOW-SHIP|SHIP|silver-ship) printf 'SHIP' ;;
     FLOW-DEBUG|DEBUG|silver-debug|silver-forensics) printf 'DEBUG' ;;
     FLOW-DOCUMENT|DOCUMENT|silver-ensure-docs) printf 'DOCUMENT' ;;
@@ -120,11 +120,10 @@ sb_orchestrator_queue_has_pending() {
   file="$(sb_orchestrator_state_file 2>/dev/null || printf '%s/orchestrator.json' "${SB_RUNTIME_STATE_DIR:-/tmp}")"
   [[ -f "$file" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
-  local current next_idx queue_len
+  local current queue_len
   current="$(jq -r '.current_flow // ""' "$file" 2>/dev/null || true)"
   [[ -n "$current" && "$current" != "null" ]] && return 0
   queue_len="$(jq '.flow_queue | length' "$file" 2>/dev/null || echo 0)"
-  next_idx="$(jq -r '.last_completed // ""' "$file" 2>/dev/null || true)"
   # Pending if last_completed set but current_flow empty incorrectly — use current_flow
   [[ "$queue_len" -gt 0 ]] && [[ -z "$current" ]] && return 1
   return 1

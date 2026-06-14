@@ -77,9 +77,9 @@ sb_prereq_run_probe() {
 }
 
 sb_prereq_blocking_message() {
-  local issues="$1"
+  local issues_text="$1"
   cat <<EOF
-🛑 Silver Bullet prerequisites missing: ${issues}
+🛑 Silver Bullet prerequisites missing: ${issues_text}
 
 Run /silver:init to repair the installation, or install jq:
   macOS: brew install jq
