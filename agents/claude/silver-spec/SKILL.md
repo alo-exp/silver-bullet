@@ -218,7 +218,7 @@ Add any design-affecting assumptions to the assumption list before Step 7.
    - `source-artifacts:` — list of all URLs provided in Step 1 (empty list if none)
    - `created:` — today's date (greenfield) OR preserve existing value (augment)
    - `last-updated:` — today's date
-5. Write to `.planning/SPEC.md` using the Write tool.
+5. Write to `.planning/SPEC.md` using the active runtime file-writing mechanism.
 
 Every `[ASSUMPTION: ...]` block in the spec must include `Status:` and `Owner:` fields. No untagged assumptions.
 
@@ -237,7 +237,7 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 3. Derive `NFR-XX` IDs from any non-functional concerns raised during elicitation (performance, security, accessibility, reliability). Assign sequential IDs starting at NFR-01.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
-6. Write to `.planning/REQUIREMENTS.md` using the Write tool.
+6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
 
 ### Step 8a: Review REQUIREMENTS.md
 
@@ -253,7 +253,7 @@ Only if a design artifact or Figma URL was provided:
 
 1. Read `templates/specs/DESIGN.md.template` to get the canonical structure.
 2. Populate from design context gathered in Steps 4 and 6.
-3. Write to `.planning/DESIGN.md` using the Write tool.
+3. Write to `.planning/DESIGN.md` using the active runtime file-writing mechanism.
 
 ### Step 9a: Review DESIGN.md (conditional)
 

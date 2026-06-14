@@ -147,7 +147,7 @@ When the user requests skipping any step:
 
 ## Step 0: Triage — Classify Failure Type
 
-Use direct user interaction:
+Ask the user directly:
 
 > What best describes this failure?
 >

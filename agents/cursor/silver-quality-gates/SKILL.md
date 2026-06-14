@@ -67,7 +67,7 @@ Use the disambiguation table to determine mode:
 
 ## Step 1: Load quality dimension skills
 
-Use the Read tool to read each of the following files. For every dimension path, read the first file that exists in this order: `SILVER_SOURCE`, `SILVER_SOURCE.md`, `SILVER_SKILL.md`, `SKILL.md`.
+Use the active runtime file-reading mechanism to read each of the following files. For every dimension path, read the first file that exists in this order: `SILVER_SOURCE`, `SILVER_SOURCE.md`, `SILVER_SKILL.md`, `SKILL.md`.
 
 1. `${DIMENSION_SKILLS_ROOT}/modularity/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
 2. `${DIMENSION_SKILLS_ROOT}/reusability/{SILVER_SOURCE,SILVER_SOURCE.md,SILVER_SKILL.md,SKILL.md}`
