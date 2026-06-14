@@ -28,6 +28,8 @@ trap cleanup_all EXIT
 write_cfg() {
   cat > "$TMPCFG" << EOF
 {
+  "config_version": "0.40.0",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
@@ -97,6 +99,7 @@ teardown() {
   rm -f "$TMPSTATE"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
+  rm -f "${SB_TEST_DIR}/stall-block"
   rm -f "${SESSION_START_FILE}"
   unset SILVER_BULLET_BRANCH_FILE
   unset SILVER_BULLET_SESSION_START_FILE
@@ -521,7 +524,8 @@ printf 'phase/10-other-project\n' > "$TMPBRANCH_FILE"
 out=$(run_hook)
 # Restore correct branch so teardown is clean
 printf 'feature/test\n' > "$TMPBRANCH_FILE"
-assert_passes "stale cross-branch state (branch file mismatch) -> skip enforcement" "$out"
+assert_blocks "stale cross-branch state (branch file mismatch) -> blocks with warning (M-04)" "$out"
+assert_contains "branch mismatch names stored branch" "$out" "phase/10-other-project"
 teardown
 
 # Test 15: S-06 regression — detached HEAD + clean tree -> no block

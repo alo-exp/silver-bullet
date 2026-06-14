@@ -5,8 +5,14 @@
 set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/pr-traceability.sh"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0
 FAIL=0
+
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
 
 # ── Test infrastructure ───────────────────────────────────────────────────────
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"

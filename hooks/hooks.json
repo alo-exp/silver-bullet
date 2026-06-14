@@ -235,6 +235,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
+            "async": false,
+            "timeout": 15
           }
         ]
       },
@@ -377,6 +383,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
             "async": false,
             "timeout": 10
@@ -393,6 +410,17 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
             "async": false,
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -421,6 +449,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-reminder.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
             "async": false,
             "timeout": 10
           }

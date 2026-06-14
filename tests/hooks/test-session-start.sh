@@ -68,6 +68,7 @@ make_git_repo() {
   git -C "$dir" -c user.email="test@test.com" -c user.name="Test" commit -q --allow-empty -m "init" 2>/dev/null
   cat > "$dir/.silver-bullet.json" <<EOF
 {
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
   "state": {
     "state_file": "${TMPSTATE}",

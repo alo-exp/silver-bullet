@@ -257,14 +257,31 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
   fi
 fi
 
-# Prepend core rules if available, then append skill status
+# Prepend core rules if available (integrity-verified), then append skill status
 if [[ -f "$core_rules_file" ]]; then
-  core_content=$(cat "$core_rules_file")
-  msg="${core_content}
+  _cr_lib="${script_dir}/lib/core-rules-integrity.sh"
+  core_content=""
+  if [[ -f "$_cr_lib" ]]; then
+    # shellcheck source=lib/core-rules-integrity.sh
+    source "$_cr_lib"
+    core_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
+    if [[ -z "$core_content" ]] && [[ -f "${script_dir}/core-rules.sha256" ]]; then
+      core_content="$(sb_core_rules_integrity_warning)"
+    elif [[ -z "$core_content" ]]; then
+      core_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+    fi
+  else
+    core_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+  fi
+  if [[ -n "$core_content" ]]; then
+    msg="${core_content}
 
 ---
 
 ${skill_status}"
+  else
+    msg="$skill_status"
+  fi
 else
   msg="$skill_status"
 fi

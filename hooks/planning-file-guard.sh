@@ -110,12 +110,21 @@ if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
   exit 0
 fi
 
-# ── Bypass: file-based override (consistent with ci-red-override pattern) ─────
+# ── Bypass: file-based override (M-03: PLAN.md only) ─────────────────────────
 _override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
 if [[ -f "$_override" && ! -L "$_override" ]]; then
-  _msg="⚠️  planning-file-guard: override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
-  printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
-  exit 0
+  case "$basename_path" in
+    *-PLAN.md|PLAN.md)
+      _audit="${SB_RUNTIME_STATE_DIR}/planning-edit-override-audit.log"
+      printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"$_audit" 2>/dev/null || true
+      _msg="⚠️  planning-file-guard: PLAN override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
+      printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
+      exit 0
+      ;;
+    *)
+      :
+      ;;
+  esac
 fi
 
 # ── Trivial bypass (sourced from shared helper — REF-01) ─────────────────────

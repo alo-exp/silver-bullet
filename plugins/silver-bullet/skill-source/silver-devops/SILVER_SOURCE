@@ -73,18 +73,12 @@ Display the composition proposal to the user:
 SILVER BULLET ► FLOW COMPOSED
 Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP
 Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra
-Approve composition? [Y/n]
-```
+### 3. Autonomous composition (default)
 
-### 4. Auto-Confirm in Autonomous Mode
+Do **not** ask `Approve composition?`. Log: `SB ► devops composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
+### 5. Legacy manual workflow start (fallback only)
 
 Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
 The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the

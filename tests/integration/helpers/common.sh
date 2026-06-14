@@ -69,6 +69,7 @@ integration_teardown() {
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$INLINE_E2E_MATRIX_FILE"
   rm -f "$VERIFY_TESTS_FILE"
+  rm -f "${SB_TEST_DIR}/stall-block"
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
 }
@@ -88,6 +89,7 @@ write_default_config() {
   cat > "$TMPCFG" << EOCFG
 {
   "config_version": "${config_version}",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},
@@ -466,6 +468,7 @@ write_full_config() {
   cat > "$TMPCFG" << EOCFG
 {
   "config_version": "${config_version}",
+  "sb_initiated": true,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},
