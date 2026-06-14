@@ -196,7 +196,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
 <span class="cmd">/silver:context</span>        <span class="comment"># captures phase context and assumptions</span>
 <span class="cmd">/silver:review-request</span> <span class="comment"># frames review scope and blockers</span>
-<span class="cmd">/silver</span> quality review   <span class="comment"># routes to the right skill automatically</span></div>
+<span class="cmd">/silver</span> quality review   <span class="comment"># classifies intent and composes the workflow chain</span></div>
 
       <h3>The /silver Router</h3>
       <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB workflow path for the work at hand. Optional external plugins are used only when they add specialized capability and the active workflow selects them.</p>
@@ -322,7 +322,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.39.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.39.3 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>

@@ -709,6 +709,14 @@ section:nth-child(even){background:var(--section-alt)}
 .ci-yes{color:var(--green)}
 .ci-no{color:var(--text-dim)}
 .compare-missing{font-size:.9rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
+.comparison-table{width:100%;border-collapse:collapse;margin:32px auto 0;font-size:.9rem}
+.comparison-table th{text-align:left;padding:12px 16px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);vertical-align:bottom}
+.comparison-table td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.55;vertical-align:top}
+.comparison-table tr:last-child td{border-bottom:none}
+.comparison-table tr:hover td{background:var(--table-row-hover)}
+.comparison-table td:first-child{font-weight:600;color:var(--text-primary);white-space:nowrap}
+.platform-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:20px}
+.platform-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-card);font-size:.82rem;font-weight:600;color:var(--text-secondary)}
 
 /* ───── CORE LIFECYCLE SECTION ───── */
 .sb-lifecycle-overview{
@@ -970,7 +978,13 @@ img{max-width:100%;height:auto}
 
     <p class="tagline mt-3">Brooks was right. Silver Bullet is not one magic trick. It is the enforced system around the work.</p>
 
-    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): the SB-owned lifecycle, orchestration, and enforcement engine for AI-native software engineering. <code>/silver</code> composes the right workflow, uses optional extension plugins only where they add domain-specific capability, and blocks unsafe edits, PRs, deploys, and releases until required evidence exists. v0.39.3 closes the AS1/Zuvo runtime parity gap with hook-backed evidence validation, backlog fingerprinting in <code>silver:add</code>, durable UI interface state, and install probes via <code>sb-bootstrap</code> and <code>sb-diagnostics</code>. SB ships 77 source skills, twelve enforcement layers, and a Codex package surface with native <code>/silver:</code> picker entries.</p>
+    <p class="subtitle">Silver Bullet is an Agentic Process Orchestrator (APO): hook-enforced workflows for Claude Code, Codex, and Cursor. Invoke <code>/silver</code> to classify intent and compose the smallest safe path&mdash;explicit routing with session reminders, not silent session hijack. v0.39.3 closes the structural parity gap with runtime-checked evidence tables, <code>silver:add</code> fingerprinting, durable <code>.planning/interface/STATE.md</code>, and install probes via <code>sb-bootstrap</code> and <code>sb-diagnostics</code>. The pack ships 49 orchestrator skills plus quality, review, and domain-contract skills (77 total) and twelve enforcement layers.</p>
+
+    <div class="platform-pills">
+      <span class="platform-pill"><i data-lucide="terminal"></i> Claude Code</span>
+      <span class="platform-pill"><i data-lucide="box"></i> Codex</span>
+      <span class="platform-pill"><i data-lucide="mouse-pointer-click"></i> Cursor</span>
+    </div>
 
     <div class="cta-group">
       <a href="#install" class="btn btn-primary">Get Started</a>
@@ -1031,7 +1045,7 @@ img{max-width:100%;height:auto}
 <section id="solution">
   <div class="container text-center">
     <div class="section-label">The Agentic Process Orchestrator</div>
-    <h2 class="section-title">Silver Bullet Owns The Delivery System.</h2>
+    <h2 class="section-title">From Intent To Release, With Mechanical Gates</h2>
     <p class="section-desc centered">Silver Bullet is the APO layer and lifecycle engine for core software-engineering work: dynamic workflow composition, spec/UAT/PR traceability, review governance, documentation governance, DevOps safety, and host hooks that make skipping steps harder.</p>
 
     <div class="hero-pills mb-4 fade-in">
@@ -1105,7 +1119,7 @@ img{max-width:100%;height:auto}
 <section id="artifact-review">
   <div class="container text-center">
     <div class="section-label">Artifact Review System</div>
-    <h2 class="section-title">Planning Artifacts Deserve Real Review Too</h2>
+    <h2 class="section-title">Artifact Review With Assessor Discipline</h2>
     <p class="section-desc centered">Silver Bullet adds a general artifact-review framework across specs, requirements, design, roadmap, context, research, ingestion, UAT, and cross-artifact consistency &mdash; with audit trails and analytics.</p>
     <div class="feature-grid mt-4 fade-in">
       <div class="feature-card">
@@ -1136,7 +1150,7 @@ img{max-width:100%;height:auto}
 <section id="review-analytics" style="background:var(--section-alt)">
   <div class="container text-center">
     <div class="section-label">Review Analytics</div>
-    <h2 class="section-title">Measure Your Review Health</h2>
+    <h2 class="section-title">Review Metrics You Can Audit</h2>
     <p class="section-desc centered">Every review round emits structured metrics. Silver Bullet gives you data-driven visibility into artifact quality trends, round counts, and finding categories &mdash; right from the CLI.</p>
     <div class="feature-grid mt-4 fade-in">
       <div class="feature-card">
@@ -1229,10 +1243,10 @@ img{max-width:100%;height:auto}
         <div class="plugin-logo"><i data-lucide="palette"></i></div>
         <div class="plugin-name">SB Design Contract</div>
         <div class="plugin-role">SB UI/UX Validation</div>
-        <div class="plugin-desc">Design-system, UX copy, accessibility, critique, and handoff expectations are captured by SB UI contract and UI review skills.</div>
+        <div class="plugin-desc">Design-system, UX copy, accessibility, critique, and handoff expectations are captured by SB UI contract and UI review skills, with durable state in <code>.planning/interface/STATE.md</code>.</div>
         <ul class="plugin-features">
+          <li><code>silver:ui-contract</code> stamps interface STATE on init</li>
           <li>Design system audit: tokens, component reuse</li>
-          <li>UX copy review: microcopy, error messages, empty states</li>
           <li>Accessibility review (WCAG 2.1 AA)</li>
           <li>Design critique and handoff specs</li>
         </ul>
@@ -1265,7 +1279,7 @@ img{max-width:100%;height:auto}
     <!-- DevOps Plugins -->
     <div class="text-center mt-8">
       <div class="section-label">DevOps Enrichment</div>
-      <h2 class="section-title">Five Leading DevOps Plugins. One Skill Router.</h2>
+      <h2 class="section-title">Optional DevOps Enrichment, Routed By Context</h2>
       <p class="section-desc centered">For the <strong>devops-cycle</strong> workflow, Silver Bullet integrates five best-in-class DevOps plugins as optional contextual enrichments. A smart skill router maps your IaC toolchain and cloud provider to the best available skill &mdash; with automatic fallback chains.</p>
     </div>
 
@@ -1541,7 +1555,7 @@ img{max-width:100%;height:auto}
     <div class="text-center">
       <div class="section-label">Live Enforcement</div>
       <h2 class="section-title">Runtime Parity You Can Enforce</h2>
-      <p class="section-desc centered">v0.39.3 turns documented AS1/Zuvo structural parity into hook-checked runtime behavior: normalized evidence tables, backlog deduplication, UI interface state, and install diagnostics.</p>
+      <p class="section-desc centered">v0.39.3 turns documented structural parity contracts into hook-checked runtime behavior: normalized evidence tables, backlog deduplication, UI interface state, and install diagnostics.</p>
     </div>
 
     <div class="grid grid-3 mt-6">
@@ -1617,6 +1631,73 @@ img{max-width:100%;height:auto}
   </div>
 </section>
 
+<!-- ────── PARITY COMPARISON ────── -->
+<section id="parity" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Why Silver Bullet</div>
+      <h2 class="section-title">Breadth Plus Hook-Enforced Accountability</h2>
+      <p class="section-desc centered">Silver Bullet matches the capability families quality-layer tools advertise&mdash;domain audits, test depth, deploy/canary, backlog, session recovery&mdash;but routes them through SB-owned workflows with artifacts and gates instead of per-concern commands or numeric grades.</p>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="comparison-table fade-in">
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th>Typical quality-layer plugins</th>
+            <th>Silver Bullet (v0.39.3)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Workflow entry</td>
+            <td>Session-start auto-routing; large skill menus</td>
+            <td>Explicit <code>/silver</code> plus prompt reminders; 49 orchestrator skills behind one router</td>
+          </tr>
+          <tr>
+            <td>Enforcement</td>
+            <td>Mostly instruction-following; refusal when agents cooperate</td>
+            <td>Twelve hook layers: completion audit, stop hook, planning guards, CI/test freshness</td>
+          </tr>
+          <tr>
+            <td>Quality findings</td>
+            <td>Tiered numeric scores and grade bands</td>
+            <td>Shared <code>docs/evidence-schema.md</code> with BLOCK/WARN/INFO; delivery gate via <code>validate-evidence-findings</code></td>
+          </tr>
+          <tr>
+            <td>Domain audits</td>
+            <td>Many named audit/fix commands</td>
+            <td><code>/silver:domain-audit</code> pack matrix inside existing workflows</td>
+          </tr>
+          <tr>
+            <td>Backlog &amp; deferred work</td>
+            <td>Tech-debt lists in reviews</td>
+            <td><code>/silver:add</code> with fingerprint, dedup, and prioritization scripts</td>
+          </tr>
+          <tr>
+            <td>Hosts</td>
+            <td>Multi-host marketing with uneven enforcement proof</td>
+            <td>Claude Code, Codex, and Cursor with documented capability tiers 0&ndash;3 and <code>sb-diagnostics</code></td>
+          </tr>
+          <tr>
+            <td>Release path</td>
+            <td>Ship/deploy/canary as separate commands</td>
+            <td>Milestone audit, UAT, docs gates, <code>/silver:ship</code>, <code>/silver:create-release</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6">
+      <div class="callout fade-in" style="max-width:760px;margin:0 auto">
+        <div class="callout-icon"><i data-lucide="info"></i></div>
+        <p><strong>Intentional differences.</strong> Silver Bullet does not provide always-on natural-language hijack, unified numeric scoring across audits, or generic automatic model routing. Those stay host-owned. SB owns workflow composition, artifact traceability, and mechanical delivery gates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ────── WORKFLOW ────── -->
 <section id="workflow">
   <div class="container">
@@ -1627,7 +1708,7 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(11)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(10+)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('dev')">Software Delivery Loop <span style="opacity:.6">(20)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps / IaC Loop <span style="opacity:.6">(24)</span></button>
     </div>
@@ -1806,13 +1887,19 @@ img{max-width:100%;height:auto}
 <section id="install">
   <div class="container text-center">
     <div class="section-label">Installation</div>
-    <h2 class="section-title">Get Started in Two Minutes</h2>
-    <p class="section-desc centered">Install Silver Bullet from the supported host marketplace, initialize your project, then use <code>/silver</code> or Codex's native <code>/silver:</code> picker when you want SB to compose the right workflow for the task.</p>
+    <h2 class="section-title">Install On Your Host, Probe With Diagnostics</h2>
+    <p class="section-desc centered">Install from the public marketplace for Claude Code, Codex, or Cursor. Run <code>bash scripts/sb-bootstrap.sh</code> for a first-time orientation probe or <code>bash scripts/sb-diagnostics.sh</code> to confirm hook-enforced tier 2 delivery. Then <code>/silver:init</code> in your project and invoke <code>/silver</code> when you want SB to classify the task.</p>
 
     <div class="install-block mt-4 fade-in">
       <div class="install-code">
+        <div><span class="comment"># Onboarding probe (jq, diagnostics, next steps)</span></div>
+        <div><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
+        <div><span class="comment"># Capability tier report (claude | codex | cursor)</span></div>
+        <div><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
+        <div>&nbsp;</div>
         <div><span class="comment"># Install Silver Bullet (Claude Code)</span></div>
         <div><span class="cmd">/plugin install</span> <span class="flag">alo-exp/silver-bullet</span></div>
+        <div><span class="comment"># Or public marketplace: alo-labs/claude-plugins</span></div>
         <div>&nbsp;</div>
         <div><span class="comment"># Install or refresh Silver Bullet (Codex)</span></div>
         <div><span class="cmd">Use the public alo-labs/codex-plugins marketplace package</span></div>
@@ -1826,9 +1913,9 @@ img{max-width:100%;height:auto}
         <div><span class="cmd">/silver:init</span></div>
         <div><span class="comment"># Guides you through dependencies, then asks: app or DevOps project?</span></div>
         <div>&nbsp;</div>
-        <div><span class="comment"># Let SB compose the workflow for a task</span></div>
+        <div><span class="comment"># Compose the workflow for a task (explicit entry point)</span></div>
         <div><span class="cmd">/silver</span> <span class="flag">quality review my architecture</span></div>
-        <div><span class="comment"># Routes to the right skill automatically</span></div>
+        <div><span class="comment"># Classifies complexity and composes the smallest safe chain</span></div>
       </div>
     </div>
 
@@ -1845,8 +1932,8 @@ img{max-width:100%;height:auto}
 <section class="cta-section" style="padding:80px 0">
   <div class="container text-center">
     <div class="section-label">Get Started</div>
-    <h2 class="section-title fade-in">The Agentic Process Orchestrator<br>for SB-Owned Delivery.</h2>
-    <p class="section-desc centered fade-in">Stop hoping your AI agent follows the process. Silver Bullet composes the workflow, preserves traceability, enforces the gates, and keeps delivery evidence visible.</p>
+    <h2 class="section-title fade-in">Install Once. Enforce Every Delivery.</h2>
+    <p class="section-desc centered fade-in">Stop hoping your AI agent follows the process. Silver Bullet composes task-shaped workflows, preserves spec-to-release traceability, validates evidence at delivery boundaries, and blocks unsafe PRs and releases when gates are missing.</p>
     <a href="#install" class="btn btn-primary fade-in" style="font-size:1rem;padding:16px 36px">Install Silver Bullet &darr;</a>
   </div>
 </section>
