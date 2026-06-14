@@ -66,6 +66,7 @@ EOF
 
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
+  export SILVER_BULLET_TEST_HOOK_ENFORCED=1
   # Mock branch file so session-start sees "feature/test" without touching
   # the live host runtime branch file.
   TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
@@ -88,6 +89,7 @@ integration_teardown() {
   rm -f "${SB_TEST_DIR}/stall-block"
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
+  unset SILVER_BULLET_TEST_HOOK_ENFORCED
 }
 
 write_default_config() {
