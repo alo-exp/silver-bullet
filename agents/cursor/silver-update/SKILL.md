@@ -117,10 +117,11 @@ If user cancels, exit.
 
 ### Step 5: Install the update
 
-Run the host-appropriate install command:
+Run the host-appropriate install command. Silver Bullet is a **plugin**, not an MCP server — install it through the host's plugin manager:
 
 ```bash
-claude mcp install silver-bullet@alo-labs
+# Cursor / Cursor (plugin host): run inside the agent, not the shell
+/plugin install alo-exp/silver-bullet
 # Codex host: ./scripts/install-codex.sh --purge-legacy-skills
 ```
 

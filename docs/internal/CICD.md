@@ -43,9 +43,13 @@ manifest updates, not just the Claude entry.
 ### Breaking change policy
 
 A semver minor bump (`v0.X.0`) is used when new skills are added to `required_deploy`,
-because existing users will see `completion-audit.sh` block their commits until they
-invoke the newly required skills. This is an intentional tightening — documented prominently
-in release notes.
+because existing users will see `completion-audit.sh` block their **final-delivery
+commands** (`gh pr create`, `gh release create`, deploy) until they invoke the newly
+required skills. Note the two-tier model: plain intermediate `git commit` / `git push`
+are gated only by the `required_planning` floor (via `stop-check.sh` / the dev-cycle
+gate), **not** by `required_deploy` — so additions to `required_deploy` tighten the
+delivery gate, not routine commits. This is an intentional tightening — documented
+prominently in release notes.
 
 ## Local Validation
 

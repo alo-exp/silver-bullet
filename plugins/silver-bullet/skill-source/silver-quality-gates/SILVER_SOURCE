@@ -49,7 +49,7 @@ Detect operating mode from artifact state before loading dimension skills.
 Run these detection commands:
 
 ```bash
-PLAN_EXISTS=$(ls .planning/phases/*/**-PLAN.md 2>/dev/null | head -1)
+PLAN_EXISTS=$(ls .planning/phases/*/PLAN.md .planning/PLAN.md 2>/dev/null | head -1)
 VERIFY_PASSED=$(grep -l "status: passed" .planning/VERIFICATION.md 2>/dev/null)
 ```
 
@@ -63,6 +63,16 @@ Use the disambiguation table to determine mode:
 | Yes | Yes | **adversarial** (pre-ship quality gate) |
 
 **Record the detected mode.** It controls Step 2 behavior for all applicable dimensions.
+
+### Dual-invocation requirement (shared marker — read carefully)
+
+`silver-quality-gates` is invoked **twice** in a full flow: once **pre-plan** (design-time) and once **pre-ship** (adversarial). Both invocations record the **same** state-machine marker (`silver-quality-gates`), so the marker alone cannot prove the pre-ship adversarial audit ran.
+
+**Therefore both invocations are mandatory and non-substitutable:**
+
+- The pre-plan (design-time) run does **not** satisfy the pre-ship gate, even though the marker already exists. The orchestrating flow skill (`silver:feature` Step 13, `silver:ui` Step 13, `silver:devops` Step 10, `silver:bugfix` Step 7b) MUST run this skill **again** in adversarial mode before ship (the pre-ship quality gate) — never skip it on the grounds that "quality-gates already ran".
+- When this skill detects **adversarial mode** (PLAN.md + VERIFICATION.md passed), it is the pre-ship run; treat a clean result as the ship gate, not the planning gate.
+- The separate 4-stage **pre-release** quality sequence (`quality-gate-stage-1..4` + `full-test-suite-rerun` in the `quality_gate_state_file`) is enforced independently by `completion-audit.sh` for `silver:release`/`gh release create` and is **not** the same as this skill's pre-ship run.
 
 ---
 
@@ -180,10 +190,13 @@ After gate enforcement, scan the report for any items that:
 For each such item, **immediately capture it in the configured SB backlog**
 instead of silently dropping it. Read `.silver-bullet.json`:
 
+Prefer routing through `/silver:add`, which resolves the correct destination
+automatically. If filing directly, honor `issue_tracker`:
+
 - `issue_tracker: "github"` -> create a GitHub Issue with `gh issue create`
   when the CLI is authenticated.
-- `issue_tracker: "gsd"` or missing -> append the item to
-  `.planning/ROADMAP.md` under a Backlog section, creating the section if
-  needed.
+- `issue_tracker: "local"` or missing (legacy `"gsd"` is treated as `local`) ->
+  append the item to `docs/issues/BACKLOG.md` (creating the file if needed), the
+  canonical local backlog used by `/silver:add`.
 
 If no items were deferred or suggested, output: "No backlog items to capture from this quality review."

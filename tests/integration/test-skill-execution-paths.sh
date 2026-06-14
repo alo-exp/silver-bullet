@@ -75,6 +75,7 @@ resolve_silver_alias() {
   case "$cmd" in
     silver:intel)               echo "gsd-intel" ;;
     silver:scan)                echo "silver-scan" ;;
+    silver:spec)                echo "silver-spec" ;;
     silver:clarify)             echo "silver-clarify" ;;
     silver:context)             echo "silver-context" ;;
     silver:plan)                echo "silver-plan" ;;
@@ -283,8 +284,11 @@ check "silver-devops: silver:verify before ship (line $dev_verify_line < $dev_sh
 SBF="$SKILLS_DIR/silver-bugfix/SKILL.md"
 bf_tdd_line=$(grep -n "Invoke \`tdd\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
 bf_plan_line=$(grep -n "silver:plan" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-bugfix: TDD before plan/execute step (line $bf_tdd_line < $bf_plan_line)" \
-  "$([[ "$bf_tdd_line" -gt 0 && "$bf_plan_line" -gt 0 && "$bf_tdd_line" -lt "$bf_plan_line" ]] && echo pass || echo fail)"
+# Canonical bugfix pre-execution chain is DEBUG → PLAN → TDD (B1): planning is
+# recorded before the regression test so workflow-chain-guard's (silver-debug
+# silver-plan) markers exist before the first fix/test edit. PLAN must precede TDD.
+check "silver-bugfix: plan step before TDD step (line $bf_plan_line < $bf_tdd_line)" \
+  "$([[ "$bf_plan_line" -gt 0 && "$bf_tdd_line" -gt 0 && "$bf_plan_line" -lt "$bf_tdd_line" ]] && echo pass || echo fail)"
 
 bf_sec_line=$(grep -n "Invoke \`security\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
 bf_ship_line=$(grep -n "silver:ship" "$SBF" | head -1 | cut -d: -f1 || echo 0)

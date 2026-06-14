@@ -109,7 +109,12 @@ case "$composer_slug" in
     required_markers=(silver-clarify)
     ;;
   silver-bugfix)
-    required_markers=(silver-quality-gates silver-context silver-plan)
+    # Bugfix is diagnosis-first: the documented pre-execution chain is
+    # ORIENT → DEBUG → PLAN (see skills/silver-bugfix/SKILL.md). Quality-gates
+    # and context are not part of the bugfix pre-execution chain (quality-gates
+    # runs post-execute at Step 7b). Require only the DEBUG and PLAN markers
+    # that are genuinely recorded before the first fix/test edit.
+    required_markers=(silver-debug silver-plan)
     ;;
   *)
     exit 0

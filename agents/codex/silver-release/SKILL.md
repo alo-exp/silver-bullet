@@ -204,11 +204,22 @@ preferences allow lighter review.
 If Step 1, Step 2, Step 2a, or review gates find blocking gaps, run at most two
 gap-closure iterations.
 
+> **Nested-workflow collision guard:** the release workflow already owns an active
+> `SB_WORKFLOW_ID` (started in Step 0). The routed sub-workflows (`silver:feature`,
+> `silver:bugfix`, `silver:ui`, `silver:devops`) normally call `scripts/workflows.sh start`,
+> which would export a **new** `SB_WORKFLOW_ID` and orphan the release tracker. To avoid
+> the collision, treat gap-closure as a **sub-flow of the release workflow**: do **not**
+> start a second tracker. Preserve the release `SB_WORKFLOW_ID` for the duration of the
+> gap-closure loop (save it, and if a routed skill starts its own tracker, restore the
+> release `SB_WORKFLOW_ID` before returning to Step 2b). Mark gap-closure progress against
+> the existing release workflow with `complete-flow`, not a new `start`.
+
 For each iteration:
 
 1. Invoke `silver:plan` to create the gap-closure plan.
 2. Route execution to `silver:feature`, `silver:bugfix`, `silver:ui`, or
-   `silver:devops` based on gap type.
+   `silver:devops` based on gap type — **as a sub-flow** (see the collision guard
+   above; keep the release `SB_WORKFLOW_ID` active, do not start a nested tracker).
 3. Re-run `silver:quality-gates`, the affected audit, `security` when relevant,
    and verification for the touched scope.
 4. Update `.planning/RELEASE-GAP-CLOSURE.md`.

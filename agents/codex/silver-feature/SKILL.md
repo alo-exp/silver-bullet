@@ -23,19 +23,22 @@ Before implementation edits, the execution trace must show only the pre-executio
 2. `silver:scan` with deeper mapping when the project is brownfield or the codebase is unfamiliar
 3. `silver:clarify` when scope is fuzzy
 4. `silver:research` when FLOW DECIDE is needed for architecture, stack, API, or data-model choices
-5. `silver:quality-gates`
-6. `silver:context`
-7. `silver:plan`
+5. `silver:spec` (FLOW 5) when `.planning/SPEC.md` does not yet exist (greenfield / new milestone)
+6. `silver:quality-gates`
+7. `silver:context`
+8. `silver:plan`
+9. `silver:validate` (pre-build gap analysis — runs after `silver:plan` so PLAN.md exists)
 
-After implementation, final delivery requires the post-execution chain:
+After implementation, final delivery requires the post-execution chain. **Canonical post-execution order (unified across `silver:feature`, `silver:ui`, `silver:devops`, `silver:bugfix`):** review triad → verify → secure → validate → quality-gates (pre-ship) → ship.
 
 1. `silver:execute`
-2. `silver:verify`
-3. `silver:review-request`, `silver:review`, and `silver:review-triage`
-4. `silver:secure`
+2. `silver:review-request`, `silver:review`, and `silver:review-triage` (review triad)
+3. `silver:verify`
+4. `security` then `silver:secure`
 5. `silver:validate`
-6. `silver:branch-finish` on feature branches
-7. `silver:ship`
+6. `silver:quality-gates` (pre-ship sweep)
+7. `silver:branch-finish` on feature branches
+8. `silver:ship`
 
 If any required SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell-only work, direct edits, or weaker fallback work.
 
@@ -103,7 +106,9 @@ grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
 
 Construct the proposed flow chain from the 18-flow catalog (FLOW 1-18), including only relevant flows based on the context scan. Standard full-feature chain:
 
-FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if research/architecture choice needed] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [include if UI] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [include if UI] → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
+FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if research/architecture choice needed] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [include if UI] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [include if UI] → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
+
+Post-execution flows follow the **canonical order**: REVIEW (triad) → VERIFY → SECURE → VALIDATE → QUALITY GATE (pre-ship) → SHIP. This order is identical across `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`.
 
 ### 3. Autonomous composition (default)
 
@@ -200,7 +205,7 @@ For each remaining phase in the current milestone:
 
 ```
 FOR each phase in remaining_phases:
-  EXECUTE FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
+  EXECUTE FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
   INSERT optional flows per composition proposal:
     - FLOW 7 (DESIGN CONTRACT) before FLOW 8 if UI discovered
     - FLOW 9 (UI QUALITY) after FLOW 8 if UI in scope
@@ -289,7 +294,19 @@ If condition met, ask:
 > A. Yes — run MultAI pre-spec review (multai:orchestrator)
 > B. No — proceed with spec as-is
 
-If A: invoke the installed multi-AI research/orchestration skill if available. Note: this step informs the spec PRE-implementation. Step 9c external second-opinion review reviews completed code POST-execution. Both are independent. If no multi-AI skill is installed, continue only if the user approves the degraded path.
+If A: invoke the installed multi-AI research/orchestration skill if available. Note: this step informs the spec PRE-implementation. Step 8c external second-opinion review reviews completed code POST-execution. Both are independent. If no multi-AI skill is installed, continue only if the user approves the degraded path.
+
+## Step 1d: Specify (FLOW 5 — greenfield / missing SPEC)
+
+**Conditional gate — only when `.planning/SPEC.md` does not exist for the current milestone (greenfield, or a new milestone without a spec).** Skip when SPEC.md already exists (matches the FLOW 5 skip signal in the Composition Proposal).
+
+```bash
+[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 5 (Step 1d)" || echo "No SPEC — run FLOW 5 (Step 1d)"
+```
+
+Invoke `silver:spec` through the active runtime's SB-recognized skill invocation channel. Purpose: AI-guided Socratic spec elicitation producing `.planning/SPEC.md` (and `.planning/REQUIREMENTS.md`) before quality gates, context, and planning. This makes the FLOW 5 (SPECIFY) node in the composition an explicit, invokable step rather than an implicit one — a greenfield feature must not proceed to planning without a written spec.
+
+After silver:spec completes, the spec is the authoritative input for Step 3 (quality gates), Step 4 (context), and Step 6 (plan).
 
 ## Step 2: Testing Strategy
 
@@ -298,21 +315,6 @@ Capture test levels, tooling, and coverage targets inside `silver:plan`. Use `ve
 ## Step 2.5: Writing Plans
 
 Keep implementation planning inside `silver:plan`. SB planning owns task shape, dependencies, verification criteria, and execution handoff.
-
-## Step 2.7: Pre-Build Validation
-
-**NON-SKIPPABLE GATE.** (VALD-03 compliance)
-
-Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
-
-If silver:validate reports any BLOCK findings:
-- STOP. Do not proceed to Step 3.
-- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
-- Offer: A. Return to /silver:spec  B. Re-run /silver:validate after fixes
-
-Only proceed to Step 3 (silver:quality-gates) when silver:validate reports zero BLOCK findings.
-
-WARN findings are recorded in .planning/VALIDATION.md and will appear in the PR description (VALD-04).
 
 ## Step 3: Pre-Plan Quality Gates (8 core dimensions + conditional gates)
 
@@ -331,6 +333,23 @@ Dependency analysis is part of `silver:plan`. Before invoking it, gather depende
 ## Step 6: Plan Phase
 
 Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md with assumptions, dependencies, task waves, TDD policy, acceptance criteria traceability, and verification loop.
+
+## Step 6b: Pre-Build Validation
+
+**NON-SKIPPABLE GATE.** (VALD-03 compliance)
+
+This runs **after** Step 6 (Plan Phase) because `silver:validate` performs pre-build gap analysis by checking SPEC.md coverage in `.planning/PLAN.md` — the plan must exist first. (Previously this gate was misordered before planning, when no PLAN.md existed yet.)
+
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
+
+If silver:validate reports any BLOCK findings:
+- STOP. Do not proceed to Step 7 (Execute).
+- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
+- Offer: A. Return to `silver:plan` to revise the plan  B. Re-run `silver:validate` after fixes
+
+Only proceed to Step 7 (Execute Phase) when silver:validate reports zero BLOCK findings.
+
+WARN findings are recorded in `.planning/VALIDATION.md` and will appear in the PR description (VALD-04).
 
 ## Step 7: Execute Phase
 
@@ -352,37 +371,29 @@ Invoke `silver:plan` through the active runtime's SB-recognized skill invocation
 Skill(skill="silver:add", args="<description of deferred item>")
 ```
 
-## Step 8: Verify Work
+> **Canonical post-execution order:** review triad (Steps 8a–8e) → verify (Step 9) → security + secure (Steps 10–11) → validate (Step 12) → pre-ship quality gates (Step 13) → ship (Step 15). This sequence is identical across `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`.
 
-Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: UAT, must-haves, artifact checks, test freshness, and completion evidence. Phase is NOT complete until this passes. Non-skippable.
-
-## Step 8b: Test Gap Fill (conditional)
-
-**Only if `silver:verify` surfaces coverage gaps:**
-
-Invoke `verify-tests` or return to `silver:execute` with a test-gap task. Purpose: add tests from UAT criteria to fill gaps identified by verification.
-
-## Step 9a: Request Code Review
+## Step 8a: Request Code Review
 
 Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel. Purpose: frame review scope, risks, artifacts, and blocker criteria before review begins.
 
-## Step 9b: Run Code Review
+## Step 8b: Run Code Review
 
 Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. Purpose: create or update REVIEW.md. This is the authoritative project code-review artifact; optional external review helpers must feed into this artifact rather than replace it.
 
 If issues are found in REVIEW.md: fix BLOCK findings through `silver:execute` or the active implementation workflow, then re-run `silver:review`.
 
-## Step 9c: Cross-AI Review (conditional)
+## Step 8c: Cross-AI Review (conditional)
 
 **Only for architecturally significant changes or user request:**
 
 Invoke the configured external second-opinion review mechanism only if available and explicitly selected. Purpose: cross-AI adversarial peer review of completed code. Distinct from Step 1d (pre-spec MultAI) — this reviews post-execution code and feeds findings back into REVIEW.md.
 
-## Step 9d: Receive Review
+## Step 8d: Receive Review
 
 Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel. Purpose: disciplined response to findings — no blind agreement and no silent dismissal.
 
-## Step 9e: Backlog capture from review
+## Step 8e: Backlog capture from review
 
 After receiving review findings, scan REVIEW.md for any low-priority, deferred, or advisory items that were not fixed. **Every such item must be added to the SB backlog immediately** — do not silently drop them.
 
@@ -392,6 +403,16 @@ Skill(skill="silver:add", args="<finding description from REVIEW.md>")
 ```
 
 If all findings were fixed or no advisory items exist, output: "No deferred review items to capture."
+
+## Step 9: Verify Work
+
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: UAT, must-haves, artifact checks, test freshness, and completion evidence. Phase is NOT complete until this passes. Non-skippable.
+
+## Step 9b: Test Gap Fill + Fresh Test Run
+
+**Test gap fill (conditional):** If `silver:verify` surfaces coverage gaps, return to `silver:execute` with a test-gap task to add tests from UAT criteria.
+
+**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's test gate and record the freshness marker. `verify-tests` is part of `required_deploy`, so the completion-audit deploy gate blocks PR/release/deploy until a fresh run is recorded. This is also re-confirmed at Step 15b (`silver:ship`); run it here so the verify→ship chain has a fresh marker on the shipped tree.
 
 ## Step 10: Security Review
 

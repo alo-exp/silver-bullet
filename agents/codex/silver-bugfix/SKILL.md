@@ -2,7 +2,7 @@
 name: "silver:bugfix"
 title: "Bugfix"
 description: >
-  This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → TDD regression test → plan → execute → review → verify → ship
+  This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → plan → TDD regression test → execute → review → verify → ship
 argument-hint: "<description of the bug or failure>"
 version: 0.1.0
 ---
@@ -61,9 +61,11 @@ Display the composition proposal to the user:
 
 ```
 SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → SECURE → VERIFY → SHIP
+Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → SHIP
 Skipped: BOOTSTRAP — .planning/ exists
-### 3. Autonomous composition (default)
+```
+
+### 4. Autonomous composition (default)
 
 Do **not** ask `Approve composition?`. Log: `SB ► bugfix composed {N} paths — orchestrator active`.
 Workflow tracking is started by `flow-advance.sh`.
@@ -184,21 +186,25 @@ Invoke `silver:forensics` through the active runtime's SB-recognized skill invoc
 After `silver:forensics` completes and outputs diagnosis:
 → Hand off to Path 1A (start at Step 1A.1 with the diagnosis context).
 
-## Step 2: TDD — Write Regression Test First
+## Step 2: Plan the Fix
 
-All paths converge here. Before writing any fix code:
+All paths converge here. Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel (lightweight, 1-2 tasks only — this is a fix, not a feature).
+
+Planning precedes the regression test so the pre-execution chain (DEBUG → PLAN) is
+recorded before the first edit — this is exactly what `workflow-chain-guard.sh`
+enforces for the bugfix composition.
+
+## Step 3: TDD — Write Regression Test First
+
+Before writing any fix code:
 
 Invoke `tdd` through the active runtime's SB-recognized skill invocation channel. Purpose: write a failing regression test first — RED must appear before writing any fix. This satisfies the hidden SB TDD gate before any fix code is written and ensures the bug cannot silently regress.
 
-**Enforcement:** Do not proceed to Step 3 until the test is red (failing for the right reason).
-
-## Step 3: Plan the Fix
-
-Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel (lightweight, 1-2 tasks only — this is a fix, not a feature).
+**Enforcement:** Do not proceed to Step 4 until the test is red (failing for the right reason).
 
 ## Step 4: Execute Fix + Verify Green
 
-Invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel. After execution, verify the regression test from Step 2 is now green.
+Invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel. After execution, verify the regression test from Step 3 is now green.
 
 ## Step 5: Code Review
 
@@ -212,9 +218,13 @@ Run the full review sequence in order:
 
 Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: confirm fix, zero regression. Non-skippable.
 
+**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's test gate and record the freshness marker — it is part of `required_deploy`, so the completion-audit deploy gate blocks ship until a fresh run is recorded. The regression test written in Step 3 must be green.
+
 ## Step 7: Security Review
 
-Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable.
+Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable. Then invoke `silver:secure` for retroactive threat-mitigation verification — both `security` and `silver-secure` are part of `required_deploy`, so the completion-audit deploy gate blocks ship until both are recorded.
+
+> **Canonical post-execution order:** review (Step 5) → verify (Step 6) → security + secure (Step 7) → pre-ship quality gates (Step 7b) → ship (Step 8). This sequence matches `silver:feature`, `silver:ui`, and `silver:devops`.
 
 ## Step 7a: Tech Debt Review
 

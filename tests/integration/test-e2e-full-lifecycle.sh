@@ -130,7 +130,7 @@ out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")
 assert_blocked "S6.1: PR create blocked before finalization" "$out"
 
 # Record remaining required deploy skills
-for skill in silver-execute silver-verify silver-ship silver-secure silver-validate \
+for skill in silver-execute silver-verify silver-ship security silver-secure silver-validate \
              silver-branch-finish verify-tests; do
   run_record_skill "$skill" >/dev/null
 done

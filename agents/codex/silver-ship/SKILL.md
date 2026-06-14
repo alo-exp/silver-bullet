@@ -29,7 +29,11 @@ SUMMARY/VERIFICATION, or a PR description draft.
    - `silver:validate` where the workflow requires it;
    - `silver:domain-audit` where specialized packs were selected by
      `silver:quality-gates`, review, verification, DevOps, or release scope;
-   - `verify-tests` when release or delivery risk requires fresh tests.
+   - `verify-tests` — **mandatory before any delivery**. `verify-tests` is in the
+     `required_deploy` list, so the completion-audit deploy gate blocks
+     `gh pr create` / `gh release create` / `deploy` until a fresh `verify-tests`
+     run is recorded. Run it here even when the suite was run earlier in the phase,
+     so the recorded freshness marker reflects the shipped tree.
 3. Run `silver:branch-finish` on non-main branches.
 4. Check git status and separate unrelated user changes from ship scope.
 5. Prepare PR or merge notes with:

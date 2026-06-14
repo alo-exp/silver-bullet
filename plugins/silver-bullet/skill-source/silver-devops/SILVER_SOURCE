@@ -61,7 +61,7 @@ Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included in the
 
 Construct the proposed flow chain for infrastructure/CI-CD work. Default chain:
 
-FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions + domain packs) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) [always included — infra work] → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions + domain packs) → FLOW 14 (SHIP)
+FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if IaC/tooling choice needed] → FLOW 13 (QUALITY GATE, pre-plan, DevOps dimensions + domain packs) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) [always included — infra work] → FLOW 13 (QUALITY GATE, pre-ship, DevOps dimensions + domain packs) → FLOW 14 (SHIP)
 
 Note: FLOW 11 (SECURE) is always included for any infrastructure engagement. FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are never included.
 
@@ -71,9 +71,11 @@ Display the composition proposal to the user:
 
 ```
 SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → PLAN → EXECUTE → SECURE → VERIFY → SHIP
+Flows: ORIENT → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → SHIP
 Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra
-### 3. Autonomous composition (default)
+```
+
+### 4. Autonomous composition (default)
 
 Do **not** ask `Approve composition?`. Log: `SB ► devops composed {N} paths — orchestrator active`.
 Workflow tracking is started by `flow-advance.sh`.
@@ -202,7 +204,15 @@ Run review sequence in order:
 3. For architecturally significant infra changes: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
 4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
-## Step 8: IaC Security + Secrets Verification
+> **Canonical post-execution order:** review (Step 7) → verify (Step 8) → secure (Step 9) → pre-ship quality gates (Step 10) → ship (Step 11). This sequence matches `silver:feature`, `silver:ui`, and `silver:bugfix`. Pre-plan infrastructure security remains mandatory at Step 3b; Step 9 is the retroactive secure sweep.
+
+## Step 8: Deployment Verification
+
+Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
+
+**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's gate (IaC validation / plan-check commands) and record the freshness marker — it is part of `required_deploy`, so the completion-audit deploy gate blocks deploy until a fresh run is recorded.
+
+## Step 9: IaC Security + Secrets Verification
 
 Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
 
@@ -220,10 +230,6 @@ Skill(skill="silver:add", args="<description of deferred item>")
 - When ambiguous → files as **backlog** (do not over-alarm with issues)
 
 **Minimum bar:** Only file items with distinct impact OR that block future work OR represent a conscious deferred decision. Do not file transient notes or items already addressed this session.
-
-## Step 9: Deployment Verification
-
-Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
 
 ## Step 10: Pre-Ship DevOps Quality Gates (7 IaC dimensions)
 

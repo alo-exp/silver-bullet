@@ -104,26 +104,35 @@ Then use ask the user directly:
 If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
-### 1.1a Graphify
+### 1.1a Graphify (advisory)
 
-Graphify is required for SB's retrieval-oriented project memory. It lets SB query code,
-docs, knowledge, and learnings before planning or editing. Existing projects can fall
-back to direct docs reads when Graphify is temporarily unavailable, but new SB setup
-must confirm the dependency.
+Graphify powers SB's retrieval-oriented project memory — it lets SB query code,
+docs, knowledge, and learnings before planning or editing. It is **recommended but
+not required**: SB falls back to direct docs reads (`docs/knowledge/INDEX.md`,
+current `docs/knowledge/YYYY-MM.md`, `docs/learnings/YYYY-MM.md`, and referenced docs)
+whenever Graphify is unavailable. This matches the core-rules retrieval fallback —
+do not hard-block init on Graphify.
 
 Run via shell:
 ```
 command -v graphify
 ```
 
-If the command fails (exit code non-zero), use ask the user directly:
-- Question: "❌ **Graphify is not installed.** Silver Bullet uses Graphify for project memory retrieval before planning, editing, debugging, review, and shipping.\n\nInstall one of:\n\n```\nuv tool install graphifyy\n```\n\nor:\n\n```\npip install graphifyy\n```\n\nReady to continue?"
-- Options:
-  - "A. Yes, I've installed Graphify — continue"
-  - "B. Stop for now"
+If the command fails (exit code non-zero), surface an advisory note (do not STOP):
 
-If A: re-run `command -v graphify`. If still not found, STOP with: `❌ Graphify still not found. Please install it and re-run /silver:init.`
-If B: STOP.
+> ⚠️ **Graphify is not installed.** Silver Bullet will fall back to direct docs reads
+> for project memory retrieval. To enable richer retrieval, install it with one of:
+>
+> ```
+> uv tool install graphifyy
+> ```
+> or:
+> ```
+> pip install graphifyy
+> ```
+
+Then continue init regardless of Graphify presence. If the user installs it now,
+re-run `command -v graphify` to confirm; otherwise proceed with the docs-read fallback.
 
 ### 1.1b Install diagnostics (advisory)
 
