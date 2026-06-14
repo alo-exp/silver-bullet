@@ -9,6 +9,7 @@ if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
 fi
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
+mkdir -p "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/test"
 TEST_RUN_ID="$$"
 PASS=0
 FAIL=0
@@ -105,6 +106,7 @@ write_default_config() {
 {
   "config_version": "${config_version}",
   "sb_initiated": true,
+  "sb_enforcement_tier": 2,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},
@@ -172,7 +174,10 @@ EOF
 }
 
 write_all_skills() {
-  emit_required_deploy_skills required_deploy > "$TMPSTATE"
+  {
+    emit_required_deploy_skills required_deploy
+    emit_required_deploy_skills required_release
+  } | awk 'NF && !seen[$0]++' > "$TMPSTATE"
   date +%s > "$VERIFY_TESTS_FILE"
   seed_gsd_lifecycle_artifacts
 }
@@ -494,6 +499,7 @@ write_full_config() {
 {
   "config_version": "${config_version}",
   "sb_initiated": true,
+  "sb_enforcement_tier": 2,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},
