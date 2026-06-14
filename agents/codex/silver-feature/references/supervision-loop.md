@@ -39,8 +39,8 @@ Run 4-tier anti-stall detection:
 ```
 
 **Tier 3 — Context exhaustion (D-18):** Monitor context window usage:
-- If context >80%: display a context-compaction recommendation and consider summarizing the current context before continuing.
-- If context >90%: display `Context exhaustion imminent. Summarize the current context before continuing.` then continue in a fresh context or subagent
+- If context >80%: display `Context compaction recommendation: context window at ~80%. Consider summarizing context before continuing.`
+- If context >90%: display `Context exhaustion imminent. Summarize context before continuing.` then run host-supported context compaction
 
 **Tier 4 — Heartbeat sentinel (D-19):** Each flow invocation writes a heartbeat timestamp to WORKFLOW.md (`Last-flow:` and `Last-beat:` fields). If heartbeat gap >15 minutes, display:
 ```

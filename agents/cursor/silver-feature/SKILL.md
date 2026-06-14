@@ -207,7 +207,7 @@ FOR each phase in remaining_phases:
     - FLOW 15 (DEBUG) dynamically on execution, CI, test, or verification failure
   TICK ROADMAP.md: update the checkbox for the completed phase from [ ] to [x]
     SB's FLOW 14 (SHIP) handles this as part of phase completion.
-    Do NOT use the Edit tool directly — planning-file-guard.sh will block it.
+    Do NOT edit planning artifacts directly through generic file edits — planning-file-guard.sh will block it.
     If FLOW 14 did not tick the checkbox, use the override bypass:
       touch $HOME/.cursor/.silver-bullet/planning-edit-override
       # Edit .planning/ROADMAP.md: change - [ ] **Phase {N}: ... to - [x] **Phase {N}: ... (completed {YYYY-MM-DD})
@@ -474,7 +474,7 @@ UAT.md format:
 - Table: # | Criterion | Result | Evidence
 - Summary section: Total, PASS, FAIL, NOT-RUN counts
 
-Write `.planning/UAT.md` using the Write tool.
+Write `.planning/UAT.md` using the active runtime file-writing mechanism.
 
 ### Step 17.0a: Review UAT.md
 

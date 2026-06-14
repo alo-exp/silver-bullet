@@ -47,7 +47,7 @@ For each rename action:
 
 ## User Approval Flow
 
-Present plan directly:
+Present plan and ask the user directly:
 - **A. Yes, proceed step by step** — execute and confirm each action individually
 - **B. Show details first** — read each detected file (first 30 lines) and explain, then re-ask
 - **C. Skip migration** — proceed to Step 3.6 without migration

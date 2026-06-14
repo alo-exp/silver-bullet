@@ -104,7 +104,7 @@ Display:
 
 ⚠️  **Note:** The update installs the new release via the active host's marketplace or package manager.
 On Codex, use the repo's Codex package refresh path instead of the Claude marketplace command.
-Your project files (CLAUDE.md, silver-bullet.md, hooks, config) are never
+Your project files (project instruction file, silver-bullet.md, hooks, config) are never
 touched — only the active host's plugin cache and registry are updated.
 ```
 

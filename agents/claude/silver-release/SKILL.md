@@ -212,7 +212,7 @@ For each iteration:
    and verification for the touched scope.
 4. Update `.planning/RELEASE-GAP-CLOSURE.md`.
 
-If blockers remain after two iterations, use AskUserQuestion when the host
+If blockers remain after two iterations, ask the user directly when the host
 supports it; otherwise ask directly. The user must choose one of:
 
 - release anyway with documented known issues
