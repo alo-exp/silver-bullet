@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.39.4] — 2026-06-14
+## [0.40.0] — 2026-06-14
 
 ## Features
 - `feat(migrate): upgrade path to latest SB (058 agent-neutral, Cursor, runtime parity)` (47f5b5a)

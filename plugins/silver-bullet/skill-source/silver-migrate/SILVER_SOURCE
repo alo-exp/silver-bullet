@@ -103,7 +103,7 @@ Merge forward from `templates/silver-bullet.config.json.default` without discard
 1. Read the template defaults and the existing `.silver-bullet.json` (create from template if absent).
 2. Preserve all project-specific values: `project.name`, `project.src_pattern`, `project.src_exclude_pattern`, custom `verify_commands`, and user-chosen `issue_tracker`.
 3. Add or refresh top-level fields when missing or older than the template:
-   - `config_version` and `version` (target: current plugin release, e.g. `0.39.4`)
+   - `config_version` and `version` (target: current plugin release, e.g. `0.40.0`)
    - `release.profile`, `release.require_plugin_runtime_matrix`, `release.require_pre_release_quality_gate`, `release.quality_gate_state_file`
    - `semantic_compression` block
    - `multi_agent` block
