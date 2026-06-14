@@ -7,13 +7,11 @@ argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
 
-# /silver:research — Tech Decisions, Architecture Spikes, Comparisons
+# /silver:research — Research Composition Spec
 
-SB orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to `.planning/research/` and referenced by the receiving workflow.
+SB **queue builder** for tech decisions and spikes. Parent orchestrator spawns workers; research artifacts hand off to feature/devops queues.
 
-**Routing note:** `silver:research` takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
-
-By default, research runs directly in the current host session using repository context, local artifacts, official docs, primary sources, and other concrete evidence available through the host/runtime. MultAI is optional and is used only when the user explicitly requests multi-AI perspectives in the current task. After research is complete, hand off to the appropriate implementation workflow.
+Never writes research inline in the parent session — workers execute flows.
 
 ## Mandatory SB workflow execution
 

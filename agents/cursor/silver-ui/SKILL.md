@@ -6,13 +6,11 @@ argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
 
-# /silver:ui — Frontend, Component, Interface Workflow
+# /silver:ui — Frontend Composition Spec
 
-SB orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. Follows the same skeleton as silver:feature but inserts `silver:ui-contract` for design contract and `silver:ui-review` post-execution.
+SB **queue builder** for UI/frontend work. Parent orchestrator seeds the queue and spawns Task workers per flow — does not execute inline.
 
-**Routing note:** If an instruction matches both silver:feature and silver:ui, silver:ui wins — UI is more specific. silver:bugfix always takes precedence over both.
-
-Never implements UI directly — orchestrates only.
+Never implements UI directly — composition spec only.
 
 ## Mandatory dependency execution
 

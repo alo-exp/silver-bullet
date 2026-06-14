@@ -7,11 +7,11 @@ argument-hint: "<description of the bug or failure>"
 version: 0.1.0
 ---
 
-# /silver:bugfix — Bug, Regression, Test Failure Workflow
+# /silver:bugfix — Bugfix Composition Spec
 
-SB orchestrator for bugs, regressions, crashes, errors, and failing tests. Enforces triage-first discipline: classify the failure type before any investigation begins.
+SB **queue builder** for bugs and regressions. Parent orchestrator spawns Task workers per flow — does not fix inline.
 
-Never implements fixes directly — orchestrates only.
+Never implements fixes directly — composition spec only.
 
 ## Pre-flight: Load Preferences
 
