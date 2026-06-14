@@ -217,10 +217,10 @@ Doc-scheme gate remediation for `phase-056-zuvo-runtime-parity-release` in a Cur
 
 ## Doc-scheme session (2026-06-14)
 
-Task `phase-056-zuvo-runtime-parity-release`: v0.39.3 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
+Task `phase-056-zuvo-runtime-parity-release`: v0.39.4 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
 
 
-## Cursor runtime bootstrap (v0.39.3 / phase 057)
+## Cursor runtime bootstrap (v0.39.4 / phase 057)
 
 Phase 057 adds targeted coverage for the Cursor host adapter:
 
