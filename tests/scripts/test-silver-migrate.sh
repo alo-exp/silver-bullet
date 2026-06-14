@@ -47,7 +47,7 @@ assert_contains "documents lessons to learnings migration" "docs/lessons/" "$SKI
 assert_contains "documents per-instance workflow tracking" "SB_WORKFLOWS_BIN.*start" "$SKILL"
 assert_contains "retires WORKFLOW.md" "Do not create.*WORKFLOW\\.md" "$SKILL"
 
-# v0.39.4 upgrade surface
+# v0.40.0 upgrade surface
 assert_contains "documents silver-bullet.md template refresh" "silver-bullet\\.md\\.base" "$SKILL"
 assert_contains "documents config_version merge" "config_version" "$SKILL"
 assert_contains "documents silver-bullet.config.json.default" "silver-bullet\\.config\\.json\\.default" "$SKILL"
