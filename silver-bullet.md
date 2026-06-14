@@ -329,7 +329,11 @@ that degraded path in work notes.
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
+Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task.
+
+**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`silver:feature`, `silver:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
+
+The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
 SB is the lifecycle authority. Semver, milestones, phases, planning, execution, verification, bug fixing, testing, review, and phase/milestone shipping flow through SB-owned skills. Optional external plugins extend SB only when a workflow explicitly marks them optional or the user requests them.
 
@@ -344,7 +348,7 @@ SB is the lifecycle authority. Semver, milestones, phases, planning, execution, 
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan -> silver:blast-radius -> devops-skill-router |
 | `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → direct research (default), optional multi-AI only when user-requested → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates -> verify-tests -> silver:release audit/publish |
-| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 direct edit, Tier 2 SB lifecycle slice, Tier 3 escalate to silver-feature |
+| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
