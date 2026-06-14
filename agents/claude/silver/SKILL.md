@@ -13,7 +13,17 @@ Smart orchestrator for Silver Bullet. Accepts freeform natural language and rout
 - an SB ad-hoc utility skill;
 - an optional external plugin only when the user explicitly asks for that plugin or the selected SB workflow marks it optional.
 
-Never does implementation itself. Match intent, show the routing decision, then invoke the chosen skill.
+Never does implementation itself. Match intent, show the routing decision, then **spawn a Task worker** (parent mode) or invoke the composer skill to seed the queue.
+
+## Parent orchestrator mode (default)
+
+When `orchestrator_mode` is `parent` in `.silver-bullet.json` (the only supported mode):
+
+1. Invoke **`silver-orchestrator`** at session start or for `/silver` routing — do not execute flow atoms inline.
+2. Composer skills (`silver-feature`, `silver-ui`, …) are **queue builders**; the parent spawns workers per `orchestrator-directive.json`.
+3. Read `next_worker_template` + `next_skill` from the directive; load `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` for each Task prompt.
+
+Cooperative single-agent execution (parent invokes `silver:plan` / `silver:execute` directly) is **disabled**.
 
 ## Core Positioning
 

@@ -107,8 +107,30 @@ If user selects A, use the active runtime file-editing mechanism to remove the l
 ### 3.2 Create directories
 
 ```bash
-mkdir -p docs/specs docs/workflows
+mkdir -p docs/specs docs/workflows .claude/rules
 ```
+
+### 3.2.1 Install Cursor orchestrator rule
+
+When the active runtime is Cursor **or** `.claude/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
+
+```bash
+mkdir -p .claude/rules
+cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .claude/rules/silver-orchestrator.mdc
+```
+
+Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).
+
+### 3.2.2 Install orchestrator worker templates
+
+Copy worker prompt templates for parent-mode Task delegation:
+
+```bash
+mkdir -p .silver-bullet/orchestrator-workers
+cp -R "${PLUGIN_ROOT}/templates/orchestrator-workers/." .silver-bullet/orchestrator-workers/
+```
+
+Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported mode).
 
 ### 3.2.5 CI setup
 
@@ -138,6 +160,12 @@ Copy both workflow templates to `docs/workflows/`, backing up any existing file 
 
 1. `${PLUGIN_ROOT}/templates/workflows/full-dev-cycle.md` → `docs/workflows/full-dev-cycle.md` (back up existing to `.backup`)
 2. `${PLUGIN_ROOT}/templates/workflows/devops-cycle.md` → `docs/workflows/devops-cycle.md` (back up existing to `.backup`)
+
+Also copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (executable) when absent — required for autonomous `flow-advance` workflow tracking in downstream projects.
+
+### 3.5.6 Copy workflow helper script
+
+Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (create `scripts/` if missing, `chmod +x`). Required for `flow-advance.sh` auto workflow tracker (Wave 0.8).
 
 ### 3.5.5 Documentation bootstrap/reconciliation (all projects)
 
