@@ -139,6 +139,24 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:research passes after clarify marker exists" "$out"
 teardown
 
+# Bugfix workflow: diagnosis-first pre-execution chain is DEBUG → PLAN (B1).
+# Quality-gates/context are NOT part of the bugfix pre-execution chain.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:bugfix" "bugfix gate test" "orient,debug,plan,execute,review,verify"
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:bugfix blocks without DEBUG/PLAN markers" "$out"
+write_state_markers silver-debug
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:bugfix still blocks with only DEBUG marker (PLAN missing)" "$out"
+write_state_markers silver-debug silver-plan
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:bugfix passes after DEBUG + PLAN markers exist" "$out"
+write_state_markers gsd-debug gsd-plan-phase
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:bugfix legacy GSD debug/plan markers satisfy SB-owned aliases" "$out"
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

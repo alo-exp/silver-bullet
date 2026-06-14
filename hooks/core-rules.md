@@ -10,7 +10,8 @@ You MUST NOT:
 - Combine steps or claim implicit coverage — each Silver Bullet skill MUST be explicitly invoked through the active runtime's SB-recognized skill invocation channel
 - Claim a step is not applicable without explicit user approval
 - Proceed to the next phase before completing the current phase's required skills
-- Declare work complete without all required_deploy skills recorded in the state file
+- Declare work complete (Stop) without the required_planning floor recorded in the state file
+- Run a final-delivery command (gh pr create / gh release create / deploy) without all required_deploy skills recorded in the state file
 
 ## Enforcement Model (Section 1)
 
@@ -23,7 +24,7 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 5. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
 6. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
 7. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
-8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if required_deploy skills are missing
+8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if the required_planning floor is incomplete (two-tier model: the full required_deploy list is enforced separately at delivery commands by the completion audit, layer 5)
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB and optional extension routes and re-injects missing skills before every message
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked

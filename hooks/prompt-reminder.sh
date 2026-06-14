@@ -97,7 +97,10 @@ sb_default_trivial="${SB_STATE_DIR}/trivial"
 config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
   (.state.state_file // $ds),
   (.state.trivial_file // $dt),
-  ((.skills.required_deploy // []) | join(" "))
+  ((.skills.required_deploy // []) | join(" ")),
+  ((.skills.required_planning // []) | join(" ")),
+  (.project.active_workflow // "full-dev-cycle"),
+  ((.skills.required_planning_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -105,6 +108,9 @@ state_file="${state_file/#\~/$HOME}"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
 required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
+required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
+required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -153,12 +159,51 @@ if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
   source "$_lib_dir/prompt-classifier.sh"
 fi
 
-if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-  required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
-elif [[ -n "$required_deploy_cfg" ]]; then
-  required_skills="$required_deploy_cfg"
+# H1: two-tier display. During development show only the planning floor (the
+# gate that actually applies at Stop). Surface the full required_deploy list
+# only when delivery is imminent — either the prompt signals delivery (ship /
+# PR / release / deploy / merge) or the build is already done (silver:execute
+# recorded), so the next gate the user hits is the delivery gate.
+delivery_adjacent=false
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_delivery_adjacent >/dev/null 2>&1; then
+  if sb_prompt_is_delivery_adjacent "$prompt"; then
+    delivery_adjacent=true
+  fi
+fi
+if [[ "$delivery_adjacent" != true ]]; then
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
+      delivery_adjacent=true
+    fi
+  elif printf '%s\n' "$state_contents" | grep -Fqx -- "silver-execute" 2>/dev/null; then
+    delivery_adjacent=true
+  fi
+fi
+
+if [[ "$active_workflow" == "devops-cycle" ]]; then
+  planning_default="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+  planning_cfg="$required_planning_devops_cfg"
 else
-  required_skills="$DEFAULT_REQUIRED"
+  planning_default="${DEFAULT_PLANNING:-silver-quality-gates}"
+  planning_cfg="$required_planning_cfg"
+fi
+
+if [[ "$delivery_adjacent" == true ]]; then
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+  elif [[ -n "$required_deploy_cfg" ]]; then
+    required_skills="$required_deploy_cfg"
+  else
+    required_skills="$DEFAULT_REQUIRED"
+  fi
+else
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$planning_cfg" "$planning_default")"
+  elif [[ -n "$planning_cfg" ]]; then
+    required_skills="$planning_cfg"
+  else
+    required_skills="$planning_default"
+  fi
 fi
 
 # On main/master, finishing-a-development-branch is not applicable
@@ -227,10 +272,19 @@ if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
 fi
 
 # ── Emit additionalContext ────────────────────────────────────────────────────
-if [[ -z "$missing_list" ]]; then
-  skill_status="Silver Bullet: all required skills complete."
+if [[ "$delivery_adjacent" == true ]]; then
+  tier_label="delivery"
 else
-  skill_status="Silver Bullet -- Missing: ${missing_list} (${completed} of ${total} complete)"
+  tier_label="planning floor"
+fi
+if [[ -z "$missing_list" ]]; then
+  if [[ "$delivery_adjacent" == true ]]; then
+    skill_status="Silver Bullet: all required delivery skills complete."
+  else
+    skill_status="Silver Bullet: planning floor complete (delivery gate surfaces when you ship/PR/release)."
+  fi
+else
+  skill_status="Silver Bullet [${tier_label}] -- Missing: ${missing_list} (${completed} of ${total} complete)"
 fi
 
 # Append WORKFLOW.md position if present

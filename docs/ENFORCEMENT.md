@@ -35,6 +35,26 @@ assume the Claude runtime when `CLAUDE_PLUGIN_ROOT` resolves under `/.codex/`.
 | C — Review Recorded | `silver-review` in state | Source edits still allowed; finalization remains gated |
 | D — Finalization | All `required_deploy` skills plus expected SB artifacts | Final delivery commands allowed |
 
+## Stop vs Delivery (Two-Tier Model)
+
+Silver Bullet enforces two **distinct** tiers — they are not the same gate:
+
+| Tier | Trigger | Hook | Requires |
+|------|---------|------|----------|
+| **Planning floor** | Task-complete declaration (Stop) | `stop-check.sh` | `required_planning` skills in state |
+| **Final delivery** | `gh pr create`, `gh release create`, deploy commands | `completion-audit.sh` | All `required_deploy` skills + expected artifacts |
+
+`stop-check.sh` (Stop event) blocks **only** on the `required_planning` floor — it does **not** require the full `required_deploy` list. This is intentional (v0.30.0 #85): an agent may legitimately end a session mid-implementation as long as the planning floor is recorded. The full `required_deploy` list is enforced separately by `completion-audit.sh` when an actual delivery command runs. `hooks/core-rules.md` and `silver-bullet.md` describe the same split — keep all three in sync.
+
+### Orchestrator Worker SubagentStop
+
+In orchestrator parent mode, the parent session spawns Task **workers**, each executing one atomic flow. Stop/SubagentStop handling differs by role:
+
+- **Worker (`SB_ORCHESTRATOR_WORKER=1`) on `SubagentStop`:** `stop-check.sh` clears the worker marker and exits 0. Workers are **not** individually subjected to the planning-floor or delivery gates — they perform a single flow and return to the parent. Enforcement is the parent's responsibility.
+- **Parent on `Stop` with a pending flow queue:** `stop-check.sh` blocks and instructs the parent to spawn the next Task worker for the next flow before ending the session. The parent cannot declare the composition complete while flows remain queued.
+
+This division means the planning-floor and delivery gates are enforced **once, at the parent level**, against the cumulative state the workers contributed — never redundantly on each worker SubagentStop.
+
 ## Composed-Workflow-First Enforcement Pattern
 
 All hooks check active `.planning/workflows/<id>.md` files first, falling back to legacy skill markers when no composed workflow is active.

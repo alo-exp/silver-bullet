@@ -155,8 +155,8 @@ out=$(run_hook)
 assert_noop_json "no config file -> valid no-op hook JSON" "$out"
 teardown
 
-# Test 2: All skills complete -> output contains "all required skills complete"
-echo "--- Test 2: All skills complete ---"
+# Test 2: All skills complete (H1 two-tier display)
+echo "--- Test 2: All skills complete (two-tier) ---"
 setup
 write_cfg
 cat > "$TMPSTATE" << 'EOF'
@@ -165,18 +165,26 @@ silver-review
 silver-completion-audit
 silver-branch-finish
 EOF
+# Delivery-adjacent prompt -> deploy tier; all deploy skills recorded.
+out=$(run_hook 'ship this and open the PR')
+assert_contains "delivery-adjacent + all deploy recorded -> delivery-complete message" "$out" "all required delivery skills complete"
+# Non-delivery prompt -> planning floor tier; planning floor recorded.
 out=$(run_hook)
-assert_contains "all skills complete -> contains all-complete message" "$out" "all required skills complete"
+assert_contains "dev (non-delivery) + planning floor recorded -> planning-floor-complete message" "$out" "planning floor complete"
 teardown
 
-# Test 3: Missing skills -> output contains "Missing:" and the skill names
+# Test 3: Missing skills -> "Missing:" and skill names (deploy tier when delivery-adjacent)
 echo "--- Test 3: Missing skills -> Missing label and skill name ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-out=$(run_hook)
+# Delivery-adjacent so the full deploy list is surfaced.
+out=$(run_hook 'ship this feature now')
 assert_contains "missing skills -> output contains 'Missing:'" "$out" "Missing:"
 assert_contains "missing skills -> output contains 'silver-review'" "$out" "silver-review"
+# H1: during dev (non-delivery) the deploy-only skills must NOT be surfaced.
+out=$(run_hook)
+assert_not_contains "dev (non-delivery) -> deploy-only skill silver-review NOT surfaced" "$out" "silver-review"
 teardown
 
 # Test 4: Missing skills -> output contains count "(N of M complete)"
@@ -184,7 +192,7 @@ echo "--- Test 4: Missing skills -> count format (N of M complete) ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-out=$(run_hook)
+out=$(run_hook 'ship this feature now')
 assert_contains "missing skills -> output contains 'of' count" "$out" "of"
 assert_contains "missing skills -> output contains 'complete'" "$out" "complete"
 teardown
@@ -208,9 +216,10 @@ write_cfg
 # Switch to main branch
 git -C "$TMPDIR_TEST" checkout -q -b main 2>/dev/null || git -C "$TMPDIR_TEST" checkout -q main 2>/dev/null || true
 # Record only silver-quality-gates (leave review and completion missing) so 'Missing:' appears,
-# but branch finishing should be exempt on main and not appear in the list
+# but branch finishing should be exempt on main and not appear in the list.
+# Use a delivery-adjacent prompt so the full deploy list (incl. branch-finish) is surfaced.
 echo "silver-quality-gates" > "$TMPSTATE"
-out=$(run_hook)
+out=$(run_hook 'ship this and merge to main')
 assert_contains "on main: output contains 'Missing:'" "$out" "Missing:"
 assert_not_contains "on main: finishing-a-development-branch NOT in missing" "$out" "finishing-a-development-branch"
 assert_not_contains "on main: silver-branch-finish NOT in missing" "$out" "silver-branch-finish"
@@ -249,14 +258,18 @@ echo "--- Test 8b: Legacy config -> no retired missing-skill reminders ---"
 setup
 write_legacy_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
+# Dev (non-delivery): planning floor is surfaced, normalized to current SB gates.
 out=$(run_hook 'Add a due date field to todos. Keep it simple.')
 assert_contains "legacy config: inherits current SB planning gate" "$out" "silver-context"
-assert_contains "legacy config: inherits current SB execution gate" "$out" "silver-execute"
 assert_not_contains "legacy config: does not request legacy gsd discuss" "$out" "gsd-discuss-phase"
 assert_not_contains "legacy config: does not request legacy gsd execute" "$out" "gsd-execute-phase"
 assert_not_contains "legacy config: does not request legacy review framing" "$out" "requesting-code-review"
 assert_not_contains "legacy config: does not request retired testing-strategy" "$out" "testing-strategy"
 assert_not_contains "legacy config: does not request retired deploy-checklist" "$out" "deploy-checklist"
+# Delivery-adjacent: deploy tier inherits current SB execution gate (silver-execute), still no retired skills.
+out=$(run_hook 'ship this feature and open a pull request')
+assert_contains "legacy config (delivery): inherits current SB execution gate" "$out" "silver-execute"
+assert_not_contains "legacy config (delivery): no retired testing-strategy" "$out" "testing-strategy"
 teardown
 
 # Test 9: Explanatory question -> no bare-prompt router injection
