@@ -27,6 +27,7 @@ Convert ambiguous input into a concise brief that can seed `silver:context` when
 - Read current project context first.
 - If the topic is visual or diagram-heavy, offer the visual companion as its own message before asking deeper questions.
 - Ask one question at a time when clarification is needed. Prefer multiple choice when possible.
+- **Decision taxonomy (Wave 0.5):** Only ask when `decision_class: blocking` (material fork). Otherwise apply `autonomous_default` and log the assumption — do not stall on preference questions.
 - If the user supplied a full requirement doc, compress repeated or already-settled points instead of restating them.
 - If the input spans multiple independent projects, split it before continuing.
 - Be opinionated. Generate options, challenge assumptions, then converge.

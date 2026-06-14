@@ -148,10 +148,10 @@ echo "--- Scenario 8: Compliance status with all required_deploy skills ---"
 integration_setup
 write_default_config
 
-# Record all current required_deploy skills
+# Record all current required_deploy and release skills
 while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
-done < <(emit_required_deploy_skills required_deploy)
+done < <(emit_required_deploy_skills required_deploy; emit_required_deploy_skills required_release)
 
 out=$(run_compliance_status)
 assert_contains "S8.1: compliance shows PLANNING complete" "$out" "PLANNING 3/3"

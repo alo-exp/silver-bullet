@@ -348,6 +348,21 @@ if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_m
 fi
 
 if [[ "$recorded_any" == true ]]; then
+  if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
+    # shellcheck source=lib/orchestrator-directive.sh
+    source "$_lib_dir/orchestrator-directive.sh"
+    expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
+    if [[ -n "$expected" ]]; then
+      state_contents=""
+      [[ -f "$STATE_FILE" ]] && state_contents="$(cat "$STATE_FILE" 2>/dev/null || true)"
+      for skill in "${completed_skills_to_mark[@]}"; do
+        if [[ "$skill" == "$expected" ]] || sb_orchestrator_directive_skill_recorded "$expected" "$state_contents"; then
+          sb_orchestrator_directive_clear
+          break
+        fi
+      done
+    fi
+  fi
   printf '{"hookSpecificOutput":{"message":"✅ Skill recorded"}}'
 else
   # No tracked skills inferred from this hook invocation.

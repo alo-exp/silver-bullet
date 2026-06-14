@@ -14,7 +14,17 @@ Smart orchestrator for Silver Bullet. Accepts freeform natural language and rout
 - an SB ad-hoc utility skill;
 - an optional external plugin only when the user explicitly asks for that plugin or the selected SB workflow marks it optional.
 
-Never does implementation itself. Match intent, show the routing decision, then invoke the chosen skill.
+Never does implementation itself. Match intent, show the routing decision, then **spawn a Task worker** (parent mode) or invoke the composer skill to seed the queue.
+
+## Parent orchestrator mode (default)
+
+When `orchestrator_mode` is `parent` in `.silver-bullet.json` (the only supported mode):
+
+1. Invoke **`silver-orchestrator`** at session start or for `/silver` routing — do not execute flow atoms inline.
+2. Composer skills (`silver-feature`, `silver-ui`, …) are **queue builders**; the parent spawns workers per `orchestrator-directive.json`.
+3. Read `next_worker_template` + `next_skill` from the directive; load `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` for each Task prompt.
+
+Cooperative single-agent execution (parent invokes `silver:plan` / `silver:execute` directly) is **disabled**.
 
 ## Core Positioning
 
@@ -75,9 +85,11 @@ Do not force workflow routing for:
 
 | Exception | Examples | Action |
 |-----------|----------|--------|
-| Q&A | "what is SB?", "explain this file", "do you agree?" | Answer directly or inspect/read as needed |
+| Pure Q&A (no implementation) | "what is SB?", "explain this file", "do you agree?" | Answer directly or inspect/read as needed |
 | Status-only | "what branch?", "where are we?", "what changed?" | Answer from local state; route to an SB status/progress workflow when persistent project status is needed |
 | Truly trivial local request | typo, comment, formatting, config value, <=3 files, no logic | Route to `silver:fast` |
+
+**Narrowing (H-05):** If the user asks how to fix, debug, or change behavior ("why does X fail?", "how do I fix Y?"), route to `silver:bugfix` or `silver:clarify` — not the Q&A exception. Only pure explanation with no expected code change qualifies as Q&A.
 
 For almost every other bare user message, route through this skill. In other words, most non-trivial bare user intent belongs in `/silver`. Bias toward SB composition when the user asks to build, fix, improve, audit, release, research, ingest, document, validate, or continue project work.
 
@@ -161,6 +173,11 @@ Each `silver:*` workflow is a composition template over the canonical atomic flo
 
 `BOOTSTRAP -> ORIENT -> CLARIFY -> DECIDE -> SPECIFY -> PLAN -> DESIGN CONTRACT -> EXECUTE -> UI QUALITY -> REVIEW -> SECURE -> VERIFY -> QUALITY GATE -> SHIP -> DEBUG -> DESIGN HANDOFF -> DOCUMENT -> RELEASE`
 
+**Full-software intent (Wave 0.7):** When the user wants an entire app/product built,
+seed the orchestrator queue `silver-spec → silver-feature → silver-ship → silver-release`
+(persisted in `$HOME/.codex/.silver-bullet/orchestrator.json`). Store the user prompt in
+`$HOME/.codex/.silver-bullet/orchestrator-intent.txt` for hook consumption.
+
 Composition rules:
 
 - Include only flows whose prerequisites and triggers apply.
@@ -173,7 +190,16 @@ Composition rules:
 
 ### Step 8: Handle ambiguity
 
-If two or more destinations have similar confidence and the consequence is material, ask the user to choose:
+**Decision taxonomy (Wave 0.5):** classify each ambiguity as:
+
+| Class | When | Action |
+|-------|------|--------|
+| `blocking` | Material fork (app vs infra, ship vs release, irreversible choice) | Ask user (one question) |
+| `autonomous_default` | Safe to assume higher rigor or first router match | Choose without prompt; log assumption |
+
+Only ask the user when `decision_class: blocking`. Otherwise choose the safer higher-rigor route and state the assumption in one line.
+
+If two or more destinations have similar confidence and the consequence is **blocking**, ask:
 
 > I can route this two ways. Which best matches your intent?
 >
@@ -181,8 +207,6 @@ If two or more destinations have similar confidence and the consequence is mater
 > B. SB lifecycle step — route directly to `silver:context`, `silver:plan`, `silver:execute`, `silver:verify`, or `silver:ship`
 > C. `silver:research` — produce a decision artifact before implementation
 > D. Something else — describe the target
-
-If the consequence is not material, choose the safer higher-rigor route and state the assumption.
 
 ### Step 9: Show routing banner
 

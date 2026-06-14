@@ -9,6 +9,7 @@ if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
 fi
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
+mkdir -p "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/test"
 TEST_RUN_ID="$$"
 PASS=0
 FAIL=0
@@ -42,7 +43,22 @@ integration_setup() {
   cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
 # Review
 
+## Findings
+
+No issues found — review completed with evidence.
+
 status: passed
+EOF
+  cat > "$TMPDIR_TEST/.planning/phases/001-test/001-VERIFICATION.md" <<'EOF'
+# Verification
+
+## Command output
+
+```bash
+$ npm test
+PASS tests/todos.test.js
+Tests: 69 passed, 69 total
+```
 EOF
 
   # SB project marker files
@@ -50,6 +66,7 @@ EOF
 
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
+  export SILVER_BULLET_TEST_HOOK_ENFORCED=1
   # Mock branch file so session-start sees "feature/test" without touching
   # the live host runtime branch file.
   TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
@@ -69,8 +86,10 @@ integration_teardown() {
   rm -f "$E2E_LIVE_MATRIX_FILE"
   rm -f "$INLINE_E2E_MATRIX_FILE"
   rm -f "$VERIFY_TESTS_FILE"
+  rm -f "${SB_TEST_DIR}/stall-block"
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
+  unset SILVER_BULLET_TEST_HOOK_ENFORCED
 }
 
 write_default_config() {
@@ -88,6 +107,8 @@ write_default_config() {
   cat > "$TMPCFG" << EOCFG
 {
   "config_version": "${config_version}",
+  "sb_initiated": true,
+  "sb_enforcement_tier": 2,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},
@@ -103,6 +124,7 @@ emit_required_deploy_skills() {
   local field="${1:-required_deploy}"
   jq -r ".skills.${field}[]" "$DEFAULT_CONFIG_TEMPLATE" | awk '
     $0 == "gsd-code-review" { pending_gsd = 1; next }
+    $0 == "silver-review" { pending_review = 1; next }
     $0 == "requesting-code-review" {
       print
       if (pending_gsd) {
@@ -111,9 +133,18 @@ emit_required_deploy_skills() {
       }
       next
     }
+    $0 == "silver-review-request" {
+      print
+      if (pending_review) {
+        print "silver-review"
+        pending_review = 0
+      }
+      next
+    }
     { print }
     END {
       if (pending_gsd) print "gsd-code-review"
+      if (pending_review) print "silver-review"
     }
   '
 }
@@ -145,7 +176,10 @@ EOF
 }
 
 write_all_skills() {
-  emit_required_deploy_skills required_deploy > "$TMPSTATE"
+  {
+    emit_required_deploy_skills required_deploy
+    emit_required_deploy_skills required_release
+  } | awk 'NF && !seen[$0]++' > "$TMPSTATE"
   date +%s > "$VERIFY_TESTS_FILE"
   seed_gsd_lifecycle_artifacts
 }
@@ -466,6 +500,8 @@ write_full_config() {
   cat > "$TMPCFG" << EOCFG
 {
   "config_version": "${config_version}",
+  "sb_initiated": true,
+  "sb_enforcement_tier": 2,
   "project": { "src_pattern": "/src/", "src_exclude_pattern": "__tests__|\\\\.test\\\\.", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ${required_planning},

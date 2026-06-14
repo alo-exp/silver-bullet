@@ -7,11 +7,11 @@ argument-hint: "<feature description>"
 version: 0.1.0
 ---
 
-# /silver:feature — Feature Development Workflow
+# /silver:feature — Feature Development Workflow (composition spec)
 
-SB Agentic Process Orchestrator for new feature development. It dynamically composes SB quality contracts around SB-owned context, planning, execution, verification, review, security, and shipping flows.
+SB **queue builder** for new feature development. The **parent orchestrator** reads this spec to seed `orchestrator.json` and spawn Task workers per atomic flow — it does not execute flows inline.
 
-Never implements features directly — orchestrates only.
+Never implements features directly — defines composition only.
 
 ## Mandatory dependency execution
 
@@ -49,14 +49,14 @@ Read the **User Workflow Preferences** section of `silver-bullet.md` to load use
 grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 ```
 
-Display banner:
+Display banner (single line — autonomous default):
 
 ```
-SILVER BULLET ► FEATURE WORKFLOW
-
-Feature: {$ARGUMENTS or "(not specified)"}
-Mode:    {interactive | autonomous — from §10e or session selection}
+SB ► feature: {$ARGUMENTS or "(not specified)"} [autonomous]
 ```
+
+Do not display per-step flow banners or ask for composition approval — the hook
+orchestrator (`flow-advance.sh`) starts the workflow tracker and chains flows.
 
 ## Composition Proposal
 
@@ -70,7 +70,7 @@ Check the following artifacts and set skip/include flags:
 |----------|--------|--------|
 | `.planning/SPEC.md` exists | Specification already written | Skip FLOW 5 (SPECIFY) |
 | `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 6 (PLAN) |
-| `.planning/VERIFICATION.md` exists and passing | Verification already done | Skip FLOW 12 (VERIFY) |
+| `.planning/VERIFICATION.md` exists, passing, and newer than last src change | Verification already done | Skip FLOW 12 (VERIFY) |
 | UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) |
 | `STATE.md` current phase and completion status | Phase position | Set loop start/end |
 
@@ -80,6 +80,20 @@ grep "^current_phase\|^current_plan" .planning/STATE.md 2>/dev/null
 
 # Check for existing SPEC.md
 [ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 5" || echo "No SPEC — include FLOW 5"
+
+# Check for stale verification (invalidate skip when src changed after VERIFICATION.md)
+if [ -f ".planning/VERIFICATION.md" ]; then
+  src_pattern=$(jq -r '.project.src_pattern // "/src/"' .silver-bullet.json 2>/dev/null || echo "/src/")
+  if find . -type f 2>/dev/null | grep -qE "$src_pattern"; then
+    ver_mtime=$(stat -f %m .planning/VERIFICATION.md 2>/dev/null || stat -c %Y .planning/VERIFICATION.md 2>/dev/null || echo 0)
+    newer_src=$(find . -type f 2>/dev/null | grep -E "$src_pattern" | while read -r f; do
+      stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0
+    done | awk -v v="$ver_mtime" '$1 > v { found=1; exit } END { exit !found }')
+    if [ "${newer_src:-1}" -eq 0 ]; then
+      echo "VERIFICATION.md is stale relative to src changes — include FLOW 12 (VERIFY)"
+    fi
+  fi
+fi
 
 # Check ROADMAP.md for remaining phases in milestone
 grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
@@ -91,33 +105,19 @@ Construct the proposed flow chain from the 18-flow catalog (FLOW 1-18), includin
 
 FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) [if research/architecture choice needed] → FLOW 5 (SPECIFY) [skip if SPEC.md exists] → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT) [include if UI] → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) [include if UI] → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
 
-### 3. Display Proposal
+### 3. Autonomous composition (default)
 
-Display the composition proposal to the user:
-
-```
-SILVER BULLET ► FLOW COMPOSED
-Flows: BOOTSTRAP → ORIENT → PLAN → ...
-Skipped: SPECIFY — SPEC.md exists
-Phase loop: Phases {start}-{end} (from ROADMAP)
-Approve composition? [Y/n]
-```
-
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
+The orchestrator auto-confirms composition — **do not** ask `Approve composition?`.
+Log one status line only:
 
 ```
-⚡ Autonomous mode: auto-confirming composition — {flow count} flows, {skipped count} skipped
+SB ► composed {N} flows ({skipped} skipped) — orchestrator active
 ```
 
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
+Workflow tracking is started by `flow-advance.sh` (not manual bash). If you must
+run `workflows.sh` manually, export `SB_WORKFLOW_ID` from its output.
 
-Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
-The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
-workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
-`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
-this to verify the active workflow is fully complete before final delivery.
+### 6. Legacy manual workflow start (fallback only)
 
 ```bash
 # Build a comma-separated flow list from the confirmed composition (use the

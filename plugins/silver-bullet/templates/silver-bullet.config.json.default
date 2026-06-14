@@ -1,6 +1,9 @@
 {
   "config_version": "0.40.0",
   "version": "0.40.0",
+  "sb_initiated": false,
+  "sb_enforcement_tier": null,
+  "orchestrator_mode": "parent",
   "project": {
     "name": "{{PROJECT_NAME}}",
     "src_pattern": "/src/",
@@ -32,10 +35,12 @@
       "silver-review-request",
       "silver-review-triage",
       "silver-branch-finish",
-      "silver-create-release",
       "silver-completion-audit",
-      "silver-tdd",
+      "tdd",
       "verify-tests"
+    ],
+    "required_release": [
+      "silver-create-release"
     ],
     "required_deploy_devops": [
       "silver-blast-radius",
@@ -51,10 +56,12 @@
       "silver-review-request",
       "silver-review-triage",
       "silver-branch-finish",
-      "silver-create-release",
       "silver-completion-audit",
-      "silver-tdd",
+      "tdd",
       "verify-tests"
+    ],
+    "required_release_devops": [
+      "silver-create-release"
     ],
     "all_tracked": [
       "silver-quality-gates",
@@ -100,6 +107,7 @@
       "silver-validate",
       "silver-add",
       "silver-init",
+      "silver-orchestrator",
       "silver-ensure-docs",
       "silver-bootstrap-project",
       "silver-bootstrap-milestone",
@@ -124,6 +132,14 @@
       "silver-scan"
     ],
     "forbidden": []
+  },
+  "hooks": {
+    "evidence_schema": {
+      "strict": true
+    },
+    "industry_tooling": {
+      "enabled": false
+    }
   },
   "devops_plugins": {
     "hashicorp": false,

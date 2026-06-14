@@ -64,20 +64,20 @@ Twelve enforcement layers enforce compliance:
 5. **Completion audit** (Pre+PostToolUse/Bash) — Blocks intermediate commits until planning is done; blocks PR/deploy/release until full workflow is done
 6. **CI status check** (Pre+PostToolUse/Bash) — Blocks further commits and actions when CI is failing
 7. **Session management** (PostToolUse/Bash) — Session logging, autonomous mode timeout detection, branch-scoped state reset
-8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_deploy skills are missing
+8. **Stop hook** (Stop/SubagentStop) — Blocks task-complete declaration if required_planning skills are missing (planning floor). The full `required_deploy` list is enforced at delivery (`gh pr create`, deploy, `gh release create`) by completion-audit. Per-prompt outcome checklist is enforced by `outcomes-check.sh` on the same events.
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — Records requested SB and optional extension routes and re-injects missing skills list before every user message
 10. **Forbidden skill gate** (PreToolUse/Skill) — Blocks deprecated/forbidden skill invocations before they execute
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — `roadmap-freshness.sh` blocks `git commit` if a phase `SUMMARY.md` is staged but the ROADMAP.md checkbox is not ticked; prevents milestone state from diverging from execution reality
 12. **Redundant instructions + anti-rationalization** — Workflow file + silver-bullet.md both enforce;
     explicit rules against skipping, combining, or implicitly covering steps
 
-**Enforcement model**: Hooks are **invocation-based**, not outcome-based.
-`record-skill.sh` records that a skill was *called*; it cannot verify
-the skill produced a meaningful result. You are responsible for actually
-doing the work each skill requires — not just invoking it. Vacuous
-invocation (calling a skill and dismissing its output) satisfies the
-hook technically but violates the workflow intent and will be caught
-during code review or verification.
+**Enforcement model**: Hooks combine **invocation tracking** with **outcome checks**.
+`record-skill.sh` records that a skill was *called*. Delivery gates and
+`outcomes-check.sh` also verify artifacts, evidence tables, and per-prompt
+outcome rows. You are responsible for actually doing the work each skill
+requires — not just invoking it. Vacuous invocation may still pass individual
+markers but is blocked at delivery when artifacts are missing, hollow, or
+outcomes remain incomplete.
 
 **Skill invocation compatibility**: Required workflow skills must be recorded through
 one of SB's supported runtime-native invocation channels (see `docs/RUNTIME-COMPATIBILITY.md`).
@@ -90,9 +90,10 @@ markers in the state file. The compliance status shows lifecycle progress.
 However, recording only proves invocation — it does not verify phases completed
 successfully.
 
-**Trivial changes** (typos, copy fixes, config tweaks): Automatically
-detected by hooks. Small edits (<100 chars) and non-logic files (.md,
-.txt, .css, .svg, etc.) skip enforcement per-edit. No action needed.
+**Trivial changes** (typos, copy fixes, config tweaks): Route through `/silver:fast`
+for classification — do not rely on a manual trivial bypass file. SessionStart clears
+any stale `$HOME/.codex/.silver-bullet/trivial` marker; hooks do not
+auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
 `.toml` files are infrastructure code and are NOT auto-exempted.
 
@@ -328,7 +329,11 @@ that degraded path in work notes.
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task. The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
+Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task.
+
+**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`silver:feature`, `silver:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
+
+The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
 SB is the lifecycle authority. Semver, milestones, phases, planning, execution, verification, bug fixing, testing, review, and phase/milestone shipping flow through SB-owned skills. Optional external plugins extend SB only when a workflow explicitly marks them optional or the user requests them.
 
@@ -343,7 +348,7 @@ SB is the lifecycle authority. Semver, milestones, phases, planning, execution, 
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan -> silver:blast-radius -> devops-skill-router |
 | `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → direct research (default), optional multi-AI only when user-requested → decision handoff |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates -> verify-tests -> silver:release audit/publish |
-| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | 3-tier complexity triage: Tier 1 direct edit, Tier 2 SB lifecycle slice, Tier 3 escalate to silver-feature |
+| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
