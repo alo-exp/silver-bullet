@@ -46,6 +46,10 @@ sb_capability_tier_number() {
 }
 
 sb_capability_tier_name() {
+  if [[ "${SILVER_BULLET_TEST_HOOK_ENFORCED:-}" == "1" ]]; then
+    printf 'hook-enforced'
+    return 0
+  fi
   local hooks_present="no"
   local state_dir="${SB_RUNTIME_STATE_DIR:-}"
   if sb_capability_hooks_present "${SB_RUNTIME_HOME_ROOT:-}"; then
