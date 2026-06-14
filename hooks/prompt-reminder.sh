@@ -257,7 +257,28 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
   fi
 fi
 
-# Prepend core rules if available (integrity-verified), then append skill status
+# Orchestrator directive injection (P0) — resolve first so it leads the prompt
+directive_ctx=""
+_od_lib="${_lib_dir}/orchestrator-directive.sh"
+if [[ -f "$_od_lib" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_od_lib"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+  fi
+  if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
+    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
+      sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
+    fi
+  fi
+  directive_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+fi
+
+# Build message: directive first (most prominent), then bare-prompt intercept, core rules, skill status
+msg="$skill_status"
+
 if [[ -f "$core_rules_file" ]]; then
   _cr_lib="${script_dir}/lib/core-rules-integrity.sh"
   core_content=""
@@ -278,12 +299,8 @@ if [[ -f "$core_rules_file" ]]; then
 
 ---
 
-${skill_status}"
-  else
-    msg="$skill_status"
+${msg}"
   fi
-else
-  msg="$skill_status"
 fi
 
 if [[ -n "$bare_prompt_context" ]]; then
@@ -294,43 +311,26 @@ if [[ -n "$bare_prompt_context" ]]; then
 ${msg}"
 fi
 
-# Orchestrator directive injection (P0)
-_od_lib="${_lib_dir}/orchestrator-directive.sh"
-if [[ -f "$_od_lib" ]]; then
-  # shellcheck source=lib/orchestrator-directive.sh
-  source "$_od_lib"
-  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
-    # shellcheck source=lib/orchestrator-state.sh
-    source "$_lib_dir/orchestrator-state.sh"
-    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
-  fi
-  if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
-    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
-      sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
-    fi
-  fi
-  directive_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
-  if [[ -n "$directive_ctx" ]]; then
-    msg="${directive_ctx}
+if [[ -n "$directive_ctx" ]]; then
+  msg="${directive_ctx}
 
 ---
 
 ${msg}"
-  fi
 fi
 
-# Enforcement tier honesty (P1) — Cursor and other hosts
+# Enforcement tier honesty (P1) — after directive so orchestrator leads the prompt
 if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
   # shellcheck source=lib/enforcement-tier-gate.sh
   source "$_lib_dir/enforcement-tier-gate.sh"
   tier_eff="$(sb_enforcement_tier_effective "$config_file")"
   tier_line="$(sb_enforcement_tier_session_banner "$tier_eff")"
   if [[ -n "$tier_line" ]]; then
-    msg="${tier_line}
+    msg="${msg}
 
 ---
 
-${msg}"
+${tier_line}"
   fi
 fi
 
