@@ -61,5 +61,13 @@ assert_contains "workflow file created" "$wf_count" "1"
 out2="$(run_hook "silver-context" "$WORK")"
 assert_contains "advance emits next flow" "$out2" "Next flow"
 
+# QUALITY GATE row must complete when flow-advance records silver-quality-gates
+# (dogfood: workflows.sh used to strip spaces on start but not on complete-flow match)
+wid="$(find "$WORK/.planning/workflows" -maxdepth 1 -name '*.md' -print | head -1)"
+wid="$(basename "$wid" .md)"
+run_hook "silver-quality-gates" "$WORK" >/dev/null
+qg_status="$(awk -F'|' '/QUALITY/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${wid}.md" 2>/dev/null || true)"
+assert_contains "quality gate flow row completes" "$qg_status" "complete"
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
