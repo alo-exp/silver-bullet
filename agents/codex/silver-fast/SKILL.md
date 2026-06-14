@@ -7,17 +7,17 @@ argument-hint: "<description of change>"
 version: 0.1.0
 ---
 
-# /silver:fast — 3-Tier Complexity Triage
+# /silver:fast — Complexity Triage (composition spec)
 
-SB fast-path with 3-tier routing. Classifies work autonomously and routes to the appropriate execution engine.
+SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker (not parent edits). Tier 2+ escalates to fuller composer queues.
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
-| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | direct SB edit with verification |
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | parent spawns FAST worker |
 | **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:context` as needed, then `silver:plan`, `silver:execute`, `silver:verify` |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
-> **Note:** This workflow does NOT read §10 prefs or create WORKFLOW.md. The fast path skips all preference and composition overhead by design.
+> **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /silver:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
 
 ## Pre-flight: Banner
 
@@ -108,6 +108,31 @@ Gates: {silver:context silver:research silver:validate | (none)}
 ```
 
 Invoke the selected SB lifecycle slice with $ARGUMENTS.
+
+**Workflow tracker (Tier 2 — mandatory):** Before the first implementation edit, start the fast-path workflow tracker:
+
+```bash
+if [[ -x scripts/workflows.sh ]]; then
+  SB_WORKFLOWS_BIN="scripts/workflows.sh"
+else
+  SB_WORKFLOWS_BIN="$(
+    for root in \
+      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"; do
+      if [[ -x "$root/scripts/workflows.sh" ]]; then
+        printf "%s\n" "$root/scripts/workflows.sh"
+        break
+      fi
+    done
+  )"
+fi
+if [[ -n "${SB_WORKFLOWS_BIN:-}" ]]; then
+  SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:fast "$ARGUMENTS" "context,plan,execute,verify")
+  export SB_WORKFLOW_ID
+fi
+```
+
+After each invoked lifecycle skill completes, run `"$SB_WORKFLOWS_BIN" complete-flow "$SB_WORKFLOW_ID" "<skill-name>"`.
 
 After the SB lifecycle slice completes, run scope expansion check (Step 4).
 

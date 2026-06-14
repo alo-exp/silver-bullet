@@ -5,7 +5,7 @@ trap 'exit 0' ERR
 # PreToolUse hook (matcher: Bash|Skill)
 # Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
 # and emits an advisory warning for silver:fast when no spec exists. Legacy GSD
-# aliases are still detected for migration compatibility.
+# aliases normalize via hooks/lib/legacy-gsd-alias.sh (sunset 2026-09-01).
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -51,6 +51,11 @@ cmd=""
 skill=""
 if [[ "$tool_name" == "Skill" ]]; then
   skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
+  if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
+    # shellcheck source=lib/legacy-gsd-alias.sh
+    source "$_lib_dir/legacy-gsd-alias.sh"
+    skill="$(sb_legacy_gsd_alias_normalize "$skill")"
+  fi
 else
   if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
     sb_tool_is_shell_like "$tool_name" || exit 0
@@ -78,20 +83,20 @@ is_plan_phase=false
 is_fast=false
 
 case "$skill" in
-  silver:plan|silver-plan|gsd:plan-phase|gsd-plan-phase)
+  silver-plan)
     is_plan_phase=true
     ;;
-  silver:fast|silver-fast|gsd:fast|gsd-fast|gsd:quick|gsd-quick)
+  silver-fast)
     is_fast=true
     ;;
 esac
 
 if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   case "$cmd" in
-    silver-plan|silver:plan|gsd-plan-phase|gsd-plan|gsd-plan-phase.sh)
+    silver-plan)
       is_plan_phase=true
       ;;
-    silver-fast|silver:fast|gsd-fast|gsd-quick)
+    silver-fast)
       is_fast=true
       ;;
   esac
@@ -101,13 +106,23 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   # Allow direct slash-style strings as a defensive fallback, but only when the
   # first shell token itself is the route. This avoids blocking `sed ... gsd-plan-phase/SKILL.md`.
   case "$cmd" in
-    /silver:plan|/silver-plan|/gsd:plan-phase|/gsd-plan-phase)
+    /silver:plan|/silver-plan)
       is_plan_phase=true
       ;;
-    /silver:fast|/silver-fast|/gsd:fast|/gsd-fast|/gsd:quick|/gsd-quick)
+    /silver:fast|/silver-fast)
       is_fast=true
       ;;
   esac
+  # Legacy gsd slash routes (normalized at cmd token)
+  if [[ "$is_plan_phase" == false && "$is_fast" == false && -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
+    # shellcheck source=lib/legacy-gsd-alias.sh
+    source "$_lib_dir/legacy-gsd-alias.sh"
+    _norm_cmd="$(sb_legacy_gsd_alias_normalize "${cmd#/}")"
+    case "$_norm_cmd" in
+      silver-plan) is_plan_phase=true ;;
+      silver-fast) is_fast=true ;;
+    esac
+  fi
 fi
 
 if [[ "$is_plan_phase" == true ]]; then

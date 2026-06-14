@@ -108,6 +108,9 @@ case "$composer_slug" in
   silver-research)
     required_markers=(silver-clarify)
     ;;
+  silver-bugfix)
+    required_markers=(silver-quality-gates silver-context silver-plan)
+    ;;
   *)
     exit 0
     ;;

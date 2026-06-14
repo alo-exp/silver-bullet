@@ -7,13 +7,11 @@ argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
 
-# /silver:ui — Frontend, Component, Interface Workflow
+# /silver:ui — Frontend Composition Spec
 
-SB orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. Follows the same skeleton as silver:feature but inserts `silver:ui-contract` for design contract and `silver:ui-review` post-execution.
+SB **queue builder** for UI/frontend work. Parent orchestrator seeds the queue and spawns Task workers per flow — does not execute inline.
 
-**Routing note:** If an instruction matches both silver:feature and silver:ui, silver:ui wins — UI is more specific. silver:bugfix always takes precedence over both.
-
-Never implements UI directly — orchestrates only.
+Never implements UI directly — composition spec only.
 
 ## Mandatory dependency execution
 
@@ -82,32 +80,15 @@ FLOW 1 (BOOTSTRAP) [skip if .planning/ exists] → FLOW 2 (ORIENT) → FLOW 3 (C
 
 Note: FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are always included — this is a UI-focused workflow.
 
-### 3. Display Proposal
+### 3. Autonomous composition (default)
 
-Display the composition proposal to the user:
+Do **not** ask `Approve composition?`. Log: `SB ► ui composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-```
-SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → DESIGN CONTRACT → PLAN → EXECUTE → UI QUALITY → ...
-Skipped: BOOTSTRAP — .planning/ exists
-Approve composition? [Y/n]
-```
+### 5. Legacy manual workflow start (fallback only)
 
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
-
-Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
-The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
-workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
-`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
-this to verify the active workflow is fully complete before final delivery.
+Resolve the workflow helper only when the hook did not start tracking. Export `SB_WORKFLOW_ID`
+so child shells (`gh pr create`, `gh release create`) inherit it for completion-audit.
 
 ```bash
 # Build a comma-separated flow list from the confirmed composition (use the

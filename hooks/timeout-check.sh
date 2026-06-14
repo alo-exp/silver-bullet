@@ -143,8 +143,11 @@ fi
 # ── Tier 2: Escalating call-count warnings ────────────────────────────────────
 # Only emit at specific thresholds (not every call) to avoid spamming
 # Thresholds: 30, 60, 100 calls since last skill recorded
-if [[ "$calls_since_progress" -ge 100 ]] && [[ $((calls_since_progress % 25)) -eq 0 ]]; then
-  printf '{"hookSpecificOutput":{"message":"🛑 STALL DETECTED — %d tool calls with no workflow progress (no new skill recorded).\n\nThis indicates a loop or planning failure. Take one of these actions:\n  1. Identify the blocking issue and log it in session log under ## Needs human review\n  2. Invoke the appropriate skill to advance the workflow\n  3. Stop and reassess — do not continue looping\n\nStall conditions (§4): repeated tool calls / no state change / per-step budget exceeded."}}' "$calls_since_progress"
+if [[ "$calls_since_progress" -ge 100 ]]; then
+  stall_block_file="$SB_DIR/stall-block"
+  sb_guard_nofollow "$stall_block_file"
+  printf '%s\n' "$calls_since_progress" >"$stall_block_file"
+  printf '{"hookSpecificOutput":{"message":"🛑 STALL BLOCK — %d tool calls with no workflow progress. Stop hook will block completion until you invoke the next SB skill or clear the stall by recording workflow progress."}}' "$calls_since_progress"
   exit 0
 elif [[ "$calls_since_progress" -ge 60 ]] && [[ $((calls_since_progress % 15)) -eq 0 ]]; then
   printf '{"hookSpecificOutput":{"message":"⚠️ STALL WARNING — %d tool calls since last skill was recorded. Are you stuck?\n\nIf you are not actively working through a skill, stop and:\n  • Identify which workflow skill is next\n  • Invoke it to advance the workflow\n  • Log any blockers under ## Needs human review"}}' "$calls_since_progress"

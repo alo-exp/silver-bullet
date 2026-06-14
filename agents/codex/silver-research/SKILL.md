@@ -7,13 +7,11 @@ argument-hint: "<research question or technology decision>"
 version: 0.1.0
 ---
 
-# /silver:research — Tech Decisions, Architecture Spikes, Comparisons
+# /silver:research — Research Composition Spec
 
-SB orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to `.planning/research/` and referenced by the receiving workflow.
+SB **queue builder** for tech decisions and spikes. Parent orchestrator spawns workers; research artifacts hand off to feature/devops queues.
 
-**Routing note:** `silver:research` takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and feature/devops, run research first, then hand off.
-
-By default, research runs directly in the current host session using repository context, local artifacts, official docs, primary sources, and other concrete evidence available through the host/runtime. MultAI is optional and is used only when the user explicitly requests multi-AI perspectives in the current task. After research is complete, hand off to the appropriate implementation workflow.
+Never writes research inline in the parent session — workers execute flows.
 
 ## Mandatory SB workflow execution
 
@@ -70,32 +68,14 @@ FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → FLOW 5 (SPECIFY) [only when research sh
 
 No per-phase loop — research is a single-pass engagement that hands off to the appropriate SB implementation workflow (`silver:feature`, `silver:ui`, `silver:devops`, or `silver:plan` when the next step is planning rather than implementation).
 
-### 3. Display Proposal
+### 3. Autonomous composition (default)
 
-Display the composition proposal to the user:
+Do **not** ask `Approve composition?`. Log: `SB ► research composed {N} paths — orchestrator active`.
+Workflow tracking is started by `flow-advance.sh`.
 
-```
-SILVER BULLET ► FLOW COMPOSED
-Flows: CLARIFY → DECIDE → SPECIFY (if needed)
-Skipped: EXECUTE/VERIFY/SHIP — research produces artifacts only
-Approve composition? [Y/n]
-```
+### 5. Legacy manual workflow start (fallback only)
 
-### 4. Auto-Confirm in Autonomous Mode
-
-In autonomous mode (§10e), auto-confirm the composition proposal with a log message:
-
-```
-⚡ Autonomous mode: auto-confirming composition — {path count} paths, {skipped count} skipped
-```
-
-### 5. Start workflow tracking (Pass 2 — workflows.sh)
-
-Resolve the workflow helper, then run its start subcommand to register this composition as an active workflow.
-The helper writes a per-instance file to `.planning/workflows/<id>.md` and returns the
-workflow id. Capture it and export it as `SB_WORKFLOW_ID` so all child shells (including
-`gh release create` / `gh pr create`) inherit it — completion-audit's strict gate uses
-this to verify the active workflow is fully complete before final delivery.
+Resolve the workflow helper only when the hook did not start tracking.
 
 ```bash
 # Build a comma-separated flow list from the confirmed composition (use the
