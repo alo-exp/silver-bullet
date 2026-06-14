@@ -19,6 +19,7 @@ TEST_RUN_ID="$$"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
+export SB_ORCHESTRATOR_WORKER=1
 
 cleanup() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/orchestrator-directive.json" "${SB_TEST_DIR}/edit-without-workflow.count" 2>/dev/null || true
@@ -55,7 +56,7 @@ source "$LIB"
 make_repo() {
   WORK=$(mktemp -d)
   git -C "$WORK" init -q
-  echo '{"sb_initiated":true,"state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK/.silver-bullet.json"
+  echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK/.silver-bullet.json"
   echo '# SB' >"$WORK/silver-bullet.md"
   mkdir -p "$WORK/.planning/workflows"
 }
@@ -67,17 +68,17 @@ assert_contains "context mentions next_skill" "$ctx" "silver-context"
 
 make_repo
 out=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+  SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "blocks edit when directive pending" "$out" "ORCHESTRATOR DIRECTIVE"
 
 printf 'silver-context\n' >"$TMPSTATE"
 out2=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+  SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_true "allows edit after skill recorded" test -z "$out2"
 
 sb_orchestrator_directive_write "silver-plan" "" "test" true
 out3=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-plan"}}' | \
-  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+  SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_true "skill tool not blocked" test -z "$out3"
 
 echo "Results: $PASS passed, $FAIL failed"
