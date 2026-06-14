@@ -135,6 +135,9 @@ fi
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 ln -sfn "$DEST_ROOT" "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
 
+printf '\nCursor hook merge complete. SB hooks are in %s/hooks.json.\n' "$CURSOR_HOME"
+printf 'If skills do not appear, reload the window or run: bash scripts/install-cursor.sh --merge-hooks-only\n'
+
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   printf 'Silver Bullet Cursor plugin refreshed from %s at %s\n' "$CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE" "$DEST_ROOT"
 else

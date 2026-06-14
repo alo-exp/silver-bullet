@@ -227,13 +227,13 @@ Phase 057 adds targeted coverage for the Cursor host adapter:
 | Area | What it proves | Location |
 |------|----------------|----------|
 | Runtime paths | `$HOME/.cursor/.silver-bullet` state + hook manifest resolution | `tests/hooks/test-runtime-paths.sh` (cursor cases) |
-| Bootstrap / install | Marketplace sync, plain-file template layout, local git identity on CI | `tests/scripts/test-cursor-runtime-bootstrap.sh` |
+| Bootstrap / install | Marketplace sync, plain-file template layout, local git identity on CI | `tests/hooks/test-cursor-runtime-bootstrap.sh` |
 | Hook bridge | Cursor `exec_command` / patch events reach SB PreToolUse hooks | `tests/hooks/test-cursor-hook-bridge.sh` |
 
 Run the focused slice before release:
 
 ```bash
-bash tests/scripts/test-cursor-runtime-bootstrap.sh
+bash tests/hooks/test-cursor-runtime-bootstrap.sh
 bash tests/hooks/test-cursor-hook-bridge.sh
 ```
 

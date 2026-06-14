@@ -68,6 +68,34 @@ keep all three marketplace repos aligned with `.claude-plugin/plugin.json` /
 
 Cursor release smoke (no live agent required): `bash scripts/release-live-matrix-cursor-smoke.sh`.
 
+### Project instruction files
+
+| Host | Typical filename | Notes |
+|------|------------------|-------|
+| Claude Code | `CLAUDE.md` | Optional; reconciled in place by `silver:init` |
+| Codex | `AGENTS.md` | Optional; not created by default on fresh Codex init |
+| Cursor | `AGENTS.md` | Optional; same reconciliation rules as Codex |
+
+Template content is host-neutral: `templates/CLAUDE.md.base` (project instruction template).
+
+### Host hooks manifests
+
+| Host | Global hooks manifest | Hook merge script |
+|------|----------------------|-------------------|
+| Claude Code | `${SB_RUNTIME_HOME_ROOT}/settings.json` | `skills/silver-init/scripts/merge-hooks.py` |
+| Codex | Plugin-delivered hooks (optional user merge) | `merge-hooks.py` when user hooks surface is used |
+| Cursor | `${SB_RUNTIME_HOME_ROOT}/hooks.json` | `skills/silver-init/scripts/merge-cursor-hooks.py` |
+
+Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `.codex/settings.json`; `silver:init` removes incompatible v1 entries when found.
+
+### Skill invocation channels
+
+| Host | Supported channels |
+|------|-------------------|
+| Claude Code | `PostToolUse/Skill` (host skill events) |
+| Codex | `silver-bullet invoke-skill <name>` adapter (hook-validated receipt) |
+| Cursor | `PostToolUse/Skill` (Cursor skill channel) or `silver-bullet invoke-skill` |
+
 ### Related Docs
 
 - `silver-bullet.md` §11 — hook protocol and SDK workarounds
