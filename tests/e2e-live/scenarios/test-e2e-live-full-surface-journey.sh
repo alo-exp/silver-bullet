@@ -641,8 +641,8 @@ done
 if [[ "$workflow_docs_present" != true ]]; then
   echo "WARN: silver:init did not create workflow docs; backfilling canonical templates so the scenario can continue"
   mkdir -p "${WORK_DIR}/docs/workflows"
-  cp /Users/shafqat/projects/silver-bullet/repo/templates/workflows/full-dev-cycle.md "${WORK_DIR}/docs/workflows/full-dev-cycle.md"
-  cp /Users/shafqat/projects/silver-bullet/repo/templates/workflows/devops-cycle.md "${WORK_DIR}/docs/workflows/devops-cycle.md"
+  cp "${SB_ROOT}/templates/workflows/full-dev-cycle.md" "${WORK_DIR}/docs/workflows/full-dev-cycle.md"
+  cp "${SB_ROOT}/templates/workflows/devops-cycle.md" "${WORK_DIR}/docs/workflows/devops-cycle.md"
 fi
 
 journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Ingest the todo-app codebase, summarize the current app structure, and note the most relevant files before any changes are made.')"
@@ -1252,7 +1252,7 @@ case "$*" in
     exit 0
     ;;
   *'raw.githubusercontent.com/alo-exp/silver-bullet/main/CHANGELOG.md'*)
-    cat /Users/shafqat/projects/silver-bullet/repo/CHANGELOG.md
+    cat "${SB_ROOT}/CHANGELOG.md"
     exit 0
     ;;
 esac

@@ -141,8 +141,9 @@ case "$composer_slug" in
     required_markers=(silver-debug silver-plan)
     ;;
   silver-fast)
-    # Tier 2 fast path: planning floor + context + plan before implementation edits.
-    required_markers=(silver-quality-gates silver-context silver-plan)
+    # Tier 2 fast path: planning floor + plan before implementation edits.
+    # silver:context is optional per skill signal detection; not chain-guarded.
+    required_markers=(silver-quality-gates silver-plan)
     ;;
   *)
     exit 0
@@ -183,6 +184,8 @@ state_contents=""
 for marker in "${required_markers[@]}"; do
   if [[ "$marker" == "silver-quality-gates" ]] && declare -f sb_qg_preplan_marker_recorded >/dev/null 2>&1; then
     sb_qg_preplan_marker_recorded "$state_contents" && continue
+  elif [[ "$marker" == "devops-quality-gates" ]] && declare -f sb_dqg_preplan_marker_recorded >/dev/null 2>&1; then
+    sb_dqg_preplan_marker_recorded "$state_contents" && continue
   elif declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
     sb_required_skill_is_recorded "$state_contents" "$marker" && continue
   elif grep -Fqx -- "$marker" "$state_file" 2>/dev/null; then

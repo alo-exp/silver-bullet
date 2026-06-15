@@ -153,6 +153,29 @@ fi
 rm -rf "$FAKE_BIN"
 teardown
 
+setup
+printf 'silver-feature\n' >"$SILVER_BULLET_STATE_FILE"
+cat >"${SB_TEST_DIR}/outcomes-session.json" <<'JSON'
+{"prompt_id":"abc","outcomes":[{"id":"route","status":"pending"},{"id":"scope","status":"pending"},{"id":"verify","status":"pending"}]}
+JSON
+FAKE_BIN=$(mktemp -d)
+cat >"$FAKE_BIN/jq" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+chmod +x "$FAKE_BIN/jq"
+out=$(cd "$TMPDIR_TEST" && printf '{"hook_event_name":"Stop","prompt":""}' \
+  | env PATH="$FAKE_BIN:$PATH" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SILVER_BULLET_STATE_FILE="$SILVER_BULLET_STATE_FILE" bash "$HOOK" 2>/dev/null)
+if printf '%s' "$out" | grep -q '"decision":"block"'; then
+  echo "  ok: outcomes-check Stop fails closed without jq when pending"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: outcomes-check Stop should block without jq when pending"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$FAKE_BIN"
+teardown
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

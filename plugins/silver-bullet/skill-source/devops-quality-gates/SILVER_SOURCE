@@ -1,7 +1,6 @@
 ---
 name: devops-quality-gates
-title: "Silver: DevOps Quality Gates"
-description: "This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /silver:plan in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop."
+description: This skill should be used to apply 7 IaC-adapted quality dimensions against infrastructure and DevOps changes. Use after /silver:blast-radius and before /silver:plan in the devops-cycle workflow. Skips usability because IaC has no direct user interface. All dimensions must pass — any ❌ is a hard stop.
 user-invocable: false
 version: 0.1.0
 ---
@@ -23,6 +22,14 @@ DIMENSION_SKILLS_ROOT="$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/c
 ```
 
 Do not require dimension helper skills to appear in the Codex skill picker. They are implementation dependencies of `devops-quality-gates`, not user-facing routes.
+
+---
+
+## Step 0: Mode detection (dual invocation)
+
+`devops-quality-gates` runs **twice** in a full devops-cycle flow: pre-plan (design-time) and pre-ship (adversarial). Use the same canonical detector as product quality gates: `hooks/lib/quality-gates-mode.sh` (`sb_qg_detect_mode`).
+
+`record-skill` writes distinguishable markers: `devops-quality-gates-design` (pre-plan) or `devops-quality-gates-adversarial` (pre-ship when PLAN.md + passed VERIFICATION.md exist). Delivery gates require the adversarial marker on devops-cycle ship paths.
 
 ---
 

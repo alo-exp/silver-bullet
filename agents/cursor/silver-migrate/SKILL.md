@@ -102,7 +102,7 @@ Merge forward from `templates/silver-bullet.config.json.default` without discard
 1. Read the template defaults and the existing `.silver-bullet.json` (create from template if absent).
 2. Preserve all project-specific values: `project.name`, `project.src_pattern`, `project.src_exclude_pattern`, custom `verify_commands`, and user-chosen `issue_tracker`.
 3. Add or refresh top-level fields when missing or older than the template:
-   - `config_version` and `version` (target: current plugin release, e.g. `0.40.0`)
+   - `config_version` and `version` (target: current plugin release from `package.json` `version` field)
    - `release.profile`, `release.require_plugin_runtime_matrix`, `release.require_pre_release_quality_gate`, `release.quality_gate_state_file`
    - `semantic_compression` block
    - `multi_agent` block
@@ -117,7 +117,7 @@ Merge forward from `templates/silver-bullet.config.json.default` without discard
 Regenerate stale host instruction files from the init contract when they predate agent-neutral separation.
 
 1. Detect the active host instruction file per `docs/RUNTIME-COMPATIBILITY.md`:
-   - Cursor → `CLAUDE.md` when present
+   - Claude Code → `CLAUDE.md` when present
    - Codex / Cursor → `AGENTS.md` when present
    - If neither exists, skip this step (SB does not require creating one during migrate).
 
@@ -161,7 +161,7 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 #### 4.2 Cursor hook merge (Cursor host only)
 
-When the active runtime is Cursor (detect via `SILVER_BULLET_RUNTIME=cursor`, presence of `$HOME/.cursor/hooks.json`, or diagnostics output):
+When the active runtime is Cursor (detect via `SILVER_BULLET_RUNTIME=cursor`, presence of `${SB_RUNTIME_HOME_ROOT}/hooks.json`, or diagnostics output):
 
 ```bash
 INSTALL_PATH="${PLUGIN_ROOT:-$(pwd)}"
@@ -255,10 +255,10 @@ if [[ -x scripts/workflows.sh ]]; then
 else
   SB_WORKFLOWS_BIN="$(
     for root in \
-      "$HOME/.cursor/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "$HOME/.cursor/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.cursor/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "$HOME/.cursor/plugins/cache/alo-labs/silver-bullet"/*; do
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
+      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
+      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break

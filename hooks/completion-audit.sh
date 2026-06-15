@@ -996,18 +996,27 @@ for skill in $required_skills; do
   fi
 done
 
-# Pre-ship quality-gates must record adversarial mode when VERIFICATION.md exists.
-if [[ "$delivery_uses_devops_deploy" != true ]] \
-   && declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
+# Pre-ship quality-gates must record adversarial mode when VERIFICATION.md passed.
+if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
    && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
   project_root_qg="$(dirname "$config_file")"
   [[ -z "$project_root_qg" || "$project_root_qg" == "." ]] && project_root_qg="$PWD"
-  if sb_qg_repo_requires_pre_ship_marker "$project_root_qg" \
-     && ! sb_qg_pre_ship_marker_recorded "$state_contents"; then
-    if has_skill "silver-quality-gates"; then
-      missing="${missing:+$missing }silver-quality-gates-pre-ship"
-    else
-      missing="${missing:+$missing }silver-quality-gates"
+  if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
+    if [[ "$delivery_uses_devops_deploy" == true ]] \
+       && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
+      if ! sb_dqg_pre_ship_marker_recorded "$state_contents"; then
+        if has_skill "devops-quality-gates"; then
+          missing="${missing:+$missing }devops-quality-gates-adversarial"
+        else
+          missing="${missing:+$missing }devops-quality-gates"
+        fi
+      fi
+    elif ! sb_qg_pre_ship_marker_recorded "$state_contents"; then
+      if has_skill "silver-quality-gates"; then
+        missing="${missing:+$missing }silver-quality-gates-adversarial"
+      else
+        missing="${missing:+$missing }silver-quality-gates"
+      fi
     fi
   fi
 fi

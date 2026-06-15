@@ -369,6 +369,20 @@ for raw in "${skills_to_record[@]}"; do
       recorded_any=true
     fi
   fi
+  if [[ "$skill" == "devops-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
+    repo_root_for_qg=""
+    if [[ -n "$config_file" ]]; then
+      repo_root_for_qg="$(dirname "$config_file")"
+    else
+      repo_root_for_qg="$PWD"
+    fi
+    qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
+    mode_marker="$(sb_dqg_mode_marker "$qg_mode")"
+    if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
+      printf '%s\n' "$mode_marker" >> "$STATE_FILE"
+      recorded_any=true
+    fi
+  fi
 done
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
