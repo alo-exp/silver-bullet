@@ -54,7 +54,7 @@ done
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
-REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-review-request silver-review-triage silver-branch-finish silver-completion-audit tdd verify-tests"
+REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-branch-finish silver-completion-audit tdd verify-tests"
 [[ -n "${DEFAULT_REQUIRED:-}" ]] && REQUIRED_DEPLOY="$DEFAULT_REQUIRED"
 
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then

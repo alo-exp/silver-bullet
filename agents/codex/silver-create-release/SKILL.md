@@ -79,8 +79,10 @@ If the user provided a version argument (e.g., `/silver:create-release v0.4.0`),
 
 Otherwise, suggest a version based on commits:
 - If any commit message starts with `feat!:` or contains `BREAKING CHANGE` → bump major
-- If any commit starts with `feat:` → bump minor
+- If any commit starts with `feat:` **and** introduces a new user-facing capability → bump minor
 - Otherwise → bump patch
+
+**Project policy:** default to **patch** releases unless the milestone ships a genuinely new capability (not refactors, fixes, hook alignment, or doc sync). When in doubt, patch.
 
 Present the suggested version and proceed (in autonomous mode, use the suggestion
 without asking).
