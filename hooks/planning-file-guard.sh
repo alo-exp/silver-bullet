@@ -33,7 +33,39 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   source "$_lib_dir/tool-input.sh"
 fi
 
-command -v jq >/dev/null 2>&1 || exit 0
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+
+emit_block_jq_missing() {
+  local reason="$1"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$reason" <<'PY'
+import json, sys
+msg = sys.argv[1]
+print(json.dumps({
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": msg,
+  }
+}))
+PY
+    return 0
+  fi
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}'
+}
+
+if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
+  sb_jq_enforcement_block_sb_initiated "planning-file-guard" "emit_block_jq_missing"
+elif ! command -v jq >/dev/null 2>&1; then
+  exit 0
+fi
 
 input=$(cat)
 
@@ -72,9 +104,11 @@ case "$planning_rel" in
   v*-MILESTONE-*.md|milestones/*.md)
     protected=true
     ;;
-  phases/*/*-PLAN.md|phases/*/*-SUMMARY.md|phases/*/*-REVIEW.md|phases/*/*-SECURITY.md|phases/*/*-VERIFICATION.md|phases/*/VERIFICATION.md|phases/*/REVIEW.md|phases/*/SECURITY.md)
+  phases/*/*-PLAN.md|phases/*/*-SUMMARY.md|phases/*/*-REVIEW.md|phases/*/*-SECURITY.md|phases/*/*-VERIFICATION.md)
     protected=true
     ;;
+  # SB-native phase layout (phases/<phase>/PLAN.md etc.) is owned by SB skills
+  # (silver-plan, silver-review, silver-verify, silver-secure) — not GSD CLI.
 esac
 
 [[ "$protected" == false ]] && exit 0

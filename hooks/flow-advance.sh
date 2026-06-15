@@ -6,14 +6,22 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
   fi
 done
 
-command -v jq >/dev/null 2>&1 || exit 0
+if ! command -v jq >/dev/null 2>&1; then
+  if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+    config_file="$(sb_find_project_config 2>/dev/null || true)"
+    if [[ -n "$config_file" ]] && sb_project_is_initiated "$config_file"; then
+      sb_jq_enforcement_warn "flow-advance"
+    fi
+  fi
+  exit 0
+fi
 sb_project_gate_or_exit
 
 input="$(cat 2>/dev/null || true)"
@@ -51,6 +59,21 @@ if sb_orchestrator_is_composer_skill "$skill"; then
 elif sb_orchestrator_is_flow_atom "$skill"; then
   advance_msg="$(sb_orchestrator_advance_on_atom "$skill" "$repo_root" 2>/dev/null || true)"
   [[ -n "$advance_msg" ]] && msg="$advance_msg"
+fi
+
+# Reset devops-cycle → full-dev-cycle after devops ship (F-04)
+if [[ "$skill" == "silver-ship" && -f "$repo_root/.silver-bullet.json" ]]; then
+  aw="$(jq -r '.project.active_workflow // "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
+  if [[ "$aw" == "devops-cycle" ]]; then
+    tmp="$(mktemp)"
+    if jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
+      mv "$tmp" "$repo_root/.silver-bullet.json"
+      reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
+      msg="${msg:+$msg — }${reset_note}"
+    else
+      rm -f -- "$tmp" 2>/dev/null || true
+    fi
+  fi
 fi
 
 [[ -n "$msg" ]] || exit 0

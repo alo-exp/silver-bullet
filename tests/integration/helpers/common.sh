@@ -65,6 +65,13 @@ No issues found — review completed with evidence.
 
 status: passed
 EOF
+  cat > "$TMPDIR_TEST/.planning/REVIEW-ROUNDS.md" <<'EOF'
+## Round 1
+Findings: advisory only — addressed.
+
+## Round 2
+No findings — clean pass.
+EOF
   cat > "$TMPDIR_TEST/.planning/phases/001-test/001-VERIFICATION.md" <<'EOF'
 # Verification
 

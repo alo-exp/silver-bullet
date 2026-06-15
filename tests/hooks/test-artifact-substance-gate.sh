@@ -92,7 +92,24 @@ cat >"$TMPDIR_TEST/.planning/phases/01-test/REVIEW.md" <<'MD'
 No findings — clean pass.
 MD
 result=$(run_gate $'silver-review\n')
-assert_passed "REVIEW.md with explicit no-findings statement passes" "$result"
+assert_blocked "REVIEW.md without REVIEW-ROUNDS.md blocks" "$result"
+teardown
+
+setup
+mkdir -p "$TMPDIR_TEST/.planning/phases/01-test"
+cat >"$TMPDIR_TEST/.planning/phases/01-test/REVIEW.md" <<'MD'
+# Review
+No findings — clean pass.
+MD
+cat >"$TMPDIR_TEST/.planning/REVIEW-ROUNDS.md" <<'MD'
+## Round 1
+Findings: must-fix item — fixed.
+
+## Round 2
+No findings — clean pass.
+MD
+result=$(run_gate $'silver-review\n')
+assert_passed "REVIEW.md with two REVIEW-ROUNDS passes" "$result"
 teardown
 
 echo

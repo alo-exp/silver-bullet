@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.43.4] — 2026-06-15
+
+SB flows launch audit remediation (F-01–F-14): planning guard SB phase paths, migrate inference, workflow doc order, devops profile reset, tier 0–1 playbook, fast-path tightening, jq fail-closed for initiated projects, REVIEW-ROUNDS delivery gate, ship UAT scope, flow-advance jq visibility, sb_initiated banner, compliance `tdd` display, Cursor apply_patch parity, bugfix chain order.
+
+## Bug Fixes
+- `fix(hooks): exempt SB-native phase VERIFICATION/REVIEW/SECURITY from planning-file-guard`
+- `fix(skills): silver:migrate inference globs for phases/*/PLAN.md and VERIFICATION.md`
+- `fix(docs): reconcile full-dev-cycle post-exec order to REVIEW→VERIFY`
+- `fix(hooks): reset devops-cycle active_workflow after silver:ship`
+- `fix(hooks): jq missing blocks PreToolUse in SB-initiated projects`
+- `fix(hooks): REVIEW-ROUNDS.md two-round substance gate at delivery`
+- `fix(hooks): compliance-status uses canonical tdd marker`
+
 ## [0.43.3] — 2026-06-15
 
 Second adversarial review closure: unified quality-gates mode detection, devops dual-mode markers, jq-missing fail-closed paths, and e2e-live journey stabilization.

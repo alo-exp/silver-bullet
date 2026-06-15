@@ -61,6 +61,10 @@ assert_contains "documents doc-scheme refresh via ensure-docs" "silver:ensure-do
 assert_contains "documents interface STATE for UI projects" "interface/STATE\\.md" "$SKILL"
 assert_contains "documents stamp-interface-state script" "stamp-interface-state" "$SKILL"
 
+# SB-native artifact layout (F-02)
+assert_contains "inference includes SB phases/*/PLAN.md" "phases/\\*/PLAN\\.md" "$SKILL"
+assert_contains "inference includes SB phases/*/VERIFICATION.md" "phases/\\*/VERIFICATION\\.md" "$SKILL"
+
 # Host-neutral canonical skill (no agent leaks)
 assert_not_contains "canonical migrate skill has no AskUserQuestion" "AskUserQuestion" "$SKILL"
 assert_not_contains "canonical migrate skill has no Skill tool literal" "Skill tool" "$SKILL"

@@ -263,7 +263,7 @@ for skill in $review_skills; do
 done
 
 # --- FINALIZATION phase ---
-final_skills="silver-branch-finish silver-completion-audit silver-tdd verify-tests"
+final_skills="silver-branch-finish silver-completion-audit tdd verify-tests"
 final_done=0
 final_total=0
 for _ in $final_skills; do ((final_total++)) || true; done
