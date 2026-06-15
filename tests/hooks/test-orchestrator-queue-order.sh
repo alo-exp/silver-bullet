@@ -58,6 +58,21 @@ devops_q="$(sb_orchestrator_default_queue_for_composer silver-devops)"
 assert_order "silver-devops" "$devops_q" "silver-execute"
 
 ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
+if printf '%s' "$ui_q" | grep -q 'silver-execute,silver-ui-review,silver-review-request'; then
+  echo "PASS: silver-ui post-exec opens with execute → ui-review → review triad"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-ui missing execute → ui-review → review triad prefix (got: $ui_q)"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$ui_q" | grep -q 'silver-ui-review,silver-review-request'; then
+  echo "PASS: silver-ui ui-review before review triad"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-ui ui-review must precede review-request (got: $ui_q)"
+  FAIL=$((FAIL + 1))
+fi
+
 if printf '%s' "$ui_q" | grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute'; then
   echo "PASS: silver-ui pre-exec includes plan → ui-contract → validate → execute"
   PASS=$((PASS + 1))

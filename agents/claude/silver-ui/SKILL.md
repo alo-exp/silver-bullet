@@ -1,7 +1,7 @@
 ---
 name: silver:ui
 description: >
-  This skill should be used for full SB-owned UI/frontend workflow: orient → clarify/decide → test strategy → silver:ui-contract → execute+TDD → silver:ui-review → verify → ship
+  This skill should be used for full SB-owned UI/frontend workflow: orient → clarify/decide → test strategy → silver:ui-contract → execute+TDD → silver:ui-review → review → verify → secure → ship
 argument-hint: "<UI feature or component description>"
 version: 0.1.0
 ---
@@ -14,7 +14,9 @@ Never implements UI directly — composition spec only.
 
 ## Mandatory dependency execution
 
-Before any local UI implementation work, the execution trace must show the SB dependency chain for this workflow. At minimum, invoke these downstream skills in order:
+SB separates pre-execution gates from post-execution gates.
+
+Before implementation edits, the execution trace must show the pre-execution chain:
 
 1. `silver:scan` when rapid SB orientation is useful
 2. `silver:scan` with deeper mapping when the project is brownfield or deeper UI pattern mapping is needed
@@ -25,13 +27,23 @@ Before any local UI implementation work, the execution trace must show the SB de
 7. `silver:plan`
 8. `silver:ui-contract`
 9. `silver:validate` (pre-build gap analysis — after plan and UI contract exist)
-10. `silver:execute`
-11. `silver:ui-review`
-12. `silver:verify`
+
+After implementation, final delivery requires the post-execution chain. **Canonical post-execution order (matches orchestrator queue and `silver:feature` when UI is in scope):** UI quality → review triad → verify → secure → validate → quality-gates (pre-ship) → ship.
+
+1. `silver:execute`
+2. `silver:ui-review` (FLOW 9 UI QUALITY — always in this workflow)
+3. `silver:review-request`, `silver:review`, and `silver:review-triage` (review triad)
+4. `silver:verify`
+5. `security` then `silver:secure`
+6. `silver:validate`
+7. `silver:quality-gates` (pre-ship sweep)
+8. `silver:branch-finish` on feature branches
+9. `silver:completion-audit` immediately before ship
+10. `silver:ship`
 
 If any required downstream SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell reconnaissance, direct edits, or other fallback work.
 
-The `workflow-chain-guard.sh` hook enforces the **pre-execution** chain at edit time (quality-gates, context, plan, ui-contract, conditional spec, validate — not execute/review/verify/ship). If the guard blocks you, complete the missing pre-execution SB steps first.
+The `workflow-chain-guard.sh` hook enforces only the **pre-execution** chain at edit time (quality-gates, context, plan, ui-contract, conditional spec, validate — not execute/review/verify/ship). Completion hooks enforce review, security, verification, artifacts, and ship gates before final delivery.
 
 ## Pre-flight: Load Preferences
 
@@ -223,15 +235,7 @@ If mode is Autonomous (§10e): invoke `silver:execute` with autonomous mode cont
 **Internal TDD gate:**
 `tdd` is hidden from the picker and activates immediately before execution for component logic. It is now an SB-owned TDD policy skill, so the execute boundary cannot start until the failing-test-first discipline is in place.
 
-## Step 8: Code Review
-
-Run review sequence in order:
-1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
-2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues are found, fix through `silver:execute` and re-review.
-3. For architecturally significant UI systems: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
-4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
-
-## FLOW UI QUALITY — Post-execution UI audit
+## Step 8: UI Visual Audit (FLOW 9 UI QUALITY)
 
 **Prerequisite Check:** Execution complete, SUMMARY.md exists with UI deliverables. STOP if not met.
 
@@ -247,7 +251,15 @@ Run review sequence in order:
 
 **Exit Condition:** UI-REVIEW.md exists with no critical findings, or user accepts.
 
-> **Canonical post-execution order:** review (Step 8) → UI quality (Step 9) → verify (Step 10) → security + secure (Step 11) → validate (Step 12) → pre-ship quality gates (Step 13) → ship (Step 15). This sequence matches `silver:feature`, `silver:devops`, and `silver:bugfix` (the optional UI-quality flow is inserted between review and verify).
+## Step 9: Code Review (FLOW 10 REVIEW)
+
+Run review sequence in order:
+1. Invoke `silver:review-request` through the active runtime's SB-recognized skill invocation channel.
+2. Invoke `silver:review` through the active runtime's SB-recognized skill invocation channel. This creates the authoritative REVIEW.md artifact; optional external review helpers must feed into this artifact rather than replace it. If issues are found, fix through `silver:execute` and re-review.
+3. For architecturally significant UI systems: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
+4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
+
+> **Canonical post-execution order:** UI quality (Step 8) → review (Step 9) → verify (Step 10) → security + secure (Step 11) → validate (Step 12) → pre-ship quality gates (Step 13) → ship (Step 15). Matches the orchestrator queue, `silver:feature` when UI is in scope, and `docs/composable-flows-contracts.md`.
 
 ## Step 10: Verify Work + Test Gap Fill
 

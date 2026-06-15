@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.43.8] — 2026-06-16
+
+Independent launch-readiness adversarial review (round 4): silver-ui post-execution sequencing alignment.
+
+## Bug Fixes
+- `fix(skills): silver-ui mandatory deps document full post-exec chain (UI quality → review → verify → secure → ship)`
+- `fix(skills): silver-ui step order — UI visual audit before code review (matches orchestrator queue)`
+- `fix(docs): composable-flows-contracts documents FLOW 9 insertion before REVIEW for silver:ui`
+- `fix(site): silver-ui help page step order aligned to canonical REVIEW→VERIFY→SECURE`
+
+## Tests
+- `test(hooks): silver-ui orchestrator queue asserts ui-review before review triad`
+
 ## [0.43.7] — 2026-06-16
 
 Independent launch-readiness adversarial review (round 3): orchestrator pre-exec queue parity and enforcement hardening.
