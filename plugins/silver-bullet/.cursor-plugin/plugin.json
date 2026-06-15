@@ -15,7 +15,8 @@
     "orchestrator",
     "devops",
     "quality-gates",
-    "deploy-gate",
     "ci-cd"
-  ]
+  ],
+  "skills": "./agents/cursor",
+  "hooks": "./cursor-hooks.json"
 }
