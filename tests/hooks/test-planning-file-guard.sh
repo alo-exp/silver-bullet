@@ -121,6 +121,22 @@ out=$(run_hook_edit "${TMPDIR_TEST}/.planning/v1.0.0-MILESTONE-AUDIT.md")
 assert_blocks "blocks Edit on .planning/v*-MILESTONE-*.md" "$out"
 teardown
 
+echo "--- Group 1c: SB phase lifecycle artifacts are NOT blocked ---"
+
+setup
+mkdir -p "${TMPDIR_TEST}/.planning/phases/01-init"
+for phase_file in PLAN.md VERIFICATION.md REVIEW.md SECURITY.md SUMMARY.md; do
+  out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/01-init/${phase_file}")
+  assert_passes "does not block SB phase .planning/phases/01-init/${phase_file}" "$out"
+done
+teardown
+
+setup
+mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment/094-01-VERIFICATION.md")
+assert_blocks "blocks nested numbered GSD VERIFICATION artifacts" "$out"
+teardown
+
 echo "--- Group 2: Non-planning files are NOT blocked ---"
 
 setup

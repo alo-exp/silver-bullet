@@ -209,7 +209,7 @@ teardown
 echo "--- Test 11: Finalization phase counts ---"
 setup
 write_cfg
-printf 'silver-branch-finish\nsilver-completion-audit\nsilver-tdd\nverify-tests\n' > "$TMPSTATE"
+printf 'silver-branch-finish\nsilver-completion-audit\ntdd\nverify-tests\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "4 finalization skills -> FINALIZATION 4/4" "$out" "FINALIZATION 4/4"
 teardown
