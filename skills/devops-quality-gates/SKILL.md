@@ -25,6 +25,14 @@ Do not require dimension helper skills to appear in the Codex skill picker. They
 
 ---
 
+## Step 0: Mode detection (dual invocation)
+
+`devops-quality-gates` runs **twice** in a full devops-cycle flow: pre-plan (design-time) and pre-ship (adversarial). Use the same canonical detector as product quality gates: `hooks/lib/quality-gates-mode.sh` (`sb_qg_detect_mode`).
+
+`record-skill` writes distinguishable markers: `devops-quality-gates-design` (pre-plan) or `devops-quality-gates-adversarial` (pre-ship when PLAN.md + passed VERIFICATION.md exist). Delivery gates require the adversarial marker on devops-cycle ship paths.
+
+---
+
 ## Step 1: Load quality dimension skills
 
 Use the active runtime file-reading mechanism to read each of the following core dimension files:

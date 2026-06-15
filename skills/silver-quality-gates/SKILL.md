@@ -45,33 +45,26 @@ If any required dimension source is unavailable, first repair the missing depend
 
 Detect operating mode from artifact state before loading dimension skills.
 
-Run these detection commands:
+**Canonical criterion** (single source of truth): `hooks/lib/quality-gates-mode.sh` — `sb_qg_detect_mode` and `sb_qg_repo_requires_pre_ship_marker`. Hooks and `record-skill` use the same logic; do not invent a parallel detector in this skill.
 
-```bash
-PLAN_EXISTS=$(ls .planning/phases/*/PLAN.md .planning/PLAN.md 2>/dev/null | head -1)
-VERIFY_PASSED=$(grep -l "status: passed" .planning/VERIFICATION.md 2>/dev/null)
-```
-
-Use the disambiguation table to determine mode:
-
-| PLAN.md exists? | VERIFICATION.md with `status: passed`? | Mode |
-|-----------------|----------------------------------------|------|
+| PLAN.md substantive? | VERIFICATION.md substantive + `status: passed`? | Mode |
+|---------------------|-----------------------------------------------|------|
 | No | No | **design-time** (pre-plan quality gate) |
-| No | Yes | **Invalid state** — STOP with error: "VERIFICATION.md shows passed but no PLAN.md found. Cannot determine quality gate context." |
-| Yes | No | **design-time** (mid-execution, treat as pre-plan) |
+| No | Yes | **Invalid state** — STOP: passed verification without PLAN.md |
+| Yes | No | **design-time** (mid-execution / pre-plan) |
 | Yes | Yes | **adversarial** (pre-ship quality gate) |
 
 **Record the detected mode.** It controls Step 2 behavior for all applicable dimensions.
 
-### Dual-invocation requirement (shared marker — read carefully)
+### Dual-invocation requirement (distinguishable markers)
 
-`silver-quality-gates` is invoked **twice** in a full flow: once **pre-plan** (design-time) and once **pre-ship** (adversarial). Both invocations record the **same** state-machine marker (`silver-quality-gates`), so the marker alone cannot prove the pre-ship adversarial audit ran.
+`silver-quality-gates` is invoked **twice** in a full flow: once **pre-plan** (design-time) and once **pre-ship** (adversarial). Each invocation records `silver-quality-gates` plus a mode marker (`silver-quality-gates-design` or `silver-quality-gates-adversarial`). Delivery gates require the adversarial marker when substantive passed `VERIFICATION.md` exists — the base marker alone cannot prove the pre-ship audit ran.
 
 **Therefore both invocations are mandatory and non-substitutable:**
 
 - The pre-plan (design-time) run does **not** satisfy the pre-ship gate, even though the marker already exists. The orchestrating flow skill (`silver:feature` Step 13, `silver:ui` Step 13, `silver:devops` Step 10, `silver:bugfix` Step 7b) MUST run this skill **again** in adversarial mode before ship (the pre-ship quality gate) — never skip it on the grounds that "quality-gates already ran".
 - When this skill detects **adversarial mode** (PLAN.md + VERIFICATION.md passed), it is the pre-ship run; treat a clean result as the ship gate, not the planning gate.
-- `record-skill` also writes a distinguishable mode marker: `silver-quality-gates-design` (pre-plan) or `silver-quality-gates-adversarial` (pre-ship). Delivery gates require the adversarial marker when substantive `VERIFICATION.md` exists.
+- `record-skill` also writes distinguishable mode markers: `silver-quality-gates-design` / `silver-quality-gates-adversarial` (product) or `devops-quality-gates-design` / `devops-quality-gates-adversarial` (devops-cycle). Delivery gates require the adversarial marker when substantive passed `VERIFICATION.md` exists.
 - The separate 4-stage **pre-release** quality sequence (`quality-gate-stage-1..4` + `full-test-suite-rerun` in the `quality_gate_state_file`) is enforced independently by `completion-audit.sh` for `silver:release`/`gh release create` and is **not** the same as this skill's pre-ship run.
 
 ---

@@ -19,11 +19,25 @@ if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
   source "$_lib_dir/trivial-bypass.sh"
 fi
 
-command -v jq >/dev/null 2>&1 || exit 0
+_sb_outcomes_have_jq=false
+if command -v jq >/dev/null 2>&1 && printf '{}' | jq . >/dev/null 2>&1; then
+  _sb_outcomes_have_jq=true
+fi
 
 input="$(cat 2>/dev/null || true)"
-hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "UserPromptSubmit"' 2>/dev/null || echo "UserPromptSubmit")
-prompt=$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)
+if [[ "$_sb_outcomes_have_jq" == true ]]; then
+  hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "UserPromptSubmit"' 2>/dev/null || echo "UserPromptSubmit")
+  prompt=$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)
+else
+  hook_event="UserPromptSubmit"
+  if grep -qE '"hook_event_name"[[:space:]]*:[[:space:]]*"(Stop|SubagentStop)"' <<<"$input" 2>/dev/null; then
+    hook_event="$(printf '%s' "$input" | grep -oE '"(Stop|SubagentStop)"' | head -1 | tr -d '"' || echo Stop)"
+  elif ! grep -qE '"hook_event_name"[[:space:]]*:[[:space:]]*"(Stop|SubagentStop)"' <<<"$input" 2>/dev/null; then
+    # Without jq we cannot seed UserPromptSubmit outcomes.
+    exit 0
+  fi
+  prompt=""
+fi
 
 # Resolve SB project
 config_file=""
@@ -90,8 +104,16 @@ if sb_outcomes_all_done; then
 fi
 
 summary="$(sb_outcomes_pending_summary)"
+if [[ -z "$summary" && "$_sb_outcomes_have_jq" != true ]]; then
+  summary="Outstanding per-prompt outcomes (jq unavailable — inspect outcomes-session.json)"
+fi
 reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nUpdate %s (mark outcomes done with evidence) or complete the missing work.' \
   "$summary" "$(sb_outcomes_session_file)")
-json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-printf '{"decision":"block","reason":%s}' "$json_reason"
+if [[ "$_sb_outcomes_have_jq" == true ]]; then
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"decision":"block","reason":%s}' "$json_reason"
+else
+  json_reason=$(printf '%s' "$reason" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+  printf '{"decision":"block","reason":%s}' "$json_reason"
+fi
 exit 0

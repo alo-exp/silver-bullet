@@ -11,28 +11,70 @@ for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orches
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
 
-command -v jq >/dev/null 2>&1 || exit 0
+_sb_odg_have_jq=false
+if command -v jq >/dev/null 2>&1 && printf '{}' | jq . >/dev/null 2>&1; then
+  _sb_odg_have_jq=true
+fi
+
+sb_odg_hook_field() {
+  local json="$1" field="$2" default="${3:-}"
+  if [[ "$_sb_odg_have_jq" == true ]]; then
+    printf '%s' "$json" | jq -r ".$field // \"$default\"" 2>/dev/null || printf '%s' "$default"
+    return 0
+  fi
+  case "$field" in
+    hook_event_name)
+      if grep -qE '"hook_event_name"[[:space:]]*:[[:space:]]*"PreToolUse"' <<<"$json" 2>/dev/null; then
+        printf 'PreToolUse'
+      else
+        printf '%s' "$default"
+      fi
+      ;;
+    tool_name)
+      printf '%s' "$json" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
+        | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
+      ;;
+    prompt)
+      printf '%s' "$json" | grep -oE '"prompt"[[:space:]]*:[[:space:]]*"[^"]*"' 2>/dev/null \
+        | head -1 | sed -E 's/.*"([^"]*)"$/\1/' || printf '%s' "$default"
+      ;;
+    tool_input.skill)
+      printf '%s' "$json" | grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' 2>/dev/null \
+        | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default"
+      ;;
+    *)
+      printf '%s' "$default"
+      ;;
+  esac
+}
+
 sb_project_gate_or_exit
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0
 
-hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo PreToolUse)"
+hook_event="$(sb_odg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
-prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+tool_name="$(sb_odg_hook_field "$input" 'tool_name' '')"
+prompt="$(sb_odg_hook_field "$input" 'prompt' '')"
 
 emit_block() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  if declare -f sb_hook_audit_record >/dev/null 2>&1; then
-    sb_hook_audit_record "orchestrator-directive-guard" "PreToolUse" "deny" "$reason" ""
-  fi
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
-  if [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]]; then
+  if command -v jq >/dev/null 2>&1; then
+    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+    if declare -f sb_hook_audit_record >/dev/null 2>&1; then
+      sb_hook_audit_record "orchestrator-directive-guard" "PreToolUse" "deny" "$reason" ""
+    fi
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  else
+    if declare -f sb_hook_audit_record >/dev/null 2>&1; then
+      sb_hook_audit_record "orchestrator-directive-guard" "PreToolUse" "deny" "$reason" ""
+    fi
     printf '%s\n' "$reason" >&2
+  fi
+  if [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" || "$_sb_odg_have_jq" != true ]]; then
     exit 2
   fi
 }
@@ -40,7 +82,7 @@ emit_block() {
 # Skill invocations: allow when matching expected skill; clear directive on match.
 case "$tool_name" in
   Skill)
-    raw_skill="$(printf '%s' "$input" | jq -r '.tool_input.skill // ""' 2>/dev/null || true)"
+    raw_skill="$(sb_odg_hook_field "$input" 'tool_input.skill' '')"
     if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
       if ! sb_orchestrator_parent_skill_allowed "$raw_skill"; then
         expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"

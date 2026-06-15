@@ -13,7 +13,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes | parent spawns FAST worker |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:context` as needed, then `silver:plan`, `silver:execute`, `silver:verify` |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` / `silver:validate` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
 > **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /silver:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
@@ -99,7 +99,8 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 - Any combination is valid.
 - Always invoke `silver:plan`, `silver:execute`, and `silver:verify`.
 - Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
-- Invoke `silver:context`, `silver:research`, or `silver:validate` only when triggered.
+- Invoke `silver:context`, `silver:research`, or `silver:validate` only when triggered by the signal table above.
+- `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
 
 Display detected signals:
 
