@@ -157,13 +157,13 @@ out=$( cd "$TMPDIR_TEST" && export SB_WORKFLOW_ID="$wf_a" && printf '%s' "$input
 assert_passes "multiple active workflows pass when SB_WORKFLOW_ID scopes to prepared workflow" "$out"
 teardown
 
-# silver-fast Tier 2: context + plan + validate before edits.
+# silver-fast Tier 2: quality-gates + plan + validate before edits (context optional).
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:fast" "fast gate test" "context,plan,execute,verify"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:fast blocks without quality-gates/context/plan/validate markers" "$out"
-write_state_markers silver-quality-gates-design silver-context silver-plan silver-validate
+assert_blocks "silver:fast blocks without quality-gates/plan/validate markers" "$out"
+write_state_markers silver-quality-gates-design silver-plan silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:fast passes after Tier 2 pre-execution markers exist" "$out"
 teardown
