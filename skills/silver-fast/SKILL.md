@@ -12,7 +12,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
-| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | parent spawns FAST worker |
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
 | **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` / `silver:validate` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
@@ -33,8 +33,9 @@ Change: {$ARGUMENTS or "(not specified)"}
 Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no interactive user prompt.
 
 **Tier 1 (Trivial):**
-- ≤3 files AND no logic changes
-- Indicators: typo, config value, rename, comment update, one-liner, text fix
+- ≤3 files AND no logic changes AND no edits under configured `src_pattern` paths (typically `src/`, `hooks/`, `scripts/`, `lib/`, `app/`)
+- Indicators: typo, config value in non-code files, rename, comment-only update, one-line text fix in docs
+- **Never Tier 1:** any `.py`, `.ts`, `.js`, `.go`, `.rs`, `.sh`, `.rb`, `.java`, `.kt`, `.swift`, `.tf`, `.hcl` logic change
 - Proceed to Step 1
 
 **Tier 2 (Medium):**

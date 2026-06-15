@@ -50,8 +50,27 @@ fi
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# jq is required for JSON parsing
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+
+emit_block_jq_missing() {
+  local reason="$1"
+  local json_reason
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+}
+
+# jq is required for JSON parsing (block SB-initiated projects; warn others)
 if ! command -v jq >/dev/null 2>&1; then
+  if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
+    sb_jq_enforcement_block_sb_initiated "dev-cycle-check" "emit_block_jq_missing"
+  fi
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
@@ -665,11 +684,11 @@ PY
   # workflow is active at all.
   if [[ "$hook_event" == "PreToolUse" ]]; then
     repo_root=$(resolve_repo_root 2>/dev/null || true)
+    active_workflows=()
     if [[ -n "$repo_root" ]]; then
       wf_dir="$repo_root/.planning/workflows"
       if [[ -d "$wf_dir" && ! -L "$wf_dir" ]]; then
         shopt -s nullglob
-        active_workflows=()
         for _wf in "$wf_dir"/*.md; do
           [[ -f "$_wf" && ! -L "$_wf" ]] && active_workflows+=("$_wf")
         done
@@ -698,6 +717,27 @@ PY
           if [[ ! -f "$active_file" || -L "$active_file" ]]; then
             emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /silver to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
             exit 0
+          fi
+        fi
+      fi
+
+      # F-06: no composed workflow — block logic src edits that bypass /silver routing
+      if [[ ${#active_workflows[@]} -eq 0 ]]; then
+        if [[ -n "$config_file" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1; then
+          if sb_project_is_initiated "$config_file"; then
+            logic_edit=false
+            if [[ -n "$file_path" ]]; then
+              case "$file_path" in
+                *.py|*.ts|*.tsx|*.js|*.jsx|*.go|*.rs|*.sh|*.rb|*.java|*.kt|*.swift|*.tf|*.hcl|*.c|*.cpp|*.h)
+                  logic_edit=true ;;
+              esac
+            elif [[ ${#shell_in_scope_targets[@]} -gt 0 ]]; then
+              logic_edit=true
+            fi
+            if [[ "$logic_edit" == true ]]; then
+              jq -n --arg m '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /silver:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.' \
+                '{"hookSpecificOutput":{"message":$m}}'
+            fi
           fi
         fi
       fi

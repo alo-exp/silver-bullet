@@ -70,6 +70,17 @@ sb_artifact_substance_gate_enforce() {
       elif ! grep -qiE 'finding|no issues|no findings|clean pass|must-fix|nice-to-have' "$rfile" 2>/dev/null; then
         issues="${issues}  ❌ REVIEW.md missing findings section or explicit no-issues statement ($rfile)\n"
       fi
+      # Two-pass review discipline: REVIEW-ROUNDS.md must show ≥2 rounds when review ran
+      local rounds_file="${repo_root}/.planning/REVIEW-ROUNDS.md"
+      if [[ -f "$rounds_file" && ! -L "$rounds_file" ]]; then
+        local round_count
+        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || echo 0)
+        if [[ "$round_count" -lt 2 ]]; then
+          issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)\n"
+        fi
+      elif [[ -f "$rfile" ]]; then
+        issues="${issues}  ❌ REVIEW-ROUNDS.md missing — append audit trail for two review rounds ($rounds_file)\n"
+      fi
     fi
   fi
 

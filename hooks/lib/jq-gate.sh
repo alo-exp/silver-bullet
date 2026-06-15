@@ -57,3 +57,24 @@ PY
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}'
   exit 0
 }
+
+# Block PreToolUse enforcement when jq is missing in an SB-initiated project.
+# Non-initiated projects remain fail-open (config copied without /silver:init).
+sb_jq_enforcement_block_sb_initiated() {
+  local hook_name="${1:-hook}"
+  local emit_fn="${2:-}"
+  command -v jq >/dev/null 2>&1 && return 0
+
+  local gate_lib
+  gate_lib="$(dirname "${BASH_SOURCE[0]}")/sb-project-gate.sh"
+  if [[ -f "$gate_lib" ]]; then
+    # shellcheck source=sb-project-gate.sh
+    source "$gate_lib"
+    local cfg
+    cfg="$(sb_find_project_config 2>/dev/null || true)"
+    if [[ -n "$cfg" ]] && sb_project_is_initiated "$cfg"; then
+      sb_jq_enforcement_block "$hook_name" "$emit_fn"
+    fi
+  fi
+  return 0
+}

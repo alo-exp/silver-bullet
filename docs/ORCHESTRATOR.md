@@ -11,7 +11,9 @@ Silver Bullet's orchestrator sequences lifecycle work through **directives**, **
 | **Parent** | Main agent / `/silver` | **No** | Task, Read, Grep, Glob; Skill: `silver` / `silver-orchestrator` only |
 | **Worker** | Task subagent per atomic flow | **Yes** (after assigned skill) | Full tool surface per flow contract; **invoke** (not merely read) the assigned skill |
 
-On tier-2 hosts the parent **spawns Task workers**; workers **invoke** flow-atom skills so hooks record state. Single-agent hosts without Task/subagent support follow the same skill order but invoke skills directly — see `docs/RUNTIME-COMPATIBILITY.md`.
+On tier-2 hosts the parent **spawns Task workers**; workers **invoke** flow-atom skills so hooks record state.
+
+**Tier 0–1 hosts** (no Task/subagent support or hooks not merged): invoke the same skill sequence **directly** in a single session — read `docs/RUNTIME-COMPATIBILITY.md` §Tier 0–1 playbook. Parent-only directive blocks apply only when tier ≥ 2 and `orchestrator_mode` is `parent`.
 
 Config: `"orchestrator_mode": "parent"` (only allowed value; default in template).
 
