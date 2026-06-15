@@ -14,9 +14,14 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 
-SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
-mkdir -p "$SB_TEST_DIR"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+
 TEST_RUN_ID="$$"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/orchestrator-guard-${TEST_RUN_ID}"
+SB_TEST_DIR="$SB_RUNTIME_STATE_DIR"
+mkdir -p "$SB_TEST_DIR"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
@@ -26,6 +31,7 @@ unset SB_ORCHESTRATOR_WORKER 2>/dev/null || true
 cleanup() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/orchestrator-directive.json" "${SB_TEST_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
   rm -rf "$WORK" 2>/dev/null || true
+  rm -rf "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/orchestrator-guard-${TEST_RUN_ID}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -107,6 +113,32 @@ else
   PASS=$((PASS + 1))
 fi
 rm -rf "$WORK2" 2>/dev/null || true
+
+# Worker marker readable without jq on PATH
+WORK3=$(mktemp -d)
+git -C "$WORK3" init -q
+echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK3/.silver-bullet.json"
+echo '# SB' >"$WORK3/silver-bullet.md"
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+  >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+FAKE_BIN=$(mktemp -d)
+cat >"$FAKE_BIN/jq" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+chmod +x "$FAKE_BIN/jq"
+PATH="$FAKE_BIN:$PATH"
+export PATH
+unset SB_ORCHESTRATOR_PARENT SB_ORCHESTRATOR_WORKER 2>/dev/null || true
+if sb_orchestrator_is_worker_session; then
+  echo "PASS: worker marker detected without jq"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: worker marker should be detected without jq"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$FAKE_BIN"
+rm -rf "$WORK3" 2>/dev/null || true
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

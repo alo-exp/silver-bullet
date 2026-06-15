@@ -7,6 +7,10 @@ if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
 fi
+
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
 mkdir -p "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/test"
@@ -24,6 +28,18 @@ LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
 
 # --- Setup/Teardown ---
 integration_setup() {
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/integration-${TEST_RUN_ID}-${RANDOM}"
+  SB_TEST_DIR="$SB_RUNTIME_STATE_DIR"
+  mkdir -p "$SB_TEST_DIR"
+  RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
+  E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+  INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
+  QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state"
+  VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
+  LEGACY_CI_TRIVIAL_FILE="${SB_TEST_DIR}/trivial"
+  LEGACY_CI_OVERRIDE_FILE="${SB_TEST_DIR}/ci-red-override"
+
   TMPDIR_TEST=$(mktemp -d)
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
@@ -60,6 +76,25 @@ PASS tests/todos.test.js
 Tests: 69 passed, 69 total
 ```
 EOF
+  cat > "$TMPDIR_TEST/.planning/phases/001-test/001-PLAN.md" <<'EOF'
+# Plan
+
+## Goal
+
+Integration fixture plan with substantive body for quality-gates mode detection.
+
+## Tasks
+
+- Task 1: exercise integration delivery gates with realistic PLAN.md body.
+
+## Acceptance criteria
+
+- Delivery hooks allow PR create when all required skills and artifacts are present.
+
+## Verification
+
+- Run `bash tests/run-all-tests.sh` and confirm integration scenarios pass.
+EOF
 
   # SB project marker files
   printf '%s\n' '# Silver Bullet' > "$TMPDIR_TEST/silver-bullet.md"
@@ -80,6 +115,7 @@ EOF
 }
 
 integration_teardown() {
+  local _isolated_dir="$SB_RUNTIME_STATE_DIR"
   rm -rf "$TMPDIR_TEST"
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
@@ -90,6 +126,7 @@ integration_teardown() {
   rm -f "$LEGACY_CI_TRIVIAL_FILE" "$LEGACY_CI_OVERRIDE_FILE"
   unset GH_RUN_LIST_OVERRIDE
   unset SILVER_BULLET_TEST_HOOK_ENFORCED
+  rm -rf "$_isolated_dir" 2>/dev/null || true
 }
 
 write_default_config() {
@@ -175,11 +212,23 @@ status: complete
 EOF
 }
 
+# Delivery gates require silver-quality-gates-adversarial when substantive
+# VERIFICATION.md exists (see hooks/lib/quality-gates-mode.sh).
+append_pre_ship_quality_gates_marker() {
+  [[ -f "$TMPSTATE" ]] || return 0
+  grep -qx 'silver-quality-gates-adversarial' "$TMPSTATE" 2>/dev/null && return 0
+  if grep -qx 'silver-quality-gates' "$TMPSTATE" 2>/dev/null \
+     || grep -qx 'devops-quality-gates' "$TMPSTATE" 2>/dev/null; then
+    printf 'silver-quality-gates-adversarial\n' >> "$TMPSTATE"
+  fi
+}
+
 write_all_skills() {
   {
     emit_required_deploy_skills required_deploy
     emit_required_deploy_skills required_release
   } | awk 'NF && !seen[$0]++' > "$TMPSTATE"
+  append_pre_ship_quality_gates_marker
   date +%s > "$VERIFY_TESTS_FILE"
   seed_gsd_lifecycle_artifacts
 }

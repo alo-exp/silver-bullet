@@ -22,6 +22,7 @@ _repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$_repo_root/hooks/lib/runtime-paths.sh"
+  export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

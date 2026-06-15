@@ -58,7 +58,7 @@ write_default_config
 run_record_skill "silver-quality-gates"
 run_record_skill "silver-quality-gates"
 
-count=$(grep -c "silver-quality-gates" "$TMPSTATE" 2>/dev/null || echo "0")
+count=$(grep -cFx "silver-quality-gates" "$TMPSTATE" 2>/dev/null || echo "0")
 if [[ "$count" -eq 1 ]]; then
   PASS=$((PASS + 1)); printf 'PASS: S3.1: skill recorded exactly once (idempotent)\n'
 else

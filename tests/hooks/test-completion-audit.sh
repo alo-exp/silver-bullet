@@ -15,6 +15,9 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
@@ -222,6 +225,18 @@ PY
 }
 
 setup() {
+  # Isolate matrix/state paths per test so parallel harness runs cannot stomp
+  # shared host-runtime release markers under ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/.
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/completion-audit-${TEST_RUN_ID}"
+  mkdir -p "$SB_RUNTIME_STATE_DIR"
+  SB_TEST_DIR="$SB_RUNTIME_STATE_DIR"
+  RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
+  E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
+  INLINE_E2E_MATRIX_FILE="${SB_TEST_DIR}/inline-e2e-matrix"
+  SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
+  VERIFY_TESTS_FILE="${SB_TEST_DIR}/verify-tests-state-${TEST_RUN_ID}"
+
   # Initialize git directly in TMPDIR_TEST so the hook finds .silver-bullet.json
   # before hitting the .git boundary (both are in the same directory).
   TMPDIR_TEST=$(mktemp -d)
@@ -274,7 +289,9 @@ teardown() {
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$RELEASE_LIVE_MATRIX_FILE"
   rm -f "$E2E_LIVE_MATRIX_FILE"
+  rm -f "$INLINE_E2E_MATRIX_FILE"
   rm -f "$SESSION_START_FILE"
+  rm -rf "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/completion-audit-${TEST_RUN_ID}" 2>/dev/null || true
   unset SILVER_BULLET_SESSION_START_FILE
 }
 
@@ -1319,6 +1336,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 write_quality_gate_state
 write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
@@ -1355,6 +1375,9 @@ matrix=full-claude-codex
 EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
 EOF
 write_quality_gate_state
 write_verify_tests_state
@@ -1394,6 +1417,9 @@ EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
 EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
 write_quality_gate_state
 write_verify_tests_state
 out=$(SB_WORKFLOW_ID="$ID" run_hook "PreToolUse" "gh release create v1.0.0")
@@ -1420,6 +1446,9 @@ matrix=full-claude-codex
 EOF
 cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
 matrix=full-claude-codex
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
 EOF
 write_quality_gate_state
 write_verify_tests_state
