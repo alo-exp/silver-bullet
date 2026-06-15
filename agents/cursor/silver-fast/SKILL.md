@@ -12,7 +12,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
-| **Tier 1 (Trivial)** | ≤3 files AND no logic changes | parent spawns FAST worker |
+| **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
 | **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` / `silver:validate` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
@@ -33,8 +33,9 @@ Change: {$ARGUMENTS or "(not specified)"}
 Analyze $ARGUMENTS to classify into one of three tiers. Classification is **autonomous** — no interactive user prompt.
 
 **Tier 1 (Trivial):**
-- ≤3 files AND no logic changes
-- Indicators: typo, config value, rename, comment update, one-liner, text fix
+- ≤3 files AND no logic changes AND no edits under configured `src_pattern` paths (typically `src/`, `hooks/`, `scripts/`, `lib/`, `app/`)
+- Indicators: typo, config value in non-code files, rename, comment-only update, one-line text fix in docs
+- **Never Tier 1:** any `.py`, `.ts`, `.js`, `.go`, `.rs`, `.sh`, `.rb`, `.java`, `.kt`, `.swift`, `.tf`, `.hcl` logic change
 - Proceed to Step 1
 
 **Tier 2 (Medium):**
@@ -67,7 +68,7 @@ Make the small edit directly in the current session. Keep the change to the clas
 
 After the trivial edit and verification complete, run scope expansion check (Step 4).
 
-**Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
+**Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `$HOME/.cursor/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
 
 **Trivial bypass mid-session:** SessionStart creates the trivial marker; the first Write/Edit removes it (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, the trivial file is already gone — workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /silver:fast` before further implementation edits.
 
@@ -122,8 +123,8 @@ if [[ -x scripts/workflows.sh ]]; then
 else
   SB_WORKFLOWS_BIN="$(
     for root in \
-      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"; do
+      "$HOME/.cursor/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.cursor/plugins/cache/alo-labs-codex/silver-bullet/current"; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break

@@ -1,5 +1,5 @@
 ---
-name: silver-quality-gates
+name: silver:quality-gates
 description: >
   This skill should be used for dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state.
 version: 0.1.0
@@ -18,12 +18,12 @@ The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included
 
 **Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. Dimension helpers are hidden implementation dependencies, so their packaged files may be named `SILVER_SOURCE` instead of `SKILL.md`.
 
-If this skill is running from a Codex native mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
+If this skill is running from a Codex native mirror such as `$HOME/.claude/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
 
 ```bash
 for candidate in \
-  "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source" \
-  "$(find "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 2 -maxdepth 2 -type d -path '*/skill-source' 2>/dev/null | sort -V | tail -n 1)"; do
+  "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source" \
+  "$(find "$HOME/.claude/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 2 -maxdepth 2 -type d -path '*/skill-source' 2>/dev/null | sort -V | tail -n 1)"; do
   if [[ -n "$candidate" && -f "$candidate/modularity/SILVER_SOURCE" ]]; then
     DIMENSION_SKILLS_ROOT="$candidate"
     break

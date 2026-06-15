@@ -50,7 +50,7 @@ Check the following artifacts and set skip/include flags:
 
 Construct the proposed flow chain for bugfix triage. Bugfix is single-phase by design — no per-phase loop. Default chain:
 
-FLOW 2 (ORIENT) → FLOW 15 (DEBUG) [always included — this is a bugfix] → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 11 (SECURE) → FLOW 12 (VERIFY) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
+FLOW 2 (ORIENT) → FLOW 15 (DEBUG) [always included — this is a bugfix] → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE) → FLOW 14 (SHIP)
 
 Note: FLOW 15 (DEBUG) is always included for any bugfix engagement. FLOW 1 (BOOTSTRAP) is skipped when `.planning/` already exists.
 
@@ -60,7 +60,7 @@ Display the composition proposal to the user:
 
 ```
 SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → VERIFY → SECURITY → SECURE → VALIDATE → QUALITY GATE → BRANCH-FINISH → COMPLETION-AUDIT → SHIP
+Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → VALIDATE → QUALITY GATE → BRANCH-FINISH → COMPLETION-AUDIT → SHIP
 Skipped: BOOTSTRAP — .planning/ exists
 ```
 
