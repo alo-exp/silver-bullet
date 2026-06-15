@@ -94,10 +94,7 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1091
   source "$_lib_dir/required-skills.sh"
 fi
-DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
-DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
-DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
-DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
+# DEFAULT_* / DEVOPS_DEFAULT_* populated by required-skills.sh (single source of truth).
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"

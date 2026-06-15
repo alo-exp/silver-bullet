@@ -22,6 +22,13 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_gate_or_exit
+fi
+
 # Read JSON from stdin
 input=$(cat)
 

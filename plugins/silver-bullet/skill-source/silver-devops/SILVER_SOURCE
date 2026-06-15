@@ -15,6 +15,7 @@ SB **queue builder** for infra/CI/CD/IaC work. Parent orchestrator seeds the que
 - No brainstorming phase — infrastructure changes are driven by operational requirements established upstream (in silver:feature or silver:research). Blast-radius analysis replaces the product/engineering brainstorm.
 - Uses `devops-quality-gates` (7 IaC-adapted dimensions) instead of the standard product quality sweep at BOTH pre-plan and pre-ship gates.
 - Application TDD is not applicable to pure infra plans; IaC uses plan, dry-run, policy, security, drift, and rollback validation instead.
+- **Config alignment:** `skills.required_deploy_devops` in `templates/silver-bullet.config.json.default` intentionally omits `tdd` (present in `required_deploy` for app work). This is by design — do not add `tdd` to devops delivery gates without changing the IaC policy in this skill.
 
 **The 7 IaC quality dimensions:** reliability, security, scalability, modularity, testability, observability, change-safety. (Usability omitted because infra has no direct user interface; reusability/extensibility are covered by modularity/change-safety in IaC.)
 

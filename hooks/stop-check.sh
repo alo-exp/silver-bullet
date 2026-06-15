@@ -185,13 +185,11 @@ fi
     # shellcheck source=lib/orchestrator-directive.sh
     source "$lib_dir/orchestrator-directive.sh"
   fi
-  if [[ "$stop_hook_event" == "SubagentStop" ]] \
-    && { [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" ]] || [[ "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]]; }; then
+  if [[ "$stop_hook_event" == "SubagentStop" ]] && sb_orchestrator_is_worker_session 2>/dev/null; then
     sb_orchestrator_clear_worker_marker 2>/dev/null || true
     exit 0
   fi
-  if [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] \
-    && sb_orchestrator_is_parent_session 2>/dev/null \
+  if sb_orchestrator_is_parent_session 2>/dev/null \
     && sb_orchestrator_parent_queue_pending 2>/dev/null; then
     cur_flow=""
     orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"

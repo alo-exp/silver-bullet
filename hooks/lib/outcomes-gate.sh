@@ -59,10 +59,10 @@ sb_outcomes_auto_evaluate() {
   [[ -f "$outfile" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
 
-  # route: any skill recorded
-  if [[ -n "$state_contents" ]]; then
+  # route: composer or router skill recorded (not merely any skill line)
+  if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
     jq '(.outcomes[] | select(.id=="route") | .status) = "done"
-        | (.outcomes[] | select(.id=="route") | .evidence) = "skill state non-empty"' \
+        | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /silver router recorded"' \
       "$outfile" >"${outfile}.tmp" 2>/dev/null && mv "${outfile}.tmp" "$outfile"
   fi
 
@@ -74,15 +74,35 @@ sb_outcomes_auto_evaluate() {
       "$outfile" >"${outfile}.tmp" 2>/dev/null && mv "${outfile}.tmp" "$outfile"
   fi
 
-  # scope: active workflow file or PLAN.md touched this session (proxy: workflow dir)
+  # scope: active workflow with composer metadata OR PLAN.md with substantive body
+  local scope_done=false
   if [[ -d ".planning/workflows" ]]; then
-  shopt -s nullglob
-    if [[ $(find .planning/workflows -maxdepth 1 -name '*.md' -print 2>/dev/null | wc -l | tr -d ' ') -gt 0 ]]; then
-      jq '(.outcomes[] | select(.id=="scope") | .status) = "done"
-          | (.outcomes[] | select(.id=="scope") | .evidence) = "active composed workflow tracker"' \
-        "$outfile" >"${outfile}.tmp" 2>/dev/null && mv "${outfile}.tmp" "$outfile"
-    fi
-  shopt -u nullglob
+    shopt -s nullglob
+    for _wf in .planning/workflows/*.md; do
+      [[ -f "$_wf" && ! -L "$_wf" ]] || continue
+      if grep -qE '^composer:' "$_wf" 2>/dev/null; then
+        scope_done=true
+        break
+      fi
+    done
+    shopt -u nullglob
+  fi
+  if [[ "$scope_done" != true ]]; then
+    shopt -s nullglob
+    for _plan in .planning/PLAN.md .planning/phases/*/PLAN.md; do
+      [[ -f "$_plan" && ! -L "$_plan" ]] || continue
+      _plan_body="$(grep -vE '^#|^$|^\s*$|^\|[-: ]+\|' "$_plan" 2>/dev/null | head -10 | tr -d '[:space:]' || true)"
+      if [[ -n "$_plan_body" ]]; then
+        scope_done=true
+        break
+      fi
+    done
+    shopt -u nullglob
+  fi
+  if [[ "$scope_done" == true ]]; then
+    jq '(.outcomes[] | select(.id=="scope") | .status) = "done"
+        | (.outcomes[] | select(.id=="scope") | .evidence) = "composed workflow or substantive PLAN.md"' \
+      "$outfile" >"${outfile}.tmp" 2>/dev/null && mv "${outfile}.tmp" "$outfile"
   fi
 }
 

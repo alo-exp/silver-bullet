@@ -31,7 +31,7 @@ Before any local UI implementation work, the execution trace must show the SB de
 
 If any required downstream SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell reconnaissance, direct edits, or other fallback work.
 
-The `workflow-chain-guard.sh` hook enforces this at edit time: once the composed workflow is active, implementation edits stay blocked until the downstream SB lifecycle markers are actually present in the workflow state. If the guard blocks you, that means the dependency chain is not complete yet.
+The `workflow-chain-guard.sh` hook enforces the **pre-execution** chain at edit time (quality-gates, context, ui-contract, plan, conditional spec, validate — not execute/review/verify/ship). If the guard blocks you, complete the missing pre-execution SB steps first.
 
 ## Pre-flight: Load Preferences
 

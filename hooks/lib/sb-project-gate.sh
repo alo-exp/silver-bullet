@@ -30,8 +30,7 @@ sb_find_project_root() {
 
 # Returns 0 when SB enforcement should activate for this project.
 # - sb_initiated: true  → initiated
-# - sb_initiated: false → not initiated (template default before /silver:init completes)
-# - field absent on legacy scaffold (has config_version) → grandfather initiated
+# - sb_initiated: false or absent → not initiated (run /silver:init or /silver:migrate)
 sb_project_is_initiated() {
   local config_file="${1:-}"
   [[ -n "$config_file" && -f "$config_file" ]] || return 1

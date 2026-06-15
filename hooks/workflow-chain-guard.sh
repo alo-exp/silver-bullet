@@ -28,8 +28,21 @@ if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
 fi
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
 
-command -v jq >/dev/null 2>&1 || exit 0
+emit_block_jq_missing() {
+  local reason="$1"
+  local json_reason
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+}
+
+if declare -f sb_jq_enforcement_block >/dev/null 2>&1; then
+  sb_jq_enforcement_block "workflow-chain-guard" "emit_block_jq_missing"
+fi
 
 input=$(cat)
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
@@ -86,10 +99,12 @@ if [[ ${#active_workflows[@]} -gt 1 ]]; then
     active_workflows=("$wf_dir/$scoped_id.md")
   else
     active_names=""
+    stale_hint=""
     for wf in "${active_workflows[@]}"; do
       active_names+="  • $(basename "$wf" .md)"$'\n'
     done
-    emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nSet SB_WORKFLOW_ID to the workflow you are executing, archive stale workflows with scripts/workflows.sh complete, or resolve the active set before making implementation edits.' "$active_names")"
+    stale_hint=$'\nStale workflows (>7 days) are auto-archived on session start. To archive manually: bash scripts/workflows.sh complete <workflow-id>'
+    emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nSet SB_WORKFLOW_ID to the workflow you are executing, archive stale workflows with scripts/workflows.sh complete <id>,%s or resolve the active set before making implementation edits.' "$active_names" "$stale_hint")"
     exit 0
   fi
 fi
@@ -121,8 +136,26 @@ case "$composer_slug" in
     # that are genuinely recorded before the first fix/test edit.
     required_markers=(silver-debug silver-plan)
     ;;
+  silver-fast)
+    # Tier 2 fast path: context + plan before implementation edits.
+    required_markers=(silver-context silver-plan)
+    ;;
   *)
     exit 0
+    ;;
+esac
+
+# Conditional silver-spec when SPEC.md is absent (greenfield feature/ui work).
+if [[ "$composer_slug" == "silver-feature" || "$composer_slug" == "silver-ui" ]]; then
+  if [[ ! -f "$repo_root/.planning/SPEC.md" ]]; then
+    required_markers+=("silver-spec")
+  fi
+fi
+
+# Post-plan validation gate for feature/ui/devops/fast composers.
+case "$composer_slug" in
+  silver-feature|silver-ui|silver-devops|silver-fast)
+    required_markers+=("silver-validate")
     ;;
 esac
 

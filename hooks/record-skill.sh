@@ -294,7 +294,6 @@ for raw in "${skills_to_record[@]}"; do
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     skill="$(sb_skill_canonical_name "$skill")"
   else
-    # Fallback for older layouts: GSD keeps a gsd- prefix, other namespaces strip.
     if printf '%s' "$skill" | grep -qE '^gsd:'; then
       skill=$(printf '%s' "$skill" | sed 's/^gsd:/gsd-/')
     else
@@ -303,6 +302,11 @@ for raw in "${skills_to_record[@]}"; do
       done
     fi
   fi
+
+  # Canonical TDD marker: required_deploy lists "tdd", not "silver-tdd".
+  case "$skill" in
+    silver-tdd|test-driven-development) skill="tdd" ;;
+  esac
 
   # --- Check if skill is tracked ---
   is_tracked=false

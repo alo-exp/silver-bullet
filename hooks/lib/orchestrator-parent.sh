@@ -16,10 +16,34 @@ sb_orchestrator_worker_marker_file() {
   printf '%s/orchestrator-worker-active.json' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
 
-# Worker subagent session — explicit env only (set in worker template / Task prompt).
+# Worker subagent session — env var, explicit parent=0, or fresh Task spawn marker file.
 sb_orchestrator_is_worker_session() {
   [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" || "${SB_ORCHESTRATOR_WORKER:-}" == "true" ]] && return 0
   [[ "${SB_ORCHESTRATOR_PARENT:-}" == "0" ]] && return 0
+  # Explicit parent env wins over a stale Task spawn marker.
+  [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] && return 1
+
+  local marker_file spawned_at now_epoch spawn_epoch ttl
+  marker_file="$(sb_orchestrator_worker_marker_file)"
+  [[ -f "$marker_file" && ! -L "$marker_file" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  spawned_at="$(jq -r '.spawned_at // ""' "$marker_file" 2>/dev/null || true)"
+  ttl="${SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS:-7200}"
+  if [[ -z "$spawned_at" ]]; then
+    return 0
+  fi
+
+  now_epoch="$(date +%s)"
+  if date -ju -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s >/dev/null 2>&1; then
+    spawn_epoch="$(date -ju -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s 2>/dev/null || echo 0)"
+  elif date -j -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s >/dev/null 2>&1; then
+    spawn_epoch="$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$spawned_at" +%s 2>/dev/null || echo 0)"
+  else
+    spawn_epoch="$(date -d "$spawned_at" +%s 2>/dev/null || echo 0)"
+  fi
+  [[ "$spawn_epoch" -gt 0 ]] || return 1
+  (( now_epoch - spawn_epoch < ttl )) && return 0
   return 1
 }
 

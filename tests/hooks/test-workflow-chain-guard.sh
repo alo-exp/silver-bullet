@@ -30,6 +30,10 @@ setup() {
   TMPDIR_TEST=$(mktemp -d)
   mkdir -p "$TMPDIR_TEST/.planning"
   mkdir -p "$TMPDIR_TEST/src"
+  cat > "$TMPDIR_TEST/.planning/SPEC.md" <<'EOF'
+spec-version: 1.0
+# Test spec (skips conditional silver-spec gate)
+EOF
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -105,10 +109,10 @@ touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:feature" "feature gate test" "bootstrap,design,execute,verify"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:feature blocks without SB pre-execution markers" "$out"
-write_state_markers silver-quality-gates silver-context silver-plan
+write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature passes after SB-owned pre-execution markers exist" "$out"
-write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase
+write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-validate-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature legacy GSD markers satisfy SB-owned aliases" "$out"
 teardown
@@ -120,10 +124,10 @@ start_workflow "/silver:ui" "ui gate test" "orient,design,plan,execute,review,ve
 write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:ui blocks until UI pre-execution markers are present" "$out"
-write_state_markers silver-quality-gates silver-context silver-ui-contract silver-plan
+write_state_markers silver-quality-gates silver-context silver-ui-contract silver-plan silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui passes after SB-owned UI pre-execution markers exist" "$out"
-write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase
+write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-validate-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui legacy GSD UI markers satisfy SB-owned aliases" "$out"
 teardown
@@ -147,10 +151,43 @@ setup
 touch "$TMPDIR_TEST/src/app.js"
 wf_a=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:feature" "wf-a" "plan,execute" )
 wf_b=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:bugfix" "wf-b" "debug,plan" )
-write_state_markers silver-quality-gates silver-context silver-plan
+write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
 input=$(jq -n --arg f "$TMPDIR_TEST/src/app.js" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old", new_string:"new"}}')
 out=$( cd "$TMPDIR_TEST" && export SB_WORKFLOW_ID="$wf_a" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 assert_passes "multiple active workflows pass when SB_WORKFLOW_ID scopes to prepared workflow" "$out"
+teardown
+
+# silver-fast Tier 2: context + plan + validate before edits.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:fast" "fast gate test" "context,plan,execute,verify"
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:fast blocks without context/plan/validate markers" "$out"
+write_state_markers silver-context silver-plan silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:fast passes after Tier 2 pre-execution markers exist" "$out"
+teardown
+
+# Feature without SPEC.md requires silver-spec marker.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+rm -f "$TMPDIR_TEST/.planning/SPEC.md"
+start_workflow "/silver:feature" "feature no spec" "plan,execute"
+write_state_markers silver-quality-gates silver-context silver-plan silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:feature without SPEC.md blocks until silver-spec recorded" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:feature without SPEC.md passes after silver-spec marker" "$out"
+teardown
+
+# Feature with existing SPEC.md skips silver-spec requirement.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:feature" "feature with spec" "plan,execute"
+write_state_markers silver-quality-gates silver-context silver-plan silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:feature with SPEC.md skips silver-spec marker" "$out"
 teardown
 
 # Bugfix workflow: diagnosis-first pre-execution chain is DEBUG → PLAN (B1).

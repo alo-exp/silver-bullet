@@ -228,6 +228,7 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   # NOTE: requires BOTH current_branch AND stored_branch to be non-empty.
   # Empty current_branch (e.g. detached HEAD with rev-parse failure) MUST NOT
   # trigger a wipe — that was the v0.27.x mid-session state-loss path.
+  SB_BRANCH_RESET_BANNER="⚠️ SB: git branch changed (${stored_branch} → ${current_branch}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
   rm -f -- "$state_file" 2>/dev/null || true
   sb_guard_nofollow "$branch_file"
@@ -332,6 +333,9 @@ fi
 
 # Build combined context
 combined=""
+if [[ -n "${SB_BRANCH_RESET_BANNER:-}" ]]; then
+  combined="${SB_BRANCH_RESET_BANNER}"
+fi
 if [[ -n "${design_file:-}" ]]; then
   combined="Design plugin detected. Use /design:design-system and /design:ux-copy only when the active Silver Bullet workflow requires UI/UX work."
 fi
