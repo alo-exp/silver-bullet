@@ -814,7 +814,7 @@ PY
   # Derive post-review/finalization skills from config required_deploy; fall back to
   # hardcoded defaults. Context/plan/execute/verify/review are normal lifecycle
   # lifecycle markers and must not be treated as phase-skip evidence.
-  finalization_skills="silver-branch-finish silver-create-release silver-completion-audit silver-tdd"
+  finalization_skills="silver-branch-finish silver-create-release silver-completion-audit tdd"
   if [[ -n "$config_file" ]]; then
     cfg_finalization=$(jq -r '(.skills.required_deploy // []) | map(select(
       . != "silver-quality-gates"

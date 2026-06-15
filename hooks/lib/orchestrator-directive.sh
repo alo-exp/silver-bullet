@@ -14,8 +14,14 @@ sb_orchestrator_override_log() {
 sb_orchestrator_flow_to_skill() {
   local flow="$1"
   case "$flow" in
-    FLOW-QUALITY-GATE|QUALITY\ GATE|QUALITYGATE)
+    FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|QUALITY\ GATE|QUALITYGATE)
       printf 'silver-quality-gates'
+      ;;
+    FLOW-DEVOPS-QUALITY-GATE-PRESHIP)
+      printf 'devops-quality-gates'
+      ;;
+    security|SECURITY)
+      printf 'security'
       ;;
     silver-*)
       printf '%s' "$flow"

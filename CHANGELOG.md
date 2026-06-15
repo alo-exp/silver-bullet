@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.43.6] — 2026-06-16
+
+Independent launch-readiness adversarial review (round 2): fix orchestrator autonomous queue ordering and completeness.
+
+## Bug Fixes
+- `fix(hooks): orchestrator queues use canonical REVIEW→VERIFY→SECURE post-exec order`
+- `fix(hooks): expand flow_atom list (review triad, security, branch-finish, completion-audit)`
+- `fix(hooks): orchestrator advance uses last_completed_index for duplicate quality-gate tokens`
+- `fix(hooks): dev-cycle-check finalization fallback uses canonical tdd marker`
+- `fix(docs): composable-flows-contracts post-execution sequencing section`
+- `fix(skills): silver:devops display chain lists full post-exec gates`
+
+## Tests
+- `test(hooks): add orchestrator queue order regression suite`
+
 ## [0.43.5] — 2026-06-16
 
 Patch release: regenerate `agents/claude`, `agents/codex`, and `agents/cursor` from `skills/` so packaged agent bundles match v0.43.4 skill fixes (silver-migrate, silver-bugfix, silver-fast, silver-ship, devops-quality-gates, silver-quality-gates, silver-devops).

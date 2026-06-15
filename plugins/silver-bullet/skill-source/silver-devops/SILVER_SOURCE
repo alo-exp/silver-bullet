@@ -85,7 +85,7 @@ Display the composition proposal to the user:
 
 ```
 SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → SHIP
+Flows: ORIENT → BLAST-RADIUS → DEVOPS QG (pre-plan) → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → VALIDATE → DEVOPS QG (pre-ship) → BRANCH-FINISH → COMPLETION-AUDIT → SHIP
 Skipped: BOOTSTRAP — .planning/ exists; DESIGN/UI — infra
 ```
 

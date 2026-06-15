@@ -38,6 +38,20 @@ Every flow contract has these fields:
 | State Impact | SB-owned state, project artifacts, or external extension state read or written |
 | Exit Condition | What makes this flow complete |
 
+## Post-execution sequencing (composer canonical order)
+
+Flow **numbers** in the catalog (FLOW 10–14) are stable identifiers — they are not always the runtime execution order for post-implementation gates.
+
+For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the **mandatory post-execute order** after FLOW 8 (EXECUTE) is:
+
+1. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)
+2. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
+3. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
+4. FLOW 13 (QUALITY GATE, pre-ship)
+5. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)
+
+The autonomous orchestrator (`hooks/lib/orchestrator-state.sh`) and composer skills use this order. Delivery hooks enforce artifact and marker presence regardless of flow numbering.
+
 ## Atomic Flow Catalog
 
 | Flow | Name | Primary Owner | Purpose |
