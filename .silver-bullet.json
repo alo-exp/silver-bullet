@@ -1,6 +1,6 @@
 {
-  "config_version": "0.43.0",
-  "version": "0.43.0",
+  "config_version": "0.43.2",
+  "version": "0.43.2",
   "sb_initiated": true,
   "project": {
     "name": "silver-bullet",
@@ -126,7 +126,6 @@
       "silver-review-triage",
       "silver-branch-finish",
       "silver-completion-audit",
-      "silver-tdd",
       "silver-remove",
       "silver-rem",
       "silver-scan"
@@ -163,5 +162,6 @@
     "top_chunks_per_file": 3,
     "debug": false
   },
-  "issue_tracker": "github"
+  "issue_tracker": "github",
+  "sb_enforcement_tier": 2
 }
