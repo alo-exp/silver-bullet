@@ -36,6 +36,19 @@ Change: {$ARGUMENTS or "(not specified)"}
 Mode:   {interactive | autonomous — from §10e or session selection}
 ```
 
+### Activate devops-cycle enforcement profile
+
+At workflow start, set the project enforcement profile so hooks use `required_deploy_devops` and DevOps planning gates:
+
+```bash
+if [[ -f .silver-bullet.json ]] && command -v jq >/dev/null 2>&1; then
+  tmp="$(mktemp)"
+  jq '.project.active_workflow = "devops-cycle"' .silver-bullet.json > "$tmp" && mv "$tmp" .silver-bullet.json
+fi
+```
+
+This must run before the first planning skill so `completion-audit.sh` and `dev-cycle-check.sh` apply the DevOps skill lists.
+
 ## Composition Proposal
 
 Before beginning execution, read existing artifacts to determine context and propose which flows to include or skip.
@@ -261,6 +274,8 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 ## Step 11: Ship / Deploy
 
 Invoke `silver:ship` through the active runtime's SB-recognized skill invocation channel. Purpose: push branch, deploy, create PR.
+
+Before ship, invoke `silver:branch-finish` on feature branches and `silver:completion-audit` immediately before `silver:ship` (both are in `required_deploy_devops`).
 
 If this workflow performs or prepares an environment rollout, invoke
 `silver:deploy` before or inside ship according to the release plan. The deploy

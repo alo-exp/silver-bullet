@@ -308,6 +308,7 @@ quality_gate_state_file="${SB_STATE_DIR}/quality-gate-state"
 verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
 required_planning_cfg=""
 required_deploy_cfg=""
+required_deploy_devops_cfg=""
 required_planning_devops_cfg=""
 active_workflow="full-dev-cycle"
 release_require_plugin_runtime_matrix="false"
@@ -321,6 +322,7 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   ((.skills.required_planning // []) | join(" ")),
   ((.skills.required_planning_devops // []) | join(" ")),
   ((.skills.required_deploy // []) | join(" ")),
+  ((.skills.required_deploy_devops // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
   (.release.quality_gate_state_file // ""),
   ((.release.require_plugin_runtime_matrix // false) | tostring),
@@ -334,11 +336,12 @@ trivial_file="${trivial_file/#\~/$HOME}"
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
 required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
-active_workflow=$(printf '%s' "$config_vals" | sed -n '6p')
-cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '7p')
+required_deploy_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '7p')
+cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '8p')
 [[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
-release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '8p')
-release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '9p')
+release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p')
+release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -900,8 +903,32 @@ DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates silver-review silver-
 DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
+delivery_uses_devops_deploy=false
 if [[ "$active_workflow" == "devops-cycle" ]]; then
+  delivery_uses_devops_deploy=true
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
+else
+  project_root_for_composer="$(dirname "$config_file")"
+  [[ -z "$project_root_for_composer" ]] && project_root_for_composer="$PWD"
+  wf_dir_for_composer="$project_root_for_composer/.planning/workflows"
+  composer_wf_id="${SB_WORKFLOW_ID:-}"
+  if [[ -z "$composer_wf_id" ]]; then
+    composer_wf_id="$(workflow_id_from_shell_assignment "$cmd" 2>/dev/null || true)"
+  fi
+  if [[ -n "$composer_wf_id" && -f "$wf_dir_for_composer/$composer_wf_id.md" ]]; then
+    composer_slug_raw="$(awk -F': ' '/^composer: / { print $2; exit }' "$wf_dir_for_composer/$composer_wf_id.md" 2>/dev/null || true)"
+    composer_slug_norm="$(printf '%s' "$composer_slug_raw" | tr '[:upper:]' '[:lower:]' | sed 's|[:/]| |g' | awk '{print $NF}')"
+    if [[ "$composer_slug_norm" == "silver-devops" || "$composer_slug_norm" == "devops" ]]; then
+      delivery_uses_devops_deploy=true
+      DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
+    fi
+  fi
+fi
+
+if [[ "$delivery_uses_devops_deploy" == true ]]; then
+  if [[ -n "$required_deploy_devops_cfg" ]]; then
+    required_deploy_cfg="$required_deploy_devops_cfg"
+  fi
 fi
 
 # When on main/master branch, branch finishing is not applicable
@@ -925,12 +952,12 @@ fi
 # Release commands also require release-only skills (e.g. silver-create-release).
 if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
   release_defaults="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
-  if [[ "$active_workflow" == "devops-cycle" ]]; then
+  if [[ "$delivery_uses_devops_deploy" == true ]]; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   fi
   release_cfg=""
   if command -v jq >/dev/null 2>&1 && [[ -f "$config_file" ]]; then
-    if [[ "$active_workflow" == "devops-cycle" ]]; then
+    if [[ "$delivery_uses_devops_deploy" == true ]]; then
       release_cfg=$(jq -r '(.skills.required_release_devops // .skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)
     else
       release_cfg=$(jq -r '(.skills.required_release // []) | join(" ")' "$config_file" 2>/dev/null || true)

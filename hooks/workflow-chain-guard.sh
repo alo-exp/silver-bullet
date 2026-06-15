@@ -81,12 +81,17 @@ shopt -u nullglob
 [[ ${#active_workflows[@]} -gt 0 ]] || exit 0
 
 if [[ ${#active_workflows[@]} -gt 1 ]]; then
-  active_names=""
-  for wf in "${active_workflows[@]}"; do
-    active_names+="  • $(basename "$wf" .md)"$'\n'
-  done
-  emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nResolve the active workflow selection before making implementation edits.' "$active_names")"
-  exit 0
+  scoped_id="${SB_WORKFLOW_ID:-}"
+  if [[ -n "$scoped_id" && -f "$wf_dir/$scoped_id.md" ]]; then
+    active_workflows=("$wf_dir/$scoped_id.md")
+  else
+    active_names=""
+    for wf in "${active_workflows[@]}"; do
+      active_names+="  • $(basename "$wf" .md)"$'\n'
+    done
+    emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nSet SB_WORKFLOW_ID to the workflow you are executing, archive stale workflows with scripts/workflows.sh complete, or resolve the active set before making implementation edits.' "$active_names")"
+    exit 0
+  fi
 fi
 
 workflow_file="${active_workflows[0]}"
@@ -106,7 +111,7 @@ case "$composer_slug" in
     required_markers=(silver-blast-radius devops-quality-gates silver-context silver-plan)
     ;;
   silver-research)
-    required_markers=(silver-clarify)
+    required_markers=(silver-clarify silver-research)
     ;;
   silver-bugfix)
     # Bugfix is diagnosis-first: the documented pre-execution chain is

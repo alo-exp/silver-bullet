@@ -720,6 +720,57 @@ out=$(run_hook_bash "PreToolUse" "cp /tmp/patch.js ${PLUGIN_CACHE_PATH}/some-plu
 assert_blocks "F-07: cp into plugin cache is still blocked" "$out"
 teardown
 
+# Test 22-uninstall: rm uninstalled plugin cache allowed when registry has no installPath (#222)
+setup
+UNINSTALL_CACHE="${PLUGIN_CACHE_PATH}/superpowers-marketplace"
+mkdir -p "$UNINSTALL_CACHE"
+REGISTRY="${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json"
+mkdir -p "$(dirname "$REGISTRY")"
+cat > "$REGISTRY" <<'EOF'
+{
+  "plugins": {
+    "silver-bullet@alo-labs": [
+      {
+        "version": "0.43.0",
+        "installPath": "REPLACE_SB_CACHE/alo-labs/silver-bullet/current"
+      }
+    ]
+  }
+}
+EOF
+python3 - "$REGISTRY" "${PLUGIN_CACHE_PATH}/alo-labs/silver-bullet/current" <<'PY'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text())
+data["plugins"]["silver-bullet@alo-labs"][0]["installPath"] = sys.argv[2]
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+out=$(run_hook_bash "PreToolUse" "rm -rf ${UNINSTALL_CACHE}")
+assert_passes "F-07: rm uninstalled plugin cache dir allowed when registry omits it" "$out"
+teardown
+
+# Test 22-uninstall-block: rm still blocked when installPath references cache subtree
+setup
+INSTALLED_CACHE="${PLUGIN_CACHE_PATH}/episodic-memory-dev/episodic-memory/1.2.3"
+mkdir -p "$INSTALLED_CACHE"
+REGISTRY="${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json"
+mkdir -p "$(dirname "$REGISTRY")"
+cat > "$REGISTRY" <<EOF
+{
+  "plugins": {
+    "episodic-memory@episodic-memory-dev": [
+      {
+        "version": "1.2.3",
+        "installPath": "${INSTALLED_CACHE}"
+      }
+    ]
+  }
+}
+EOF
+out=$(run_hook_bash "PreToolUse" "rm -rf ${INSTALLED_CACHE}")
+assert_blocks "F-07: rm installed plugin cache dir still blocked when registry references it" "$out"
+teardown
+
 # Test 22a: script indirection through a symlink into plugin cache is blocked
 setup
 mkdir -p "$TMPDIR_TEST/.hook-probes"

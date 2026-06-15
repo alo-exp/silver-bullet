@@ -41,16 +41,10 @@ fi
 UAT=".planning/UAT.md"
 SPEC=".planning/SPEC.md"
 
-# Only gate on release, milestone completion, or ship when SPEC defines acceptance criteria
-if ! printf '%s' "$skill" | grep -qE 'silver-release|silver-ship'; then
+# Gate milestone release only — phase-level ship (silver:ship) does not require UAT.md.
+# UAT is generated at milestone completion (silver:feature Step 17) before silver:release.
+if ! printf '%s' "$skill" | grep -qE 'silver-release'; then
   exit 0
-fi
-
-# Ship gate applies only when the project has a spec with acceptance criteria
-if printf '%s' "$skill" | grep -qE 'silver-ship'; then
-  if [[ ! -f "$SPEC" ]]; then
-    exit 0
-  fi
 fi
 
 # Check 1: UAT.md must exist (UATG-01)

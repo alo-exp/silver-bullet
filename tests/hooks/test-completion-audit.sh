@@ -909,6 +909,49 @@ out=$(run_hook "PreToolUse" "git commit -m 'infra'")
 assert_blocks "devops: git commit blocked without silver-blast-radius/devops-quality-gates" "$out"
 teardown
 
+# Test 17b: devops-cycle uses required_deploy_devops list (not required_deploy)
+setup
+cat > "$TMPCFG" << EOF
+{
+  "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
+  "project": { "src_pattern": "/src/", "active_workflow": "devops-cycle" },
+  "skills": {
+    "required_planning": ["silver-quality-gates"],
+    "required_planning_devops": ["silver-blast-radius", "devops-quality-gates"],
+    "required_deploy": ["silver-quality-gates", "verify-tests"],
+    "required_deploy_devops": ["silver-blast-radius", "devops-quality-gates", "silver-review", "silver-review-request", "silver-review-triage", "silver-branch-finish", "silver-completion-audit", "verify-tests"],
+    "all_tracked": ["silver-quality-gates", "silver-blast-radius", "devops-quality-gates"]
+  },
+  "release": {
+    "require_plugin_runtime_matrix": false,
+    "require_pre_release_quality_gate": false,
+    "quality_gate_state_file": "${QUALITY_GATE_FILE}"
+  },
+  "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
+}
+EOF
+echo "silver-quality-gates" > "$TMPSTATE"
+write_verify_tests_state
+mkdir -p "$TMPDIR_TEST/.planning/phases/001-test"
+cat > "$TMPDIR_TEST/.planning/phases/001-test/001-REVIEW.md" <<'EOF'
+# Review
+## Findings
+No issues found — review completed with evidence.
+EOF
+cat > "$TMPDIR_TEST/.planning/phases/001-test/001-VERIFICATION.md" <<'EOF'
+# Verification
+## Command output
+```bash
+$ npm test
+PASS
+```
+EOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'infra'")
+assert_blocks "devops: PR blocked when only product deploy skills recorded (uses required_deploy_devops)" "$out"
+assert_contains "devops deploy list mentions silver-blast-radius" "$out" "silver-blast-radius"
+teardown
+
 # Test 18: Trivial file bypass
 echo "--- Group 6: Bypass mechanisms ---"
 setup
