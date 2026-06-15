@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.43.5] — 2026-06-16
+
+Patch release: regenerate `agents/claude`, `agents/codex`, and `agents/cursor` from `skills/` so packaged agent bundles match v0.43.4 skill fixes (silver-migrate, silver-bugfix, silver-fast, silver-ship, devops-quality-gates, silver-quality-gates, silver-devops).
+
+## Chore
+- `chore(agents): sync bundles from skills post v0.43.4`
+
 ## [0.43.4] — 2026-06-15
 
 SB flows launch audit remediation (F-01–F-14): planning guard SB phase paths, migrate inference, workflow doc order, devops profile reset, tier 0–1 playbook, fast-path tightening, jq fail-closed for initiated projects, REVIEW-ROUNDS delivery gate, ship UAT scope, flow-advance jq visibility, sb_initiated banner, compliance `tdd` display, Cursor apply_patch parity, bugfix chain order.

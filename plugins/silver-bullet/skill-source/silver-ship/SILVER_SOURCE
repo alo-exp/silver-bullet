@@ -14,6 +14,12 @@ readiness, docs traceability, and handoff.
 This is phase-level ship, not milestone release. Use `silver:release` for
 versioned publication.
 
+**UAT scope:** `uat-gate.sh` runs only when `silver:release` is invoked — phase
+PRs via `silver:ship` do **not** require `.planning/UAT.md` even when
+`.planning/SPEC.md` has acceptance criteria. Run `/silver:release` (or invoke
+`silver:release` explicitly) when milestone-level acceptance testing is required
+before publication.
+
 ## Output
 
 Write or update the ship section in `.planning/STATE.md`, current phase

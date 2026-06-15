@@ -1,6 +1,7 @@
 ---
-name: silver-migrate
-description: This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults.
+name: "silver:migrate"
+title: "Migrate"
+description: "This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults."
 version: 0.4.0
 ---
 
@@ -161,7 +162,7 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 #### 4.2 Cursor hook merge (Cursor host only)
 
-When the active runtime is Cursor (detect via `SILVER_BULLET_RUNTIME=cursor`, presence of `${SB_RUNTIME_HOME_ROOT}/hooks.json`, or diagnostics output):
+When the active runtime is Cursor (detect via `SILVER_BULLET_RUNTIME=cursor`, presence of `$HOME/.codex/hooks.json`, or diagnostics output):
 
 ```bash
 INSTALL_PATH="${PLUGIN_ROOT:-$(pwd)}"
@@ -226,11 +227,11 @@ Then scan for artifacts that indicate flow completion:
 | CLARIFY | `.planning/phases/*/*-CONTEXT.md` | Complete if context exists; otherwise pending or skipped based on current phase |
 | DECIDE | `.planning/research/*.md`, `.planning/ADR-*.md`, legacy `docs/superpowers/specs/*.md` | Complete if any exists |
 | SPECIFY | `.planning/SPEC.md` | Complete if exists |
-| PLAN | `.planning/phases/*/*-PLAN.md` | Complete if current phase has a plan |
-| EXECUTE | `.planning/phases/*/*-SUMMARY.md` | Complete if current phase has a summary |
-| REVIEW | `.planning/phases/*/*-REVIEW.md`, `.planning/REVIEW.md` | Complete if any exists |
-| SECURE | `.planning/phases/*/*-SECURITY.md`, `.planning/SECURITY.md` | Complete if any exists |
-| VERIFY | `.planning/UAT.md`, `.planning/phases/*/*-UAT.md`, `.planning/phases/*/*-VERIFICATION.md` | Complete if any exists |
+| PLAN | `.planning/phases/*/*-PLAN.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has a plan |
+| EXECUTE | `.planning/phases/*/*-SUMMARY.md`, `.planning/phases/*/SUMMARY.md` | Complete if current phase has a summary |
+| REVIEW | `.planning/phases/*/*-REVIEW.md`, `.planning/phases/*/REVIEW.md`, `.planning/REVIEW.md` | Complete if any exists |
+| SECURE | `.planning/phases/*/*-SECURITY.md`, `.planning/phases/*/SECURITY.md`, `.planning/SECURITY.md` | Complete if any exists |
+| VERIFY | `.planning/UAT.md`, `.planning/phases/*/*-UAT.md`, `.planning/phases/*/*-VERIFICATION.md`, `.planning/phases/*/VERIFICATION.md` | Complete if any exists |
 | QUALITY GATE | SB state marker `silver-quality-gates` | Complete if marker exists |
 | SHIP | SB state marker `silver-ship` or legacy `gsd-ship` marker | Complete if marker exists |
 | DOCUMENT | `silver-ensure-docs` marker, legacy `gsd-docs-update` marker, or docs modified for current phase | Complete if evidence exists |
@@ -256,9 +257,9 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
-      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
       "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
-      "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"/*; do
+      "$HOME/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break
