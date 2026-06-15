@@ -59,7 +59,7 @@ sb_outcomes_auto_evaluate() {
   [[ -f "$outfile" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
 
-  # route: composer or router skill recorded (not merely any skill line)
+  # route: composer or router skill recorded (not merely planning-floor skills)
   if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
     jq '(.outcomes[] | select(.id=="route") | .status) = "done"
         | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /silver router recorded"' \
@@ -92,7 +92,8 @@ sb_outcomes_auto_evaluate() {
     for _plan in .planning/PLAN.md .planning/phases/*/PLAN.md; do
       [[ -f "$_plan" && ! -L "$_plan" ]] || continue
       _plan_body="$(grep -vE '^#|^$|^\s*$|^\|[-: ]+\|' "$_plan" 2>/dev/null | head -10 | tr -d '[:space:]' || true)"
-      if [[ -n "$_plan_body" ]]; then
+      if [[ -n "$_plan_body" ]] \
+         && grep -qiE 'acceptance|task|wave|verification|dependency|deliverable' "$_plan" 2>/dev/null; then
         scope_done=true
         break
       fi
@@ -125,8 +126,12 @@ sb_outcomes_all_done() {
   local outfile
   outfile="$(sb_outcomes_session_file)"
   [[ -f "$outfile" ]] || return 0
-  command -v jq >/dev/null 2>&1 || return 0
+  if ! command -v jq >/dev/null 2>&1; then
+    # Fail closed when outcomes session exists but jq cannot evaluate completion.
+    grep -q '"status"[[:space:]]*:[[:space:]]*"pending"' "$outfile" 2>/dev/null && return 1
+    return 0
+  fi
   local pending
-  pending=$(jq '[.outcomes[] | select(.status != "done")] | length' "$outfile" 2>/dev/null || echo 0)
+  pending=$(jq '[.outcomes[] | select(.status != "done")] | length' "$outfile" 2>/dev/null) || return 1
   [[ "${pending:-0}" -eq 0 ]]
 }

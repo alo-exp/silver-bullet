@@ -99,6 +99,7 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 **Gate composition rules:**
 - Any combination is valid.
 - Always invoke `silver:plan`, `silver:execute`, and `silver:verify`.
+- Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
 - Invoke `silver:context`, `silver:research`, or `silver:validate` only when triggered.
 
 Display detected signals:

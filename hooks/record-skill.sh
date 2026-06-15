@@ -34,6 +34,14 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck source=lib/required-skills.sh
+  source "$_lib_dir/required-skills.sh"
+fi
+if [[ -f "$_lib_dir/quality-gates-mode.sh" ]]; then
+  # shellcheck source=lib/quality-gates-mode.sh
+  source "$_lib_dir/quality-gates-mode.sh"
+fi
 
 # jq is required for JSON parsing
 if ! command -v jq >/dev/null 2>&1; then
@@ -259,11 +267,13 @@ fi
 # .silver-bullet.json exists. Fall back to a small hardcoded list only if the
 # template cannot be read for some reason.
 DEFAULT_TRACKED=""
-if [[ -n "${_repo_dir:-}" && -f "${_repo_dir}/templates/silver-bullet.config.json.default" ]]; then
+if [[ -n "${DEFAULT_ALL_TRACKED:-}" ]]; then
+  DEFAULT_TRACKED="$DEFAULT_ALL_TRACKED"
+elif [[ -n "${_repo_dir:-}" && -f "${_repo_dir}/templates/silver-bullet.config.json.default" ]]; then
   DEFAULT_TRACKED=$(jq -r '(.skills.all_tracked // []) | join(" ")' "${_repo_dir}/templates/silver-bullet.config.json.default" 2>/dev/null || true)
 fi
 if [[ -z "$DEFAULT_TRACKED" ]]; then
-  DEFAULT_TRACKED="silver-quality-gates silver-domain-audit silver-blast-radius devops-quality-gates devops-skill-router silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-ui-contract silver-ui-review silver-debug silver-review-request silver-review-triage silver-branch-finish silver-completion-audit silver-tdd silver-create-release silver-ensure-docs silver-forensics silver-init silver-add silver-remove silver-rem silver-scan silver-test silver-deploy silver-canary silver-incident silver-retro silver-benchmark silver-content silver-refactor silver-worktree verify-tests tdd security reliability usability testability extensibility modularity reusability scalability ai-llm-safety"
+  DEFAULT_TRACKED="${__SB_RS_ALL_TRACKED_FALLBACK:-silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests}"
 fi
 
 tracked_list="$DEFAULT_TRACKED"
@@ -342,6 +352,22 @@ for raw in "${skills_to_record[@]}"; do
   if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >> "$STATE_FILE"
     recorded_any=true
+  fi
+
+  # Distinguishable pre-plan vs pre-ship quality-gates markers (fixes invocation theater).
+  if [[ "$skill" == "silver-quality-gates" ]] && declare -f sb_qg_detect_mode >/dev/null 2>&1; then
+    repo_root_for_qg=""
+    if [[ -n "$config_file" ]]; then
+      repo_root_for_qg="$(dirname "$config_file")"
+    else
+      repo_root_for_qg="$PWD"
+    fi
+    qg_mode="$(sb_qg_detect_mode "$repo_root_for_qg")"
+    mode_marker="$(sb_qg_mode_marker "$qg_mode")"
+    if ! grep -Fqx -- "$mode_marker" "$STATE_FILE" 2>/dev/null; then
+      printf '%s\n' "$mode_marker" >> "$STATE_FILE"
+      recorded_any=true
+    fi
   fi
 done
 

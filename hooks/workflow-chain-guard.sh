@@ -24,6 +24,10 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck source=lib/required-skills.sh
   source "$_lib_dir/required-skills.sh"
 fi
+if [[ -f "$_lib_dir/quality-gates-mode.sh" ]]; then
+  # shellcheck source=lib/quality-gates-mode.sh
+  source "$_lib_dir/quality-gates-mode.sh"
+fi
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"
@@ -137,8 +141,8 @@ case "$composer_slug" in
     required_markers=(silver-debug silver-plan)
     ;;
   silver-fast)
-    # Tier 2 fast path: context + plan before implementation edits.
-    required_markers=(silver-context silver-plan)
+    # Tier 2 fast path: planning floor + context + plan before implementation edits.
+    required_markers=(silver-quality-gates silver-context silver-plan)
     ;;
   *)
     exit 0
@@ -177,7 +181,9 @@ missing_markers=()
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 for marker in "${required_markers[@]}"; do
-  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+  if [[ "$marker" == "silver-quality-gates" ]] && declare -f sb_qg_preplan_marker_recorded >/dev/null 2>&1; then
+    sb_qg_preplan_marker_recorded "$state_contents" && continue
+  elif declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
     sb_required_skill_is_recorded "$state_contents" "$marker" && continue
   elif grep -Fqx -- "$marker" "$state_file" 2>/dev/null; then
     continue

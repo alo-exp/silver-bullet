@@ -87,6 +87,7 @@ assert_blocked "S3.1: completion-audit blocks when silver-completion-audit missi
 # Record the missing skill
 run_record_skill "silver-completion-audit" >/dev/null
 seed_gsd_lifecycle_artifacts
+append_pre_ship_quality_gates_marker
 
 # Now should be allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: test'")

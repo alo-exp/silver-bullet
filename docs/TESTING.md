@@ -70,11 +70,11 @@ Without `</dev/null`, the subshell inherits the parent agent shell's open stdin.
 ```yaml
 - name: Validate required_deploy contents
   run: |
-    jq -e '.skills.required_deploy | contains(["silver-tdd","verify-tests"])' \
+    jq -e '.skills.required_deploy | contains(["tdd","verify-tests"])' \
       .silver-bullet.json
     jq -e '.skills.required_deploy | contains(["accessibility-review"]) | not' \
       .silver-bullet.json
-    jq -e '.skills.all_tracked | contains(["silver-tdd","accessibility-review","incident-response"])' \
+    jq -e '.skills.all_tracked | contains(["tdd","silver-bootstrap-project","silver-orient"])' \
       .silver-bullet.json
 
 - name: Config template parity

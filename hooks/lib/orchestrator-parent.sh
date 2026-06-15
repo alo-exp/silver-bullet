@@ -26,9 +26,14 @@ sb_orchestrator_is_worker_session() {
   local marker_file spawned_at now_epoch spawn_epoch ttl
   marker_file="$(sb_orchestrator_worker_marker_file)"
   [[ -f "$marker_file" && ! -L "$marker_file" ]] || return 1
-  command -v jq >/dev/null 2>&1 || return 1
 
-  spawned_at="$(jq -r '.spawned_at // ""' "$marker_file" 2>/dev/null || true)"
+  spawned_at=""
+  if command -v jq >/dev/null 2>&1; then
+    spawned_at="$(jq -r '.spawned_at // ""' "$marker_file" 2>/dev/null || true)"
+  else
+    grep -qE '"spawned_at"[[:space:]]*:' "$marker_file" 2>/dev/null || return 1
+    spawned_at="$(grep -oE '"spawned_at"[[:space:]]*:[[:space:]]*"[^"]+"' "$marker_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || true)"
+  fi
   ttl="${SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS:-7200}"
   if [[ -z "$spawned_at" ]]; then
     return 0

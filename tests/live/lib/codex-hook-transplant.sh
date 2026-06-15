@@ -503,6 +503,74 @@ for plugin_root in cache_root.iterdir():
 PY
 }
 
+
+sb_ensure_silver_bullet_registry_entry() {
+  local home_root="$1"
+  local registry_file="${home_root}/.codex/plugins/installed_plugins.json"
+
+  python3 - "$registry_file" "$home_root" <<'PY'
+import datetime
+import json
+import pathlib
+import re
+import shutil
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+home = pathlib.Path(sys.argv[2]).expanduser()
+now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+plugin_id = "silver-bullet@alo-labs-codex"
+plugin_root = home / ".codex" / "plugins" / "cache" / "alo-labs-codex" / "silver-bullet"
+
+if not plugin_root.exists():
+    raise SystemExit(0)
+
+def version_sort_key(path: pathlib.Path):
+    return tuple(int(part) if part.isdigit() else part for part in re.split(r"([0-9]+)", path.name))
+
+version_dirs = sorted(
+    [path for path in plugin_root.iterdir() if path.is_dir() and path.name != "current"],
+    key=version_sort_key,
+)
+if not version_dirs:
+    raise SystemExit(0)
+
+target_path = version_dirs[-1]
+current_path = plugin_root / "current"
+if current_path.exists() or current_path.is_symlink():
+    if current_path.is_dir() and not current_path.is_symlink():
+        shutil.rmtree(current_path)
+    else:
+        current_path.unlink()
+current_path.symlink_to(target_path)
+
+data = {"version": 2, "plugins": {}}
+if registry_path.is_file():
+    try:
+        data = json.loads(registry_path.read_text())
+    except Exception:
+        pass
+
+plugins = data.setdefault("plugins", {})
+entry = {
+    "scope": "project",
+    "projectPath": str(home),
+    "installPath": str(current_path),
+    "version": target_path.name,
+    "installedAt": now,
+    "lastUpdated": now,
+}
+
+if plugin_id in plugins and plugins[plugin_id]:
+    plugins[plugin_id][0].update(entry)
+else:
+    plugins[plugin_id] = [entry]
+
+registry_path.parent.mkdir(parents=True, exist_ok=True)
+registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+}
+
 sb_rewrite_text_file_runtime_paths() {
   local source_path="$1"
   local dest_path="$2"
@@ -739,6 +807,7 @@ sync_install_generated_codex_user_hooks() {
     "${target_codex_home}/config.toml" \
     "${target_codex_home}/hooks.json" \
     "$harvest_state_blob"
+  sb_ensure_silver_bullet_registry_entry "$target_home_root"
   sb_seed_managed_plugin_hook_state \
     "${target_codex_home}/config.toml" \
     "${target_codex_home}/plugins/installed_plugins.json"
