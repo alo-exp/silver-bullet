@@ -1,0 +1,11 @@
+---
+name: silver-bootstrap-milestone
+description: Legacy alias for new-milestone bootstrap — use silver-feature or silver-clarify flows.
+version: 0.1.0
+---
+
+# silver:bootstrap-milestone (alias)
+
+Thin compatibility marker for legacy `gsd-new-milestone` recordings.
+
+**Use `/silver:feature`** or **`/silver:clarify`** for new milestone work. This skill exists so enforcement can record the virtual marker when legacy aliases fire.

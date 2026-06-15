@@ -606,7 +606,20 @@ it thereafter.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host hooks manifest**: resolve install path from `installed_plugins.json` or `$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current`, then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
-- **3.9 Done**: output “Silver Bullet initialized. Start any task and the active workflow will be enforced automatically.”
+- **3.9 Done**: run capability probe and surface enforcement tier honestly:
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
+  bash scripts/sb-diagnostics.sh 2>/dev/null || true
+```
+
+Read `sb_enforcement_tier` / capability tier from diagnostics output. Completion message MUST reflect tier:
+
+- **Tier 2 (hook-enforced):** “Silver Bullet initialized with hook enforcement active (tier 2). Start any task and the active workflow will be enforced automatically.”
+- **Tier 1 (state-tracked):** “Silver Bullet initialized (tier 1 — state tracked only). Hooks may not fire on this host; run `bash scripts/sb-diagnostics.sh` and install host hooks per `docs/RUNTIME-COMPATIBILITY.md` before claiming SB gated delivery.”
+- **Tier 0 (guidance-only):** “Silver Bullet initialized (tier 0 — guidance only). Mechanical enforcement is INACTIVE until host hooks are installed. Do not claim SB enforced this work until tier ≥ 2.”
+
+Never use “fully enforced” unless tier ≥ 2 is confirmed.
 
 ## Additional Resources
 

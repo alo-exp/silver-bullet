@@ -69,6 +69,8 @@ After the trivial edit and verification complete, run scope expansion check (Ste
 
 **Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `$HOME/.cursor/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
 
+**Trivial bypass mid-session:** SessionStart creates the trivial marker; the first Write/Edit removes it (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, the trivial file is already gone — workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /silver:fast` before further implementation edits.
+
 If scope remained ≤3 files, display completion banner:
 
 ```

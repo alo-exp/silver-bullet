@@ -110,7 +110,8 @@ Merge forward from `templates/silver-bullet.config.json.default` without discard
    - `compactPrompt`
    - any new entries in `skills.required_planning`, `skills.required_deploy`, or `skills.all_tracked` — union with existing lists; do not remove user-added skill names
 4. Normalize legacy `issue_tracker` value `"gsd"` to `"local"` (filing skills treat both as local markdown tracking).
-5. Write the merged config and report fields added or bumped.
+5. Set **`sb_initiated: true`** — run `bash scripts/sb-migrate-initiated.sh` (or equivalent `jq '.sb_initiated = true'`) so enforcement hooks activate after migrate.
+6. Write the merged config and report fields added or bumped.
 
 ### Step 3: Reconcile Project Instruction File (Host-Appropriate)
 
