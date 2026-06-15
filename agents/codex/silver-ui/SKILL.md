@@ -23,15 +23,16 @@ Before any local UI implementation work, the execution trace must show the SB de
 4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
 5. `silver:quality-gates`
 6. `silver:context`
-7. `silver:ui-contract`
-8. `silver:plan`
-9. `silver:execute`
-10. `silver:ui-review`
-11. `silver:verify`
+7. `silver:plan`
+8. `silver:ui-contract`
+9. `silver:validate` (pre-build gap analysis — after plan and UI contract exist)
+10. `silver:execute`
+11. `silver:ui-review`
+12. `silver:verify`
 
 If any required downstream SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell reconnaissance, direct edits, or other fallback work.
 
-The `workflow-chain-guard.sh` hook enforces the **pre-execution** chain at edit time (quality-gates, context, ui-contract, plan, conditional spec, validate — not execute/review/verify/ship). If the guard blocks you, complete the missing pre-execution SB steps first.
+The `workflow-chain-guard.sh` hook enforces the **pre-execution** chain at edit time (quality-gates, context, plan, ui-contract, conditional spec, validate — not execute/review/verify/ship). If the guard blocks you, complete the missing pre-execution SB steps first.
 
 ## Pre-flight: Load Preferences
 

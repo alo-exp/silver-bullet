@@ -124,7 +124,7 @@ case "$composer_slug" in
     required_markers=(silver-quality-gates silver-context silver-plan)
     ;;
   silver-ui)
-    required_markers=(silver-quality-gates silver-context silver-ui-contract silver-plan)
+    required_markers=(silver-quality-gates silver-context silver-plan silver-ui-contract)
     ;;
   silver-devops)
     required_markers=(silver-blast-radius devops-quality-gates silver-context silver-plan)

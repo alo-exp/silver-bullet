@@ -16,7 +16,7 @@ trigger:
 
 This skill is an internal Silver Bullet policy layer. It is not picker-visible and is only used by SB workflows.
 
-Canonical marker: `silver-tdd`
+Canonical marker: `tdd` (recorded when this skill runs; `silver-tdd` is accepted as a legacy alias)
 
 Before behavior-changing implementation work, follow this red-green-refactor
 cycle directly. Do not invoke an external plugin as a prerequisite; SB owns this TDD

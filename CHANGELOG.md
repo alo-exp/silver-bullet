@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.43.7] — 2026-06-16
+
+Independent launch-readiness adversarial review (round 3): orchestrator pre-exec queue parity and enforcement hardening.
+
+## Bug Fixes
+- `fix(hooks): silver-ui/devops orchestrator queues include silver-validate before execute`
+- `fix(hooks): silver-release queue includes branch-finish and completion-audit before ship`
+- `fix(hooks): register silver-create-release as orchestrator flow atom`
+- `fix(hooks): silver-ui chain-guard marker order plan → ui-contract (composable FLOW 6→7)`
+- `fix(hooks): forbidden-skill-check jq fail-closed for sb_initiated projects`
+- `fix(skills): silver-ui mandatory deps and tdd canonical marker documentation`
+
+## Tests
+- `test(hooks): extend orchestrator queue regression for ui/devops/release atoms`
+
 ## [0.43.6] — 2026-06-16
 
 Independent launch-readiness adversarial review (round 2): fix orchestrator autonomous queue ordering and completeness.

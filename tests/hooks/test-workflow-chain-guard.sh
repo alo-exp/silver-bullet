@@ -124,7 +124,7 @@ start_workflow "/silver:ui" "ui gate test" "orient,design,plan,execute,review,ve
 write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:ui blocks until UI pre-execution markers are present" "$out"
-write_state_markers silver-quality-gates silver-context silver-ui-contract silver-plan silver-spec silver-validate
+write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui passes after SB-owned UI pre-execution markers exist" "$out"
 write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-validate-phase
