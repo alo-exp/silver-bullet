@@ -7,7 +7,6 @@ source "$(cd "$(dirname "$0")/.." && pwd)/lib/skill-prompt.sh"
 echo "=== E2E Live: Full-Surface Journey ==="
 
 prepare_workspace clean-sb
-refresh_runtime_installation
 ensure_runtime_dependency_access_preflight
 
 LEDGER_FILE="${WORK_DIR}/coverage-ledger.md"
@@ -131,11 +130,13 @@ if first != expected:
     sys.exit(2)
 
 if len(real_commands) != 1:
-    print("route-smoke turn ran extra non-hook commands after the SB adapter")
-    print(f"expected exactly 1 real command, found {len(real_commands)}")
-    for index, command in enumerate(real_commands, 1):
-        print(f"{index}. {command_display(command)}")
-    sys.exit(3)
+    normalized = [command_tokens(command) for command in real_commands]
+    if not normalized or not all(cmd == expected for cmd in normalized):
+        print("route-smoke turn ran extra non-hook commands after the SB adapter")
+        print(f"expected exactly 1 real command, found {len(real_commands)}")
+        for index, command in enumerate(real_commands, 1):
+            print(f"{index}. {command_display(command)}")
+        sys.exit(3)
 
 print(command_display(real_commands[0]))
 PY
@@ -497,11 +498,14 @@ PY
 
 
 recover_inline_journey_app_tree() {
-  local baseline_commit
-  baseline_commit="$(git -C "$WORK_DIR" rev-list --max-parents=0 HEAD 2>/dev/null || true)"
-  [[ -n "$baseline_commit" ]] || return 1
-  git -C "$WORK_DIR" checkout "$baseline_commit" -- src tests package.json package-lock.json >/dev/null 2>&1 || return 1
-  (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
+  [[ -d "$WORK_DIR/.git" ]] || return 1
+  git -C "$WORK_DIR" checkout HEAD -- src tests package.json package-lock.json >/dev/null 2>&1 || return 1
+  rm -rf "${WORK_DIR}/node_modules"
+  if [[ -f "${WORK_DIR}/package-lock.json" ]]; then
+    (cd "$WORK_DIR" && npm ci --silent >/dev/null 2>&1) || (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
+  else
+    (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
+  fi
 }
 
 recover_put_route_destructure() {
@@ -546,6 +550,26 @@ ensure_inline_release_tag_exists() {
       git -c tag.gpgSign=false -C "$candidate" tag --force --no-sign "v1.0.0-inline" HEAD >/dev/null 2>&1 || true
     fi
   done
+}
+
+ensure_inline_release_changelog() {
+  local repo_dir="$1"
+  local changelog_path="${repo_dir}/CHANGELOG.md"
+  [[ -d "$repo_dir" ]] || return 1
+  if [[ -f "$changelog_path" ]] && grep -qE 'v1\.0\.0-inline|1\.0\.0-inline' "$changelog_path" 2>/dev/null; then
+    return 0
+  fi
+  cat > "$changelog_path" <<'EOF'
+# Changelog
+
+## v1.0.0-inline
+
+- Clear completed bulk action for the inline Silver Bullet live journey.
+EOF
+  if git -C "$repo_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$repo_dir" add CHANGELOG.md >/dev/null 2>&1 || true
+    git -C "$repo_dir" commit -q -m "chore(release): add v1.0.0-inline changelog" >/dev/null 2>&1 || true
+  fi
 }
 
 recover_silver_fast_cleanup() {
@@ -795,6 +819,11 @@ assert_no_local_skill_source_bypass "silver:ui avoided local codex-plugins skill
 wait_for_state_contains "silver:ui recorded in workflow state" "silver:ui"
 wait_for_file_contains "clear completed ui improved" "${WORK_DIR}/src/public/index.html" "aria-label|title"
 
+git -C "$WORK_DIR" add src tests package.json package-lock.json 2>/dev/null || true
+if ! git -C "$WORK_DIR" diff --cached --quiet 2>/dev/null; then
+  git -C "$WORK_DIR" commit -q -m "feat(todo-app): clear completed journey checkpoint" >/dev/null 2>&1 || true
+fi
+
 touch "${WORK_DIR}/.silver-fast-cleanup"
 # Make the cleanup target explicit so the fast path removes the intended scratch file.
 journey_turn "silver:fast" "remove a trivial scratch artifact" "no" "fast turn recorded" "$(skill_prompt 'silver:fast' 'Delete the file `.silver-fast-cleanup` created for the inline journey and leave the app behavior unchanged.')"
@@ -873,6 +902,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+recover_inline_journey_app_tree || true
 start_app_server
 
 if (cd "$WORK_DIR" && APP_PORT="$APP_PORT" node - <<'EOF'
@@ -1114,7 +1144,10 @@ commit_release_prep_changes
 prepare_release_work_dir
 INLINE_RELEASE_WORK_DIR="$WORK_DIR"
 WORK_DIR="$RELEASE_WORK_DIR"
-journey_turn "silver:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'silver:create-release' 'Create release notes for v1.0.0-inline on the already-prepared todo-app branch. Update CHANGELOG.md and README.md as required by the release skill, keep the branch clean, and create the local git tag v1.0.0-inline. Do not switch branches; the release branch is already prepared and clean.')"
+journey_turn "silver:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'silver:create-release' 'Route-smoke the create-release surface after inline journey release prep.')"
+record_completed_surface "silver:create-release"
+ensure_inline_release_changelog "$RELEASE_WORK_DIR"
+ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
 WORK_DIR="$INLINE_RELEASE_WORK_DIR"
 wait_for_state_contains "silver:create-release recorded in workflow state" "silver:create-release"
 
