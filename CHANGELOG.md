@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.43.3] — 2026-06-15
+
+Second adversarial review closure: unified quality-gates mode detection, devops dual-mode markers, jq-missing fail-closed paths, and e2e-live journey stabilization.
+
+## Bug Fixes
+- `fix(hooks): close adversarial review loop — unified QG mode and gate parity`
+- `fix(e2e-live): stabilize full-surface journey npm and release gates`
+
+## Tests
+- `test(hooks): add quality-gates-mode canonical detection regression suite`
+
+---
+
 ## [0.43.2] — 2026-06-15
 
 Adversarial review closure + test-suite remediation: zero failures across all five `run-all-tests.sh` suites.
