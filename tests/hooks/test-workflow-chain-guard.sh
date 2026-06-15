@@ -128,7 +128,7 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui legacy GSD UI markers satisfy SB-owned aliases" "$out"
 teardown
 
-# Research workflow: clarify marker is required.
+# Research workflow: clarify + research markers are required.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:research" "research gate test" "clarify,research,hand-off"
@@ -136,7 +136,21 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:research blocks without clarify marker" "$out"
 write_state_markers silver-clarify
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:research passes after clarify marker exists" "$out"
+assert_blocks "silver:research blocks with only clarify marker (research missing)" "$out"
+write_state_markers silver-clarify silver-research
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:research passes after clarify + research markers exist" "$out"
+teardown
+
+# Multiple active workflows: SB_WORKFLOW_ID scopes the guard to one workflow file.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+wf_a=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:feature" "wf-a" "plan,execute" )
+wf_b=$( cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:bugfix" "wf-b" "debug,plan" )
+write_state_markers silver-quality-gates silver-context silver-plan
+input=$(jq -n --arg f "$TMPDIR_TEST/src/app.js" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old", new_string:"new"}}')
+out=$( cd "$TMPDIR_TEST" && export SB_WORKFLOW_ID="$wf_a" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+assert_passes "multiple active workflows pass when SB_WORKFLOW_ID scopes to prepared workflow" "$out"
 teardown
 
 # Bugfix workflow: diagnosis-first pre-execution chain is DEBUG → PLAN (B1).

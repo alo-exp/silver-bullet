@@ -67,6 +67,8 @@ Make the small edit directly in the current session. Keep the change to the clas
 
 After the trivial edit and verification complete, run scope expansion check (Step 4).
 
+**Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `$HOME/.claude/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
+
 If scope remained ≤3 files, display completion banner:
 
 ```
