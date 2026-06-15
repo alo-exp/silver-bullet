@@ -278,6 +278,15 @@ Invoke `silver:ship` through the active runtime's SB-recognized skill invocation
 
 Before ship, invoke `silver:branch-finish` on feature branches and `silver:completion-audit` immediately before `silver:ship` (both are in `required_deploy_devops`).
 
+**Reset enforcement profile:** After devops ship completes, restore application workflow gates:
+
+```bash
+if [[ -f .silver-bullet.json ]] && command -v jq >/dev/null 2>&1; then
+  tmp="$(mktemp)"
+  jq '.project.active_workflow = "full-dev-cycle"' .silver-bullet.json > "$tmp" && mv "$tmp" .silver-bullet.json
+fi
+```
+
 If this workflow performs or prepares an environment rollout, invoke
 `silver:deploy` before or inside ship according to the release plan. The deploy
 artifact must record platform detection, command safety, artifact identity,
