@@ -39,6 +39,7 @@ EOF
   # Write a basic config with no forbidden list by default
   cat > "$TMPCFG" << 'CFGEOF'
 {
+  "sb_initiated": true,
   "project": { "src_pattern": "/hooks/|/skills/|/templates/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
@@ -138,6 +139,7 @@ setup
 # Override config with a custom forbidden skill
 cat > "$TMPCFG" << 'CFGEOF'
 {
+  "sb_initiated": true,
   "project": { "src_pattern": "/hooks/|/skills/|/templates/", "active_workflow": "full-dev-cycle" },
   "skills": {
     "required_planning": ["silver-quality-gates"],

@@ -150,9 +150,6 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
   source "$_lib_dir/required-skills.sh"
-else
-  # Fallback if lib not found (should not happen in correct installs)
-  DEFAULT_REQUIRED="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review silver-secure silver-validate silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests"
 fi
 if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
   # shellcheck source=lib/prompt-classifier.sh

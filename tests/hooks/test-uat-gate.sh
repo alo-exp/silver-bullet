@@ -136,8 +136,8 @@ out=$(run_hook "silver:release")
 assert_passes "silver:release passes with all PASS results" "$out"
 teardown
 
-# Test 5: silver:release with NOT-RUN — advisory only, not blocked
-echo "--- Group 5: NOT-RUN advisory ---"
+# Test 5: silver:release blocked when NOT-RUN present
+echo "--- Group 5: NOT-RUN blocking ---"
 setup
 cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
 spec-version: 1.0
@@ -149,8 +149,8 @@ spec-version: 1.0
 | 2  | Optional feature | NOT-RUN |
 EOF
 out=$(run_hook "silver:release")
-assert_passes "silver:release NOT blocked with NOT-RUN (advisory only)" "$out"
-assert_contains "output mentions NOT-RUN advisory" "$out" "NOT-RUN"
+assert_blocks "silver:release blocked with NOT-RUN results" "$out"
+assert_contains "block message mentions NOT-RUN" "$out" "NOT-RUN"
 teardown
 
 # Test 6: Spec version mismatch — blocked

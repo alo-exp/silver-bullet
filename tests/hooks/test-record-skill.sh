@@ -372,7 +372,7 @@ setup
 adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver-tdd"
 (cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver-tdd >/dev/null 2>/dev/null) || true
 run_hook_bash "$adapter_cmd" >/dev/null
-assert_in_state "Codex invoke-skill adapter resolves virtual silver-tdd marker through hidden tdd skill" "silver-tdd"
+assert_in_state "Codex invoke-skill adapter canonicalizes silver-tdd to tdd marker" "tdd"
 teardown
 
 setup

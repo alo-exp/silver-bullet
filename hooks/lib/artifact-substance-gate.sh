@@ -73,6 +73,17 @@ sb_artifact_substance_gate_enforce() {
     fi
   fi
 
+  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-plan' 2>/dev/null; then
+    pfile="$(_sb_substance_find_artifact "$repo_root" "PLAN.md" 2>/dev/null || true)"
+    if [[ -n "$pfile" ]]; then
+      if _sb_substance_is_stub "$pfile"; then
+        issues="${issues}  ❌ PLAN.md is empty or stub-only ($pfile)\n"
+      elif ! grep -qiE 'acceptance|task|wave|verification|dependency' "$pfile" 2>/dev/null; then
+        issues="${issues}  ❌ PLAN.md missing task/acceptance/verification sections ($pfile)\n"
+      fi
+    fi
+  fi
+
   [[ -n "$issues" ]] || return 0
 
   local msg

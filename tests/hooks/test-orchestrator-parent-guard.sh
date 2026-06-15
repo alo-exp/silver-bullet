@@ -24,7 +24,7 @@ export SB_ORCHESTRATOR_PARENT=1
 unset SB_ORCHESTRATOR_WORKER 2>/dev/null || true
 
 cleanup() {
-  rm -f "$TMPSTATE" "${SB_TEST_DIR}/orchestrator-directive.json" 2>/dev/null || true
+  rm -f "$TMPSTATE" "${SB_TEST_DIR}/orchestrator-directive.json" "${SB_TEST_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
   rm -rf "$WORK" 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -88,6 +88,25 @@ fi
 out_skill=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"silver-plan"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks direct flow skill" "$out_skill" "ORCHESTRATOR PARENT"
+
+# Worker detected via marker file without SB_ORCHESTRATOR_WORKER env
+WORK2=$(mktemp -d)
+git -C "$WORK2" init -q
+echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK2/.silver-bullet.json"
+echo '# SB' >"$WORK2/silver-bullet.md"
+mkdir -p "$WORK2/.planning/workflows"
+jq -n --arg at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" '{skill:"silver-plan",template:"PLAN",spawned_at:$at}' \
+  >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+out_worker=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+if printf '%s' "$out_worker" | grep -qF 'ORCHESTRATOR PARENT'; then
+  echo "FAIL: worker marker without env should not get parent block"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: worker marker without env treated as worker"
+  PASS=$((PASS + 1))
+fi
+rm -rf "$WORK2" 2>/dev/null || true
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
