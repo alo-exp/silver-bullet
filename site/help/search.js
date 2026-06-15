@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Help Center landing page for Silver Bullet v0.43.5 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+    "text": "Help Center landing page for Silver Bullet v0.43.6 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
   },
   {
     "page": "Core Concepts",
@@ -343,7 +343,7 @@ var IDX = [
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "runtime-parity",
-    "title": "Runtime parity scripts v0.43.5",
+    "title": "Runtime parity scripts v0.43.6",
     "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
