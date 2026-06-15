@@ -255,9 +255,13 @@ Invoke `silver:verify` through the active runtime's SB-recognized skill invocati
 
 **Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's test gate and record the freshness marker — it is part of `required_deploy`, so the completion-audit deploy gate blocks delivery until a fresh run is recorded. If coverage gaps remain after verification, route a test-gap task through `silver:execute`, then re-run `verify-tests`.
 
-## Step 11: Frontend Security
+## Step 11: Security Review
 
-Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: frontend security review — XSS, CSP, auth surface. Also invoke `security` as the mandatory security gate.
+Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable gate.
+
+## Step 11b: Secure Phase
+
+Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: retroactive threat-mitigation verification and frontend security artifact update (XSS, CSP, auth surface).
 
 ## Step 12: Validate Phase
 
@@ -309,6 +313,10 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 ## Step 14: Finishing Branch
 
 Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel.
+
+## Step 14b: Completion Audit
+
+Invoke `silver:completion-audit` through the active runtime's SB-recognized skill invocation channel immediately before ship.
 
 Ask user about PR branch:
 > Would you like a clean PR branch (strips .planning/ commits)?

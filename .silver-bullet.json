@@ -1,6 +1,6 @@
 {
-  "config_version": "0.42.0",
-  "version": "0.41.0",
+  "config_version": "0.43.0",
+  "version": "0.43.0",
   "sb_initiated": true,
   "project": {
     "name": "silver-bullet",
@@ -57,7 +57,6 @@
       "silver-review-triage",
       "silver-branch-finish",
       "silver-completion-audit",
-      "tdd",
       "verify-tests"
     ],
     "required_release_devops": [

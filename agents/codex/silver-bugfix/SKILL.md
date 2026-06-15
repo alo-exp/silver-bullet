@@ -61,7 +61,7 @@ Display the composition proposal to the user:
 
 ```
 SILVER BULLET ► FLOW COMPOSED
-Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → VERIFY → SECURE → SHIP
+Flows: ORIENT → DEBUG → PLAN → EXECUTE → REVIEW → VERIFY → SECURITY → SECURE → VALIDATE → QUALITY GATE → BRANCH-FINISH → COMPLETION-AUDIT → SHIP
 Skipped: BOOTSTRAP — .planning/ exists
 ```
 
@@ -224,7 +224,7 @@ Invoke `silver:verify` through the active runtime's SB-recognized skill invocati
 
 Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable. Then invoke `silver:secure` for retroactive threat-mitigation verification — both `security` and `silver-secure` are part of `required_deploy`, so the completion-audit deploy gate blocks ship until both are recorded.
 
-> **Canonical post-execution order:** review (Step 5) → verify (Step 6) → security + secure (Step 7) → pre-ship quality gates (Step 7b) → ship (Step 8). This sequence matches `silver:feature`, `silver:ui`, and `silver:devops`.
+> **Canonical post-execution order:** review (Step 5) → verify (Step 6) → security + secure (Step 7) → quality gates (Step 7b) → validate (Step 7c) → branch-finish (Step 7d) → completion-audit (Step 7e) → ship (Step 8). This sequence matches `silver:feature`, `silver:ui`, and `silver:devops`.
 
 ## Step 7a: Tech Debt Review
 
@@ -249,7 +249,19 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel (affected quality dimensions for the changed code). Non-skippable.
 
-## Step 7c: Doc-Scheme Compliance (conditional)
+## Step 7c: Validate Phase
+
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: pre-ship validation gap filling and consistency check.
+
+## Step 7d: Finishing Branch
+
+On non-main branches, invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel before ship.
+
+## Step 7e: Completion Audit
+
+Invoke `silver:completion-audit` through the active runtime's SB-recognized skill invocation channel immediately before ship. Purpose: verify completion claims and evidence are substantive — required by `required_deploy` and must be recorded before `gh pr create`.
+
+## Step 7f: Doc-Scheme Compliance (conditional)
 
 **Only if `docs/doc-scheme.md` exists in the project:**
 

@@ -9,7 +9,9 @@ Silver Bullet's orchestrator sequences lifecycle work through **directives**, **
 | Role | Session | May implement? | Tools |
 |------|---------|----------------|-------|
 | **Parent** | Main agent / `/silver` | **No** | Task, Read, Grep, Glob; Skill: `silver` / `silver-orchestrator` only |
-| **Worker** | Task subagent per atomic flow | **Yes** (after assigned skill) | Full tool surface per flow contract |
+| **Worker** | Task subagent per atomic flow | **Yes** (after assigned skill) | Full tool surface per flow contract; **invoke** (not merely read) the assigned skill |
+
+On tier-2 hosts the parent **spawns Task workers**; workers **invoke** flow-atom skills so hooks record state. Single-agent hosts without Task/subagent support follow the same skill order but invoke skills directly — see `docs/RUNTIME-COMPATIBILITY.md`.
 
 Config: `"orchestrator_mode": "parent"` (only allowed value; default in template).
 
@@ -80,6 +82,10 @@ Guidance only — `templates/cursor-rules/silver-orchestrator.mdc` + directive i
 
 - **Worker SubagentStop:** Clears `orchestrator-worker-active.json`; does not block (parent continues).
 - **Parent Stop:** Blocked while orchestrator queue has pending `current_flow` — parent must spawn next Task worker.
+
+### Skill recording from workers
+
+Workers must invoke assigned flow skills through the host's SB-recognized channel (`Skill` tool, `scripts/silver-bullet invoke-skill`, or equivalent) so `PostToolUse/Skill` → `record-skill.sh` appends markers to `${SB_RUNTIME_STATE_DIR}/state`. Parent Task spawns do not auto-record skills — the worker invocation does. If delivery gates report missing skills after a worker completed, verify the worker used a recorded channel rather than reading the skill file inline.
 
 ## Migration
 

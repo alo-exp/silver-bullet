@@ -8,6 +8,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/plugin-cache-guard.sh" ]]; then
+  # shellcheck source=lib/plugin-cache-guard.sh
+  source "$_lib_dir/plugin-cache-guard.sh"
+fi
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck source=lib/required-skills.sh
   # shellcheck disable=SC1091
@@ -180,6 +184,13 @@ main() {
 
   # --- Third-party plugin boundary (§8) — HARD STOP on upstream plugin edits ---
   plugin_cache="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
+  plugin_boundary_is_uninstall_cleanup() {
+    if [[ -n "${command_str:-}" ]] && declare -f sb_plugin_cache_command_is_uninstall_cleanup >/dev/null 2>&1; then
+      sb_plugin_cache_command_is_uninstall_cleanup "$command_str" "${shell_write_targets[@]:-}"
+      return $?
+    fi
+    return 1
+  }
   if [[ -n "$file_path" ]] && [[ "$file_path" == "$plugin_cache"/* ]]; then
     msg="🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION — You are attempting to edit a file inside the plugin cache:
 $(basename "$file_path")
@@ -196,15 +207,20 @@ See CLAUDE.md §8 for details."
     # F-07: Block Bash commands that write into the plugin cache.
     # Read-only access to upstream templates is allowed so Silver Bullet can
     # copy them into the project workspace during initialization.
+    # Uninstall cleanup is allowed when installed_plugins.json no longer references the path (#222).
     if shell_writes_under_prefix "$plugin_cache"; then
-      emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
-      exit 0
+      if ! plugin_boundary_is_uninstall_cleanup; then
+        emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
+        exit 0
+      fi
     fi
     if printf '%s' "$command_str" | grep -qE "$plugin_cache"; then
       plugin_write_pattern='([[:space:]](>>|>)[[:space:]]*"?'"$plugin_cache"'|\b(cp|mv|rm|chmod|install|tee)\b.*"?'"$plugin_cache"'|\b(sed|perl)\b.*-i.*"?'"$plugin_cache"')'
       if printf '%s' "$command_str" | grep -qE "$plugin_write_pattern"; then
-        emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
-        exit 0
+        if ! plugin_boundary_is_uninstall_cleanup; then
+          emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
+          exit 0
+        fi
       fi
     fi
   fi

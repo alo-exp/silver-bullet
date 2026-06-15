@@ -173,6 +173,19 @@ assert_blocks "silver:release blocked when spec version mismatches" "$out"
 assert_contains "block mentions version mismatch" "$out" "v1.0"
 teardown
 
+# Test 6b: silver:ship passes without UAT when SPEC exists (release-only UAT gate)
+setup
+cat > "$TMPDIR_TEST/.planning/SPEC.md" << 'EOF'
+spec-version: 1.0
+# Spec
+
+## Acceptance Criteria
+- AC-1: Works
+EOF
+out=$(run_hook "silver-ship")
+assert_passes "silver:ship not blocked when SPEC exists but UAT absent (phase ship)" "$out"
+teardown
+
 # Test 7: legacy gsd:complete-milestone (colon variant) also triggers the gate
 echo "--- Group 7: Legacy colon variant ---"
 setup

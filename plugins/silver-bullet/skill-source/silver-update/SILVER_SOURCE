@@ -13,10 +13,13 @@ Check GitHub for the latest Silver Bullet release, display what changed since yo
 
 ### Step 1: Read installed version
 
-Read `$HOME/.codex/plugins/installed_plugins.json`. Try the `silver-bullet@alo-labs` key first; if absent, fall back to the `silver-bullet@silver-bullet` key (legacy installation):
+Read `$HOME/.codex/plugins/installed_plugins.json`. Try these keys in order:
 
-- `version` — currently installed version (e.g. `0.24.1`)
-- If neither key exists, treat installed version as `0.0.0`.
+- `silver-bullet@alo-labs` (Claude / Cursor marketplace)
+- `silver-bullet@alo-labs-codex` (Codex marketplace)
+- `silver-bullet@silver-bullet` (legacy installation)
+
+Use the first key that exists; read its `version` field (e.g. `0.24.1`). If none exist, treat installed version as `0.0.0`.
 
 Display:
 ```
