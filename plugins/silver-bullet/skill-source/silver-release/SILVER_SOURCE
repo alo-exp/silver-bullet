@@ -332,6 +332,8 @@ session.
 Then invoke `silver:verify` for release-scope evidence review. Do not proceed to
 ship until both gates have fresh passing evidence.
 
+Invoke `silver:completion-audit` immediately before `silver:ship` to verify release-scope completion claims.
+
 ## Step 10: Ship - Branch, PR, CI, Deploy Readiness
 
 Invoke `silver:ship`. Purpose: complete phase-level shipping duties before the

@@ -38,7 +38,8 @@ After implementation, final delivery requires the post-execution chain. **Canoni
 5. `silver:validate`
 6. `silver:quality-gates` (pre-ship sweep)
 7. `silver:branch-finish` on feature branches
-8. `silver:ship`
+8. `silver:completion-audit` immediately before ship
+9. `silver:ship`
 
 If any required SB skill cannot be invoked, stop immediately and notify the user. Do not replace missing lifecycle skills with shell-only work, direct edits, or weaker fallback work.
 
@@ -73,7 +74,6 @@ Check the following artifacts and set skip/include flags:
 |----------|--------|--------|
 | `.planning/SPEC.md` exists | Specification already written | Skip FLOW 5 (SPECIFY) |
 | `.planning/PLAN.md` files exist for current phase | Planning already done | Skip FLOW 6 (PLAN) |
-| `.planning/VERIFICATION.md` exists, passing, and newer than last src change | Verification already done | Skip FLOW 12 (VERIFY) |
 | UI files detected in phase scope (*.tsx, *.css, *.html, design/) | UI work in scope | Include FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) |
 | `STATE.md` current phase and completion status | Phase position | Set loop start/end |
 
@@ -83,20 +83,6 @@ grep "^current_phase\|^current_plan" .planning/STATE.md 2>/dev/null
 
 # Check for existing SPEC.md
 [ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 5" || echo "No SPEC — include FLOW 5"
-
-# Check for stale verification (invalidate skip when src changed after VERIFICATION.md)
-if [ -f ".planning/VERIFICATION.md" ]; then
-  src_pattern=$(jq -r '.project.src_pattern // "/src/"' .silver-bullet.json 2>/dev/null || echo "/src/")
-  if find . -type f 2>/dev/null | grep -qE "$src_pattern"; then
-    ver_mtime=$(stat -f %m .planning/VERIFICATION.md 2>/dev/null || stat -c %Y .planning/VERIFICATION.md 2>/dev/null || echo 0)
-    newer_src=$(find . -type f 2>/dev/null | grep -E "$src_pattern" | while read -r f; do
-      stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0
-    done | awk -v v="$ver_mtime" '$1 > v { found=1; exit } END { exit !found }')
-    if [ "${newer_src:-1}" -eq 0 ]; then
-      echo "VERIFICATION.md is stale relative to src changes — include FLOW 12 (VERIFY)"
-    fi
-  fi
-fi
 
 # Check ROADMAP.md for remaining phases in milestone
 grep "^\-\s\[\s\]" .planning/ROADMAP.md 2>/dev/null | head -5
@@ -457,6 +443,10 @@ If `docs/doc-scheme.md`/`docs/doc-scheme.json` are missing, recover via `/silver
 ## Step 14: Finishing Branch
 
 Invoke `silver:branch-finish` through the active runtime's SB-recognized skill invocation channel. Purpose: merge / PR / cleanup decision, branch hygiene, and gate readiness.
+
+## Step 14b: Completion Audit
+
+Invoke `silver:completion-audit` through the active runtime's SB-recognized skill invocation channel immediately before ship. Purpose: verify completion claims and evidence — required by `required_deploy` and must be recorded before `gh pr create`.
 
 ## Step 15a: PR Branch (ask user)
 

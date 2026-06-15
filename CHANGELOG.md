@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.43.0] — 2026-06-15
+
+Launch-readiness follow-up: closes GitHub #222 and remaining adversarial review wiring gaps (SB-REV-001–021).
+
+## Bug Fixes
+- `fix(dev-cycle-check): allow rm/rmdir of uninstalled plugin cache dirs when absent from installed_plugins.json` (#222)
+- `fix(completion-audit): wire required_deploy_devops when active_workflow is devops-cycle or composer is silver-devops`
+- `fix(uat-gate): restrict UAT gate to silver:release — phase ship no longer requires UAT.md when SPEC exists`
+- `fix(workflow-chain-guard): scope multi-workflow deadlock to SB_WORKFLOW_ID when set`
+
+## Features / Flows
+- `feat(flows): add silver:completion-audit before ship in feature/ui/devops/bugfix/release compositions`
+- `feat(silver-devops): activate active_workflow devops-cycle at workflow start`
+- `feat(silver-bugfix): complete deploy chain with validate, branch-finish, completion-audit`
+- `fix(silver-ui): canonical security → silver:secure order`
+- `fix(silver-feature): remove stale VERIFY skip from composition context scan`
+- `fix(silver-research): align workflow-chain guard with clarify + research markers`
+
+## Config / Docs
+- `chore(config): remove tdd from required_deploy_devops; align config_version and version to 0.43.0`
+- `docs(ORCHESTRATOR): clarify worker skill invoke vs parent Task spawn; subagent recording note`
+- `fix(silver-update): document Codex registry key silver-bullet@alo-labs-codex`
+
+## Tests
+- Plugin uninstall bypass, devops deploy list, UAT ship scope, multi-workflow SB_WORKFLOW_ID scoping
+
+---
+
 ## [0.42.0] — 2026-06-15
 
 Launch-hardening release. Remediates all blocker/high/medium findings from the pre-launch adversarial review and confirms a clean surface over two consecutive fully-green test rounds (3371 passed, 0 failed; 33/33 hooks covered).
