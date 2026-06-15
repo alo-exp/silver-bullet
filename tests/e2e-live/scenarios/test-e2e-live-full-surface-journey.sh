@@ -495,10 +495,19 @@ path.write_text(text.replace("  throw new Error('injected regression');\n", ""))
 PY
 }
 
+
+recover_inline_journey_app_tree() {
+  local baseline_commit
+  baseline_commit="$(git -C "$WORK_DIR" rev-list --max-parents=0 HEAD 2>/dev/null || true)"
+  [[ -n "$baseline_commit" ]] || return 1
+  git -C "$WORK_DIR" checkout "$baseline_commit" -- src tests package.json package-lock.json >/dev/null 2>&1 || return 1
+  (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
+}
+
 recover_put_route_destructure() {
   local route_file="${WORK_DIR}/src/routes/todos.js"
   [[ -f "$route_file" ]] || return 1
-  grep -q "const { title, completed, due_date } = req.body;" "$route_file" && return 1
+  grep -qE "const \{ title, completed" "$route_file" && return 1
   python3 - "$route_file" <<'PY'
 from pathlib import Path
 import sys
@@ -803,6 +812,11 @@ else
   PASS=$((PASS + 1))
 fi
 
+recover_inline_journey_app_tree || true
+if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-pre-regression.log 2>&1) && recover_inline_journey_app_tree; then
+  echo "WARN: agent left the app tree broken; restored baseline src/ and tests/ before regression probe"
+  (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-pre-regression.log 2>&1) || true
+fi
 if (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-pre-regression.log 2>&1); then
   echo "PASS: npm test passes before the injected regression"
   PASS=$((PASS + 1))
@@ -843,6 +857,11 @@ fi
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_put_route_destructure; then
   echo "WARN: silver:bugfix left the PUT route destructure missing; applied deterministic live-test recovery"
+fi
+
+if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_inline_journey_app_tree; then
+  echo "WARN: silver:bugfix left the app tree broken; restored baseline src/ and tests/ after bugfix recovery"
+  (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) || true
 fi
 
 if (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1); then

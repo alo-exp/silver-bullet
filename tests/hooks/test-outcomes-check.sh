@@ -22,6 +22,7 @@ setup() {
 {"sb_initiated":true,"project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]}}
 JSON
   cp "$REPO_ROOT/silver-bullet.md" "$TMPDIR_TEST/silver-bullet.md"
+  export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
   export SILVER_BULLET_STATE_FILE="${SB_TEST_DIR}/state-$$"
   export SILVER_BULLET_BRANCH_FILE="${SB_TEST_DIR}/branch-$$"
   printf 'main\n' >"$SILVER_BULLET_BRANCH_FILE"
@@ -68,6 +69,88 @@ else
   echo "  FAIL: Stop should block incomplete outcomes"
   FAIL=$((FAIL + 1))
 fi
+teardown
+
+setup
+run_hook "UserPromptSubmit" "ship the feature" >/dev/null
+printf 'silver-feature\nsilver-quality-gates\n' >"$SILVER_BULLET_STATE_FILE"
+out=$(run_hook "Stop" "")
+if printf '%s' "$out" | grep -q '"decision":"block"'; then
+  echo "  ok: route via composer alone does not auto-complete outcomes without scope/verify"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: composer marker without scope/verify should still block"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
+setup
+run_hook "UserPromptSubmit" "define caching scope" >/dev/null
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+cat >"$TMPDIR_TEST/.planning/workflows/wf-1.md" <<'MD'
+# Workflow
+composer: /silver:fast
+args: add redis cache
+MD
+# shellcheck source=../../hooks/lib/outcomes-gate.sh
+source "$REPO_ROOT/hooks/lib/outcomes-gate.sh"
+(
+  cd "$TMPDIR_TEST"
+  sb_outcomes_auto_evaluate "silver-fast" "${SB_TEST_DIR}/trivial-missing"
+)
+scope_status=$(jq -r '.outcomes[] | select(.id=="scope") | .status' "${SB_TEST_DIR}/outcomes-session.json")
+if [[ "$scope_status" == "done" ]]; then
+  echo "  ok: composed workflow metadata satisfies scope outcome"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: composed workflow metadata should satisfy scope outcome (got: $scope_status)"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
+setup
+run_hook "UserPromptSubmit" "quick typo fix" >/dev/null
+mkdir -p "$TMPDIR_TEST/.planning/phases/01-test"
+cat >"$TMPDIR_TEST/.planning/phases/01-test/PLAN.md" <<'MD'
+# Plan
+Just some notes without structured scope.
+MD
+source "$REPO_ROOT/hooks/lib/outcomes-gate.sh"
+(
+  cd "$TMPDIR_TEST"
+  sb_outcomes_auto_evaluate "noop" "${SB_TEST_DIR}/trivial-missing"
+)
+scope_status=$(jq -r '.outcomes[] | select(.id=="scope") | .status' "${SB_TEST_DIR}/outcomes-session.json")
+if [[ "$scope_status" != "done" ]]; then
+  echo "  ok: hollow PLAN.md does not satisfy scope outcome"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: hollow PLAN.md should not satisfy scope outcome"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
+setup
+cat >"${SB_TEST_DIR}/outcomes-session.json" <<'JSON'
+{"prompt_id":"abc","outcomes":[{"id":"route","status":"pending"},{"id":"scope","status":"pending"},{"id":"verify","status":"pending"}]}
+JSON
+source "$REPO_ROOT/hooks/lib/outcomes-gate.sh"
+FAKE_BIN=$(mktemp -d)
+cat >"$FAKE_BIN/jq" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+chmod +x "$FAKE_BIN/jq"
+PATH="$FAKE_BIN:$PATH"
+export PATH
+if sb_outcomes_all_done; then
+  echo "  FAIL: outcomes gate should block without jq when pending outcomes exist"
+  FAIL=$((FAIL + 1))
+else
+  echo "  ok: outcomes gate fails closed without jq when session has pending items"
+  PASS=$((PASS + 1))
+fi
+rm -rf "$FAKE_BIN"
 teardown
 
 echo

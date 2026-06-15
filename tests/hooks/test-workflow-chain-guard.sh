@@ -162,10 +162,17 @@ setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:fast" "fast gate test" "context,plan,execute,verify"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:fast blocks without context/plan/validate markers" "$out"
-write_state_markers silver-context silver-plan silver-validate
+assert_blocks "silver:fast blocks without quality-gates/context/plan/validate markers" "$out"
+write_state_markers silver-quality-gates-design silver-context silver-plan silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:fast passes after Tier 2 pre-execution markers exist" "$out"
+teardown
+
+# silver-fast Tier 1: no active workflow tracker — edits are not chain-guarded.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:fast Tier 1 without workflow tracker does not block edits" "$out"
 teardown
 
 # Feature without SPEC.md requires silver-spec marker.

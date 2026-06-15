@@ -135,6 +135,7 @@ for skill in silver-execute silver-verify silver-ship security silver-secure sil
   run_record_skill "$skill" >/dev/null
 done
 seed_gsd_lifecycle_artifacts
+append_pre_ship_quality_gates_marker
 
 # PR create now allowed
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'feat: tags'")

@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.43.2] — 2026-06-15
+
+Adversarial review closure + test-suite remediation: zero failures across all five `run-all-tests.sh` suites.
+
+## Bug Fixes
+- `fix(hooks): record distinguishable silver-quality-gates-design vs silver-quality-gates-adversarial markers; delivery gate requires pre-ship marker when VERIFICATION.md exists`
+- `fix(hooks): unify completion-audit and record-skill fallbacks with required-skills.sh single source of truth`
+- `fix(hooks): silver-fast Tier 2 chain guard requires silver-quality-gates pre-plan marker`
+- `fix(hooks): tighten outcomes scope anti-gaming; fail-closed without jq when pending outcomes exist`
+- `fix(hooks): orchestrator worker marker readable without jq (grep fallback)`
+- `fix(config): remove duplicate silver-tdd from all_tracked` — canonical `tdd` marker only; fixes skill-coverage false negative when record-skill canonicalizes silver-tdd→tdd
+- `fix(skills): add ## sections to silver-bootstrap-* and silver-orient alias skills` — satisfies SKILL.md structural validation
+- `test(integration): append pre-ship quality-gates adversarial marker in delivery fixtures` — aligns with v0.43.1 completion-audit dual-mode gate
+- `test(integration): enrich PLAN.md fixture for artifact substance gate`
+- `test(live): seed installed_plugins registry after Codex hook transplant` — fixes intermittent install-codex rsync failures
+
+## Tests
+- `test(hooks): add artifact-substance-gate, outcomes anti-gaming, silver-fast Tier 1/2 chain-guard, orchestrator worker marker without jq`
+- `test(hooks): isolate completion-audit matrix state per test run`
+- Add skill scenarios for `silver-bootstrap-milestone`, `silver-bootstrap-project`, `silver-orient`
+- `docs(TESTING): align jq assertions with canonical tdd naming`
+
+---
+
+## [0.43.1] — 2026-06-15
+
+Adversarial SB flows review remediation (tagged release; see git history for hook/skill parity fixes).
+
+---
+
 ## [0.43.0] — 2026-06-15
 
 Launch-readiness follow-up: closes GitHub #222 and remaining adversarial review wiring gaps (SB-REV-001–021).

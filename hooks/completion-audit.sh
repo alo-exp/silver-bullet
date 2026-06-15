@@ -94,6 +94,11 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1091
   source "$_lib_dir/required-skills.sh"
 fi
+if [[ -f "$_lib_dir/quality-gates-mode.sh" ]]; then
+  # shellcheck source=lib/quality-gates-mode.sh
+  # shellcheck disable=SC1091
+  source "$_lib_dir/quality-gates-mode.sh"
+fi
 # DEFAULT_* / DEVOPS_DEFAULT_* populated by required-skills.sh (single source of truth).
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
@@ -888,16 +893,9 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
   fi
 fi
 
-# Build required skills list
-# Source canonical required-skills list (single source of truth — TD-01 fix)
-# shellcheck source=lib/required-skills.sh
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
-if [[ -f "$_lib_dir/required-skills.sh" ]]; then
-  # shellcheck disable=SC1090
-  source "$_lib_dir/required-skills.sh"
-fi
-DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-silver-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
-DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-silver-blast-radius devops-quality-gates silver-review silver-review-request silver-review-triage silver-branch-finish silver-create-release silver-completion-audit silver-tdd verify-tests}"
+# Build required skills list (DEFAULT_* already populated by required-skills.sh at top).
+DEFAULT_REQUIRED="${DEFAULT_REQUIRED:-${__SB_RS_FALLBACK:-silver-quality-gates silver-completion-audit verify-tests}}"
+DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-${__SB_RS_FALLBACK:-silver-quality-gates silver-completion-audit verify-tests}}"
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 delivery_uses_devops_deploy=false
@@ -997,6 +995,22 @@ for skill in $required_skills; do
     fi
   fi
 done
+
+# Pre-ship quality-gates must record adversarial mode when VERIFICATION.md exists.
+if [[ "$delivery_uses_devops_deploy" != true ]] \
+   && declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
+   && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
+  project_root_qg="$(dirname "$config_file")"
+  [[ -z "$project_root_qg" || "$project_root_qg" == "." ]] && project_root_qg="$PWD"
+  if sb_qg_repo_requires_pre_ship_marker "$project_root_qg" \
+     && ! sb_qg_pre_ship_marker_recorded "$state_contents"; then
+    if has_skill "silver-quality-gates"; then
+      missing="${missing:+$missing }silver-quality-gates-pre-ship"
+    else
+      missing="${missing:+$missing }silver-quality-gates"
+    fi
+  fi
+fi
 
 # ── Check code review ordering ───────────────────────────────────────────────
 # Enforce: review-request frames the review, silver-review produces REVIEW.md,

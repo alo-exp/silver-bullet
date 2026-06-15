@@ -72,6 +72,7 @@ Use the disambiguation table to determine mode:
 
 - The pre-plan (design-time) run does **not** satisfy the pre-ship gate, even though the marker already exists. The orchestrating flow skill (`silver:feature` Step 13, `silver:ui` Step 13, `silver:devops` Step 10, `silver:bugfix` Step 7b) MUST run this skill **again** in adversarial mode before ship (the pre-ship quality gate) — never skip it on the grounds that "quality-gates already ran".
 - When this skill detects **adversarial mode** (PLAN.md + VERIFICATION.md passed), it is the pre-ship run; treat a clean result as the ship gate, not the planning gate.
+- `record-skill` also writes a distinguishable mode marker: `silver-quality-gates-design` (pre-plan) or `silver-quality-gates-adversarial` (pre-ship). Delivery gates require the adversarial marker when substantive `VERIFICATION.md` exists.
 - The separate 4-stage **pre-release** quality sequence (`quality-gate-stage-1..4` + `full-test-suite-rerun` in the `quality_gate_state_file`) is enforced independently by `completion-audit.sh` for `silver:release`/`gh release create` and is **not** the same as this skill's pre-ship run.
 
 ---

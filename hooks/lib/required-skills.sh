@@ -46,6 +46,13 @@ __sb_rs_load() {
   jq -r ".skills.${field} | .[]" "${cfg}" 2>/dev/null | tr '\n' ' ' | sed 's/ $//'
 }
 
+__sb_rs_load_all_tracked() {
+  local cfg
+  cfg="$(__sb_rs_find_default_config)" || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  jq -r '(.skills.all_tracked // []) | join(" ")' "${cfg}" 2>/dev/null | sed 's/ $//'
+}
+
 __sb_rs_default_version() {
   local cfg
   cfg="$(__sb_rs_find_default_config)" || return 1
@@ -228,6 +235,7 @@ sb_required_skills_normalize_configured_list() {
 __SB_RS_FALLBACK="silver-quality-gates silver-completion-audit verify-tests"
 __SB_RS_PLANNING_FALLBACK="silver-quality-gates"
 __SB_RS_DEVOPS_PLANNING_FALLBACK="silver-blast-radius devops-quality-gates"
+__SB_RS_ALL_TRACKED_FALLBACK="silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests"
 
 __sb_rs_populate() {
   local value
@@ -272,6 +280,14 @@ __sb_rs_populate() {
   else
     # shellcheck disable=SC2034
     DEVOPS_DEFAULT_RELEASE_REQUIRED="${value}"
+  fi
+  value="$(__sb_rs_load_all_tracked || true)"
+  if [ -z "${value}" ]; then
+    # shellcheck disable=SC2034
+    DEFAULT_ALL_TRACKED="${__SB_RS_ALL_TRACKED_FALLBACK}"
+  else
+    # shellcheck disable=SC2034
+    DEFAULT_ALL_TRACKED="${value}"
   fi
 }
 

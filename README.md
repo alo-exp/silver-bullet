@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.43.0-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.43.0)
+[![version](https://img.shields.io/badge/version-v0.43.2-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.43.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -362,7 +362,7 @@ Minimal shape:
       "silver-branch-finish",
       "silver-create-release",
       "silver-completion-audit",
-      "silver-tdd",
+      "tdd",
       "verify-tests"
     ]
   },
@@ -514,8 +514,8 @@ runtime state are not treated as plugin package content.
 
 ## Current Release
 
-- Version: `0.43.0`
-- Release: [v0.43.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.43.0)
+- Version: `0.43.2`
+- Release: [v0.43.2](https://github.com/alo-exp/silver-bullet/releases/tag/v0.43.2)
 - Notable changes:
   - Template `config_version` aligned to `0.41.0` for orchestrator-parent-mode schema.
   - Cursor `cursor-hooks.json` regenerated for `flow-advance` and `industry-tooling-hint` hook parity.
