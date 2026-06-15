@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|silver-branch-finish|silver-completion-audit|security)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|silver-branch-finish|silver-completion-audit|silver-create-release|security)
       return 0
       ;;
     *)
@@ -48,11 +48,11 @@ sb_orchestrator_default_queue_for_composer() {
       ;;
     silver-ui)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
-      printf '%s' "FLOW-QUALITY-GATE,silver-context,silver-plan,silver-ui-contract,silver-execute,silver-ui-review,${post_exec}"
+      printf '%s' "FLOW-QUALITY-GATE,silver-context,silver-plan,silver-ui-contract,silver-validate,silver-execute,silver-ui-review,${post_exec}"
       ;;
     silver-devops)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-DEVOPS-QUALITY-GATE-PRESHIP')"
-      printf '%s' "silver-blast-radius,devops-quality-gates,silver-context,silver-plan,silver-execute,${post_exec}"
+      printf '%s' "silver-blast-radius,devops-quality-gates,silver-context,silver-plan,silver-validate,silver-execute,${post_exec}"
       ;;
     silver-bugfix)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
@@ -62,7 +62,7 @@ sb_orchestrator_default_queue_for_composer() {
       printf '%s' 'silver-clarify,silver-research'
       ;;
     silver-release)
-      printf '%s' 'silver-quality-gates,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-ship,silver-create-release'
+      printf '%s' 'silver-quality-gates,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
       ;;
     *)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
