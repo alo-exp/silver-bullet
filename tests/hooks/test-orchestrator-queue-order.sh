@@ -57,6 +57,39 @@ fi
 devops_q="$(sb_orchestrator_default_queue_for_composer silver-devops)"
 assert_order "silver-devops" "$devops_q" "silver-execute"
 
+ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
+if printf '%s' "$ui_q" | grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute'; then
+  echo "PASS: silver-ui pre-exec includes plan → ui-contract → validate → execute"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-ui missing plan → ui-contract → validate → execute prefix (got: $ui_q)"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$devops_q" | grep -q 'silver-plan,silver-validate,silver-execute'; then
+  echo "PASS: silver-devops pre-exec includes validate before execute"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-devops missing validate before execute (got: $devops_q)"
+  FAIL=$((FAIL + 1))
+fi
+
+release_q="$(sb_orchestrator_default_queue_for_composer silver-release)"
+if printf '%s' "$release_q" | grep -q 'silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'; then
+  echo "PASS: silver-release ship prep before ship and create-release"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-release missing branch-finish/completion-audit before ship (got: $release_q)"
+  FAIL=$((FAIL + 1))
+fi
+
+if sb_orchestrator_is_flow_atom silver-create-release; then
+  echo "PASS: silver-create-release is a flow atom"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-create-release not registered as flow atom"
+  FAIL=$((FAIL + 1))
+fi
+
 if sb_orchestrator_is_flow_atom security && sb_orchestrator_is_flow_atom silver-review-request; then
   echo "PASS: security and review-request are flow atoms"
   PASS=$((PASS + 1))
