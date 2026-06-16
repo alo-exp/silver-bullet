@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.43.9] — 2026-06-16
+
+Independent launch-readiness adversarial review (round 5): Codex package sync now chains Cursor manifest refresh.
+
+## Bug Fixes
+- `fix(scripts): sync-codex-package.sh invokes sync-cursor-package.sh after codex sanitizer so Cursor hooks/manifest stay present in shared plugins/silver-bullet tree`
+- `fix(site): refresh Help Center search index version strings to match package.json (0.43.9)`
+
+## Tests
+- `test(scripts): sync-codex-package asserts Cursor manifest and cursor-hooks.json after codex sync`
+
 ## [0.43.8] — 2026-06-16
 
 Independent launch-readiness adversarial review (round 4): silver-ui post-execution sequencing alignment.
