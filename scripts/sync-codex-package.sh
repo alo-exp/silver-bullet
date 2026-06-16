@@ -91,4 +91,12 @@ else
   exit 1
 fi
 
+cursor_package_sync_script="${SCRIPT_DIR}/sync-cursor-package.sh"
+if [[ -x "$cursor_package_sync_script" ]]; then
+  "$cursor_package_sync_script"
+else
+  printf 'ERROR: Cursor package sync script not found or not executable: %s\n' "$cursor_package_sync_script" >&2
+  exit 1
+fi
+
 log "Codex package synchronized"

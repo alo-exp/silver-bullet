@@ -179,6 +179,8 @@ SOURCE_ASK_USER_FILES=(
 )
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
+assert_file_exists "Cursor manifest present after codex sync" "$PACKAGE_ROOT/.cursor-plugin/plugin.json"
+assert_file_exists "Cursor hooks manifest present after codex sync" "$PACKAGE_ROOT/cursor-hooks.json"
 assert_codex_skill_titles_match_picker_namespace "Codex skill titles match Codex picker namespace" "$PACKAGE_ROOT"
 assert_path_absent "Codex package does not expose plugin picker skills directory" "$PACKAGE_ROOT/skills"
 assert_path_absent "Codex package does not expose generated picker skills directory" "$PACKAGE_ROOT/.generated-skills"
