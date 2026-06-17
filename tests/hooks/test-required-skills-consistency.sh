@@ -196,6 +196,12 @@ LIB_REQUIRED_RELEASE=$(printf '%s' "${DEFAULT_RELEASE_REQUIRED:-}" | sort_space)
 check "required_release set matches DEFAULT_RELEASE_REQUIRED" \
   test "$CFG_REQUIRED_RELEASE" = "$LIB_REQUIRED_RELEASE"
 
+# Utility skills shipped in source must be recordable via all_tracked.
+for skill in silver silver-phase silver-spike silver-thread silver-undo; do
+  check "all_tracked includes $skill" \
+    bash -c 'grep -qxF "$1" <<< "$2"' _ "$skill" "$CFG_ALL_TRACKED"
+done
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

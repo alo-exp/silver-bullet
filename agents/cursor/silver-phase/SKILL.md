@@ -114,10 +114,18 @@ coverage, mode annotation, or acceptance criteria reference.
 4. Validate the operation against the safety rules below.
 5. In interactive mode (no `--auto`), show the planned change and require
    explicit confirmation before writing.
-6. Write the change to ROADMAP.md.
-7. Update STATE.md `phase_count` and `current_phase` if affected by a
+6. **Planning guard bypass:** `planning-file-guard` blocks direct ROADMAP.md and
+   STATE.md edits. Before any Write/Edit to those files, create the override
+   marker, then remove it when mutations finish:
+   ```bash
+   touch "$HOME/.cursor/.silver-bullet/roadmap-edit-override"
+   # ... Write/Edit ROADMAP.md and STATE.md ...
+   rm -f "$HOME/.cursor/.silver-bullet/roadmap-edit-override"
+   ```
+7. Write the change to ROADMAP.md.
+8. Update STATE.md `phase_count` and `current_phase` if affected by a
    removal or reorder.
-8. Display the post-mutation ROADMAP.md section.
+9. Display the post-mutation ROADMAP.md section.
 
 ## Safety Rules
 

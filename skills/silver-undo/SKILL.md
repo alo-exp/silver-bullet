@@ -71,7 +71,10 @@ Before reverting, the skill checks:
 5. Confirm the exact commits to revert and what artifacts will be updated.
 6. Unless `--dry-run`, require the user to type `yes` or respond `yes` before
    proceeding.
-7. Run `git revert --no-commit` on each commit in reverse chronological order.
+7. **Planning guard bypass:** before Write/Edit to `STATE.md` (or `ROADMAP.md`
+   when artifact cleanup requires it), create
+   `${SB_RUNTIME_STATE_DIR}/roadmap-edit-override` and remove it after updates.
+8. Run `git revert --no-commit` on each commit in reverse chronological order.
    Create a single revert commit with a structured message:
    ```
    revert(phase-NN): roll back <scope>
