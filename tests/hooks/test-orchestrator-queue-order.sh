@@ -142,6 +142,18 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+tmp_no_spec_ui=$(mktemp -d)
+mkdir -p "$tmp_no_spec_ui/.planning"
+ui_no_spec="$(sb_orchestrator_queue_for_composer silver-ui "$tmp_no_spec_ui")"
+rm -rf "$tmp_no_spec_ui"
+if printf '%s' "$ui_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-spec,silver-context'; then
+  echo "PASS: silver-ui queue inserts silver-spec when SPEC.md absent"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-ui missing conditional silver-spec (got: $ui_no_spec)"
+  FAIL=$((FAIL + 1))
+fi
+
 if sb_orchestrator_is_flow_atom devops-skill-router; then
   echo "PASS: devops-skill-router is a flow atom"
   PASS=$((PASS + 1))
