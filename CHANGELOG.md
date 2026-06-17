@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.43.11] — 2026-06-17
+
+Ship migrate mechanical scripts referenced by `silver:migrate` since v0.43.10 skill update.
+
+## Bug Fixes
+- `fix(scripts): add sb-migrate-config.sh and sb-migrate-project.sh for legacy project surface parity`
+
+## Tests
+- `test(scripts): sb-migrate-config and sb-migrate-project regression suites`
+
 ## [0.43.10] — 2026-06-17
 
 Independent launch-readiness adversarial review (Round 1–2): enforcement bypasses, orchestrator parity, routing/docs drift, migrate/init gaps, bundle render fix.
