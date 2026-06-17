@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.44.3] — 2026-06-18
+
+Flow adversarial review: align UI, DevOps, and Fast Tier 2 skills with `workflow-chain-guard` pre-build `silver:validate` requirements.
+
+## Bug Fixes
+- `fix(skills): silver-ui — add Step 6b Pre-Build Validation before execute (workflow-chain-guard dead-end)`
+- `fix(skills): silver-devops — add Step 5b pre-build and Step 9b post-ship silver:validate steps`
+- `fix(skills): silver-fast — make Tier 2 silver:validate mandatory; fix SessionStart trivial-marker wording`
+
+## Tests
+- `test(integration): skill-execution-paths guards for validate ordering in ui/devops/fast`
+
+---
+
 ## [0.44.2] — 2026-06-18
 
 Launch-readiness adversarial review: fix silver:phase ROADMAP guard bypass, register v0.44.0 utility skills in all_tracked, and align Codex manifest/config versions with package.json.

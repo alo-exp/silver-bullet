@@ -13,7 +13,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` / `silver:validate` when signals match |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:validate`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
 > **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /silver:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
@@ -70,7 +70,7 @@ After the trivial edit and verification complete, run scope expansion check (Ste
 
 **Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `$HOME/.claude/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
 
-**Trivial bypass mid-session:** SessionStart creates the trivial marker; the first Write/Edit removes it (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, the trivial file is already gone — workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /silver:fast` before further implementation edits.
+**Trivial bypass mid-session:** SessionStart clears any stale `$HOME/.claude/.silver-bullet/trivial` marker; the first Write/Edit removes it if recreated (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /silver:fast` before further implementation edits.
 
 If scope remained ≤3 files, display completion banner:
 
@@ -94,13 +94,12 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 |------|---------------------------|
 | `silver:context` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
 | `silver:research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
-| `silver:validate` | Change modifies src/, app/, or lib/ directories with logic changes (not just config/comments) |
 
 **Gate composition rules:**
 - Any combination is valid.
-- Always invoke `silver:plan`, `silver:execute`, and `silver:verify`.
+- Always invoke `silver:plan`, `silver:validate`, `silver:execute`, and `silver:verify` for Tier 2.
 - Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
-- Invoke `silver:context`, `silver:research`, or `silver:validate` only when triggered by the signal table above.
+- Invoke `silver:context` or `silver:research` only when triggered by the signal table above.
 - `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
 
 Display detected signals:
@@ -109,8 +108,7 @@ Display detected signals:
 Detected signals:
   Ambiguity: {yes/no} {reason if yes}
   Novel domain: {yes/no} {reason if yes}
-  Production code: {yes/no} {reason if yes}
-Gates: {silver:context silver:research silver:validate | (none)}
+Gates: {silver:context silver:research | (none)} + silver:plan silver:validate silver:execute silver:verify (always)
 ```
 
 Invoke the selected SB lifecycle slice with $ARGUMENTS.
@@ -133,7 +131,7 @@ else
   )"
 fi
 if [[ -n "${SB_WORKFLOWS_BIN:-}" ]]; then
-  SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:fast "$ARGUMENTS" "context,plan,execute,verify")
+  SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:fast "$ARGUMENTS" "QUALITY GATE,plan,validate,execute,verify")
   export SB_WORKFLOW_ID
 fi
 ```
@@ -144,7 +142,7 @@ After the SB lifecycle slice completes, run scope expansion check (Step 4).
 
 ### Tier 2 delivery (deploy gap — important)
 
-The Tier 2 slice (`context → plan → execute → verify`) intentionally stops at
+The Tier 2 slice (`quality-gates → plan → validate → execute → verify`) intentionally stops at
 verification. It does **not** record the post-execution deploy chain
 (`silver:review-request`, `silver:review`, `silver:review-triage`, `silver:secure`,
 `silver:validate`, `silver:branch-finish`, `silver:ship`).

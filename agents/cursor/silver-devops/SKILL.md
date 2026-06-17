@@ -20,6 +20,23 @@ SB **queue builder** for infra/CI/CD/IaC work. Parent orchestrator seeds the que
 
 Never implements infra changes directly — composition spec only.
 
+## Mandatory dependency execution
+
+SB separates pre-execution gates from post-execution gates.
+
+Before implementation edits, the execution trace must show the pre-execution chain:
+
+1. `silver:scan` when rapid SB orientation is useful
+2. `silver:blast-radius`
+3. `devops-skill-router`
+4. `devops-quality-gates` (pre-plan)
+5. `security` (pre-plan infrastructure hard gate)
+6. `silver:context`
+7. `silver:plan`
+8. `silver:validate` (pre-build gap analysis — after plan exists)
+
+After execution, complete review → verify → secure → validate → pre-ship devops quality gates → ship.
+
 ## Pre-flight: Load Preferences
 
 Read the **User Workflow Preferences** section of `silver-bullet.md` to load user workflow preferences before any other step.
@@ -202,6 +219,23 @@ Invoke `silver:context` through the active runtime's SB-recognized skill invocat
 
 Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: PLAN.md for the infrastructure change, including validation, rollback, policy, and observability evidence.
 
+## Step 5b: Pre-Build Validation
+
+**NON-SKIPPABLE GATE.** (VALD-03 compliance)
+
+This runs **after** Step 5 (Plan Phase) because `silver:validate` performs pre-build gap analysis against `.planning/PLAN.md`. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
+
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
+
+If silver:validate reports any BLOCK findings:
+- STOP. Do not proceed to Step 6 (Execute).
+- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
+- Offer: A. Return to `silver:plan` to revise the plan  B. Re-run `silver:validate` after fixes
+
+Only proceed to Step 6 (Execute Phase) when silver:validate reports zero BLOCK findings.
+
+WARN findings are recorded in `.planning/VALIDATION.md` and will appear in the PR description (VALD-04).
+
 ## Step 6: Execute Phase (IaC validation, not app TDD)
 
 If mode is Interactive: invoke `silver:execute` through the active runtime's SB-recognized skill invocation channel.
@@ -217,7 +251,7 @@ Run review sequence in order:
 3. For architecturally significant infra changes: invoke configured external second-opinion review only when available and explicitly selected; findings feed into REVIEW.md.
 4. Invoke `silver:review-triage` through the active runtime's SB-recognized skill invocation channel.
 
-> **Canonical post-execution order:** review (Step 7) → verify (Step 8) → secure (Step 9) → pre-ship quality gates (Step 10) → ship (Step 11). This sequence matches `silver:feature`, `silver:ui`, and `silver:bugfix`. Pre-plan infrastructure security remains mandatory at Step 3b; Step 9 is the retroactive secure sweep.
+> **Canonical post-execution order:** review (Step 7) → verify (Step 8) → secure (Step 9) → validate (Step 9b) → pre-ship quality gates (Step 10) → ship (Step 11). This sequence matches `silver:feature`, `silver:ui`, and `silver:bugfix`. Pre-plan infrastructure security remains mandatory at Step 3b; Step 9 is the retroactive secure sweep.
 
 ## Step 8: Deployment Verification
 
@@ -228,6 +262,10 @@ Invoke `silver:verify` through the active runtime's SB-recognized skill invocati
 ## Step 9: IaC Security + Secrets Verification
 
 Invoke `silver:secure` through the active runtime's SB-recognized skill invocation channel. Purpose: IaC security and secrets verification — confirm no credentials in code, correct IAM boundaries, secure defaults.
+
+## Step 9b: Validate Phase
+
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: post-implementation validation gap filling and pre-ship consistency check.
 
 ### Deferred-Item Capture (mandatory)
 

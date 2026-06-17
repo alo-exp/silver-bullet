@@ -202,6 +202,28 @@ check "silver-feature: silver:verify listed as non-skippable" \
 check "silver-feature: pre-build validate has NON-SKIPPABLE GATE marker" \
   "$([[ "$(grep -i 'NON-SKIPPABLE GATE' "$SF" | head -1)" ]] && echo pass || echo fail)"
 
+SUI="$SKILLS_DIR/silver-ui/SKILL.md"
+check "silver-ui: pre-build validate has NON-SKIPPABLE GATE marker" \
+  "$([[ "$(grep -i 'Pre-Build Validation' "$SUI" | head -1)" ]] && echo pass || echo fail)"
+validate_ui_pre=$(grep -n "Invoke \`silver:validate\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
+exec_ui_line=$(grep -n "invoke \`silver:execute\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
+check "silver-ui: silver:validate before execute (line $validate_ui_pre < $exec_ui_line)" \
+  "$([[ "$validate_ui_pre" -gt 0 && "$exec_ui_line" -gt 0 && "$validate_ui_pre" -lt "$exec_ui_line" ]] && echo pass || echo fail)"
+
+SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
+check "silver-devops: pre-build validate has Pre-Build Validation step" \
+  "$([[ "$(grep -i 'Pre-Build Validation' "$SDEV" | head -1)" ]] && echo pass || echo fail)"
+validate_dev_pre=$(grep -n "Invoke \`silver:validate\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
+exec_dev_line=$(grep -n "invoke \`silver:execute\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
+check "silver-devops: silver:validate before execute (line $validate_dev_pre < $exec_dev_line)" \
+  "$([[ "$validate_dev_pre" -gt 0 && "$exec_dev_line" -gt 0 && "$validate_dev_pre" -lt "$exec_dev_line" ]] && echo pass || echo fail)"
+
+SFAST="$SKILLS_DIR/silver-fast/SKILL.md"
+check "silver-fast: Tier 2 always requires silver:validate" \
+  "$([[ "$(grep -F 'silver:validate' "$SFAST" | grep -F 'Always invoke' | head -1)" ]] && echo pass || echo fail)"
+check "silver-fast: SessionStart clears trivial marker (not creates)" \
+  "$([[ "$(grep -F 'SessionStart clears any stale' "$SFAST")" ]] && echo pass || echo fail)"
+
 SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
 check "silver-devops: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
