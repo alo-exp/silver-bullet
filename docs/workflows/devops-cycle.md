@@ -101,15 +101,7 @@ monitoring verification instead.
 Apply in the lowest affected environment first. Promote only after verification
 passes.
 
-### 7. Verify
-
-Run `/silver:verify`.
-
-DevOps verification must include health checks, no unexpected drift, monitoring
-and alerting evidence, rollback procedure evidence, runbook freshness, and
-environment-specific acceptance criteria.
-
-### 8. Review
+### 7. Review
 
 Run the SB review sequence:
 
@@ -120,6 +112,14 @@ Run the SB review sequence:
 For infrastructure, review must inspect least privilege, network exposure,
 encryption, backups, tags/labels, idempotency, state handling, observability, and
 plan output, not just source files.
+
+### 8. Verify
+
+Run `/silver:verify`.
+
+DevOps verification must include health checks, no unexpected drift, monitoring
+and alerting evidence, rollback procedure evidence, runbook freshness, and
+environment-specific acceptance criteria.
 
 ### 9. Secure
 

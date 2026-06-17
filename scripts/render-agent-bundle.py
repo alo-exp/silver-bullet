@@ -200,6 +200,31 @@ def ensure_codex_picker_title(text: str) -> str:
     return "".join(lines)
 
 
+PROTECTED_RUNTIME_SUBSTRINGS = (
+    "templates/cursor-rules/",
+    ".cursor/rules/",
+)
+
+
+def _mask_protected_runtime_subs(text: str) -> tuple[str, list[tuple[str, str]]]:
+    masks: list[tuple[str, str]] = []
+    updated = text
+    for index, protected in enumerate(PROTECTED_RUNTIME_SUBSTRINGS):
+        if protected not in updated:
+            continue
+        token = f"__SB_PROTECTED_RUNTIME_{index}__"
+        masks.append((token, protected))
+        updated = updated.replace(protected, token)
+    return updated, masks
+
+
+def _unmask_protected_runtime_subs(text: str, masks: list[tuple[str, str]]) -> str:
+    updated = text
+    for token, protected in masks:
+        updated = updated.replace(token, protected)
+    return updated
+
+
 def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     current_home = f"$HOME/.{agent}"
     others = [name for name in ("claude", "codex", "cursor") if name != agent]
@@ -256,8 +281,10 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
         updated = ensure_codex_picker_title(updated)
         updated = quote_codex_frontmatter_scalars(updated)
     if not preserve_runtime_placeholders:
+        updated, protected_masks = _mask_protected_runtime_subs(updated)
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
+        updated = _unmask_protected_runtime_subs(updated, protected_masks)
     if agent == "codex":
         updated = sanitize_codex_text(updated)
     elif agent == "cursor":
