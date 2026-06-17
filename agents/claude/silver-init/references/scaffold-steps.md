@@ -116,7 +116,7 @@ When the active runtime is Cursor **or** `.claude/` already exists in the projec
 
 ```bash
 mkdir -p .claude/rules
-cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .claude/rules/silver-orchestrator.mdc
+cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .cursor/rules/silver-orchestrator.mdc
 ```
 
 Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).

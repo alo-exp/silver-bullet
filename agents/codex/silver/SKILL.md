@@ -123,7 +123,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "incident", "outage", "production regression", "postmortem", "customer-impacting failure" | `silver:incident` | Incident response and corrective action path |
 | "retro", "retrospective", "release metrics", "delivery metrics", "process review" | `silver:retro` | Engineering retrospective path |
 | "benchmark", "compare agents", "compare models", "provider comparison", "agent quality" | `silver:benchmark` | Repeatable evaluation and adversarial benchmark path |
-| "content", "SEO", "GEO", "AI search", "article", "blog", "migration", "metadata", "link health" | `silver:content` | Public content/search workflow; docs governance still uses `silver:ensure-docs` |
+| "content", "SEO", "GEO", "AI search", "article", "blog", "site content", "metadata", "link health" | `silver:content` | Public content/search workflow; **not** SB project upgrade (use `silver:migrate`) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
@@ -133,6 +133,9 @@ First strong match wins after complexity triage and conflict resolution.
 | "pick up", "resume", "continue where", "next step" | `silver:handoff` or active SB workflow | Resume from SB state and handoff artifacts |
 | "handoff", "wrap up session", "continue later", "session summary" | `silver:handoff` | SB project-level continuation prompt |
 | "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup/update |
+| "migrate", "upgrade SB", "upgrade Silver Bullet", "adopt Silver Bullet", "switch to Silver Bullet" | `silver:migrate` | Brownfield contract upgrade — not content/site migration |
+| "update Silver Bullet", "check for updates", "SB version" | `silver:update` | Plugin/version update check |
+| "scan codebase", "map codebase", "codebase intel" | `silver:scan` | Codebase orientation |
 | "doc scheme", "ensure docs", "docs checklist", "docs gate failed", "reconcile docs", "recover doc scheme" | `silver:ensure-docs` | Doc governance authority |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
 | "API audit", "database audit", "dependency audit", "performance audit", "structure audit", "CI audit", "environment audit", "SEO", "AI search", "content audit", "accessibility audit", "canary", "incident", "retro", "benchmark", "domain audit" | `silver:domain-audit` | Specialized quality contract packs; feeds findings back into the owning SB workflow |
@@ -169,9 +172,13 @@ First strong match wins after complexity triage and conflict resolution.
 
 ### Step 7: Compose or delegate
 
-Each `silver:*` workflow is a composition template over the canonical atomic flow catalog in `docs/composable-flows-contracts.md`:
+Each `silver:*` workflow is a composition template over the canonical atomic flow catalog in `docs/composable-flows-contracts.md`.
 
-`BOOTSTRAP -> ORIENT -> CLARIFY -> DECIDE -> SPECIFY -> PLAN -> DESIGN CONTRACT -> EXECUTE -> UI QUALITY -> REVIEW -> SECURE -> VERIFY -> QUALITY GATE -> SHIP -> DEBUG -> DESIGN HANDOFF -> DOCUMENT -> RELEASE`
+**Catalog flow order (not runtime gate order):**
+
+`BOOTSTRAP → ORIENT → CLARIFY → DECIDE → SPECIFY → PLAN → DESIGN CONTRACT → EXECUTE → UI QUALITY → REVIEW → VERIFY → SECURE → VALIDATE → QUALITY GATE → SHIP → DEBUG → DESIGN HANDOFF → DOCUMENT → RELEASE`
+
+**Runtime post-execution gate order (authoritative for delivery):** see `docs/composable-flows-contracts.md` §Post-execution sequencing — review triad → verify → security + secure → validate → pre-ship quality gate → branch-finish → completion-audit → ship.
 
 **Full-software intent (Wave 0.7):** When the user wants an entire app/product built,
 seed the orchestrator queue `silver-spec → silver-feature → silver-ship → silver-release`

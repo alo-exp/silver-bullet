@@ -1,7 +1,7 @@
 ---
 name: silver:migrate
 description: This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # silver:migrate
@@ -12,6 +12,9 @@ Migrates an older mid-milestone project to the current Silver Bullet contract:
 - `docs/learnings/` terminology (replaces `docs/lessons/`)
 - agent-neutral `silver-bullet.md` and project instruction files
 - current `.silver-bullet.json` defaults from `templates/silver-bullet.config.json.default`
+- orchestrator parent mode (`orchestrator_mode: parent`, worker templates, Cursor rule)
+- `scripts/workflows.sh` and `docs/workflows/*.md` when absent (parity with `/silver:init`)
+- `.gitignore` entry for `.planning/workflows/` (local runtime state)
 - runtime parity awareness (evidence schema, diagnostics, bootstrap probes)
 - doc-scheme / task checklist alignment
 - optional UI interface state (`.planning/interface/STATE.md`)
@@ -26,7 +29,9 @@ Per-host install paths, hook manifests, and skill invocation channels are docume
 - `.planning/` exists with older lifecycle state artifacts.
 - The project was started before per-instance workflow tracking or before v0.39.x runtime parity.
 - `silver-bullet.md` still references host-specific skill channels or pre-058 wording.
-- `.silver-bullet.json` lacks current `config_version`, `release`, or `multi_agent` defaults.
+- `.silver-bullet.json` lacks current `config_version`, `release`, `required_release`, `hooks`, or `multi_agent` defaults.
+- `orchestrator_mode` is absent or not `parent`.
+- `scripts/workflows.sh` is missing (workflow tracker / `flow-advance` will fail).
 - The user explicitly runs `/silver:migrate` or asks to migrate workflow tracking or SB version surface.
 
 ## Prerequisites
@@ -99,18 +104,52 @@ Re-stamp from the bundled template without host-specific leaks. Silver Bullet ow
 
 Merge forward from `templates/silver-bullet.config.json.default` without discarding project customizations.
 
+Run the mechanical merge when the script is available:
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-migrate-config.sh" 2>/dev/null || \
+  bash scripts/sb-migrate-config.sh
+```
+
+If neither script is available, merge manually:
+
 1. Read the template defaults and the existing `.silver-bullet.json` (create from template if absent).
 2. Preserve all project-specific values: `project.name`, `project.src_pattern`, `project.src_exclude_pattern`, custom `verify_commands`, and user-chosen `issue_tracker`.
 3. Add or refresh top-level fields when missing or older than the template:
    - `config_version` and `version` (target: current plugin release from `package.json` `version` field)
+   - `orchestrator_mode` → `"parent"` (only supported mode)
    - `release.profile`, `release.require_plugin_runtime_matrix`, `release.require_pre_release_quality_gate`, `release.quality_gate_state_file`
+   - `hooks.evidence_schema`, `hooks.industry_tooling`
+   - `devops_plugins` block
    - `semantic_compression` block
    - `multi_agent` block
    - `compactPrompt`
-   - any new entries in `skills.required_planning`, `skills.required_deploy`, or `skills.all_tracked` — union with existing lists; do not remove user-added skill names
+   - any new entries in `skills.required_planning`, `skills.required_deploy`, `skills.required_release`, `skills.required_*_devops`, or `skills.all_tracked` — union with existing lists; do not remove user-added skill names
 4. Normalize legacy `issue_tracker` value `"gsd"` to `"local"` (filing skills treat both as local markdown tracking).
-5. Set **`sb_initiated: true`** — run `bash scripts/sb-migrate-initiated.sh` (or equivalent `jq '.sb_initiated = true'`) so enforcement hooks activate after migrate.
+5. Set **`sb_initiated: true`** so enforcement hooks activate after migrate.
 6. Write the merged config and report fields added or bumped.
+
+### Step 2.5: Install Project Surface Parity (Init-Equivalent)
+
+Bring mechanical bootstrap artifacts to parity with `/silver:init` without overwriting user docs.
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-migrate-project.sh" 2>/dev/null || \
+  bash scripts/sb-migrate-project.sh
+```
+
+This script (idempotent) runs `sb-migrate-config.sh`, `sb-migrate-orchestrator-parent.sh`, copies `scripts/workflows.sh` when absent, creates `.planning/workflows/.archive/`, seeds missing `docs/workflows/{full-dev-cycle,devops-cycle}.md` from templates, and ensures `.gitignore` contains `.planning/workflows/`.
+
+If the script is unavailable, perform the same steps manually:
+
+1. Set `orchestrator_mode: parent` and copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/`.
+2. When **Cursor** is the active host or `.cursor/rules/` exists, refresh `.cursor/rules/silver-orchestrator.mdc` from `${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc`. (Claude/Codex hosts: skip — orchestrator uses hook directive injection.)
+3. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
+4. `mkdir -p .planning/workflows/.archive docs/workflows`.
+5. Copy workflow docs from `${PLUGIN_ROOT}/templates/workflows/` only when the destination file is absent (back up before any explicit user-requested refresh).
+6. Append `.planning/workflows/` to `.gitignore` when missing.
+
+Report what was installed vs already present.
 
 ### Step 3: Reconcile Project Instruction File (Host-Appropriate)
 
@@ -159,16 +198,24 @@ bash "${PLUGIN_ROOT}/scripts/sb-bootstrap.sh" 2>/dev/null || \
 
 Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-COMPATIBILITY.md` for tier definitions and install surfaces.
 
-#### 4.2 Cursor hook merge (Cursor host only)
+#### 4.2 Host hook merge (all hosts)
 
-When the active runtime is Cursor (detect via `SILVER_BULLET_RUNTIME=cursor`, presence of `$HOME/.claude/hooks.json`, or diagnostics output):
+Re-register SB hooks in the active host settings file (same contract as `/silver:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `$HOME/.claude/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
 
 ```bash
-INSTALL_PATH="${PLUGIN_ROOT:-$(pwd)}"
-python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"
+INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]] || [[ -d "${HOME}/.claude" && -f "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" ]]; then
+  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+else
+  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+fi
 ```
 
-Confirm merged entries in the global Cursor hooks manifest. If merge fails, advise `bash scripts/install-cursor.sh` from the SB repo or marketplace install per `docs/RUNTIME-COMPATIBILITY.md`.
+Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-claude.sh`, `install-codex.sh`, or `install-cursor.sh`).
+
+#### 4.2a v1 hook incompatibility check
+
+When a project-scoped host settings file exists (see `docs/RUNTIME-COMPATIBILITY.md`), scan for retired v1 hook references: `record-skill.sh`, `dev-cycle-check.sh`, `/tmp/.wyzr-workflow-state`. If found, ask the user to remove them before relying on v2 enforcement (same rule as `/silver:init` §1.7).
 
 #### 4.3 Phase 056 runtime parity checklist (project docs awareness)
 
@@ -223,7 +270,7 @@ Then scan for artifacts that indicate flow completion:
 |------|--------------------|----------------|
 | BOOTSTRAP | `.planning/PROJECT.md`, `.planning/ROADMAP.md`, `.planning/REQUIREMENTS.md`, `.planning/STATE.md` | Complete if all four exist |
 | ORIENT | `.planning/intel/*.md`, `.planning/codebase/*.md` | Complete if any exists |
-| CLARIFY | `.planning/phases/*/*-CONTEXT.md` | Complete if context exists; otherwise pending or skipped based on current phase |
+| CLARIFY | `.planning/CONTEXT.md`, `.planning/phases/*/CONTEXT.md`, `.planning/phases/*/*-CONTEXT.md` | Complete if context exists; otherwise pending or skipped based on current phase |
 | DECIDE | `.planning/research/*.md`, `.planning/ADR-*.md`, legacy `docs/superpowers/specs/*.md` | Complete if any exists |
 | SPECIFY | `.planning/SPEC.md` | Complete if exists |
 | PLAN | `.planning/phases/*/*-PLAN.md`, `.planning/phases/*/PLAN.md` | Complete if current phase has a plan |
@@ -232,7 +279,7 @@ Then scan for artifacts that indicate flow completion:
 | SECURE | `.planning/phases/*/*-SECURITY.md`, `.planning/phases/*/SECURITY.md`, `.planning/SECURITY.md` | Complete if any exists |
 | VERIFY | `.planning/UAT.md`, `.planning/phases/*/*-UAT.md`, `.planning/phases/*/*-VERIFICATION.md`, `.planning/phases/*/VERIFICATION.md` | Complete if any exists |
 | QUALITY GATE | SB state marker `silver-quality-gates` | Complete if marker exists |
-| SHIP | SB state marker `silver-ship` or legacy `gsd-ship` marker | Complete if marker exists |
+| SHIP | SB state markers `silver-completion-audit` and `silver-ship` (or legacy `gsd-ship`) | Complete when both completion-audit and ship markers exist, or legacy ship marker alone |
 | DOCUMENT | `silver-ensure-docs` marker, legacy `gsd-docs-update` marker, or docs modified for current phase | Complete if evidence exists |
 | RELEASE | `silver-create-release` marker or current version tag exists | Complete if evidence exists |
 
@@ -288,8 +335,8 @@ Leave the first uncertain or unfinished flow pending. Do not mark execution, rev
 Report in sections:
 
 1. **Documentation terminology** — files moved/updated; leftover `docs/lessons/`
-2. **Surface refresh** — `silver-bullet.md`, `.silver-bullet.json` fields bumped, instruction file reconciliation
-3. **Runtime parity** — diagnostics tier, Cursor hook merge (if applicable), doc-scheme keys, interface STATE
+2. **Surface refresh** — `silver-bullet.md`, `.silver-bullet.json` fields bumped, orchestrator parent surface, `workflows.sh` / workflow docs / gitignore, instruction file reconciliation
+3. **Runtime parity** — diagnostics tier, host hook merge, doc-scheme keys, interface STATE
 4. **Workflow tracker** — workflow id (or "skipped — active workflow exists")
 5. **Inferred complete flows** with evidence
 6. **Pending next flow**
@@ -301,7 +348,10 @@ Recommend `/silver:init` in update mode when hook registration or full doc boots
 
 - `.planning/workflows/<id>.md` — active per-instance workflow tracker (when Step 7 runs)
 - refreshed `silver-bullet.md` from agent-neutral template
-- merged `.silver-bullet.json` with current default fields
+- merged `.silver-bullet.json` with current default fields (`sb_initiated: true`, `orchestrator_mode: parent`)
+- `scripts/workflows.sh` and missing `docs/workflows/*.md` when absent
+- `.silver-bullet/orchestrator-workers/` and `.cursor/rules/silver-orchestrator.mdc` when applicable
+- `.gitignore` entry for `.planning/workflows/` when missing
 - reconciled `CLAUDE.md` or `AGENTS.md` when stale
 - `docs/learnings/` — current portable learnings path
 - updated `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` when present
@@ -313,4 +363,4 @@ Recommend `/silver:init` in update mode when hook registration or full doc boots
 - If a legacy `.planning/WORKFLOW.md` exists, leave it untouched and treat it as historical evidence only.
 - If inferred state is ambiguous, choose the safer pending status and let SB resume from `.planning/STATE.md`.
 - Do not leave new writes pointed at `docs/lessons/`. Read legacy `docs/lessons/` only as migration input.
-- Canonical skill text stays host-neutral; run `bash scripts/render-agent-bundle.py render --agent all` and `bash scripts/sync-codex-package.sh` after editing this file in the SB source repo.
+- Canonical skill text stays host-neutral; run `python3 scripts/render-agent-bundle.py render --agent {claude,codex,cursor} --source-root skills --dest-root agents/<agent>` and `bash scripts/sync-codex-package.sh` after editing this file in the SB source repo.

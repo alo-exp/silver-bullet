@@ -74,6 +74,13 @@ MILESTONE ARCHIVE -> CREATE RELEASE
 Display the proposed chain and skipped flows before starting. In autonomous mode,
 auto-confirm the composition and record the decision.
 
+> **Orchestrator parent mode:** When `orchestrator_mode` is `parent`, the
+> autonomous queue in `hooks/lib/orchestrator-state.sh` runs the **delivery tail**
+> only (quality gates through `silver:create-release`). Audit, gap-closure, UAT,
+> and milestone steps in this skill remain **parent-driven** — the orchestrator
+> does not auto-chain them. Complete Steps 0–7 manually before the delivery tail
+> advances.
+
 ### Workflow Tracking
 
 Resolve `scripts/workflows.sh`, start `/silver:release`, export

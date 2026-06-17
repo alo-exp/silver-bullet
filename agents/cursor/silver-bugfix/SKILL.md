@@ -223,7 +223,7 @@ Invoke `silver:verify` through the active runtime's SB-recognized skill invocati
 
 Invoke `security` through the active runtime's SB-recognized skill invocation channel. Non-skippable. Then invoke `silver:secure` for retroactive threat-mitigation verification — both `security` and `silver-secure` are part of `required_deploy`, so the completion-audit deploy gate blocks ship until both are recorded.
 
-> **Canonical post-execution order:** review (Step 5) → verify (Step 6) → security + secure (Step 7) → quality gates (Step 7b) → validate (Step 7c) → branch-finish (Step 7d) → completion-audit (Step 7e) → ship (Step 8). This sequence matches `silver:feature`, `silver:ui`, and `silver:devops`.
+> **Canonical post-execution order:** review (Step 5) → verify (Step 6) → security + secure (Step 7) → validate (Step 7b) → quality gates (Step 7c) → branch-finish (Step 7d) → completion-audit (Step 7e) → ship (Step 8). This sequence matches `silver:feature`, `silver:ui`, and `silver:devops`.
 
 ## Step 7a: Tech Debt Review
 
@@ -244,13 +244,13 @@ Skill(skill="silver:add", args="<description of deferred item>")
 
 **Minimum bar:** Only file items with distinct impact OR that block future work OR represent a conscious deferred decision. Do not file transient notes or items already addressed this session.
 
-## Step 7b: Quality Gates
-
-Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel (affected quality dimensions for the changed code). Non-skippable.
-
-## Step 7c: Validate Phase
+## Step 7b: Validate Phase
 
 Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel. Purpose: pre-ship validation gap filling and consistency check.
+
+## Step 7c: Quality Gates
+
+Invoke `silver:quality-gates` through the active runtime's SB-recognized skill invocation channel (affected quality dimensions for the changed code). Non-skippable.
 
 ## Step 7d: Finishing Branch
 
