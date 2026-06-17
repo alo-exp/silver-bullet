@@ -1,6 +1,6 @@
 {
-  "config_version": "0.44.1",
-  "version": "0.44.1",
+  "config_version": "0.44.2",
+  "version": "0.44.2",
   "sb_initiated": true,
   "project": {
     "name": "silver-bullet",
@@ -128,7 +128,12 @@
       "silver-completion-audit",
       "silver-remove",
       "silver-rem",
-      "silver-scan"
+      "silver-scan",
+      "silver",
+      "silver-phase",
+      "silver-spike",
+      "silver-thread",
+      "silver-undo"
     ]
   },
   "hooks": {

@@ -19,6 +19,11 @@ fi
 
 log "Refreshing generated package surface in ${DEST_DIR}"
 
+plugin_version="$(jq -r '.version' "${REPO_ROOT}/package.json")"
+tmp="$(mktemp)"
+jq --arg v "$plugin_version" '.version = $v' "$DEST_DIR/.codex-plugin/plugin.json" > "$tmp"
+mv "$tmp" "$DEST_DIR/.codex-plugin/plugin.json"
+
 mkdir -p "${REPO_ROOT}/agents"
 python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skills" --dest-root "${REPO_ROOT}/agents/claude"
 python3 "$AGENT_RENDERER" render --agent codex --source-root "${REPO_ROOT}/skills" --dest-root "${REPO_ROOT}/agents/codex"
