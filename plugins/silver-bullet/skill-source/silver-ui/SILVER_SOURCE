@@ -23,11 +23,12 @@ Before implementation edits, the execution trace must show the pre-execution cha
 2. `silver:scan` with deeper mapping when the project is brownfield or deeper UI pattern mapping is needed
 3. `silver:clarify`
 4. `silver:research` when FLOW DECIDE is needed for interaction, design-system, API, or architecture tradeoffs
-5. `silver:quality-gates`
-6. `silver:context`
-7. `silver:plan`
-8. `silver:ui-contract`
-9. `silver:validate` (pre-build gap analysis — after plan and UI contract exist)
+5. `silver:spec` (FLOW 5) when `.planning/SPEC.md` does not yet exist (greenfield / new milestone)
+6. `silver:quality-gates`
+7. `silver:context`
+8. `silver:plan`
+9. `silver:ui-contract`
+10. `silver:validate` (pre-build gap analysis — after plan and UI contract exist)
 
 After implementation, final delivery requires the post-execution chain. **Canonical post-execution order (matches orchestrator queue and `silver:feature` when UI is in scope):** UI quality → review triad → verify → secure → validate → quality-gates (pre-ship) → ship.
 
@@ -190,6 +191,18 @@ Ask:
 
 If A: invoke the external `multai:orchestrator` skill via the active host's supported skill invocation channel. MultAI is optional and is not bundled by Silver Bullet; if the MultAI plugin is unavailable, STOP and notify the user, then offer install-and-retry before continuing without multi-AI UX perspectives.
 
+## Step 1d: Specify (FLOW 5 — greenfield / missing SPEC)
+
+**Conditional gate — only when `.planning/SPEC.md` does not exist for the current milestone (greenfield, or a new milestone without a spec).** Skip when SPEC.md already exists (matches the FLOW 5 skip signal in the Composition Proposal). `workflow-chain-guard` blocks implementation edits until this marker is recorded when SPEC.md is absent.
+
+```bash
+[ -f ".planning/SPEC.md" ] && echo "SPEC exists — skip FLOW 5 (Step 1d)" || echo "No SPEC — run FLOW 5 (Step 1d)"
+```
+
+Invoke `silver:spec` through the active runtime's SB-recognized skill invocation channel. Purpose: AI-guided Socratic spec elicitation producing `.planning/SPEC.md` (and `.planning/REQUIREMENTS.md`) before quality gates, context, planning, and the UI design contract.
+
+After silver:spec completes, the spec is the authoritative input for Step 3 (quality gates), Step 4 (context), Step 5 (plan), and the UI design contract.
+
 ## Step 2: Testing Strategy
 
 Invoke `verify-tests` planning guidance or capture the test strategy inside `silver:plan`. Purpose: define test levels for UI (component, visual, e2e) before SB planning.
@@ -207,11 +220,15 @@ Invoke `silver:quality-gates` through the active runtime's SB-recognized skill i
 
 Invoke `silver:context` through the active runtime's SB-recognized skill invocation channel. Purpose: UI phase context, assumptions, dependencies, and locked decisions.
 
+## Step 5: Plan Phase
+
+Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md for the UI phase — must exist before the design contract and pre-build validation.
+
 ## FLOW DESIGN CONTRACT — UI specification (iterative)
 
-**Prerequisite Check:** PLAN.md exists for current phase. STOP if not met.
+**Prerequisite Check:** PLAN.md exists for current phase. STOP if not met — complete Step 5 (Plan Phase) first.
 
-**Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed).
+**Note:** Always active in silver:ui (UI workflow is inherently UI work — no trigger detection needed). Runs **after** Step 5 (Plan Phase); `workflow-chain-guard` requires the `silver-plan` marker before implementation edits.
 
 **Steps** (all through the active runtime's SB-recognized skill invocation channel):
 1. `silver:ui-contract` (Always — produces UI-SPEC.md)
@@ -223,15 +240,11 @@ Invoke `silver:context` through the active runtime's SB-recognized skill invocat
 
 **Exit Condition:** UI-SPEC.md exists, user accepts design contract.
 
-## Step 6: Plan Phase
-
-Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of the UI-SPEC.md contract.
-
 ## Step 6b: Pre-Build Validation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
-This runs **after** Step 6 (Plan Phase) and the UI design contract because `silver:validate` performs pre-build gap analysis by checking SPEC.md coverage in `.planning/PLAN.md` — the plan must exist first. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
+This runs **after** Step 5 (Plan Phase) and the UI design contract because `silver:validate` performs pre-build gap analysis by checking SPEC.md coverage in `.planning/PLAN.md` — the plan must exist first. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
 
 Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
 

@@ -205,6 +205,10 @@ check "silver-feature: pre-build validate has NON-SKIPPABLE GATE marker" \
 SUI="$SKILLS_DIR/silver-ui/SKILL.md"
 check "silver-ui: pre-build validate has NON-SKIPPABLE GATE marker" \
   "$([[ "$(grep -i 'Pre-Build Validation' "$SUI" | head -1)" ]] && echo pass || echo fail)"
+check "silver-ui: documents conditional silver:spec when SPEC.md absent" \
+  "$([[ "$(grep -F 'silver:spec' "$SUI" | grep -F 'SPEC.md' | head -1)" ]] && echo pass || echo fail)"
+check "silver-ui: plan step precedes ui-contract block" \
+  "$([[ "$(grep -n '^## Step 5: Plan Phase' "$SUI" | cut -d: -f1)" -lt "$(grep -n '^## FLOW DESIGN CONTRACT' "$SUI" | cut -d: -f1)" ]] && echo pass || echo fail)"
 validate_ui_pre=$(grep -n "Invoke \`silver:validate\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
 exec_ui_line=$(grep -n "invoke \`silver:execute\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
 check "silver-ui: silver:validate before execute (line $validate_ui_pre < $exec_ui_line)" \
@@ -223,6 +227,8 @@ check "silver-fast: Tier 2 always requires silver:validate" \
   "$([[ "$(grep -F 'silver:validate' "$SFAST" | grep -F 'Always invoke' | head -1)" ]] && echo pass || echo fail)"
 check "silver-fast: SessionStart clears trivial marker (not creates)" \
   "$([[ "$(grep -F 'SessionStart clears any stale' "$SFAST")" ]] && echo pass || echo fail)"
+check "silver-fast: Tier 2 deploy chain documents security and completion-audit" \
+  "$([[ "$(grep -F 'security → silver:secure' "$SFAST")" && "$(grep -F 'silver:completion-audit' "$SFAST")" ]] && echo pass || echo fail)"
 
 SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
 check "silver-devops: security listed as non-skippable" \

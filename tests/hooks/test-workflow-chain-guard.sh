@@ -205,6 +205,19 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature with SPEC.md skips silver-spec marker" "$out"
 teardown
 
+# UI without SPEC.md requires silver-spec marker (same conditional as feature).
+setup
+touch "$TMPDIR_TEST/src/app.js"
+rm -f "$TMPDIR_TEST/.planning/SPEC.md"
+start_workflow "/silver:ui" "ui no spec" "plan,design,execute"
+write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:ui without SPEC.md blocks until silver-spec recorded" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-spec silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:ui without SPEC.md passes after silver-spec marker" "$out"
+teardown
+
 # Bugfix workflow: diagnosis-first pre-execution chain is DEBUG → PLAN (B1).
 # Quality-gates/context are NOT part of the bugfix pre-execution chain.
 setup

@@ -86,3 +86,79 @@ None deferred for this release. E2E live harness not executed in this review cyc
 
 **Version:** v0.44.3 (patch)  
 **Rationale:** Flow instruction gaps that caused `workflow-chain-guard` dead-ends for UI, DevOps, and Fast Tier 2 paths.
+
+---
+
+## Round 3 — Fresh Independent Pass (post-v0.44.3)
+
+**Date:** 2026-06-18  
+**Baseline version:** v0.44.3  
+**Reviewer:** Independent adversarial subagent (re-run per user request)
+
+### Scope
+
+Same as Round 1 — full bird's-eye + ant's-eye across composable flows, hooks, state machine, templates, install path, cross-flow consistency.
+
+### Findings (Round 3)
+
+| ID | Severity | Issue | Disposition |
+|----|----------|-------|-------------|
+| R3-01 | **HIGH** | `silver-ui` lacked **Step 1d / mandatory `silver:spec`** when `.planning/SPEC.md` absent — `workflow-chain-guard` and orchestrator queue require `silver-spec` marker (same class as R1-01 validate dead-end) | **FIXED** — added Step 1d + mandatory chain item 5 |
+| R3-02 | **MEDIUM** | `silver-ui` step body placed UI design contract **before** Plan Phase while prerequisite and hooks require plan → ui-contract | **FIXED** — reordered Step 5 Plan before FLOW DESIGN CONTRACT |
+| R3-03 | **MEDIUM** | `silver-fast` Tier 2 deploy-chain doc omitted `security`, `silver:quality-gates` (pre-ship), and `silver:completion-audit` — users following doc would still hit `completion-audit` deploy gate at PR | **FIXED** — canonical post-exec chain documented |
+| R3-04 | **LOW** | `silver-ui` step numbering skips Step 5 label (cosmetic; FLOW block between 4 and 6) | **DEFERRED** — no enforcement impact |
+| R3-05 | **INFO** | `silver-devops` Step 8 cites `required_deploy` instead of `required_deploy_devops` for verify-tests | **DEFERRED** — verify-tests is in both lists; no gate mismatch |
+
+### Fixes Applied (Round 3)
+
+- `skills/silver-ui/SKILL.md` — Step 1d spec, mandatory chain, plan → ui-contract ordering
+- `skills/silver-fast/SKILL.md` — full Tier 2 deploy chain documentation
+- `agents/{codex,cursor,claude}/*` — re-rendered from skills source
+- `tests/hooks/test-workflow-chain-guard.sh` — silver-ui conditional silver-spec
+- `tests/hooks/test-orchestrator-queue-order.sh` — silver-ui queue silver-spec insertion
+- `tests/integration/test-skill-execution-paths.sh` — ui spec + fast deploy-chain guards
+
+---
+
+## Round 4 — Skeptical Re-Review (post-fix)
+
+Re-checked after Round 3 fixes:
+
+| Check | Result |
+|-------|--------|
+| `test-skill-refs.sh` | PASS (82/82) |
+| `test-skill-execution-paths.sh` | PASS (378/378) |
+| `test-workflow-chain-guard.sh` | PASS (24/24) |
+| `test-orchestrator-queue-order.sh` | PASS (17/17) |
+| `test-silver-router-flow-contracts.sh` | PASS (58/58) |
+| `test-release-version-alignment.sh` | PASS (7/7) |
+| All composable flows vs `orchestrator-state.sh` queues | PASS |
+| Hook `required_deploy` vs flow promises | PASS |
+| Forbidden skill literals in hooks | PASS |
+| silver-feature / silver-bugfix / silver-release / silver-devops validate steps | PASS — unchanged from v0.44.3 |
+
+### Round 4 Findings
+
+**Zero genuine end-user-impacting issues remaining.**
+
+Deferred non-issues: R3-04 (cosmetic numbering), R3-05 (doc precision only).
+
+---
+
+## Test Results (Final — Round 4)
+
+| Suite | Result |
+|-------|--------|
+| `tests/integration/test-skill-refs.sh` | 82 passed, 0 failed |
+| `tests/integration/test-skill-execution-paths.sh` | 378 passed, 0 failed |
+| `tests/hooks/test-workflow-chain-guard.sh` | 24 passed, 0 failed |
+| `tests/hooks/test-orchestrator-queue-order.sh` | 17 passed, 0 failed |
+| `tests/scripts/test-silver-router-flow-contracts.sh` | 58 passed, 0 failed |
+| `tests/scripts/test-release-version-alignment.sh` | 7 passed, 0 failed |
+
+---
+
+## Release
+
+**Version:** v0.44.4 (patch)  
+**Rationale:** Greenfield UI spec dead-end and Fast Tier 2 incomplete deploy-chain documentation.
