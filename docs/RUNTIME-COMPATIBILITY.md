@@ -9,8 +9,8 @@ Silver Bullet does not provide generic automatic model routing. The historical `
 | Surface | Model owner | Silver Bullet responsibility |
 |---------|-------------|------------------------------|
 | Current Claude, Codex, or Cursor session | User and host configuration | Compose workflow, enforce gates, record skill progress |
-| GSD subagents or GSD-managed work | GSD and host agent configuration | Delegate to GSD at the correct lifecycle boundary |
-| Design, Engineering, Product Management, Superpowers, MultAI | The invoked plugin/tool and current host session | Sequence the helper only when the SB workflow calls for it |
+| SB orchestrator subagents / Task workers | Host agent configuration | Delegate implementation at the correct lifecycle boundary |
+| Optional extension plugins (DevOps, MultAI, connectors) | The invoked plugin/tool and current host session | Sequence only when the SB workflow explicitly calls for them |
 | Hooks and shell helpers | No model selection | Validate state, command intent, and artifact freshness |
 
 ## Rules

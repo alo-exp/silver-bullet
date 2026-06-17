@@ -11,7 +11,7 @@
 Run this before any Silver Bullet release to validate the full workflow works end-to-end on a real project.
 
 **Duration:** ~30-60 minutes (one full-dev-cycle run)
-**Requires:** Claude Code with Silver Bullet, GSD, Superpowers, Engineering, and Design plugins installed
+**Requires:** A host runtime with Silver Bullet installed (Claude Code, Codex, or Cursor)
 
 ---
 
@@ -81,7 +81,7 @@ As SB drives the workflow, check off each step:
 - [ ] `/test-driven-development` invoked BEFORE implementation code
 - [ ] `/gsd:execute-phase` invoked (commits produced)
 - [ ] `/gsd:verify-work` invoked (UAT tests presented)
-- [ ] `/requesting-code-review` invoked (frames the review scope and dispatches Superpowers review help only where SB requires it)
+- [ ] `/silver:review-request` invoked (frames the review scope before SB-owned code review)
 - [ ] `/gsd:code-review` invoked (authoritative `REVIEW.md`, 2 consecutive clean passes)
 - [ ] `/receiving-code-review` invoked
 

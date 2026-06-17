@@ -29,6 +29,38 @@ Write or update `.planning/REVIEW.md`.
 6. For each finding, classify severity as BLOCK, WARN, or INFO.
 7. Fix BLOCK findings before ship unless the user explicitly accepts the risk.
 8. Re-run targeted verification after fixes and update REVIEW.md.
+9. **Score deployment risk** (see Deployment Risk Scoring below) and include
+   the score in REVIEW.md.
+
+## Deployment Risk Scoring
+
+After listing findings, assign a deployment risk tier to the overall change set.
+This score reflects how risky it is to deploy the change to production — independent
+of whether all review findings are resolved.
+
+| Tier | Label | Criteria |
+|------|-------|----------|
+| 1 | `LOW` | Docs, config, copy, dependency bumps (non-breaking), test additions. No production data path changes. |
+| 2 | `MEDIUM` | New features behind flags, additive API changes, non-critical bug fixes, schema changes with safe migrations. |
+| 3 | `HIGH` | Auth/authz changes, breaking API changes, migrations that modify existing rows, performance-critical paths, payment/billing logic. |
+| 4 | `CRITICAL` | Multi-tenant data isolation changes, security patches for active exploits, production data backfills, irreversible schema drops, changes to authentication secrets or encryption. |
+
+Write in REVIEW.md:
+
+```markdown
+## Deployment Risk
+
+Tier: HIGH (example)
+Rationale: <one sentence explaining the highest-risk change>
+Recommended deploy steps:
+- <e.g., "Deploy behind feature flag">
+- <e.g., "Run migration in read-only first">
+- <e.g., "Verify rollback plan before deploying">
+```
+
+The deployment risk tier is informational — it does not block ship on its own.
+However, CRITICAL tier requires the user to explicitly acknowledge the risk
+before `silver:ship` proceeds.
 
 ## Optional Review Enrichment
 

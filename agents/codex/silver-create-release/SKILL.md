@@ -235,6 +235,12 @@ CI wait, tag, or GitHub Release until the current session has recorded
 `quality-gate-stage-1` through `quality-gate-stage-4` and `full-test-suite-rerun`
 in the configured quality-gate file.
 
+> **MANDATORY — 2 Consecutive Clean Rounds:** Each review/audit stage in the quality gate
+> (Stage 1 code review, Stage 2 consistency audit, Stage 4 security audit) MUST achieve
+> **2 consecutive clean rounds** — zero accepted findings in each of two back-to-back passes —
+> before the stage is considered complete and its marker is written. Declare a stage complete
+> only after both rounds are verified clean. This requirement cannot be skipped.
+
 ---
 
 ## Step 6 — Run Shared Live Matrix

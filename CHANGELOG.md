@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.44.0] — 2026-06-17
+
+## Features
+- `feat(skills): add silver:spike — executable feasibility experiments with Given/When/Then structure and VALIDATED/INVALIDATED/PARTIAL verdicts`
+- `feat(skills): add silver:phase — CRUD management for phases in ROADMAP.md; sanctioned path to mutate phase list without planning-file-guard`
+- `feat(skills): add silver:undo — safe git revert for SB phase/plan commits with dependency checks and artifact cleanup`
+- `feat(skills): add silver:thread — lightweight cross-session context threads for topic-specific tracking across sessions`
+- `feat(skills): silver:context --assumptions mode — surface AI implementation assumptions without interactive session; writes ASSUMPTIONS.md`
+- `feat(skills): silver:add --seed flag — forward-looking idea classification with trigger-condition tracking in .planning/seeds/`
+- `feat(skills): silver:plan --mvp mode — vertical-slice planning producing thin end-to-end feature slices; writes SKELETON.md for new projects`
+- `feat(skills): silver:review deployment risk scoring — per-change Tier 1–4 deployment risk score in REVIEW.md`
+- `feat(silver-bullet.md): Package Legitimacy Gate — verify package name, age, download signals, and source repo before any installation`
+- `feat(silver-bullet.md): Alumnium optional visual/browser companion integration — structured fallback hierarchy (Alumnium → host browser MCP → text-only)`
+- `feat(docs): pre-release quality gate now enforces 2 consecutive clean rounds per review/audit stage`
+
+## Bug Fixes
+- `fix(hooks): session-start removes stale Design plugin detection code`
+- `fix(scripts): remove gsd-sdk.cjs and install-gsd-sdk-shim.sh legacy GSD SDK shim layer`
+- `fix(skills): silver:init legacy plugin section updated to reflect removal of probing/reporting third-party lifecycle plugins`
+- `fix(tests): test-install-codex assertion updated to match new legacy plugin note wording`
+
+## Documentation
+- `docs(site): reference page and search index updated with silver:spike, silver:phase, silver:undo, silver:thread entries`
+- `docs(internal): pre-release-quality-gate.md adds MANDATORY 2-consecutive-clean-rounds requirement at top`
+
+## Chores
+- `chore(bundles): sync all agent bundles (claude, codex, cursor) with updated and new skills`
+- `chore(release): v0.44.0 superset audit remediation, four new utility skills, skill extensions
+
+---
+
 ## [0.43.11] — 2026-06-17
 
 Ship migrate mechanical scripts referenced by `silver:migrate` since v0.43.10 skill update.

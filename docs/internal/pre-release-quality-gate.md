@@ -4,6 +4,13 @@ Before ANY release (`/silver-create-release`), the following four-stage quality 
 be completed in order. Each stage has its own completion criteria. Skipping a stage
 or declaring it complete without meeting the criteria is a violation.
 
+> **MANDATORY — 2 Consecutive Clean Rounds:** Each stage that uses a review or audit loop
+> MUST achieve **2 consecutive clean rounds** before the stage is considered complete.
+> A "clean round" means all active review or audit steps produced zero accepted findings.
+> This requirement applies to Stage 1 (code review loop), Stage 2 (consistency audit loop),
+> and Stage 4 (security audit loop). Do NOT advance to the next stage or proceed to release
+> until 2 consecutive clean rounds are confirmed for each applicable stage.
+
 **IMPORTANT**: This gate runs AFTER the normal workflow finalization steps (testing,
 documentation, branch cleanup, deployment readiness) and BEFORE `/silver-create-release`.
 The `/silver-create-release` skill will not be invoked until all four stages pass.

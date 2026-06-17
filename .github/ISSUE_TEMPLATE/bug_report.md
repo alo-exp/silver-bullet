@@ -27,9 +27,9 @@ What actually happened. Include error messages or hook output if available.
 ## Environment
 
 - **Silver Bullet version**: (check `package.json` or `/plugin list`)
-- **Claude Code version**:
+- **Host runtime**: (Claude Code / Codex / Cursor)
+- **Host runtime version**:
 - **OS**: (macOS / Linux / Windows)
-- **GSD version**: (`npx get-shit-done-cc --version`)
 - **Shell**: (bash / zsh)
 
 ## Logs

@@ -162,36 +162,11 @@ After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
 `bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
 runtime tier. Per-host state and hook manifest paths are documented in `docs/RUNTIME-COMPATIBILITY.md`.
 
-### 1.2 Optional legacy plugin discovery
+### 1.2 Legacy plugin note
 
-Legacy lifecycle-overlap plugins are no longer hard requirements for SB
-initialization. SB implements the required behavior as SB-owned lifecycle
-markers and workflows.
-
-Optionally record whether legacy/core dependency plugins are present for
-migration diagnostics only. Do not stop when they are missing.
-
-Run via shell to run:
-```bash
-printf 'legacy-brainstorming-plugin: '
-test -f "$HOME/.claude/plugins/cache/superpowers-marketplace/superpowers/current/skills/brainstorming/SKILL.md" || \
-  find "$HOME/.claude/plugins/cache" -path '*/superpowers/*/skills/brainstorming/SKILL.md' -print -quit 2>/dev/null | grep -q .
-printf '%s\n' "$?"
-
-printf 'legacy-lifecycle-plugin: '
-{ test -f "$HOME/.claude/get-shit-done/workflows/new-project.md" || test -f "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" || test -f "$HOME/.claude/commands/gsd/new-project.md"; }
-printf '%s\n' "$?"
-
-printf 'legacy-knowledge-work-plugin: '
-find "$HOME/.claude/plugins/cache" \( -path '*/knowledge-work-plugins/*/engineering/skills/*' -o -path '*/knowledge-work-plugins/*/design/skills/*' -o -path '*/knowledge-work-plugins/*/product-management/skills/*' \) -print -quit 2>/dev/null | grep -q .
-printf '%s\n' "$?"
-```
-
-Interpret exit status `0` as present and non-zero as absent. If absent, continue.
-At most output a short note:
-
-> Legacy dependency plugins not detected. Continuing with SB-owned lifecycle
-> behavior; optional DevOps/enrichment plugins can still be installed later.
+SB no longer probes or reports third-party lifecycle-overlap plugin installs
+(GSD, Superpowers, Anthropic knowledge-work). Core lifecycle behavior is
+SB-owned. Continue initialization without those plugins.
 
 ### 1.6 Runtime-aware bootstrap
 
@@ -264,23 +239,10 @@ If user selects A: invoke `/silver:update` through the active runtime's SB-recog
 If user selects B: output "Skipping SB update." and proceed.
 If version check fails (curl error, missing file, or either version is "unknown"): output "Could not check SB version (offline?). Continuing..." and proceed.
 
-### 1.5.2 Optional legacy plugin version report
+### 1.5.2 Legacy plugin version report (removed)
 
-Read installed versions from `$HOME/.claude/plugins/installed_plugins.json`. Display the installed version of each plugin found:
-
-```bash
-cat "$HOME/.claude/plugins/installed_plugins.json" | jq -r '
-  .plugins | to_entries[] |
-  select(.key | test("^(superpowers|design|engineering|product-management|gsd)@")) |
-  "\(.key | split("@")[0]): v\(.value[0].version)"
-' 2>/dev/null || echo "Could not read plugin registry"
-```
-
-If none are present, output:
-> No legacy dependency plugins detected. Continuing
-> with SB-owned lifecycle behavior.
-
-Do not ask to install or update these plugins during init.
+SB no longer reports installed versions of absorbed third-party lifecycle
+plugins during init. Silver Bullet itself is the only required freshness check.
 
 ### 1.5.3 Check MultAI version
 
