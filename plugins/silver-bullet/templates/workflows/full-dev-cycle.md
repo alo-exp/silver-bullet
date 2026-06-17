@@ -133,6 +133,11 @@ in `docs/learnings/YYYY-MM.md`.
 Run `/silver:branch-finish` on feature branches. This step is skipped on
 `main`/`master` because there is no feature branch to finish.
 
+### 11b. Completion audit
+
+Run `/silver:completion-audit` before ship. This gate independently verifies
+required skills, artifact substance, and delivery readiness markers.
+
 ### 12. CI and ship
 
 - Run `/verify-tests`.
@@ -150,6 +155,7 @@ readiness, fresh tests, `silver:ship`, milestone archival, and
 
 ## Non-Skippable Gates
 
+- `/silver:completion-audit` immediately before ship
 - `/silver:quality-gates` before planning and before ship
 - `/silver:verify`
 - `/verify-tests` before PR, deploy, or release
