@@ -227,6 +227,23 @@ Invoke `silver:context` through the active runtime's SB-recognized skill invocat
 
 Invoke `silver:plan` through the active runtime's SB-recognized skill invocation channel. Purpose: implementation PLAN.md built on top of the UI-SPEC.md contract.
 
+## Step 6b: Pre-Build Validation
+
+**NON-SKIPPABLE GATE.** (VALD-03 compliance)
+
+This runs **after** Step 6 (Plan Phase) and the UI design contract because `silver:validate` performs pre-build gap analysis by checking SPEC.md coverage in `.planning/PLAN.md` — the plan must exist first. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
+
+Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
+
+If silver:validate reports any BLOCK findings:
+- STOP. Do not proceed to Step 7 (Execute).
+- Display: "Pre-build validation found BLOCK findings. Resolve them before continuing."
+- Offer: A. Return to `silver:plan` to revise the plan  B. Re-run `silver:validate` after fixes
+
+Only proceed to Step 7 (Execute Phase) when silver:validate reports zero BLOCK findings.
+
+WARN findings are recorded in `.planning/VALIDATION.md` and will appear in the PR description (VALD-04).
+
 ## Step 7: Execute Phase + TDD
 
 **Execute:**
