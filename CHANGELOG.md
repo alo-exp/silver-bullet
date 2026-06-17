@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.44.6] — 2026-06-18
+
+Fresh adversarial flow review (post-v0.44.5): validate dead-end for DevOps/Fast paths without SPEC.md.
+
+## Bug Fixes
+- `fix(skills): silver-validate — plan-only mode when SPEC.md absent (unblocks devops/fast pre-exec chain)`
+- `fix(skills): silver-devops/silver-fast — document plan-only validate path`
+- `fix(templates): sync orchestrator worker templates to host-neutral plugin wording`
+
+## Tests
+- `test(hooks): workflow-chain-guard silver-devops without SPEC.md`
+- `test(hooks): orchestrator worker template repo/plugin parity`
+- `test(integration): skill-execution-paths plan-only validate guards`
+
+---
+
 ## [0.44.5] — 2026-06-18
 
 Fresh adversarial flow review (post-v0.44.4): parent orchestrator worker template gaps and devops queue skill mapping.

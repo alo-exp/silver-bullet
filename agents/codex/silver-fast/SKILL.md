@@ -100,6 +100,7 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 - Any combination is valid.
 - Always invoke `silver:plan`, `silver:validate`, `silver:execute`, and `silver:verify` for Tier 2.
 - Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
+- When `.planning/SPEC.md` is absent, `silver:validate` runs in **plan-only mode** (PLAN.md completeness — see `skills/silver-validate/SKILL.md` Step 0). Do not run `/silver:spec` unless product requirements need a formal SPEC.
 - Invoke `silver:context` or `silver:research` only when triggered by the signal table above.
 - `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
 
