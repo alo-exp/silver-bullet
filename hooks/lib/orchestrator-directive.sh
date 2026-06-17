@@ -17,8 +17,11 @@ sb_orchestrator_flow_to_skill() {
     FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|QUALITY\ GATE|QUALITYGATE)
       printf 'silver-quality-gates'
       ;;
-    FLOW-DEVOPS-QUALITY-GATE-PRESHIP)
+    FLOW-DEVOPS-QUALITY-GATE-PRESHIP|devops-quality-gates|DEVOPS-QUALITY-GATES)
       printf 'devops-quality-gates'
+      ;;
+    devops-skill-router|DEVOPS-SKILL-ROUTER)
+      printf 'devops-skill-router'
       ;;
     security|SECURITY)
       printf 'security'

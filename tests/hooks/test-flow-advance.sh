@@ -69,5 +69,22 @@ run_hook "silver-quality-gates" "$WORK" >/dev/null
 qg_status="$(awk -F'|' '/QUALITY/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${wid}.md" 2>/dev/null || true)"
 assert_contains "quality gate flow row completes" "$qg_status" "complete"
 
+# Worker sessions must not re-seed composer queue when re-reading composer skills
+make_repo
+run_hook "silver-feature" "$WORK" >/dev/null
+before_wid="$(jq -r '.workflow_id // ""' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || true)"
+before_len="$(jq '.flow_queue | length' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || echo 0)"
+( cd "$WORK" && SB_ORCHESTRATOR_WORKER=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  printf '{"tool_input":{"skill":"silver-feature"}}' | bash "$HOOK" >/dev/null 2>&1 ) || true
+after_wid="$(jq -r '.workflow_id // ""' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || true)"
+after_len="$(jq '.flow_queue | length' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || echo 0)"
+if [[ "$before_wid" == "$after_wid" && "$before_len" == "$after_len" ]]; then
+  echo "PASS: worker session does not re-seed composer queue"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: worker session re-seeded composer (before=$before_wid/$before_len after=$after_wid/$after_len)"
+  FAIL=$((FAIL + 1))
+fi
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

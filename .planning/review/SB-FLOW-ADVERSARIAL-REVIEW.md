@@ -162,3 +162,90 @@ Deferred non-issues: R3-04 (cosmetic numbering), R3-05 (doc precision only).
 
 **Version:** v0.44.4 (patch)  
 **Rationale:** Greenfield UI spec dead-end and Fast Tier 2 incomplete deploy-chain documentation.
+
+---
+
+## Round 5 — Fresh Independent Pass (post-v0.44.4)
+
+**Date:** 2026-06-18  
+**Baseline version:** v0.44.4  
+**Reviewer:** Independent adversarial subagent (re-run per user request)
+
+### Scope
+
+Full bird's-eye + ant's-eye across composable flows, hooks, orchestrator parent mode, worker templates, state machine, templates, install path, cross-flow consistency.
+
+### Findings (Round 5)
+
+| ID | Severity | Issue | Disposition |
+|----|----------|-------|-------------|
+| R5-01 | **CRITICAL** | Parent orchestrator missing worker templates for queue skills (`DECIDE`, `SPECIFY`, `DEVOPS-SKILL-ROUTER`, `REVIEW-REQUEST`, `REVIEW-TRIAGE`, `BRANCH-FINISH`, `COMPLETION-AUDIT`) — parent could not spawn workers for research, greenfield spec, devops router, or post-exec delivery tail | **FIXED** — added 7 templates under `templates/orchestrator-workers/` (+ plugin sync) |
+| R5-02 | **HIGH** | `sb_orchestrator_flow_to_skill` mapped `devops-quality-gates` → `silver-devops-quality-gates` (invalid skill) via generic `silver-` prefix fallback | **FIXED** — explicit `devops-quality-gates` / `devops-skill-router` cases in `orchestrator-directive.sh` |
+| R5-03 | **HIGH** | Worker subagents re-invoking composer skills re-seeded `orchestrator.json` / workflow tracker (queue reset mid-flow) | **FIXED** — `flow-advance.sh` skips composer re-seed in worker sessions |
+| R5-04 | **MEDIUM** | `silver-devops` mandatory post-exec chain omitted review triad, branch-finish, completion-audit (deploy gate dead-end risk when following summary only) | **FIXED** — canonical post-exec list added |
+| R5-05 | **MEDIUM** | `silver-bugfix` lacked mandatory dependency section documenting pre/post chains vs `workflow-chain-guard` | **FIXED** |
+| R5-06 | **LOW** | `silver-devops` Step 8 cited `required_deploy` instead of `required_deploy_devops` for verify-tests | **FIXED** |
+| R5-07 | **INFO** | Cosmetic step numbering gaps in `silver-ui` (unchanged from R3-04) | **DEFERRED** |
+
+### Fixes Applied (Round 5)
+
+- `templates/orchestrator-workers/{DECIDE,SPECIFY,DEVOPS-SKILL-ROUTER,REVIEW-REQUEST,REVIEW-TRIAGE,BRANCH-FINISH,COMPLETION-AUDIT}.md` (+ plugin copies)
+- `hooks/lib/orchestrator-directive.sh` — devops skill token mapping
+- `hooks/lib/orchestrator-parent.sh` — explicit worker template mappings
+- `hooks/flow-advance.sh` — worker-session composer guard
+- `skills/silver-devops/SKILL.md`, `skills/silver-bugfix/SKILL.md` — mandatory chains / config key
+- `agents/{codex,cursor,claude}/*` — re-rendered from skills source
+- `tests/hooks/test-orchestrator-worker-templates.sh` — regression coverage for queue→template resolution
+- `tests/hooks/test-flow-advance.sh` — worker composer re-seed guard
+- `tests/hooks/test-orchestrator-worker-handoff.sh` — devops mapping + DECIDE template asserts
+- `tests/integration/test-skill-execution-paths.sh` — invoke-line ordering guards (mandatory-section false positive)
+
+---
+
+## Round 6 — Skeptical Re-Review (post-fix)
+
+Re-checked after Round 5 fixes:
+
+| Check | Result |
+|-------|--------|
+| `test-skill-refs.sh` | PASS (82/82) |
+| `test-skill-execution-paths.sh` | PASS (378/378) |
+| `test-workflow-chain-guard.sh` | PASS (24/24) |
+| `test-orchestrator-queue-order.sh` | PASS (17/17) |
+| `test-silver-router-flow-contracts.sh` | PASS (58/58) |
+| `test-release-version-alignment.sh` | PASS (7/7) |
+| `test-orchestrator-worker-templates.sh` | PASS (79/79) |
+| `test-orchestrator-worker-handoff.sh` | PASS (7/7) |
+| `test-flow-advance.sh` | PASS (6/6) |
+| All composer queues vs worker templates | PASS |
+| Hook forbidden skill literals | PASS |
+| Template ↔ live sync (no instruction drift this cycle) | PASS |
+
+### Round 6 Findings
+
+**Zero genuine end-user-impacting issues remaining.**
+
+Deferred non-issues: R5-07 (cosmetic numbering).
+
+---
+
+## Test Results (Final — Round 6)
+
+| Suite | Result |
+|-------|--------|
+| `tests/integration/test-skill-refs.sh` | 82 passed, 0 failed |
+| `tests/integration/test-skill-execution-paths.sh` | 378 passed, 0 failed |
+| `tests/hooks/test-workflow-chain-guard.sh` | 24 passed, 0 failed |
+| `tests/hooks/test-orchestrator-queue-order.sh` | 17 passed, 0 failed |
+| `tests/scripts/test-silver-router-flow-contracts.sh` | 58 passed, 0 failed |
+| `tests/scripts/test-release-version-alignment.sh` | 7 passed, 0 failed |
+| `tests/hooks/test-orchestrator-worker-templates.sh` | 79 passed, 0 failed |
+| `tests/hooks/test-orchestrator-worker-handoff.sh` | 7 passed, 0 failed |
+| `tests/hooks/test-flow-advance.sh` | 6 passed, 0 failed |
+
+---
+
+## Release
+
+**Version:** v0.44.5 (patch)  
+**Rationale:** Parent orchestrator worker template gaps, devops queue skill mapping bug, and composer re-seed guard in worker sessions.

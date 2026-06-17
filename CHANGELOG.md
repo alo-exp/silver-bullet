@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.44.5] — 2026-06-18
+
+Fresh adversarial flow review (post-v0.44.4): parent orchestrator worker template gaps and devops queue skill mapping.
+
+## Bug Fixes
+- `fix(orchestrator): add missing worker templates for DECIDE, SPECIFY, devops router, review triad tail, branch-finish, completion-audit`
+- `fix(hooks): map devops-quality-gates and devops-skill-router correctly in orchestrator flow_to_skill`
+- `fix(hooks): prevent worker sessions from re-seeding composer orchestrator queue`
+- `fix(skills): silver-devops/silver-bugfix — document canonical mandatory pre/post chains`
+
+## Tests
+- `test(hooks): orchestrator worker template coverage for all composer queue skills`
+- `test(hooks): flow-advance worker composer re-seed guard`
+- `test(integration): skill-execution-paths invoke-line ordering guards`
+
+---
+
 ## [0.44.4] — 2026-06-18
 
 Fresh adversarial flow review (post-v0.44.3): greenfield UI spec dead-end and Fast Tier 2 deploy-chain documentation gaps.

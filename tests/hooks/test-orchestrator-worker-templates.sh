@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Regression: every flow token in default composer queues must resolve to an on-disk worker template.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+LIB_OS="$REPO_ROOT/hooks/lib/orchestrator-state.sh"
+LIB_PARENT="$REPO_ROOT/hooks/lib/orchestrator-parent.sh"
+TEMPLATES="$REPO_ROOT/templates/orchestrator-workers"
+PASS=0
+FAIL=0
+
+# shellcheck source=hooks/lib/orchestrator-state.sh
+source "$LIB_OS"
+# shellcheck source=hooks/lib/orchestrator-parent.sh
+source "$LIB_PARENT"
+
+assert_template() {
+  local skill="$1"
+  local template
+  template="$(sb_orchestrator_worker_template_for_skill "$skill")"
+  if [[ -f "$TEMPLATES/${template}.md" ]]; then
+    echo "PASS: $skill -> ${template}.md"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $skill -> missing $TEMPLATES/${template}.md"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+collect_queue_skills() {
+  local composer="$1"
+  local repo_root="${2:-}"
+  local token skill
+  while IFS= read -r token; do
+    [[ -n "$token" ]] || continue
+    case "$token" in
+      FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|FLOW-DEVOPS-QUALITY-GATE-PRESHIP)
+        skill="$(sb_orchestrator_flow_to_skill "$token")"
+        ;;
+      *)
+        skill="$(sb_orchestrator_flow_to_skill "$token")"
+        ;;
+    esac
+    printf '%s\n' "$skill"
+  done < <(sb_orchestrator_queue_for_composer "$composer" "$repo_root" | tr ',' '\n')
+}
+
+# shellcheck source=hooks/lib/orchestrator-directive.sh
+source "$REPO_ROOT/hooks/lib/orchestrator-directive.sh"
+
+echo "=== orchestrator worker template coverage ==="
+
+for composer in silver-feature silver-ui silver-devops silver-bugfix silver-research silver-fast silver-release; do
+  echo "--- $composer queue ---"
+  while IFS= read -r skill; do
+    [[ -n "$skill" ]] || continue
+    assert_template "$skill"
+  done < <(collect_queue_skills "$composer" "")
+done
+
+# Explicit post-exec tokens referenced by sb_orchestrator_post_exec_queue
+post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
+while IFS= read -r skill; do
+  [[ -n "$skill" ]] || continue
+  assert_template "$skill"
+done < <(printf '%s' "$post_exec" | tr ',' '\n' | while read -r t; do sb_orchestrator_flow_to_skill "$t"; done)
+
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+[[ "$FAIL" -eq 0 ]]

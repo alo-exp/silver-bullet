@@ -74,6 +74,11 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-CLARIFY|CLARIFY|silver-clarify) printf 'CLARIFY' ;;
     FLOW-DECIDE|DECIDE|silver-research) printf 'DECIDE' ;;
     FLOW-SPECIFY|SPECIFY|silver-spec|silver-ingest) printf 'SPECIFY' ;;
+    devops-skill-router) printf 'DEVOPS-SKILL-ROUTER' ;;
+    silver-review-request) printf 'REVIEW-REQUEST' ;;
+    silver-review-triage) printf 'REVIEW-TRIAGE' ;;
+    silver-branch-finish) printf 'BRANCH-FINISH' ;;
+    silver-completion-audit) printf 'COMPLETION-AUDIT' ;;
     FLOW-PLAN|PLAN|silver-plan) printf 'PLAN' ;;
     FLOW-DESIGN-CONTRACT|DESIGN-CONTRACT|DESIGN\ CONTRACT|silver-ui-contract) printf 'DESIGN-CONTRACT' ;;
     FLOW-EXECUTE|EXECUTE|silver-execute) printf 'EXECUTE' ;;
