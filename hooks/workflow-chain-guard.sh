@@ -36,6 +36,14 @@ if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
   source "$_lib_dir/jq-gate.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
 
 emit_block_jq_missing() {
   local reason="$1"
@@ -44,7 +52,9 @@ emit_block_jq_missing() {
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
-if declare -f sb_jq_enforcement_block >/dev/null 2>&1; then
+if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
+  sb_jq_enforcement_block_sb_initiated "workflow-chain-guard" "emit_block_jq_missing"
+elif declare -f sb_jq_enforcement_block >/dev/null 2>&1; then
   sb_jq_enforcement_block "workflow-chain-guard" "emit_block_jq_missing"
 fi
 
@@ -54,9 +64,13 @@ hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 case "$tool_name" in
-  Edit|Write|MultiEdit) ;;
+  Edit|Write|MultiEdit|apply_patch) ;;
   *) exit 0 ;;
 esac
+
+if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
+  sb_project_gate_or_exit
+fi
 
 resolve_repo_root() {
   local d="$PWD"
@@ -127,7 +141,7 @@ case "$composer_slug" in
     required_markers=(silver-quality-gates silver-context silver-plan silver-ui-contract)
     ;;
   silver-devops)
-    required_markers=(silver-blast-radius devops-quality-gates silver-context silver-plan)
+    required_markers=(silver-blast-radius devops-skill-router devops-quality-gates security silver-context silver-plan)
     ;;
   silver-research)
     required_markers=(silver-clarify silver-research)

@@ -113,6 +113,43 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+if printf '%s' "$devops_q" | grep -q 'devops-skill-router,devops-quality-gates,security,silver-context'; then
+  echo "PASS: silver-devops pre-exec includes router, devops-qg, and pre-plan security"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-devops missing router/devops-qg/security prefix (got: $devops_q)"
+  FAIL=$((FAIL + 1))
+fi
+
+fast_q="$(sb_orchestrator_default_queue_for_composer silver-fast)"
+if printf '%s' "$fast_q" | grep -q 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'; then
+  echo "PASS: silver-fast Tier 2 orchestrator queue"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-fast queue incorrect (got: $fast_q)"
+  FAIL=$((FAIL + 1))
+fi
+
+tmp_no_spec=$(mktemp -d)
+mkdir -p "$tmp_no_spec/.planning"
+feature_no_spec="$(sb_orchestrator_queue_for_composer silver-feature "$tmp_no_spec")"
+rm -rf "$tmp_no_spec"
+if printf '%s' "$feature_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-spec,silver-context'; then
+  echo "PASS: silver-feature queue inserts silver-spec when SPEC.md absent"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-feature missing conditional silver-spec (got: $feature_no_spec)"
+  FAIL=$((FAIL + 1))
+fi
+
+if sb_orchestrator_is_flow_atom devops-skill-router; then
+  echo "PASS: devops-skill-router is a flow atom"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: devops-skill-router not registered as flow atom"
+  FAIL=$((FAIL + 1))
+fi
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

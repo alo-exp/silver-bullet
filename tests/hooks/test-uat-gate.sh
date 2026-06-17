@@ -23,6 +23,12 @@ trap cleanup_all EXIT
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   mkdir -p "$TMPDIR_TEST/.planning"
+  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
+# Silver Bullet
+EOF
+  cat > "$TMPDIR_TEST/.silver-bullet.json" <<'EOF'
+{"sb_initiated": true}
+EOF
 }
 
 teardown() {

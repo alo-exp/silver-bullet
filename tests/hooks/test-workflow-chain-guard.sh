@@ -39,6 +39,7 @@ EOF
 EOF
   cat > "$TMPDIR_TEST/.silver-bullet.json" <<EOF
 {
+  "sb_initiated": true,
   "state": { "state_file": "${SB_TEST_DIR}/workflow-chain-state-${TEST_RUN_ID}" }
 }
 EOF
@@ -69,6 +70,13 @@ run_hook_edit() {
   local file_path="$1"
   local input
   input=$(jq -n --arg f "$file_path" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old", new_string:"new"}}')
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+}
+
+run_hook_apply_patch() {
+  local patch="$1"
+  local input
+  input=$(jq -n --arg p "$patch" '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{patch:$p}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
@@ -213,6 +221,27 @@ assert_passes "silver:bugfix passes after DEBUG + PLAN markers exist" "$out"
 write_state_markers gsd-debug gsd-plan-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:bugfix legacy GSD debug/plan markers satisfy SB-owned aliases" "$out"
+teardown
+
+# apply_patch must honor the same pre-execution chain as Edit (Codex parity).
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:feature" "apply_patch gate" "plan,execute"
+out=$(run_hook_apply_patch "*** Begin Patch
+*** Update File: src/app.js
+@@
+-old
++new
+*** End Patch")
+assert_blocks "apply_patch blocked without SB pre-execution markers" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
+out=$(run_hook_apply_patch "*** Begin Patch
+*** Update File: src/app.js
+@@
+-old
++new
+*** End Patch")
+assert_passes "apply_patch passes after SB pre-execution markers exist" "$out"
 teardown
 
 echo ""

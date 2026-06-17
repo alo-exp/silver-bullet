@@ -12,7 +12,7 @@ sb_orchestrator_composition_log() {
 
 sb_orchestrator_is_composer_skill() {
   case "$1" in
-    silver-feature|silver-ui|silver-devops|silver-bugfix|silver-research|silver-release)
+    silver-feature|silver-ui|silver-devops|silver-bugfix|silver-research|silver-release|silver-fast)
       return 0
       ;;
     *)
@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|silver-branch-finish|silver-completion-audit|silver-create-release|security)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security)
       return 0
       ;;
     *)
@@ -52,7 +52,7 @@ sb_orchestrator_default_queue_for_composer() {
       ;;
     silver-devops)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-DEVOPS-QUALITY-GATE-PRESHIP')"
-      printf '%s' "silver-blast-radius,devops-quality-gates,silver-context,silver-plan,silver-validate,silver-execute,${post_exec}"
+      printf '%s' "silver-blast-radius,devops-skill-router,devops-quality-gates,security,silver-context,silver-plan,silver-validate,silver-execute,${post_exec}"
       ;;
     silver-bugfix)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
@@ -60,6 +60,9 @@ sb_orchestrator_default_queue_for_composer() {
       ;;
     silver-research)
       printf '%s' 'silver-clarify,silver-research'
+      ;;
+    silver-fast)
+      printf '%s' 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'
       ;;
     silver-release)
       printf '%s' 'silver-quality-gates,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
@@ -71,17 +74,34 @@ sb_orchestrator_default_queue_for_composer() {
   esac
 }
 
+# Resolve composer queue with runtime conditionals (e.g. silver-spec when SPEC.md absent).
+sb_orchestrator_queue_for_composer() {
+  local composer="$1"
+  local repo_root="${2:-}"
+  local queue
+  queue="$(sb_orchestrator_default_queue_for_composer "$composer")"
+  case "$composer" in
+    silver-feature|silver-ui)
+      if [[ -n "$repo_root" && ! -f "$repo_root/.planning/SPEC.md" ]]; then
+        queue="${queue//silver-context/silver-spec,silver-context}"
+      fi
+      ;;
+  esac
+  printf '%s' "$queue"
+}
+
 sb_orchestrator_flow_csv_for_workflows() {
   local composer="$1" line out=""
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     case "$line" in
       FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|FLOW-DEVOPS-QUALITY-GATE-PRESHIP) line="QUALITY GATE" ;;
+      devops-skill-router) line="DEVOPS SKILL ROUTER" ;;
       security) line="SECURE" ;;
       silver-*) line="$(printf '%s' "${line#silver-}" | tr '[:lower:]' '[:upper:]')" ;;
     esac
     out="${out:+$out,}$line"
-  done < <(sb_orchestrator_default_queue_for_composer "$composer" | tr ',' '\n')
+  done < <(sb_orchestrator_queue_for_composer "$composer" | tr ',' '\n')
   printf '%s' "$out"
 }
 
@@ -118,6 +138,7 @@ sb_orchestrator_write_json() {
 sb_orchestrator_seed_intent() {
   local intent="$1"
   local composer="${2:-}"
+  local repo_root="${3:-}"
   local now
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   command -v jq >/dev/null 2>&1 || return 0
@@ -126,7 +147,7 @@ sb_orchestrator_seed_intent() {
   if sb_orchestrator_detect_full_software_intent "$intent"; then
     queue_csv="$(sb_orchestrator_full_software_queue)"
   elif [[ -n "$composer" ]]; then
-    queue_csv="$(sb_orchestrator_default_queue_for_composer "$composer")"
+    queue_csv="$(sb_orchestrator_queue_for_composer "$composer" "$repo_root")"
   else
     queue_csv="silver-context,silver-plan,silver-execute,silver-verify,silver-ship"
   fi
@@ -171,7 +192,7 @@ sb_orchestrator_on_composer_start() {
   [[ -n "$composer_skill" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
 
-  sb_orchestrator_seed_intent "$intent" "$composer_skill"
+  sb_orchestrator_seed_intent "$intent" "$composer_skill" "$repo_root"
 
   local wf_bin wf_id flows_csv
   wf_bin=""
