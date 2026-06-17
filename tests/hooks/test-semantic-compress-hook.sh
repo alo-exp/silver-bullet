@@ -10,31 +10,39 @@ assert_eq() {
 
 HOOK="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/hooks/semantic-compress.sh"
 
-# Test 1: non-GSD skill → no output, exit 0
+# Test 1: non-phase skill → no output, exit 0
 result=$(printf '{"tool_input":{"skill":"superpowers:brainstorming"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "non-GSD skill: no output" "" "$result"
+assert_eq "non-phase skill: no output" "" "$result"
 
-# Test 2: gsd:execute-phase → hook delegates (no .planning/ = no output)
-result=$(printf '{"tool_input":{"skill":"gsd:execute-phase"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "gsd:execute-phase without planning: no output" "" "$result"
+# Test 2: silver:execute → hook delegates (no .planning/ = no output)
+result=$(printf '{"tool_input":{"skill":"silver:execute"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver:execute without planning: no output" "" "$result"
 
-# Test 3: gsd:plan-phase → same
-result=$(printf '{"tool_input":{"skill":"gsd:plan-phase"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "gsd:plan-phase without planning: no output" "" "$result"
+# Test 3: silver:plan → same
+result=$(printf '{"tool_input":{"skill":"silver:plan"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver:plan without planning: no output" "" "$result"
 
-# Test 4: gsd:discuss-phase → same
-result=$(printf '{"tool_input":{"skill":"gsd:discuss-phase"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "gsd:discuss-phase without planning: no output" "" "$result"
+# Test 4: silver:context → same
+result=$(printf '{"tool_input":{"skill":"silver:context"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver:context without planning: no output" "" "$result"
 
-# Test 5: gsd:research-phase → same
-result=$(printf '{"tool_input":{"skill":"gsd:research-phase"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "gsd:research-phase without planning: no output" "" "$result"
+# Test 5: silver:research → same
+result=$(printf '{"tool_input":{"skill":"silver:research"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver:research without planning: no output" "" "$result"
 
-# Test 6: missing skill field → no output, no crash
+# Test 6: hyphenated silver-execute → same
+result=$(printf '{"tool_input":{"skill":"silver-execute"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver-execute without planning: no output" "" "$result"
+
+# Test 7: hyphenated silver-plan → same
+result=$(printf '{"tool_input":{"skill":"silver-plan"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver-plan without planning: no output" "" "$result"
+
+# Test 8: missing skill field → no output, no crash
 result=$(printf '{"tool_input":{}}' | "$HOOK" 2>/dev/null || true)
 assert_eq "missing skill field: no output" "" "$result"
 
-# Test 7: empty stdin → no output, no crash
+# Test 9: empty stdin → no output, no crash
 result=$(printf '' | "$HOOK" 2>/dev/null || true)
 assert_eq "empty stdin: no output" "" "$result"
 

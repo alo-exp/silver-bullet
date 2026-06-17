@@ -304,13 +304,9 @@ for raw in "${skills_to_record[@]}"; do
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     skill="$(sb_skill_canonical_name "$skill")"
   else
-    if printf '%s' "$skill" | grep -qE '^gsd:'; then
-      skill=$(printf '%s' "$skill" | sed 's/^gsd:/gsd-/')
-    else
-      while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
-        skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
-      done
-    fi
+    while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
+      skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
+    done
   fi
 
   # Canonical TDD marker: required_deploy lists "tdd", not "silver-tdd".

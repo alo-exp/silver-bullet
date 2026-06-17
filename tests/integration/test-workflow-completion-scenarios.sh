@@ -23,7 +23,7 @@ assert_blocked "S1.1: stop-check blocks when required skills are missing" "$out"
 while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
 done < <(emit_required_deploy_skills required_deploy)
-seed_gsd_lifecycle_artifacts
+seed_lifecycle_artifacts
 # Step 3: stop-check passes now (all skills present)
 out=$(run_stop_check "Stop")
 assert_allowed "S1.2: stop-check passes with all skills" "$out"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PostToolUse hook — semantic context compression gate.
-# Exits immediately for non-GSD-phase skills (< 10ms overhead).
+# Exits immediately for non-phase skills (< 10ms overhead).
 set -euo pipefail
 trap 'exit 0' ERR
 
@@ -15,7 +15,8 @@ input=$(cat 2>/dev/null || true)
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""' 2>/dev/null || true)
 
 case "${skill:-}" in
-  gsd:execute-phase|gsd:plan-phase|gsd:discuss-phase|gsd:research-phase) ;;
+  silver:execute|silver:plan|silver:context|silver:research|\
+  silver-execute|silver-plan|silver-context|silver-research) ;;
   *) exit 0 ;;
 esac
 

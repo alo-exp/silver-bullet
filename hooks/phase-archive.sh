@@ -3,7 +3,7 @@ set -euo pipefail
 trap 'printf "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"phase-archive: archive failed — blocking clear to prevent data loss\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Bash)
-# Intercepts gsd-tools.cjs phases clear before it runs.
+# Intercepts any `phases clear` command before it runs.
 # Archives all current phase directories to .planning/archive/{milestone}/ so
 # they are preserved after the clear completes.
 
@@ -39,8 +39,8 @@ else
 fi
 [[ -z "$cmd" ]] && exit 0
 
-# Only trigger on gsd-tools phases clear commands
-if ! printf '%s' "$cmd" | grep -qE 'gsd-tools[^"]*phases\s+clear'; then
+# Only trigger on phases clear commands
+if ! printf '%s' "$cmd" | grep -qE 'phases\s+clear'; then
   exit 0
 fi
 

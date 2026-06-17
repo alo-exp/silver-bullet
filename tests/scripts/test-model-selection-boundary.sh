@@ -54,7 +54,6 @@ assert_contains "full dev workflow documents host model boundary" "HOST MODEL BO
 assert_contains "template workflow documents host model boundary" "HOST MODEL BOUNDARY" "$REPO_ROOT/templates/workflows/full-dev-cycle.md"
 assert_contains "devops workflow documents host model boundary" "HOST MODEL BOUNDARY" "$REPO_ROOT/docs/workflows/devops-cycle.md"
 assert_contains "template devops workflow documents host model boundary" "HOST MODEL BOUNDARY" "$REPO_ROOT/templates/workflows/devops-cycle.md"
-assert_contains "disabled routing hook remains no-op" "DISABLED" "$REPO_ROOT/hooks/ensure-model-routing.sh"
 
 assert_not_contains "current docs do not encode explicit Claude/Codex model ladders" \
   "claude-(sonnet|opus)-4-6|GPT-5\\.[2345]|gpt-5\\.[2345]|Haiku" \

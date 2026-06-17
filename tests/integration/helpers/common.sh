@@ -167,16 +167,7 @@ EOCFG
 emit_required_deploy_skills() {
   local field="${1:-required_deploy}"
   jq -r ".skills.${field}[]" "$DEFAULT_CONFIG_TEMPLATE" | awk '
-    $0 == "gsd-code-review" { pending_gsd = 1; next }
     $0 == "silver-review" { pending_review = 1; next }
-    $0 == "requesting-code-review" {
-      print
-      if (pending_gsd) {
-        print "gsd-code-review"
-        pending_gsd = 0
-      }
-      next
-    }
     $0 == "silver-review-request" {
       print
       if (pending_review) {
@@ -187,13 +178,12 @@ emit_required_deploy_skills() {
     }
     { print }
     END {
-      if (pending_gsd) print "gsd-code-review"
       if (pending_review) print "silver-review"
     }
   '
 }
 
-seed_gsd_lifecycle_artifacts() {
+seed_lifecycle_artifacts() {
   mkdir -p "$TMPDIR_TEST/.planning"
   cat > "$TMPDIR_TEST/.planning/STATE.md" <<'EOF'
 # Execution State
@@ -237,7 +227,7 @@ write_all_skills() {
   } | awk 'NF && !seen[$0]++' > "$TMPSTATE"
   append_pre_ship_quality_gates_marker
   date +%s > "$VERIFY_TESTS_FILE"
-  seed_gsd_lifecycle_artifacts
+  seed_lifecycle_artifacts
 }
 
 # Write a WORKFLOW.md with all paths marked complete

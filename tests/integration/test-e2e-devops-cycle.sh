@@ -138,7 +138,7 @@ assert_blocked "S6.1: PR blocked with only silver-blast-radius" "$out"
 while IFS= read -r skill; do
   run_record_skill "$skill" >/dev/null
 done < <(emit_required_deploy_skills required_deploy_devops)
-seed_gsd_lifecycle_artifacts
+seed_lifecycle_artifacts
 out=$(run_completion_audit "PreToolUse" "gh pr create --title 'infra: promote to staging'")
 assert_allowed "S6.2: PR allowed with all devops required skills" "$out"
 

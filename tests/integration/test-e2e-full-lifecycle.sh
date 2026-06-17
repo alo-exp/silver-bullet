@@ -134,7 +134,7 @@ for skill in silver-execute silver-verify silver-ship security silver-secure sil
              silver-branch-finish verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
-seed_gsd_lifecycle_artifacts
+seed_lifecycle_artifacts
 append_pre_ship_quality_gates_marker
 
 # PR create now allowed

@@ -1,7 +1,7 @@
 ---
 name: silver-undo
 description: >
-  Safe git revert for SB phase or plan commits. Shows recent GSD/SB commits,
+  Safe git revert for SB phase or plan commits. Shows recent commits,
   checks dependent phases, and requires confirmation before reverting.
 argument-hint: "[--last N] [--phase NN] [--plan NN-MM] [--dry-run]"
 version: 0.1.0
@@ -40,7 +40,7 @@ Next: Phase <N> is now pending — re-run silver:execute when ready
 
 | Flag | Behaviour |
 |------|-----------|
-| `--last N` | Show the N most recent SB/GSD phase or plan commits and offer interactive selection |
+| `--last N` | Show the N most recent SB phase or plan commits and offer interactive selection |
 | `--phase NN` | Revert all commits associated with phase NN |
 | `--plan NN-MM` | Revert commits for plan MM within phase NN |
 | `--dry-run` | Show what would be reverted without making changes |
