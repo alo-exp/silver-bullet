@@ -60,9 +60,7 @@ jq . templates/silver-bullet.config.json.default > /dev/null
 ```bash
 # Prerequisites
 brew install jq
-npx get-shit-done-cc@latest   # GSD
-# In the host coding agent: /plugin install obra/superpowers
-# In the host coding agent: /silver:init   — activates enforcement in this repo
+# In the host coding agent: /silver:init — activates enforcement in this repo
 ```
 
 ---
@@ -89,7 +87,7 @@ The three pillars:
 
 - **SessionStart** → `session-start` (branch-scoped state reset, context injection), `spec-session-record.sh`
 - **PreToolUse/Bash** → `phase-archive.sh`, `completion-audit.sh`, `roadmap-freshness.sh`, `dev-cycle-check.sh`, `ci-status-check.sh`, `spec-floor-check.sh`
-- **PreToolUse/Edit|Write|MultiEdit** → `planning-file-guard.sh` (blocks direct edits to GSD-managed planning artifacts)
+- **PreToolUse/Edit|Write|MultiEdit** → `planning-file-guard.sh` (blocks direct edits to SB-managed planning artifacts)
 - **PreToolUse/Skill** → `forbidden-skill-check.sh`, `uat-gate.sh`
 - **PostToolUse/Skill** → `semantic-compress.sh`, `record-skill.sh` (writes to state file)
 - **PostToolUse/Write|Edit|MultiEdit** → trivial-file removal (marks session as non-trivial)
@@ -102,7 +100,7 @@ The three pillars:
 
 `completion-audit.sh` and `stop-check.sh` enforce two separate gates:
 
-1. **Intermediate commits** (`git commit`, `git push`) — requires only `required_planning` skills (default: `silver-quality-gates`). Allows GSD subagents to make atomic commits mid-execution.
+1. **Intermediate commits** (`git commit`, `git push`) — requires only `required_planning` skills (default: `silver-quality-gates`). Allows execution subagents to make atomic commits mid-execution.
 2. **Final delivery** (`gh pr create`, `gh release create`, `deploy`) — requires the full `required_deploy` list from `.silver-bullet.json`.
 
 The required-skill list has a **single source of truth**: `templates/silver-bullet.config.json.default`. Hooks source `hooks/lib/required-skills.sh`, which reads from that file via `jq` at runtime — there are no hardcoded skill literals in hook scripts.
@@ -131,12 +129,12 @@ Skill invocations are recorded to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`
 Every skill is a single `SKILL.md` file with YAML frontmatter (`name`, `description`, optional `argument-hint`). The **composable flow skills** are orchestrators that sequence other skills:
 
 - `silver-feature` — 20-step app development workflow
-- `silver-ui` — UI variant of silver-feature, adds `gsd-ui-phase` + `gsd-ui-review`
+- `silver-ui` — UI variant of silver-feature, adds UI phase and review steps
 - `silver-bugfix` — diagnosis-first bug fix workflow
-- `silver-release` — cross-artifact review → deploy-checklist → gsd-ship ordering
+- `silver-release` — cross-artifact review → deploy-checklist → ship ordering
 - `silver-devops` — infrastructure / DevOps variant
 
-These call into GSD (`gsd-*`) and Superpowers (`superpowers:*`) skills — Silver Bullet orchestrates but does not implement.
+Composable flow skills sequence SB-owned lifecycle skills. Legacy `gsd-*` marker names remain as compatibility aliases in hooks and config.
 
 ### Templates
 

@@ -28,17 +28,12 @@ At the very start of any new session, perform these steps automatically:
    If A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel, then continue.
    If B or check fails (offline/unknown): output "Skipping SB update." and continue.
 
-   **5.2 Optional legacy plugins (informational)**
-   ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '
-     .plugins | to_entries[] |
-     select(.key | test("^(superpowers|design|engineering|product-management)@")) |
-     "\(.key | split("@")[0]): v\(.value[0].version)"
-   ' 2>/dev/null || echo "Could not read plugin registry"
-   ```
-   Display installed versions only. These plugins are no longer required for core SB workflows.
-   Do not install, update, or activate legacy lifecycle-overlap plugins during SB setup.
-   If the user explicitly asks to use one later, treat it as an external optional plugin request.
+   **5.2 Legacy lifecycle plugins (informational)**
+
+   SB no longer reports installed versions of absorbed third-party lifecycle
+   plugins (GSD, Superpowers, Anthropic knowledge-work). Core workflows are
+   SB-owned. Do not install or update legacy lifecycle-overlap plugins during
+   SB setup unless the user explicitly requests an external plugin.
 
    **5.4 MultAI (optional, only if installed)**
    ```bash
@@ -48,6 +43,10 @@ At the very start of any new session, perform these steps automatically:
    Compare to the latest entry in `$HOME/.codex/plugins/cache/multai/CHANGELOG.md` only when a version is installed. If installed version is outdated, display:
    - "MultAI v{installed} appears outdated. Update manually with `/multai:update` if you plan to use optional multi-AI perspectives in this session."
    If the plugin is missing or the version is unknown: output "MultAI not installed. Optional; skipping." and continue.
+
+   **5.5 Alumnium (optional visual/browser companion)**
+   Alumnium is optional. SB routes to it for visual-heavy clarify sessions and browser-backed UI verification when the user has configured the [Alumnium](https://alumnium.ai/) MCP server. See §8.1 for hook points, fallback hierarchy, and install reference.
+   If Alumnium MCP is not configured: notify the user, then use the host agent's built-in browser MCP when available (§8.1). Text-only only when neither Alumnium nor host browser tools are available.
 
 > **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip context compaction. Evidence: no file reads for docs/ in session start.
 
@@ -184,6 +183,10 @@ without consulting external lifecycle plugin files.
 | `/silver:debug` | Systematic debugging with reproduction, hypotheses, evidence, and regression guard | Execution, test, CI, or verification failure |
 | `/silver:completion-audit` | Independently verifies completion claims | Before accepting task/phase/review/release completion |
 | `/silver:branch-finish` | Branch cleanup, PR/merge readiness, and remaining-work decision | Before phase-level ship on feature branches |
+| `/silver:spike` | Run 2–5 executable feasibility experiments before committing to an approach | Uncertain technical direction; "can we do this?" |
+| `/silver:phase` | Add, insert, remove, or edit phases in ROADMAP.md | Any roadmap structure change; planning-file-guard blocks direct edits |
+| `/silver:undo` | Safe git revert for phase or plan commits with dependency checks | Rolling back executed phase work |
+| `/silver:thread` | Create and manage lightweight cross-session context threads for topic-specific tracking | Ongoing concern or decision chain that spans multiple sessions |
 
 ### 2c. Utility Command Awareness
 
@@ -438,6 +441,19 @@ If a connector is unavailable, ingestion continues with `[ARTIFACT MISSING]` blo
 ## 3. NON-NEGOTIABLE RULES
 
 These rules apply to EVERY non-trivial change. There are NO exceptions.
+
+### Package Legitimacy Gate
+
+Before adding any new package, library, or dependency to the project, you MUST:
+
+1. **Verify the package name is exact.** Confirm the exact name from the official registry (npm, PyPI, crates.io, etc.). Do not install a package whose name you inferred from a description without verifying.
+2. **Check age and download signals.** A legitimate widely-used package typically has a publication history of months or years and significant download counts. A package with no history, zero downloads, or a name suspiciously similar to a popular package is a slopsquatting/supply-chain risk.
+3. **Check the source repository.** A legitimate package should link to a public repository. Packages with no source link or with a repository that does not match the package name are red flags.
+4. **Confirm with the user** before installing any package that fails the above checks (unfamiliar package, new package, or any package you haven't seen in previous work on this project).
+
+**If you are unsure about a package:** pause and present it to the user with the name, registry link, and what you know about it. Do NOT install silently.
+
+> **Anti-Skip:** You are violating this rule if you run `npm install`, `pip install`, `cargo add`, or any equivalent package installation command without first verifying the package name against the official registry and confirming it is not a homoglyph or typosquatting variant.
 
 You MUST NOT:
 - Invoke any optional helper/dependency skill before SB route/workflow guidance has selected it
@@ -812,6 +828,29 @@ If an optional third-party skill's behavior needs adjustment, implement the chan
 2. A hook (in `hooks/`) that intercepts or augments the skill's output
 3. A Silver Bullet skill (in `skills/`) that wraps the optional extension with additional logic
 
+### 8.1 Optional Extension Dependencies
+
+SB composes optional third-party tools; they never own lifecycle routing, planning, execution, verification, or ship.
+
+| Extension | Site / repository | SB hook points | Status |
+|-----------|-------------------|----------------|--------|
+| **Alumnium** | [alumnium.ai](https://alumnium.ai/) · [alumnium-hq/alumnium](https://github.com/alumnium-hq/alumnium) | Visual companion in `silver:clarify`; browser evidence in `silver:ui-review` and `silver:verify` | **Incorporate now** |
+| **Sidekick** | [alo-exp/sidekick](https://github.com/alo-exp/sidekick) | Cross-AI plan review / replan loop (`--reviews`, plan convergence) | **Deferred** |
+| **InstaDecks** | [alo-exp/instadecks](https://github.com/alo-exp/instadecks) | Presentation generation (`zuvo:presentation` parity) | **Deferred** |
+| **MultAI** | multai plugin | Multi-AI research perspectives when user-requested | Optional (existing) |
+
+**Alumnium integration contract:** When Alumnium MCP is configured, SB may invoke it for natural-language browser actions (`do`), assertions (`check`), data extraction (`get`), and waits (`wait`) against a running app or mockup URL. Alumnium wraps Playwright, Selenium, or Appium via accessibility trees and optional screenshots — it augments SB skills; it does not replace them. Install: `claude mcp add alumnium --env OPENAI_API_KEY=... -- npx alumnium mcp` (or `uvx alumnium mcp`; provider keys per [Alumnium docs](https://alumnium.ai/docs)). Do not block core workflows when Alumnium is absent.
+
+**Browser evidence fallback hierarchy** (visual companion, `silver:ui-review`, `silver:verify` UAT):
+
+1. **Alumnium MCP (preferred)** — when configured, use structured `start` → `do` / `check` / `get` / `wait` → `stop`. Natural-language actions and assertions compress browser noise; prefer this over ad-hoc navigation when both are available.
+2. **Host browser MCP** — when Alumnium is absent but the host exposes built-in browser tools, use them for the same use cases. Typical flow: navigate to URL → snapshot (accessibility/DOM structure) → screenshot (visual evidence) → click/type/scroll for interaction → re-snapshot after state changes. In Cursor, use `cursor-ide-browser` tools (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_type`, `browser_scroll`). Attach screenshots and snapshot notes to `.planning/CLARIFY.md`, `UI-REVIEW.md`, or `VERIFICATION.md`.
+3. **Text-only** — when neither Alumnium nor host browser MCP is available; continue without blocking.
+
+**Alumnium capability reference** (high level): natural-language `do` / `check` / `get` / `wait`; MCP server for general-purpose agents; Playwright, Selenium, and Appium backends; web (Chrome) and mobile (iOS/Android); accessibility-tree-driven targeting with optional vision; Python, TypeScript, and Java libraries; coexists with existing E2E tests and CI; session `start`/`stop` with cookies, headers, profiles, and headless options; assertion results with explanations; structured data extraction; `fetch_accessibility_tree` for debugging; multi-provider AI support (OpenAI, Anthropic, Google, and others); automatic screenshots stored in artifacts.
+
+**Sidekick / InstaDecks:** Documented dependencies only; no SB routing until dedicated integration work lands.
+
 ---
 
 <!--
@@ -849,6 +888,10 @@ Last updated: 2026-05-06
 ### 9e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|
+
+### 9f. Alumnium Preferences
+| Trigger | Disposition | Since |
+|---------|-------------|-------|
 
 ---
 

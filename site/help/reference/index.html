@@ -264,6 +264,10 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:remove</td><td>Deferred work</td><td>Removes or retires a tracked work item by ID.</td></tr>
           <tr><td>/silver:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable learnings into monthly files under <code>docs/knowledge/</code> and <code>docs/learnings/</code>.</td></tr>
           <tr><td>/silver:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/learning candidates.</td></tr>
+          <tr><td>/silver:spike</td><td>Feasibility</td><td>Runs 2–5 executable experiments with Given/When/Then structure and VALIDATED/INVALIDATED/PARTIAL verdicts before committing to an implementation approach.</td></tr>
+          <tr><td>/silver:phase</td><td>Roadmap management</td><td>CRUD management for phases in <code>.planning/ROADMAP.md</code> — add, insert, remove, or edit phases. The sanctioned path to mutate the phase list without triggering the planning-file-guard.</td></tr>
+          <tr><td>/silver:undo</td><td>Safe revert</td><td>Safe git revert for phase or plan commits with dependency checks and artifact cleanup. Keeps STATE.md and SUMMARY.md consistent with reverted code.</td></tr>
+          <tr><td>/silver:thread</td><td>Cross-session tracking</td><td>Creates and manages lightweight cross-session context threads for tracking a specific topic, decision chain, or concern across multiple sessions.</td></tr>
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>

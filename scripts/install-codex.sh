@@ -1882,9 +1882,6 @@ for root in targets:
             continue
 
         updated = text
-        if file_path.name == "gsd-sdk.cjs":
-            for src, dst in gsd_sdk_replacements:
-                updated = updated.replace(src, dst)
         for src, dst in home_claude_replacements:
             updated = updated.replace(src, dst)
         updated = updated.replace("\\.claude/", "\\.codex/")

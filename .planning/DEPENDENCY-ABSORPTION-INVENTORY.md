@@ -62,9 +62,9 @@ Do not absorb:
   `all_tracked` so old project state remains readable.
 - Hook alias tables keep old marker names so migration does not break active
   branches.
-- `scripts/gsd-sdk.cjs` and `scripts/install-gsd-sdk-shim.sh` remain a legacy
-  compatibility shim with its own test coverage; they are not part of the
-  required SB lifecycle.
+- `scripts/gsd-sdk.cjs` and `scripts/install-gsd-sdk-shim.sh` were removed
+  (2026-06-17): legacy GSD SDK compatibility shim with no runtime or install
+  wiring in the SB lifecycle.
 - Historical docs under `docs/superpowers/`, `docs/sessions/`,
   `docs/silver-forensics/`, and older audit/spec records were not rewritten.
 - Negative rules may still name forbidden Superpowers execution skills to block
@@ -293,8 +293,9 @@ Still outstanding before the overall goal is complete:
   direct GSD/Superpowers references.
 - `site/help/index.html` and `site/sb-vs-gsd/index.html` still carry old public
   positioning and need the same repositioning as the homepage.
-- `scripts/deploy-gate-snippet.sh`, `scripts/gsd-sdk.cjs`, and the GSD SDK shim
-  are legacy compatibility surfaces that need an explicit keep/remove decision.
+- `scripts/deploy-gate-snippet.sh` remains a legacy compatibility surface that
+  needs an explicit keep/remove decision. (`gsd-sdk.cjs` / GSD SDK shim removed
+  2026-06-17.)
 3. Rewrite `hooks/workflow-chain-guard.sh` pre-execution marker lists to use
    SB-owned markers and legacy aliases.
 4. Change `hooks/dependency-skill-check.sh` so absorbed dependency namespaces

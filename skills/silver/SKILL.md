@@ -110,6 +110,7 @@ First strong match wins after complexity triage and conflict resolution.
 | User intent signals | Route to | Notes |
 |---------------------|----------|-------|
 | "what if", "I'm thinking about", "not sure how to", "help me think", unclear goal | `silver:clarify` | Fuzzy intent first |
+| "visual mockup", "browser mockup", "show in browser", "visual companion", "compare UI options", "sketch UI" | `silver:clarify` (+ browser evidence per §8.1) | Visual brainstorming; Alumnium preferred, host browser MCP fallback; see `silver-bullet.md §8.1` |
 | "add", "build", "implement", "new feature", "enhance", "extend" | `silver:feature` | Core dev path; SB owns context/plan/execute/verify |
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; SB debug/plan/execute/verify plus TDD |
 | "write tests", "add tests", "generate tests", "E2E", "Playwright", "fix tests", "test audit", "mutation", "slow tests", "test performance" | `silver:test` | SB-owned test engineering; feeds `test-health`, `verify-tests`, and `silver:verify` |
@@ -137,7 +138,16 @@ First strong match wins after complexity triage and conflict resolution.
 | "scan codebase", "map codebase", "codebase intel" | `silver:scan` | Codebase orientation |
 | "doc scheme", "ensure docs", "docs checklist", "docs gate failed", "reconcile docs", "recover doc scheme" | `silver:ensure-docs` | Doc governance authority |
 | "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
-| "API audit", "database audit", "dependency audit", "performance audit", "structure audit", "CI audit", "environment audit", "SEO", "AI search", "content audit", "accessibility audit", "canary", "incident", "retro", "benchmark", "domain audit" | `silver:domain-audit` | Specialized quality contract packs; feeds findings back into the owning SB workflow |
+| "API audit", "audit my API", "check API contracts", "audit endpoints" | `silver:domain-audit --pack api-contract` | API integrity: status codes, input validation, pagination, auth, rate limiting |
+| "database audit", "DB audit", "schema safety", "migration safety", "query audit" | `silver:domain-audit --pack data-contract` | Data layer: migration safety, rollback, indexes, concurrency |
+| "dependency audit", "supply chain", "package vulnerabilities", "outdated packages", "license check" | `silver:domain-audit --pack dependency-supply` | Dependency health, CVEs, freshness, bundle weight |
+| "performance audit", "performance review", "slow app", "latency audit", "bundle size" | `silver:domain-audit --pack performance-resource` | Full-stack performance: rendering, API, algorithms, memory |
+| "accessibility audit", "a11y", "WCAG", "keyboard navigation", "screen reader", "color contrast" | `silver:domain-audit --pack accessibility` | WCAG 2.2 accessibility: keyboard, ARIA, contrast, forms |
+| "CI audit", "GitHub Actions audit", "pipeline review", "slow CI" | `silver:domain-audit --pack ci-workflow` | CI/CD: caching, parallelism, secret use, action pinning |
+| "env audit", "environment check", "secrets audit", "config parity" | `silver:domain-audit --pack environment-secrets` | Env completeness, secret exposure, parity, type safety |
+| "structure audit", "codebase organization", "dead code", "duplication" | `silver:domain-audit --pack structure-maintainability` | Directory structure, naming, complexity, duplication |
+| "architecture review", "ADR", "architecture decision", "design decision record" | `silver:domain-audit --pack architecture-adr` | ADR creation/review, alternatives, reversibility, coupling |
+| "domain audit", "specialized audit" (no specific domain) | `silver:domain-audit` | Let pack selection happen interactively |
 | "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
 | "IaC quality", "devops quality", "terraform quality" | `devops-quality-gates` | DevOps quality audit |
 | "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Evidence-based post-mortem |
@@ -145,6 +155,10 @@ First strong match wins after complexity triage and conflict resolution.
 | "run tests", "verify tests", "test suite", "rerun tests", "fresh tests" | `verify-tests` | Fresh test gate |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `devops-skill-router` | IaC routing |
 | "ingest", "import", "jira", "figma", "pull ticket", "cross-repo", "fetch spec from" | `silver:ingest` | External artifact ingestion |
+| "spike", "feasibility experiment", "try this approach", "prove it works before building", "is X possible before we commit" | `silver:spike` | Executable feasibility experiments with Given/When/Then and verdicts |
+| "add phase", "insert phase", "remove phase", "edit phase", "phase list", "add to roadmap", "new phase in roadmap" | `silver:phase` | Phase CRUD in ROADMAP.md — sanctioned path to mutate the phase list |
+| "undo phase", "revert phase", "roll back phase", "undo plan", "revert commits for phase" | `silver:undo` | Safe phase/plan git revert with dependency checks and artifact cleanup |
+| "thread", "track this topic across sessions", "cross-session note", "track this concern" | `silver:thread` | Lightweight cross-session context threads for topic-specific tracking |
 | Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
 
 ### Step 5: Apply ship/release disambiguation

@@ -129,6 +129,13 @@ milestone completion audit, cross-artifact review when release artifacts exist,
 fresh full-suite verification via `verify-tests`, `silver:verify`,
 `silver:ship`, and milestone archive before `silver:create-release`.
 
+**Pre-release quality gate (4-stage):** Before `silver:create-release`, the
+4-stage process in `docs/internal/pre-release-quality-gate.md` MUST complete.
+Each review/audit stage (Stage 1, Stage 2, Stage 4) requires **2 consecutive
+clean rounds** — zero accepted findings in two back-to-back passes. Do not
+advance to `silver:create-release` until all four stages and the
+`full-test-suite-rerun` marker are recorded in the quality gate state file.
+
 Non-skippable release gates:
 
 - `silver:quality-gates`
