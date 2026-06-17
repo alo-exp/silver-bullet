@@ -183,6 +183,18 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:fast Tier 1 without workflow tracker does not block edits" "$out"
 teardown
 
+# silver-devops: full pre-execution chain including validate (plan-only when no SPEC).
+setup
+rm -f "$TMPDIR_TEST/.planning/SPEC.md"
+touch "$TMPDIR_TEST/infra.tf"
+start_workflow "/silver:devops" "devops gate test" "blast-radius,plan,execute,verify"
+out=$(run_hook_edit "$TMPDIR_TEST/infra.tf")
+assert_blocks "silver:devops blocks without pre-execution markers" "$out"
+write_state_markers silver-blast-radius devops-skill-router devops-quality-gates security silver-context silver-plan silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/infra.tf")
+assert_passes "silver:devops passes after full pre-execution chain (no SPEC — plan-only validate)" "$out"
+teardown
+
 # Feature without SPEC.md requires silver-spec marker.
 setup
 touch "$TMPDIR_TEST/src/app.js"

@@ -235,7 +235,7 @@ Invoke `silver:plan` through the active runtime's SB-recognized skill invocation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
-This runs **after** Step 5 (Plan Phase) because `silver:validate` performs pre-build gap analysis against `.planning/PLAN.md`. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
+This runs **after** Step 5 (Plan Phase) because `silver:validate` performs pre-build gap analysis against `.planning/PLAN.md` (plan-only mode when `.planning/SPEC.md` is absent). `workflow-chain-guard` blocks implementation edits until this marker is recorded.
 
 Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
 

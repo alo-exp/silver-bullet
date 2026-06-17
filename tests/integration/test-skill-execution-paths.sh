@@ -229,8 +229,14 @@ check "silver-fast: SessionStart clears trivial marker (not creates)" \
   "$([[ "$(grep -F 'SessionStart clears any stale' "$SFAST")" ]] && echo pass || echo fail)"
 check "silver-fast: Tier 2 deploy chain documents security and completion-audit" \
   "$([[ "$(grep -F 'security → silver:secure' "$SFAST")" && "$(grep -F 'silver:completion-audit' "$SFAST")" ]] && echo pass || echo fail)"
+check "silver-fast: Tier 2 documents plan-only validate without SPEC" \
+  "$([[ "$(grep -F 'plan-only mode' "$SFAST")" ]] && echo pass || echo fail)"
 
-SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
+SVAL="$SKILLS_DIR/silver-validate/SKILL.md"
+check "silver-validate: documents plan-only mode when SPEC absent" \
+  "$([[ "$(grep -F 'Plan-only mode' "$SVAL")" ]] && echo pass || echo fail)"
+check "silver-devops: Step 5b references plan-only validate without SPEC" \
+  "$([[ "$(grep -F 'plan-only mode' "$SDEV")" ]] && echo pass || echo fail)"
 check "silver-devops: security listed as non-skippable" \
   "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 

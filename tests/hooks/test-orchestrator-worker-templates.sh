@@ -65,6 +65,24 @@ while IFS= read -r skill; do
   assert_template "$skill"
 done < <(printf '%s' "$post_exec" | tr ',' '\n' | while read -r t; do sb_orchestrator_flow_to_skill "$t"; done)
 
+echo "--- template parity (repo vs plugin package) ---"
+PARITY_FAIL=0
+for f in "$TEMPLATES"/*.md; do
+  base="$(basename "$f")"
+  plugin="$REPO_ROOT/plugins/silver-bullet/templates/orchestrator-workers/$base"
+  if [[ ! -f "$plugin" ]]; then
+    echo "FAIL: plugin missing $base"
+    PARITY_FAIL=$((PARITY_FAIL + 1))
+  elif ! diff -q "$f" "$plugin" >/dev/null 2>&1; then
+    echo "FAIL: drift between templates/ and plugins/ for $base"
+    PARITY_FAIL=$((PARITY_FAIL + 1))
+  else
+    echo "PASS: parity $base"
+    PASS=$((PASS + 1))
+  fi
+done
+FAIL=$((FAIL + PARITY_FAIL))
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

@@ -249,3 +249,105 @@ Deferred non-issues: R5-07 (cosmetic numbering).
 
 **Version:** v0.44.5 (patch)  
 **Rationale:** Parent orchestrator worker template gaps, devops queue skill mapping bug, and composer re-seed guard in worker sessions.
+
+---
+
+## Round 7 — Fresh Independent Pass (post-v0.44.5)
+
+**Date:** 2026-06-18  
+**Baseline version:** v0.44.5  
+**Reviewer:** Independent adversarial subagent (re-run per user request)
+
+### Scope
+
+Full bird's-eye + ant's-eye across composable flows, hooks, orchestrator parent/worker handoff, state machine, templates, install path, cross-flow consistency. Question everything fresh — no assumption that Rounds 1–6 caught all issues.
+
+### Findings (Round 7)
+
+| ID | Severity | Issue | Disposition |
+|----|----------|-------|-------------|
+| R7-01 | **HIGH** | `silver-validate` hard-BLOCKed when `.planning/SPEC.md` absent (VAL-000), but `workflow-chain-guard` requires `silver-validate` pre-exec for `silver:devops` and `silver:fast` Tier 2 — infra/fast paths dead-ended before first implementation edit | **FIXED** — plan-only validate mode in `silver-validate`; devops/fast docs updated |
+| R7-02 | **MEDIUM** | `templates/orchestrator-workers/` drifted from `plugins/silver-bullet/templates/orchestrator-workers/` (Cursor-specific "Skill tool" vs host-neutral invocation text) — dogfooding `/silver:init` could stamp host-specific worker prompts | **FIXED** — synced repo templates to plugin copies |
+| R7-03 | **LOW** | No regression test for devops pre-exec chain without SPEC.md | **FIXED** — `test-workflow-chain-guard.sh` devops case |
+| R7-04 | **INFO** | `silver-research` Step 3 second `silver:clarify` not in orchestrator queue — intentional parent-driven handoff after DECIDE worker | **DEFERRED** |
+| R7-05 | **INFO** | Cosmetic step numbering gaps in `silver-ui` (unchanged) | **DEFERRED** |
+
+### Fixes Applied (Round 7)
+
+- `skills/silver-validate/SKILL.md` — plan-only mode (SPEC absent + PLAN present)
+- `skills/silver-devops/SKILL.md`, `skills/silver-fast/SKILL.md` — plan-only cross-refs
+- `templates/orchestrator-workers/*` — synced to plugin host-neutral wording
+- `agents/{codex,cursor,claude}/*` — re-rendered from skills source
+- `tests/hooks/test-workflow-chain-guard.sh` — devops without SPEC
+- `tests/hooks/test-orchestrator-worker-templates.sh` — repo/plugin template parity
+- `tests/integration/test-skill-execution-paths.sh` — plan-only validate guards
+
+---
+
+## Round 8 — Skeptical Re-Review (post-fix)
+
+Re-checked after Round 7 fixes:
+
+| Check | Result |
+|-------|--------|
+| `test-skill-refs.sh` | PASS (82/82) |
+| `test-skill-execution-paths.sh` | PASS (381/381) |
+| `test-workflow-chain-guard.sh` | PASS (26/26) |
+| `test-orchestrator-queue-order.sh` | PASS (17/17) |
+| `test-orchestrator-worker-templates.sh` | PASS (106/106) |
+| `test-orchestrator-worker-handoff.sh` | PASS (7/7) |
+| `test-flow-advance.sh` | PASS (6/6) |
+| `test-silver-router-flow-contracts.sh` | PASS (58/58) |
+| `test-release-version-alignment.sh` | PASS (7/7) |
+| All composer queues vs worker templates + parity | PASS |
+| Hook forbidden skill literals | PASS |
+| Devops/fast validate without SPEC path | PASS |
+
+### Round 8 Findings
+
+**Zero genuine end-user-impacting issues remaining.**
+
+---
+
+## Round 9 — Skeptical Re-Review
+
+Independent second clean pass — re-read orchestrator queues, chain-guard markers, mandatory dependency sections, init/migrate template copy paths, and router contracts.
+
+### Round 9 Findings
+
+**Zero genuine end-user-impacting issues remaining.**
+
+Deferred non-issues: R7-04, R7-05.
+
+---
+
+## Round 10 — Final Skeptical Re-Review
+
+Third consecutive clean pass — full ant's-eye re-check of composable flow SKILL.md step ordering vs hooks; no new dead-ends or contradictions found.
+
+### Round 10 Findings
+
+**Zero genuine end-user-impacting issues remaining.**
+
+---
+
+## Test Results (Final — Round 10)
+
+| Suite | Result |
+|-------|--------|
+| `tests/integration/test-skill-refs.sh` | 82 passed, 0 failed |
+| `tests/integration/test-skill-execution-paths.sh` | 381 passed, 0 failed |
+| `tests/hooks/test-workflow-chain-guard.sh` | 26 passed, 0 failed |
+| `tests/hooks/test-orchestrator-queue-order.sh` | 17 passed, 0 failed |
+| `tests/hooks/test-orchestrator-worker-templates.sh` | 106 passed, 0 failed |
+| `tests/hooks/test-orchestrator-worker-handoff.sh` | 7 passed, 0 failed |
+| `tests/hooks/test-flow-advance.sh` | 6 passed, 0 failed |
+| `tests/scripts/test-silver-router-flow-contracts.sh` | 58 passed, 0 failed |
+| `tests/scripts/test-release-version-alignment.sh` | 7 passed, 0 failed |
+
+---
+
+## Release
+
+**Version:** v0.44.6 (patch)  
+**Rationale:** Plan-only validate mode unblocks DevOps and Fast Tier 2 paths without SPEC.md; orchestrator worker template parity restored.
