@@ -10,8 +10,24 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# jq is required for JSON parsing
-if ! command -v jq >/dev/null 2>&1; then
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+for _lib in jq-gate.sh sb-project-gate.sh; do
+  if [[ -f "$_lib_dir/$_lib" ]]; then
+    # shellcheck source=/dev/null
+    source "$_lib_dir/$_lib"
+  fi
+done
+
+emit_block_jq_missing() {
+  local reason="$1"
+  local json_reason
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.' 2>/dev/null || printf '"jq required for Silver Bullet enforcement"')
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+}
+
+if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
+  sb_jq_enforcement_block_sb_initiated "uat-gate" "emit_block_jq_missing"
+elif ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
@@ -19,7 +35,9 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
+  sb_project_gate_or_exit
+fi
 
 # Emit a block (PreToolUse deny)
 emit_block() {

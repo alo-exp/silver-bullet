@@ -115,6 +115,15 @@ if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   source "$_lib_dir/jq-gate.sh"
 fi
 
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+
 # Read JSON from stdin
 input=$(cat)
 
@@ -144,6 +153,22 @@ emit_block() {
 }
 
 if ! command -v jq >/dev/null 2>&1; then
+  _ca_config=""
+  _ca_search="$PWD"
+  while true; do
+    if [[ -f "$_ca_search/.silver-bullet.json" && -f "$_ca_search/silver-bullet.md" ]]; then
+      _ca_config="$_ca_search/.silver-bullet.json"
+      break
+    fi
+    if [[ -d "$_ca_search/.git" ]] || [[ "$_ca_search" == "/" ]]; then
+      break
+    fi
+    _ca_search=$(dirname "$_ca_search")
+  done
+  if [[ -n "$_ca_config" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1 && sb_project_is_initiated "$_ca_config"; then
+    sb_jq_enforcement_block "completion-audit" "emit_block"
+    exit 0
+  fi
   if printf '%s' "$input" | grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b'; then
     sb_jq_enforcement_block "completion-audit" "emit_block"
   fi
