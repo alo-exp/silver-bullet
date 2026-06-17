@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.44.1] — 2026-06-18
+
+Patch release: GSD runtime purge, orphaned shim test removal, hook test fixes, and skill scenario coverage for v0.44.0 utility skills.
+
+## Refactoring
+- `refactor(hooks): purge GSD runtime references — legacy-gsd-alias.sh renamed to legacy-skill-alias.sh, sb_legacy_gsd_alias_normalize renamed to sb_legacy_skill_alias_normalize; semantic-compress.sh updated to match silver:* trigger patterns; phase-archive.sh retargeted to SB-native skill names; dead code removed from record-skill.sh, record-requested-skill.sh, spec-floor-check.sh, uat-gate.sh, dev-cycle-check.sh, dependency-skill-check.sh`
+- `refactor(skills): silver:ensure-docs, silver:review-stats, silver:undo — update internal GSD skill references to SB-native equivalents`
+- `refactor(scripts): install-codex.sh GSD_PHASE_ARCHIVE_HOOK and legacy-gsd-alias references replaced with SB-native names`
+
+## Bug Fixes
+- `fix(hooks): semantic-compress.sh trigger pattern updated from gsd:execute-phase to silver:execute to match current skill namespace`
+
+## Tests
+- `test(hooks): rename test-legacy-gsd-alias.sh to test-legacy-skill-alias.sh; update sb_legacy_skill_alias_normalize call sites; test-semantic-compress.sh trigger fixture updated to silver:execute`
+- `test(skills): add scenario coverage for silver:phase, silver:spike, silver:thread, silver:undo (v0.44.0 utility skills)`
+- `chore(tests): remove orphaned test-gsd-sdk-shim.sh — GSD SDK shim (gsd-sdk.cjs, install-gsd-sdk-shim.sh) was removed in v0.44.0; test was mistakenly not deleted at that time`
+
+---
+
 ## [0.44.0] — 2026-06-17
 
 ## Features
