@@ -1,13 +1,13 @@
 # shellcheck shell=bash
-# L-03: Legacy GSD skill alias normalization — sunset 2026-09-01.
+# L-03: Legacy skill alias normalization — sunset 2026-09-01.
 #
 # Hooks normalize legacy gsd-* / gsd:* names to canonical silver-* skills at the
 # matcher boundary. New projects should invoke silver:* routes only.
 
 # shellcheck disable=SC2034  # documented sunset date for downstream tooling
-SB_GSD_ALIAS_SUNSET_DATE="2026-09-01"
+SB_LEGACY_ALIAS_SUNSET_DATE="2026-09-01"
 
-sb_legacy_gsd_alias_normalize() {
+sb_legacy_skill_alias_normalize() {
   local raw="${1:-}"
   [[ -n "$raw" ]] || return 0
 
@@ -44,7 +44,7 @@ sb_legacy_gsd_alias_normalize() {
   esac
 }
 
-sb_legacy_gsd_alias_is_legacy() {
+sb_legacy_skill_alias_is_legacy() {
   local raw="${1:-}"
   [[ "$raw" == gsd:* || "$raw" == gsd-* ]]
 }

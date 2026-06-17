@@ -1706,16 +1706,6 @@ for cache_root in cache_roots:
         targets.append(version_dir)
 
 path_segment_re = re.compile(r'/\.claude(?=/|$)')
-gsd_sdk_replacements = (
-    (
-        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
-        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
-    ),
-    (
-        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools')",
-        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools')",
-    ),
-)
 home_claude_replacements = (
     ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
     ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),
@@ -1740,8 +1730,6 @@ def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
         if isinstance(value, str):
             updated = value.replace("${CLAUDE_PLUGIN_ROOT}", str(package_root))
             if file_path.name == "hooks.json":
-                for src, dst in gsd_sdk_replacements:
-                    updated = updated.replace(src, dst)
                 for src, dst in home_claude_replacements:
                     updated = updated.replace(src, dst)
                 updated = updated.replace("\\.claude/", "\\.codex/")
@@ -1846,16 +1834,6 @@ def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
     return changed
 
 path_segment_re = re.compile(r'/\.claude(?=/|$)')
-gsd_sdk_replacements = (
-    (
-        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
-        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools.cjs')",
-    ),
-    (
-        "path.join(os.homedir(), '.claude', 'get-shit-done', 'bin', 'gsd-tools')",
-        "path.join(os.homedir(), '.codex', 'get-shit-done', 'bin', 'gsd-tools')",
-    ),
-)
 home_claude_replacements = (
     ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
     ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),

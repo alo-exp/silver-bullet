@@ -109,7 +109,7 @@ At minimum:
 5. `archive_moves[]` for switch-to-SB move operations
 6. `sync` pointers for `doc-scheme.md` and `task-doc-checklist.json`
 
-## Best-Practice Absorption (from `gsd:docs-update`)
+## Documentation Best Practices
 
 Adopt:
 1. verify-only capability

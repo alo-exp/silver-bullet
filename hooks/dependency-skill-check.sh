@@ -53,16 +53,16 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
 fi
 
 # M-07: intentional no-op — absorbed dependency namespaces exit 0 below.
-# Legacy gsd-* aliases normalize to silver-* via legacy-gsd-alias.sh (sunset 2026-09-01).
+# Legacy skill aliases normalize to silver-* via legacy-skill-alias.sh (sunset 2026-09-01).
 # Hook retained for matcher compatibility; does not block SB-owned workflows.
-if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
-  # shellcheck source=lib/legacy-gsd-alias.sh
-  source "$_lib_dir/legacy-gsd-alias.sh"
-  raw_skill="$(sb_legacy_gsd_alias_normalize "$raw_skill")"
+if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
+  # shellcheck source=lib/legacy-skill-alias.sh
+  source "$_lib_dir/legacy-skill-alias.sh"
+  raw_skill="$(sb_legacy_skill_alias_normalize "$raw_skill")"
 fi
 
 case "$raw_skill" in
-  gsd:*|gsd-*|superpowers:*|design:*|engineering:*|product-management:*|multai:*)
+  superpowers:*|design:*|engineering:*|product-management:*|multai:*)
     exit 0
     ;;
   code-review|clarify|test-driven-development|systematic-debugging|requesting-code-review|receiving-code-review|finishing-a-development-branch|design-critique|user-research|write-spec)

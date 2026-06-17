@@ -301,18 +301,18 @@ run_hook "devops-quality-gates" >/dev/null
 assert_in_state "devops-quality-gates recorded" "devops-quality-gates"
 teardown
 
-# Test 11: GSD namespace preserved as gsd- prefix (gsd:discuss-phase → gsd-discuss-phase)
-echo "--- Group 4b: GSD namespace ---"
+# Test 11: Legacy marker normalization (gsd:discuss-phase → gsd-discuss-phase for old state compat)
+echo "--- Group 4b: Legacy marker normalization ---"
 setup
 run_hook "gsd:discuss-phase" >/dev/null
-assert_in_state "gsd:discuss-phase recorded as gsd-discuss-phase" "gsd-discuss-phase"
-assert_not_in_state "gsd: form not recorded verbatim" "gsd:discuss-phase"
-assert_not_in_state "stripped form discuss-phase not recorded" "discuss-phase"
+assert_in_state "legacy gsd: colon form normalized to hyphen form" "gsd-discuss-phase"
+assert_not_in_state "colon form not recorded verbatim" "gsd:discuss-phase"
+assert_not_in_state "stripped form not recorded" "discuss-phase"
 teardown
 
 setup
 run_hook "gsd:execute-phase" >/dev/null
-assert_in_state "gsd:execute-phase recorded as gsd-execute-phase" "gsd-execute-phase"
+assert_in_state "legacy gsd:execute-phase normalized to gsd-execute-phase" "gsd-execute-phase"
 teardown
 
 # Test 12: Non-Skill tool input is silently ignored

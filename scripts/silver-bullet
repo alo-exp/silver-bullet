@@ -40,10 +40,6 @@ canonical_skill_name() {
     return
   fi
 
-  if [[ "$skill" == gsd:* ]]; then
-    printf 'gsd-%s' "${skill#gsd:}"
-    return
-  fi
   if [[ "$skill" == silver:* ]]; then
     printf 'silver-%s' "${skill#silver:}"
     return

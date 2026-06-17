@@ -18,8 +18,8 @@ trap 'finish_noop' ERR
 # - Codex CLI hook tool events are currently Bash-only, and agents don't always
 #   read the target SKILL.md file explicitly.
 # - SB's E2E and enforcement rely on a durable "state file" trail of which
-#   SB/GSD steps were invoked.
-# - This hook records the *requested* SB/GSD route directly from the user prompt,
+#   SB steps were invoked.
+# - This hook records the *requested* SB route directly from the user prompt,
 #   which is deterministic and independent of agent behavior.
 #
 # Output:
@@ -90,11 +90,8 @@ fi
 
 # ── Extract requested route(s) from prompt ──────────────────────────────────
 #
-# We record two kinds of markers:
-# - SB routes: `silver:init`, `silver:feature`, etc → requested marker `silver-init`, ...
-# - GSD phase names mentioned in text: `gsd-discuss-phase`, `gsd-plan-phase`, ...
+# We record SB routes: `silver:init`, `silver:feature`, etc → requested marker `silver-init`, ...
 #
-# We keep this intentionally conservative: only record SB and GSD markers.
 # Requested routes are intentionally stored separately from completed state so
 # prompt text cannot satisfy workflow gates.
 
@@ -109,15 +106,9 @@ while IFS= read -r tok; do
   tok="${tok#\`}"
   tok="${tok%\`}"
   case "$tok" in
-    silver:*|gsd:*) skills+=("$tok") ;;
+    silver:*) skills+=("$tok") ;;
   esac
 done < <(printf '%s' "$prompt" | grep -oE "$backtick_regex" 2>/dev/null | head -n 50 || true)
-
-# Explicit gsd-* mentions in plain text (no backticks).
-while IFS= read -r tok; do
-  [[ -n "$tok" ]] || continue
-  skills+=("$tok")
-done < <(printf '%s' "$prompt" | grep -oE '\\bgsd-[a-zA-Z0-9-]+\\b' 2>/dev/null | head -n 50 || true)
 
 if [[ ${#skills[@]} -eq 0 ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
   if sb_prompt_is_bare_work_request "$prompt"; then
@@ -137,7 +128,7 @@ touch -- "$REQUESTED_FILE" 2>/dev/null || true
 
 canonicalize() {
   local raw="$1"
-  # Convert gsd:* -> gsd-*, silver:* -> silver-*
+  # Convert silver:* -> silver-*
   if [[ "$raw" == *:* ]]; then
     printf '%s' "$raw" | sed 's/:/-/g'
   else
@@ -150,7 +141,6 @@ for raw in "${skills[@]}"; do
   case "$skill" in
     silver) ;;
     silver-*) ;;
-    gsd-*) ;;
     *) continue ;;
   esac
   ledger_skills+=("$skill")

@@ -4,8 +4,8 @@ trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Bash|Skill)
 # Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
-# and emits an advisory warning for silver:fast when no spec exists. Legacy GSD
-# aliases normalize via hooks/lib/legacy-gsd-alias.sh (sunset 2026-09-01).
+# and emits an advisory warning for silver:fast when no spec exists. Legacy
+# aliases normalize via hooks/lib/legacy-skill-alias.sh (sunset 2026-09-01).
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -51,10 +51,10 @@ cmd=""
 skill=""
 if [[ "$tool_name" == "Skill" ]]; then
   skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
-  if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
-    # shellcheck source=lib/legacy-gsd-alias.sh
-    source "$_lib_dir/legacy-gsd-alias.sh"
-    skill="$(sb_legacy_gsd_alias_normalize "$skill")"
+  if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
+    # shellcheck source=lib/legacy-skill-alias.sh
+    source "$_lib_dir/legacy-skill-alias.sh"
+    skill="$(sb_legacy_skill_alias_normalize "$skill")"
   fi
 else
   if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
@@ -104,7 +104,8 @@ fi
 
 if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   # Allow direct slash-style strings as a defensive fallback, but only when the
-  # first shell token itself is the route. This avoids blocking `sed ... gsd-plan-phase/SKILL.md`.
+  # first shell token itself is the route. This avoids blocking file paths
+  # that contain skill names as text substrings.
   case "$cmd" in
     /silver:plan|/silver-plan)
       is_plan_phase=true
@@ -113,11 +114,11 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
       is_fast=true
       ;;
   esac
-  # Legacy gsd slash routes (normalized at cmd token)
-  if [[ "$is_plan_phase" == false && "$is_fast" == false && -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
-    # shellcheck source=lib/legacy-gsd-alias.sh
-    source "$_lib_dir/legacy-gsd-alias.sh"
-    _norm_cmd="$(sb_legacy_gsd_alias_normalize "${cmd#/}")"
+  # Legacy slash routes (normalized at cmd token)
+  if [[ "$is_plan_phase" == false && "$is_fast" == false && -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
+    # shellcheck source=lib/legacy-skill-alias.sh
+    source "$_lib_dir/legacy-skill-alias.sh"
+    _norm_cmd="$(sb_legacy_skill_alias_normalize "${cmd#/}")"
     case "$_norm_cmd" in
       silver-plan) is_plan_phase=true ;;
       silver-fast) is_fast=true ;;

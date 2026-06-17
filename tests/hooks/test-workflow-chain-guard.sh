@@ -122,7 +122,7 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature passes after SB-owned pre-execution markers exist" "$out"
 write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-validate-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:feature legacy GSD markers satisfy SB-owned aliases" "$out"
+assert_passes "silver:feature legacy markers satisfy SB-owned aliases" "$out"
 teardown
 
 # UI workflow: UI-specific pre-execution SB markers must be present.
@@ -137,7 +137,7 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui passes after SB-owned UI pre-execution markers exist" "$out"
 write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-validate-phase
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:ui legacy GSD UI markers satisfy SB-owned aliases" "$out"
+assert_passes "silver:ui legacy UI markers satisfy SB-owned aliases" "$out"
 teardown
 
 # Research workflow: clarify + research markers are required.
