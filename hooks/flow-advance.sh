@@ -52,6 +52,10 @@ fi
 msg=""
 
 if sb_orchestrator_is_composer_skill "$skill"; then
+  # Workers may re-read composer skills for instructions — never re-seed the queue.
+  if declare -f sb_orchestrator_is_worker_session >/dev/null 2>&1 && sb_orchestrator_is_worker_session; then
+    exit 0
+  fi
   wid="$(sb_orchestrator_on_composer_start "$skill" "$intent" "$repo_root" 2>/dev/null || true)"
   if [[ -n "$wid" ]]; then
     msg="SB orchestrator ► Workflow ${wid} started (autonomous; no composition approval required)"

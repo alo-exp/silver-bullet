@@ -301,7 +301,7 @@ check "silver-feature: silver:verify before silver:ship (line $verify_line < $sh
 
 SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
 dev_sec_line=$(grep -n "Invoke \`security\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-dev_ship_line=$(grep -n "silver:ship" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
+dev_ship_line=$(grep -in "invoke \`silver:ship\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
 check "silver-devops: security before ship (line $dev_sec_line < $dev_ship_line)" \
   "$([[ "$dev_sec_line" -gt 0 && "$dev_ship_line" -gt 0 && "$dev_sec_line" -lt "$dev_ship_line" ]] && echo pass || echo fail)"
 
@@ -319,7 +319,7 @@ check "silver-bugfix: plan step before TDD step (line $bf_plan_line < $bf_tdd_li
   "$([[ "$bf_plan_line" -gt 0 && "$bf_tdd_line" -gt 0 && "$bf_plan_line" -lt "$bf_tdd_line" ]] && echo pass || echo fail)"
 
 bf_sec_line=$(grep -n "Invoke \`security\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-bf_ship_line=$(grep -n "silver:ship" "$SBF" | head -1 | cut -d: -f1 || echo 0)
+bf_ship_line=$(grep -in "invoke \`silver:ship\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
 check "silver-bugfix: security before ship (line $bf_sec_line < $bf_ship_line)" \
   "$([[ "$bf_sec_line" -gt 0 && "$bf_ship_line" -gt 0 && "$bf_sec_line" -lt "$bf_ship_line" ]] && echo pass || echo fail)"
 

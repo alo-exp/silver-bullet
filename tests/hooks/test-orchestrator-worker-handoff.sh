@@ -41,6 +41,8 @@ assert_eq "next_skill preserved" "$(jq -r '.next_skill' "${SB_TEST_DIR}/orchestr
 
 assert_eq "flow quality gate template" "$(sb_orchestrator_worker_template_for_skill 'FLOW-QUALITY-GATE')" "QUALITY-GATE"
 assert_eq "plan template" "$(sb_orchestrator_worker_template_for_skill 'silver-plan')" "PLAN"
+assert_eq "devops quality gates skill mapping" "$(sb_orchestrator_flow_to_skill 'devops-quality-gates')" "devops-quality-gates"
+assert_eq "research decide template" "$(sb_orchestrator_worker_template_for_skill 'silver-research')" "DECIDE"
 
 ctx="$(sb_orchestrator_directive_context_block)"
 if printf '%s' "$ctx" | grep -qF 'next_worker_template: EXECUTE.md'; then
