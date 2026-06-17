@@ -161,6 +161,23 @@ if [[ -f "$_override" && ! -L "$_override" ]]; then
   esac
 fi
 
+# ── Bypass: roadmap phase CRUD (silver:phase / silver:undo) ─────────────────
+_roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
+if [[ -f "$_roadmap_override" && ! -L "$_roadmap_override" ]]; then
+  case "$basename_path" in
+    ROADMAP.md|STATE.md)
+      _audit="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override-audit.log"
+      printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"$_audit" 2>/dev/null || true
+      _msg="⚠️  planning-file-guard: roadmap-edit-override active — allowing ${basename_path} edit via owning SB skill. Remove ${_roadmap_override} when done."
+      printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
+      exit 0
+      ;;
+    *)
+      :
+      ;;
+  esac
+fi
+
 # ── Trivial bypass (sourced from shared helper — REF-01) ─────────────────────
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
@@ -180,7 +197,7 @@ fi
 skill_hint=""
 case "$basename_path" in
   ROADMAP.md)
-    skill_hint="Use /silver:plan, /silver:add, /silver:release, or the owning roadmap workflow instead."
+    skill_hint="Use /silver:phase for phase CRUD, /silver:plan, /silver:add, /silver:release, or the owning roadmap workflow instead."
     ;;
   STATE.md)
     skill_hint="Use /silver:execute, /silver:release, or the owning resume/pause workflow instead."

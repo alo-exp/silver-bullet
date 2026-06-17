@@ -19,7 +19,7 @@ TRIVIAL_FILE="${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 OVERRIDE_FILE="${SB_TEST_DIR}/planning-edit-override"
 
 cleanup_all() {
-  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" 2>/dev/null || true
+  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" "${SB_TEST_DIR}/roadmap-edit-override" 2>/dev/null || true
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST" || true
 }
 trap cleanup_all EXIT
@@ -186,6 +186,17 @@ assert_blocks "planning-edit-override does not allow ROADMAP.md edit" "$out"
 rm -f "$OVERRIDE_FILE"
 teardown
 
+# roadmap-edit-override allows ROADMAP.md and STATE.md for silver:phase / silver:undo
+ROADMAP_OVERRIDE_FILE="${SB_TEST_DIR}/roadmap-edit-override"
+setup
+touch "$ROADMAP_OVERRIDE_FILE"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "roadmap-edit-override allows ROADMAP.md edit" "$out"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/STATE.md")
+assert_passes "roadmap-edit-override allows STATE.md edit" "$out"
+rm -f "$ROADMAP_OVERRIDE_FILE"
+teardown
+
 # Env-var bypass: SB_ALLOW_PLANNING_EDITS=1 → allow edit
 setup
 out=$(SB_ALLOW_PLANNING_EDITS=1 run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
@@ -206,7 +217,7 @@ echo "--- Group 4: Block message contains skill hint ---"
 
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-if printf '%s' "$out" | grep -q "silver:plan\|silver:add\|silver:release"; then
+if printf '%s' "$out" | grep -q "silver:phase\|silver:plan\|silver:add\|silver:release"; then
   echo "  ✅ ROADMAP block message mentions owning skills"
   PASS=$((PASS + 1))
 else

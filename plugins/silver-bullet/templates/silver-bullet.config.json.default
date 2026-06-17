@@ -1,6 +1,6 @@
 {
-  "config_version": "0.43.9",
-  "version": "0.43.9",
+  "config_version": "0.44.2",
+  "version": "0.44.2",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
   "orchestrator_mode": "parent",
@@ -131,7 +131,12 @@
       "silver-completion-audit",
       "silver-remove",
       "silver-rem",
-      "silver-scan"
+      "silver-scan",
+      "silver",
+      "silver-phase",
+      "silver-spike",
+      "silver-thread",
+      "silver-undo"
     ],
     "forbidden": []
   },

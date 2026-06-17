@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.44.2] — 2026-06-18
+
+Launch-readiness adversarial review: fix silver:phase ROADMAP guard bypass, register v0.44.0 utility skills in all_tracked, and align Codex manifest/config versions with package.json.
+
+## Bug Fixes
+- `fix(hooks): planning-file-guard — roadmap-edit-override allows ROADMAP.md/STATE.md edits for silver:phase and silver:undo`
+- `fix(config): add silver, silver-phase, silver-spike, silver-thread, silver-undo to skills.all_tracked`
+- `fix(scripts): sync-codex-package and sync-codex-marketplace-version derive version from package.json`
+
+## Documentation
+- `docs(skills): silver:phase and silver:undo document roadmap-edit-override protocol`
+- `docs(orchestrator): add PHASE worker template for silver:phase queue atoms`
+
+## Tests
+- `test(hooks): planning-file-guard roadmap-edit-override bypass coverage`
+- `test(scripts): release version alignment guard across plugin manifests and config template`
+- `test(hooks): required-skills-consistency asserts v0.44.0 utility skills are tracked`
+
+---
+
 ## [0.44.1] — 2026-06-18
 
 Patch release: GSD runtime purge, orphaned shim test removal, hook test fixes, and skill scenario coverage for v0.44.0 utility skills.

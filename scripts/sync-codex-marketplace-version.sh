@@ -26,7 +26,7 @@ command -v jq >/dev/null || { echo "jq required"; exit 1; }
 if [[ -n "$requested_version" ]]; then
   plugin_v="${requested_version#v}"
 else
-  plugin_v=$(jq -r '.version' "$codex_plugin_json")
+  plugin_v=$(jq -r '.version' "$repo_root/package.json")
 fi
 
 update_version_file() {
