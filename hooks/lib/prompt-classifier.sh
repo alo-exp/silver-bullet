@@ -15,7 +15,7 @@ sb_prompt_is_bare_work_request() {
 
   # Explicit commands/skill mentions are handled by the normal route recorder.
   case "$lower" in
-    /*|silver:*|gsd:*|*@silver*|*'`silver:'*|*'`gsd:'*) return 1 ;;
+    /*|silver:*|*@silver*|*'`silver:'*) return 1 ;;
   esac
 
   # Common conversational/status questions should not be forced through SB.

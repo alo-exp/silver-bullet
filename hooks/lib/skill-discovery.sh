@@ -115,7 +115,11 @@ sb_skill_canonical_name() {
   [[ -n "$skill" ]] || return 1
 
   if [[ "$skill" == gsd:* ]]; then
-    printf 'gsd-%s' "${skill#gsd:}"
+    if declare -F sb_legacy_skill_alias_normalize >/dev/null 2>&1; then
+      printf '%s' "$(sb_legacy_skill_alias_normalize "$skill")"
+    else
+      printf 'gsd-%s' "${skill#gsd:}"
+    fi
     return 0
   fi
 

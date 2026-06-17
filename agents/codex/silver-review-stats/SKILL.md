@@ -55,7 +55,7 @@ Produces summary reports from review analytics data. Reads `.planning/review-ana
 | Artifact Type | Avg Findings/Round | Total Findings | Most Active Reviewer |
 |---------------|-------------------|----------------|---------------------|
 | SPEC.md | 2.5 | 30 | review-spec |
-| PLAN.md | 0.8 | 16 | gsd-plan-checker |
+| PLAN.md | 0.8 | 16 | silver-plan |
 
 - Avg Findings/Round = sum(finding_count) / total rounds for that type
 - Total Findings = sum(finding_count) for that type

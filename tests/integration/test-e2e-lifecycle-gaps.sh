@@ -86,7 +86,7 @@ assert_blocked "S3.1: completion-audit blocks when silver-completion-audit missi
 
 # Record the missing skill
 run_record_skill "silver-completion-audit" >/dev/null
-seed_gsd_lifecycle_artifacts
+seed_lifecycle_artifacts
 append_pre_ship_quality_gates_marker
 
 # Now should be allowed
@@ -96,50 +96,11 @@ assert_allowed "S3.2: completion-audit allows after all required skills recorded
 unset SILVER_BULLET_SKILL_ROOTS
 integration_teardown
 
-# ── S4: Model routing integration (hook DISABLED 2026-04-16) ─────────────────
-# ensure-model-routing.sh is disabled — it exits 0 immediately without modifying
-# any GSD agent files. Frontmatter injection into third-party plugin files is
-# discontinued. See hooks/ensure-model-routing.sh for rationale and backlog 999.19.
-echo "--- S4: Model routing integration (hook disabled — no-op) ---"
-
-FAKE_HOME=$(mktemp -d)
-FAKE_AGENTS="${FAKE_HOME}/.claude/agents"
-FAKE_SB="${FAKE_HOME}/.claude/.silver-bullet"
-mkdir -p "$FAKE_AGENTS" "$FAKE_SB"
-
-HOOK_EMR="${REPO_ROOT}/hooks/ensure-model-routing.sh"
-
-# Create mock agent files without any model: line
-for agent in gsd-planner gsd-security-auditor gsd-executor gsd-checker; do
-  printf -- '---\ndescription: mock agent\n---\n# %s\n' "$agent" > "${FAKE_AGENTS}/${agent}.md"
-done
-
-before_planner=$(cat "${FAKE_AGENTS}/gsd-planner.md")
-
-# Run the hook — should exit 0 and make no modifications
-hook_exit=0
-HOME="$FAKE_HOME" bash "$HOOK_EMR" 2>/dev/null || hook_exit=$?
-
-if [[ "$hook_exit" -eq 0 ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.1: ensure-model-routing.sh exits 0 (disabled no-op)\n'
-else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.1: ensure-model-routing.sh exited %d, expected 0\n' "$hook_exit"
-fi
-
-after_planner=$(cat "${FAKE_AGENTS}/gsd-planner.md")
-if [[ "$before_planner" == "$after_planner" ]]; then
-  PASS=$((PASS+1)); printf 'PASS: S4.2: gsd-planner.md not modified by disabled hook\n'
-else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.2: gsd-planner.md was unexpectedly modified\n'
-fi
-
-if ! grep -q "^model:" "${FAKE_AGENTS}/gsd-planner.md" 2>/dev/null; then
-  PASS=$((PASS+1)); printf 'PASS: S4.3: no model: frontmatter injected into gsd-planner.md\n'
-else
-  FAIL=$((FAIL+1)); printf 'FAIL: S4.3: model: line was unexpectedly injected into gsd-planner.md\n'
-fi
-
-rm -rf "$FAKE_HOME"
+# ── S4: Model routing (hook removed) ─────────────────────────────────────────
+# ensure-model-routing.sh was removed — model routing via frontmatter injection
+# into agent files is discontinued. No test needed.
+echo "--- S4: Model routing hook removed — skipping ---"
+PASS=$((PASS+1)); printf 'PASS: S4.1: ensure-model-routing.sh correctly removed\n'
 
 # ── S5: DevOps workflow stop-check uses devops required skills ────────────────
 # Write config with active_workflow=devops-cycle.

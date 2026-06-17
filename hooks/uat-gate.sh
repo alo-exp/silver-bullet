@@ -50,10 +50,10 @@ emit_block() {
 # Extract skill name from supported skill invocation input
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
-if [[ -f "$_lib_dir/legacy-gsd-alias.sh" ]]; then
-  # shellcheck source=lib/legacy-gsd-alias.sh
-  source "$_lib_dir/legacy-gsd-alias.sh"
-  skill="$(sb_legacy_gsd_alias_normalize "$skill")"
+if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
+  # shellcheck source=lib/legacy-skill-alias.sh
+  source "$_lib_dir/legacy-skill-alias.sh"
+  skill="$(sb_legacy_skill_alias_normalize "$skill")"
 fi
 
 UAT=".planning/UAT.md"

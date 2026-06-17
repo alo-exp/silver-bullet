@@ -827,11 +827,6 @@ PY
       and . != "silver-review"
       and . != "silver-review-request"
       and . != "silver-review-triage"
-      and . != "gsd-discuss-phase"
-      and . != "gsd-plan-phase"
-      and . != "gsd-execute-phase"
-      and . != "gsd-verify-work"
-      and . != "gsd-code-review"
       and . != "requesting-code-review"
       and . != "receiving-code-review"
     )) | join(" ")' "$config_file" 2>/dev/null || true)
