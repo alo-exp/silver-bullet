@@ -157,9 +157,11 @@ Consequences and routing:
   at `gh pr create` / `gh release create` / `deploy` because the review, security,
   validate, branch-finish, and ship markers are missing. Before raising a PR you
   MUST either:
-  - **(a)** complete the remaining deploy chain in order —
-    `silver:review-request → silver:review → silver:review-triage → silver:secure →
-    silver:validate → silver:branch-finish → silver:ship` — then deliver, or
+  - **(a)** complete the remaining deploy chain in order (canonical post-execution
+    sequence — same as `silver:feature`) —
+    `silver:review-request → silver:review → silver:review-triage → silver:verify →
+    security → silver:secure → silver:validate → silver:quality-gates →
+    silver:branch-finish → silver:completion-audit → silver:ship` — then deliver, or
   - **(b)** escalate to `silver:feature` (Step 3), which owns the full lifecycle and
     deploy chain end-to-end.
 

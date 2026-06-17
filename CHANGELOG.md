@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.44.4] — 2026-06-18
+
+Fresh adversarial flow review (post-v0.44.3): greenfield UI spec dead-end and Fast Tier 2 deploy-chain documentation gaps.
+
+## Bug Fixes
+- `fix(skills): silver-ui — add Step 1d silver:spec for greenfield UI (workflow-chain-guard dead-end when SPEC.md absent)`
+- `fix(skills): silver-ui — reorder plan before ui-contract to match hook/orchestrator queue`
+- `fix(skills): silver-fast — document full canonical deploy chain for Tier 2 PR/release paths`
+
+## Tests
+- `test(hooks): workflow-chain-guard silver-ui conditional silver-spec`
+- `test(hooks): orchestrator queue silver-ui conditional silver-spec`
+- `test(integration): skill-execution-paths guards for ui spec and fast deploy chain`
+
+---
+
 ## [0.44.3] — 2026-06-18
 
 Flow adversarial review: align UI, DevOps, and Fast Tier 2 skills with `workflow-chain-guard` pre-build `silver:validate` requirements.
