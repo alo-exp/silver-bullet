@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.43.10] — 2026-06-17
+
+Independent launch-readiness adversarial review (Round 1–2): enforcement bypasses, orchestrator parity, routing/docs drift, migrate/init gaps, bundle render fix.
+
+## Bug Fixes
+- `fix(hooks): workflow-chain-guard honors apply_patch and devops pre-exec markers`
+- `fix(hooks): workflow-chain-guard uat-gate completion-audit sb_initiated jq fail-closed parity`
+- `fix(hooks): orchestrator queues — conditional silver-spec, silver-fast, devops router/security`
+- `fix(skills): router post-exec order, migrate/update routes, bugfix validate→QG, init orchestrator surface`
+- `fix(docs): devops-cycle review-before-verify; full-dev-cycle completion-audit step`
+- `fix(scripts): render-agent-bundle preserves .cursor/rules project paths`
+
+## Tests
+- `test(hooks): apply_patch chain-guard, orchestrator devops/fast/spec, uat-gate sb_initiated fixtures`
+
 ## [0.43.9] — 2026-06-16
 
 Independent launch-readiness adversarial review (round 5): Codex package sync now chains Cursor manifest refresh.
