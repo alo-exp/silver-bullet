@@ -38,19 +38,37 @@ When the user requests skipping any step:
 
 ## Step 0: Pre-flight Checks
 
-Check required files:
+Detect validation mode before parsing artifacts:
+
+```bash
+test -f .planning/SPEC.md && echo "spec-mode" || echo "no-spec"
+find .planning/phases/ -name "*PLAN.md" 2>/dev/null | head -1
+```
+
+**Spec mode (default):** `.planning/SPEC.md` exists — run full SPEC ↔ PLAN gap analysis (Steps 1 and 3a).
+
+**Plan-only mode:** `.planning/SPEC.md` is absent but at least one `*PLAN.md` exists under `.planning/phases/`. Use this for `silver:devops`, `silver:fast` Tier 2, and other infra-only work where `workflow-chain-guard` requires a `silver:validate` marker before implementation edits but no product SPEC exists yet. Skip Step 1 and Step 3a (AC coverage); run Steps 2, 3b–3d, and 3f only.
+
+Display mode in the banner:
+
+```
+Mode: {spec | plan-only}
+```
 
 1. Verify `.planning/SPEC.md` exists:
    ```bash
    ls .planning/SPEC.md
    ```
-   If missing: emit the following and exit immediately (do not proceed to Step 1):
+   If missing **and** no `*PLAN.md` exists under `.planning/phases/`:
    ```
-   FINDING [BLOCK] VAL-000: SPEC.md not found at .planning/SPEC.md
+   FINDING [BLOCK] VAL-000: Neither SPEC.md nor PLAN.md found — nothing to validate
      Spec ref: pre-flight
      Plan ref: missing
-     Resolution: Run /silver:spec to create SPEC.md before validating
+     Resolution: Run /silver:plan (or /silver:spec for product work) before /silver:validate
    ```
+   Exit after emitting VAL-000 when neither artifact exists.
+
+   If missing **but** PLAN.md exists: continue in **plan-only mode** (do not emit VAL-000 as BLOCK).
 
 2. Check for PLAN.md files in `.planning/phases/`:
    ```bash
@@ -64,9 +82,9 @@ Check required files:
      Resolution: Validation is running in pre-planning mode — gap analysis will show all AC items as uncovered
    ```
 
-## Step 1: Read SPEC.md (NON-SKIPPABLE GATE)
+## Step 1: Read SPEC.md (NON-SKIPPABLE GATE — spec mode only)
 
-**This step cannot be skipped. Do not proceed until SPEC.md is fully parsed.**
+**Skip this entire step in plan-only mode.** In spec mode, do not proceed until SPEC.md is fully parsed.
 
 Read `.planning/SPEC.md` and extract:
 
@@ -122,9 +140,11 @@ PLAN.md files scanned: {N}
 
 ## Step 3: Gap Analysis (NON-SKIPPABLE GATE)
 
-**This step cannot be skipped. All checks must run.**
+**This step cannot be skipped.** Run every subsection that applies to the active mode (spec vs plan-only).
 
-**3a. AC Coverage Check (BLOCK severity)**
+**3a. AC Coverage Check (BLOCK severity — spec mode only)**
+
+Skip 3a entirely in plan-only mode (no acceptance criteria without SPEC.md).
 
 For each AC item (AC-01 through AC-NN): check whether any PLAN.md task:
 - References the AC's requirement ID in its `requirements` frontmatter, OR
@@ -237,11 +257,20 @@ Then ask:
 
 > BLOCK findings must be resolved before implementation begins. What would you like to do?
 >
-> A. Return to /silver:spec to resolve the gaps in SPEC.md
+> A. Return to {/silver:spec in spec mode | /silver:plan in plan-only mode} to resolve the gaps
 > B. Show me the BLOCK findings again
 > C. I have resolved the issues — re-run /silver:validate
 
 Do NOT allow proceeding to Step 6 while BLOCK findings exist. If user selects C, restart from Step 0.
+
+**Plan-only mode — additional BLOCK rules (3f):**
+
+When SPEC.md is absent, emit BLOCK (not advisory) when:
+- No `*PLAN.md` file exists under `.planning/phases/` (should have been caught in Step 0)
+- Any scanned PLAN.md has zero implementation tasks
+- Any PLAN.md task lacks verification or acceptance evidence (test command, provider plan/dry-run, policy check, or explicit rollback note for infra work)
+
+Emit WARN (not BLOCK) for infra plans missing rollback notes when the change is clearly reversible/config-only.
 
 **If only WARN/INFO findings (zero BLOCKs):**
 
@@ -258,7 +287,7 @@ Then ask:
 > WARN findings will be recorded in .planning/VALIDATION.md and will appear in the PR description.
 >
 > A. Accept and proceed — write VALIDATION.md and continue
-> B. Return to /silver:spec to address WARN findings first
+> B. Return to {/silver:spec in spec mode | /silver:plan in plan-only mode} to address WARN findings first
 > C. Show me all findings again
 
 Only proceed to Step 6 when user selects A.
@@ -269,7 +298,8 @@ Display:
 ```
 VALIDATION CLEAN — ZERO FINDINGS
 
-All acceptance criteria are covered. No unresolved assumptions or open questions.
+{In spec mode: All acceptance criteria are covered. No unresolved assumptions or open questions.}
+{In plan-only mode: PLAN.md is actionable with verification evidence. No blocking gaps.}
 ```
 
 Automatically proceed to Step 6.
@@ -282,7 +312,8 @@ This file is consumed by `pr-traceability.sh` (Plan 02) to populate PR descripti
 
 ```markdown
 ---
-spec-version: {spec-version from SPEC.md frontmatter, or "unknown"}
+validation-mode: {spec | plan-only}
+spec-version: {spec-version from SPEC.md frontmatter, or "n/a" in plan-only mode}
 validation-date: {today's date in YYYY-MM-DD}
 finding-counts:
   block: {B}

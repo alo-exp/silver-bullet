@@ -11,7 +11,7 @@ Invoke **`silver:phase`** via the host SB skill channel before Edit/Write/Bash.
 ## Planning guard
 
 `planning-file-guard` blocks direct ROADMAP.md / STATE.md edits. Before writing,
-create `${SB_RUNTIME_STATE_DIR}/roadmap-edit-override` and remove it when done.
+create `$HOME/.codex/.silver-bullet/roadmap-edit-override` and remove it when done.
 
 ## Exit
 
