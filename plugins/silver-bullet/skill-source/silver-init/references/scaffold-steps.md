@@ -116,7 +116,7 @@ When the active runtime is Cursor **or** `.codex/` already exists in the project
 
 ```bash
 mkdir -p .codex/rules
-cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .codex/rules/silver-orchestrator.mdc
+cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .cursor/rules/silver-orchestrator.mdc
 ```
 
 Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).

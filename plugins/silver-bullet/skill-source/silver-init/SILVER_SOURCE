@@ -157,7 +157,7 @@ Confirm Silver Bullet is installed for the active host before project init:
 | Codex | Public `alo-labs/codex-plugins` marketplace via `bash scripts/install-codex.sh --public-release` | `bash scripts/install-codex.sh --purge-legacy-skills` |
 | Cursor | Add marketplace `https://github.com/alo-labs/alo-labs-cursor-marketplace`, install `silver-bullet`, or run `bash scripts/install-cursor.sh --public-release` | `bash scripts/install-cursor.sh` |
 
-**Cursor orchestrator rule:** On init, copy `templates/cursor-rules/silver-orchestrator.mdc` → `.codex/rules/silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1).
+**Cursor orchestrator rule (Cursor hosts only):** On init, copy `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1 and Phase 3 step 3.2.1).
 
 After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
 `bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
@@ -432,7 +432,7 @@ ls -d src/ app/ lib/ includes/ admin/ public/ packages/*/src/ modules/*/src/ wp-
 If the current runtime and repo metadata already imply an answer, use it without prompting:
 - Codex runtime → keep prompts runtime-neutral and use the current approval model instead of asking the user to restate it
 - GitHub remote/hosting metadata → set `issue_tracker` to `github`
-- Local-only / non-GitHub repo → set `issue_tracker` to `gsd`
+- Local-only / non-GitHub repo → set `issue_tracker` to `local`
 - Only ask when the runtime, remote, or approval state is genuinely ambiguous
 
 ### 2.7 Confirm with user
@@ -584,8 +584,13 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-6 Ensure the reference line** `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` is present at the top of the final project instruction file. If absent, prepend it. Do not duplicate it if already present.
 
   **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no project instruction file section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
-- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows`.
-- **3.2.1 Interface design state (UI/frontend projects)**: when the detected
+- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers .codex/rules`.
+- **3.2.1 Orchestrator surface (parent mode)**: when `orchestrator_mode` is `parent` (default), install mechanical orchestrator artifacts idempotently:
+  1. Copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/` (skip existing files).
+  2. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
+  3. **Cursor only:** copy `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/silver-orchestrator.mdc`.
+  See `references/scaffold-steps.md` §3.2.1–3.2.2 for full commands.
+- **3.2.2 Interface design state (UI/frontend projects)**: when the detected
   stack or workflow indicates a UI surface (React/Vue/Angular/Svelte/Flutter,
   `silver-ui` workflow, or similar), stamp durable interface state:
 
