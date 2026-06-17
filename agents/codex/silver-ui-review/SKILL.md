@@ -31,6 +31,16 @@ Write or update `.planning/UI-REVIEW.md`.
    - drift against `.planning/interface/STATE.md` when present.
 4. Use real browser/screenshot evidence for frontend work when a runnable app is
    available.
+4b. Collect browser evidence per `silver-bullet.md §8.1` fallback hierarchy:
+   - **Alumnium (preferred):** when configured, use `check` and `get` for layout,
+     accessibility, interaction, and responsive assertions; attach command output
+     and screenshots to UI-REVIEW.md.
+   - **Host browser MCP:** when Alumnium is absent, navigate to the running app,
+     capture `browser_snapshot` for structure/a11y cues and
+     `browser_take_screenshot` for visual layout; exercise key interactions with
+     `browser_click` / `browser_type` / `browser_scroll`, then re-snapshot.
+     Cursor: `cursor-ide-browser` tools. Attach evidence to UI-REVIEW.md.
+   - **Otherwise:** Playwright output and static screenshots when available.
 5. Invoke or apply `silver:domain-audit` with `ui-system`, `accessibility`, and
    `performance-resource` packs for reusable or public UI changes.
 6. Update `.planning/interface/STATE.md` when the implementation establishes a

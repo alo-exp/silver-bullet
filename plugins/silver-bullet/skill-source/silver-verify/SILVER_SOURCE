@@ -34,7 +34,17 @@ Write or update `.planning/phases/<phase>/VERIFICATION.md` or
 7. If coverage gaps are found, add or request missing tests before passing the
    gate.
 8. Record UAT evidence, commands run, results, unverified claims, and residual
-   risks.
+   risks. When UAT requires browser interaction, follow `silver-bullet.md §8.1`
+   fallback hierarchy:
+   - **Alumnium (preferred):** when configured, use `do` / `check` / `get` for
+     acceptance-criteria evidence; attach results to VERIFICATION.md.
+   - **Host browser MCP:** when Alumnium is absent, navigate to the app, walk
+     UAT steps with `browser_click` / `browser_type` / `browser_scroll`,
+     verify state via `browser_snapshot`, and capture `browser_take_screenshot`
+     per criterion. Cursor: `cursor-ide-browser` tools. Attach evidence to
+     VERIFICATION.md.
+   - **Text-only:** document unverified browser-dependent criteria as WARN when
+     neither path is available.
 9. File deferred non-blocking gaps through `silver:add`.
 
 ## Exit Gate

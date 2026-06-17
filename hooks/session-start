@@ -305,24 +305,6 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# Locate Design plugin design-system SKILL.md
-plugin_cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
-design_file=""
-shopt -s nullglob
-for candidate in \
-  "$plugin_cache_root"/*/design/*/skills/design-system/SKILL.md \
-  "$plugin_cache_root"/*/knowledge-work-plugins/*/design/skills/design-system/SKILL.md; do
-  if [[ -f "$candidate" ]]; then
-    design_file="$candidate"
-    break
-  fi
-done
-shopt -u nullglob
-if [[ -n "${design_file:-}" ]]; then
-  _design_resolved="$(cd "$(dirname "$design_file")" 2>/dev/null && pwd)/$(basename "$design_file")" || design_file=""
-  [[ "${_design_resolved:-}" == "${plugin_cache_root%/}/"* ]] || design_file=""
-fi
-
 # Locate SB core-rules.md (rules file installed alongside this hook)
 # This is the SB equivalent of the host runtime core-values file — re-injected every session
 # so enforcement rules survive context compaction.
@@ -342,9 +324,6 @@ fi
 combined=""
 if [[ -n "${SB_BRANCH_RESET_BANNER:-}" ]]; then
   combined="${SB_BRANCH_RESET_BANNER}"
-fi
-if [[ -n "${design_file:-}" ]]; then
-  combined="Design plugin detected. Use /design:design-system and /design:ux-copy only when the active Silver Bullet workflow requires UI/UX work."
 fi
 
 # Append core enforcement rules so they survive compaction (Tier 2 rule injection)

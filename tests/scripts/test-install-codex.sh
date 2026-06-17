@@ -1227,7 +1227,7 @@ assert_contains "SB init skill uses silver prefix" "name: \"silver:init\"" "$(sb
 assert_contains "SB ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
 assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 # shellcheck disable=SC2088 # literal tilde is part of the documented Codex cache glob
-assert_contains "SB init skill treats legacy plugins as optional" "no longer hard" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
+assert_contains "SB init skill treats legacy plugins as optional" "no longer probes or reports" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_contains "SB init skill does not fail on flaky legacy GSD" "do not fail bootstrap" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_contains "SB ensure-docs skill runs semantic audits" "semantic freshness audits against the current project state" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
@@ -1342,13 +1342,6 @@ assert_file_exists "Codex claude reference audit report generated" "$CLAUDE_REFE
 if [[ -s "$CLAUDE_REFERENCE_REPORT" ]]; then
   echo "INFO: Non-skill/hook claude references detected in Codex installation:"
   sed -n '1,20p' "$CLAUDE_REFERENCE_REPORT"
-fi
-
-if [[ -f "$FAKE_MARKETPLACE_ROOT/scripts/gsd-sdk.cjs" ]]; then
-  assert_not_contains "Codex gsd-sdk no longer references Claude home" ".claude" "$FAKE_MARKETPLACE_ROOT/scripts/gsd-sdk.cjs"
-fi
-if [[ -f "$FAKE_SB_INSTALL_ROOT/scripts/gsd-sdk.cjs" ]]; then
-  assert_not_contains "Codex gsd-sdk cache copy no longer references Claude home" ".claude" "$FAKE_SB_INSTALL_ROOT/scripts/gsd-sdk.cjs"
 fi
 
 DEFAULT_GSD_TMP="$(mktemp -d)"

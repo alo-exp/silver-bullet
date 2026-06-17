@@ -75,7 +75,50 @@ Apply this rubric to the user's description to determine `ITEM_TYPE` and `ITEM_L
 - An open question that is INFORMATIONAL and does not block current work
 - Low-priority item from review that will not be addressed now
 
+**Seed** (routes to `.planning/seeds/SEED-NNN-<slug>.md`):
+- A forward-looking idea that is NOT ready to build yet
+- Requires a specific trigger condition before it becomes actionable (e.g., "when WebSocket infra is in place", "after v2.0 ships", "if usage exceeds 10k/day")
+- The idea has clear WHY (user value or strategic rationale) but the WHEN is conditional
+- Use `--seed` flag to explicitly classify as seed; the rubric alone does not auto-classify seeds
+
 **Default when ambiguous:** classify as backlog. Do not file: transient exploration notes, one-line TODOs without context, or items already addressed in the current session.
+
+### `--seed` flag
+
+When the user provides `--seed`, classify as **Seed** regardless of rubric. Write to `.planning/seeds/SEED-NNN-<slug>.md`:
+
+```markdown
+# Seed: <title>
+
+Created: YYYY-MM-DD
+Status: dormant
+
+## Idea
+
+<What is this? One paragraph.>
+
+## Why
+
+<User value or strategic rationale. Why does this matter?>
+
+## Trigger condition
+
+<When should this be surfaced? What event, metric, or milestone activates this?>
+Examples:
+- "When WebSocket infrastructure is added in phase N"
+- "If daily active users exceed 10k"
+- "After the v2.0 data model migration ships"
+
+## Breadcrumbs
+
+<Links to related issues, decisions, or prior discussions>
+```
+
+Number seeds sequentially (SEED-001, SEED-002, …) by reading the highest
+existing SEED-NNN prefix in `.planning/seeds/`.
+
+Seeds are surfaced by `silver:release` (new milestone setup) and `silver:clarify`
+(when the trigger condition appears to be met).
 
 ---
 
