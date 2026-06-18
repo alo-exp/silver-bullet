@@ -73,13 +73,18 @@ for f in "$TEMPLATES"/*.md; do
   if [[ ! -f "$plugin" ]]; then
     echo "FAIL: plugin missing $base"
     PARITY_FAIL=$((PARITY_FAIL + 1))
-  elif ! diff -q "$f" "$plugin" >/dev/null 2>&1; then
+    continue
+  fi
+  expected_file="$(mktemp)"
+  sed 's|\${SB_RUNTIME_HOME_ROOT}|$HOME/.codex|g' "$f" > "$expected_file"
+  if ! diff -q "$expected_file" "$plugin" >/dev/null 2>&1; then
     echo "FAIL: drift between templates/ and plugins/ for $base"
     PARITY_FAIL=$((PARITY_FAIL + 1))
   else
     echo "PASS: parity $base"
     PASS=$((PASS + 1))
   fi
+  rm -f "$expected_file"
 done
 FAIL=$((FAIL + PARITY_FAIL))
 

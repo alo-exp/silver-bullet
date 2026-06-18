@@ -238,6 +238,10 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   SB_BRANCH_RESET_BANNER="⚠️ SB: git branch changed (${stored_branch} → ${current_branch}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
   rm -f -- "$state_file" 2>/dev/null || true
+  rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
+        "${SB_STATE_DIR}/orchestrator-directive.json" \
+        "${SB_STATE_DIR}/orchestrator-worker-active.json" \
+        "${SB_STATE_DIR}/stall-block" 2>/dev/null || true
   sb_guard_nofollow "$branch_file"
   printf '%s\n' "$current_branch" > "$branch_file"
   if [[ ! -s "$branch_file" ]]; then
@@ -297,6 +301,9 @@ rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null
 if [[ "$sb_should_mutate" == true ]]; then
   rm -f -- "$quality_gate_state_file" 2>/dev/null
   rm -f -- "$verify_tests_state_file" 2>/dev/null
+  rm -f -- "${SB_STATE_DIR}/planning-edit-override" \
+        "${SB_STATE_DIR}/roadmap-edit-override" \
+        "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
 fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled

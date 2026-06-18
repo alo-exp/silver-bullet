@@ -36,7 +36,19 @@ Before implementation edits, the execution trace must show the pre-execution cha
 7. `silver:plan`
 8. `silver:validate` (pre-build gap analysis — after plan exists)
 
-After execution, complete review → verify → secure → validate → pre-ship devops quality gates → ship.
+After implementation, final delivery requires the post-execution chain. **Canonical post-execution order (matches orchestrator queue and `silver:feature`):**
+
+1. `silver:execute`
+2. `silver:review-request`, `silver:review`, and `silver:review-triage` (review triad)
+3. `silver:verify`
+4. `security` then `silver:secure`
+5. `silver:validate`
+6. `devops-quality-gates` (pre-ship sweep)
+7. `silver:branch-finish` on feature branches
+8. `silver:completion-audit` immediately before ship
+9. `silver:ship`
+
+If any required SB skill cannot be invoked, stop immediately and notify the user.
 
 ## Pre-flight: Load Preferences
 
@@ -224,7 +236,7 @@ Invoke `silver:plan` through the active runtime's SB-recognized skill invocation
 
 **NON-SKIPPABLE GATE.** (VALD-03 compliance)
 
-This runs **after** Step 5 (Plan Phase) because `silver:validate` performs pre-build gap analysis against `.planning/PLAN.md`. `workflow-chain-guard` blocks implementation edits until this marker is recorded.
+This runs **after** Step 5 (Plan Phase) because `silver:validate` performs pre-build gap analysis against `.planning/PLAN.md` (plan-only mode when `.planning/SPEC.md` is absent). `workflow-chain-guard` blocks implementation edits until this marker is recorded.
 
 Invoke `silver:validate` through the active runtime's SB-recognized skill invocation channel.
 
@@ -258,7 +270,7 @@ Run review sequence in order:
 
 Invoke `silver:verify` through the active runtime's SB-recognized skill invocation channel. Purpose: deployment verification and UAT. Non-skippable gate.
 
-**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's gate (IaC validation / plan-check commands) and record the freshness marker — it is part of `required_deploy`, so the completion-audit deploy gate blocks deploy until a fresh run is recorded.
+**Fresh test execution (required before delivery):** Invoke `verify-tests` to run the project's gate (IaC validation / plan-check commands) and record the freshness marker — it is part of `required_deploy_devops`, so the completion-audit deploy gate blocks deploy until a fresh run is recorded.
 
 ## Step 9: IaC Security + Secrets Verification
 

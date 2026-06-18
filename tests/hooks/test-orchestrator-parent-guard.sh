@@ -114,6 +114,24 @@ else
 fi
 rm -rf "$WORK2" 2>/dev/null || true
 
+# Marker without spawned_at is invalid — parent guards must still apply
+WORK4=$(mktemp -d)
+git -C "$WORK4" init -q
+echo '{"sb_initiated":true,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK4/.silver-bullet.json"
+echo '# SB' >"$WORK4/silver-bullet.md"
+printf '{"skill":"silver-plan","template":"PLAN"}\n' >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+if sb_orchestrator_is_worker_session; then
+  echo "FAIL: marker without spawned_at must not classify session as worker"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: marker without spawned_at ignored"
+  PASS=$((PASS + 1))
+fi
+out_invalid=$(cd "$WORK4" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_contains "invalid marker still blocks parent Edit" "$out_invalid" "ORCHESTRATOR PARENT"
+rm -rf "$WORK4" 2>/dev/null || true
+
 # Worker marker readable without jq on PATH
 WORK3=$(mktemp -d)
 git -C "$WORK3" init -q

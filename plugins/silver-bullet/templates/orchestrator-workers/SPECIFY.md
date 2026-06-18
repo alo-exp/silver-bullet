@@ -10,7 +10,7 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:spec`** via Skill tool before implementation edits.
+Invoke **`silver:spec`** through the active runtime's SB-recognized skill invocation channel before implementation edits.
 
 When external artifacts exist, run **`silver:ingest`** first per the skill contract, then **`silver:spec`**.
 

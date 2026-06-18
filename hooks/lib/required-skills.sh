@@ -233,8 +233,8 @@ sb_required_skills_normalize_configured_list() {
 # Fallback used only when default config or jq unavailable. Keep minimal —
 # hooks always enforce at least the planning/quality-gate floor.
 __SB_RS_FALLBACK="silver-quality-gates silver-completion-audit verify-tests"
-__SB_RS_PLANNING_FALLBACK="silver-quality-gates"
-__SB_RS_DEVOPS_PLANNING_FALLBACK="silver-blast-radius devops-quality-gates"
+__SB_RS_PLANNING_FALLBACK="silver-quality-gates silver-context silver-plan"
+__SB_RS_DEVOPS_PLANNING_FALLBACK="silver-blast-radius devops-quality-gates silver-context silver-plan"
 __SB_RS_ALL_TRACKED_FALLBACK="silver-quality-gates silver-quality-gates-design silver-quality-gates-adversarial verify-tests"
 
 __sb_rs_populate() {

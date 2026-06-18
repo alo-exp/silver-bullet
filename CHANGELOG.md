@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.44.7] — 2026-06-18
+
+Second adversarial review pass: orchestrator state scoping, planning-chain fallbacks, and session hygiene after branch changes.
+
+## Bug Fixes
+- `fix(hooks): scope orchestrator Stop gate to current repo via repo_root in orchestrator.json`
+- `fix(hooks): tighten worker-session marker TTL parsing (require spawned_at value)`
+- `fix(hooks): align planning fallbacks with silver-context and silver-plan across stop, dev-cycle, compliance, and prompt-reminder`
+- `fix(hooks): clear orchestrator and edit-override state on branch change and session start`
+- `fix(hooks): orchestrator-directive guard rejects out-of-scope state file paths`
+- `fix(hooks): remove duplicate jq-gate source in completion-audit`
+- `fix(templates): host-neutral worker invoke wording and SB_RUNTIME_HOME_ROOT in PHASE.md`
+
+## Tests
+- `test(hooks): orchestrator parent guard and cross-project stop-check behavior`
+- `test(hooks): session-start orchestrator reset on branch change`
+- `test(hooks): flow-advance and stop-check planning chain expectations`
+
+---
+
 ## [0.44.6] — 2026-06-18
 
 Fresh adversarial flow review (post-v0.44.5): validate dead-end for DevOps/Fast paths without SPEC.md.

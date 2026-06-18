@@ -178,10 +178,10 @@ if [[ "$delivery_adjacent" != true ]]; then
 fi
 
 if [[ "$active_workflow" == "devops-cycle" ]]; then
-  planning_default="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+  planning_default="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
   planning_cfg="$required_planning_devops_cfg"
 else
-  planning_default="${DEFAULT_PLANNING:-silver-quality-gates}"
+  planning_default="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
   planning_cfg="$required_planning_cfg"
 fi
 

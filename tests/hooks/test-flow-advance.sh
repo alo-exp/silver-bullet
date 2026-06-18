@@ -7,16 +7,17 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0
 FAIL=0
 
-SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT:-/tmp}/.silver-bullet"
-mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT:-/tmp}/.silver-bullet/flow-advance-${TEST_RUN_ID}"
+mkdir -p "$SB_TEST_DIR"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 export SILVER_BULLET_STATE_FILE="$TMPSTATE"
-export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
 
 cleanup() {
   rm -f "$TMPSTATE" "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-intent.txt" 2>/dev/null || true
-  rm -rf "$WORK" 2>/dev/null || true
+  rm -rf "$WORK" "${SB_RUNTIME_HOME_ROOT:-/tmp}/.silver-bullet/flow-advance-${TEST_RUN_ID}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -70,12 +71,18 @@ qg_status="$(awk -F'|' '/QUALITY/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.p
 assert_contains "quality gate flow row completes" "$qg_status" "complete"
 
 # Worker sessions must not re-seed composer queue when re-reading composer skills
+rm -f "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-intent.txt" 2>/dev/null || true
 make_repo
 run_hook "silver-feature" "$WORK" >/dev/null
 before_wid="$(jq -r '.workflow_id // ""' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || true)"
 before_len="$(jq '.flow_queue | length' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || echo 0)"
-( cd "$WORK" && SB_ORCHESTRATOR_WORKER=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SB_RUNTIME_PRESERVE_STATE_DIR=1 \
-  printf '{"tool_input":{"skill":"silver-feature"}}' | bash "$HOOK" >/dev/null 2>&1 ) || true
+( cd "$WORK" && \
+  printf '{"tool_input":{"skill":"silver-feature"}}' | \
+  SB_ORCHESTRATOR_WORKER=1 \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" \
+  SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  bash "$HOOK" >/dev/null 2>&1 ) || true
 after_wid="$(jq -r '.workflow_id // ""' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || true)"
 after_len="$(jq '.flow_queue | length' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || echo 0)"
 if [[ "$before_wid" == "$after_wid" && "$before_len" == "$after_len" ]]; then
