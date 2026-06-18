@@ -174,6 +174,9 @@ if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_
         state_file="${state_file/#\~/$HOME}"
       fi
     fi
+    if ! sb_runtime_path_is_state_scoped "$state_file"; then
+      state_file="${SB_STATE_DIR}/state"
+    fi
     state_contents=""
     [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents="$(cat "$state_file" 2>/dev/null || true)"
     if ! sb_orchestrator_directive_skill_recorded "$expected" "$state_contents"; then

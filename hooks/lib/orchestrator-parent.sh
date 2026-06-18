@@ -30,13 +30,14 @@ sb_orchestrator_is_worker_session() {
   spawned_at=""
   if command -v jq >/dev/null 2>&1; then
     spawned_at="$(jq -r '.spawned_at // ""' "$marker_file" 2>/dev/null || true)"
-  else
-    grep -qE '"spawned_at"[[:space:]]*:' "$marker_file" 2>/dev/null || return 1
+  fi
+  if [[ -z "$spawned_at" ]]; then
+    grep -qE '"spawned_at"[[:space:]]*:[[:space:]]*"[^"]+"' "$marker_file" 2>/dev/null || return 1
     spawned_at="$(grep -oE '"spawned_at"[[:space:]]*:[[:space:]]*"[^"]+"' "$marker_file" 2>/dev/null | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || true)"
   fi
   ttl="${SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS:-7200}"
   if [[ -z "$spawned_at" ]]; then
-    return 0
+    return 1
   fi
 
   now_epoch="$(date +%s)"
@@ -148,21 +149,6 @@ sb_orchestrator_clear_worker_marker() {
   rm -f -- "$(sb_orchestrator_worker_marker_file)" 2>/dev/null || true
 }
 
-# True when orchestrator.json has pending flows in queue after current index.
-sb_orchestrator_queue_has_pending() {
-  local file
-  file="$(sb_orchestrator_state_file 2>/dev/null || printf '%s/orchestrator.json' "${SB_RUNTIME_STATE_DIR:-/tmp}")"
-  [[ -f "$file" ]] || return 1
-  command -v jq >/dev/null 2>&1 || return 1
-  local current queue_len
-  current="$(jq -r '.current_flow // ""' "$file" 2>/dev/null || true)"
-  [[ -n "$current" && "$current" != "null" ]] && return 0
-  queue_len="$(jq '.flow_queue | length' "$file" 2>/dev/null || echo 0)"
-  # Pending if last_completed set but current_flow empty incorrectly — use current_flow
-  [[ "$queue_len" -gt 0 ]] && [[ -z "$current" ]] && return 1
-  return 1
-}
-
 # Pending = non-empty current_flow in orchestrator state.
 sb_orchestrator_parent_queue_pending() {
   local file
@@ -172,6 +158,47 @@ sb_orchestrator_parent_queue_pending() {
   local cur
   cur="$(jq -r '.current_flow // ""' "$file" 2>/dev/null || true)"
   [[ -n "$cur" && "$cur" != "null" ]]
+}
+
+sb_orchestrator_normalize_repo_root() {
+  local root="$1"
+  [[ -n "$root" ]] || return 1
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$root" 2>/dev/null || printf '%s' "$root"
+    return 0
+  fi
+  (cd "$root" 2>/dev/null && pwd) || printf '%s' "$root"
+}
+
+# True when orchestrator.json current_flow applies to the given project root.
+# Prevents cross-project stale state from blocking Stop in unrelated repos/tests.
+sb_orchestrator_state_applies_to_project() {
+  local repo_root="$1"
+  [[ -n "$repo_root" ]] || return 1
+  sb_orchestrator_parent_queue_pending || return 1
+
+  local file stored_root wid wf_file norm_stored norm_current
+  file="$(sb_orchestrator_state_file 2>/dev/null || true)"
+  [[ -f "$file" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  stored_root="$(jq -r '.repo_root // ""' "$file" 2>/dev/null || true)"
+  if [[ -n "$stored_root" && "$stored_root" != "null" ]]; then
+    norm_stored="$(sb_orchestrator_normalize_repo_root "$stored_root")"
+    norm_current="$(sb_orchestrator_normalize_repo_root "$repo_root")"
+    [[ "$norm_stored" == "$norm_current" ]]
+    return $?
+  fi
+
+  wid="$(jq -r '.workflow_id // ""' "$file" 2>/dev/null || true)"
+  if [[ -n "$wid" && "$wid" != "null" ]]; then
+    wf_file="$repo_root/.planning/workflows/$wid.md"
+    [[ -f "$wf_file" && ! -L "$wf_file" ]]
+    return $?
+  fi
+
+  # No repo_root or workflow_id — cannot prove this queue belongs to the current project.
+  return 1
 }
 
 # Parent-allowed PreToolUse tools (read-only + delegation).

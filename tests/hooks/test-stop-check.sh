@@ -15,14 +15,25 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
+
 # ── Test infrastructure ───────────────────────────────────────────────────────
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
-SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
-mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/stop-check-${TEST_RUN_ID}"
+SB_TEST_DIR="$SB_RUNTIME_STATE_DIR"
+mkdir -p "$SB_TEST_DIR"
 SESSION_START_FILE="${SB_TEST_DIR}/test-session-start-${TEST_RUN_ID}"
 
-cleanup_all() { rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}" "${SESSION_START_FILE}"; }
+cleanup_all() {
+  rm -f "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" \
+    "${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}" "${SESSION_START_FILE}" \
+    "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-directive.json" \
+    "${SB_TEST_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
+  rm -rf "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/stop-check-${TEST_RUN_ID}" 2>/dev/null || true
+}
 trap cleanup_all EXIT
 
 write_cfg() {
@@ -748,6 +759,29 @@ seed_doc_scheme_checklist_current_month "$current_month"
 out=$(run_hook)
 assert_blocks "DOC-2D: missing concrete doc key blocks completion" "$out"
 assert_contains "DOC-2D: block names missing extra doc" "$out" "docs/EXTRA.md"
+teardown
+
+echo "--- ORCH-1: stale orchestrator state from another project does not block Stop ---"
+setup
+write_current_planning_state
+printf 'work\n' > "$TMPDIR_TEST/wip.txt"
+git -C "$TMPDIR_TEST" add wip.txt
+jq -n \
+  --arg repo "/other/project/root" \
+  '{current_flow:"FLOW-QUALITY-GATE",workflow_id:"20260428T120000Z-abc123-silver-feature",repo_root:$repo}' \
+  > "${SB_TEST_DIR}/orchestrator.json"
+out=$(run_hook)
+assert_passes "ORCH-1: foreign orchestrator state ignored for isolated test repo" "$out"
+teardown
+
+echo "--- ORCH-2: unscoped orchestrator state does not block Stop when workflows exist ---"
+setup
+write_current_planning_state
+mkdir -p "$TMPDIR_TEST/.planning/workflows"
+printf '# workflow\n' > "$TMPDIR_TEST/.planning/workflows/20260428T120000Z-abc123-silver-feature.md"
+jq -n '{current_flow:"FLOW-QUALITY-GATE"}' > "${SB_TEST_DIR}/orchestrator.json"
+out=$(run_hook)
+assert_passes "ORCH-2: orchestrator without repo_root/workflow_id ignored despite local workflows" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

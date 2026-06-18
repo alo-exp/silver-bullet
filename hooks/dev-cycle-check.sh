@@ -17,8 +17,8 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1091
   source "$_lib_dir/required-skills.sh"
 fi
-DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
-DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
 if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
   # shellcheck source=lib/hook-audit.sh
   source "$_lib_dir/hook-audit.sh"

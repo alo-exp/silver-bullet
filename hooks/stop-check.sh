@@ -128,8 +128,8 @@ if [[ -f "$lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
   source "$lib_dir/required-skills.sh"
 fi
-DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates}"
-DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates}"
+DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
+DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
 
 # shellcheck source=lib/skill-discovery.sh
 if [[ -f "$lib_dir/skill-discovery.sh" ]]; then
@@ -189,8 +189,10 @@ fi
     sb_orchestrator_clear_worker_marker 2>/dev/null || true
     exit 0
   fi
+  _stop_project_root="$(dirname "$config_file")"
+  [[ -z "$_stop_project_root" || "$_stop_project_root" == "." ]] && _stop_project_root="$search_dir"
   if sb_orchestrator_is_parent_session 2>/dev/null \
-    && sb_orchestrator_parent_queue_pending 2>/dev/null; then
+    && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
     cur_flow=""
     orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"
     [[ -f "$orch_file" ]] && cur_flow="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"

@@ -154,15 +154,24 @@ sb_orchestrator_seed_intent() {
 
   flow_queue_json="$(printf '%s' "$queue_csv" | tr ',' '\n' | jq -R . | jq -s .)"
 
-  local doc
+  local doc norm_root=""
+  if [[ -n "$repo_root" ]]; then
+    if declare -f sb_orchestrator_normalize_repo_root >/dev/null 2>&1; then
+      norm_root="$(sb_orchestrator_normalize_repo_root "$repo_root")"
+    else
+      norm_root="$(cd "$repo_root" 2>/dev/null && pwd || printf '%s' "$repo_root")"
+    fi
+  fi
   doc="$(jq -n \
     --arg intent "$intent" \
     --arg composer "$composer" \
     --arg now "$now" \
+    --arg repo_root "$norm_root" \
     --argjson queue "$flow_queue_json" \
     '{
       active_intent: $intent,
       composer: $composer,
+      repo_root: $repo_root,
       flow_queue: $queue,
       current_flow: ($queue[0] // ""),
       intent_graph: {

@@ -13,6 +13,31 @@ SB **queue builder** for bugs and regressions. Parent orchestrator spawns Task w
 
 Never implements fixes directly — composition spec only.
 
+## Mandatory dependency execution
+
+SB separates pre-execution gates from post-execution gates.
+
+Before implementation edits, the execution trace must show the pre-execution chain:
+
+1. `silver:debug` (systematic debugging — always for bugfix)
+2. `silver:plan` (lightweight fix plan — recorded before TDD/regression test edits)
+
+After implementation, final delivery requires the post-execution chain. **Canonical post-execution order (matches orchestrator queue and `silver:feature`):**
+
+1. `silver:execute`
+2. `silver:review-request`, `silver:review`, and `silver:review-triage` (review triad)
+3. `silver:verify`
+4. `security` then `silver:secure`
+5. `silver:validate`
+6. `silver:quality-gates` (pre-ship sweep)
+7. `silver:branch-finish` on feature branches
+8. `silver:completion-audit` immediately before ship
+9. `silver:ship`
+
+If any required SB skill cannot be invoked, stop immediately and notify the user.
+
+The `workflow-chain-guard.sh` hook enforces only the **pre-execution** chain at edit time (`silver-debug`, `silver-plan` — not quality-gates/context). Completion hooks enforce review, security, verification, and ship gates before final delivery.
+
 ## Pre-flight: Load Preferences
 
 Read the **User Workflow Preferences** section of `silver-bullet.md` to load user workflow preferences before any other step.
