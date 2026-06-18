@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Help Center landing page for Silver Bullet v0.44.2 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+    "text": "Help Center landing page for Silver Bullet v0.44.7 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
   },
   {
     "page": "Core Concepts",
@@ -343,7 +343,7 @@ var IDX = [
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "runtime-parity",
-    "title": "Runtime parity scripts v0.44.2",
+    "title": "Runtime parity scripts v0.44.7",
     "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
@@ -351,7 +351,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.44.2, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.44.7, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",

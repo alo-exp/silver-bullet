@@ -253,6 +253,29 @@ fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH"
 
+# Test 1b: Branch change clears orchestrator ephemeral state
+echo "--- Test 1b: Branch change clears orchestrator ephemeral state ---"
+HOOK_WORKDIR=$(make_git_repo)
+ORCH_DIR="${SB_TEST_DIR}/session-start-orch-${TEST_RUN_ID}"
+mkdir -p "$ORCH_DIR"
+printf '{"current_flow":"FLOW-QUALITY-GATE","workflow_id":"20260428T120000Z-abc123-silver-feature"}' > "$ORCH_DIR/orchestrator.json"
+printf '{"next_skill":"silver-quality-gates"}' > "$ORCH_DIR/orchestrator-directive.json"
+printf '{"skill":"silver-plan"}' > "$ORCH_DIR/orchestrator-worker-active.json"
+printf 'silver-quality-gates\n' > "$TMPSTATE"
+printf 'old-branch-xyz' > "$TMPBRANCH"
+( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$ORCH_DIR" \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "branch changed -> orchestrator.json deleted" "$ORCH_DIR/orchestrator.json"
+assert_file_missing "branch changed -> orchestrator-directive.json deleted" "$ORCH_DIR/orchestrator-directive.json"
+assert_file_missing "branch changed -> orchestrator-worker-active.json deleted" "$ORCH_DIR/orchestrator-worker-active.json"
+rm -rf "$HOOK_WORKDIR" "$ORCH_DIR"
+rm -f "$TMPBRANCH"
+
 # Test 2: Same branch -> state file preserved
 echo "--- Test 2: Same branch -> state file preserved ---"
 HOOK_WORKDIR=$(make_git_repo)
@@ -329,6 +352,32 @@ run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "same branch -> test execution gate file cleared" "$VERIFY_TESTS_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$VERIFY_TESTS_FILE"
+
+# Test 7b: Session start clears stale planning override files
+echo "--- Test 7b: Session start clears stale planning override files ---"
+HOOK_WORKDIR=$(make_git_repo)
+new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+OVERRIDE_DIR="${SB_TEST_DIR}/session-start-override-${TEST_RUN_ID}"
+mkdir -p "$OVERRIDE_DIR"
+printf '%s' "$new_branch" > "$TMPBRANCH"
+touch "$OVERRIDE_DIR/planning-edit-override" "$OVERRIDE_DIR/roadmap-edit-override"
+( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "startup clears planning-edit-override" "$OVERRIDE_DIR/planning-edit-override"
+assert_file_missing "startup clears roadmap-edit-override" "$OVERRIDE_DIR/roadmap-edit-override"
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+  > "$OVERRIDE_DIR/orchestrator-worker-active.json"
+( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "startup clears stale orchestrator-worker-active.json" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+rm -rf "$HOOK_WORKDIR" "$OVERRIDE_DIR"
+rm -f "$TMPBRANCH"
 
 # ── Trivial file cleanup tests ────────────────────────────────────────────────
 

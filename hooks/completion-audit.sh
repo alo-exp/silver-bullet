@@ -114,11 +114,6 @@ if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
   source "$_lib_dir/jq-gate.sh"
 fi
-
-if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
-  # shellcheck source=lib/jq-gate.sh
-  source "$_lib_dir/jq-gate.sh"
-fi
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
