@@ -19,7 +19,7 @@ At the very start of any new session, perform these steps automatically:
 
    **5.1 Silver Bullet**
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, ask the user directly:
@@ -37,10 +37,10 @@ At the very start of any new session, perform these steps automatically:
 
    **5.4 MultAI (optional, only if installed)**
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
    ```
    MultAI is optional. `silver:research` works without it and only uses it when the user explicitly asks for multi-AI perspectives in the current task.
-   Compare to the latest entry in `$HOME/.codex/plugins/cache/multai/CHANGELOG.md` only when a version is installed. If installed version is outdated, display:
+   Compare to the latest entry in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/CHANGELOG.md` only when a version is installed. If installed version is outdated, display:
    - "MultAI v{installed} appears outdated. Update manually with `/multai:update` if you plan to use optional multi-AI perspectives in this session."
    If the plugin is missing or the version is unknown: output "MultAI not installed. Optional; skipping." and continue.
 
@@ -213,10 +213,10 @@ transition and step boundary, derive the user's current position from `.planning
 1. `.planning/STATE.md` — parse YAML front matter for `current_plan`, `status`, `stopped_at`, `progress.total_phases`, `progress.completed_phases`, `progress.total_plans`, `progress.completed_plans`, `progress.percent`
 2. `.planning/ROADMAP.md` — identify current phase name, its goal, and how many plans it contains
 
-**SB state file (`$HOME/.codex/.silver-bullet/state`) is ONLY for:**
+**SB state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) is ONLY for:**
 - Skill invocation markers (recorded by `record-skill.sh`)
-- Session mode (`$HOME/.codex/.silver-bullet/mode`)
-- Session init sentinel (`$HOME/.codex/.silver-bullet/session-init`)
+- Session mode (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`)
+- Session init sentinel (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init`)
 
 These runtime marker files do not replace `.planning/STATE.md`. Use the SB runtime state
 only for invocation evidence, mode, and session sentinels.
@@ -242,7 +242,7 @@ narrate at each plan boundary:
 
 ### 2f. Autonomous Commentary
 
-In autonomous mode (when `$HOME/.codex/.silver-bullet/mode` contains `autonomous`),
+In autonomous mode (when `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` contains `autonomous`),
 do NOT ask questions or pause, but DO output structured commentary at each major step:
 
 **Before each SB lifecycle skill invocation:**
@@ -683,7 +683,7 @@ at the workflow level.
 user confirmation prompts), skip the interactive/autonomous question entirely.
 Auto-set autonomous mode immediately:
 ```bash
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 Log: "Autonomous mode auto-set: bypass-permissions detected".
 Also suppress ALL other confirmation-asking behaviors for the remainder of the session
@@ -714,12 +714,12 @@ At the start of every session, before any work begins, ask the user directly:
 
 Write the choice:
 ```bash
-echo "interactive" > $HOME/.codex/.silver-bullet/mode
+echo "interactive" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 # or
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 
-**Fallback**: if `$HOME/.codex/.silver-bullet/mode` is unreadable at any point, default to interactive
+**Fallback**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` is unreadable at any point, default to interactive
 and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**
@@ -738,7 +738,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - On completion: output structured summary (phases done, autonomous decisions, blockers queued,
   agents dispatched, commits made, virtual cost)
 
-> **Anti-Skip:** You are violating this rule if the mode file ($HOME/.codex/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
+> **Anti-Skip:** You are violating this rule if the mode file (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
 
 ---
 
@@ -819,7 +819,7 @@ stop, notify the user, and offer remediation in this order:
 3. Switch to a different workflow or stop
 
 You MUST NOT:
-- Edit any file under `$HOME/.codex/plugins/cache/` (third-party plugin caches)
+- Edit any file under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (third-party plugin caches)
 - Modify an optional extension or provider skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
