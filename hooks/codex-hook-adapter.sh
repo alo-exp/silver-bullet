@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'exit 0' ERR
 
 event_name="${1:-}"
 shift || true
