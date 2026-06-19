@@ -159,6 +159,10 @@ case "$composer_slug" in
     # silver:context is optional per skill signal detection; not chain-guarded.
     required_markers=(silver-quality-gates silver-plan)
     ;;
+  silver-release)
+    # Milestone release: Step 0 is quality-gates before any release artifact edits.
+    required_markers=(silver-quality-gates)
+    ;;
   *)
     exit 0
     ;;

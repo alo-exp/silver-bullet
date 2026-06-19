@@ -2,6 +2,7 @@
 # Silver Bullet — clear the trivial-session marker after edits/writes.
 
 set -euo pipefail
+trap 'exit 0' ERR
 
 _sb_runtime_paths_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_sb_runtime_paths_dir/runtime-paths.sh" ]]; then

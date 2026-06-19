@@ -48,7 +48,7 @@ At the very start of any new session, perform these steps automatically:
    Alumnium is optional. SB routes to it for visual-heavy clarify sessions and browser-backed UI verification when the user has configured the [Alumnium](https://alumnium.ai/) MCP server. See §8.1 for hook points, fallback hierarchy, and install reference.
    If Alumnium MCP is not configured: notify the user, then use the host agent's built-in browser MCP when available (§8.1). Text-only only when neither Alumnium nor host browser tools are available.
 
-> **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip context compaction. Evidence: no file reads for docs/ in session start.
+> **Anti-Skip:** you are violating this rule if you begin work without reading docs/ or skip context compaction. Evidence: no active runtime file-reading mechanism calls for docs/ files in session start.
 
 ---
 
@@ -693,7 +693,7 @@ Use defaults for any skipped questions. Log each suppressed question under
 
 **Persistent permission mode**: If the user reports that the host runtime keeps asking
 for permissions despite setting bypass-permissions, the issue is that the UI toggle
-only applies to the current session. To persist it, add to `.codex/settings.local.json`:
+only applies to the current session. To persist it, add to `$HOME/.codex/settings.local.json`:
 
 > ⚠️ **CAUTION — bypassPermissions:** Only use this setting in a **fully isolated environment** (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files). Verify isolation **before** applying this setting. Misuse in non-isolated environments permanently disables the host runtime permission guardrails.
 
