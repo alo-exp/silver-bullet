@@ -10,16 +10,26 @@
 
 ### 1. Pre-Release Quality Gate (Mandatory)
 
-Four stages must pass in the current session. See `docs/ENFORCEMENT.md` for details.
+Four effective stages must pass in the **current session**. See
+`docs/internal/pre-release-quality-gate.md` for full criteria.
 
-| Stage | Gate |
-|-------|------|
-| 1 | Code Review Triad — loop until zero issues |
-| 2 | Big-Picture Consistency Audit — two clean passes |
-| 3 | Public-Facing Content Refresh — all surfaces current |
-| 4 | Security Audit (SENTINEL) — two clean passes |
+| Stage | Gate | Hook marker |
+|-------|------|-------------|
+| 1 | ENHANCED adversarial review — 2 consecutive DISCOVERY cleans on 1177-row manifest | `adversarial-review-clean` |
+| 2 | SENTINEL per-skill — 1 clean pass per `skills/*/SKILL.md` (85 skills) | `sentinel-skills-clean` |
+| 3 | Code security — `security` skill on `hooks/` and `scripts/` only | (in `required_deploy` state) |
+| 4 | Public content refresh + single verification bundle | `quality-gate-stage-3`, `full-test-suite-rerun` |
 
-Each stage requires `silver:completion-audit` evidence. Markers cleared on session start.
+**Security split (non-substitutable):** SENTINEL audits prose skills; `security` audits executable code.
+
+Validation scripts:
+
+```bash
+bash scripts/validate-launch-review.sh
+bash scripts/validate-sentinel-skills-manifest.sh
+```
+
+Markers live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` and are cleared on session start.
 
 ### 2. Version Bump
 
@@ -45,19 +55,18 @@ artifact. The `silver:create-release` skill runs this validation in Step 7b.
 Before the tag is created, the release commit must already be green. The
 `silver:create-release` skill waits for `bash scripts/verify-release-commit-ci.sh`
 and only then proceeds to `git tag` / `gh release create`. `completion-audit.sh`
-blocks `gh release create` until all `required_deploy` skills, all 4 quality gate
-stage markers, and the live matrix markers are present.
+blocks `gh release create` until all `required_deploy` skills, pre-release quality
+gate markers (`adversarial-review-clean`, `sentinel-skills-clean`,
+`quality-gate-stage-3`, `full-test-suite-rerun`), and live matrix markers are present.
+
 Run `bash scripts/run-release-live-matrix.sh` and
 `tests/e2e-live/run-e2e-live-tests.sh` successfully in the current session
-before creating the release tag. The
-todo-app suite is now one inline full-surface journey and also writes an
-`inline-e2e-matrix` marker so the end-user plugin bootstrap path and the
-follow-on development flow are both proven before release.
-The standard release gate now uses the Kay-backed Codex-compatible path only:
-MiniMax.io + `MiniMax-M3` + low reasoning in isolated envs. Those
-runs write `matrix=codex-only` markers, and those markers are the normal
-release prerequisite. A full Claude/native-Codex matrix remains optional
-diagnostic coverage only when explicitly requested.
+before creating the release tag. The todo-app suite is one inline full-surface
+journey and writes an `inline-e2e-matrix` marker.
+
+The standard release gate uses the Kay-backed Codex-compatible path:
+`matrix=codex-only` markers are the normal release prerequisite. Full
+Claude/native-Codex parity is optional diagnostic coverage.
 
 ### 5. Post-Release
 
@@ -75,7 +84,7 @@ Release closure is mandatory only after the following have succeeded:
   - Codex via `scripts/install-codex.sh --purge-legacy-skills --public-release`
 - Verify CI remained green on the release commit before the tag was created.
 - Confirm plugin cache update works via `/silver:update`.
-- Update site if needed (Stage 3 should have covered this).
+- Update site if needed (Stage 4 public content should have covered this).
 - Keep the shared `alo-labs/claude-plugins` and `alo-labs/codex-plugins`
   marketplaces aligned with the SB package boundary whenever versioned wrappers
   change. Use `scripts/sync-release-marketplace-versions.sh` during release

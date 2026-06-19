@@ -840,10 +840,9 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
       quality_gate_ready=true
       for marker in \
-        quality-gate-stage-1 \
-        quality-gate-stage-2 \
+        adversarial-review-clean \
+        sentinel-skills-clean \
         quality-gate-stage-3 \
-        quality-gate-stage-4 \
         full-test-suite-rerun; do
         if ! grep -Fqx -- "$marker" "$quality_gate_state_file" 2>/dev/null; then
           quality_gate_ready=false
@@ -853,8 +852,24 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     fi
 
     if [[ "$quality_gate_ready" != true ]]; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — The configured pre-release quality sequence has not been completed in this session.\n\nComplete the configured 4-stage quality gate, record quality-gate-stage-1 through quality-gate-stage-4 in %s, rerun bash tests/run-all-tests.sh, record full-test-suite-rerun in the same file, then retry.' "$quality_gate_state_file" )"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — The configured pre-release quality sequence has not been completed in this session.\n\nComplete docs/internal/pre-release-quality-gate.md (adversarial + SENTINEL per-skill + public content + test rerun), record adversarial-review-clean, sentinel-skills-clean, quality-gate-stage-3, and full-test-suite-rerun in %s, then retry.' "$quality_gate_state_file" )"
       exit 0
+    fi
+
+    # Optional automated validation when scripts exist (non-fatal when absent in test fixtures).
+    _qg_validate_launch="${project_root}/scripts/validate-launch-review.sh"
+    if [[ -x "$_qg_validate_launch" ]]; then
+      if ! "$_qg_validate_launch" >/dev/null 2>&1; then
+        emit_block "$(printf '🛑 RELEASE BLOCKED — LAUNCH-REVIEW.md does not satisfy adversarial exit criteria (status: clean, discovery_clean_streak >= 2).\n\nRun bash scripts/validate-launch-review.sh for details, complete ENHANCED adversarial review, then retry.' )"
+        exit 0
+      fi
+    fi
+    _qg_validate_sentinel="${project_root}/scripts/validate-sentinel-skills-manifest.sh"
+    if [[ -x "$_qg_validate_sentinel" ]]; then
+      if ! "$_qg_validate_sentinel" >/dev/null 2>&1; then
+        emit_block "$(printf '🛑 RELEASE BLOCKED — SENTINEL per-skill manifest is incomplete (docs/audits/sentinel-skills/manifest.json must show 85/85 clean rows).\n\nRun bash scripts/validate-sentinel-skills-manifest.sh for details, complete per-skill SENTINEL audits, record sentinel-skills-clean, then retry.' )"
+        exit 0
+      fi
     fi
   fi
 
