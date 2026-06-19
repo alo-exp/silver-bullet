@@ -68,10 +68,9 @@ EOF
 
 write_quality_gate_state() {
   cat > "$QUALITY_GATE_FILE" << 'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 }
@@ -586,7 +585,46 @@ rm -f "$QUALITY_GATE_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without pre-release gate markers" "$out"
 assert_contains "release block mentions pre-release quality sequence" "$out" "pre-release quality sequence"
-assert_contains "release block mentions run-all-tests" "$out" "tests/run-all-tests.sh"
+assert_contains "release block mentions adversarial marker" "$out" "adversarial-review-clean"
+assert_contains "release block mentions sentinel marker" "$out" "sentinel-skills-clean"
+teardown
+
+# Test 12a: gh release create blocked when sentinel-skills-clean marker is missing
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+requesting-code-review
+gsd-code-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+verify-tests
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=codex-only
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+write_verify_tests_state
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+adversarial-review-clean
+quality-gate-stage-3
+full-test-suite-rerun
+EOF
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_blocks "release blocked when sentinel-skills-clean marker missing" "$out"
+assert_contains "partial gate block mentions sentinel-skills-clean" "$out" "sentinel-skills-clean"
 teardown
 
 # Test 12b: gh release create blocked when verify-tests is recorded but stale
@@ -617,10 +655,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 rm -f "$VERIFY_TESTS_FILE"
@@ -658,10 +695,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 write_verify_tests_state
@@ -697,10 +733,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 write_verify_tests_state
@@ -736,10 +771,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 write_verify_tests_state
@@ -777,10 +811,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 write_verify_tests_state
@@ -816,10 +849,9 @@ cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
 cat > "$QUALITY_GATE_FILE" <<'EOF'
-quality-gate-stage-1
-quality-gate-stage-2
+adversarial-review-clean
+sentinel-skills-clean
 quality-gate-stage-3
-quality-gate-stage-4
 full-test-suite-rerun
 EOF
 write_verify_tests_state
