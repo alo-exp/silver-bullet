@@ -1,188 +1,184 @@
 # Pre-Release Quality Gate
 
-Before ANY release (`/silver-create-release`), the following four-stage quality gate MUST
-be completed in order. Each stage has its own completion criteria. Skipping a stage
-or declaring it complete without meeting the criteria is a violation.
+Before ANY release (`/silver-create-release`), the following **four effective stages**
+MUST be completed in order in the **current session**. Skipping a stage or declaring it
+complete without meeting the criteria is a violation.
 
-> **MANDATORY — 2 Consecutive Clean Rounds:** Each stage that uses a review or audit loop
-> MUST achieve **2 consecutive clean rounds** before the stage is considered complete.
-> A "clean round" means all active review or audit steps produced zero accepted findings.
-> This requirement applies to Stage 1 (code review loop), Stage 2 (consistency audit loop),
-> and Stage 4 (security audit loop). Do NOT advance to the next stage or proceed to release
-> until 2 consecutive clean rounds are confirmed for each applicable stage.
+> **Session reset:** `session-start` clears `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
+> on every session. Each release cycle must earn its gate markers in the current session.
 
-**IMPORTANT**: This gate runs AFTER the normal workflow finalization steps (testing,
-documentation, branch cleanup, deployment readiness) and BEFORE `/silver-create-release`.
-The `/silver-create-release` skill will not be invoked until all four stages pass.
+> **Security split (non-substitutable):**
+> - **SENTINEL** (`audit-security-of-skill` v2.3) audits **prose** skills (`skills/*/SKILL.md`)
+> - **`security` skill** audits **executable code** (`hooks/`, `scripts/`, `scripts/lib/`)
+> - **ENHANCED adversarial** (`ENHANCED-REVIEW-PROMPT.md`) is the repo-wide manifest gate (includes M-G code invariants during DISCOVERY, but does **not** replace per-skill SENTINEL)
+
+This gate runs AFTER normal workflow finalization (testing, documentation, branch cleanup,
+deployment readiness) and BEFORE `/silver-create-release`.
 
 ---
 
-## Stage 1 — Code Review (FLOW 10: SB Review Stack)
+## Stage 1 — Adversarial Release Gate (ENHANCED)
 
-Runs SB's FLOW 10 code-review structure against the release candidate
-(see `docs/composable-flows-contracts.md` §FLOW 10). SB owns the authoritative
-`REVIEW.md`, review request framing, findings triage, and fix loop. The stage
-iterates until **2 consecutive clean passes across the active review stack**.
+Replaces the former Stage 1 (code review loop) and Stage 2 (big-picture consistency audit).
 
-### Review stack
+### Entry criteria
 
-Each review pass produces findings -> triages via `silver:review-triage` ->
-applies fixes through the owning SB workflow. Cross-AI review is optional and
-only supplements the SB review artifact.
-
-| Step | Skill | Role | Triage | Fix |
-|------|-------|------|--------|-----|
-| 1 (Always for this release gate) | `silver:review-request` | Frames the review scope, files, risks, and blockers | n/a | n/a |
-| 2 (Always) | `silver:review` | Authoritative SB review artifact -> `REVIEW.md` | `silver:review-triage` | Owning SB workflow |
-| 3 (As-needed) | external second-opinion review | Optional adversarial peer review when architecturally significant or user-requested | `silver:review-triage` | Owning SB workflow |
+- `git diff` and `git diff --cached` empty on the release branch
+- `bash tests/run-all-tests.sh` green within this session (or immediately before Round 1)
 
 ### Execution
 
-1. **Frame the review.** Invoke `silver:review-request` so the
-   active runtime states scope, files, and risks before reviewers run.
-2. **Run SB review.** Invoke `silver:review` and treat its `REVIEW.md` as
-   the authoritative review artifact.
-3. **Optional adversarial review.** Use an external second-opinion reviewer only
-   when the release is architecturally significant or the user requests cross-AI review.
-4. **Triage.** Run `silver:review-triage` against each review
-   output that contains findings. Do NOT merge findings before triage — each
-   reviewer frame stays intact through its own triage pass.
-5. **Fix.** Apply accepted findings through the owning SB workflow
-   (atomic commits per coherent fix). Non-accepted findings with rationale go to
-   `REVIEW.md` notes.
-6. **Backlog capture.** Before starting the next round, any low-priority /
-   deferred / advisory findings not fixed in this round MUST be filed via
-   `silver:add` or the configured local backlog — do not silently drop them.
-7. **Round boundary.** A "clean round" = all active review steps produced zero
-   accepted findings in that round.
-8. **Loop**: run rounds until **2 consecutive clean rounds across all active
-   review steps**. Match the review cycle discipline used in Stages 2 and 4.
-9. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through
-   the active runtime's SB-recognized skill invocation channel. Running
-   verification commands manually is NOT a substitute for invoking the SB
-   completion gate. You need BOTH: (a) run the actual
-   verification commands (tests, CI status, lint), AND (b) invoke the SB skill
-   so `record-skill.sh` tracks it.
+1. Load `.planning/phases/launch-readiness-adversarial-review/ENHANCED-REVIEW-PROMPT.md` as the sole adversarial playbook.
+2. Minimum round sequence: **D1 → R2 → D3** (more rounds if fixes found).
+3. Each DISCOVERY round: all manifest rows `REVIEWED` or documented `SKIP`.
+4. Exit: **2 consecutive DISCOVERY clean rounds** — zero accepted CRITICAL/HIGH/MEDIUM,
+   `LAUNCH-REVIEW.md` frontmatter `status: clean`, `discovery_clean_streak: 2`,
+   `manifest_completion: "1177/1177"`, `git_clean: true`.
 
-### Retro-audit mode
+### Hook marker
 
-When this gate runs retroactively against an already-shipped release (no
-release candidate to fix), the active review stack still runs for findings, but the
-"fix and loop until 2 clean rounds" cycle is replaced by **"file every
-accepted finding as a backlog item for the next patch release"**. Stage
-markers are NOT recorded in retro-audit mode — the markers are reserved for
-gating a live release candidate. The user must declare retro-audit mode
-explicitly at the start of the gate.
+```bash
+echo "adversarial-review-clean" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+```
+
+### Validation
+
+```bash
+bash scripts/validate-launch-review.sh
+```
 
 ---
 
-## Stage 2 — Big-Picture Consistency Audit
+## Stage 2 — SENTINEL Per-Skill Audit (Prose Skills)
 
-Review the entire plugin for cross-file inconsistencies, redundancies, and contradictions.
+Mandatory **1 clean SENTINEL pass per canonical** `skills/*/SKILL.md` (**85 skills**).
+Agent bundle copies (`agents/{claude,codex,cursor}/*/SKILL.md`) are covered by sync
+parity when `diff` against canonical is empty; diverged copies require their own pass.
 
-1. Dispatch parallel Explore agents across five dimensions:
-   - **Workflows**: full-dev-cycle.md vs devops-cycle.md vs CLAUDE.md vs silver-bullet.md
-   - **Skills**: all SKILL.md files — obsolete references, redundant work, contradictions
-   - **Hooks + config**: .sh files, hooks.json, .silver-bullet.json, templates
-   - **Help site + README**: HTML pages, search.js, README.md — step counts, paths, versions
-   - **Absorbed dependency consistency**: check SB lifecycle skills, hooks,
-     templates, installers, README, and site copy for contradictions or
-     lingering hard dependencies on absorbed GSD/Superpowers/Anthropic
-     knowledge-work skills
-2. Fix all genuine issues found
-3. **Loop**: repeat until two consecutive audit passes find zero issues
-4. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
+### Pass criteria (per skill)
 
----
+| Criterion | Requirement |
+|-----------|-------------|
+| Clean pass | 1 consecutive SENTINEL run with zero unresolved CRITICAL/HIGH/MEDIUM after Step 8 self-challenge |
+| Verdict | `Deploy with mitigations`, `Deploy with monitoring`, or `Deploy freely` — not `Block` |
+| Evidence | `docs/audits/sentinel-skills/SENTINEL-audit-<skill-name>.md` or linked prior audit with content-hash parity |
 
-## Stage 3 — Public-Facing Content Refresh
+### Tracking
 
-Verify and update all user-visible surfaces to reflect the current state.
+- Human-readable: `docs/audits/sentinel-skills/MANIFEST.md`
+- Machine-readable: `docs/audits/sentinel-skills/manifest.json`
+- Scaffold: `bash scripts/generate-sentinel-skills-manifest.sh`
 
-1. Audit for factual accuracy:
-   - GitHub repo description and topics (`gh repo edit`)
-   - README.md (version, step counts, enforcement layers, state paths, architecture)
-   - Landing page (`site/index.html`)
-   - All help pages (`site/help/*/index.html`)
-   - Search index (`site/help/search.js`)
-   - Compare page (`site/compare/index.html`) if it exists
-2. Fix all discrepancies
-3. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
-4. Push and confirm CI green
+### Hook marker (aggregate)
 
----
+```bash
+echo "sentinel-skills-clean" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+```
 
-## Stage 4 — Security Audit (SENTINEL)
+Optional per-skill lines: `sentinel-clean:<skill-name>` (85 lines when complete).
 
-Run the SENTINEL v2.3 adversarial security audit against the full plugin.
+### Validation
 
-1. Invoke the SB security audit path targeting the plugin root
-2. Fix all findings (Critical, High, Medium; Low at discretion)
-3. Re-run the audit
-4. **Loop**: repeat until two consecutive audit passes find zero issues
-5. **MANDATORY — invoke `/silver:completion-audit` or `/silver:verify`** through the active runtime's SB-recognized skill invocation channel.
+```bash
+bash scripts/validate-sentinel-skills-manifest.sh
+```
 
 ---
 
-## Mandatory Full Test Suite Rerun
+## Stage 3 — Code Security (`security` skill)
 
-After all four stages pass in the current session, rerun the full test suite
-before release finalization:
+Structured review of **executable shell/Python surfaces only**:
 
-1. Run `/verify-tests`
-2. Record the rerun marker: `echo "full-test-suite-rerun" >> ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`
-3. Do not invoke `/silver-release` until both the rerun marker and the `/verify-tests` freshness marker are present
+- `hooks/*.sh`, `hooks/lib/*.sh`
+- `scripts/*.sh`, `scripts/lib/*`
 
-`hooks/completion-audit.sh` blocks release creation until the quality-gate file
-contains the four stage markers plus `full-test-suite-rerun`, and the
-`/verify-tests` freshness marker is still present.
+Invoke the `security` skill; record in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`
+(already in `required_deploy`). Run **after** Stage 2 so skill-driven hook changes are covered.
+
+**Not in scope:** `skills/*/SKILL.md` prose — use SENTINEL (Stage 2).
 
 ---
 
-## Enforcement
+## Stage 4 — Public Content Refresh + Verification Bundle
 
-Each stage is enforced via mandatory SB completion evidence from
-`/silver:completion-audit` or `/silver:verify`. When invoked, it is recorded in the state file
-(`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`); `hooks/completion-audit.sh` tracks required skill
-invocations to gate `gh release create`. The stage completion markers and the
-full-suite rerun marker live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`.
+### 4a — Public-facing content (ex-Stage 3)
 
-**Session reset:** The `session-start` hook clears the Silver Bullet quality-gate file at
-the beginning of every session. Each release cycle must earn its own gate pass in
-the current session.
+Verify and update user-visible surfaces:
 
-> **Anti-Skip:** You are violating this rule if you release without running all 4 stages
-> in the CURRENT session and rerunning the full test suite afterward. Each stage requires
-> explicit SB completion-audit or verification invocation — running verification
-> commands manually is NOT a substitute.
+- GitHub repo description and topics (`gh repo edit`)
+- `README.md` (version, step counts, enforcement layers)
+- Landing page (`site/index.html`) and help pages (`site/help/`)
+- Search index (`site/help/search.js`)
+
+Record marker:
+
+```bash
+echo "quality-gate-stage-3" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+```
+
+### 4b — Verification bundle (single pass)
+
+After all fixes from Stages 1–4a:
+
+1. Invoke `/verify-tests` (records freshness marker)
+2. Invoke `/silver:verify` (release scope) and `/silver:completion-audit` (release claim)
+3. Run `bash tests/run-all-tests.sh` once — must be green
+4. Record:
+
+```bash
+echo "full-test-suite-rerun" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+```
+
+Do **not** invoke `/silver:create-release` until both `full-test-suite-rerun` and the
+`/verify-tests` freshness marker are present.
+
+---
+
+## Hook enforcement summary
+
+On `gh release create`, `hooks/completion-audit.sh` requires these markers in
+`quality-gate-state` when `release.require_pre_release_quality_gate` is true:
+
+| Marker | Stage |
+|--------|-------|
+| `adversarial-review-clean` | 1 — ENHANCED adversarial |
+| `sentinel-skills-clean` | 2 — SENTINEL per-skill |
+| `quality-gate-stage-3` | 4a — public content |
+| `full-test-suite-rerun` | 4b — test rerun |
+
+Optional automated checks at release time:
+
+- `scripts/validate-launch-review.sh`
+- `scripts/validate-sentinel-skills-manifest.sh`
+
+**Retired markers:** `quality-gate-stage-1`, `quality-gate-stage-2`, `quality-gate-stage-4`
+(absorbed into adversarial + per-skill SENTINEL gates above).
+
+---
 
 ## Live Matrix Release Gate
 
-Before `gh release create` or `/silver-create-release`, the release live matrix
-wrapper and the todo-app live E2E suite must run successfully in the current
-session:
+Before `gh release create` or `/silver-create-release`:
 
 1. Run `bash scripts/run-release-live-matrix.sh`
-2. Run `tests/e2e-live/run-e2e-live-tests.sh`
-3. Confirm the standard isolated Kay/OpenCode Go/DeepSeek V4 Flash low path passes in each suite
-4. Let each runner create its session-scoped marker
+2. Run `tests/e2e-live/run-e2e-live-tests.sh` (or documented SKIP)
+3. Confirm `matrix=codex-only` + `inline-full-surface` markers exist
+4. Run `bash scripts/verify-release-commit-ci.sh` — CI + Secret Scan green on HEAD
 
-`hooks/completion-audit.sh` blocks release creation until both markers exist.
-Before the tag is created, run `bash scripts/verify-release-commit-ci.sh` and
-wait for the release commit's `CI` and `Secret Scan` runs to complete
-successfully. The release must not be published while that commit is still
-running or failing.
+Default release path uses Kay-backed Codex-compatible markers (`matrix=codex-only`).
+Full Claude/native-Codex parity is optional diagnostic coverage.
 
-The default runners now write `matrix=codex-only` markers because the release
-gate is defined on the Kay-backed Codex-compatible runtime. Those markers are
-the normal release prerequisite. A broader full Claude/native-Codex parity run
-is still accepted when explicitly requested, but it is no longer required to
-cut a release.
+Optional Cursor smoke: `bash scripts/release-live-matrix-cursor-smoke.sh` writes
+`matrix=cursor-smoke` when enabled.
 
-Optional Cursor smoke (install, hook merge, diagnostics, cursor hook unit tests;
-no live Cursor agent session): `bash scripts/release-live-matrix-cursor-smoke.sh`
-writes `matrix=cursor-smoke` when enabled. CI runs this smoke path on every push.
+---
 
-If any stage surfaces a blocker that cannot be resolved (e.g., upstream dependency
-issue, ambiguous design decision), log it under "Needs human review" and surface
-to the user before proceeding to the next stage.
+## Anti-Skip
+
+You are violating this rule if you release without completing all four stages in the
+**current session**, recording all required markers, and rerunning the full test suite
+after all fixes. Running verification commands manually is NOT a substitute for invoking
+SB skills so `record-skill.sh` tracks them.
+
+If any stage surfaces a blocker that cannot be resolved, log it under "Needs human review"
+and surface to the user before proceeding.
