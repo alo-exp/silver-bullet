@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.45.0] — 2026-06-20
+
+Streamlined pre-release quality gate: adversarial + per-skill SENTINEL enforcement on `gh release create`.
+
+## Features
+- `feat(hooks): replace legacy quality-gate-stage-1/2/4 with adversarial-review-clean and sentinel-skills-clean markers`
+- `feat(scripts): add validate-launch-review.sh and validate-sentinel-skills-manifest.sh release validators`
+- `docs: collapse pre-release gate to adversarial, SENTINEL per-skill, code security, and public content stages`
+
+## Documentation
+- `docs: add PRE-RELEASE-PROCESS-PROPOSAL and sentinel-skills audit manifest (85/85)`
+- `docs: silver-bullet §9 pre-release section; align silver:release and silver:create-release skills`
+
+## Tests
+- `test(hooks): completion-audit coverage for new pre-release markers`
+- `test(scripts): validate-launch-review and sentinel manifest gate tests`
+
+---
+
 ## [0.44.7] — 2026-06-18
 
 Second adversarial review pass: orchestrator state scoping, planning-chain fallbacks, and session hygiene after branch changes.
