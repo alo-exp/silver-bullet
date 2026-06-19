@@ -65,6 +65,8 @@
     "forbidden": [],
     "all_tracked": [
       "silver-quality-gates",
+      "silver-quality-gates-design",
+      "silver-quality-gates-adversarial",
       "silver-domain-audit",
       "silver-blast-radius",
       "devops-quality-gates",
