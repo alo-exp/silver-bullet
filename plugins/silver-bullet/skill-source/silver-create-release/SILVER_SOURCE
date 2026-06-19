@@ -229,17 +229,17 @@ If the release marketplace sync wrapper reports that either upstream marketplace
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
-The four-stage pre-release quality gate from `docs/internal/pre-release-quality-gate.md`
+The streamlined pre-release quality gate from `docs/internal/pre-release-quality-gate.md`
 is a hard prerequisite for any release work. Do not proceed to the live matrix,
-CI wait, tag, or GitHub Release until the current session has recorded
-`quality-gate-stage-1` through `quality-gate-stage-4` and `full-test-suite-rerun`
-in the configured quality-gate file.
+CI wait, tag, or GitHub Release until the current session has recorded:
 
-> **MANDATORY — 2 Consecutive Clean Rounds:** Each review/audit stage in the quality gate
-> (Stage 1 code review, Stage 2 consistency audit, Stage 4 security audit) MUST achieve
-> **2 consecutive clean rounds** — zero accepted findings in each of two back-to-back passes —
-> before the stage is considered complete and its marker is written. Declare a stage complete
-> only after both rounds are verified clean. This requirement cannot be skipped.
+- `adversarial-review-clean` (ENHANCED adversarial — 2× DISCOVERY clean)
+- `sentinel-skills-clean` (85/85 per-skill SENTINEL passes)
+- `quality-gate-stage-3` (public content refresh)
+- `full-test-suite-rerun` (post-fix test bundle)
+
+Validate with `bash scripts/validate-launch-review.sh` and
+`bash scripts/validate-sentinel-skills-manifest.sh` when available.
 
 ---
 
@@ -253,9 +253,9 @@ the current session earns the release-live-matrix marker used by
 bash scripts/run-release-live-matrix.sh
 ```
 
-The matrix must complete successfully for both Claude and Codex in the current
-session. If either runtime fails, stop here and fix the underlying issue before
-continuing.
+The matrix must complete successfully for the Kay-backed Codex-compatible path
+(`matrix=codex-only`) in the current session. A full Claude/native-Codex matrix
+remains optional diagnostic coverage when explicitly requested.
 
 ## Step 6b — Wait for Release CI to Go Green
 
