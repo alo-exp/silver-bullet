@@ -130,12 +130,15 @@ milestone completion audit, cross-artifact review when release artifacts exist,
 fresh full-suite verification via `verify-tests`, `silver:verify`,
 `silver:ship`, and milestone archive before `silver:create-release`.
 
-**Pre-release quality gate (4-stage):** Before `silver:create-release`, the
-4-stage process in `docs/internal/pre-release-quality-gate.md` MUST complete.
-Each review/audit stage (Stage 1, Stage 2, Stage 4) requires **2 consecutive
-clean rounds** — zero accepted findings in two back-to-back passes. Do not
-advance to `silver:create-release` until all four stages and the
-`full-test-suite-rerun` marker are recorded in the quality gate state file.
+**Pre-release quality gate (streamlined 4-stage):** Before `silver:create-release`, complete
+`docs/internal/pre-release-quality-gate.md` in the current session:
+
+1. **Adversarial** — ENHANCED review to 2 consecutive DISCOVERY cleans; marker `adversarial-review-clean`
+2. **SENTINEL per-skill** — 1 clean `audit-security-of-skill` pass per `skills/*/SKILL.md` (85); marker `sentinel-skills-clean`
+3. **Code security** — `security` skill on `hooks/` and `scripts/` only (not a SENTINEL substitute)
+4. **Public content + verification** — README/site refresh (`quality-gate-stage-3`), then single `verify-tests` + `run-all-tests.sh` pass (`full-test-suite-rerun`)
+
+Do not advance to `silver:create-release` until all markers are recorded in the quality gate state file.
 
 Non-skippable release gates:
 
@@ -207,11 +210,14 @@ The audit must list:
 - release risks
 - required gap-closure phases
 
-## Step 2a: Security Hard Gate
+## Step 2a: Code Security Hard Gate (hooks/scripts)
 
-Invoke `security`. Purpose: independent pre-release security review across the
-changes being released. This gate is mandatory even if the normal workflow
-preferences allow lighter review.
+Invoke `security` on **executable code surfaces only**: `hooks/`, `scripts/`,
+`scripts/lib/`. This is the structured code review gate — it does **not** audit
+prose skills. Per-skill prose security is covered by the SENTINEL per-skill
+matrix in `docs/internal/pre-release-quality-gate.md` Stage 2 before release.
+
+Record `security` in state (already in `required_deploy` traceability).
 
 ## Step 2b: Gap-Closure Loop (conditional, max 2 iterations)
 
