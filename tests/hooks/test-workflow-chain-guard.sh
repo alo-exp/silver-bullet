@@ -248,6 +248,18 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:bugfix legacy GSD debug/plan markers satisfy SB-owned aliases" "$out"
 teardown
 
+# silver-release: quality-gates must be recorded before release artifact edits.
+setup
+mkdir -p "$TMPDIR_TEST/docs"
+touch "$TMPDIR_TEST/docs/CHANGELOG.md"
+start_workflow "/silver:release" "release gate test" "quality-gate,audit,ship,create-release"
+out=$(run_hook_edit "$TMPDIR_TEST/docs/CHANGELOG.md")
+assert_blocks "silver:release blocks without silver-quality-gates marker" "$out"
+write_state_markers silver-quality-gates-design
+out=$(run_hook_edit "$TMPDIR_TEST/docs/CHANGELOG.md")
+assert_passes "silver:release passes after pre-plan quality-gates marker exists" "$out"
+teardown
+
 # apply_patch must honor the same pre-execution chain as Edit (Codex parity).
 setup
 touch "$TMPDIR_TEST/src/app.js"
