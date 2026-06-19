@@ -161,6 +161,7 @@
   },
   "issue_tracker": "local",
   "release": {
+    "_comment_quality_gate_markers": "On gh release create: adversarial-review-clean, sentinel-skills-clean, quality-gate-stage-3, full-test-suite-rerun",
     "profile": "generic",
     "require_plugin_runtime_matrix": true,
     "require_pre_release_quality_gate": true,

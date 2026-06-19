@@ -388,7 +388,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `silver:execute` |
 | FLOW 9 | UI QUALITY | UI review — silver:ui-review plus optional design/accessibility lenses |
 | FLOW 10 | REVIEW | Code review — 3 parallel layers with triage + fix |
-| FLOW 11 | SECURE | Security audit — SENTINEL, silver:secure, silver:validate |
+| FLOW 11 | SECURE | Prose: SENTINEL per-skill (`audit-security-of-skill`); Code: `security` on hooks/scripts; phase: `silver:secure`, `silver:validate` |
 | FLOW 12 | VERIFY | Verification — silver:verify, silver:completion-audit |
 | FLOW 13 | QUALITY GATE | 8 core quality dimensions plus conditional gates, dual-mode (design-time + adversarial) |
 | FLOW 14 | SHIP | Phase shipping — silver:ship, PR creation |
