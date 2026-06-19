@@ -710,6 +710,8 @@ skill_line() {
 if [[ "$is_intermediate" == true ]]; then
   # Determine planning skills required for intermediate commits
   # DevOps workflow requires silver-blast-radius + devops-quality-gates instead of silver-quality-gates
+  # DEFAULT_PLANNING populated by required-skills.sh (sourced at top).
+  # shellcheck disable=SC2153
   default_planning="$DEFAULT_PLANNING"
   if [[ "$active_workflow" == "devops-cycle" ]]; then
     default_planning="$DEVOPS_DEFAULT_PLANNING"
