@@ -27,6 +27,10 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
   source "$_lib_dir/workflow-utils.sh"
 fi
@@ -233,15 +237,6 @@ See CLAUDE.md §8 for details."
         exit 0
       fi
     fi
-    if printf '%s' "$command_str" | grep -qE "$plugin_cache"; then
-      plugin_write_pattern='([[:space:]](>>|>)[[:space:]]*"?'"$plugin_cache"'|\b(cp|mv|rm|chmod|install|tee)\b.*"?'"$plugin_cache"'|\b(sed|perl)\b.*-i.*"?'"$plugin_cache"')'
-      if printf '%s' "$command_str" | grep -qE "$plugin_write_pattern"; then
-        if ! plugin_boundary_is_uninstall_cleanup; then
-          emit_block "🚫 THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command — Silver Bullet NEVER modifies upstream plugin files. See CLAUDE.md §8."
-          exit 0
-        fi
-      fi
-    fi
   fi
 
   # --- Silver Bullet hook self-protection ─────────────────────────────────────
@@ -294,9 +289,33 @@ See CLAUDE.md §8 for details."
   _runtime_root_regex=$(printf '%s' "${SB_RUNTIME_HOME_ROOT}" | sed 's/[[][\\.^$*+?(){}|]/\\&/g')
   _state_dir_regex=$(printf '%s' "${SB_RUNTIME_STATE_DIR}" | sed 's/[[][\\.^$*+?(){}|]/\\&/g')
 
+  sb_state_sentinel_path_allowed() {
+    local candidate="$1"
+    [[ -n "$candidate" ]] || return 1
+    case "$(basename "$candidate")" in
+      planning-edit-override|roadmap-edit-override|trivial|planning-edit-override-audit.log|roadmap-edit-override-audit.log)
+        [[ "$candidate" == "${SB_STATE_DIR_EARLY}/"* ]] && return 0
+        ;;
+    esac
+    return 1
+  }
+
+  sb_bash_touches_state_sentinel_only() {
+    local cmd="$1"
+    local target
+    if ! printf '%s' "$cmd" | grep -qE '(^|[[:space:]])touch([[:space:]]|$)'; then
+      return 1
+    fi
+    target=$(printf '%s' "$cmd" | sed -nE 's/.*\btouch\b[[:space:]]+([^;&|]+).*/\1/p' | head -1 | tr -d "'\"")
+    sb_state_sentinel_path_allowed "$target"
+  }
+
   if [[ -n "$file_path" ]]; then
-    # Edit/Write targeting the state directory → hard block
+    # Edit/Write targeting the state directory → hard block (except explicit sentinels)
     if [[ "$file_path" == "${SB_STATE_DIR_EARLY}/"* ]]; then
+      if sb_state_sentinel_path_allowed "$file_path"; then
+        exit 0
+      fi
       emit_block "🚫 STATE TAMPER BLOCKED — Direct edits to Silver Bullet state files are not permitted.
 
 Skills are recorded automatically when invoked through the active runtime's SB-recognized skill invocation channel. Modifying state files directly bypasses workflow enforcement.
@@ -310,7 +329,8 @@ To reset the workflow state, remove the file from your terminal (not from Claude
     # strings are allowed; only real redirections / tee writes are blocked.
     cmd_first_line_tamper=$(printf '%s' "$command_str" | head -1)
     state_path="${SB_STATE_DIR_EARLY}/state"
-    if ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
+    if ! sb_bash_touches_state_sentinel_only "$command_str" && \
+       ! printf '%s' "$cmd_first_line_tamper" | grep -qE '^\s*(git\s|gh\s)' && \
        { { printf '%s' "$cmd_first_line_tamper" | grep -qE '(>>|\s>[^>&=]|\btee\b)' && \
            printf '%s' "$cmd_first_line_tamper" | grep -qF "$state_path"; } || \
          shell_writes_to_exact_path "$state_path"; }; then
@@ -326,21 +346,25 @@ To reset workflow state intentionally, run in your terminal:
 
   # --- Resolve config file by walking up from file's directory (or $PWD for Bash) ---
   config_file=""
+  config_search_dir="$PWD"
   if [[ -n "$file_path" ]]; then
-    search_dir=$(dirname "$file_path")
-  else
-    search_dir="$PWD"
+    config_search_dir="$(dirname "$file_path")"
   fi
-  while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      config_file="$search_dir/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-      break
-    fi
-    search_dir=$(dirname "$search_dir")
-  done
+  if declare -f sb_find_project_config_from >/dev/null 2>&1; then
+    config_file="$(sb_find_project_config_from "$config_search_dir" 2>/dev/null || true)"
+  else
+    search_dir="$config_search_dir"
+    while true; do
+      if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+        config_file="$search_dir/.silver-bullet.json"
+        break
+      fi
+      if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+        break
+      fi
+      search_dir=$(dirname "$search_dir")
+    done
+  fi
 
   # --- Read config values with defaults ---
   src_pattern="/src/"
@@ -423,6 +447,18 @@ To reset workflow state intentionally, run in your terminal:
     local payload="$1"
     declare -f sb_shell_command_looks_read_only >/dev/null 2>&1 || return 1
     sb_shell_command_looks_read_only "$payload" >/dev/null 2>&1
+  }
+
+  shell_command_shows_write_intent() {
+    local payload="${1:-}"
+    [[ -n "$payload" ]] || return 1
+    if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
+      return 0
+    fi
+    if printf '%s' "$payload" | grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[[:space:]]+-[^[:space:];|&]*i|\bperl\b[[:space:]]+-[^[:space:];|&]*i|\btouch\b|\bchmod\b)'; then
+      return 0
+    fi
+    return 1
   }
 
   shell_payload_is_sb_skill_adapter_invocation() {
@@ -582,6 +618,7 @@ PY
       fi
       # Fallback for opaque shell commands where no concrete write target can be
       # resolved from the command text or sourced script bodies.
+      shell_command_shows_write_intent "$command_str" || exit 0
       if ! matches_src_scope "$command_str" "$src_pattern"; then
         exit 0
       fi
@@ -785,7 +822,7 @@ PY
     # Stage A: missing planning skills — HARD STOP
     missing_display=""
     for ms in $missing_skills; do
-      missing_display="${missing_display}❌ ${ms}\\n"
+      missing_display="${missing_display}❌ ${ms}"$'\n'
     done
     stage_a_msg=$(printf '🚫 HARD STOP — Planning incomplete. Missing skills:\n%s\nRun the missing planning skills before editing source code.' "$missing_display")
     if [[ -n "$unavailable_skills" ]]; then

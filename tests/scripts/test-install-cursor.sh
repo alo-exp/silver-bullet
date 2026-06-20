@@ -51,6 +51,23 @@ else
   fail "install-cursor syncs cursor-hooks.json"
 fi
 
+if [[ -f "${current_link}/.cursor-plugin/plugin.json" ]] && [[ -f "${current_link}/cursor-hooks.json" ]]; then
+  pass "install-cursor installs Cursor plugin manifest"
+else
+  fail "install-cursor installs Cursor plugin manifest"
+fi
+
+registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"
+resolved_current="$(cd "$current_link" && pwd -P)"
+if [[ -f "$registry_path" ]] && \
+   jq -e --arg path "$resolved_current" \
+     '(.plugins["silver-bullet@alo-labs"] | if type == "array" then .[0].installPath else .installPath end) == $path' \
+     "$registry_path" >/dev/null 2>&1; then
+  pass "install-cursor registers silver-bullet@alo-labs in installed_plugins.json"
+else
+  fail "install-cursor registers silver-bullet@alo-labs in installed_plugins.json"
+fi
+
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"
 

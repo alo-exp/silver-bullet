@@ -4,6 +4,7 @@ title: "Silver: Verify Tests"
 description: This skill should be used to run the project's test execution gate before final delivery; it runs configured verify commands or stack defaults and writes the freshness marker consumed by SB hooks
 argument-hint: ""
 version: 0.1.0
+user-invocable: false
 ---
 
 # /verify-tests — Test Execution Gate

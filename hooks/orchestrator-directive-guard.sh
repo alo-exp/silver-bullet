@@ -114,7 +114,7 @@ esac
 # Parent orchestrator: allow delegation tools; block implementation tools on project source.
 if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
   case "$tool_name" in
-    Task|Subagent)
+    Task|Subagent|Agent)
       expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
       tmpl=""
       args=""

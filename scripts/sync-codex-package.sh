@@ -31,9 +31,12 @@ python3 "$AGENT_RENDERER" render --agent cursor --source-root "${REPO_ROOT}/skil
 
 shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
-  if [[ "$(basename "$entry")" == ".codex-plugin" ]]; then
-    continue
-  fi
+  base="$(basename "$entry")"
+  case "$base" in
+    .codex-plugin|.cursor-plugin|commands|skill-source|cursor-hooks.json|templates)
+      continue
+      ;;
+  esac
   rm -rf -- "$entry"
 done
 shopt -u dotglob nullglob
@@ -54,12 +57,10 @@ PACKAGE_ENTRIES=(
   SECURITY.md
   SENTINEL-audit-silver-bullet-v0.15.1.md
   SENTINEL-audit-silver-init.md
-  commands
   .silver-bullet.json
   docs
   hooks
   scripts
-  templates
 )
 
 for entry in "${PACKAGE_ENTRIES[@]}"; do

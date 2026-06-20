@@ -68,79 +68,7 @@ assert_route_smoke_adapter_only() {
     return 1
   fi
 
-  if validation_output="$(python3 - "$transcript_file" "$surface" <<'PY'
-import json
-import shlex
-import sys
-from pathlib import Path
-
-transcript_path = Path(sys.argv[1])
-route = sys.argv[2]
-expected = ["silver-bullet", "invoke-skill", route]
-
-
-def command_tokens(command):
-    if isinstance(command, list):
-        return [str(part) for part in command]
-    if isinstance(command, str):
-        try:
-            return shlex.split(command)
-        except ValueError:
-            return [command]
-    return []
-
-
-def command_display(command):
-    tokens = command_tokens(command)
-    if tokens:
-        return " ".join(shlex.quote(token) for token in tokens)
-    return repr(command)
-
-
-def is_hook_bridge(command):
-    tokens = command_tokens(command)
-    return any("project-hook-bridge.sh" in token for token in tokens)
-
-
-real_commands = []
-for raw in transcript_path.read_text(encoding="utf-8", errors="replace").splitlines():
-    if not raw.strip():
-        continue
-    try:
-        row = json.loads(raw)
-    except json.JSONDecodeError:
-        continue
-    msg = row.get("msg") or {}
-    if msg.get("type") != "exec_command_begin":
-        continue
-    command = msg.get("command")
-    if is_hook_bridge(command):
-        continue
-    real_commands.append(command)
-
-if not real_commands:
-    print(f"no non-hook exec_command_begin events found in {transcript_path}")
-    sys.exit(1)
-
-first = command_tokens(real_commands[0])
-if first != expected:
-    print("first real command was not the SB adapter")
-    print(f"expected: {' '.join(expected)}")
-    print(f"actual:   {command_display(real_commands[0])}")
-    sys.exit(2)
-
-if len(real_commands) != 1:
-    normalized = [command_tokens(command) for command in real_commands]
-    if not normalized or not all(cmd == expected for cmd in normalized):
-        print("route-smoke turn ran extra non-hook commands after the SB adapter")
-        print(f"expected exactly 1 real command, found {len(real_commands)}")
-        for index, command in enumerate(real_commands, 1):
-            print(f"{index}. {command_display(command)}")
-        sys.exit(3)
-
-print(command_display(real_commands[0]))
-PY
-)"; then
+  if validation_output="$(python3 "$(cd "$(dirname "$0")/.." && pwd)/lib/route-smoke-transcript.py" "$transcript_file" "$surface" 2>&1)"; then
     echo "PASS: $surface invoked the SB adapter as the only real command"
     PASS=$((PASS + 1))
     return 0
@@ -645,7 +573,7 @@ if [[ "$workflow_docs_present" != true ]]; then
   cp "${SB_ROOT}/templates/workflows/devops-cycle.md" "${WORK_DIR}/docs/workflows/devops-cycle.md"
 fi
 
-journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Ingest the todo-app codebase, summarize the current app structure, and note the most relevant files before any changes are made.')"
+journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Route-smoke the ingest surface for the todo-app journey. The harness owns deterministic scaffold recovery; do not explore the codebase.')"
 journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
 wait_for_state_contains "silver:scan recorded in workflow state" "silver:scan"
 research_prompt="$(skill_prompt 'silver:research' 'Route-smoke the research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"

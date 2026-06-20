@@ -72,7 +72,87 @@ sync_plugin_tree_from_checkout() {
   fi
   python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
+  install_cursor_plugin_manifest "$dest" "$version" "$source_root"
   printf '%s\n' "$dest"
+}
+
+install_cursor_plugin_manifest() {
+  local dest="$1"
+  local version="$2"
+  local source_root="$3"
+  local manifest_src="${source_root}/.cursor-plugin/plugin.json"
+  local tmp
+
+  mkdir -p "${dest}/.cursor-plugin"
+  [[ -f "$manifest_src" ]] || manifest_src="${REPO_ROOT}/.cursor-plugin/plugin.json"
+  [[ -f "$manifest_src" ]] || {
+    printf 'ERROR: missing Cursor plugin manifest at %s\n' "$manifest_src" >&2
+    exit 1
+  }
+
+  tmp="$(mktemp)"
+  jq --arg v "$version" '
+    .version = $v
+    | .skills = "./agents/cursor"
+    | .hooks = "./cursor-hooks.json"
+  ' "$manifest_src" > "$tmp"
+  install -m 644 "$tmp" "${dest}/.cursor-plugin/plugin.json"
+  rm -f -- "$tmp"
+  install -m 644 "${dest}/hooks/cursor-hooks.json" "${dest}/cursor-hooks.json"
+}
+
+ensure_cursor_installed_plugins_registry() {
+  local dest="$1"
+  local version="$2"
+  local registry_file="${CURSOR_HOME}/plugins/installed_plugins.json"
+  local now
+  local tmp
+
+  now="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
+  mkdir -p "$(dirname "$registry_file")"
+
+  python3 - "$registry_file" "$dest" "$version" "$now" <<'PY'
+import json
+import pathlib
+import sys
+
+registry_path = pathlib.Path(sys.argv[1])
+install_path = str(pathlib.Path(sys.argv[2]).resolve())
+version = sys.argv[3]
+now = sys.argv[4]
+plugin_id = "silver-bullet@alo-labs"
+
+data = {"version": 2, "plugins": {}}
+if registry_path.is_file():
+    try:
+        data = json.loads(registry_path.read_text())
+    except Exception:
+        pass
+
+plugins = data.setdefault("plugins", {})
+entry = {
+    "scope": "user",
+    "installPath": install_path,
+    "version": version,
+    "installedAt": now,
+    "lastUpdated": now,
+    "enabled": True,
+}
+
+existing = plugins.get(plugin_id)
+if isinstance(existing, list):
+    if existing:
+        existing[0].update(entry)
+    else:
+        plugins[plugin_id] = [entry]
+elif isinstance(existing, dict):
+    existing.update(entry)
+    plugins[plugin_id] = existing
+else:
+    plugins[plugin_id] = entry
+
+registry_path.write_text(json.dumps(data, indent=2) + "\n")
+PY
 }
 
 sync_plugin_tree() {
@@ -134,6 +214,7 @@ fi
 
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 ln -sfn "$DEST_ROOT" "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
+ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION"
 
 printf '\nCursor hook merge complete. SB hooks are in %s/hooks.json.\n' "$CURSOR_HOME"
 printf 'If skills do not appear, reload the window or run: bash scripts/install-cursor.sh --merge-hooks-only\n'

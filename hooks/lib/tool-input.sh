@@ -438,6 +438,7 @@ git_read_only_subcommands = {
     "branch",
     "config",
     "diff",
+    "grep",
     "log",
     "ls-files",
     "remote",
@@ -488,14 +489,105 @@ def unwrap_shell_command(command_name, args):
     return None
 
 
+def is_discard_redirect_target(target: str) -> bool:
+    normalized = target.strip().strip('"').strip("'")
+    return normalized in {"/dev/null", "NUL", "nul"} or normalized.endswith("/dev/null")
+
+
+def segment_has_writing_redirect(segment: str) -> bool:
+    for match in redirect_re.finditer(segment):
+        target = match.group(2) or match.group(3) or match.group(4) or ""
+        if not is_discard_redirect_target(target):
+            return True
+    return False
+
+
+def arg_has_embedded_writing_redirect(arg: str) -> bool:
+    if re.fullmatch(r">>?", arg):
+        return False
+    match = re.match(r"^(?:[1-9]\d*|&)?>>(.+)$", arg)
+    if match is not None:
+        return not is_discard_redirect_target(match.group(1))
+    match = re.match(r"^(?:[1-9]\d*|&)?>(.+)$", arg)
+    if match is not None:
+        return not is_discard_redirect_target(match.group(1))
+    return False
+
+
+def split_shell_segments(line: str):
+    segments = []
+    current = []
+    in_single = False
+    in_double = False
+    i = 0
+    length = len(line)
+    while i < length:
+        ch = line[i]
+        if in_single:
+            current.append(ch)
+            if ch == "'":
+                in_single = False
+            i += 1
+            continue
+        if in_double:
+            current.append(ch)
+            if ch == "\\" and i + 1 < length:
+                current.append(line[i + 1])
+                i += 2
+                continue
+            if ch == '"':
+                in_double = False
+            i += 1
+            continue
+        if ch == "'":
+            in_single = True
+            current.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_double = True
+            current.append(ch)
+            i += 1
+            continue
+        if i + 1 < length and line[i : i + 2] == "||":
+            segments.append("".join(current).strip())
+            current = []
+            i += 2
+            continue
+        if i + 1 < length and line[i : i + 2] == "&&":
+            segments.append("".join(current).strip())
+            current = []
+            i += 2
+            continue
+        if ch in ";|":
+            segments.append("".join(current).strip())
+            current = []
+            i += 1
+            continue
+        if ch == "\n":
+            segments.append("".join(current).strip())
+            current = []
+            i += 1
+            continue
+        current.append(ch)
+        i += 1
+    if current:
+        segments.append("".join(current).strip())
+    return [segment for segment in segments if segment and not segment.startswith("#")]
+
+
 def has_tokenized_redirect(command_name, args):
     for index, arg in enumerate(args):
+        if arg_has_embedded_writing_redirect(arg):
+            return True
         if not redirect_token_re.fullmatch(arg):
             continue
         if index + 1 >= len(args):
             continue
         candidate = args[index + 1]
         if candidate == "--":
+            continue
+        if is_discard_redirect_target(candidate):
             continue
         prior_operands = [
             token for token in args[:index]
@@ -589,13 +681,9 @@ while pending_chunks:
                 pending_chunks.insert(0, nested_command)
                 continue
 
-            if redirect_re.search(raw_line):
-                raise SystemExit(1)
-
-    for segment in re.split(r'(?:\|\||&&|[;|]|\n)', raw_line):
-        segment = segment.strip()
-        if not segment or segment.startswith("#"):
-            continue
+    for segment in split_shell_segments(raw_line):
+        if segment_has_writing_redirect(segment):
+            raise SystemExit(1)
         tokens = parse_tokens(segment)
         if not tokens:
             raise SystemExit(1)

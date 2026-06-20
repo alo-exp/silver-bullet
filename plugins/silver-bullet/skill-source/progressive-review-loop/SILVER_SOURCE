@@ -2,6 +2,7 @@
 name: progressive-review-loop
 title: "Silver: Progressive Review Loop"
 description: Run iterative audit/fix/verify loops for bounded artifact sets by escalating through model and reasoning levels one pair at a time until two consecutive clean passes are achieved at each level. Use when reviewing scripts, prompts, runbooks, configs, or other operational artifacts that need progressive confidence-building reviews.
+user-invocable: false
 ---
 
 # Progressive Review Loop

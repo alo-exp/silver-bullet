@@ -81,6 +81,10 @@ out_task=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Ta
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Task" "$out_task"
 
+out_agent=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Agent","tool_input":{"description":"worker"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows Agent (#229)" "$out_agent"
+
 assert_true_marker=false
 [[ -f "${SB_TEST_DIR}/orchestrator-worker-active.json" ]] && assert_true_marker=true
 if $assert_true_marker; then

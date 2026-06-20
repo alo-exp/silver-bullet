@@ -17,5 +17,6 @@
     "quality-gates",
     "deploy-gate",
     "ci-cd"
-  ]
+  ],
+  "skills": "./agents/claude"
 }
