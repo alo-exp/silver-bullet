@@ -39,9 +39,9 @@ If the user asks to refresh templates:
 
 ### 3.1a Write silver-bullet.md
 
-Write `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base`. This is always safe — it's a new file owned by Silver Bullet.
+Copy `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` into the project root (byte-for-byte template copy, then placeholder substitution). This is always safe — it's a new file owned by Silver Bullet.
 
-Perform these placeholder replacements:
+Perform these placeholder replacements on the copied file:
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{ACTIVE_WORKFLOW}}` → `full-dev-cycle` (default)
 
