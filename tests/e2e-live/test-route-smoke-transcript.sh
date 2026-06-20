@@ -37,6 +37,9 @@ assert_passes "direct argv adapter invocation accepted" \
 assert_passes "bash -lc wrapped adapter invocation accepted" \
   python3 "$SCRIPT" "${FIXTURE_DIR}/bash-lc-adapter.jsonl" "silver:ingest"
 
+assert_passes "route-smoke completion echo wrappers around adapter accepted" \
+  python3 "$SCRIPT" "${FIXTURE_DIR}/echo-adapter-echo.jsonl" "silver:forensics"
+
 assert_passes "duplicate identical adapter invocations accepted" \
   python3 "$SCRIPT" "${FIXTURE_DIR}/duplicate-adapter.jsonl" "silver:feature"
 

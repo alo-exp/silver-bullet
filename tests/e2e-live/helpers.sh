@@ -1308,9 +1308,19 @@ wait_for_state_contains() {
   local timeout_seconds="${3:-600}"
   local interval_seconds="${4:-2}"
   local deadline=$((SECONDS + timeout_seconds))
+  local alt_needle=""
+
+  if [[ "$needle" == silver:* ]]; then
+    alt_needle="silver-${needle#silver:}"
+  fi
 
   while (( SECONDS < deadline )); do
     if grep -qx "$needle" "$STATE_FILE" 2>/dev/null; then
+      echo "PASS: $label"
+      PASS=$((PASS + 1))
+      return 0
+    fi
+    if [[ -n "$alt_needle" ]] && grep -qx "$alt_needle" "$STATE_FILE" 2>/dev/null; then
       echo "PASS: $label"
       PASS=$((PASS + 1))
       return 0

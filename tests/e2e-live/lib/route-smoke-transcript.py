@@ -31,6 +31,30 @@ def is_hook_bridge(command: object) -> bool:
     return any("project-hook-bridge.sh" in token for token in command_tokens(command))
 
 
+def is_route_smoke_completion_echo(tokens: list[str], route: str) -> bool:
+    if not tokens or tokens[0] != "echo":
+        return False
+
+    message = " ".join(tokens[1:]).strip().strip("'\"")
+    route_variants = {route, f"`{route}`", f"{route}."}
+    for variant in route_variants:
+        if message == f"Route smoke complete for {variant}":
+            return True
+        if message == f"Route smoke complete for {variant}.":
+            return True
+    return False
+
+
+def substantive_exec_commands(transcript_path: Path, route: str) -> list[object]:
+    commands: list[object] = []
+    for command in extract_exec_commands(transcript_path):
+        tokens = command_tokens(command)
+        if is_route_smoke_completion_echo(tokens, route):
+            continue
+        commands.append(command)
+    return commands
+
+
 def normalize_route_smoke_adapter(tokens: list[str], route: str) -> list[str] | None:
     expected = ["silver-bullet", "invoke-skill", route]
     if tokens[:3] == expected:
@@ -97,7 +121,7 @@ def validate_route_smoke_transcript(transcript_path: Path, route: str) -> tuple[
             f"latest capture may be stale at {transcript_path}"
         )
 
-    real_commands = extract_exec_commands(transcript_path)
+    real_commands = substantive_exec_commands(transcript_path, route)
     if not real_commands:
         return False, f"no non-hook exec_command_begin events found in {transcript_path}"
 
@@ -107,7 +131,7 @@ def validate_route_smoke_transcript(transcript_path: Path, route: str) -> tuple[
         normalized = normalize_route_smoke_adapter(tokens, route)
         if normalized is None:
             return False, (
-                "first real command was not the SB adapter\n"
+                "first substantive command was not the SB adapter\n"
                 f"expected: {' '.join(expected)}\n"
                 f"actual:   {command_display(command)}"
             )
@@ -120,8 +144,8 @@ def validate_route_smoke_transcript(transcript_path: Path, route: str) -> tuple[
         return True, command_display(real_commands[0])
 
     lines = [
-        "route-smoke turn ran extra non-hook commands after the SB adapter",
-        f"expected exactly 1 real command, found {len(real_commands)}",
+        "route-smoke turn ran extra substantive commands after the SB adapter",
+        f"expected exactly 1 substantive command, found {len(real_commands)}",
     ]
     for index, command in enumerate(real_commands, 1):
         lines.append(f"{index}. {command_display(command)}")
