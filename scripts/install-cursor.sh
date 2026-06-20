@@ -10,7 +10,10 @@ CURSOR_MARKETPLACE_SOURCE="${CURSOR_MARKETPLACE_SOURCE:-https://github.com/alo-l
 CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="${CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/alo-labs-cursor-marketplace.git}"
 CURSOR_MARKETPLACE_NAME="${CURSOR_MARKETPLACE_NAME:-alo-labs-cursor}"
 CURSOR_MARKETPLACE_ROOT="${CURSOR_MARKETPLACE_ROOT:-${CURSOR_HOME}/plugins/marketplaces/${CURSOR_MARKETPLACE_NAME}}"
+CURSOR_GITHUB_REPO_SLUG="${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
+CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/silver-bullet.git}"
 DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
+INSTALL_COMMIT_SHA=""
 MERGE_HOOKS="${REPO_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py"
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
@@ -101,9 +104,60 @@ install_cursor_plugin_manifest() {
   install -m 644 "${dest}/hooks/cursor-hooks.json" "${dest}/cursor-hooks.json"
 }
 
+cursor_github_marketplace_gitpath_root() {
+  printf '%s/plugins/marketplaces/github.com/%s\n' "$CURSOR_HOME" "$CURSOR_GITHUB_REPO_SLUG"
+}
+
+resolve_install_commit_sha() {
+  local source_root="$1"
+  if [[ -d "${source_root}/.git" ]]; then
+    git -C "$source_root" rev-parse HEAD
+    return 0
+  fi
+  git -C "$REPO_ROOT" rev-parse HEAD
+}
+
+ensure_cursor_github_marketplace_gitpath() {
+  local commit_sha="$1"
+  local source_root="$2"
+  local base_root dest_root
+
+  [[ -n "$commit_sha" ]] || return 0
+
+  base_root="$(cursor_github_marketplace_gitpath_root)"
+  dest_root="${base_root}/${commit_sha}"
+
+  if [[ -d "${dest_root}/.git" ]] && git -C "$dest_root" cat-file -e "${commit_sha}^{commit}" >/dev/null 2>&1; then
+    git -C "$dest_root" checkout -f "$commit_sha" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  if [[ -d "$dest_root" ]]; then
+    rm -rf "$dest_root"
+  fi
+  mkdir -p "$(dirname "$base_root")"
+
+  if [[ -d "${source_root}/.git" ]] && [[ "$(git -C "$source_root" rev-parse HEAD)" == "$commit_sha" ]]; then
+    git clone --local "$source_root" "$dest_root" >/dev/null
+    return 0
+  fi
+
+  if ! git clone --depth 1 "$CURSOR_GITHUB_REPO_URL" "$dest_root" >/dev/null 2>&1; then
+    git clone "$CURSOR_GITHUB_REPO_URL" "$dest_root" >/dev/null
+  fi
+
+  if ! git -C "$dest_root" cat-file -e "${commit_sha}^{commit}" >/dev/null 2>&1; then
+    git -C "$dest_root" fetch --depth 1 origin "$commit_sha" >/dev/null 2>&1 || \
+      git -C "$dest_root" fetch origin "$commit_sha" >/dev/null 2>&1 || true
+  fi
+
+  git -C "$dest_root" checkout -f "$commit_sha" >/dev/null
+}
+
 ensure_cursor_installed_plugins_registry() {
   local dest="$1"
   local version="$2"
+  local commit_sha="${3:-}"
   local registry_file="${CURSOR_HOME}/plugins/installed_plugins.json"
   local now
   local tmp
@@ -111,7 +165,7 @@ ensure_cursor_installed_plugins_registry() {
   now="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
   mkdir -p "$(dirname "$registry_file")"
 
-  python3 - "$registry_file" "$dest" "$version" "$now" <<'PY'
+  python3 - "$registry_file" "$dest" "$version" "$now" "$commit_sha" <<'PY'
 import json
 import pathlib
 import sys
@@ -120,6 +174,7 @@ registry_path = pathlib.Path(sys.argv[1])
 install_path = str(pathlib.Path(sys.argv[2]).resolve())
 version = sys.argv[3]
 now = sys.argv[4]
+commit_sha = sys.argv[5]
 plugin_id = "silver-bullet@alo-labs"
 
 data = {"version": 2, "plugins": {}}
@@ -138,6 +193,8 @@ entry = {
     "lastUpdated": now,
     "enabled": True,
 }
+if commit_sha:
+    entry["gitCommitSha"] = commit_sha
 
 existing = plugins.get(plugin_id)
 if isinstance(existing, list):
@@ -156,12 +213,17 @@ PY
 }
 
 sync_plugin_tree() {
+  local dest
+
   mkdir -p "${REPO_ROOT}/agents"
   python3 "$AGENT_RENDERER" render \
     --agent cursor \
     --source-root "${REPO_ROOT}/skills" \
     --dest-root "${REPO_ROOT}/agents/cursor" >/dev/null 2>&1 || true
-  sync_plugin_tree_from_checkout "$REPO_ROOT" "$VERSION"
+  INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
+  dest="$(sync_plugin_tree_from_checkout "$REPO_ROOT" "$VERSION")"
+  ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
+  printf '%s\n' "$dest"
 }
 
 sync_plugin_tree_from_public_release() {
@@ -183,8 +245,10 @@ sync_plugin_tree_from_public_release() {
     --source-root "${checkout_dir}/skills" \
     --dest-root "${checkout_dir}/agents/cursor" >/dev/null
 
+  INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$checkout_dir")"
   VERSION="$release_version"
   DEST_ROOT="$(sync_plugin_tree_from_checkout "$checkout_dir" "$release_version")"
+  ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$checkout_dir"
   rm -rf -- "$checkout_dir"
 }
 
@@ -214,7 +278,10 @@ fi
 
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 ln -sfn "$DEST_ROOT" "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
-ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION"
+if [[ -z "$INSTALL_COMMIT_SHA" && -d "$REPO_ROOT/.git" ]]; then
+  INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
+fi
+ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
 
 printf '\nCursor hook merge complete. SB hooks are in %s/hooks.json.\n' "$CURSOR_HOME"
 printf 'If skills do not appear, reload the window or run: bash scripts/install-cursor.sh --merge-hooks-only\n'

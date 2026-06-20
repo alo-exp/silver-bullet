@@ -68,6 +68,23 @@ else
   fail "install-cursor registers silver-bullet@alo-labs in installed_plugins.json"
 fi
 
+repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+gitpath_root="${CURSOR_HOME}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${repo_sha}"
+if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${repo_sha}^{commit}" >/dev/null 2>&1; then
+  pass "install-cursor seeds github.com marketplace gitPath checkout"
+else
+  fail "install-cursor seeds github.com marketplace gitPath checkout"
+fi
+
+if [[ -f "$registry_path" ]] && \
+   jq -e --arg sha "$repo_sha" \
+     '(.plugins["silver-bullet@alo-labs"] | if type == "array" then .[0].gitCommitSha else .gitCommitSha end) == $sha' \
+     "$registry_path" >/dev/null 2>&1; then
+  pass "install-cursor records gitCommitSha in installed_plugins.json"
+else
+  fail "install-cursor records gitCommitSha in installed_plugins.json"
+fi
+
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"
 
