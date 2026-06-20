@@ -158,6 +158,16 @@ assert_file_exists "Silver Bullet Claude agent bundle rendered in repo" "$REPO_R
 assert_file_exists "Silver Bullet Claude agent bundle materialized in cache" "$CURRENT_SB_CACHE_DIR/agents/claude/silver-init/SKILL.md"
 assert_file_exists "Silver Bullet skills alias remains available in cache" "$CURRENT_SB_CACHE_DIR/skills/silver-init/SKILL.md"
 
+assert_file_absent "Silver Bullet Claude cache does not ship duplicate commands surface" "$CURRENT_SB_CACHE_DIR/commands"
+
+if [[ -L "$CURRENT_SB_CACHE_DIR/skills" ]] && [[ "$(readlink "$CURRENT_SB_CACHE_DIR/skills")" == "agents/claude" ]]; then
+  echo "PASS: Silver Bullet skills alias targets agents/claude"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Silver Bullet skills alias targets agents/claude"
+  (( FAIL++ )) || true
+fi
+
 if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF '"hookEventName":"SessionStart"' "$CURRENT_SB_CACHE_DIR/hooks/spec-session-record.sh"; then
   echo "PASS: Silver Bullet session-start hook emits hookEventName"
   (( PASS++ )) || true

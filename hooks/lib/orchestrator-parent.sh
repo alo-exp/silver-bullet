@@ -205,7 +205,7 @@ sb_orchestrator_state_applies_to_project() {
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
   case "$tool_name" in
-    Task|Subagent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
+    Task|Subagent|Agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
       return 0
       ;;
     Skill)

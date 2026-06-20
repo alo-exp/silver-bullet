@@ -106,7 +106,7 @@
         ]
       },
       {
-        "matcher": "Task|Subagent",
+        "matcher": "Task|Subagent|Agent",
         "hooks": [
           {
             "type": "command",

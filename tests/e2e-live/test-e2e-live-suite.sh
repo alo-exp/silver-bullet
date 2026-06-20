@@ -128,8 +128,10 @@ assert_file_contains "full-surface journey terminates timeout child pids" "${SCR
 assert_file_contains "full-surface journey force-kills stubborn timeout child pids" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'kill_process_id_list KILL'
 assert_file_contains "full-surface journey fails route-smoke timeouts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'route-smoke turns must stop after the SB adapter receipt'
 assert_file_contains "full-surface journey validates route-smoke transcript command order" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'assert_route_smoke_adapter_only'
-assert_file_contains "full-surface journey ignores hook bridge transcript commands" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'project-hook-bridge\.sh'
-assert_file_contains "full-surface journey requires exact SB adapter argv" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'expected = \["silver-bullet", "invoke-skill", route\]'
+assert_file_contains "route-smoke transcript validator ignores hook bridge commands" "${SCRIPT_DIR}/lib/route-smoke-transcript.py" 'project-hook-bridge\.sh'
+assert_file_contains "route-smoke transcript validator requires exact SB adapter argv" "${SCRIPT_DIR}/lib/route-smoke-transcript.py" 'expected = \["silver-bullet", "invoke-skill", route\]'
+assert_file_contains "route-smoke transcript validator normalizes bash -lc adapter wrapper" "${SCRIPT_DIR}/lib/route-smoke-transcript.py" 'normalize_route_smoke_adapter'
+assert_executable "route-smoke transcript unit test is executable" "${SCRIPT_DIR}/test-route-smoke-transcript.sh"
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'silver-context silver-plan'
 assert_file_contains "full-surface journey shortens route-smoke workflow-doc wait" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'workflow_docs_deadline=\$\(\(SECONDS \+ 2\)\)'
 assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
