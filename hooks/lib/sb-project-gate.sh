@@ -4,20 +4,68 @@
 # Set only by silver:init (Wave 0.1). Prevents SB activation in arbitrary repos
 # that happen to contain .silver-bullet.json without running init.
 
-# Print absolute path to .silver-bullet.json when project boundary is satisfied.
-sb_find_project_config() {
-  local search_dir="$PWD"
-  while true; do
+SB_PROJECT_ROOT_CACHE_FILE="${SB_RUNTIME_STATE_DIR}/project-root"
+
+# Persist a validated project root for CWD-independent hook resolution (#232).
+sb_project_root_cache_write() {
+  local root="${1%/}"
+  [[ -n "$root" ]] || return 1
+  [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]] || return 1
+  [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 0
+  mkdir -p "${SB_RUNTIME_STATE_DIR}" 2>/dev/null || true
+  local tmp="${SB_PROJECT_ROOT_CACHE_FILE}.$$"
+  if printf '%s\n' "$root" >"$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null || rm -f -- "$tmp"
+  fi
+}
+
+# Return cached project root when still valid.
+sb_project_root_cache_read() {
+  local cached=""
+  [[ -f "$SB_PROJECT_ROOT_CACHE_FILE" ]] || return 1
+  cached="$(sed -n '1p' "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null || true)"
+  [[ -n "$cached" && -f "$cached/.silver-bullet.json" && -f "$cached/silver-bullet.md" ]] || return 1
+  printf '%s' "$cached"
+}
+
+# Walk upward from start_dir; print .silver-bullet.json when boundary is satisfied.
+sb_find_project_config_from() {
+  local search_dir="${1:-$PWD}"
+  local root=""
+
+  if [[ -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then
+    root="${SILVER_BULLET_PROJECT_ROOT%/}"
+    if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then
+      sb_project_root_cache_write "$root"
+      printf '%s/.silver-bullet.json' "$root"
+      return 0
+    fi
+  fi
+
+  while [[ -n "$search_dir" ]]; do
     if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      printf '%s' "$search_dir/.silver-bullet.json"
+      sb_project_root_cache_write "$search_dir"
+      printf '%s/.silver-bullet.json' "$search_dir"
       return 0
     fi
     if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
       break
     fi
-    search_dir=$(dirname "$search_dir")
+    search_dir="$(dirname "$search_dir")"
   done
+
+  root="$(sb_project_root_cache_read 2>/dev/null || true)"
+  if [[ -n "$root" ]]; then
+    printf '%s/.silver-bullet.json' "$root"
+    return 0
+  fi
+
   return 1
+}
+
+# Print absolute path to .silver-bullet.json when project boundary is satisfied.
+sb_find_project_config() {
+  sb_find_project_config_from "$PWD"
 }
 
 # Print project root directory when boundary is satisfied.

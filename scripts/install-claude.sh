@@ -281,13 +281,21 @@ sync_silver_bullet_skill_cache() {
   [[ -d "$cache_root" ]] || return 0
   current_version_dir="$(find "$cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
   [[ -n "$current_version_dir" ]] || return 0
-  [[ -d "$source_root" ]] || return 0
 
-  rm -rf "${current_version_dir}/skills"
-  rm -rf "${current_version_dir}/agents"
-  mkdir -p "${current_version_dir}/agents"
-  rsync -a --delete "${source_root}/" "${current_version_dir}/agents/claude/"
-  ln -sfn "agents/claude" "${current_version_dir}/skills"
+  rm -rf "${current_version_dir}/commands"
+
+  if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 && -d "$source_root" ]]; then
+    rm -rf "${current_version_dir}/skills"
+    rm -rf "${current_version_dir}/agents"
+    mkdir -p "${current_version_dir}/agents"
+    rsync -a --delete "${source_root}/" "${current_version_dir}/agents/claude/"
+  elif [[ -d "${current_version_dir}/skills" && ! -L "${current_version_dir}/skills" ]]; then
+    rm -rf "${current_version_dir}/skills"
+  fi
+
+  if [[ -d "${current_version_dir}/agents/claude" ]]; then
+    ln -sfn "agents/claude" "${current_version_dir}/skills"
+  fi
 }
 
 ensure_github_https_rewrite() {
@@ -346,8 +354,8 @@ refresh_silver_bullet_install_alias
 sync_silver_bullet_settings_paths
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   sync_silver_bullet_hook_cache
-  sync_silver_bullet_skill_cache
 fi
+sync_silver_bullet_skill_cache
 
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   printf 'Claude marketplace refreshed from public source %s\n' "$CLAUDE_SB_MARKETPLACE_SOURCE"

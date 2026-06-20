@@ -355,6 +355,65 @@ out=$(run_hook_bash "PreToolUse" "git show HEAD:src/app.js | sed -n '1,40p'")
 assert_passes "read-only git show of src file passes without planning" "$out"
 teardown
 
+# Test 4ae2: Stage A — git grep in src passes without planning (#227 grep false positive)
+setup
+out=$(run_hook_bash "PreToolUse" "git grep -n forwarder -- src/app.js")
+assert_passes "read-only git grep of src file passes without planning" "$out"
+teardown
+
+# Test 4ae3: Stage A — grep in src passes without planning
+setup
+out=$(run_hook_bash "PreToolUse" "grep -n forwarder src/app.js")
+assert_passes "read-only grep of src file passes without planning" "$out"
+teardown
+
+# Test 4ae4: Stage A — ls under src-tauri/src with 2>/dev/null passes without planning
+setup
+PROXY_DIR="${TMPDIR_TEST}/src-tauri/src/proxy"
+mkdir -p "$PROXY_DIR"
+touch "${PROXY_DIR}/forwarder.rs"
+out=$(run_hook_bash "PreToolUse" "ls -la ${PROXY_DIR}/ 2>/dev/null")
+assert_passes "read-only ls of src-tauri/src path with stderr discard passes" "$out"
+teardown
+
+# Test 4ae5: Stage A — compound ls with || and src-tauri paths passes without planning
+setup
+PROXY_DIR="${TMPDIR_TEST}/src-tauri/src/proxy"
+mkdir -p "$PROXY_DIR"
+touch "${PROXY_DIR}/forwarder.rs"
+out=$(run_hook_bash "PreToolUse" "ls -la ${TMPDIR_TEST}/.planning/quality-gates/ 2>/dev/null || echo \"no quality-gates dir yet\"; ls -la ${PROXY_DIR}/ 2>/dev/null")
+assert_passes "read-only compound ls with stderr discard and src-tauri path passes" "$out"
+teardown
+
+# Test 4ae6: Stage A — grep with alternation in quotes piped to head passes without planning
+setup
+PROXY_DIR="${TMPDIR_TEST}/src-tauri/src/proxy"
+mkdir -p "$PROXY_DIR"
+touch "${PROXY_DIR}/forwarder.rs"
+out=$(run_hook_bash "PreToolUse" "grep -n \"log::info\\|tracing::info\" ${PROXY_DIR}/forwarder.rs | head -10")
+assert_passes "read-only grep with quoted alternation piped to head passes" "$out"
+teardown
+
+# Test 4ae7: Stage A — gh issue create mentioning src path in args is not planning-gated (#231)
+setup
+out=$(run_hook_bash "PreToolUse" "gh issue create --repo alo-exp/silver-bullet --title \"bug in src-tauri/src/proxy/forwarder.rs\" --body \"mentions src/app.js in prose only\"")
+assert_passes "gh issue create with src path mentions in args is not planning-gated" "$out"
+teardown
+
+# Test 4ae8: Stage A — planning block uses real newlines in missing skill list (#230)
+setup
+out=$(run_hook_bash "PreToolUse" "touch src/new-file.js")
+assert_blocks "touch inside src still blocked without planning" "$out"
+reason=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty' 2>/dev/null || true)
+if printf '%s' "$reason" | grep -q $'silver-quality-gates\n'; then
+  echo "  ✅ planning block uses real newlines in skill list"
+  PASS=$((PASS + 1))
+else
+  echo "  ❌ planning block must use real newlines between missing skills"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
 # Test 4af: Stage A — touch inside src is blocked without planning
 setup
 out=$(run_hook_bash "PreToolUse" "touch src/new-file.js")
@@ -679,6 +738,24 @@ out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silv
 assert_blocks "tamper: tee with expanded quoted state path is still blocked (exemption abuse)" "$out"
 teardown
 
+# Test 17i: planning-edit-override sentinel via touch is ALLOWED
+setup
+out=$(run_hook_bash "PreToolUse" "touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override")
+assert_passes "tamper: touch planning-edit-override sentinel is allowed" "$out"
+teardown
+
+# Test 17j: planning-edit-override sentinel via Write is ALLOWED
+setup
+out=$(run_hook_write "PreToolUse" "${SB_RUNTIME_STATE_DIR}/planning-edit-override")
+assert_passes "tamper: Write planning-edit-override sentinel is allowed" "$out"
+teardown
+
+# Test 17k: direct Write to state file is still BLOCKED
+setup
+out=$(run_hook_write "PreToolUse" "${SB_RUNTIME_STATE_DIR}/state")
+assert_blocks "tamper: Write to state file is still blocked" "$out"
+teardown
+
 # Tests 18-22: F-07 plugin boundary — execution vs write distinction
 # Use expanded $HOME path so the plugin_cache grep actually fires in the hook
 PLUGIN_CACHE_PATH="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
@@ -700,6 +777,12 @@ teardown
 setup
 out=$(run_hook_bash "PreToolUse" "cat ${PLUGIN_CACHE_PATH}/some-plugin/template.md | sed 's/foo/bar/' > /tmp/template.out")
 assert_passes "F-07: read from plugin cache with workspace redirect is allowed" "$out"
+teardown
+
+# Test 19c: cp from plugin cache template into project workspace is ALLOWED (#227)
+setup
+out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/silver-bullet.md")
+assert_passes "F-07: cp from plugin cache into project workspace is allowed" "$out"
 teardown
 
 # Test 20: python3 execution of plugin binary should be ALLOWED
