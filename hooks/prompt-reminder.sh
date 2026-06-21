@@ -391,6 +391,20 @@ ${tier_line}"
   fi
 fi
 
+# Graphify opt-in status (only when user has enabled enforcement)
+if [[ -f "$_lib_dir/graphify-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/graphify-gate.sh
+  source "$_lib_dir/graphify-gate.sh"
+  graphify_line="$(sb_graphify_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+  if [[ -n "$graphify_line" ]]; then
+    msg="${msg}
+
+---
+
+${graphify_line}"
+  fi
+fi
+
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0
