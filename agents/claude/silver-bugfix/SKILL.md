@@ -27,6 +27,12 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 
 Single-phase by design — no per-phase loop. FLOW 15 always included.
 
+Before triage, run Graphify for the failure surface:
+
+```bash
+graphify query "<bug symptom, files, tests, stack traces>" --graph graphify-out/graph.json --budget 2000
+```
+
 ## Triage paths (FLOW 15)
 
 | User selection | Route |

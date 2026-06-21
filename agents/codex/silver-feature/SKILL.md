@@ -75,6 +75,14 @@ missing lifecycle skills with shell-only work.
 
 ### Context scan (skip/include flags)
 
+Before composing flows, run Graphify retrieval for the feature scope:
+
+```bash
+graphify query "<feature intent plus likely files/modules>" --graph graphify-out/graph.json --budget 2000
+```
+
+Inspect nodes before choosing skip/include flags. Hooks block implementation edits without a fresh query.
+
 | Artifact | Action |
 |----------|--------|
 | `.planning/SPEC.md` | Skip FLOW 5 when present |

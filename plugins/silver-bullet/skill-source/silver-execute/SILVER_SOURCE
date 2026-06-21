@@ -26,8 +26,10 @@ Update the current phase with:
 ## Process
 
 1. Display `SILVER BULLET > EXECUTE`.
-2. Read the active PLAN.md and confirm prerequisites, blockers, and TDD policy.
-3. For implementation logic, invoke `tdd` before code edits and establish the
+2. Run Graphify retrieval for the plan scope before the first wave:
+   `graphify query "<phase/plan files and task context>" --graph graphify-out/graph.json --budget 2000`
+3. Read the active PLAN.md and confirm prerequisites, blockers, and TDD policy.
+4. For implementation logic, invoke `tdd` before code edits and establish the
    failing test or explicit testability rationale.
 4. Execute one wave at a time. Keep edits scoped to the wave.
 5. After each wave:

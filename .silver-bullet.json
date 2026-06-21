@@ -138,6 +138,12 @@
       "silver-undo"
     ]
   },
+  "graphify": {
+    "required": true,
+    "graph_path": "graphify-out/graph.json",
+    "query_ttl_seconds": 1800,
+    "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+  },
   "hooks": {
     "evidence_schema": {
       "strict": true

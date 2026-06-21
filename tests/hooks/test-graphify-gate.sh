@@ -3,14 +3,6 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
-  # shellcheck source=hooks/lib/runtime-paths.sh
-  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
-fi
-
-export SILVER_BULLET_TEST_HOOK_ENFORCED=1
-
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GATE_HOOK="$REPO_ROOT/hooks/graphify-gate.sh"
 LIB="$REPO_ROOT/hooks/lib/graphify-gate.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
@@ -82,10 +74,14 @@ EOF
   export PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
+unmock_graphify() {
+  export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+  hash -r 2>/dev/null || true
+}
+
 write_cfg() {
-  local enabled="${1:-true}"
+  local required="${1:-true}"
   local initiated="${2:-true}"
-  local suspended="${3:-false}"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -94,14 +90,11 @@ EOF
   "config_version": "${CURRENT_CONFIG_VERSION}",
   "sb_initiated": ${initiated},
   "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
-  "recommended_tools": {
-    "graphify": {
-      "enabled_by_user": ${enabled},
-      "enforcement_suspended": ${suspended},
-      "graph_path": "graphify-out/graph.json",
-      "query_ttl_seconds": 1800,
-      "query_state_file": "${GRAPHIFY_STATE}"
-    }
+  "graphify": {
+    "required": ${required},
+    "graph_path": "graphify-out/graph.json",
+    "query_ttl_seconds": 1800,
+    "query_state_file": "${GRAPHIFY_STATE}"
   },
   "skills": { "required_planning": ["silver-quality-gates"] },
   "state": {
@@ -125,6 +118,7 @@ setup() {
   git -C "$TMPDIR_TEST" config user.email "test@test.com"
   git -C "$TMPDIR_TEST" config user.name "Test"
   export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  export SILVER_BULLET_GRAPHIFY_QUERY_STATE_FILE="$GRAPHIFY_STATE"
   export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST"
   export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
   rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
@@ -147,6 +141,7 @@ run_bash() {
 
 echo "=== graphify-gate.sh tests ==="
 
+# 1: No SB project -> allow
 setup
 unset SILVER_BULLET_PROJECT_ROOT
 rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
@@ -154,34 +149,21 @@ out="$(run_edit)"
 assert_allow "no silver-bullet.md config boundary" "$out"
 export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST"
 
+# 2: not initiated -> allow
 setup
 write_cfg true false
-install_mock_graphify
-touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_edit)"
-assert_deny "config present enforces gate regardless of sb_initiated" "$out"
+assert_allow "sb_initiated false bypasses gate" "$out"
 
+# 3: graphify.required false -> allow
 setup
 write_cfg false true
 install_mock_graphify
 touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_edit)"
-assert_allow "enabled_by_user false bypasses gate" "$out"
+assert_allow "graphify.required false bypasses gate" "$out"
 
-setup
-write_cfg null true
-install_mock_graphify
-touch "${TMPDIR_TEST}/graphify-out/graph.json"
-out="$(run_edit)"
-assert_allow "consent pending bypasses gate" "$out"
-
-setup
-write_cfg true true true
-install_mock_graphify
-touch "${TMPDIR_TEST}/graphify-out/graph.json"
-out="$(run_edit)"
-assert_allow "enforcement_suspended bypasses gate despite opt-in" "$out"
-
+# 4: trivial session -> allow
 setup
 write_cfg true true
 install_mock_graphify
@@ -190,15 +172,17 @@ touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out="$(run_edit)"
 assert_allow "trivial bypass" "$out"
 
+# 5: CLI missing -> warn not deny
 setup
 write_cfg true true
 touch "${TMPDIR_TEST}/graphify-out/graph.json"
 input=$(jq -n --arg f "$TMPFILE" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
 out="$(cd "$TMPDIR_TEST" && export PATH="/usr/bin:/bin" HOME="$(mktemp -d)" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
-assert_deny "CLI missing blocks when opted in" "$out"
+assert_allow "CLI missing warns but allows" "$out"
 assert_contains "CLI missing message" "$out" "GRAPHIFY REQUIRED"
 
+# 6: index missing -> deny
 setup
 write_cfg true true
 install_mock_graphify
@@ -206,6 +190,7 @@ out="$(run_edit)"
 assert_deny "index missing blocks edit" "$out"
 assert_contains "index missing reason" "$out" "GRAPHIFY INDEX MISSING"
 
+# 7: index present, no query -> deny
 setup
 write_cfg true true
 install_mock_graphify
@@ -214,6 +199,7 @@ out="$(run_edit)"
 assert_deny "no fresh query blocks edit" "$out"
 assert_contains "stale query reason" "$out" "GRAPHIFY QUERY REQUIRED"
 
+# 8: fresh query -> allow
 setup
 write_cfg true true
 install_mock_graphify
@@ -222,6 +208,7 @@ date +%s >"$GRAPHIFY_STATE"
 out="$(run_edit)"
 assert_allow "fresh query allows edit" "$out"
 
+# 9: stale query -> deny
 setup
 write_cfg true true
 install_mock_graphify
@@ -230,6 +217,7 @@ printf '1\n' >"$GRAPHIFY_STATE"
 out="$(run_edit)"
 assert_deny "stale query blocks edit" "$out"
 
+# 10: graphify query bash exempt without prior query
 setup
 write_cfg true true
 install_mock_graphify
@@ -237,6 +225,7 @@ touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_bash 'graphify query "hooks graphify-gate" --graph graphify-out/graph.json')"
 assert_allow "graphify query command exempt" "$out"
 
+# 11: graphify-out edit exempt
 setup
 write_cfg true true
 install_mock_graphify
@@ -246,6 +235,7 @@ out="$(jq -n --arg f "$GF" \
   '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f}}' | (cd "$TMPDIR_TEST" && bash "$GATE_HOOK" 2>/dev/null))"
 assert_allow "graphify-out path exempt" "$out"
 
+# 12: git commit without query -> deny
 setup
 write_cfg true true
 install_mock_graphify
@@ -253,6 +243,7 @@ touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_bash 'git commit -m "test"')"
 assert_deny "git commit requires fresh query" "$out"
 
+# 13: lib — retrieval command detection
 # shellcheck source=hooks/lib/graphify-gate.sh
 source "$LIB"
 if sb_graphify_command_is_retrieval 'graphify query "foo" --graph graphify-out/graph.json'; then
@@ -271,9 +262,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+# 14: core-rules mandatory language
 assert_contains "core-rules layer 13" "$(cat "$REPO_ROOT/hooks/core-rules.md")" "Graphify retrieval gate"
-assert_contains "core-rules opt-in" "$(cat "$REPO_ROOT/hooks/core-rules.md")" "enabled_by_user"
+assert_contains "core-rules MUST query" "$(cat "$REPO_ROOT/hooks/core-rules.md")" "MUST retrieve project memory with Graphify"
 
+# 15: jq missing fail-open (static guard + runtime no-op when jq absent)
 if grep -q 'command -v jq' "$GATE_HOOK"; then
   echo "  PASS: jq guard present in graphify-gate.sh"
   PASS=$((PASS + 1))
