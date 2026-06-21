@@ -44,7 +44,7 @@ EOF
   "skills": {
     "required_planning": ["silver-quality-gates"],
     "required_deploy": ["silver-quality-gates","code-review"],
-    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","silver-blast-radius","devops-quality-gates","gsd-discuss-phase","gsd-plan-phase","gsd-execute-phase","gsd-verify-work","gsd-ship"]
+    "all_tracked": ["silver-quality-gates","code-review","requesting-code-review","receiving-code-review","testing-strategy","documentation","finishing-a-development-branch","deploy-checklist","silver-create-release","verification-before-completion","test-driven-development","tech-debt","silver-blast-radius","devops-quality-gates","silver-context","silver-plan","silver-execute","silver-verify","silver-ship"]
   },
   "state": { "state_file": "${TMPSTATE}", "trivial_file": "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" }
   }
@@ -207,19 +207,6 @@ run_hook "silver:scan" >/dev/null
 assert_in_state "default SB route remains recordable when project config has partial all_tracked" "silver-scan"
 teardown
 
-# Test 2c: legacy project config can still record an explicit legacy marker
-setup
-run_hook "gsd-discuss-phase" >/dev/null
-assert_in_state "legacy project config records gsd-discuss-phase when explicitly tracked" "gsd-discuss-phase"
-teardown
-
-# Test 2d: retired dependency-era markers are not in fresh packaged defaults
-setup
-rm -f "$TMPCFG"
-run_hook "gsd-scan" >/dev/null
-assert_not_in_state "fresh packaged defaults do not track gsd-scan" "gsd-scan"
-teardown
-
 # Test 3: Namespace prefix stripped (e.g., superpowers:code-review → code-review)
 setup
 run_hook "superpowers:code-review" >/dev/null
@@ -299,20 +286,6 @@ teardown
 setup
 run_hook "devops-quality-gates" >/dev/null
 assert_in_state "devops-quality-gates recorded" "devops-quality-gates"
-teardown
-
-# Test 11: Legacy marker normalization (gsd:discuss-phase → gsd-discuss-phase for old state compat)
-echo "--- Group 4b: Legacy marker normalization ---"
-setup
-run_hook "gsd:discuss-phase" >/dev/null
-assert_in_state "legacy gsd: colon form normalized to hyphen form" "gsd-discuss-phase"
-assert_not_in_state "colon form not recorded verbatim" "gsd:discuss-phase"
-assert_not_in_state "stripped form not recorded" "discuss-phase"
-teardown
-
-setup
-run_hook "gsd:execute-phase" >/dev/null
-assert_in_state "legacy gsd:execute-phase normalized to gsd-execute-phase" "gsd-execute-phase"
 teardown
 
 # Test 12: Non-Skill tool input is silently ignored

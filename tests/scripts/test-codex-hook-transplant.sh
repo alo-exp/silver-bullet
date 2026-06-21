@@ -64,7 +64,7 @@ cat > "$root/.codex/hooks.json" <<JSON
       {
         "hooks": [
           {
-            "command": "\"$root/.codex/hooks/gsd-check-update.js\""
+            "command": "\"$root/.codex/hooks/legacy-check-update.js\""
           }
         ]
       }
@@ -82,7 +82,7 @@ cat > "$root/.codex/hooks.json" <<JSON
   }
 }
 JSON
-cat > "$root/.codex/hooks/gsd-check-update.js" <<'HOOKJS'
+cat > "$root/.codex/hooks/legacy-check-update.js" <<'HOOKJS'
 console.log("harvested-check-update");
 HOOKJS
 cat > "$root/.codex/bin/silver-bullet" <<SHIM
@@ -293,7 +293,7 @@ assert_file_contains "target hooks.json updated from harvested install" \
   "$TARGET_HOME/.codex/hooks.json" \
   'dev-cycle-check.sh'
 assert_file_contains "target hooks directory synced from harvested install" \
-  "$TARGET_HOME/.codex/hooks/gsd-check-update.js" \
+  "$TARGET_HOME/.codex/hooks/legacy-check-update.js" \
   'harvested-check-update'
 assert_file_contains "target Codex invoke-skill shim synced from harvested install" \
   "$TARGET_HOME/.codex/bin/silver-bullet" \

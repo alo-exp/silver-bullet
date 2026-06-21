@@ -142,13 +142,13 @@ out=$(run_hook)
 assert_contains "review skills complete -> REVIEW 3/3" "$out" "REVIEW 3/3"
 teardown
 
-# Test 5: legacy GSD skills present -> LIFECYCLE count increments through aliases
-echo "--- Test 5: legacy GSD skills increment LIFECYCLE counter ---"
+# Test 5: SB lifecycle skills present -> LIFECYCLE count increments
+echo "--- Test 5: SB lifecycle skills increment LIFECYCLE counter ---"
 setup
 write_cfg
-printf 'gsd-discuss-phase\ngsd-plan-phase\ngsd-execute-phase\n' > "$TMPSTATE"
+printf 'silver-context\nsilver-plan\nsilver-execute\n' > "$TMPSTATE"
 out=$(run_hook)
-assert_contains "3 legacy gsd skills -> LIFECYCLE 3/5" "$out" "LIFECYCLE 3/5"
+assert_contains "3 SB lifecycle skills -> LIFECYCLE 3/5" "$out" "LIFECYCLE 3/5"
 teardown
 
 # Test 6: Next skill shown for first missing planning skill
@@ -200,7 +200,7 @@ teardown
 echo "--- Test 10: Total step count correct ---"
 setup
 write_cfg
-printf 'silver-quality-gates\nrequesting-code-review\ngsd-code-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nrequesting-code-review\nsilver-review\n' > "$TMPSTATE"
 out=$(run_hook)
 assert_contains "3 lines in state -> Silver Bullet: 3 steps" "$out" "3 steps"
 teardown

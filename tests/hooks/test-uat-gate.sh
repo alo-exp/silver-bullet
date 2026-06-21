@@ -192,13 +192,6 @@ out=$(run_hook "silver-ship")
 assert_passes "silver:ship not blocked when SPEC exists but UAT absent (phase ship)" "$out"
 teardown
 
-# Test 7: legacy gsd:complete-milestone (colon variant) also triggers the gate
-echo "--- Group 7: Legacy colon variant ---"
-setup
-out=$(run_hook "gsd:complete-milestone")
-assert_blocks "legacy gsd:complete-milestone (colon form) also blocked when UAT.md missing" "$out"
-teardown
-
 # Test 8: Summary table with FAIL column header — must NOT block
 echo "--- Group 8: Summary table FAIL header (HOOK-01) ---"
 setup

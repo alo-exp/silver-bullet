@@ -54,12 +54,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
 fi
 
 # M-07: intentional no-op — absorbed dependency namespaces exit 0 below.
-# silver:* routes normalize to silver-* via legacy-skill-alias.sh.
+# silver:* routes normalize to silver-* via skill-discovery.sh.
 # Hook retained for matcher compatibility; does not block SB-owned workflows.
-if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
-  # shellcheck source=lib/legacy-skill-alias.sh
-  source "$_lib_dir/legacy-skill-alias.sh"
-  raw_skill="$(sb_legacy_skill_alias_normalize "$raw_skill")"
+if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+  raw_skill="$(sb_skill_canonical_name "$raw_skill")"
 fi
 
 case "$raw_skill" in
