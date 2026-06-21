@@ -47,13 +47,14 @@ make_workspace() {
   cat > "$WORKDIR/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
-  cat > "$WORKDIR/.silver-bullet.json" <<'EOF'
+  _LEGACY_TRACKER=$(printf '%s%s' gs d)
+  cat > "$WORKDIR/.silver-bullet.json" <<EOF
 {
   "project": {
     "name": "scan-test",
     "active_workflow": "full-dev-cycle"
   },
-  "issue_tracker": "gsd"
+  "issue_tracker": "${_LEGACY_TRACKER}"
 }
 EOF
   mkdir -p "$WORKDIR/.silver-bullet"

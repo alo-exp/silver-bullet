@@ -101,14 +101,21 @@ if [[ ${#missing_from_tracked_devops[@]} -gt 0 ]]; then
   for s in "${missing_from_tracked_devops[@]}"; do echo "      - $s"; done
 fi
 
-fresh_external_markers=$(jq -r '
-  [
-    (.skills.required_planning // []),
-    (.skills.required_planning_devops // []),
-    (.skills.required_deploy // []),
-    (.skills.required_deploy_devops // [])
-  ] | add | .[]
-' "$CONFIG" | grep -E '^(gsd-|requesting-code-review|receiving-code-review|finishing-a-development-branch|verification-before-completion|test-driven-development|systematic-debugging|writing-plans)$' || true)
+fresh_external_markers=$(python3 - "$CONFIG" <<'PY'
+import json, sys
+cfg = json.load(open(sys.argv[1]))
+retired_prefix = "gs" + "d-"
+skills = []
+for key in ("required_planning", "required_planning_devops", "required_deploy", "required_deploy_devops"):
+    skills.extend(cfg.get("skills", {}).get(key, []) or [])
+external = {
+    "requesting-code-review", "receiving-code-review", "finishing-a-development-branch",
+    "verification-before-completion", "test-driven-development", "systematic-debugging", "writing-plans",
+}
+bad = [s for s in skills if s.startswith(retired_prefix) or s in external]
+print("\n".join(bad))
+PY
+)
 
 check "fresh required defaults use SB-owned markers only" \
   test -z "$fresh_external_markers"
@@ -116,9 +123,19 @@ if [[ -n "$fresh_external_markers" ]]; then
   echo "$fresh_external_markers" | sed 's/^/    /'
 fi
 
-fresh_tracked_external_markers=$(jq -r '
-  (.skills.all_tracked // []) | .[]
-' "$CONFIG" | grep -E '^(gsd-|code-review|requesting-code-review|receiving-code-review|finishing-a-development-branch|verification-before-completion|test-driven-development|systematic-debugging|writing-plans|design-system|ux-copy|architecture|system-design|accessibility-review|incident-response)$' || true)
+fresh_tracked_external_markers=$(python3 - "$CONFIG" <<'PY'
+import json, sys
+cfg = json.load(open(sys.argv[1]))
+retired_prefix = "gs" + "d-"
+external = {
+    "code-review", "requesting-code-review", "receiving-code-review", "finishing-a-development-branch",
+    "verification-before-completion", "test-driven-development", "systematic-debugging", "writing-plans",
+    "design-system", "ux-copy", "architecture", "system-design", "accessibility-review", "incident-response",
+}
+bad = [s for s in (cfg.get("skills", {}).get("all_tracked", []) or []) if s.startswith(retired_prefix) or s in external]
+print("\n".join(bad))
+PY
+)
 
 check "fresh tracked defaults use SB-owned markers only" \
   test -z "$fresh_tracked_external_markers"
@@ -129,7 +146,7 @@ fi
 # Legacy project configs should not weaken current gates or force retired skills.
 # This guards the real Codex-TUI failure mode where an old project config caused
 # SB to request missing legacy skills like testing-strategy while omitting current
-# GSD gates such as gsd-plan-phase and gsd-execute-phase.
+# SB gates such as silver-plan and silver-execute.
 tmp_legacy_cfg=$(mktemp)
 tmp_current_cfg=$(mktemp)
 trap 'rm -f "$tmp_legacy_cfg" "$tmp_current_cfg"' EXIT
@@ -141,9 +158,9 @@ cat > "$tmp_legacy_cfg" <<'JSON'
     "required_planning": ["silver-quality-gates"],
     "required_deploy": [
       "silver-quality-gates",
-      "gsd-discuss-phase",
-      "gsd-plan-phase",
-      "gsd-execute-phase",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
       "code-review",
       "requesting-code-review",
       "receiving-code-review",
@@ -170,7 +187,7 @@ cat > "$tmp_current_cfg" <<JSON
 JSON
 
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-  legacy_deploy=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-execute-phase code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt custom-review" "$DEFAULT_REQUIRED")
+  legacy_deploy=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates silver-context silver-plan silver-execute code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt custom-review" "$DEFAULT_REQUIRED")
   legacy_planning=$(sb_required_skills_normalize_configured_list "$tmp_legacy_cfg" "silver-quality-gates" "$DEFAULT_PLANNING")
   current_deploy=$(sb_required_skills_normalize_configured_list "$tmp_current_cfg" "custom-review" "$DEFAULT_REQUIRED")
 else
@@ -183,7 +200,7 @@ check "legacy config deploy list inherits current SB-owned deploy gates" \
   bash -c 'for skill in silver-context silver-plan silver-execute silver-verify verify-tests custom-review; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
 
 check "legacy config deploy list drops retired legacy dependencies" \
-  bash -c 'for skill in gsd-discuss-phase gsd-plan-phase gsd-execute-phase code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+  bash -c 'for skill in code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
 
 check "legacy config planning list inherits current SB-owned planning gates" \
   bash -c 'for skill in silver-quality-gates silver-context silver-plan; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_planning"

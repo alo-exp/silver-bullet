@@ -9,7 +9,7 @@ version: 0.1.0
 
 ## Purpose
 
-Thin compatibility marker for legacy `gsd-new-project` recordings.
+Thin compatibility marker for brownfield project bootstrap recordings.
 
 ## Preferred routes
 

@@ -53,8 +53,8 @@ cat > "$TMPCFG" << EOF
   "project": { "src_pattern": "/src/", "active_workflow": "${workflow}" },
   "skills": {
     "required_planning": ["silver-quality-gates"],
-    "required_deploy": ["silver-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review"]
+    "required_deploy": ["silver-quality-gates","silver-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-quality-gates","silver-review","code-review"]
   },
   "release": {
     "require_plugin_runtime_matrix": true,
@@ -190,7 +190,7 @@ seed_delivery_ready_state() {
   cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -417,7 +417,7 @@ cat > "$TMPCFG" << 'EOF'
   "skills": {
     "required_planning": ["not-a-real-skill"],
     "required_deploy": ["not-a-real-skill"],
-    "all_tracked": ["silver-quality-gates","gsd-code-review","code-review"]
+    "all_tracked": ["silver-quality-gates","silver-review","code-review"]
   },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
@@ -456,7 +456,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -484,7 +484,7 @@ teardown
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 EOF
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_blocks "release blocked without full workflow skills" "$out"
@@ -496,7 +496,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -525,7 +525,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -558,7 +558,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -594,7 +594,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -632,7 +632,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -672,7 +672,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -710,7 +710,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -748,7 +748,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -788,7 +788,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -826,7 +826,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -874,7 +874,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -897,10 +897,10 @@ teardown
 # Test 15: Code review stack ordering detected (GSD review before framing)
 echo "--- Group 4: Ordering enforcement ---"
 setup
-# Put gsd-code-review BEFORE requesting-code-review in the state file
+# Put silver-review BEFORE requesting-code-review in the state file
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 requesting-code-review
 receiving-code-review
 testing-strategy
@@ -924,7 +924,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1026,7 +1026,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1051,7 +1051,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1075,7 +1075,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1104,7 +1104,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1140,7 +1140,7 @@ setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1307,7 +1307,7 @@ _full_state() {
   cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 testing-strategy
 documentation
@@ -1512,7 +1512,7 @@ _make_workflow "$ID" "| 1 | bootstrap | complete | - | now |
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
 requesting-code-review
-gsd-code-review
+silver-review
 receiving-code-review
 finishing-a-development-branch
 silver-create-release
@@ -1538,8 +1538,8 @@ echo "--- WF-PASS2-N: SB adapter skill invocation is not classified as deploy de
 setup
 ID="20260428T120000Z-abc123-silver-feature"
 _make_workflow "$ID" "| 1 | bootstrap | complete | - | now |"
-out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill gsd-ship 'Ship marker; user did not request push/PR/deploy.'")
-assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill gsd-ship is not delivery-gated" "$out"
+out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill silver-ship 'Ship marker; user did not request push/PR/deploy.'")
+assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill silver-ship is not delivery-gated" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────

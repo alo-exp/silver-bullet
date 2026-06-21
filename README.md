@@ -277,6 +277,8 @@ After that, use `/silver` for normal work.
 
 ## Built-In Skills And Routes
 
+Silver Bullet ships **85 canonical skills** under `skills/`. The plugin exposes **36 command stubs** in `plugins/silver-bullet/commands/` for top marketplace routes (`/silver`, `/silver:feature`, `/silver:bugfix`, etc.). The remaining **~49 skills are Skill-tool-only** — invoke them through the host skill picker or, on Codex, `silver-bullet invoke-skill <name>`. Regenerate stubs after composer changes: `bash scripts/generate-plugin-commands.sh`.
+
 | Route or skill | Purpose |
 |----------------|---------|
 | `/silver` | Main natural-language router and APO entry point |

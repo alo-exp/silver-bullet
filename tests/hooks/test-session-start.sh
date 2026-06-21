@@ -300,16 +300,16 @@ assert_file_contains "same branch -> code-review preserved" "$TMPSTATE" "code-re
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-# Test 4: Same branch -> GSD lifecycle markers survive session restart
-echo "--- Test 4: Same branch -> GSD lifecycle markers survive session restart ---"
+# Test 4: Same branch -> SB lifecycle markers survive session restart
+echo "--- Test 4: Same branch -> SB lifecycle markers survive session restart ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_contains "same branch -> silver-quality-gates preserved" "$TMPSTATE" "silver-quality-gates"
-assert_file_contains "same branch -> gsd-discuss-phase preserved" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_contains "same branch -> gsd-plan-phase preserved" "$TMPSTATE" "gsd-plan-phase"
+assert_file_contains "same branch -> silver-context preserved" "$TMPSTATE" "silver-context"
+assert_file_contains "same branch -> silver-plan preserved" "$TMPSTATE" "silver-plan"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
@@ -524,7 +524,7 @@ echo "--- Test 10: Branch file absent -> branch file created; state preserved --
 rm -f "$TMPBRANCH" 2>/dev/null || true   # ensure branch file is absent
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\ncode-review\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\ncode-review\n' > "$TMPSTATE"
 mkdir -p "$(dirname "$QUALITY_GATE_FILE")"
 cat > "$QUALITY_GATE_FILE" <<'EOF'
 quality-gate-stage-1
@@ -549,14 +549,14 @@ fi
 # State file must NOT have been wiped — skill recordings should survive
 assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
 assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Branch-file-absent and same-branch startup preserve GSD lifecycle evidence.
-assert_file_contains "branch file absent -> gsd-* markers preserved" "$TMPSTATE" "gsd-discuss-phase"
+# Branch-file-absent and same-branch startup preserve SB lifecycle evidence.
+assert_file_contains "branch file absent -> SB lifecycle markers preserved" "$TMPSTATE" "silver-context"
 assert_file_missing "branch file absent -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"
 
 # ── #87 regressions: SessionStart benign-event safety ────────────────────────
-# Bug 1: gsd-* markers must NOT be stripped on `compact` (or `resume`).
+# Bug 1: SB lifecycle markers must NOT be stripped on `compact` (or `resume`).
 # Bug 3: empty current_branch must NOT trigger destructive branch-mismatch wipe.
 
 # Helper: run hook with explicit session source override
@@ -570,36 +570,36 @@ run_hook_source() {
     bash "$HOOK" </dev/null 2>/dev/null ) || true
 }
 
-echo "--- Test #87-A: compact source preserves gsd-* markers ---"
+echo "--- Test #87-A: compact source preserves SB lifecycle markers ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook_source "$HOOK_WORKDIR" "compact" >/dev/null
 assert_file_contains "#87-A: compact preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
-assert_file_contains "#87-A: compact preserves gsd-discuss-phase (was stripped pre-fix)" "$TMPSTATE" "gsd-discuss-phase"
-assert_file_contains "#87-A: compact preserves gsd-plan-phase (was stripped pre-fix)" "$TMPSTATE" "gsd-plan-phase"
+assert_file_contains "#87-A: compact preserves silver-context (was stripped pre-fix)" "$TMPSTATE" "silver-context"
+assert_file_contains "#87-A: compact preserves silver-plan (was stripped pre-fix)" "$TMPSTATE" "silver-plan"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-echo "--- Test #87-B: resume source preserves gsd-* markers ---"
+echo "--- Test #87-B: resume source preserves SB lifecycle markers ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook_source "$HOOK_WORKDIR" "resume" >/dev/null
-assert_file_contains "#87-B: resume preserves gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_contains "#87-B: resume preserves silver-context" "$TMPSTATE" "silver-context"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 
-echo "--- Test #87-C: clear source preserves GSD lifecycle markers ---"
+echo "--- Test #87-C: clear source preserves SB lifecycle markers ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
-printf 'silver-quality-gates\ngsd-discuss-phase\n' > "$TMPSTATE"
+printf 'silver-quality-gates\nsilver-context\n' > "$TMPSTATE"
 printf '%s' "$new_branch" > "$TMPBRANCH"
 run_hook_source "$HOOK_WORKDIR" "clear" >/dev/null
 assert_file_contains "#87-C: clear preserves silver-quality-gates" "$TMPSTATE" "silver-quality-gates"
-assert_file_contains "#87-C: clear preserves gsd-discuss-phase" "$TMPSTATE" "gsd-discuss-phase"
+assert_file_contains "#87-C: clear preserves silver-context" "$TMPSTATE" "silver-context"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH"
 

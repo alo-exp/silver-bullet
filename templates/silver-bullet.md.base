@@ -31,7 +31,7 @@ At the very start of any new session, perform these steps automatically:
    **5.2 Legacy lifecycle plugins (informational)**
 
    SB no longer reports installed versions of absorbed third-party lifecycle
-   plugins (GSD, Superpowers, Anthropic knowledge-work). Core workflows are
+   plugins (Superpowers, Anthropic knowledge-work). Core workflows are
    SB-owned. Do not install or update legacy lifecycle-overlap plugins during
    SB setup unless the user explicitly requests an external plugin.
 

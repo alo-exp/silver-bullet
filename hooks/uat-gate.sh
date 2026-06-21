@@ -4,14 +4,13 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error
 
 # PreToolUse hook (matcher: Skill)
 # UAT GATE — blocks silver:release / milestone completion when UAT.md is missing,
-# has FAIL results, or was run against a stale spec version. Legacy GSD milestone
-# completion aliases remain guarded for migration compatibility.
+# has FAIL results, or was run against a stale spec version.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in jq-gate.sh sb-project-gate.sh; do
+for _lib in jq-gate.sh sb-project-gate.sh skill-discovery.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -50,10 +49,8 @@ emit_block() {
 # Extract skill name from supported skill invocation input
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
-if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
-  # shellcheck source=lib/legacy-skill-alias.sh
-  source "$_lib_dir/legacy-skill-alias.sh"
-  skill="$(sb_legacy_skill_alias_normalize "$skill")"
+if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+  skill="$(sb_skill_canonical_name "$skill")"
 fi
 
 UAT=".planning/UAT.md"

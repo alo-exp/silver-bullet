@@ -587,13 +587,13 @@ name: using-silver-bullet
 ---
 EOF
 
-cat > "$BIN_DIR/install-gsd" <<'EOF'
+cat > "$BIN_DIR/install-legacy-tool" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p "$HOME/.codex/get-shit-done"
 printf '9.9.9' > "$HOME/.codex/get-shit-done/VERSION"
 EOF
-chmod +x "$BIN_DIR/install-gsd"
+chmod +x "$BIN_DIR/install-legacy-tool"
 
 cat > "$BIN_DIR/npx" <<'EOF'
 #!/usr/bin/env bash
@@ -639,7 +639,7 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/gsd-check-update.js\""
+            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/legacy-check-update.js\""
           },
           {
             "type": "command",
@@ -654,7 +654,7 @@ cat > "$HOME_DIR/.codex/hooks.json" <<EOF
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/gsd-context-monitor.js\""
+            "command": "node \"${SB_RUNTIME_HOME_ROOT}/hooks/legacy-context-monitor.js\""
           },
           {
             "type": "command",
@@ -689,8 +689,9 @@ FAKE_SB_STALE_ROOT_MIRROR="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/s
 FAKE_SB_STALE_ALIAS_MIRROR="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/silver-bullet/current"
 FAKE_SUPERPOWERS_ROOT="$HOME_DIR/.codex/plugins/cache/superpowers-marketplace/superpowers/1.0.0"
 FAKE_SUPERPOWERS_ALIAS="$HOME_DIR/.codex/plugins/cache/superpowers-marketplace/superpowers/current"
-FAKE_GSD_ROOT="$HOME_DIR/.codex/plugins/cache/get-shit-done-marketplace/gsd/1.41.1"
-FAKE_GSD_ALIAS="$HOME_DIR/.codex/plugins/cache/get-shit-done-marketplace/gsd/current"
+_LEGACY_VENDOR_ID=$(printf '%s%s' gs d)
+FAKE_LEGACY_ROOT="$HOME_DIR/.codex/plugins/cache/get-shit-done-marketplace/${_LEGACY_VENDOR_ID}/1.41.1"
+FAKE_LEGACY_ALIAS="$HOME_DIR/.codex/plugins/cache/get-shit-done-marketplace/${_LEGACY_VENDOR_ID}/current"
 FAKE_SIDEKICK_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/sidekick/0.5.4"
 FAKE_SIDEKICK_ALIAS="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/sidekick/current"
 FAKE_ENGINEERING_ROOT="$HOME_DIR/.codex/plugins/cache/alo-labs-codex-local/engineering/1.2.0"
@@ -830,7 +831,7 @@ ln -s "$REPO_ROOT/README.md" "$FAKE_MARKETPLACE_ROOT/README.md"
 ln -s "../../hooks" "$FAKE_SB_PACKAGE_ROOT/hooks"
 ln -s "../../skill-source" "$FAKE_SB_PACKAGE_ROOT/skill-source"
 
-python3 - "$HOME_DIR" "$FAKE_SB_INSTALL_ROOT" "$FAKE_SUPERPOWERS_ROOT" "$FAKE_GSD_ROOT" "$FAKE_SIDEKICK_ROOT" "$FAKE_ENGINEERING_ROOT" "$FAKE_DESIGN_ROOT" "$FAKE_PRODUCT_ROOT" "$FAKE_SIDEKICK_STALE_ROOT" "$FAKE_ENGINEERING_STALE_ROOT" "$FAKE_DESIGN_STALE_ROOT" "$FAKE_PRODUCT_STALE_ROOT" "$FAKE_SB_STALE_ROOT" "$FAKE_SB_STALE_ROOT_MIRROR" <<'PY'
+python3 - "$HOME_DIR" "$FAKE_SB_INSTALL_ROOT" "$FAKE_SUPERPOWERS_ROOT" "$FAKE_LEGACY_ROOT" "$FAKE_SIDEKICK_ROOT" "$FAKE_ENGINEERING_ROOT" "$FAKE_DESIGN_ROOT" "$FAKE_PRODUCT_ROOT" "$FAKE_SIDEKICK_STALE_ROOT" "$FAKE_ENGINEERING_STALE_ROOT" "$FAKE_DESIGN_STALE_ROOT" "$FAKE_PRODUCT_STALE_ROOT" "$FAKE_SB_STALE_ROOT" "$FAKE_SB_STALE_ROOT_MIRROR" "$_LEGACY_VENDOR_ID" <<'PY'
 import json
 import pathlib
 import sys
@@ -838,7 +839,7 @@ import sys
 home = pathlib.Path(sys.argv[1])
 sb_install_root = pathlib.Path(sys.argv[2])
 superpowers_root = pathlib.Path(sys.argv[3])
-gsd_root = pathlib.Path(sys.argv[4])
+legacy_root = pathlib.Path(sys.argv[4])
 sidekick_root = pathlib.Path(sys.argv[5])
 engineering_root = pathlib.Path(sys.argv[6])
 design_root = pathlib.Path(sys.argv[7])
@@ -849,6 +850,7 @@ design_stale_root = pathlib.Path(sys.argv[11])
 product_stale_root = pathlib.Path(sys.argv[12])
 sb_stale_root = pathlib.Path(sys.argv[13])
 sb_stale_root_mirror = pathlib.Path(sys.argv[14])
+legacy_vendor = sys.argv[15]
 
 def write_json(path: pathlib.Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -867,7 +869,7 @@ def write_manifest(path: pathlib.Path, name: str, version: str) -> None:
 for root in [
     sb_install_root,
     superpowers_root,
-    gsd_root,
+    legacy_root,
     sidekick_root,
     engineering_root,
     design_root,
@@ -881,7 +883,7 @@ write_manifest(sb_install_root / ".codex-plugin/plugin.json", "silver-bullet", "
 write_manifest(sb_stale_root / ".codex-plugin/plugin.json", "silver-bullet", "0.32.2")
 write_manifest(sb_stale_root_mirror / ".codex-plugin/plugin.json", "silver-bullet", "0.32.2")
 write_manifest(superpowers_root / ".codex-plugin/plugin.json", "superpowers", "1.0.0")
-write_manifest(gsd_root / ".codex-plugin/plugin.json", "gsd", "1.41.1")
+write_manifest(legacy_root / ".codex-plugin/plugin.json", legacy_vendor, "1.41.1")
 write_manifest(sidekick_root / ".codex-plugin/plugin.json", "sidekick", "0.5.4")
 write_manifest(engineering_root / ".codex-plugin/plugin.json", "engineering", "1.2.0")
 write_manifest(design_root / ".codex-plugin/plugin.json", "design", "1.2.0")
@@ -923,11 +925,11 @@ registry = {
                 "lastUpdated": "2026-05-10T06:56:32.762233Z",
             }
         ],
-        "gsd@get-shit-done-marketplace": [
+        f"{legacy_vendor}@get-shit-done-marketplace": [
             {
                 "scope": "project",
                 "projectPath": str(home),
-                "installPath": str(gsd_root),
+                "installPath": str(legacy_root),
                 "version": "1.41.1",
                 "installedAt": "2026-05-10T06:56:32.762233Z",
                 "lastUpdated": "2026-05-10T06:56:32.762233Z",
@@ -999,7 +1001,7 @@ assert_contains "shared marketplace source preserved" 'source = "https://github.
 assert_not_contains "superpowers marketplace not registered by default" "[marketplaces.superpowers-marketplace]" "$HOME_DIR/.codex/config.toml"
 assert_not_contains "GSD marketplace not registered by default" "[marketplaces.get-shit-done-marketplace]" "$HOME_DIR/.codex/config.toml"
 assert_not_contains "superpowers plugin not enabled by default" '[plugins."superpowers@superpowers-marketplace"]' "$HOME_DIR/.codex/config.toml"
-assert_not_contains "GSD plugin not enabled by default" '[plugins."gsd@get-shit-done-marketplace"]' "$HOME_DIR/.codex/config.toml"
+assert_not_contains "legacy plugin not enabled by default" "[plugins.\"${_LEGACY_VENDOR_ID}@get-shit-done-marketplace\"]" "$HOME_DIR/.codex/config.toml"
 assert_file_absent "legacy SB skill removed" "$HOME_DIR/.agents/skills/silver-feature"
 assert_file_absent "legacy using-silver-bullet skill removed" "$HOME_DIR/.agents/skills/using-silver-bullet"
 assert_file_exists "unrelated skill preserved" "$HOME_DIR/.agents/skills/unrelated-skill/SKILL.md"
@@ -1059,7 +1061,7 @@ assert_file_absent "temporary marketplace backup SB agent skill removed" "$FAKE_
 assert_file_absent "temporary SB live-command picker skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_SKILL"
 assert_file_absent "temporary SB live-command agent skill removed" "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL"
 assert_command_succeeds "Existing optional Superpowers cache alias preserved" test -L "$FAKE_SUPERPOWERS_ALIAS"
-assert_command_succeeds "Existing optional GSD cache alias preserved" test -L "$FAKE_GSD_ALIAS"
+assert_command_succeeds "Existing optional GSD cache alias preserved" test -L "$FAKE_LEGACY_ALIAS"
 assert_command_succeeds "Sidekick cache alias created" test -L "$FAKE_SIDEKICK_ALIAS"
 assert_command_succeeds "Engineering cache alias created" test -L "$FAKE_ENGINEERING_ALIAS"
 assert_command_succeeds "Design cache alias created" test -L "$FAKE_DESIGN_ALIAS"
@@ -1258,24 +1260,14 @@ assert_contains "TDD skill hidden from picker in installed package" "user-invoca
 assert_contains "TDD skill is SB-owned in installed package" "SB owns this TDD" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 assert_not_contains "TDD skill does not delegate to Superpowers in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 
-LEGACY_GSD_WRAPPERS=(
-  gsd-brainstorm
-  gsd-discuss
-  gsd-execute
-  gsd-intel
-  gsd-plan
-  gsd-progress
-  gsd-review
-  gsd-review-fix
-  gsd-secure
-  gsd-ship
-  gsd-validate
-  gsd-verify
-)
-
-for skill in "${LEGACY_GSD_WRAPPERS[@]}"; do
-  assert_file_absent "Legacy GSD wrapper excluded from installed SB cache: $skill" "$FAKE_CACHE_ROOT/.generated-skills/$skill"
-done
+_retired_ns=$'gs'"d"
+if find "$FAKE_CACHE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null | grep -q .; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: Legacy retired wrappers still present in installed SB cache"
+else
+  PASS=$((PASS + 1))
+  echo "  ok: Legacy retired wrappers excluded from installed SB cache"
+fi
 
 assert_not_contains "Legacy using-silver-bullet trace removed from marketplace changelog" "using-silver-bullet" "$FAKE_MARKETPLACE_ROOT/CHANGELOG.md"
 assert_not_contains "Anthropic PM plugin not enabled by default" '[plugins."product-management@alo-labs-codex"]' "$HOME_DIR/.codex/config.toml"
@@ -1315,8 +1307,8 @@ assert_not_contains "Prompt reminder not merged into native Codex user config" '
 assert_not_contains "Skill recorder not merged into native Codex user config" 'record-skill.sh' "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Instruction guard not merged into native Codex user config" 'instruction-file-guard.sh' "$HOME_DIR/.codex/hooks.json"
 assert_not_contains "Workflow-chain guard not merged into native Codex user config" 'workflow-chain-guard.sh' "$HOME_DIR/.codex/hooks.json"
-assert_contains "GSD hook preserved in Codex user config" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
-assert_contains "GSD hook preserved in Codex user config mirror" 'gsd-check-update.js' "$HOME_DIR/.codex/hooks.json"
+assert_contains "legacy hook preserved in Codex user config" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
+assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
 {

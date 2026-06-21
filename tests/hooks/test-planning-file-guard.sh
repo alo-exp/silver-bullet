@@ -132,9 +132,9 @@ done
 teardown
 
 setup
-mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment"
-out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment/094-01-VERIFICATION.md")
-assert_blocks "blocks nested numbered GSD VERIFICATION artifacts" "$out"
+mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-alignment"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-alignment/094-01-VERIFICATION.md")
+assert_blocks "blocks nested numbered phase VERIFICATION artifacts" "$out"
 teardown
 
 echo "--- Group 2: Non-planning files are NOT blocked ---"
@@ -145,8 +145,8 @@ assert_passes "does not block phase directory files" "$out"
 teardown
 
 setup
-mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment"
-out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-gsd-alignment/094-01-PLAN.md")
+mkdir -p "${TMPDIR_TEST}/.planning/phases/094-sb-alignment"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/phases/094-sb-alignment/094-01-PLAN.md")
 assert_blocks "blocks nested numbered GSD PLAN artifacts" "$out"
 teardown
 

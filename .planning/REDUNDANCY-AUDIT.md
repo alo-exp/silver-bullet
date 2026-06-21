@@ -305,7 +305,7 @@ These redundancies are **required by architecture** and must remain:
 3. **Fail-open `ERR` traps** — hooks exit 0 on unexpected failure
 4. **Branch-scoped state** — `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`
 5. **Plugin symlink mirror** for hooks/scripts/docs — never edit plugin cache at install path
-6. **`legacy-skill-alias.sh`** — `silver:*` route normalization only (GSD aliases removed 2026-06-22)
+6. **`skill-discovery.sh`** — `silver:*` route normalization; GSD namespace blocked in `forbidden-skill-check.sh` (removed 2026-06-22)
 7. **Separate deploy vs planning skill gates** — `completion-audit.sh` / `stop-check.sh` tiers
 8. **`render-agent-bundle.py` host transforms** — Claude/Cursor/Codex invocation differences
 9. **`.planning/` as SB-managed** — `planning-file-guard.sh` enforcement
@@ -344,7 +344,7 @@ Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates)
 |---|------|--------|-------|
 | 1 | `skills/` sole source; CI render freshness | **FIXED** | `tests/scripts/test-render-agent-bundle-freshness.sh` |
 | 2 | `silver-bullet.md` ↔ template sync gate | **FIXED** | `tests/scripts/test-silver-bullet-template-parity.sh` |
-| 3 | Sunset `gsd-*` aliases + scenarios | **BLOCKED** | Until 2026-09-01; `docs/knowledge/2026-06.md`; `tests/scripts/test-legacy-alias-sunset.sh` |
+| 3 | Sunset `gsd-*` aliases + scenarios | **FIXED** | Removed 2026-06-22; `tests/scripts/test-no-gsd-runtime.sh` |
 | 4 | `silver-orient` vs `silver-scan` collision | **FIXED** | Deprecation in `skills/silver-orient/SKILL.md`; file retained until Phase 3 |
 | 5 | Hook test fixtures helper | **FIXED** | `tests/hooks/helpers/common.sh`; `test-record-requested-skill.sh` migrated |
 | 6 | jq-gate centralization | **FIXED** | 11 hooks via `hooks/lib/jq-gate.sh` |
@@ -362,7 +362,7 @@ Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates)
 | P2 | workflow-utils inline grep | **INTENTIONAL** | Source `workflow-utils.sh`; fail-open fallback kept |
 | P2 | Hook tests → common.sh | **PARTIAL** | One migration; more can follow |
 | P3 | git-ignore agents/ | **INTENTIONAL** | Freshness test instead |
-| P3 | Remove silver-orient | **BLOCKED** | Post-sunset / major |
+| P3 | Remove silver-orient | **BLOCKED** | Major version |
 | P3 | CLAUDE.md.base pointer | **FIXED** |
 | P3 | `gsd-vmodel-gap.svg` | **FIXED** | Removed unused root artifact |
 
@@ -371,9 +371,8 @@ Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates)
 - `test-core-rules-integrity.sh` — `core-rules.sha256` pin drift
 - `test-completion-audit.sh` / `test-session-start.sh` — artifact substance + core-rules cascade
 
-### Remaining (major version / post-sunset)
+### Remaining (major version)
 
 - Generated-only skill trees (not committed)
 - Single config schema version
-- Retire `legacy-skill-alias.sh` + 19 `gsd-*` scenarios after 2026-09-01
 

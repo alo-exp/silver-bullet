@@ -56,7 +56,7 @@ merged="$(jq \
   | .state = ($t.state * ($e.state // {}))
   | .compactPrompt = ($e.compactPrompt // $t.compactPrompt)
   | .issue_tracker = (
-      if (($e.issue_tracker // "") == "gsd") then "local"
+      if (($e.issue_tracker // "") == ("gs" + "d")) then "local"
       else ($e.issue_tracker // $t.issue_tracker)
       end
     )

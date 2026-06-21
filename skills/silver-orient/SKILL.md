@@ -6,7 +6,7 @@ version: 0.1.0
 
 # silver:orient (deprecated alias)
 
-> **Deprecation:** Prefer **`/silver:scan`** (retrospective session scanner for deferred work and insights) or **`/silver:context`** (phase context capture). Do not invoke `silver-orient` directly in new work.
+> **Deprecation:** Prefer **`/silver:scan`** (retrospective session scanner for deferred work and insights) or **`/silver:context`** (phase context capture). Do not use this deprecated route in new work.
 
 ## Purpose
 

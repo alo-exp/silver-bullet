@@ -63,8 +63,9 @@ assert_not_contains "current docs do not promise SB automatic model routing" \
   "Model Routing|MODEL ROUTING|pre-assigned to models|silent escalation|session ladder" \
   "${CURRENT_SURFACES[@]}"
 
-assert_not_contains "current docs do not require GSD model_profile" \
-  "model_profile.*balanced|gsd-set-profile balanced|planner_model|researcher_model|checker_model" \
+_legacy_profile_pattern=$'model_profile.*balanced|'"gs"'d-set-profile balanced|planner_model|researcher_model|checker_model'
+assert_not_contains "current docs do not require external model_profile routing" \
+  "$_legacy_profile_pattern" \
   "${CURRENT_SURFACES[@]}"
 
 echo

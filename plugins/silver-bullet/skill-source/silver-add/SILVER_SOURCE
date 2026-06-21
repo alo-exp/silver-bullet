@@ -1,7 +1,7 @@
 ---
 name: "silver:add"
 title: "Add"
-description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=local or absent; legacy issue_tracker=gsd is accepted as local) — and return a stable, referenceable ID.
+description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=local or absent) — and return a stable, referenceable ID.
 version: 0.1.0
 ---
 
@@ -52,7 +52,7 @@ CACHE=$(jq -r '._github_project // empty' .silver-bullet.json)
 Display: "Filing via: [github | local docs/issues/]"
 
 - If `TRACKER` = `"github"` → proceed to Step 4 after classification.
-- If `TRACKER` = `"local"`, legacy `"gsd"`, or absent → proceed to Step 5 after classification.
+- If `TRACKER` = `"local"` or absent → proceed to Step 5 after classification.
 
 ---
 
@@ -333,7 +333,7 @@ review.
 
 ## Step 5 — File to local docs/
 
-Execute only when `TRACKER` = `"local"`, legacy `"gsd"`, or absent.
+Execute only when `TRACKER` = `"local"` or absent.
 
 ### Step 5a — Ensure directory exists
 
