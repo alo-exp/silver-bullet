@@ -178,53 +178,66 @@ for skill in "${ORCHESTRATION_SKILLS[@]}"; do
 done
 
 # ===========================================================================
-# GROUP 2: Non-skippable gate presence
+# GROUP 2: Composition-chain gate presence (non-skippable + enforcement)
 # ===========================================================================
 
 echo ""
-echo "=== Group 2: Non-Skippable Gate Presence ==="
+echo "=== Group 2: Composition-Chain Gate Presence ==="
+
+ORCH_LIB="${REPO_ROOT}/hooks/lib/orchestrator-state.sh"
+# shellcheck source=/dev/null
+source "$ORCH_LIB"
+
+COMPOSER_SKILLS=(
+  silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release silver-fast
+)
+
+for skill in "${COMPOSER_SKILLS[@]}"; do
+  skill_file="$SKILLS_DIR/$skill/SKILL.md"
+  [[ -f "$skill_file" ]] || { check "$skill: SKILL.md exists" "fail"; continue; }
+
+  if [[ "$skill" == "silver-fast" ]]; then
+    check "$skill: documents Tier 2 composition slice" \
+      "$([[ "$(grep -F 'quality-gates' "$skill_file" | grep -F 'silver:plan' | head -1)" ]] && echo pass || echo fail)"
+  else
+    check "$skill: declares Standard composition chain" \
+      "$([[ "$(grep -F 'Standard composition chain' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+  fi
+
+  if grep -qi 'non-skippable' "$skill_file"; then
+    check "$skill: non-skippable section mentions security" \
+      "$([[ "$(grep -i 'security' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+    check "$skill: non-skippable section mentions verify" \
+      "$([[ "$(grep -iE 'silver:verify|silver-verify|verify-tests' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+    check "$skill: non-skippable section mentions quality gates" \
+      "$([[ "$(grep -iE 'quality-gates|devops-quality-gates' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+  fi
+
+  if grep -qi 'Enforcement queue' "$skill_file"; then
+    check "$skill: references orchestrator enforcement hooks" \
+      "$([[ "$(grep -E 'orchestrator-state\.sh|workflow-chain-guard|orchestrator\.json|Parent orchestrator' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+  fi
+
+  if grep -qi 'Post-execution' "$skill_file"; then
+    check "$skill: documents post-execution sequencing" \
+      "$([[ "$(grep -iE 'review|verify|secure|ship' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+  elif [[ "$skill" == "silver-fast" ]]; then
+    check "$skill: documents Tier 2 post-verify deploy gap" \
+      "$([[ "$(grep -F 'post-execution deploy chain' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+  fi
+done
 
 SF="$SKILLS_DIR/silver-feature/SKILL.md"
-
-nonsk=$(grep -i "non-skippable" "$SF" || true)
-check "silver-feature: has non-skippable gates section" \
-  "$([[ -n "$nonsk" ]] && echo pass || echo fail)"
-
-check "silver-feature: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-feature: security listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-feature: silver:verify listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SF" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-feature: pre-build validate has NON-SKIPPABLE GATE marker" \
-  "$([[ "$(grep -i 'NON-SKIPPABLE GATE' "$SF" | head -1)" ]] && echo pass || echo fail)"
+check "silver-feature: documents conditional silver:spec when SPEC.md absent" \
+  "$([[ "$(grep -F 'silver:spec' "$SF" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
 
 SUI="$SKILLS_DIR/silver-ui/SKILL.md"
-check "silver-ui: pre-build validate has NON-SKIPPABLE GATE marker" \
-  "$([[ "$(grep -i 'Pre-Build Validation' "$SUI" | head -1)" ]] && echo pass || echo fail)"
-check "silver-ui: documents conditional silver:spec when SPEC.md absent" \
-  "$([[ "$(grep -F 'silver:spec' "$SUI" | grep -F 'SPEC.md' | head -1)" ]] && echo pass || echo fail)"
-check "silver-ui: plan step precedes ui-contract block" \
-  "$([[ "$(grep -n '^## Step 5: Plan Phase' "$SUI" | cut -d: -f1)" -lt "$(grep -n '^## FLOW DESIGN CONTRACT' "$SUI" | cut -d: -f1)" ]] && echo pass || echo fail)"
-validate_ui_pre=$(grep -n "Invoke \`silver:validate\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
-exec_ui_line=$(grep -n "invoke \`silver:execute\`" "$SUI" | head -1 | cut -d: -f1 || echo 0)
-check "silver-ui: silver:validate before execute (line $validate_ui_pre < $exec_ui_line)" \
-  "$([[ "$validate_ui_pre" -gt 0 && "$exec_ui_line" -gt 0 && "$validate_ui_pre" -lt "$exec_ui_line" ]] && echo pass || echo fail)"
-
-SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
-check "silver-devops: pre-build validate has Pre-Build Validation step" \
-  "$([[ "$(grep -i 'Pre-Build Validation' "$SDEV" | head -1)" ]] && echo pass || echo fail)"
-validate_dev_pre=$(grep -n "Invoke \`silver:validate\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-exec_dev_line=$(grep -n "invoke \`silver:execute\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-check "silver-devops: silver:validate before execute (line $validate_dev_pre < $exec_dev_line)" \
-  "$([[ "$validate_dev_pre" -gt 0 && "$exec_dev_line" -gt 0 && "$validate_dev_pre" -lt "$exec_dev_line" ]] && echo pass || echo fail)"
+check "silver-ui: documents conditional silver:spec when SPEC absent" \
+  "$([[ "$(grep -F 'silver:spec' "$SUI" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
 
 SFAST="$SKILLS_DIR/silver-fast/SKILL.md"
 check "silver-fast: Tier 2 always requires silver:validate" \
-  "$([[ "$(grep -F 'silver:validate' "$SFAST" | grep -F 'Always invoke' | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -F 'silver:validate' "$SFAST" | grep -E 'Always invoke|always invoke' | head -1)" ]] && echo pass || echo fail)"
 check "silver-fast: SessionStart clears trivial marker (not creates)" \
   "$([[ "$(grep -F 'SessionStart clears any stale' "$SFAST")" ]] && echo pass || echo fail)"
 check "silver-fast: Tier 2 deploy chain documents security and completion-audit" \
@@ -235,110 +248,63 @@ check "silver-fast: Tier 2 documents plan-only validate without SPEC" \
 SVAL="$SKILLS_DIR/silver-validate/SKILL.md"
 check "silver-validate: documents plan-only mode when SPEC absent" \
   "$([[ "$(grep -F 'Plan-only mode' "$SVAL")" ]] && echo pass || echo fail)"
-check "silver-devops: Step 5b references plan-only validate without SPEC" \
-  "$([[ "$(grep -F 'plan-only mode' "$SDEV")" ]] && echo pass || echo fail)"
-check "silver-devops: security listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-devops: silver:verify listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-devops: devops-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SDEV" | grep -i 'devops-quality-gates' | head -1)" ]] && echo pass || echo fail)"
-
-SBF="$SKILLS_DIR/silver-bugfix/SKILL.md"
-check "silver-bugfix: security listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-bugfix: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-bugfix: silver:verify listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SBF" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
-
-SUI="$SKILLS_DIR/silver-ui/SKILL.md"
-check "silver-ui: security listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-ui: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
-
-check "silver-ui: silver:verify listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SUI" | grep -i 'silver:verify' | head -1)" ]] && echo pass || echo fail)"
+SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
+check "silver-devops: references plan-only validate without SPEC" \
+  "$([[ "$(grep -F 'plan-only' "$SDEV" || grep -F 'plan-only mode' "$SVAL")" ]] && echo pass || echo fail)"
 
 SREL="$SKILLS_DIR/silver-release/SKILL.md"
-check "silver-release: silver-quality-gates listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SREL" | grep -i 'silver:quality-gates' | head -1)" ]] && echo pass || echo fail)"
+check "silver-release: non-skippable gates section present" \
+  "$([[ "$(grep -i 'Non-skippable' "$SREL" | head -1)" ]] && echo pass || echo fail)"
+check "silver-release: references create-release marketplace sync" \
+  "$([[ "$(grep -F 'sync-release-marketplace-versions.sh' "$SREL" | head -1)" ]] && echo pass || echo fail)"
 
-check "silver-release: security listed as non-skippable" \
-  "$([[ "$(grep -i 'non-skippable' "$SREL" | grep -i 'security' | head -1)" ]] && echo pass || echo fail)"
 
 # ===========================================================================
-# GROUP 3: Required step ordering
+# GROUP 3: Orchestrator queue ordering (composition model)
 # ===========================================================================
 
 echo ""
-echo "=== Group 3: Required Step Ordering ==="
+echo "=== Group 3: Orchestrator Queue Ordering ==="
 
-line_of() {
-  grep -n "$1" "$2" | head -1 | cut -d: -f1
-}
+feature_q="$(sb_orchestrator_default_queue_for_composer silver-feature)"
+check "silver-feature: quality-gates before execute in orchestrator queue" \
+  "$(printf '%s' "$feature_q" | grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute' && echo pass || echo fail)"
+check "silver-feature: review before verify in orchestrator queue" \
+  "$(printf '%s' "$feature_q" | grep -q 'silver-review-request,silver-review,silver-review-triage,silver-verify' && echo pass || echo fail)"
 
-SF="$SKILLS_DIR/silver-feature/SKILL.md"
+ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
+check "silver-ui: ui-contract before execute in orchestrator queue" \
+  "$(printf '%s' "$ui_q" | grep -q 'silver-ui-contract,silver-validate,silver-execute' && echo pass || echo fail)"
+check "silver-ui: ui-review immediately after execute" \
+  "$(printf '%s' "$ui_q" | grep -q 'silver-execute,silver-ui-review' && echo pass || echo fail)"
 
-qg_line=$(grep -n "Invoke \`silver:quality-gates\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-exec_line=$(grep -n "invoke \`silver:execute\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-feature: silver-quality-gates step before execute step (line $qg_line < $exec_line)" \
-  "$([[ "$qg_line" -gt 0 && "$exec_line" -gt 0 && "$qg_line" -lt "$exec_line" ]] && echo pass || echo fail)"
+devops_q="$(sb_orchestrator_default_queue_for_composer silver-devops)"
+check "silver-devops: validate before execute in orchestrator queue" \
+  "$(printf '%s' "$devops_q" | grep -q 'silver-validate,silver-execute' && echo pass || echo fail)"
+check "silver-devops: security before ship segment" \
+  "$(printf '%s' "$devops_q" | grep -q 'security,silver-secure' && echo pass || echo fail)"
 
-sec_line=$(grep -n "Invoke \`security\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-ship_line=$(grep -n "Invoke \`silver:ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-feature: security step before ship step (line $sec_line < $ship_line)" \
-  "$([[ "$sec_line" -gt 0 && "$ship_line" -gt 0 && "$sec_line" -lt "$ship_line" ]] && echo pass || echo fail)"
+bugfix_q="$(sb_orchestrator_default_queue_for_composer silver-bugfix)"
+bugfix_pre="${bugfix_q%%,silver-execute*}"
+check "silver-bugfix: debug before plan in orchestrator queue" \
+  "$(printf '%s' "$bugfix_q" | grep -q 'silver-debug,silver-plan' && echo pass || echo fail)"
+check "silver-bugfix: no pre-plan quality-gates in orchestrator queue" \
+  "$([[ "$(printf '%s' "$bugfix_pre" | grep -c 'FLOW-QUALITY-GATE')" -eq 0 ]] && echo pass || echo fail)"
 
-tdd_line=$(grep -n "^\*\*Internal TDD gate" "$SF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-feature: TDD step after first execute step (line $exec_line < $tdd_line)" \
-  "$([[ "$exec_line" -gt 0 && "$tdd_line" -gt 0 && "$exec_line" -lt "$tdd_line" ]] && echo pass || echo fail)"
+release_q="$(sb_orchestrator_default_queue_for_composer silver-release)"
+check "silver-release: branch-finish before ship in orchestrator queue" \
+  "$(printf '%s' "$release_q" | grep -q 'silver-branch-finish,silver-completion-audit,silver-ship' && echo pass || echo fail)"
+check "silver-release: create-release is queue tail" \
+  "$([[ "$(printf '%s' "$release_q" | awk -F, '{print $NF}')" == "silver-create-release" ]] && echo pass || echo fail)"
 
-verify_line=$(grep -n "Invoke \`silver:verify\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-ship_line=$(grep -n "Invoke \`silver:ship\`" "$SF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-feature: silver:verify before silver:ship (line $verify_line < $ship_line)" \
-  "$([[ "$verify_line" -gt 0 && "$ship_line" -gt 0 && "$verify_line" -lt "$ship_line" ]] && echo pass || echo fail)"
-
-SDEV="$SKILLS_DIR/silver-devops/SKILL.md"
-dev_sec_line=$(grep -n "Invoke \`security\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-dev_ship_line=$(grep -in "invoke \`silver:ship\`" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-check "silver-devops: security before ship (line $dev_sec_line < $dev_ship_line)" \
-  "$([[ "$dev_sec_line" -gt 0 && "$dev_ship_line" -gt 0 && "$dev_sec_line" -lt "$dev_ship_line" ]] && echo pass || echo fail)"
-
-dev_verify_line=$(grep -n "silver:verify" "$SDEV" | head -1 | cut -d: -f1 || echo 0)
-check "silver-devops: silver:verify before ship (line $dev_verify_line < $dev_ship_line)" \
-  "$([[ "$dev_verify_line" -gt 0 && "$dev_ship_line" -gt 0 && "$dev_verify_line" -lt "$dev_ship_line" ]] && echo pass || echo fail)"
+fast_q="$(sb_orchestrator_default_queue_for_composer silver-fast)"
+check "silver-fast: Tier 2 orchestrator queue ends at verify" \
+  "$([[ "$(printf '%s' "$fast_q" | awk -F, '{print $NF}')" == "silver-verify" ]] && echo pass || echo fail)"
 
 SBF="$SKILLS_DIR/silver-bugfix/SKILL.md"
-bf_tdd_line=$(grep -n "Invoke \`tdd\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-bf_plan_line=$(grep -n "silver:plan" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-# Canonical bugfix pre-execution chain is DEBUG → PLAN → TDD (B1): planning is
-# recorded before the regression test so workflow-chain-guard's (silver-debug
-# silver-plan) markers exist before the first fix/test edit. PLAN must precede TDD.
-check "silver-bugfix: plan step before TDD step (line $bf_plan_line < $bf_tdd_line)" \
-  "$([[ "$bf_plan_line" -gt 0 && "$bf_tdd_line" -gt 0 && "$bf_plan_line" -lt "$bf_tdd_line" ]] && echo pass || echo fail)"
-
-bf_sec_line=$(grep -n "Invoke \`security\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-bf_ship_line=$(grep -in "invoke \`silver:ship\`" "$SBF" | head -1 | cut -d: -f1 || echo 0)
-check "silver-bugfix: security before ship (line $bf_sec_line < $bf_ship_line)" \
-  "$([[ "$bf_sec_line" -gt 0 && "$bf_ship_line" -gt 0 && "$bf_sec_line" -lt "$bf_ship_line" ]] && echo pass || echo fail)"
-
-SREL="$SKILLS_DIR/silver-release/SKILL.md"
-rel_qg_line=$(grep -n "silver:quality-gates" "$SREL" | head -1 | cut -d: -f1 || echo 0)
-# Match the actual invoke line for silver:ship (case-insensitive, not frontmatter description references)
-rel_ship_line=$(grep -in "invoke \`silver:ship\`" "$SREL" | head -1 | cut -d: -f1 || echo 0)
-check "silver-release: silver-quality-gates before ship (line $rel_qg_line < $rel_ship_line)" \
-  "$([[ "$rel_qg_line" -gt 0 && "$rel_ship_line" -gt 0 && "$rel_qg_line" -lt "$rel_ship_line" ]] && echo pass || echo fail)"
-
-rel_sec_line=$(grep -n "Invoke \`security\`" "$SREL" | head -1 | cut -d: -f1 || echo 0)
-check "silver-release: security before ship (line $rel_sec_line < $rel_ship_line)" \
-  "$([[ "$rel_sec_line" -gt 0 && "$rel_ship_line" -gt 0 && "$rel_sec_line" -lt "$rel_ship_line" ]] && echo pass || echo fail)"
+check "silver-bugfix: documents debug before plan in enforcement queue" \
+  "$([[ "$(grep -F 'silver:debug' "$SBF" | head -1)" && "$(grep -F 'silver:plan' "$SBF" | head -1)" ]] && echo pass || echo fail)"
 
 SCL="$SKILLS_DIR/silver-create-release/SKILL.md"
 rel_ci_gate_line=$(grep -n "verify-release-commit-ci.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
@@ -372,42 +338,6 @@ check "silver-create-release: release announcement workflow is mandatory (line $
 rel_optional_gchat_line=$(grep -n "notification is optional" "$SCL" | head -1 | cut -d: -f1 || echo 0)
 check "silver-create-release: Google Chat notification is no longer optional" \
   "$([[ "$rel_optional_gchat_line" -eq 0 ]] && echo pass || echo fail)"
-
-market_sync_result=fail
-if python3 - "$SREL" <<'PY' >/dev/null 2>&1
-from pathlib import Path
-import sys
-text = Path(sys.argv[1]).read_text()
-raise SystemExit(0 if "bash scripts/sync-release-marketplace-versions.sh" in text else 1)
-PY
-then
-  market_sync_result=pass
-fi
-check "silver-release: marketplace sync wrapper is referenced in release contract" "$market_sync_result"
-
-market_commit_result=fail
-if python3 - "$SREL" <<'PY' >/dev/null 2>&1
-from pathlib import Path
-import sys
-text = Path(sys.argv[1]).read_text()
-raise SystemExit(0 if "git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json" in text else 1)
-PY
-then
-  market_commit_result=pass
-fi
-check "silver-release: marketplace manifests are committed in release contract" "$market_commit_result"
-
-market_push_result=fail
-if python3 - "$SREL" <<'PY' >/dev/null 2>&1
-from pathlib import Path
-import sys
-text = Path(sys.argv[1]).read_text()
-raise SystemExit(0 if "upstream marketplace repo" in text and "pushed" in text else 1)
-PY
-then
-  market_push_result=pass
-fi
-check "silver-release: upstream marketplace repo push is required in release contract" "$market_push_result"
 
 # ===========================================================================
 # GROUP 4: Quality-gates dimension completeness

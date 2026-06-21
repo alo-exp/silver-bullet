@@ -281,6 +281,33 @@ out=$(run_hook_apply_patch "*** Begin Patch
 assert_passes "apply_patch passes after SB pre-execution markers exist" "$out"
 teardown
 
+# Post-exec markers alone must not satisfy the pre-execution chain guard.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:feature" "post-exec only gate" "plan,execute"
+write_state_markers silver-execute silver-review-request silver-verify security silver-ship
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:feature blocks when only post-exec markers recorded" "$out"
+teardown
+
+# Pre-exec markers without post-exec markers must allow edits.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:feature" "pre-exec only gate" "plan,execute"
+write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:feature passes with pre-exec markers only (post-exec absent)" "$out"
+teardown
+
+# Only silver-execute recorded (plan missing) must block.
+setup
+touch "$TMPDIR_TEST/src/app.js"
+start_workflow "/silver:feature" "execute without plan" "plan,execute"
+write_state_markers silver-execute
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_blocks "silver:feature blocks with only silver-execute marker (plan missing)" "$out"
+teardown
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
