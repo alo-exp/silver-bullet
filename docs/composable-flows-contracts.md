@@ -53,6 +53,35 @@ For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the **m
 
 The autonomous orchestrator (`hooks/lib/orchestrator-state.sh`) and composer skills use this order. Delivery hooks enforce artifact and marker presence regardless of flow numbering.
 
+## Runtime Queue Tokens (orchestrator enforcement)
+
+The autonomous orchestrator (`hooks/lib/orchestrator-state.sh`) seeds **enforcement queues**
+with skill tokens and a few synthetic labels. These are not separate catalog flows — they
+map to atomic flows or sub-steps below.
+
+| Queue token | Maps to | Role |
+|-------------|---------|------|
+| `FLOW-QUALITY-GATE` | FLOW 13 (pre-plan) | Orchestrator label → `silver:quality-gates` or `devops-quality-gates` |
+| `FLOW-QUALITY-GATE-PRESHIP` | FLOW 13 (pre-ship) | Product pre-ship quality gate |
+| `FLOW-DEVOPS-QUALITY-GATE-PRESHIP` | FLOW 13 (pre-ship, DevOps) | IaC pre-ship quality gate |
+| `silver:blast-radius` | FLOW 6 extension (DevOps) | Pre-plan blast-radius assessment before PLAN |
+| `devops-skill-router` | FLOW 6 extension (DevOps) | IaC toolchain routing before PLAN |
+| `silver:validate` | FLOW 5 / 6 / 11 sub-step | Pre-build or pre-ship gap analysis |
+| `silver:branch-finish` | FLOW 14 sub-step | Branch hygiene before ship |
+| `silver:completion-audit` | FLOW 12 sub-step | Completion evidence before ship/release claim |
+| `ROUTER` | `/silver` router skill | Intent classification (worker template only) |
+
+**Composition vs enforcement:** Composer skills (`silver:feature`, `silver:ui`, …) declare
+full FLOW 1–18 **composition chains** (including conditional FLOW 2 ORIENT, FLOW 3 CLARIFY,
+FLOW 4 DECIDE, FLOW 1 BOOTSTRAP). The orchestrator **enforcement queue** omits optional
+orientation/clarify/decide atoms by default — hooks only block edits on the mandatory
+pre-execution skill markers for each composer. Parent orchestrators insert skipped flows
+when context scan flags require them.
+
+Worker templates under `templates/orchestrator-workers/` implement one catalog flow each.
+Per-flow skill steps, produces, and exit conditions live in this file — not in composer
+`SKILL.md` files.
+
 ## Atomic Flow Catalog
 
 | Flow | Name | Primary Owner | Purpose |
@@ -293,3 +322,16 @@ The autonomous orchestrator (`hooks/lib/orchestrator-state.sh`) and composer ski
 | Review Cycle | Cross-artifact and pre-release quality gates must pass before release creation |
 | State Impact | Records release markers, updates release docs, and preserves milestone evidence |
 | Exit Condition | Release tag and GitHub Release exist and point at the fully verified release commit |
+
+**FLOW 18 sub-steps (release composition vocabulary):**
+
+| Sub-step | FLOW | Purpose |
+|----------|------|---------|
+| Pre-release quality gate | FLOW 13 | `silver:quality-gates` + domain audit |
+| UAT audit | FLOW 12 | Cross-phase UAT evidence → `.planning/RELEASE-UAT-AUDIT.md` |
+| Milestone audit | FLOW 18 | Scope vs evidence → `.planning/RELEASE-MILESTONE-AUDIT.md` |
+| Gap closure | FLOW 8 + FLOW 15 | Max 2 iterations via nested `silver:feature` / `silver:bugfix` / … |
+| Design handoff | FLOW 16 | UI milestone handoff when UI phases exist |
+| Document | FLOW 17 | `silver:ensure-docs`, milestone summary |
+| Ship prep | FLOW 14 | `silver:branch-finish` → `silver:completion-audit` → `silver:ship` |
+| Create release | FLOW 18 | `silver:create-release` (always last) |

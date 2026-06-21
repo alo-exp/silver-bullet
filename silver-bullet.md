@@ -342,16 +342,18 @@ SB is the lifecycle authority. Semver, milestones, phases, planning, execution, 
 
 **The eight workflows:**
 
-| Workflow | Entry triggers | First step |
-|----------|---------------|------------|
-| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | silver:clarify (merged PM framing + brainstorming) -> SB lifecycle handoff |
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:scan -> silver:clarify/decide -> SB context/plan/execute/verify |
-| `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → silver:debug → silver:debug |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:scan -> silver:clarify/decide -> silver:ui-contract |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:scan -> silver:blast-radius -> devops-skill-router |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:clarify → direct research (default), optional multi-AI only when user-requested → decision handoff |
-| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates -> verify-tests -> silver:release audit/publish |
+| Workflow | Entry triggers | Standard composition chain |
+|----------|---------------|---------------------------|
+| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | FLOW 3 (CLARIFY) → handoff to `silver:feature` / `silver:devops` / `silver:research` |
+| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | FLOW 1–5 (conditional) → FLOW 13 (pre-plan) → FLOW 6 → [FLOW 7 if UI] → FLOW 8 → post-execution chain |
+| `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | FLOW 15 (DEBUG) → FLOW 6 → FLOW 8 → post-execution chain |
+| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | FLOW 1–6 (conditional) → FLOW 7 → FLOW 8 → FLOW 9 → post-execution chain |
+| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | FLOW 2 → [3–4] → blast-radius → devops-skill-router → FLOW 13 → FLOW 6 → FLOW 8 → post-execution chain |
+| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | FLOW 3 → FLOW 4 → [FLOW 5] → handoff to `silver:feature` / `silver:devops` |
+| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | FLOW 13 → FLOW 12 (UAT audit) → FLOW 18 (milestone audit + gap closure) → FLOW 16–17 → delivery tail → `silver:create-release` |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
+
+Per-flow steps, produces, and exit conditions live in `docs/composable-flows-contracts.md`. Composer `SKILL.md` files declare **standard composition chains** only — not inline step lists.
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
@@ -372,30 +374,41 @@ When the user requests skipping a workflow step, SB:
 
 Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `silver:verify`.
 
+**Post-execution sequencing (after FLOW 8):** Flow numbers are stable identifiers — not always runtime order. For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the mandatory post-execute order is:
+
+1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected
+2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)
+3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
+4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
+5. FLOW 13 (QUALITY GATE, pre-ship)
+6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)
+
+**Composition vs enforcement:** Composer skills declare full FLOW 1–18 composition chains (including conditional FLOW 1–5 orientation/clarify/decide atoms). The orchestrator enforcement queue (`hooks/lib/orchestrator-state.sh`) omits optional pre-execution atoms by default — hooks block edits on mandatory pre-execution markers only. Parent orchestrators insert skipped flows when context scan flags require them. See `docs/composable-flows-contracts.md` § Runtime Queue Tokens.
+
 #### Composable Flows Catalog
 
 Each workflow composes from these 18 flows. See `docs/composable-flows-contracts.md` for full contracts.
 
 | Flow | Name | Purpose |
 |------|------|---------|
-| FLOW 1 | BOOTSTRAP | Project setup — PROJECT.md, ROADMAP.md, REQUIREMENTS.md, STATE.md |
-| FLOW 2 | ORIENT | Codebase intelligence — silver:scan plus project docs and Graphify when available |
-| FLOW 3 | CLARIFY | Discovery and framing — silver:clarify, optional multi-AI research only when explicitly requested |
-| FLOW 4 | DECIDE | Option synthesis — silver:clarify |
-| FLOW 5 | SPECIFY | Spec creation — silver-ingest, silver-spec, silver-validate |
-| FLOW 6 | PLAN | Phase planning — silver:context, silver:plan |
-| FLOW 7 | DESIGN CONTRACT | UI/UX design — silver:ui-contract plus optional design lenses |
+| FLOW 1 | BOOTSTRAP | Project setup — `silver:init`, workflow initialization |
+| FLOW 2 | ORIENT | Codebase intelligence — `silver:scan`, `silver:context`, optional `silver:review-stats` |
+| FLOW 3 | CLARIFY | Discovery and framing — `silver:clarify`, optional multi-AI only when user-requested |
+| FLOW 4 | DECIDE | Option synthesis — `silver:research`, optional spike or external research connector |
+| FLOW 5 | SPECIFY | Spec creation — `silver:ingest`, `silver:spec`, `silver:validate` |
+| FLOW 6 | PLAN | Phase planning — `silver:context`, `silver:plan`, optional `silver:validate` |
+| FLOW 7 | DESIGN CONTRACT | UI/UX design — `silver:ui-contract` plus optional design lenses |
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `silver:execute` |
-| FLOW 9 | UI QUALITY | UI review — silver:ui-review plus optional design/accessibility lenses |
-| FLOW 10 | REVIEW | Code review — 3 parallel layers with triage + fix |
-| FLOW 11 | SECURE | Prose: SENTINEL per-skill (`audit-security-of-skill`); Code: `security` on hooks/scripts; phase: `silver:secure`, `silver:validate` |
-| FLOW 12 | VERIFY | Verification — silver:verify, silver:completion-audit |
-| FLOW 13 | QUALITY GATE | 8 core quality dimensions plus conditional gates, dual-mode (design-time + adversarial) |
-| FLOW 14 | SHIP | Phase shipping — silver:ship, PR creation |
-| FLOW 15 | DEBUG | Debugging — silver:debug (dynamic insertion on failure) |
-| FLOW 16 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 18 only |
-| FLOW 17 | DOCUMENT | Documentation — silver:ensure-docs, silver:handoff, docs gates |
-| FLOW 18 | RELEASE | Milestone release — silver:release, silver-create-release |
+| FLOW 9 | UI QUALITY | UI review — `silver:ui-review` plus optional design/accessibility lenses |
+| FLOW 10 | REVIEW | Code review — `silver:review-request` → `silver:review` → `silver:review-triage` |
+| FLOW 11 | SECURE | Security — `security`, `silver:secure`, `silver:validate`, optional `silver:ai-llm-safety` |
+| FLOW 12 | VERIFY | Verification — `silver:verify`, `verify-tests`, `silver:completion-audit` |
+| FLOW 13 | QUALITY GATE | `silver:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
+| FLOW 14 | SHIP | Phase shipping — `silver:branch-finish` → `silver:ship`, PR/CI |
+| FLOW 15 | DEBUG | Debugging — `silver:debug`, optional `silver:forensics` (dynamic insertion on failure) |
+| FLOW 16 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 18 when UI phases exist |
+| FLOW 17 | DOCUMENT | Documentation — `silver:ensure-docs`, `silver:handoff`, docs gates |
+| FLOW 18 | RELEASE | Milestone release — `silver:release` → [FLOW 16–17] → `silver:create-release` (last) |
 
 ---
 
