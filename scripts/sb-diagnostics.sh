@@ -143,7 +143,7 @@ main() {
         graph_path="$(sb_graphify_abs_graph_path "$REPO_ROOT" "$sb_config")"
       fi
       if [[ -f "$graph_path" && ! -L "$graph_path" ]]; then
-        record pass "graphify-index" "index present at ${graph_path#${REPO_ROOT}/}"
+        record pass "graphify-index" "index present at ${graph_path#"${REPO_ROOT}"/}"
       else
         record fail "graphify-index" "index missing — run: graphify update . --no-cluster"
       fi
@@ -152,7 +152,7 @@ main() {
         gf_host="$(sb_runtime_host)"
         artifact_path="$(sb_graphify_platform_artifact_path "$REPO_ROOT" "$gf_host")"
         if sb_graphify_platform_artifact_present "$REPO_ROOT" "$gf_host"; then
-          record pass "graphify-platform" "platform artifact present (${artifact_path#${REPO_ROOT}/}, host=${gf_host})"
+          record pass "graphify-platform" "platform artifact present (${artifact_path#"${REPO_ROOT}"/}, host=${gf_host})"
         else
           record warn "graphify-platform" "platform artifact missing for ${gf_host} — run post-index install (see docs/GRAPHIFY.md)"
         fi

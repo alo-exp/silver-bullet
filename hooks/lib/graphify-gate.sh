@@ -6,9 +6,10 @@
 _sb_graphify_default_ttl_seconds=1800
 _sb_graphify_default_graph_path="graphify-out/graph.json"
 
-[[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]] && \
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
   # shellcheck source=recommended-tools.sh
   source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
+fi
 
 sb_graphify_graph_rel_path() {
   local config_file="${1:-}"
