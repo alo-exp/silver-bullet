@@ -6,38 +6,31 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/record-requested-skill.sh"
-PASS=0
-FAIL=0
+# shellcheck source=helpers/common.sh
+source "$(dirname "$0")/helpers/common.sh"
 
-if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
-  # shellcheck source=hooks/lib/runtime-paths.sh
-  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
-fi
-
-SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
-mkdir -p "$SB_TEST_DIR"
+hook_test_init_counters
+PASS="${HOOK_TEST_PASS:-0}"
+FAIL="${HOOK_TEST_FAIL:-0}"
 TEST_RUN_ID="$$"
-TMPSTATE=""
-TMPLOG_PATH_FILE="${SB_TEST_DIR}/session-log-path-${TEST_RUN_ID}"
+TMPLOG_PATH_FILE="${SB_RUNTIME_STATE_DIR}/session-log-path-${TEST_RUN_ID}"
 SESSION_LOG_FILE=""
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" 2>/dev/null || true
-  rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}" 2>/dev/null || true
-  rm -f "${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}.requested" 2>/dev/null || true
+  hook_test_teardown
+  rm -f "${SB_RUNTIME_STATE_DIR}/requested-skill-${TEST_RUN_ID}" 2>/dev/null || true
+  rm -f "${SB_RUNTIME_STATE_DIR}/requested-skill-${TEST_RUN_ID}.requested" 2>/dev/null || true
   rm -f "$TMPLOG_PATH_FILE" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
 setup() {
-  TMPDIR_TEST=$(mktemp -d)
-  TMPSTATE="${SB_TEST_DIR}/requested-skill-${TEST_RUN_ID}"
-  SESSION_LOG_FILE="${TMPDIR_TEST}/docs/sessions/requested-skill-${TEST_RUN_ID}.md"
+  hook_test_setup "$TEST_RUN_ID"
+  TMPSTATE="${SB_RUNTIME_STATE_DIR}/requested-skill-${TEST_RUN_ID}"
+  export SILVER_BULLET_STATE_FILE="$TMPSTATE"
+  SESSION_LOG_FILE="${HOOK_TEST_TMPDIR}/docs/sessions/requested-skill-${TEST_RUN_ID}.md"
   rm -f "$TMPSTATE" "${TMPSTATE}.requested"
-  cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
-# Silver Bullet
-EOF
-  cat > "$TMPDIR_TEST/.silver-bullet.json" <<EOF
+  cat > "$HOOK_TEST_CFG" <<EOF
 {
   "project": { "name": "test" },
   "state": { "state_file": "${TMPSTATE}" }
@@ -79,9 +72,11 @@ assert_in_state() {
   local skill="$2"
   if grep -qx "$skill" "$TMPSTATE" 2>/dev/null; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$skill' not found in state: $(cat "$TMPSTATE" 2>/dev/null || echo '(empty)')"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }
@@ -91,9 +86,11 @@ assert_in_requested() {
   local skill="$2"
   if grep -qx "$skill" "${TMPSTATE}.requested" 2>/dev/null; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$skill' not found in requested-state: $(cat "${TMPSTATE}.requested" 2>/dev/null || echo '(empty)')"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }
@@ -103,9 +100,11 @@ assert_not_in_state() {
   local skill="$2"
   if ! grep -qx "$skill" "$TMPSTATE" 2>/dev/null; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$skill' unexpectedly found in state"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }
@@ -115,9 +114,11 @@ assert_not_in_requested() {
   local skill="$2"
   if ! grep -qx "$skill" "${TMPSTATE}.requested" 2>/dev/null; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$skill' unexpectedly found in requested-state"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }
@@ -127,9 +128,11 @@ assert_in_session_log() {
   local needle="$2"
   if grep -qF "$needle" "$SESSION_LOG_FILE" 2>/dev/null; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — '$needle' not found in session log: $(cat "$SESSION_LOG_FILE" 2>/dev/null || echo '(empty)')"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }
@@ -139,9 +142,11 @@ assert_noop_json() {
   local output="$2"
   if printf '%s' "$output" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit" and ((.hookSpecificOutput | keys) == ["hookEventName"])' >/dev/null 2>&1; then
     echo "  ✅ $label"
+    HOOK_TEST_PASS=$((HOOK_TEST_PASS + 1))
     PASS=$((PASS + 1))
   else
     echo "  ❌ $label — expected no-op hook JSON, got: $output"
+    HOOK_TEST_FAIL=$((HOOK_TEST_FAIL + 1))
     FAIL=$((FAIL + 1))
   fi
 }

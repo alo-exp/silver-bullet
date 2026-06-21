@@ -62,6 +62,9 @@ for composer in "${THINNED_COMPOSERS[@]}"; do
   fi
 done
 
+# Full skill-source parity is enforced by tests/scripts/test-render-agent-bundle-freshness.sh
+# (all 85 skills). This script spot-checks hooks symlink parity + thinned composers only.
+
 if [[ "$FAIL" -ne 0 ]]; then
   echo "::error::Plugin mirror drift detected — sync plugins/silver-bullet/ from source"
   exit 1
