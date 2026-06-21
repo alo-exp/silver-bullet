@@ -201,7 +201,7 @@ record_completed_surface() {
   local surface="$1"
 
   case "$surface" in
-    silver:*|gsd:*|gsd-*) ;;
+    silver:*|retired-*) ;;
     *) return 0 ;;
   esac
 

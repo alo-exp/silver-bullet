@@ -97,7 +97,7 @@ wait_for_hook_audit_entry "plugin boundary deny recorded" "dev-cycle-check" "den
 echo "--- Case 6: source edit opens after planning state is valid ---"
 clear_hook_audit_log
 rm -rf "${WORK_DIR}/.planning/workflows"
-printf 'silver-quality-gates\ngsd-discuss-phase\ngsd-plan-phase\n' > "$STATE_FILE"
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$STATE_FILE"
 target_digest="$(capture_digest "$target_file")"
 run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
 wait_for_hook_audit_entry "dev-cycle-check allow recorded" "dev-cycle-check" "allow" 'Planning verified|Implementation edits allowed'

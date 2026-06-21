@@ -49,7 +49,7 @@ disable_codex_guard() {
 }
 
 seed_stage_c() {
-  seed_state "silver-quality-gates" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+  seed_state "silver-quality-gates" "silver-review" "requesting-code-review" "receiving-code-review"
 }
 
 run_doc_step() {
@@ -156,7 +156,7 @@ tmp=\$(mktemp)
   printf '## $current_month-15 — redis-cache\\n'
   printf -- '- **What:** Added Redis cache-aside layer for API responses.\\n'
   printf -- '- **Commits:** abc1234\\n'
-  printf -- '- **Skills:** silver-quality-gates, gsd-code-review\\n'
+  printf -- '- **Skills:** silver-quality-gates, silver-review\\n'
   printf -- '- **Knowledge:** Architecture Patterns\\n'
   printf -- '- **Learnings:** stack, practice\\n\\n'
   tail -n +3 docs/CHANGELOG.md
