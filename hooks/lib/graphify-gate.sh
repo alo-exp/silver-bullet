@@ -1,22 +1,25 @@
 # shellcheck shell=bash
-# Graphify retrieval gate — CLI/index/query state helpers.
-# Enforcement is active only when recommended_tools.graphify.enabled_by_user is true.
+# Graphify mandatory retrieval gate — single source of truth for CLI/index/query state.
 # Sourced by: graphify-gate.sh, record-graphify-query.sh, prompt-reminder.sh, sb-diagnostics.sh
 
 _sb_graphify_default_ttl_seconds=1800
 _sb_graphify_default_graph_path="graphify-out/graph.json"
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
+# Resolve graphify.required from project config (default: true when key absent).
+sb_graphify_required() {
+  local config_file="${1:-}"
+  [[ -n "$config_file" && -f "$config_file" ]] || return 1
+  if jq -e '.graphify.required == false' "$config_file" >/dev/null 2>&1; then
+    return 1
+  fi
+  return 0
+}
 
 sb_graphify_graph_rel_path() {
   local config_file="${1:-}"
   local rel="${_sb_graphify_default_graph_path}"
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    rel="$(jq -r --arg def "$_sb_graphify_default_graph_path" \
-      '.recommended_tools.graphify.graph_path // .graphify.graph_path // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_graph_path")"
+    rel="$(jq -r --arg def "$_sb_graphify_default_graph_path" '.graphify.graph_path // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_graph_path")"
   fi
   printf '%s' "$rel"
 }
@@ -25,8 +28,7 @@ sb_graphify_query_ttl_seconds() {
   local config_file="${1:-}"
   local ttl="${_sb_graphify_default_ttl_seconds}"
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    ttl="$(jq -r --argjson def "$_sb_graphify_default_ttl_seconds" \
-      '.recommended_tools.graphify.query_ttl_seconds // .graphify.query_ttl_seconds // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_ttl_seconds")"
+    ttl="$(jq -r --argjson def "$_sb_graphify_default_ttl_seconds" '.graphify.query_ttl_seconds // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_ttl_seconds")"
   fi
   if ! [[ "$ttl" =~ ^[0-9]+$ ]] || [[ "$ttl" -lt 60 ]]; then
     ttl="${_sb_graphify_default_ttl_seconds}"
@@ -74,7 +76,7 @@ sb_graphify_query_state_path() {
   local config_file="${1:-}"
   local state_path=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    state_path="$(jq -r '.recommended_tools.graphify.query_state_file // .graphify.query_state_file // ""' "$config_file" 2>/dev/null || true)"
+    state_path="$(jq -r '.graphify.query_state_file // ""' "$config_file" 2>/dev/null || true)"
     state_path="${state_path/#\~/$HOME}"
   fi
   if [[ -z "$state_path" ]]; then
@@ -127,6 +129,7 @@ sb_graphify_clear_query_state() {
   rm -f -- "$state_path" 2>/dev/null || true
 }
 
+# Detect graphify retrieval commands in a shell string.
 sb_graphify_command_is_retrieval() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
@@ -141,6 +144,7 @@ sb_graphify_command_is_index_build() {
   printf '%s' "$cmd" | grep -qE '\b(update|extract|watch)\b'
 }
 
+# Read-only or graphify maintenance commands that do not require a prior query.
 sb_graphify_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
@@ -150,6 +154,7 @@ sb_graphify_command_is_exempt() {
   if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)'; then
     return 0
   fi
+  # Common read-only discovery — do not require graphify query first.
   if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)'; then
     return 0
   fi
@@ -175,29 +180,17 @@ sb_graphify_edit_path_is_exempt() {
 }
 
 sb_graphify_block_message_no_cli() {
-  local config_file="${1:-}"
-  local host install_lines
-  host="$(sb_runtime_host)"
-  install_lines="$(sb_recommended_tool_full_install_lines "$config_file" graphify "$host" 2>/dev/null || true)"
-  if [[ -z "$install_lines" ]]; then
-    install_lines=$'uv tool install graphifyy\npipx install graphifyy'
-    local pre post
-    pre="$(sb_recommended_tool_platform_pre_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
-    post="$(sb_recommended_tool_platform_post_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
-    [[ -n "$pre" ]] && install_lines="${install_lines}"$'\n'"${pre}"
-    install_lines="${install_lines}"$'\n'"graphify update . --no-cluster"
-    [[ -n "$post" ]] && install_lines="${install_lines}"$'\n'"${post}"
-  fi
-  cat <<EOF
-🚫 GRAPHIFY REQUIRED — CLI not installed (user opted in).
+  cat <<'EOF'
+⚠️ GRAPHIFY REQUIRED — CLI not installed.
 
-Silver Bullet mandates Graphify for tier-1 project-memory retrieval in this project. Install before substantive work (host: ${host}):
+Silver Bullet mandates Graphify for tier-1 project-memory retrieval. Install before substantive work:
 
-${install_lines}
+  uv tool install graphifyy
+  # or: python3 -m pip install graphifyy
 
 Then run: graphify update . --no-cluster
 
-To disable enforcement, set recommended_tools.graphify.enabled_by_user to false in .silver-bullet.json.
+Docs-read fallback is allowed only when Graphify is literally unavailable — do not substitute native search when Graphify can be installed.
 EOF
 }
 
@@ -226,36 +219,6 @@ From the project root, query with concrete file/feature context:
 
   graphify query "<task, file paths, hook names, or feature context>" --graph ${graph_path} --budget 2000
 
-Inspect returned nodes before editing. A fresh query is required every ${ttl}s (or after branch change). Native search is not an acceptable substitute when Graphify is enabled.
+Inspect returned nodes before editing. A fresh query is required every ${ttl}s (or after branch change). Native search is not an acceptable substitute when Graphify is available.
 EOF
-}
-
-sb_graphify_prompt_reminder_line() {
-  local config_file="${1:-}"
-  local project_root graph_rel ttl
-  project_root="$(dirname "$config_file")"
-  graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
-
-  case "$(sb_recommended_tool_consent "$config_file" "graphify")" in
-    pending)
-      printf '%s' "Graphify: consent pending — ask user to opt in or out (see session-start context)."
-      ;;
-    disabled)
-      printf '%s' "Graphify: opted out — enforcements disabled; use direct docs reads."
-      ;;
-    enabled)
-      if sb_recommended_tool_enforcement_suspended "$config_file" "graphify"; then
-        printf '%s' "Graphify: opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
-      elif ! sb_graphify_cli_available; then
-        printf '%s' "Graphify: CLI missing — install graphifyy; hooks block substantive work until installed."
-      elif ! sb_graphify_index_exists "$project_root" "$config_file"; then
-        printf '%s' "Graphify: index missing — run \`graphify update . --no-cluster\` (expected ${graph_rel}). Hooks block substantive edits until built."
-      elif sb_graphify_query_is_fresh "$config_file"; then
-        printf '%s' "Graphify: fresh query recorded — substantive work allowed until TTL expires."
-      else
-        ttl="$(sb_graphify_query_ttl_seconds "$config_file")"
-        printf '%s' "Graphify: QUERY REQUIRED — run \`graphify query \"<concrete task context>\" --graph ${graph_rel} --budget 2000\` before edits (TTL ${ttl}s). Native search is not a substitute."
-      fi
-      ;;
-  esac
 }
