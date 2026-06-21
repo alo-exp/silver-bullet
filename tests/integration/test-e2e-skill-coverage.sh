@@ -110,13 +110,13 @@ echo "--- Scenario 5: retired namespace marker is not recorded by fresh defaults
 integration_setup
 write_full_config
 
-input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "gsd:discuss-phase"}}')
+input=$(jq -n '{hook_event_name: "PostToolUse", tool_name: "Skill", tool_input: {skill: "testing-strategy"}}')
 ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "${HOOKS_DIR}/record-skill.sh" 2>/dev/null ) >/dev/null
 
-if ! grep -qx "gsd-discuss-phase" "$TMPSTATE" 2>/dev/null; then
-  PASS=$((PASS + 1)); printf 'PASS: S5.1: retired gsd marker is not recorded by fresh defaults\n'
+if ! grep -qx "testing-strategy" "$TMPSTATE" 2>/dev/null; then
+  PASS=$((PASS + 1)); printf 'PASS: S5.1: retired marker is not recorded by fresh defaults\n'
 else
-  FAIL=$((FAIL + 1)); printf 'FAIL: S5.1: retired gsd marker should not be recorded by fresh defaults\n'
+  FAIL=$((FAIL + 1)); printf 'FAIL: S5.1: retired marker should not be recorded by fresh defaults\n'
 fi
 
 integration_teardown
