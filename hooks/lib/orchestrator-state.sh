@@ -32,7 +32,8 @@ sb_orchestrator_is_flow_atom() {
   esac
 }
 
-# Canonical post-execution chain (review triad → verify → secure → validate → pre-ship QG → ship prep).
+# Canonical post-execution chain (FLOW 10 → 12 → 11 → validate → FLOW 13 → FLOW 14).
+# Maps to docs/composable-flows-contracts.md § Post-execution sequencing.
 sb_orchestrator_post_exec_queue() {
   local preship_qg="${1:-FLOW-QUALITY-GATE-PRESHIP}"
   printf '%s' "silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,${preship_qg},silver-branch-finish,silver-completion-audit,silver-ship"
@@ -42,6 +43,8 @@ sb_orchestrator_default_queue_for_composer() {
   local composer="$1"
   local post_exec
   case "$composer" in
+    # Enforcement queue: FLOW 13 pre-plan → FLOW 6 pre-chain → FLOW 8 → post-exec (FLOW 10–14).
+    # Optional FLOW 1–5 atoms are parent-inserted per composer SKILL.md context scan.
     silver-feature)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
       printf '%s' "FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute,${post_exec}"
@@ -65,7 +68,8 @@ sb_orchestrator_default_queue_for_composer() {
       printf '%s' 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'
       ;;
     silver-release)
-      printf '%s' 'silver-quality-gates,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
+      # FLOW 18 delivery tail — audit/gap steps are parent-driven (see silver:release SKILL.md).
+      printf '%s' 'FLOW-QUALITY-GATE,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
       ;;
     *)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
@@ -97,6 +101,11 @@ sb_orchestrator_flow_csv_for_workflows() {
     case "$line" in
       FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|FLOW-DEVOPS-QUALITY-GATE-PRESHIP) line="QUALITY GATE" ;;
       devops-skill-router) line="DEVOPS SKILL ROUTER" ;;
+      silver-blast-radius) line="BLAST RADIUS" ;;
+      silver-branch-finish) line="BRANCH FINISH" ;;
+      silver-completion-audit) line="COMPLETION AUDIT" ;;
+      silver-validate) line="VALIDATE" ;;
+      silver-create-release) line="CREATE RELEASE" ;;
       security) line="SECURE" ;;
       silver-*) line="$(printf '%s' "${line#silver-}" | tr '[:lower:]' '[:upper:]')" ;;
     esac
