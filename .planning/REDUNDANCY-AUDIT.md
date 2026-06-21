@@ -336,7 +336,7 @@ These redundancies are **required by architecture** and must remain:
 
 ## 8. Remediation Status (2026-06-22)
 
-Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates), `e2c5c732` (docs/site/skills).
+Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates), `35ebebae` (docs/site/skills).
 
 ### Top 10
 
