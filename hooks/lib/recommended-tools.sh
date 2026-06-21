@@ -39,9 +39,26 @@ sb_recommended_tool_consent() {
   printf 'pending'
 }
 
+sb_recommended_tool_enforcement_suspended() {
+  local config_file="${1:-}" tool_id="${2:-}"
+  [[ -n "$config_file" && -f "$config_file" && -n "$tool_id" ]] || return 1
+  jq -e --arg id "$tool_id" '.recommended_tools[$id].enforcement_suspended == true' "$config_file" >/dev/null 2>&1
+}
+
+sb_recommended_tool_install_status() {
+  sb_recommended_tool_config_string "${1:-}" "${2:-}" "install_status" ""
+}
+
+sb_recommended_tool_install_failure_reason() {
+  sb_recommended_tool_config_string "${1:-}" "${2:-}" "install_failure_reason" ""
+}
+
 sb_recommended_tool_enforced() {
   local config_file="${1:-}" tool_id="${2:-}"
   [[ "$(sb_recommended_tool_consent "$config_file" "$tool_id")" == "enabled" ]] || return 1
+  if sb_recommended_tool_enforcement_suspended "$config_file" "$tool_id"; then
+    return 1
+  fi
   if jq -e --arg id "$tool_id" '.recommended_tools[$id].required_when_enabled == false' "$config_file" >/dev/null 2>&1; then
     return 1
   fi
@@ -115,7 +132,15 @@ EOF
       printf '%s\n' "${tool_id} opted out for this project (recommended_tools.${tool_id}.enabled_by_user=false). Enforcements disabled — use direct docs reads per §2g-i advisory path."
       ;;
     enabled)
-      if [[ "$tool_id" == "graphify" ]] && declare -f sb_graphify_cli_available >/dev/null 2>&1; then
+      if sb_recommended_tool_enforcement_suspended "$config_file" "$tool_id"; then
+        local fail_reason
+        fail_reason="$(sb_recommended_tool_install_failure_reason "$config_file" "$tool_id")"
+        cat <<EOF
+Graphify opted in but install failed — enforcement suspended until upgrade; retry on /silver:update.
+User consent preserved (enabled_by_user=true). Hooks treat Graphify as advisory until install succeeds.
+${fail_reason:+Failure reason: ${fail_reason}}
+EOF
+      elif [[ "$tool_id" == "graphify" ]] && declare -f sb_graphify_cli_available >/dev/null 2>&1; then
         if ! sb_graphify_cli_available; then
           cat <<EOF
 Graphify enabled but CLI missing — install before substantive work:

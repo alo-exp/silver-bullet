@@ -143,6 +143,9 @@
   "recommended_tools": {
     "graphify": {
       "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
       "required_when_enabled": true,
       "install_commands": [
         "uv tool install graphifyy",
