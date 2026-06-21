@@ -1,8 +1,8 @@
 ---
 name: "silver:bugfix"
 title: "Bugfix"
-description: Fix a bug with Silver Bullet discipline
-argument-hint: <bug description>
+description: >
+argument-hint: <description of the bug or failure>
 ---
 
-Invoke the Silver Bullet `silver-bugfix` workflow for the described bug or regression. Triage the failure first, then follow the SB bugfix flow end to end.
+Invoke the Silver Bullet `silver-bugfix` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.

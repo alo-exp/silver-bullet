@@ -11,6 +11,18 @@ version: 0.1.0
 
 Orchestrator skill for artifact review. Accepts an artifact path and optional reviewer name, dispatches to the appropriate reviewer skill, runs the 2-consecutive-pass review loop, records per-artifact state, and writes the REVIEW-ROUNDS.md audit trail.
 
+## Entry point vs direct review-* skills
+
+**Use `artifact-reviewer` as the hub** for all SB-managed planning artifacts (SPEC, PLAN, ROADMAP, UAT, etc.). It auto-detects the correct `review-*` skill from the artifact filename, runs the shared 2-pass loop, and writes analytics.
+
+| Invoke | When |
+|--------|------|
+| `/artifact-reviewer <path>` | Default — any artifact in the mapping table below |
+| `/review-spec`, `/review-plan`, … | Advanced/direct only when you already know the reviewer and want to skip hub dispatch |
+| `/silver-review` | Code changes — separate from artifact reviewers; use `artifact-reviewer` only when reviewing code is not the goal |
+
+Do not fork review logic: `review-*` skills implement QC checks; `artifact-reviewer` owns orchestration, state, and `REVIEW-ROUNDS.md`.
+
 ## Usage
 
 ```

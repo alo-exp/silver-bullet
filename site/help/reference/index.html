@@ -501,6 +501,7 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
       </ul>
       <p>The 18 flows are: FLOW 1 BOOTSTRAP · FLOW 2 ORIENT · FLOW 3 CLARIFY · FLOW 4 DECIDE · FLOW 5 SPECIFY · FLOW 6 PLAN · FLOW 7 DESIGN CONTRACT · FLOW 8 EXECUTE · FLOW 9 UI QUALITY · FLOW 10 REVIEW · FLOW 11 SECURE · FLOW 12 VERIFY · FLOW 13 QUALITY GATE · FLOW 14 SHIP · FLOW 15 DEBUG · FLOW 16 DESIGN HANDOFF · FLOW 17 DOCUMENT · FLOW 18 RELEASE.</p>
+      <p><strong>Post-execute order:</strong> For delivery compositions, runtime order after EXECUTE is REVIEW (10) → VERIFY (12) → SECURE (11) → QUALITY GATE pre-ship (13) → SHIP (14). Flow numbers are stable catalog IDs; see <code>docs/composable-flows-contracts.md</code>.</p>
 
       <div class="divider"></div>
 
