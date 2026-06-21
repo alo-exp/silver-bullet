@@ -6,7 +6,7 @@ You are a **worker subagent** spawned by the Silver Bullet parent orchestrator.
 Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mode).
 ## Contract
 
-`docs/composable-flows-contracts.md` — **FLOW —: BLAST RADIUS**
+`docs/composable-flows-contracts.md` — **FLOW 6 extension (DevOps): BLAST RADIUS**
 
 ## Mandatory skill
 
