@@ -97,7 +97,7 @@ fi
 # test fixtures, test scripts, superpowers plans, hooks that log session metadata, templates for session logs
 # Excludes all archived/historical dirs: specs (point-in-time designs), sessions (logs),
 # internal (superseded), superpowers (completed plans), tests, .planning, .claude, site,
-# plus CHANGELOG files (historical entries) and session-log templates
+# graphify-out/raw (generated Graphify index), plus CHANGELOG files (historical entries) and session-log templates
 stale_refs=$(grep -rl "KNOWLEDGE\.md" --include="*.md" --include="*.sh" --include="*.json" --include="*.base" \
   --exclude-dir=".claude" --exclude-dir="site" --exclude-dir="specs" --exclude-dir="sessions" \
   --exclude-dir="internal" --exclude-dir="superpowers" --exclude-dir="tests" \
@@ -119,7 +119,7 @@ for pattern in "Architecture-and-Design" "Testing-Strategy-and-Plan" "Master-PRD
   hits=$(grep -rl "$pattern" --include="*.md" --include="*.sh" --include="*.json" --include="*.base" \
     --exclude-dir=".claude" --exclude-dir="internal" --exclude-dir="specs" \
     --exclude-dir="sessions" --exclude-dir="superpowers" --exclude-dir="tests" \
-    --exclude-dir=".planning" --exclude-dir="site" . 2>/dev/null | \
+    --exclude-dir=".planning" --exclude-dir="site" --exclude-dir="graphify-out" --exclude-dir="raw" . 2>/dev/null | \
     grep -v "CHANGELOG" | grep -v "README" | grep -v "skills/silver-init" || true)
   if [[ -z "$hits" ]]; then
     pass "No references to '$pattern' in active files"
