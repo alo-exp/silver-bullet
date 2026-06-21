@@ -1,5 +1,5 @@
 {
-  "config_version": "0.45.0",
+  "config_version": "0.46.0",
   "version": "0.45.0",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
