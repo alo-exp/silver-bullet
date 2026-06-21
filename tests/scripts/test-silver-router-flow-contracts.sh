@@ -77,6 +77,18 @@ for file in \
   assert_contains "composer declares standard chain in ${file#$REPO_ROOT/}" "Standard composition chain" "$file"
 done
 
+assert_contains "research declares standard composition chain" "Standard composition chain" "$REPO_ROOT/skills/silver-research/SKILL.md"
+
+for file in \
+  "$REPO_ROOT/skills/silver-feature/SKILL.md" \
+  "$REPO_ROOT/skills/silver-ui/SKILL.md" \
+  "$REPO_ROOT/skills/silver-devops/SKILL.md" \
+  "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
+  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-release/SKILL.md"; do
+  assert_not_contains "no Invoke silver: bloat in ${file#$REPO_ROOT/}" "[Ii]nvoke \`silver:" "$file"
+done
+
 assert_contains "release uses FLOW 18 vocabulary" "FLOW 18" "$REPO_ROOT/skills/silver-release/SKILL.md"
 assert_not_contains "release avoids legacy UAT AUDIT label" "UAT AUDIT -> MILESTONE AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
 
