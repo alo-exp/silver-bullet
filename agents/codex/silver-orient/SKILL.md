@@ -1,16 +1,21 @@
 ---
 name: "silver:orient"
 title: "Orient"
-description: Legacy alias for rapid orientation — routes to silver-scan or silver-context.
+description: "DEPRECATED — use silver-scan for retrospective session scan or silver-context for phase context."
 version: 0.1.0
 ---
 
-# silver:orient (alias)
+# silver:orient (deprecated alias)
+
+> **Deprecation:** Prefer **`/silver:scan`** (retrospective session scanner for deferred work and insights) or **`/silver:context`** (phase context capture). Do not invoke `silver-orient` directly in new work.
 
 ## Purpose
 
-Thin compatibility marker for legacy `gsd-scan` / `gsd-map-codebase` recordings.
+Thin compatibility marker for brownfield orientation recordings. Routes to `silver-scan` for new work.
 
 ## Preferred routes
 
-**Use `/silver:scan`** for orientation or **`/silver:context`** for phase context. This skill exists so enforcement can record the virtual marker when legacy aliases fire.
+| Need | Use instead |
+|------|-------------|
+| Brownfield orientation / codebase map | `/silver:scan` |
+| Active phase context before planning | `/silver:context` |

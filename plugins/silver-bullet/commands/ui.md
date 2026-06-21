@@ -1,8 +1,8 @@
 ---
 name: "silver:ui"
-title: "UI"
-description: Run a UI or design task through Silver Bullet
-argument-hint: <UI or design request>
+title: "Ui"
+description: >
+argument-hint: <UI feature or component description>
 ---
 
-Invoke the Silver Bullet `silver-ui` workflow for the requested UI or design task. Keep the work aligned with SB workflow discipline and the dependency plugins it requires.
+Invoke the Silver Bullet `silver-ui` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.

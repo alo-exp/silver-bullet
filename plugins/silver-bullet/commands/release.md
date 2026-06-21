@@ -1,8 +1,8 @@
 ---
 name: "silver:release"
 title: "Release"
-description: Prepare a Silver Bullet milestone release
-argument-hint: <version or release description>
+description: >
+argument-hint: <version or release description, e.g. v1.2.0>
 ---
 
-Invoke the Silver Bullet `silver-release` workflow to prepare the milestone release, run the release gates, and publish the versioned release artifacts.
+Invoke the Silver Bullet `silver-release` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.

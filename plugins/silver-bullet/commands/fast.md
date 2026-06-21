@@ -1,8 +1,8 @@
 ---
 name: "silver:fast"
 title: "Fast"
-description: Handle a trivial task with no workflow overhead
-argument-hint: <small task>
+description: >
+argument-hint: <description of change>
 ---
 
-Invoke the Silver Bullet `silver-fast` workflow for this trivial task. Keep it inline, avoid planning overhead, and finish quickly.
+Invoke the Silver Bullet `silver-fast` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.
