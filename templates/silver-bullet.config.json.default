@@ -149,8 +149,31 @@
       "required_when_enabled": true,
       "install_commands": [
         "uv tool install graphifyy",
-        "pip install graphifyy"
+        "pipx install graphifyy"
       ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "graphify install --project"
+          ],
+          "post_index": [
+            "graphify claude install --project"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "graphify install --project --platform codex"
+          ],
+          "post_index": [
+            "graphify codex install --project"
+          ]
+        },
+        "cursor": {
+          "post_index": [
+            "graphify cursor install"
+          ]
+        }
+      },
       "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,

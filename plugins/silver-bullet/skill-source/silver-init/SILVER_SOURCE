@@ -163,6 +163,25 @@ Run when `graphify_consent` is `true` AND either:
 - this is a fresh opt-in (user just chose Yes), OR
 - `graphify_suspended` is `true` (update mode / post-`/silver:update` retry)
 
+**Detect host** (same logic as `hooks/lib/runtime-paths.sh`):
+```bash
+if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
+  SB_HOST="$SILVER_BULLET_RUNTIME"
+elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
+  SB_HOST=cursor
+elif [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
+  SB_HOST=codex
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
+  SB_HOST=codex
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
+  SB_HOST=cursor
+else
+  SB_HOST=claude
+fi
+echo "$SB_HOST"
+```
+
+**Step 3a — CLI package** (upstream recommends `uv tool install`; `pipx` is the pip alternative):
 ```bash
 command -v graphify
 ```
@@ -173,19 +192,39 @@ uv tool install graphifyy
 ```
 or:
 ```
-pip install graphifyy
+pipx install graphifyy
 ```
 
 Re-check `command -v graphify`.
 
-When CLI is present:
+**Step 3b — Skill registration** (before index; upstream [Install Step 2](https://github.com/safishamsi/graphify#install)):
+
+| Host (`SB_HOST`) | Pre-index commands |
+|------------------|-------------------|
+| `claude` | `graphify install --project` |
+| `codex` | `graphify install --project --platform codex` |
+| `cursor` | *(none — Cursor uses post-index `graphify cursor install` only)* |
+
+Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` from `.silver-bullet.json` when present.
+
+**Step 3c — Build index** (when CLI is present):
 ```bash
 graphify update . --no-cluster
 ```
 
-On Cursor hosts:
+**Step 3d — Platform always-on** (after index; per upstream [Make your assistant always use the graph](https://github.com/safishamsi/graphify#make-your-assistant-always-use-the-graph)):
+
+| Host (`SB_HOST`) | Post-index commands | Artifact |
+|------------------|----------------------|----------|
+| `claude` | `graphify claude install --project` | `.codex/settings.json` hooks |
+| `codex` | `graphify codex install --project` | `.codex/hooks.json` |
+| `cursor` | `graphify cursor install` | `.cursor/rules/graphify.mdc` (`alwaysApply: true`, [issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
+
+Read `platform_install_commands.<host>.post_index` from config when present.
+
+**Step 3e — Optional git hooks** (advisory; upstream recommends for auto-rebuild):
 ```bash
-graphify cursor install
+graphify hook install
 ```
 
 Confirm `graphify-out/graph.json` exists (or path in config).

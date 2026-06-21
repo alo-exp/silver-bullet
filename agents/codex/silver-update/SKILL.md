@@ -201,10 +201,21 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_su
 as fresh init — present benefits, ask Yes/No, write choice to `.silver-bullet.json`.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry Graphify install
-without re-asking:
-1. `uv tool install graphifyy` or `pip install graphifyy`
-2. `graphify update . --no-cluster`
-3. On Cursor: `graphify cursor install`
+without re-asking. Detect host the same way as `/silver:init` Phase 1.1a Step 3 (`SB_HOST` =
+`claude`, `codex`, or `cursor` via `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars).
+
+1. `uv tool install graphifyy` or `pipx install graphifyy`
+2. Pre-index skill registration (upstream Install Step 2):
+   - **Claude:** `graphify install --project`
+   - **Codex:** `graphify install --project --platform codex`
+   - **Cursor:** skip
+3. `graphify update . --no-cluster`
+4. Post-index always-on (upstream "Make your assistant always use the graph"):
+   - **Claude:** `graphify claude install --project`
+   - **Codex:** `graphify codex install --project`
+   - **Cursor:** `graphify cursor install`
+
+Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` / `.post_index` from `.silver-bullet.json` when present.
 
 On success, clear suspension:
 ```bash
