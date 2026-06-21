@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.47.0] — 2026-06-22
+
+Recommended-tools opt-in for Graphify, GSD lifecycle namespace removal, atomic-flow composition hardening, and hook/test parity gates.
+
+## Features
+- `feat(recommended-tools): opt-in Graphify consent with hook enforcement` (`f762dfdd`)
+- `feat(recommended-tools): implement opt-in policy decisions for Graphify` (`2b6da65c`)
+- `feat(graphify): align per-platform install with upstream v8` (`495c35ba`)
+
+## Refactoring
+- `refactor(runtime): remove GSD lifecycle namespace from SB hooks` (`0d660f39`)
+- `refactor(hooks): centralize jq-gate and dedupe hooks.json matchers` (`1c9d447f`)
+
+## Documentation
+- `docs(redundancy): audit remediation, site FLOW alignment, skill deprecations` (`35ebebae`)
+- `docs(planning): add full SB redundancy audit` (`b626ac89`)
+- `docs: fix remediation commit ref after amend` (`646d334f`)
+
+## Tests
+- `test(flows): P1 composition hardening and e2e smoke refresh` (`ba2e1fe5`)
+- `test: finish GSD removal in integration and live fixtures` (`f146d4b2`)
+- `test: fix post-GSD and remediation test failures` (`0e88b87a`, `3a5ca89a`)
+- `chore(tests): add parity gates, hook fixtures, and template sync` (`176504f2`)
+- `test(hooks): isolate CURSOR_PLUGIN_ROOT host detection from SILVER_BULLET_RUNTIME`
+
+## Chores
+- `chore(sync): refresh silver-init skill-source after opt-in Graphify init flow` (`76f460cb`)
+
+---
+
 ## [0.46.0] — 2026-06-20
 
 Hotfix release: hook false-positive elimination, Cursor gitPath install repair, e2e-live Kay stability, and worm payload removal.
