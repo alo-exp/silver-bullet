@@ -9,7 +9,7 @@ which tier supplied the evidence.
 | Tier | Name | Operations | When used |
 |------|------|------------|-----------|
 | 0 | Shell discovery | `rg`, `grep`, `find`, `git log`, file reads, test output | Always available; default fallback |
-| 1 | Graphify retrieval | semantic search, related-file retrieval, session graph queries | When Graphify is installed and project is indexed |
+| 1 | Graphify retrieval | semantic search, related-file retrieval, session graph queries | When user opted in (`recommended_tools.graphify.enabled_by_user: true`) and Graphify is installed/indexed |
 | 2 | Structural graph | call chains, dependency edges, module boundaries, duplicate hotspots | When graph queries return structural evidence |
 | 3 | Live runtime | browser traces, HTTP probes, Playwright, deploy smoke | When a runnable app or environment exists |
 
@@ -33,7 +33,7 @@ Code intelligence tier: 1 (Graphify retrieval) with tier-0 shell fallback for fi
 
 1. Start at tier 0 when graph or live tooling is absent.
 2. Do not block ship solely because tier 1+ is unavailable if tier 0 evidence
-   is sufficient for the finding.
+   is sufficient for the finding — **unless** the user opted into Graphify enforcement.
 3. Do not claim call-chain or semantic coverage without naming the tier and
    command/query that produced it.
 4. Prefer direct shell and test evidence for release blockers; use graph

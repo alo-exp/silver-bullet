@@ -30,16 +30,6 @@
         "matcher": "Shell|Skill"
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-        "timeout": 15,
-        "matcher": "Shell"
-      },
-      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit"
@@ -85,19 +75,9 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/graphify-gate.sh\"",
         "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "timeout": 15,
-        "matcher": "Shell"
+        "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
@@ -133,26 +113,6 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
         "timeout": 10,
         "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
-        "timeout": 5,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "timeout": 30,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
       }
     ],
     "beforeShellExecution": [
@@ -167,16 +127,6 @@
         "timeout": 15
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-        "matcher": ".*",
-        "timeout": 15
-      },
-      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
         "matcher": ".*",
         "timeout": 10
@@ -192,37 +142,7 @@
         "timeout": 15
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "matcher": ".*",
-        "timeout": 15
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
-        "matcher": ".*",
-        "timeout": 5
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "matcher": ".*",
-        "timeout": 30
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/graphify-gate.sh\"",
         "matcher": ".*",
         "timeout": 10
       },
@@ -269,16 +189,6 @@
         "matcher": "Skill|Shell"
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
-        "timeout": 15,
-        "matcher": "Shell"
-      },
-      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
         "timeout": 15,
         "matcher": "Edit|Write|MultiEdit|Shell"
@@ -287,16 +197,6 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "timeout": 15,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/compliance-status.sh\"",
@@ -329,23 +229,8 @@
         "matcher": "Shell"
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-        "timeout": 15,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/pr-traceability.sh\"",
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-graphify-query.sh\"",
         "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/session-log-init.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "timeout": 30,
         "matcher": "Shell"
       }
     ],
@@ -361,26 +246,6 @@
         "timeout": 15
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-skill.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
-        "matcher": ".*",
-        "timeout": 15
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "matcher": ".*",
-        "timeout": 15
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
         "matcher": ".*",
         "timeout": 15
@@ -411,24 +276,9 @@
         "timeout": 30
       },
       {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-        "matcher": ".*",
-        "timeout": 15
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/pr-traceability.sh\"",
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-graphify-query.sh\"",
         "matcher": ".*",
         "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/session-log-init.sh\"",
-        "matcher": ".*",
-        "timeout": 10
-      },
-      {
-        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-        "matcher": ".*",
-        "timeout": 30
       }
     ],
     "stop": [

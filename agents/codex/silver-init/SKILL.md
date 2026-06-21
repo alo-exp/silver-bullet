@@ -104,35 +104,85 @@ Then use ask the user directly:
 If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /silver:init.`
 If B: STOP.
 
-### 1.1a Graphify (advisory)
+### 1.1a Graphify (recommended tool — opt-in)
 
-Graphify powers SB's retrieval-oriented project memory — it lets SB query code,
-docs, knowledge, and learnings before planning or editing. It is **recommended but
-not required**: SB falls back to direct docs reads (`docs/knowledge/INDEX.md`,
-current `docs/knowledge/YYYY-MM.md`, `docs/learnings/YYYY-MM.md`, and referenced docs)
-whenever Graphify is unavailable. This matches the core-rules retrieval fallback —
-do not hard-block init on Graphify.
+Graphify powers SB's retrieval-oriented project memory. SB **asks for explicit permission**
+before enabling mandatory enforcement. Consent is stored in `.silver-bullet.json` under
+`recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = opted in, `false` = opted out).
 
-Run via shell:
+**Benefits (present concisely when asking):**
+- Scoped retrieval saves tokens vs broad file reads
+- Team-shared knowledge graph indexes code + docs in the repo
+- Portable across Claude, Codex, and Cursor agents
+
+#### Step 1 — Read existing consent
+
+If `.silver-bullet.json` exists, read consent:
+```bash
+jq -r '.recommended_tools.graphify.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
 ```
+
+Store as `graphify_consent` for this init run. Fresh setup defaults to `null`.
+
+#### Step 2 — Ask when consent is pending
+
+If `graphify_consent` is `null`, use ask the user directly (do **not** auto-install):
+
+- Question: "Silver Bullet recommends **Graphify** for project-memory retrieval.\n\nBenefits: scoped queries save tokens; team-shared knowledge graph; works across agents.\n\nEnable Graphify for this project? Hooks will require `graphify query` before substantive edits when enabled."
+- Options:
+  - "A. Yes — enable Graphify (install + mandatory enforcement)"
+  - "B. No — skip Graphify (advisory/docs fallback only)"
+
+If **A**: set `graphify_consent=true`. If **B**: set `graphify_consent=false`.
+
+Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4:
+```json
+"recommended_tools": {
+  "graphify": { "enabled_by_user": true }
+}
+```
+(or `false` when opted out). Preserve other `recommended_tools.graphify` fields from the template.
+
+#### Step 3 — Install and index (only when opted in)
+
+If `graphify_consent` is `true`:
+
+```bash
 command -v graphify
 ```
 
-If the command fails (exit code non-zero), surface an advisory note (do not STOP):
+If missing, attempt install (user already consented):
+```
+uv tool install graphifyy
+```
+or:
+```
+pip install graphifyy
+```
 
-> ⚠️ **Graphify is not installed.** Silver Bullet will fall back to direct docs reads
-> for project memory retrieval. To enable richer retrieval, install it with one of:
->
-> ```
-> uv tool install graphifyy
-> ```
-> or:
-> ```
-> pip install graphifyy
-> ```
+Re-check `command -v graphify`. If still missing, warn loudly but continue init — hooks will block substantive work until installed.
 
-Then continue init regardless of Graphify presence. If the user installs it now,
-re-run `command -v graphify` to confirm; otherwise proceed with the docs-read fallback.
+When CLI is present:
+```bash
+graphify update . --no-cluster
+```
+
+On Cursor hosts:
+```bash
+graphify cursor install
+```
+
+Confirm `graphify-out/graph.json` exists (or path in config). Surface errors if index build fails.
+
+#### Step 4 — Opted out or pending after decline
+
+If `graphify_consent` is `false`: output "Graphify opted out — enforcements disabled for this project." Continue init.
+
+If still `null` after a skipped prompt (should not happen): leave `enabled_by_user: null`; session-start will re-prompt.
+
+#### Step 5 — Already consented projects
+
+If consent is already `true` or `false` in an existing config (update mode), respect it without re-asking unless the user requests a change. When `true` and CLI missing, surface install instructions (same as Step 3).
 
 ### 1.1b Install diagnostics (advisory)
 
@@ -166,7 +216,7 @@ runtime tier. Per-host state and hook manifest paths are documented in `docs/RUN
 ### 1.2 Legacy plugin note
 
 SB no longer probes or reports third-party lifecycle-overlap plugin installs
-(GSD, Superpowers, Anthropic knowledge-work). Core lifecycle behavior is
+(Superpowers, Anthropic knowledge-work, and other absorbed lifecycle overlap). Core lifecycle behavior is
 SB-owned. Continue initialization without those plugins.
 
 ### 1.6 Runtime-aware bootstrap
@@ -473,7 +523,7 @@ This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills tha
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
 - `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
 
-Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy `"gsd"` values in existing configs are treated as local tracking by filing/removal skills.
+Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized by `silver:migrate`.
 
 ---
 

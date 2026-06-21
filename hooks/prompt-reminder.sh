@@ -62,7 +62,13 @@ shell_single_quote() {
 }
 
 # jq is required — return a no-op payload if missing.
-command -v jq >/dev/null 2>&1 || finish_noop
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "prompt-reminder"
+fi
 
 prompt=""
 if [[ ! -t 0 ]]; then
@@ -382,6 +388,20 @@ if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
 ---
 
 ${tier_line}"
+  fi
+fi
+
+# Graphify opt-in status (only when user has enabled enforcement)
+if [[ -f "$_lib_dir/graphify-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/graphify-gate.sh
+  source "$_lib_dir/graphify-gate.sh"
+  graphify_line="$(sb_graphify_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+  if [[ -n "$graphify_line" ]]; then
+    msg="${msg}
+
+---
+
+${graphify_line}"
   fi
 fi
 

@@ -12,7 +12,7 @@ trap 'exit 0' ERR
 #   - resume   : continuing a prior session
 #   - clear    : explicit /clear by the user
 #   - compact  : context compression (auto or manual) — NOT a reset
-# Previously, all four triggered destructive cleanup, wiping mid-session GSD
+# Previously, all four triggered destructive cleanup, wiping mid-session SB
 # progress on every compact. Now only `startup` and `clear` reset ephemeral gate
 # files; `resume` and `compact` are benign continuation events.
 #
@@ -165,7 +165,7 @@ fi
 # This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
 #
 # Within the same branch: skill recordings accumulate so mid-feature work across
-# sessions is preserved. GSD lifecycle markers are real skill records, not
+# sessions is preserved. SB lifecycle markers are real skill records, not
 # disposable session markers, and must survive startup on the same branch.
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
@@ -243,13 +243,28 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \
         "${SB_STATE_DIR}/stall-block" 2>/dev/null || true
+  if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
+    # shellcheck source=lib/graphify-gate.sh
+    source "$_lib_dir/graphify-gate.sh"
+    _gf_cfg=""
+    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+      _gf_cfg="${sb_project_root}/.silver-bullet.json"
+    fi
+    if [[ -n "$_gf_cfg" ]]; then
+      sb_graphify_clear_query_state "$_gf_cfg" 2>/dev/null || true
+    else
+      rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
+    fi
+  else
+    rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
+  fi
   sb_guard_nofollow "$branch_file"
   printf '%s\n' "$current_branch" > "$branch_file"
   if [[ ! -s "$branch_file" ]]; then
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
 elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]; then
-  # Same branch — preserve recorded skill state. GSD markers are authoritative
+  # Same branch — preserve recorded skill state. SB markers are authoritative
   # lifecycle evidence and must not be discarded on session startup.
   :
 fi
@@ -430,6 +445,27 @@ if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
 ---
 
 }Cursor: merge ~/.cursor/hooks.json via skills/silver-init/scripts/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
+  fi
+fi
+
+# Recommended-tools consent injection (Graphify and future opt-in tooling)
+if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
+  # shellcheck source=lib/recommended-tools.sh
+  source "$_lib_dir/recommended-tools.sh"
+  if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
+    # shellcheck source=lib/graphify-gate.sh
+    source "$_lib_dir/graphify-gate.sh"
+  fi
+  _rt_cfg="${sb_project_root}/.silver-bullet.json"
+  if [[ -f "$_rt_cfg" ]]; then
+    _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "graphify" 2>/dev/null || true)"
+    if [[ -n "$_rt_ctx" ]]; then
+      combined="${combined:+$combined
+
+---
+
+}${_rt_ctx}"
+    fi
   fi
 fi
 

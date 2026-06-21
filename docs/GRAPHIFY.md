@@ -2,6 +2,28 @@
 
 Silver Bullet uses Graphify as the preferred local retrieval layer before planning, editing, debugging, review, and shipping.
 
+## Opt-In Policy
+
+Graphify is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit
+permission at `/silver:init` and session start. Consent is stored in `.silver-bullet.json`:
+
+```json
+"recommended_tools": {
+  "graphify": {
+    "enabled_by_user": null,
+    "required_when_enabled": true
+  }
+}
+```
+
+| `enabled_by_user` | Behavior |
+|-----------------|----------|
+| `null` | Consent pending — SB prompts; no hook enforcement |
+| `true` | Mandatory — hooks block substantive edits until index + fresh query |
+| `false` | Opted out — advisory/docs fallback only |
+
+The same `recommended_tools` pattern applies to future SB-suggested tooling (see `hooks/lib/recommended-tools.sh`).
+
 ## Local Setup
 
 Graphify requires Python 3.10+. If the system `python3` is older, install it with a newer Python or a tool runtime:
