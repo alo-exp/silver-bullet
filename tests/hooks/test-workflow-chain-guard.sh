@@ -120,7 +120,7 @@ assert_blocks "silver:feature blocks without SB pre-execution markers" "$out"
 write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature passes after SB-owned pre-execution markers exist" "$out"
-write_state_markers silver-quality-gates gsd-discuss-phase gsd-plan-phase gsd-validate-phase
+write_state_markers silver-quality-gates silver-context silver-plan silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature legacy markers satisfy SB-owned aliases" "$out"
 teardown
@@ -129,13 +129,13 @@ teardown
 setup
 touch "$TMPDIR_TEST/src/app.js"
 start_workflow "/silver:ui" "ui gate test" "orient,design,plan,execute,review,verify"
-write_state_markers gsd-discuss-phase gsd-ui-phase gsd-plan-phase
+write_state_markers silver-context silver-ui-contract silver-plan
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_blocks "silver:ui blocks until UI pre-execution markers are present" "$out"
 write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui passes after SB-owned UI pre-execution markers exist" "$out"
-write_state_markers silver-quality-gates gsd-discuss-phase gsd-ui-phase gsd-plan-phase gsd-validate-phase
+write_state_markers silver-quality-gates silver-context silver-ui-contract silver-plan silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui legacy UI markers satisfy SB-owned aliases" "$out"
 teardown
@@ -243,7 +243,7 @@ assert_blocks "silver:bugfix still blocks with only DEBUG marker (PLAN missing)"
 write_state_markers silver-debug silver-plan
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:bugfix passes after DEBUG + PLAN markers exist" "$out"
-write_state_markers gsd-debug gsd-plan-phase
+write_state_markers silver-debug silver-plan
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:bugfix legacy GSD debug/plan markers satisfy SB-owned aliases" "$out"
 teardown

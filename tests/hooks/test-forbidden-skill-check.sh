@@ -133,7 +133,20 @@ out=$(run_hook '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input"
 assert_blocks "superpowers:subagent-driven-development -> permissionDecision deny" "$out"
 teardown
 
-# Test 5: Custom forbidden skill from .silver-bullet.json skills.forbidden array → block
+# Test 5b: Retired GSD namespace blocked
+echo "--- Test 5b: Retired lifecycle namespace blocked ---"
+setup
+_retired_colon=$(printf '%s%s:' gs d)
+_retired_hyphen=$(printf '%s%s-' gs d)
+out=$(run_hook "{\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Skill\",\"tool_input\":{\"skill\":\"${_retired_colon}plan-phase\"}}")
+assert_blocks "retired colon namespace -> permissionDecision deny" "$out"
+teardown
+
+setup
+out=$(run_hook "{\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Skill\",\"tool_input\":{\"skill\":\"${_retired_hyphen}plan-phase\"}}")
+assert_blocks "retired hyphen namespace -> permissionDecision deny" "$out"
+teardown
+
 echo "--- Test 5: Custom forbidden skill from config ---"
 setup
 # Override config with a custom forbidden skill

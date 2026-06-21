@@ -114,15 +114,6 @@ sb_skill_canonical_name() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
 
-  if [[ "$skill" == gsd:* ]]; then
-    if declare -F sb_legacy_skill_alias_normalize >/dev/null 2>&1; then
-      printf '%s' "$(sb_legacy_skill_alias_normalize "$skill")"
-    else
-      printf 'gsd-%s' "${skill#gsd:}"
-    fi
-    return 0
-  fi
-
   # Silver Bullet uses `silver:<route>` as a single skill family, and the
   # compliance state uses hyphenated markers (`silver-init`, `silver-feature`,
   # etc.). Do not strip the `silver:` prefix.

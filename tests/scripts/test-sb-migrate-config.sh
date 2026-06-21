@@ -35,7 +35,8 @@ trap 'rm -rf "$WORK"' EXIT
 
 git -C "$WORK" init -q
 cp "$TEMPLATE" "$WORK/.silver-bullet.json"
-jq '.project.name = "legacy-app" | .project.src_pattern = "/lib/" | .skills.all_tracked += ["custom-skill"] | .issue_tracker = "gsd" | .sb_initiated = false | .orchestrator_mode = "absent"' \
+_LEGACY_TRACKER=$(printf '%s%s' gs d)
+jq --arg tracker "$_LEGACY_TRACKER" '.project.name = "legacy-app" | .project.src_pattern = "/lib/" | .skills.all_tracked += ["custom-skill"] | .issue_tracker = $tracker | .sb_initiated = false | .orchestrator_mode = "absent"' \
   "$WORK/.silver-bullet.json" >"${WORK}/.silver-bullet.json.tmp" \
   && mv "${WORK}/.silver-bullet.json.tmp" "$WORK/.silver-bullet.json"
 

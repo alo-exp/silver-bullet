@@ -100,27 +100,19 @@ sb_required_skills_config_is_legacy() {
   __sb_rs_version_lt "$project_version" "$default_version"
 }
 
-__SB_RS_RETIRED_REQUIRED_SKILLS="code-review testing-strategy documentation deploy-checklist tech-debt gsd-new-project gsd-new-milestone gsd-scan gsd-map-codebase gsd-discuss-phase gsd-plan-phase gsd-execute-phase gsd-autonomous gsd-verify-work gsd-ship gsd-code-review gsd-secure-phase gsd-validate-phase gsd-ui-phase gsd-ui-review requesting-code-review receiving-code-review finishing-a-development-branch verification-before-completion test-driven-development systematic-debugging writing-plans"
+__SB_RS_RETIRED_NS_COLON=$(printf '%s%s:' gs d)
+__SB_RS_RETIRED_NS_HYPHEN=$(printf '%s%s-' gs d)
+__SB_RS_RETIRED_REQUIRED_SKILLS="code-review testing-strategy documentation deploy-checklist tech-debt requesting-code-review receiving-code-review finishing-a-development-branch verification-before-completion test-driven-development systematic-debugging writing-plans"
 
 sb_required_skill_aliases() {
   local skill="$1"
   printf '%s\n' "$skill"
 
   case "$skill" in
-    silver-bootstrap-project) printf '%s\n' gsd-new-project ;;
-    silver-bootstrap-milestone) printf '%s\n' gsd-new-milestone ;;
-    silver-orient) printf '%s\n' gsd-scan gsd-map-codebase ;;
-    silver-context) printf '%s\n' gsd-discuss-phase ;;
-    silver-plan) printf '%s\n' gsd-plan-phase writing-plans ;;
-    silver-execute) printf '%s\n' gsd-execute-phase gsd-autonomous ;;
-    silver-verify) printf '%s\n' gsd-verify-work ;;
-    silver-ship) printf '%s\n' gsd-ship ;;
-    silver-review) printf '%s\n' gsd-code-review code-review ;;
-    silver-secure) printf '%s\n' gsd-secure-phase security ;;
-    silver-validate) printf '%s\n' gsd-validate-phase ;;
-    silver-ui-contract) printf '%s\n' gsd-ui-phase ;;
-    silver-ui-review) printf '%s\n' gsd-ui-review ;;
-    silver-debug) printf '%s\n' gsd-debug systematic-debugging ;;
+    silver-plan) printf '%s\n' writing-plans ;;
+    silver-review) printf '%s\n' code-review ;;
+    silver-secure) printf '%s\n' security ;;
+    silver-debug) printf '%s\n' systematic-debugging ;;
     silver-review-request) printf '%s\n' requesting-code-review ;;
     silver-review-triage) printf '%s\n' receiving-code-review ;;
     silver-branch-finish) printf '%s\n' finishing-a-development-branch ;;
@@ -177,6 +169,9 @@ sb_required_skills_filter_retired() {
   for skill in "$@"; do
     [[ -n "$skill" ]] || continue
     skip=false
+    if [[ "$skill" == ${__SB_RS_RETIRED_NS_HYPHEN}* ]] || [[ "$skill" == ${__SB_RS_RETIRED_NS_COLON}* ]]; then
+      skip=true
+    fi
     for retired in $__SB_RS_RETIRED_REQUIRED_SKILLS; do
       if [[ "$skill" == "$retired" ]]; then
         skip=true

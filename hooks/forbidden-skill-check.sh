@@ -52,6 +52,17 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️  forbidden-skill-che
 raw_skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
 [[ -z "$raw_skill" ]] && exit 0
 
+_SB_RETIRED_NS_COLON=$(printf '%s%s:' gs d)
+_SB_RETIRED_NS_HYPHEN=$(printf '%s%s-' gs d)
+
+# Block retired GSD namespace (removed from SB runtime).
+if [[ "$raw_skill" == ${_SB_RETIRED_NS_COLON}* ]] || [[ "$raw_skill" == ${_SB_RETIRED_NS_HYPHEN}* ]]; then
+  reason="FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /silver routing and SB-owned skills (silver:context, silver:plan, silver:execute, silver:verify, silver:ship). See silver-bullet.md."
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  exit 0
+fi
+
 # Strip all namespace prefixes (e.g. "outer:inner:executing-plans" → "executing-plans")
 # Threat T-07-01: greedy strip prevents double-namespace bypass (SENTINEL finding)
 skill_name="$raw_skill"

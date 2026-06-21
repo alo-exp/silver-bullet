@@ -129,7 +129,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIGINAL_HOME="$TMP/original-home"
 FAKE_BIN="$TMP/bin/kay"
 mkdir -p "$ORIGINAL_HOME/.kay" "$(dirname "$FAKE_BIN")"
-mkdir -p "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/plugins" "$ORIGINAL_HOME/.codex/skills/gsd-discuss-phase" "$ORIGINAL_HOME/.agents/skills/gsd-plan-phase" "$ORIGINAL_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin"
+mkdir -p "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/plugins" "$ORIGINAL_HOME/.codex/skills/external-discuss-phase" "$ORIGINAL_HOME/.agents/skills/external-plan-phase" "$ORIGINAL_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/hooks"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/superpowers-marketplace/superpowers/5.1.0/skills/verification-before-completion"
@@ -193,17 +193,17 @@ cat > "$ORIGINAL_HOME/.codex/hooks.json" <<'EOF'
   "pre_tool_use": []
 }
 EOF
-cat > "$ORIGINAL_HOME/.codex/hooks/gsd-check-update.js" <<'EOF'
+cat > "$ORIGINAL_HOME/.codex/hooks/legacy-check-update.js" <<'EOF'
 console.log("check-update");
 EOF
-cat > "$ORIGINAL_HOME/.codex/skills/gsd-discuss-phase/SKILL.md" <<'EOF'
+cat > "$ORIGINAL_HOME/.codex/skills/external-discuss-phase/SKILL.md" <<'EOF'
 ---
-name: "gsd-discuss-phase"
+name: "external-discuss-phase"
 ---
 EOF
-cat > "$ORIGINAL_HOME/.agents/skills/gsd-plan-phase/SKILL.md" <<'EOF'
+cat > "$ORIGINAL_HOME/.agents/skills/external-plan-phase/SKILL.md" <<'EOF'
 ---
-name: "gsd:plan-phase"
+name: "external:plan-phase"
 ---
 EOF
 cat > "$ORIGINAL_HOME/.codex/plugins/installed_plugins.json" <<EOF
@@ -302,13 +302,13 @@ assert_file_contains "Projected Kay config keeps trusted projects" "$KAY_HOME/.k
 assert_file_contains "Projected Kay config keeps trusted project level" "$KAY_HOME/.kay/config.toml" 'trust_level = "trusted"'
 assert_file_not_contains "Projected Kay config strips Codex plugin registry sections" "$KAY_HOME/.kay/config.toml" '[plugins."silver-bullet@alo-labs-codex"]'
 assert_file_not_contains "Projected Kay config strips Codex hook trust state blocks" "$KAY_HOME/.kay/config.toml" '[hooks.state]'
-assert_file_not_contains "Projected Kay config strips Codex agent registry sections" "$KAY_HOME/.kay/config.toml" '[agents.gsd-planner]'
-assert_file_exists "Isolated Codex hooks directory is mirrored" "$KAY_HOME/.codex/hooks/gsd-check-update.js"
+assert_file_not_contains "Projected Kay config strips Codex agent registry sections" "$KAY_HOME/.kay/config.toml" '[agents.external-planner]'
+assert_file_exists "Isolated Codex hooks directory is mirrored" "$KAY_HOME/.codex/hooks/legacy-check-update.js"
 assert_file_exists "Isolated Codex hooks.json is mirrored" "$KAY_HOME/.codex/hooks.json"
-assert_file_exists "Isolated Kay env mirrors host Codex skill roots" "$KAY_HOME/.codex/skills/gsd-discuss-phase/SKILL.md"
-assert_file_exists "Isolated Kay env mirrors host .agents skill roots" "$KAY_HOME/.agents/skills/gsd-plan-phase/SKILL.md"
-assert_command_succeeds "Isolated Kay hook discovery resolves gsd-discuss-phase" sb_skill_is_installed "gsd-discuss-phase"
-assert_command_succeeds "Isolated Kay hook discovery resolves gsd-plan-phase" sb_skill_is_installed "gsd-plan-phase"
+assert_file_exists "Isolated Kay env mirrors host Codex skill roots" "$KAY_HOME/.codex/skills/external-discuss-phase/SKILL.md"
+assert_file_exists "Isolated Kay env mirrors host .agents skill roots" "$KAY_HOME/.agents/skills/external-plan-phase/SKILL.md"
+assert_command_succeeds "Isolated Kay hook discovery resolves external-discuss-phase" sb_skill_is_installed "external-discuss-phase"
+assert_command_succeeds "Isolated Kay hook discovery resolves external-plan-phase" sb_skill_is_installed "external-plan-phase"
 assert_file_exists "Isolated Silver Bullet plugin cache exists" "$KAY_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/.codex-plugin/plugin.json"
 assert_file_exists "Isolated Silver Bullet cache includes Kay hook bridge" "$KAY_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/hooks/kay-project-hook-bridge.sh"
 assert_file_exists "Isolated Silver Bullet marketplace snapshot exists" "$KAY_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"

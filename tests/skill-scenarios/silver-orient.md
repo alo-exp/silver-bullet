@@ -1,11 +1,11 @@
 # Silver Orient Skill Scenario
 
 ## Skill: silver-orient
-## Context: Legacy gsd-scan / gsd-map-codebase alias
+## Context: Deprecated orientation alias
 
-### Scenario: Record legacy orientation marker
+### Scenario: Record orientation marker
 
-**Trigger:** Agent invokes `gsd-scan`, `gsd-map-codebase`, or `silver-orient`
+**Trigger:** Agent invokes `silver-orient`
 
 **Workflow:**
 1. Enforcement records the virtual `silver-orient` marker.

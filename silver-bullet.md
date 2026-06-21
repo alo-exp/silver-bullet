@@ -31,7 +31,7 @@ At the very start of any new session, perform these steps automatically:
    **5.2 Legacy lifecycle plugins (informational)**
 
    SB no longer reports installed versions of absorbed third-party lifecycle
-   plugins (GSD, Superpowers, Anthropic knowledge-work). Core workflows are
+   plugins (Superpowers, Anthropic knowledge-work). Core workflows are
    SB-owned. Do not install or update legacy lifecycle-overlap plugins during
    SB setup unless the user explicitly requests an external plugin.
 
@@ -863,8 +863,6 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 **Alumnium capability reference** (high level): natural-language `do` / `check` / `get` / `wait`; MCP server for general-purpose agents; Playwright, Selenium, and Appium backends; web (Chrome) and mobile (iOS/Android); accessibility-tree-driven targeting with optional vision; Python, TypeScript, and Java libraries; coexists with existing E2E tests and CI; session `start`/`stop` with cookies, headers, profiles, and headless options; assertion results with explanations; structured data extraction; `fetch_accessibility_tree` for debugging; multi-provider AI support (OpenAI, Anthropic, Google, and others); automatic screenshots stored in artifacts.
 
 **Sidekick / InstaDecks:** Documented dependencies only; no SB routing until dedicated integration work lands.
-
----
 
 ---
 

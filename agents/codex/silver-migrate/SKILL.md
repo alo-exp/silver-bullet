@@ -126,7 +126,7 @@ If neither script is available, merge manually:
    - `multi_agent` block
    - `compactPrompt`
    - any new entries in `skills.required_planning`, `skills.required_deploy`, `skills.required_release`, `skills.required_*_devops`, or `skills.all_tracked` — union with existing lists; do not remove user-added skill names
-4. Normalize legacy `issue_tracker` value `"gsd"` to `"local"` (filing skills treat both as local markdown tracking).
+4. Normalize legacy local-tracker `issue_tracker` values to `"local"` (filing skills treat pre-SB local markdown tracking the same as explicit `local`).
 5. Set **`sb_initiated: true`** so enforcement hooks activate after migrate.
 6. Write the merged config and report fields added or bumped.
 
@@ -280,8 +280,8 @@ Then scan for artifacts that indicate flow completion:
 | SECURE | `.planning/phases/*/*-SECURITY.md`, `.planning/phases/*/SECURITY.md`, `.planning/SECURITY.md` | Complete if any exists |
 | VERIFY | `.planning/UAT.md`, `.planning/phases/*/*-UAT.md`, `.planning/phases/*/*-VERIFICATION.md`, `.planning/phases/*/VERIFICATION.md` | Complete if any exists |
 | QUALITY GATE | SB state marker `silver-quality-gates` | Complete if marker exists |
-| SHIP | SB state markers `silver-completion-audit` and `silver-ship` (or legacy `gsd-ship`) | Complete when both completion-audit and ship markers exist, or legacy ship marker alone |
-| DOCUMENT | `silver-ensure-docs` marker, legacy `gsd-docs-update` marker, or docs modified for current phase | Complete if evidence exists |
+| SHIP | SB state markers `silver-completion-audit` and `silver-ship` | Complete when both completion-audit and ship markers exist |
+| DOCUMENT | `silver-ensure-docs` marker, or docs modified for current phase | Complete if evidence exists |
 | RELEASE | `silver-create-release` marker or current version tag exists | Complete if evidence exists |
 
 ### Step 6: Compose Current Flow List

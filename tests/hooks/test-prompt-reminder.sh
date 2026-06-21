@@ -261,9 +261,7 @@ echo "silver-quality-gates" > "$TMPSTATE"
 # Dev (non-delivery): planning floor is surfaced, normalized to current SB gates.
 out=$(run_hook 'Add a due date field to todos. Keep it simple.')
 assert_contains "legacy config: inherits current SB planning gate" "$out" "silver-context"
-assert_not_contains "legacy config: does not request legacy gsd discuss" "$out" "gsd-discuss-phase"
-assert_not_contains "legacy config: does not request legacy gsd execute" "$out" "gsd-execute-phase"
-assert_not_contains "legacy config: does not request legacy review framing" "$out" "requesting-code-review"
+assert_not_contains "legacy config: does not request retired review framing" "$out" "requesting-code-review"
 assert_not_contains "legacy config: does not request retired testing-strategy" "$out" "testing-strategy"
 assert_not_contains "legacy config: does not request retired deploy-checklist" "$out" "deploy-checklist"
 # Delivery-adjacent: deploy tier inherits current SB execution gate (silver-execute), still no retired skills.

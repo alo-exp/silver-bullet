@@ -165,8 +165,8 @@ fi
 # This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
 #
 # Within the same branch: skill recordings accumulate so mid-feature work across
-# sessions is preserved. GSD lifecycle markers are real skill records, not
-# disposable session markers, and must survive startup on the same branch.
+# sessions is preserved. SB lifecycle markers are authoritative workflow evidence
+# and must survive startup on the same branch.
 state_file="${SB_STATE_DIR}/state"
 branch_file="${SB_STATE_DIR}/branch"
 quality_gate_state_file="${QUALITY_GATE_FILE}"
@@ -249,8 +249,8 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
 elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]; then
-  # Same branch — preserve recorded skill state. GSD markers are authoritative
-  # lifecycle evidence and must not be discarded on session startup.
+  # Same branch — preserve recorded skill state. SB lifecycle markers are
+  # authoritative workflow evidence and must not be discarded on session startup.
   :
 fi
 # `compact` and `resume` fall through with no state mutation.

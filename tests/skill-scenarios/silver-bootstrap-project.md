@@ -1,12 +1,12 @@
 # Silver Bootstrap Project Skill Scenario
 
 ## Skill: silver-bootstrap-project
-## Context: Legacy gsd-new-project alias
+## Context: Brownfield project bootstrap marker
 
-### Scenario: Record legacy project bootstrap marker
+### Scenario: Record project bootstrap marker
 
-**Trigger:** Agent invokes `gsd-new-project` or `silver-bootstrap-project`
+**Trigger:** Agent invokes `silver-bootstrap-project`
 
 **Workflow:**
 1. Enforcement records the virtual `silver-bootstrap-project` marker.
-2. Route new work to `/silver:init` instead of legacy GSD project bootstrap.
+2. Route new work to `/silver:init` for project bootstrap.

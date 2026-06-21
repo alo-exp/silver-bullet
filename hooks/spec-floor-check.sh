@@ -5,12 +5,16 @@ trap 'exit 0' ERR
 # PreToolUse hook (matcher: Bash|Skill)
 # Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
 # and emits an advisory warning for silver:fast when no spec exists. silver:*
-# routes normalize via hooks/lib/legacy-skill-alias.sh.
+# routes normalize via hooks/lib/skill-discovery.sh.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/skill-discovery.sh" ]]; then
+  # shellcheck source=lib/skill-discovery.sh
+  source "$_lib_dir/skill-discovery.sh"
+fi
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
@@ -54,10 +58,8 @@ cmd=""
 skill=""
 if [[ "$tool_name" == "Skill" ]]; then
   skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""')
-  if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
-    # shellcheck source=lib/legacy-skill-alias.sh
-    source "$_lib_dir/legacy-skill-alias.sh"
-    skill="$(sb_legacy_skill_alias_normalize "$skill")"
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    skill="$(sb_skill_canonical_name "$skill")"
   fi
 else
   if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
@@ -118,10 +120,8 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
       ;;
   esac
   # silver:* slash routes (normalized at cmd token)
-  if [[ "$is_plan_phase" == false && "$is_fast" == false && -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
-    # shellcheck source=lib/legacy-skill-alias.sh
-    source "$_lib_dir/legacy-skill-alias.sh"
-    _norm_cmd="$(sb_legacy_skill_alias_normalize "${cmd#/}")"
+  if [[ "$is_plan_phase" == false && "$is_fast" == false ]] && declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    _norm_cmd="$(sb_skill_canonical_name "${cmd#/}")"
     case "$_norm_cmd" in
       silver-plan) is_plan_phase=true ;;
       silver-fast) is_fast=true ;;

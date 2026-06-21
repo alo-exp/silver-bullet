@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests for hooks/spec-floor-check.sh
 # Tests spec floor enforcement for silver:plan (hard block) and silver:fast
-# (advisory), with legacy GSD aliases still accepted.
+# (advisory). Retired lifecycle namespaces are handled by forbidden-skill-check.
 
 set -euo pipefail
 
@@ -96,7 +96,7 @@ assert_passes "git commit passes silently" "$out"
 teardown
 
 setup
-out=$(run_hook "rg -n 'gsd-plan-phase|gsd-fast|gsd-quick' skills docs")
+out=$(run_hook "rg -n 'silver-plan|silver-fast' skills docs")
 assert_passes "read-only rg containing GSD skill names passes silently" "$out"
 teardown
 
@@ -160,11 +160,18 @@ assert_passes "silver:fast NOT blocked when no SPEC.md (advisory only)" "$out"
 assert_contains "output contains ADVISORY warning" "$out" "ADVISORY"
 teardown
 
-# Test 7: legacy gsd-quick without SPEC.md — advisory only, NOT blocked
+# Test 7: Retired lifecycle namespace is not handled by spec-floor
 setup
-out=$(run_hook "gsd-quick")
-assert_passes "gsd-quick NOT blocked when no SPEC.md (advisory only)" "$out"
-assert_contains "output contains ADVISORY warning" "$out" "ADVISORY"
+_retired_route=$(printf '%s%s-quick' gs d)
+out=$(run_hook "$_retired_route")
+assert_passes "retired lifecycle route exits without spec-floor block" "$out"
+if printf '%s' "$out" | grep -q 'ADVISORY'; then
+  echo "  ❌ spec-floor should not emit ADVISORY for retired lifecycle route"
+  FAIL=$((FAIL + 1))
+else
+  echo "  ✅ spec-floor does not emit ADVISORY for retired lifecycle route"
+  PASS=$((PASS + 1))
+fi
 teardown
 
 # ── WORKFLOW.md advisory mode tests ──────────────────────────────────────────

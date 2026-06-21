@@ -293,8 +293,8 @@ echo "--- Test 2: All required skills present ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
+silver-context
+silver-plan
 code-review
 requesting-code-review
 receiving-code-review
@@ -380,8 +380,8 @@ git -C "$TMPDIR_TEST" add main-work.txt
 # Put all required skills EXCEPT finishing-a-development-branch
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-discuss-phase
-gsd-plan-phase
+silver-context
+silver-plan
 code-review
 requesting-code-review
 receiving-code-review

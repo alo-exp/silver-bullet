@@ -466,7 +466,7 @@ teardown
 # Test 4b: PostToolUse write invalidates verify-tests freshness marker
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
-echo "gsd-code-review" >> "$TMPSTATE"
+echo "silver-review" >> "$TMPSTATE"
 mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
 printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
 out=$(run_hook_write "PreToolUse" "$TMPFILE")
@@ -479,7 +479,7 @@ teardown
 
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
-echo "gsd-code-review" >> "$TMPSTATE"
+echo "silver-review" >> "$TMPSTATE"
 mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
 printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
 out=$(run_hook_apply_patch "PostToolUse" "*** Begin Patch
@@ -494,7 +494,7 @@ teardown
 # Test 4ba: PostToolUse non-src Bash write does not invalidate verify-tests freshness
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
-echo "gsd-code-review" >> "$TMPSTATE"
+echo "silver-review" >> "$TMPSTATE"
 mkdir -p "$(dirname "$VERIFY_TESTS_FILE")"
 printf 'verified_at=2026-05-10T00:00:00Z\n' > "$VERIFY_TESTS_FILE"
 out=$(run_hook_bash "PostToolUse" "cat > .silver-bullet.json <<'EOF'
@@ -505,11 +505,11 @@ assert_file_exists "PostToolUse non-src Bash write keeps verify-tests freshness"
 teardown
 
 # Test 5: Stage B — planning done but no code-review → ALLOW with final-delivery reminder
-echo "--- Group 2: Stage B (planning done, no gsd-code-review) ---"
+echo "--- Group 2: Stage B (planning done, no silver-review) ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "Stage B: src edit allowed after planning, before gsd-code-review" "$out"
+assert_passes "Stage B: src edit allowed after planning, before silver-review" "$out"
 assert_contains "Stage B reminder mentions code review" "$out" "Code review"
 teardown
 
@@ -523,28 +523,28 @@ out=$(run_hook_apply_patch "PreToolUse" "*** Begin Patch
 assert_passes "Stage B: apply_patch source edit allowed after planning" "$out"
 teardown
 
-# Test 6: Phase-skip detection — finalization before gsd-code-review warns but allows fixes
+# Test 6: Phase-skip detection — finalization before silver-review warns but allows fixes
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 echo "finishing-a-development-branch" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 # Source edits remain open so review/verification fixes can proceed, but final delivery stays blocked.
-assert_passes "Phase-skip: finalization before gsd-code-review allows source fixes" "$out"
+assert_passes "Phase-skip: finalization before silver-review allows source fixes" "$out"
 assert_contains "Phase-skip warning mentions final delivery remains blocked" "$out" "final delivery remains blocked"
 teardown
 
-# Test 7: Stage C — gsd-code-review done, finalization remaining → ALLOW with hint
-echo "--- Group 3: Stage C (gsd-code-review done) ---"
+# Test 7: Stage C — silver-review done, finalization remaining → ALLOW with hint
+echo "--- Group 3: Stage C (silver-review done) ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
-echo "gsd-code-review" >> "$TMPSTATE"
+echo "silver-review" >> "$TMPSTATE"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "Stage C: src edit allowed after gsd-code-review (finalization remaining)" "$out"
+assert_passes "Stage C: src edit allowed after silver-review (finalization remaining)" "$out"
 assert_contains "Stage C hint mentions finalization" "$out" "finalization"
 out=$(run_hook_bash "PreToolUse" "cat > src/app.js <<'EOF'
 console.log('hello')
 EOF")
-assert_passes "Stage C: relative Bash write allowed after gsd-code-review" "$out"
+assert_passes "Stage C: relative Bash write allowed after silver-review" "$out"
 teardown
 
 # Test 8: Stage D — all phases complete → ALLOW
@@ -552,7 +552,7 @@ echo "--- Group 4: Stage D (all complete) ---"
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 requesting-code-review
 testing-strategy
 documentation
@@ -616,8 +616,8 @@ cat > "$TMPCFG" << 'EOF'
   },
   "skills": {
     "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","silver-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","silver-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
   },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
@@ -642,8 +642,8 @@ cat > "$TMPCFG" << 'EOF'
   },
   "skills": {
     "required_planning": ["silver-blast-radius","devops-quality-gates"],
-    "required_deploy": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
-    "all_tracked": ["silver-blast-radius","devops-quality-gates","gsd-code-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
+    "required_deploy": ["silver-blast-radius","devops-quality-gates","silver-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"],
+    "all_tracked": ["silver-blast-radius","devops-quality-gates","silver-review","requesting-code-review","receiving-code-review","finishing-a-development-branch","silver-create-release","verification-before-completion","test-driven-development","verify-tests"]
   },
   "state": { "state_file": "STATEFILE", "trivial_file": "TRIVIALFILE" }
 }
@@ -1045,7 +1045,7 @@ setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 finishing-a-development-branch
 EOF
 out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
@@ -1091,7 +1091,7 @@ setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 finishing-a-development-branch
 EOF
 out=$(run_hook_bash "PreToolUse" "SB_WORKFLOW_ID=$workflow_id perl -0pi -e 's/old/new/' src/app.js")
@@ -1104,7 +1104,7 @@ setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 finishing-a-development-branch
 EOF
 out=$(run_hook_bash "PreToolUse" "SB_WORKFLOW_ID=20260510T000000Z-abc123-silver-feature perl -0pi -e 's/old/new/' src/app.js")
@@ -1118,7 +1118,7 @@ setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 finishing-a-development-branch
 EOF
 out=$(run_hook_bash "PreToolUse" "export SB_WORKFLOW_ID=$workflow_id; perl -0pi -e 's/old/new/' src/app.js")
@@ -1146,7 +1146,7 @@ out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old c
 assert_blocks "WF-PASS2-K: orchestrator-seeded workflow still blocks without planning skills" "$out"
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
-gsd-code-review
+silver-review
 finishing-a-development-branch
 EOF
 out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")

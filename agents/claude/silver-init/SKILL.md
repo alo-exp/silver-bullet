@@ -165,7 +165,7 @@ runtime tier. Per-host state and hook manifest paths are documented in `docs/RUN
 ### 1.2 Legacy plugin note
 
 SB no longer probes or reports third-party lifecycle-overlap plugin installs
-(GSD, Superpowers, Anthropic knowledge-work). Core lifecycle behavior is
+(Superpowers, Anthropic knowledge-work). Core lifecycle behavior is
 SB-owned. Continue initialization without those plugins.
 
 ### 1.6 Runtime-aware bootstrap
@@ -472,7 +472,7 @@ This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills tha
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
 - `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
 
-Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy `"gsd"` values in existing configs are treated as local tracking by filing/removal skills.
+Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized to `"local"` by filing/removal skills.
 
 ---
 

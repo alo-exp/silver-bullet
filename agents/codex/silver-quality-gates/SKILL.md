@@ -189,7 +189,7 @@ automatically. If filing directly, honor `issue_tracker`:
 
 - `issue_tracker: "github"` -> create a GitHub Issue with `gh issue create`
   when the CLI is authenticated.
-- `issue_tracker: "local"` or missing (legacy `"gsd"` is treated as `local`) ->
+- `issue_tracker: "local"` or missing ->
   append the item to `docs/issues/BACKLOG.md` (creating the file if needed), the
   canonical local backlog used by `/silver:add`.
 

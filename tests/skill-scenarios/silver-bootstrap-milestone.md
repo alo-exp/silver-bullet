@@ -1,12 +1,12 @@
 # Silver Bootstrap Milestone Skill Scenario
 
 ## Skill: silver-bootstrap-milestone
-## Context: Legacy gsd-new-milestone alias
+## Context: Brownfield milestone bootstrap marker
 
-### Scenario: Record legacy milestone bootstrap marker
+### Scenario: Record milestone bootstrap marker
 
-**Trigger:** Agent invokes `gsd-new-milestone` or `silver-bootstrap-milestone`
+**Trigger:** Agent invokes `silver-bootstrap-milestone`
 
 **Workflow:**
 1. Enforcement records the virtual `silver-bootstrap-milestone` marker.
-2. Route new work to `/silver:feature` or `/silver:clarify` instead of legacy GSD flows.
+2. Route new work to `/silver:init` or active milestone workflows.

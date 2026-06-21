@@ -28,5 +28,5 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Internal | `docs/internal/` | QA reports, guidelines, superseded docs |
 | Git Repo | https://github.com/alo-exp/silver-bullet.git | — |
 
-Latest knowledge: `docs/knowledge/2026-06.md`
+Latest knowledge: `docs/knowledge/2026-05.md`
 Latest learnings: `docs/learnings/2026-06.md`

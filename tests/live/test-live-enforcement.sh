@@ -23,15 +23,15 @@ assert_file_not_modified "S1: target file unchanged when edit is blocked" "$targ
 # file-level invariants are the release-relevant signal here.
 live_teardown
 
-# --- S2: Planning gate opens after full planning floor + gsd-code-review ---
+# --- S2: Planning gate opens after full planning floor + silver-review ---
 echo "--- S2: Edit allowed after reaching Stage C ---"
 live_setup
-seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "silver-context" "silver-plan" "silver-review" "requesting-code-review" "receiving-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
 hook_output=$(jq -n --arg f "$target_file" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \
   | (cd "$WORK_DIR" && bash "${SB_ROOT}/hooks/dev-cycle-check.sh" 2>/dev/null || true))
-# With the planning floor AND gsd-code-review recorded, Stage C is reached — the hook should allow the edit.
+# With the planning floor AND silver-review recorded, Stage C is reached — the hook should allow the edit.
 assert_response_not_contains "S2: Stage C hook allows source edit" "$hook_output" "permissionDecision.*deny|decision.*block|HARD STOP|planning incomplete"
 live_teardown
 

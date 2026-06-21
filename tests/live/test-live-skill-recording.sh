@@ -26,7 +26,7 @@ assert_state_contains "S5: silver-quality-gates recorded in state after direct h
 # Seeding the review markers keeps this scenario focused on the hook allow path
 # instead of letting the prompt router turn a direct edit into an extra fast-path model turn.
 # This verifies the full loop: state → hook reads state → enforcement decision
-seed_state "silver-quality-gates" "gsd-discuss-phase" "gsd-plan-phase" "gsd-code-review" "requesting-code-review" "receiving-code-review"
+seed_state "silver-quality-gates" "silver-context" "silver-plan" "silver-review" "requesting-code-review" "receiving-code-review"
 target_file="${WORK_DIR}/src/routes/todos.js"
 hook_output=$(jq -n --arg f "$target_file" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"old content here long enough to exceed the small-edit bypass threshold", new_string:"new content here long enough to exceed the small-edit bypass threshold"}}' \

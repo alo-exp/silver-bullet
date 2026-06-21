@@ -110,27 +110,13 @@ out=$(run_hook "product-management:write-spec")
 assert_passes "installed product-management upstream write-spec passes" "$out"
 teardown
 
-# Test 5: Bare GSD dependency installed in skills/ passes
-setup
-make_skill "skills/gsd-plan-phase/SKILL.md" "gsd-plan-phase"
-out=$(run_hook "gsd-plan-phase")
-assert_passes "installed gsd-plan-phase passes" "$out"
-teardown
-
-# Test 6: Namespaced GSD dependency installed in skills/ passes
-setup
-make_skill "skills/gsd-discuss-phase/SKILL.md" "gsd-discuss-phase"
-out=$(run_hook "gsd:discuss-phase")
-assert_passes "installed gsd:discuss-phase passes" "$out"
-teardown
-
-# Test 7: Bare legacy optional skill passes through when missing
+# Test 5: Bare legacy optional skill passes through when missing
 setup
 out=$(run_hook "clarify")
 assert_passes "missing clarify passes through" "$out"
 teardown
 
-# Test 8: Non-dependency skill passes through
+# Test 6: Non-dependency skill passes through
 setup
 out=$(run_hook "silver:fast")
 assert_passes "silver:fast passes" "$out"
