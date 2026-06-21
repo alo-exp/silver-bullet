@@ -162,6 +162,37 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+research_q="$(sb_orchestrator_default_queue_for_composer silver-research)"
+if [[ "$research_q" == "silver-clarify,silver-research" ]]; then
+  echo "PASS: silver-research clarify → research queue"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-research queue incorrect (got: $research_q)"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$research_q" | grep -q 'silver-execute'; then
+  echo "FAIL: silver-research queue must not include silver-execute"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: silver-research excludes execute atom"
+  PASS=$((PASS + 1))
+fi
+
+if printf '%s' "$release_q" | grep -q 'silver-execute'; then
+  echo "FAIL: silver-release queue must not include silver-execute"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: silver-release excludes silver-execute"
+  PASS=$((PASS + 1))
+fi
+if printf '%s' "$release_q" | grep -q 'silver-create-release'; then
+  echo "PASS: silver-release ends with silver-create-release"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-release missing silver-create-release tail (got: $release_q)"
+  FAIL=$((FAIL + 1))
+fi
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

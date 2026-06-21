@@ -4,8 +4,12 @@ set -euo pipefail
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/flow-advance.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+LIB="${REPO_ROOT}/hooks/lib/orchestrator-state.sh"
 PASS=0
 FAIL=0
+
+# shellcheck source=/dev/null
+source "$LIB"
 
 TEST_RUN_ID="$$"
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT:-/tmp}/.silver-bullet/flow-advance-${TEST_RUN_ID}"
@@ -28,6 +32,11 @@ make_repo() {
   mkdir -p "$WORK/.planning/workflows"
   cat >"$WORK/.silver-bullet.json" <<EOF
 {"sb_initiated":true,"project":{"name":"t","src_pattern":"/src/","active_workflow":"full-dev-cycle"},"state":{"state_file":"${TMPSTATE}"}}
+EOF
+  mkdir -p "$WORK/.planning"
+  cat >"$WORK/.planning/SPEC.md" <<'EOF'
+spec-version: 1.0
+# test spec
 EOF
   echo "# SB" >"$WORK/silver-bullet.md"
   cp "$REPO_ROOT/scripts/workflows.sh" "$WORK/scripts/workflows.sh" 2>/dev/null || mkdir -p "$WORK/scripts" && cp "$REPO_ROOT/scripts/workflows.sh" "$WORK/scripts/"
@@ -92,6 +101,32 @@ else
   echo "FAIL: worker session re-seeded composer (before=$before_wid/$before_len after=$after_wid/$after_len)"
   FAIL=$((FAIL + 1))
 fi
+
+# Composition log is written when .planning exists at composer start
+log_file="$WORK/.planning/orchestrator-composition-log.jsonl"
+assert_contains "composition log file created" "$(test -f "$log_file" && echo yes)" "yes"
+log_tail="$(tail -1 "$log_file" 2>/dev/null || true)"
+assert_contains "composition log records silver-feature" "$log_tail" '"composer":"silver-feature"'
+assert_contains "composition log records autonomous mode" "$log_tail" '"mode":"autonomous"'
+
+# Drain silver-fast queue — current_flow must end empty
+rm -f "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-intent.txt" "$log_file" 2>/dev/null || true
+make_repo
+run_hook "silver-fast" "$WORK" >/dev/null
+fast_atoms=(silver-quality-gates silver-plan silver-validate silver-execute silver-verify)
+for atom in "${fast_atoms[@]}"; do
+  run_hook "$atom" "$WORK" >/dev/null
+done
+current_flow="$(jq -r '.current_flow // "<unset>"' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || echo "<missing>")"
+if [[ -z "$current_flow" || "$current_flow" == "null" ]]; then
+  echo "PASS: orchestrator current_flow empty after queue drain"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: orchestrator current_flow not empty after drain (got: $current_flow)"
+  FAIL=$((FAIL + 1))
+fi
+last_completed="$(jq -r '.last_completed // ""' "${SB_TEST_DIR}/orchestrator.json" 2>/dev/null || true)"
+assert_contains "last completed atom is silver-verify" "$last_completed" "silver-verify"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

@@ -64,40 +64,33 @@ Tell Claude:
 
 ## 4. WORKFLOW VALIDATION
 
-As SB drives the workflow, check off each step:
+Run `/silver:feature` (or let SB route bare feature intent). As the orchestrator parent drives the composed workflow, check off each phase:
 
-### Session Setup
-- [ ] Step 0 — Session mode question asked (interactive/autonomous)
+### Orchestrator parent mode
+- [ ] Parent invokes `silver-orchestrator` / composer queue builder — does **not** implement features inline
+- [ ] `orchestrator.json` seeded under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`
+- [ ] `.planning/workflows/<workflow-id>.md` created with **Flow Log** CSV rows (not legacy `WORKFLOW.md`)
+- [ ] `.planning/orchestrator-composition-log.jsonl` records composer + autonomous mode
+- [ ] Task workers advance atoms; parent does not re-seed queue on worker re-read
 
-### Project Initialization
-- [ ] `/gsd:new-project` invoked (questioning, requirements, roadmap)
-- [ ] `.planning/PROJECT.md` created
-- [ ] `.planning/ROADMAP.md` created with phases
+### Pre-execution chain (FLOW 1–8 vocabulary)
+- [ ] FLOW 2 ORIENT — `silver:scan` when brownfield
+- [ ] FLOW 3 CLARIFY / FLOW 4 DECIDE — when intent is fuzzy or architectural
+- [ ] FLOW 5 SPECIFY — when `.planning/SPEC.md` absent
+- [ ] FLOW 13 QUALITY GATE (pre-plan) — `silver:quality-gates`
+- [ ] FLOW 6 PLAN — `silver:plan` + `silver:validate`
+- [ ] FLOW 8 EXECUTE — `silver:execute` (TDD before implementation)
 
-### Per-Phase Loop
-- [ ] `/gsd:discuss-phase` invoked with what/expect/fail explanations shown to user
-- [ ] `/silver-quality-gates` invoked (8 core quality dimensions plus conditional gates checked)
-- [ ] `/gsd:plan-phase` invoked (PLAN.md created)
-- [ ] `/test-driven-development` invoked BEFORE implementation code
-- [ ] `/gsd:execute-phase` invoked (commits produced)
-- [ ] `/gsd:verify-work` invoked (UAT tests presented)
-- [ ] `/silver:review-request` invoked (frames the review scope before SB-owned code review)
-- [ ] `/gsd:code-review` invoked (authoritative `REVIEW.md`, 2 consecutive clean passes)
-- [ ] `/receiving-code-review` invoked
+### Post-execution chain (after FLOW 8)
+- [ ] FLOW 10 REVIEW — `silver:review-request` → `silver:review` → `silver:review-triage`
+- [ ] FLOW 12 VERIFY — `silver:verify` + verify-tests freshness
+- [ ] FLOW 11 SECURE — `security` + `silver:secure`
+- [ ] FLOW 13 QUALITY GATE (pre-ship)
+- [ ] FLOW 14 SHIP — `silver:branch-finish` → `silver:completion-audit` → `silver:ship`
 
-### Finalization
-- [ ] `testing-strategy` invoked
-- [ ] `tech-debt` invoked
-- [ ] `documentation` invoked (README updated)
-- [ ] `/finishing-a-development-branch` invoked
-
-### Deployment
-- [ ] CI/CD verification step ran
-- [ ] `deploy-checklist` invoked
-
-### Ship & Release
-- [ ] `/gsd:ship` invoked (or equivalent for direct-to-main)
-- [ ] `/silver-create-release` invoked
+### Admission control
+- [ ] Source edits blocked until `SB_WORKFLOW_ID` matches active `.planning/workflows/<id>.md`
+- [ ] `dev-cycle-check.sh` references active workflow id (not legacy skill-count only)
 
 ---
 
@@ -135,23 +128,24 @@ kill %1
 cat ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state | sort -u
 ```
 
-**Required skills in state file:**
+**Required skills in state file (feature / full-dev-cycle):**
 - [ ] `silver-quality-gates`
-- [ ] `gsd-code-review`
-- [ ] `requesting-code-review`
-- [ ] `receiving-code-review`
-- [ ] `testing-strategy`
-- [ ] `documentation`
-- [ ] `finishing-a-development-branch`
-- [ ] `deploy-checklist`
+- [ ] `silver-review-request`
+- [ ] `silver-review`
+- [ ] `silver-review-triage`
+- [ ] `silver-verify`
+- [ ] `security`
+- [ ] `silver-secure`
+- [ ] `silver-validate`
+- [ ] `silver-branch-finish`
+- [ ] `silver-completion-audit`
+- [ ] `silver-ship`
 - [ ] `silver-create-release`
-- [ ] `verification-before-completion`
-- [ ] `test-driven-development`
-- [ ] `tech-debt`
+- [ ] `tdd` (or recorded via `silver-execute` chain)
 
-**Compliance status should show all phases complete:**
+**Compliance status should show FLOW progress when a workflow file is active:**
 ```
-Silver Bullet: N steps | PLANNING 1/1 | REVIEW 2/2 | FINALIZATION 4/4 | RELEASE 1/1
+Silver Bullet: orchestrator active | workflow <id> | FLOW N/M
 ```
 
 ---
@@ -174,31 +168,51 @@ git clean -fd        # Remove untracked files
 
 ---
 
-## Composable Flows Verification (v0.20.0+)
+## Composable Flows Verification (atomic FLOW-ID model)
 
-After completing the standard smoke test above, verify composable flows features:
+After the standard smoke test, verify composer-specific behavior. Each checklist is abbreviated UAT for manual release validation.
 
-### WORKFLOW.md State Tracking
-1. Run `/silver:feature "add a health check endpoint"` on the test app
-2. Verify `.planning/WORKFLOW.md` is created during execution
-3. Check WORKFLOW.md contains: Composition section, Flow Log table, Heartbeat section, Next Flow
-4. Verify Flow Log entries update as flows complete
+### Shared orchestrator checks (all composers)
+1. Composer skill seeds `orchestrator.json` + `.planning/workflows/<id>.md` Flow Log
+2. Flow Log row labels match `hooks/lib/orchestrator-state.sh` CSV mapping (e.g. `QUALITY GATE`, `EXECUTE`)
+3. `SB_WORKFLOW_ID` admission blocks stray source edits during active workflow
+4. Worker sessions do not re-seed composer queue
 
-### Dual-Mode Hook Enforcement
-1. With WORKFLOW.md present, verify `dev-cycle-check.sh` shows FLOW progress (not just skill count)
-2. With WORKFLOW.md present, verify `compliance-status.sh` shows FLOW N/M format
-3. Delete WORKFLOW.md — verify hooks fall back to legacy skill-based enforcement
+### silver:feature
+- [ ] Pre-chain: QUALITY GATE → CONTEXT → PLAN → VALIDATE → EXECUTE
+- [ ] Post-chain: REVIEW → VERIFY → SECURE → VALIDATE → QUALITY GATE (pre-ship) → SHIP
+- [ ] Conditional `silver:spec` when SPEC.md absent
 
-### 3-Tier silver-fast Triage
-1. Run `/silver:fast "fix typo in README"` — should classify as Tier 1, route to gsd-fast
-2. Run `/silver:fast "refactor auth module across 5 files"` — should classify as Tier 2, route to gsd-quick
-3. Run `/silver:fast "implement new user dashboard"` — should classify as Tier 3, escalate to silver-feature
+### silver:ui
+- [ ] Pre-chain includes `silver:ui-contract` before EXECUTE
+- [ ] Post-chain opens with `silver:ui-review` before review triad
 
-### silver:migrate (Legacy Projects)
-1. On a project WITH .planning/ artifacts but WITHOUT WORKFLOW.md
-2. Run `/silver:migrate`
-3. Verify it scans artifacts, infers flow completion, and proposes WORKFLOW.md
-4. Confirm generated WORKFLOW.md has correct flow completion based on existing artifacts
+### silver:devops
+- [ ] Pre-chain: BLAST RADIUS → DEVOPS SKILL ROUTER → devops quality gates → SECURE → … → EXECUTE
+- [ ] Post-chain uses `FLOW-DEVOPS-QUALITY-GATE-PRESHIP` before ship prep
+
+### silver:bugfix
+- [ ] Diagnosis-first: DEBUG → PLAN → EXECUTE (no pre-plan quality-gates/context)
+- [ ] Post-chain matches feature ship tail
+
+### silver:research
+- [ ] Queue: `silver:clarify` → `silver:research` only (no EXECUTE atom)
+- [ ] Default direct research; MultAI only when user explicitly requests in current task
+- [ ] Handoff offers feature / devops / research-only paths
+
+### silver:release
+- [ ] Parent-driven audits before delivery tail: `RELEASE-UAT-AUDIT.md`, `RELEASE-MILESTONE-AUDIT.md`
+- [ ] Delivery tail excludes `silver:execute`; ends with `silver:create-release`
+- [ ] Gap-closure loop (max 2×) preserves release `SB_WORKFLOW_ID`
+
+### silver:fast
+- [ ] Tier 1 trivial → direct edit; Tier 3 → escalates to `silver:feature`
+- [ ] Tier 2 queue: QUALITY GATE → PLAN → VALIDATE → EXECUTE → VERIFY
+
+### silver:migrate (legacy projects)
+1. Project has `.planning/` artifacts but stale workflow tracking
+2. Run `/silver:migrate` — infers completed FLOW rows from artifacts
+3. Generated `.planning/workflows/<id>.md` reflects inferred completion (not legacy `WORKFLOW.md`)
 
 ---
 
