@@ -140,6 +140,46 @@
     ],
     "forbidden": []
   },
+  "recommended_tools": {
+    "graphify": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "uv tool install graphifyy",
+        "pipx install graphifyy"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "graphify install --project"
+          ],
+          "post_index": [
+            "graphify claude install --project"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "graphify install --project --platform codex"
+          ],
+          "post_index": [
+            "graphify codex install --project"
+          ]
+        },
+        "cursor": {
+          "post_index": [
+            "graphify cursor install"
+          ]
+        }
+      },
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
+      "graph_path": "graphify-out/graph.json",
+      "query_ttl_seconds": 1800,
+      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query"
+    }
+  },
   "hooks": {
     "evidence_schema": {
       "strict": true

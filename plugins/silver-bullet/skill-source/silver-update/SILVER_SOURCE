@@ -186,3 +186,44 @@ Installed via the active host's package manager / marketplace (silver-bullet@alo
 
 [View full changelog](https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md)
 ```
+
+### Step 8: Recommended-tools consent and install retry (project-level)
+
+After the plugin update succeeds, check the **project's** `.silver-bullet.json` (if present)
+for Graphify consent and suspension state. This mirrors Phase 1.1a of `/silver:init`.
+
+```bash
+test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enabled_by_user // "null"' .silver-bullet.json
+test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null` (consent pending):** run the same AskQuestion consent flow
+as fresh init — present benefits, ask Yes/No, write choice to `.silver-bullet.json`.
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry Graphify install
+without re-asking. Detect host the same way as `/silver:init` Phase 1.1a Step 3 (`SB_HOST` =
+`claude`, `codex`, or `cursor` via `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars).
+
+1. `uv tool install graphifyy` or `pipx install graphifyy`
+2. Pre-index skill registration (upstream Install Step 2):
+   - **Claude:** `graphify install --project`
+   - **Codex:** `graphify install --project --platform codex`
+   - **Cursor:** skip
+3. `graphify update . --no-cluster`
+4. Post-index always-on (upstream "Make your assistant always use the graph"):
+   - **Claude:** `graphify claude install --project`
+   - **Codex:** `graphify codex install --project`
+   - **Cursor:** `graphify cursor install`
+
+Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` / `.post_index` from `.silver-bullet.json` when present.
+
+On success, clear suspension:
+```bash
+jq '.recommended_tools.graphify.enforcement_suspended = false
+  | .recommended_tools.graphify.install_status = "ok"
+  | .recommended_tools.graphify.install_failure_reason = null' .silver-bullet.json
+```
+
+On failure, keep suspension and update `install_failure_reason`. Do not block the update.
+
+**If `enabled_by_user` is `false`:** no action needed.
