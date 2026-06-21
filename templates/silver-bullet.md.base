@@ -309,10 +309,12 @@ Before planning, editing, debugging, reviewing, documenting, or shipping, the ac
 agent MUST retrieve project memory that could affect the action.
 
 **Opt-in policy:** Graphify is a **recommended tool** — SB asks for explicit user consent
-at init and session start (`recommended_tools.graphify.enabled_by_user` in `.silver-bullet.json`).
-`null` = consent pending (no enforcement); `true` = mandatory hooks active; `false` = advisory only.
+at init, update, and session start (`recommended_tools.graphify.enabled_by_user` in `.silver-bullet.json`).
+`null` = consent pending (no enforcement); `true` = mandatory hooks active when install succeeded;
+`false` = advisory only. If the user opts in but install fails, `enforcement_suspended: true`
+lifts hook blocks until the next init/update retry succeeds.
 
-**When opted in (`enabled_by_user: true`):**
+**When opted in (`enabled_by_user: true`) and not suspended:**
 
 1. **Graphify query (required when CLI installed).** From the project root, run
    `graphify query "<task, file, feature, bug, or workflow context>" --graph graphify-out/graph.json --budget 2000`.

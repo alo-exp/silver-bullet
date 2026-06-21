@@ -152,7 +152,7 @@ Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write back
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`. For `recommended_tools.graphify`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1a records an explicit user choice; include suspension fields when install was attempted.
 
 ### 3.5 Copy workflow files
 

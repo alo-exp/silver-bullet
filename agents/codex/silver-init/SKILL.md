@@ -75,7 +75,7 @@ Then use the host-supported context compaction mechanism before proceeding.
    ```
    test -f .silver-bullet.json && echo "EXISTS" || echo "NOT_FOUND"
    ```
-2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 and Phase 2. Go directly to Phase 3 in **update mode**.
+2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 (except §1.1a Graphify consent/retry) and Phase 2. Run §1.1a, then go directly to Phase 3 in **update mode**.
 3. If `NOT_FOUND` → this is a **fresh setup**. Proceed to Phase 1.
 
 ---
@@ -115,18 +115,27 @@ before enabling mandatory enforcement. Consent is stored in `.silver-bullet.json
 - Team-shared knowledge graph indexes code + docs in the repo
 - Portable across Claude, Codex, and Cursor agents
 
+**Fresh init default:** always start with `enabled_by_user: null` (pending). Do not pre-opt-in
+or pre-opt-out from org defaults or template overrides — the user must explicitly choose each
+fresh init.
+
+**Update mode re-prompt:** when `.silver-bullet.json` already exists (update mode) or after
+`/silver:update`, if `enabled_by_user` is still `null`, run the same consent prompt as fresh init.
+
 #### Step 1 — Read existing consent
 
-If `.silver-bullet.json` exists, read consent:
+If `.silver-bullet.json` exists, read consent and suspension state:
 ```bash
 jq -r '.recommended_tools.graphify.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
+jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false
 ```
 
-Store as `graphify_consent` for this init run. Fresh setup defaults to `null`.
+Store as `graphify_consent` and `graphify_suspended` for this init run. Fresh setup defaults to `null` / `false`.
 
 #### Step 2 — Ask when consent is pending
 
-If `graphify_consent` is `null`, use ask the user directly (do **not** auto-install):
+If `graphify_consent` is `null`, use ask the user directly (do **not** auto-install) — applies to
+**both fresh init and update mode**:
 
 - Question: "Silver Bullet recommends **Graphify** for project-memory retrieval.\n\nBenefits: scoped queries save tokens; team-shared knowledge graph; works across agents.\n\nEnable Graphify for this project? Hooks will require `graphify query` before substantive edits when enabled."
 - Options:
@@ -135,17 +144,24 @@ If `graphify_consent` is `null`, use ask the user directly (do **not** auto-inst
 
 If **A**: set `graphify_consent=true`. If **B**: set `graphify_consent=false`.
 
-Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4:
+Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (fresh) or preserved in update mode:
 ```json
 "recommended_tools": {
-  "graphify": { "enabled_by_user": true }
+  "graphify": {
+    "enabled_by_user": true,
+    "enforcement_suspended": false,
+    "install_status": null,
+    "install_failure_reason": null
+  }
 }
 ```
 (or `false` when opted out). Preserve other `recommended_tools.graphify` fields from the template.
 
-#### Step 3 — Install and index (only when opted in)
+#### Step 3 — Install and index (when opted in or retrying suspended install)
 
-If `graphify_consent` is `true`:
+Run when `graphify_consent` is `true` AND either:
+- this is a fresh opt-in (user just chose Yes), OR
+- `graphify_suspended` is `true` (update mode / post-`/silver:update` retry)
 
 ```bash
 command -v graphify
@@ -160,7 +176,7 @@ or:
 pip install graphifyy
 ```
 
-Re-check `command -v graphify`. If still missing, warn loudly but continue init — hooks will block substantive work until installed.
+Re-check `command -v graphify`.
 
 When CLI is present:
 ```bash
@@ -172,17 +188,39 @@ On Cursor hosts:
 graphify cursor install
 ```
 
-Confirm `graphify-out/graph.json` exists (or path in config). Surface errors if index build fails.
+Confirm `graphify-out/graph.json` exists (or path in config).
 
-#### Step 4 — Opted out or pending after decline
+**On full success** (CLI present + index exists), clear suspension in config:
+```bash
+jq '.recommended_tools.graphify.enforcement_suspended = false
+  | .recommended_tools.graphify.install_status = "ok"
+  | .recommended_tools.graphify.install_failure_reason = null' .silver-bullet.json
+```
 
-If `graphify_consent` is `false`: output "Graphify opted out — enforcements disabled for this project." Continue init.
+**On install or index failure** — do **not** block init; suspend enforcement but preserve consent:
+```bash
+jq --arg reason "<brief failure reason>" '
+  .recommended_tools.graphify.enforcement_suspended = true
+  | .recommended_tools.graphify.install_status = "failed"
+  | .recommended_tools.graphify.install_failure_reason = $reason
+' .silver-bullet.json
+```
 
-If still `null` after a skipped prompt (should not happen): leave `enabled_by_user: null`; session-start will re-prompt.
+Output: "Graphify opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+
+Hooks treat suspended Graphify like opted-out (no graphify-gate blocks) while remembering `enabled_by_user: true`.
+
+#### Step 4 — Opted out
+
+If `graphify_consent` is `false`: set `enforcement_suspended: false`, `install_status: null`. Output "Graphify opted out — enforcements disabled for this project." Continue init.
 
 #### Step 5 — Already consented projects
 
-If consent is already `true` or `false` in an existing config (update mode), respect it without re-asking unless the user requests a change. When `true` and CLI missing, surface install instructions (same as Step 3).
+If consent is already `true` or `false` in an existing config, respect it without re-asking **unless**:
+- consent is `null` — always re-prompt (Step 2; fresh init and update mode)
+- consent is `true` AND `enforcement_suspended` is `true` — retry install (Step 3) without re-asking
+
+When `true`, not suspended, and CLI missing: surface install instructions (Step 3).
 
 ### 1.1b Install diagnostics (advisory)
 
@@ -616,7 +654,7 @@ This creates `.planning/interface/STATE.md` from
 it thereafter.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
-- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, and set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace).
+- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, always write `enabled_by_user` from the user's Phase 1.1a choice — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields (`enforcement_suspended`, `install_status`, `install_failure_reason`) from Phase 1.1a Step 3 outcome when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.

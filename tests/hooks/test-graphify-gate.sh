@@ -77,6 +77,7 @@ EOF
 write_cfg() {
   local enabled="${1:-true}"
   local initiated="${2:-true}"
+  local suspended="${3:-false}"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -88,6 +89,7 @@ EOF
   "recommended_tools": {
     "graphify": {
       "enabled_by_user": ${enabled},
+      "enforcement_suspended": ${suspended},
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_state_file": "${GRAPHIFY_STATE}"
@@ -162,6 +164,13 @@ install_mock_graphify
 touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_edit)"
 assert_allow "consent pending bypasses gate" "$out"
+
+setup
+write_cfg true true true
+install_mock_graphify
+touch "${TMPDIR_TEST}/graphify-out/graph.json"
+out="$(run_edit)"
+assert_allow "enforcement_suspended bypasses gate despite opt-in" "$out"
 
 setup
 write_cfg true true

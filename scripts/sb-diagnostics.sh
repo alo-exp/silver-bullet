@@ -124,13 +124,19 @@ main() {
 
   local sb_config="${REPO_ROOT}/.silver-bullet.json"
   local graphify_consent="pending"
+  local graphify_suspended="false"
   if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
     graphify_consent="$(sb_recommended_tool_consent "$sb_config" "graphify")"
+  fi
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_enforcement_suspended >/dev/null 2>&1; then
+    if sb_recommended_tool_enforcement_suspended "$sb_config" "graphify"; then
+      graphify_suspended="true"
+    fi
   fi
 
   if command -v graphify >/dev/null 2>&1 || [[ -x "${HOME}/.local/bin/graphify" ]]; then
     graphify="yes"
-    if [[ "$graphify_consent" == "enabled" ]]; then
+    if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" != "true" ]]; then
       record pass "graphify-cli" "CLI available (opted in)"
       graph_path="${REPO_ROOT}/graphify-out/graph.json"
       if [[ -f "$sb_config" ]] && declare -f sb_graphify_abs_graph_path >/dev/null 2>&1; then
@@ -145,7 +151,9 @@ main() {
       record pass "graphify-cli" "CLI available (consent: ${graphify_consent})"
     fi
   else
-    if [[ "$graphify_consent" == "enabled" ]]; then
+    if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" == "true" ]]; then
+      record warn "graphify" "opted in but install failed — enforcement suspended; retry on /silver:update"
+    elif [[ "$graphify_consent" == "enabled" ]]; then
       record fail "graphify-cli" "not on PATH — user opted in; install: uv tool install graphifyy"
     else
       record warn "graphify" "not on PATH — tier-1 code intelligence unavailable (consent: ${graphify_consent})"

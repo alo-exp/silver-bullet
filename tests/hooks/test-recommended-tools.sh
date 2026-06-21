@@ -45,6 +45,14 @@ sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && fail "requir
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && pass "enabled + required_when_enabled default enforces" || fail "enabled enforces"
 
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true,\"enforcement_suspended\":true}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && fail "suspended should not enforce" || pass "suspended skips enforcement despite opt-in"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true,\"enforcement_suspended\":true,\"install_status\":\"failed\",\"install_failure_reason\":\"uv install failed\"}}}"
+block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
+printf '%s' "$block" | grep -q 'enforcement suspended' && pass "suspended prompt block" || fail "suspended prompt block"
+printf '%s' "$block" | grep -q 'uv install failed' && pass "suspended prompt includes reason" || fail "suspended prompt includes reason"
+
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":null}}}"
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
 printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "pending prompt block" || fail "pending prompt block"
