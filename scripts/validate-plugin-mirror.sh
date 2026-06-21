@@ -32,9 +32,34 @@ while IFS= read -r f; do
   check_file "$rel"
 done < <(find "$REPO_ROOT/hooks" -type f \( -name '*.sh' -o -name 'session-start' -o -name 'core-rules.md' -o -name 'core-rules.sha256' -o -name 'hooks.json' \) ! -path '*/__pycache__/*' | sort)
 
-# Spot-check critical orchestrator hooks
-for rel in hooks/flow-advance.sh hooks/orchestrator-directive-guard.sh hooks/lib/orchestrator-directive.sh scripts/workflows.sh; do
+# Spot-check critical orchestrator hooks and thinned composer plugin sources
+for rel in \
+  hooks/lib/orchestrator-state.sh \
+  hooks/flow-advance.sh \
+  hooks/orchestrator-directive-guard.sh \
+  hooks/lib/orchestrator-directive.sh \
+  scripts/workflows.sh; do
   check_file "$rel"
+done
+
+THINNED_COMPOSERS=(silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release)
+for composer in "${THINNED_COMPOSERS[@]}"; do
+  src="${REPO_ROOT}/agents/codex/${composer}/SKILL.md"
+  dst="${REPO_ROOT}/plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
+  if [[ ! -f "$src" ]]; then
+    echo "MISSING codex bundle: agents/codex/${composer}/SKILL.md"
+    FAIL=1
+    continue
+  fi
+  if [[ ! -f "$dst" ]]; then
+    echo "DRIFT missing in plugin mirror: plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
+    FAIL=1
+    continue
+  fi
+  if ! cmp -s "$src" "$dst"; then
+    echo "DRIFT content mismatch: plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
+    FAIL=1
+  fi
 done
 
 if [[ "$FAIL" -ne 0 ]]; then

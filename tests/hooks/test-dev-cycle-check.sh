@@ -187,6 +187,19 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local label="$1"
+  local output="$2"
+  local needle="$3"
+  if ! printf '%s' "$output" | grep -q "$needle"; then
+    echo "  ✅ $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  ❌ $label — unexpected '$needle' in: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 assert_file_exists() {
   local label="$1"
   local path="$2"
@@ -1110,6 +1123,34 @@ finishing-a-development-branch
 EOF
 out=$(run_hook_bash "PreToolUse" "export SB_WORKFLOW_ID=$workflow_id; perl -0pi -e 's/old/new/' src/app.js")
 assert_passes "WF-PASS2-J: export-style matching SB_WORKFLOW_ID allows Bash source edit" "$out"
+teardown
+
+# WF-PASS2-K: orchestrator-seeded flow CSV labels + SB_WORKFLOW_ID admission
+echo "--- WF-PASS2-K: orchestrator-seeded flow CSV workflow ---"
+setup
+ORCH_LIB="${REPO_ROOT}/hooks/lib/orchestrator-state.sh"
+# shellcheck source=/dev/null
+source "$ORCH_LIB"
+mkdir -p "$TMPDIR_TEST/.planning"
+cat > "$TMPDIR_TEST/.planning/SPEC.md" <<'EOF'
+spec-version: 1.0
+# admission test spec
+EOF
+orch_flows="$(sb_orchestrator_flow_csv_for_workflows silver-feature)"
+workflow_id=$(cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:feature" "orchestrator-seeded flows" "$orch_flows")
+wf_body="$(cat "$TMPDIR_TEST/.planning/workflows/${workflow_id}.md")"
+assert_contains "WF-PASS2-K: workflow uses QUALITY GATE label" "$wf_body" "QUALITY GATE"
+assert_contains "WF-PASS2-K: workflow uses EXECUTE label" "$wf_body" "EXECUTE"
+assert_not_contains "WF-PASS2-K: workflow avoids legacy bootstrap label" "$wf_body" "bootstrap"
+out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF-PASS2-K: orchestrator-seeded workflow still blocks without planning skills" "$out"
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+gsd-code-review
+finishing-a-development-branch
+EOF
+out=$(SB_WORKFLOW_ID="$workflow_id" run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF-PASS2-K: matching SB_WORKFLOW_ID admits edit on orchestrator-seeded workflow" "$out"
 teardown
 
 # ── Results ───────────────────────────────────────────────────────────────────
