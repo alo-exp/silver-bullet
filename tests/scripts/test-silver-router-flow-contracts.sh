@@ -91,6 +91,12 @@ done
 
 assert_contains "release uses FLOW 18 vocabulary" "FLOW 18" "$REPO_ROOT/skills/silver-release/SKILL.md"
 assert_not_contains "release avoids legacy UAT AUDIT label" "UAT AUDIT -> MILESTONE AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
+assert_contains "contracts document RELEASE-UAT-AUDIT artifact" "RELEASE-UAT-AUDIT" "$contracts"
+assert_contains "contracts document RELEASE-MILESTONE-AUDIT artifact" "RELEASE-MILESTONE-AUDIT" "$contracts"
+assert_contains "release references RELEASE-UAT-AUDIT" "RELEASE-UAT-AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
+assert_contains "release references RELEASE-MILESTONE-AUDIT" "RELEASE-MILESTONE-AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
+assert_contains "release UAT audit maps to FLOW 12" "UAT audit.*12.*RELEASE-UAT-AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
+assert_contains "release milestone audit maps to FLOW 18" "Milestone audit.*18.*RELEASE-MILESTONE-AUDIT" "$REPO_ROOT/skills/silver-release/SKILL.md"
 
 assert_contains "contracts document runtime queue tokens" "Runtime Queue Tokens" "$contracts"
 
