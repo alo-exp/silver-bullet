@@ -9,12 +9,7 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
             "async": false,
             "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-session-record.sh\"",
@@ -37,24 +32,7 @@
         ]
       },
       {
-        "matcher": "Bash|Skill",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-archive.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-            "async": false,
-            "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "exec_command",
+        "matcher": "Bash|Skill|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -117,7 +95,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
+        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -136,29 +114,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
             "async": false,
             "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "exec_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
-            "async": false,
-            "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/trivial-file-guard.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/graphify-gate.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false,
-            "timeout": 15
           }
         ]
       },
@@ -186,37 +147,7 @@
         ]
       },
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
-            "async": false,
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/roadmap-freshness.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false,
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-            "async": false,
-            "timeout": 10
-          }
-        ]
-      }
-      ,
-      {
-        "matcher": "exec_command",
+        "matcher": "Bash|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -269,7 +200,7 @@
         ]
       },
       {
-        "matcher": "Skill|Bash",
+        "matcher": "Skill|Bash|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -286,41 +217,7 @@
         ]
       },
       {
-        "matcher": "exec_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-skill.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
-            "async": false,
-            "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-            "async": false,
-            "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
-            "async": false,
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "exec_command",
+        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -354,7 +251,7 @@
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Bash|exec_command",
         "hooks": [
           {
             "type": "command",
@@ -379,36 +276,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
             "async": false,
             "timeout": 30
-          }
-        ]
-      }
-      ,
-      {
-        "matcher": "exec_command",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
-            "async": false,
-            "timeout": 15
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pr-traceability.sh\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-graphify-query.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-log-init.sh\"",
-            "async": false,
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
-            "async": false,
-            "timeout": 30
           }
         ]
       }
@@ -422,23 +295,13 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
             "async": false,
             "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": ".*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
             "async": false,
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": ".*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
@@ -457,23 +320,13 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",
             "async": false,
             "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": ".*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
             "async": false,
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": ".*",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
