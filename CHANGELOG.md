@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.46.0] — 2026-06-20
+
+Hotfix release: hook false-positive elimination, Cursor gitPath install repair, e2e-live Kay stability, and worm payload removal.
+
+## Bug Fixes
+- `fix(hooks): eliminate dev-cycle false positives for grep, ls, git grep, and compound read-only shells` (`cc7297b3`)
+- `fix(hooks): cache project root at session start; honor SILVER_BULLET_PROJECT_ROOT` (`cc7297b3`)
+- `fix(hooks): allowlist planning-edit-override and related state sentinels` (`cc7297b3`)
+- `fix(cursor): automate github.com marketplace gitPath checkout and gitCommitSha registry` (`5e5a9567`)
+- `fix(e2e-live): accept route-smoke completion echo wrappers in Kay transcripts` (`2f0db4c0`)
+
+## Security
+- `chore(security): remove yugin0120 worm payload from .vscode/tasks.json and fake FontAwesome fonts` (`c5e02825`)
+
+## Tests
+- `test(hooks): expand dev-cycle and shell read-only coverage` (`cc7297b3`)
+- `test(scripts): install-cursor gitPath and registry assertions` (`5e5a9567`)
+- `test(e2e-live): echo-adapter-echo route-smoke fixture` (`2f0db4c0`)
+
+---
+
 ## [0.45.0] — 2026-06-20
 
 Streamlined pre-release quality gate: adversarial + per-skill SENTINEL enforcement on `gh release create`.
