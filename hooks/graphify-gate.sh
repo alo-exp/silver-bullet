@@ -103,7 +103,7 @@ else
 fi
 
 if ! sb_graphify_cli_available; then
-  emit_block "$(sb_graphify_block_message_no_cli)"
+  emit_block "$(sb_graphify_block_message_no_cli "$config_file")"
   exit 0
 fi
 
