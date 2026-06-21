@@ -49,11 +49,9 @@ cat >"$TMP/.silver-bullet.json" <<EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
   "sb_initiated": true,
-  "recommended_tools": {
-    "graphify": {
-      "enabled_by_user": true,
-      "query_state_file": "${GRAPHIFY_STATE}"
-    }
+  "graphify": {
+    "required": true,
+    "query_state_file": "${GRAPHIFY_STATE}"
   },
   "skills": { "required_planning": ["silver-quality-gates"], "required_deploy": ["silver-quality-gates"] },
   "state": { "state_file": "${SB_TEST_DIR}/state-${TEST_RUN_ID}", "trivial_file": "${SB_TEST_DIR}/trivial-${TEST_RUN_ID}" }
@@ -73,6 +71,7 @@ rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
 
 echo "=== graphify enforcement integration ==="
 
+# Block then record then allow
 edit_in='{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"src/main.sh","old_string":"a","new_string":"b"}}'
 deny="$(cd "$TMP" && printf '%s' "$edit_in" | bash "$GATE" 2>/dev/null)"
 if printf '%s' "$deny" | jq -e '.hookSpecificOutput.permissionDecision=="deny"' >/dev/null; then
@@ -98,6 +97,7 @@ else
   fail "integration: prompt-reminder reports fresh query"
 fi
 
+# Branch change clears graphify state via session-start
 printf 'feature/a\n' >"$BRANCH_FILE"
 git -C "$TMP" checkout -q -b feature/b 2>/dev/null || git -C "$TMP" checkout -q feature/b
 export SILVER_BULLET_SESSION_SOURCE=startup
@@ -106,24 +106,6 @@ if [[ ! -f "$GRAPHIFY_STATE" ]]; then
   pass "integration: branch change clears graphify query state"
 else
   fail "integration: branch change clears graphify query state"
-fi
-
-# Opted out: gate should not block
-cat >"$TMP/.silver-bullet.json" <<EOF
-{
-  "config_version": "${CURRENT_CONFIG_VERSION}",
-  "sb_initiated": true,
-  "recommended_tools": { "graphify": { "enabled_by_user": false } },
-  "skills": { "required_planning": ["silver-quality-gates"] },
-  "state": { "state_file": "${SB_TEST_DIR}/state-${TEST_RUN_ID}" }
-}
-EOF
-rm -f "$GRAPHIFY_STATE"
-allow_out="$(cd "$TMP" && printf '%s' "$edit_in" | bash "$GATE" 2>/dev/null)"
-if [[ -z "$allow_out" ]] || ! printf '%s' "$allow_out" | jq -e '.hookSpecificOutput.permissionDecision=="deny"' >/dev/null 2>&1; then
-  pass "integration: opted out allows edit without query"
-else
-  fail "integration: opted out allows edit without query"
 fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

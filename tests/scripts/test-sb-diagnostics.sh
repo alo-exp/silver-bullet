@@ -75,6 +75,7 @@ assert_file_contains "silver-add documents fingerprinting" \
 assert_output_contains "diagnostics emits Results line" "Results:" bash "$SCRIPT"
 assert_output_contains "diagnostics checks jq" "jq" bash "$SCRIPT"
 assert_output_contains "diagnostics reports capability tier" "runtime-capability-tier" bash "$SCRIPT"
+assert_output_contains "diagnostics checks graphify CLI" "graphify-cli" bash "$SCRIPT"
 
 grep -q 'optimize-score' "$SCRIPT" && pass "diagnostics includes optimize-score" || fail "diagnostics optimize-score"
 grep -q 'stack-optimizer' "$SCRIPT" && pass "diagnostics sources stack-optimizer" || fail "diagnostics stack-optimizer"

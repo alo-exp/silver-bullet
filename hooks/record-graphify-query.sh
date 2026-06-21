@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PostToolUse/Bash — record successful Graphify retrieval commands for the opt-in gate.
+# PostToolUse/Bash — record successful Graphify retrieval commands for the mandatory gate.
 
 umask 0077
 
@@ -10,7 +10,6 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 [[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
-[[ -f "$_lib_dir/recommended-tools.sh" ]] && source "$_lib_dir/recommended-tools.sh"
 [[ -f "$_lib_dir/graphify-gate.sh" ]] && source "$_lib_dir/graphify-gate.sh"
 
 command -v jq >/dev/null 2>&1 || exit 0

@@ -1,6 +1,6 @@
 # Graphify Readiness
 
-Silver Bullet uses Graphify as the preferred local retrieval layer before planning, editing, debugging, review, and shipping.
+Silver Bullet uses Graphify as the **mandatory** local retrieval layer before planning, editing, debugging, review, and shipping when the CLI is installed. Hooks block substantive work without a fresh query.
 
 ## Opt-In Policy
 
