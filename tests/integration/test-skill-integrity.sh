@@ -107,14 +107,11 @@ for skill_dir in "$SKILLS_DIR"/*/; do
     check "$skill_name: no TODO/TBD/FIXME markers ($placeholder_count found)" "fail"
   fi
 
-  # Check 8: silver-forensics must not reference /gsd:silver-forensics (non-existent command)
-  # The correct GSD forensics skill is invoked as /gsd-forensics (hyphen), not /gsd:silver-forensics.
-  # Regression test for: https://github.com/alo-exp/silver-bullet (bug fixed in v0.20.8)
   if [[ "$skill_name" == "silver-forensics" ]]; then
-    if grep -q '/gsd:silver-forensics' "$skill_file" 2>/dev/null; then
-      check "silver-forensics: must not reference non-existent /gsd:silver-forensics command" "fail"
+    if grep -qE '/gsd[:/]' "$skill_file" 2>/dev/null; then
+      check "silver-forensics: must not reference retired gsd forensics routes" "fail"
     else
-      check "silver-forensics: must not reference non-existent /gsd:silver-forensics command" "pass"
+      check "silver-forensics: must not reference retired gsd forensics routes" "pass"
     fi
   fi
 

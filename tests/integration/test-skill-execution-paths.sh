@@ -28,13 +28,6 @@ check() {
 # extension skills or historical aliases. SB-owned lifecycle skills must resolve
 # to local skill directories below.
 EXTERNAL_SKILLS=(
-  gsd-intel gsd-scan gsd-map-codebase gsd-explore gsd-discuss-phase gsd-analyze-dependencies
-  gsd-plan-phase gsd-execute-phase gsd-autonomous gsd-verify-work gsd-add-tests
-  gsd-code-review gsd-code-review-fix gsd-review gsd-secure-phase gsd-validate-phase
-  gsd-ship gsd-pr-branch gsd-complete-milestone gsd-audit-uat gsd-audit-milestone
-  gsd-plan-milestone-gaps gsd-fast gsd-multai gsd-debug gsd-forensics
-  gsd-docs-update gsd-milestone-summary gsd-ui-phase gsd-ui-review
-  "gsd-review --all"
   "requesting-code-review" "receiving-code-review"
   "superpowers:test-driven-development" "superpowers:writing-plans"
   "superpowers:finishing-a-development-branch"
@@ -73,7 +66,6 @@ resolve_silver_alias() {
   local name="$1"
   local cmd="${name%% *}"
   case "$cmd" in
-    silver:intel)               echo "gsd-intel" ;;
     silver:scan)                echo "silver-scan" ;;
     silver:spec)                echo "silver-spec" ;;
     silver:clarify)             echo "silver-clarify" ;;
