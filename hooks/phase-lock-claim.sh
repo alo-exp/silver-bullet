@@ -33,13 +33,16 @@ if [[ "${SB_PHASE_LOCK_INHERITED:-}" == "true" ]]; then
 fi
 
 # ── jq probe (warn-and-fail-open) ────────────────────────────────────────────
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ phase-lock-claim.sh: jq missing — skipping lock claim"}}\n'
-  exit 0
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "phase-lock-claim"
 fi
 
 # ── Source shared libs (phase-path, nofollow-guard) ──────────────────────────
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -z "$_lib_dir" || ! -f "$_lib_dir/phase-path.sh" ]]; then
   printf '{"hookSpecificOutput":{"message":"⚠️ phase-lock-claim.sh: phase-path.sh missing — skipping"}}\n'
   exit 0

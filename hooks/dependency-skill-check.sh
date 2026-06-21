@@ -5,23 +5,24 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"Silver Bullet dependency co
 # PreToolUse hook (matcher: Skill)
 # Legacy compatibility gate for dependency skill invocations.
 #
-# SB now absorbs its explicit GSD, Superpowers, and Anthropic dependencies into
-# SB-owned lifecycle markers and workflows. Missing core dependency plugins are
-# therefore no longer a hard Silver Bullet runtime prerequisite. This hook keeps
-# the old matcher surface in place for compatibility but does not block absorbed
-# dependency namespaces.
+# SB owns lifecycle markers and workflows. Missing optional third-party plugins
+# are not a hard Silver Bullet runtime prerequisite. This hook keeps the matcher
+# surface in place for compatibility but does not block absorbed namespaces.
 #
 # Forbidden Superpowers execution modes are still blocked by
 # forbidden-skill-check.sh.
 
 umask 0077
 
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet dependency gate requires jq. Install jq and retry."}}'
-  exit 0
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "dependency-skill-check"
 fi
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
   # shellcheck source=lib/skill-discovery.sh
   source "$_lib_dir/skill-discovery.sh"
@@ -53,7 +54,7 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
 fi
 
 # M-07: intentional no-op — absorbed dependency namespaces exit 0 below.
-# Legacy skill aliases normalize to silver-* via legacy-skill-alias.sh (sunset 2026-09-01).
+# silver:* routes normalize to silver-* via legacy-skill-alias.sh.
 # Hook retained for matcher compatibility; does not block SB-owned workflows.
 if [[ -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
   # shellcheck source=lib/legacy-skill-alias.sh

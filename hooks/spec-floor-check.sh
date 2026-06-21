@@ -4,21 +4,24 @@ trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Bash|Skill)
 # Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
-# and emits an advisory warning for silver:fast when no spec exists. Legacy
-# aliases normalize via hooks/lib/legacy-skill-alias.sh (sunset 2026-09-01).
+# and emits an advisory warning for silver:fast when no spec exists. silver:*
+# routes normalize via hooks/lib/legacy-skill-alias.sh.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 # jq is required for JSON parsing
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
-  exit 0
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "spec-floor-check"
 fi
 
 # Read JSON from stdin
 input=$(cat)
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
@@ -114,7 +117,7 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
       is_fast=true
       ;;
   esac
-  # Legacy slash routes (normalized at cmd token)
+  # silver:* slash routes (normalized at cmd token)
   if [[ "$is_plan_phase" == false && "$is_fast" == false && -f "$_lib_dir/legacy-skill-alias.sh" ]]; then
     # shellcheck source=lib/legacy-skill-alias.sh
     source "$_lib_dir/legacy-skill-alias.sh"
