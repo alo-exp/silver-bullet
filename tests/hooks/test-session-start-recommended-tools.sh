@@ -19,6 +19,14 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+# Prerequisite probe requires plugin cache (see test-session-start.sh)
+PLUGIN_CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
+mkdir -p "${PLUGIN_CACHE_DIR}/alo-labs/silver-bullet/test"
+
+TEST_RUN_ID="$$"
+STATE_FILE="${SB_RUNTIME_STATE_DIR}/session-rt-test-state-${TEST_RUN_ID}"
+TRIVIAL_FILE="${SB_RUNTIME_STATE_DIR}/session-rt-test-trivial-${TEST_RUN_ID}"
+
 cat >"$TMP/silver-bullet.md" <<'EOF'
 # SB
 EOF
@@ -38,8 +46,8 @@ write_consent() {
   },
   "skills": { "required_planning": ["silver-quality-gates"] },
   "state": {
-    "state_file": "${SB_RUNTIME_STATE_DIR}/session-rt-test-state",
-    "trivial_file": "${SB_RUNTIME_STATE_DIR}/session-rt-test-trivial"
+    "state_file": "${STATE_FILE}",
+    "trivial_file": "${TRIVIAL_FILE}"
   }
 }
 EOF
