@@ -44,9 +44,12 @@ if [[ -f "$_lib_dir/quality-gates-mode.sh" ]]; then
 fi
 
 # jq is required for JSON parsing
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
-  exit 0
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "record-skill"
 fi
 
 # Read JSON from stdin
@@ -260,8 +263,7 @@ if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
 fi
 
 # --- Tracked skills list ---
-# SB lifecycle phases (tracked as current silver-* markers; legacy aliases are
-# understood by compatibility normalization but are not default tracked markers)
+# SB lifecycle phases (tracked as current silver-* markers)
 # Prefer the canonical tracked list from the packaged config template so
 # bootstrap skills like silver:init are still recorded before a project-level
 # .silver-bullet.json exists. Fall back to a small hardcoded list only if the

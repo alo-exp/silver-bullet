@@ -17,15 +17,21 @@ trap 'exit 0' ERR
 umask 0077
 
 # jq is required — warn visibly if missing
-if ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"ROADMAP check inactive — jq not installed."}}'
-  exit 0
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "roadmap-freshness"
 fi
 
 # Read JSON from stdin
 input=$(cat)
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -z "$_lib_dir" ]]; then
+  _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+fi
 if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"

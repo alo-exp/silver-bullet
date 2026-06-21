@@ -35,7 +35,14 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/runtime-paths.sh" ]]; then
   source "$_lib_dir/runtime-paths.sh"
 fi
 
-command -v jq >/dev/null 2>&1 || finish_noop
+# jq is required — return a no-op payload if missing.
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "record-requested-skill"
+fi
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || finish_noop

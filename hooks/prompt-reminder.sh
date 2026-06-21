@@ -62,7 +62,13 @@ shell_single_quote() {
 }
 
 # jq is required — return a no-op payload if missing.
-command -v jq >/dev/null 2>&1 || finish_noop
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "prompt-reminder"
+fi
 
 prompt=""
 if [[ ! -t 0 ]]; then
