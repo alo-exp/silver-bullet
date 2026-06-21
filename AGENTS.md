@@ -18,6 +18,15 @@
 # Full validation
 bash tests/run-all-tests.sh
 
+# Sync physical plugin template mirror after editing templates/
+bash scripts/sync-templates.sh
+
+# Regenerate agent bundles + skill-source after editing skills/
+bash scripts/sync-codex-package.sh
+
+# Regenerate composer command stubs (plugins/silver-bullet/commands/)
+bash scripts/generate-plugin-commands.sh
+
 # Hook and script sanity checks
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f"; done
 jq . hooks/hooks.json >/dev/null
@@ -26,6 +35,18 @@ jq . .silver-bullet.json >/dev/null
 # ShellCheck when available
 shellcheck hooks/*.sh hooks/lib/*.sh scripts/*.sh
 ```
+
+## Derived Surfaces (edit source only)
+
+| Source | Generated / mirrored | Sync command |
+|--------|---------------------|--------------|
+| `skills/` | `agents/{claude,codex,cursor}/`, `plugins/silver-bullet/skill-source/` | `bash scripts/sync-codex-package.sh` |
+| `templates/` | `plugins/silver-bullet/templates/` | `bash scripts/sync-templates.sh` |
+| Composer `SKILL.md` frontmatter | `plugins/silver-bullet/commands/` (36 stubs) | `bash scripts/generate-plugin-commands.sh` |
+
+CI enforces `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`tests/scripts/test-silver-bullet-template-parity.sh`) and render freshness (`tests/scripts/test-render-agent-bundle-freshness.sh`).
+
+**Commands vs skills:** 85 canonical skills live under `skills/`; only ~36 top routes have plugin `commands/*.md` stubs for marketplace discoverability. The remaining ~49 skills are **Skill-tool-only** (invoke via host skill picker or `silver-bullet invoke-skill` on Codex).
 
 ## Working Rules
 

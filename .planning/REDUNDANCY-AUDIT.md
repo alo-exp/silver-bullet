@@ -1,174 +1,379 @@
 # Silver Bullet Redundancy Audit
 
-**Branch:** `main`  
-**Audit date:** 2026-06-22  
-**Scope:** hooks/, skills/, scripts/, templates/, agents/, plugins/, docs/, site/, tests/, forge/  
-**Constraint:** P1 hardening complete at `ba2e1fe5` — do not redo P1 agent-bundle parity or release/version work.
+**Date:** 2026-06-22  
+**Scope:** 100% codebase survey — `hooks/`, `skills/`, `scripts/`, `templates/`, `agents/`, `plugins/`, `docs/`, `site/`, `tests/`, `forge/`  
+**Method:** Directory inventory, line counts, `diff`/`cmp` sampling, ripgrep structural search, manifest review  
+**Status:** Analysis only — no fixes implemented
 
 ---
 
-## 1. Executive Summary — Top 10 Opportunities
+## 1. Executive Summary
 
-| # | Opportunity | Severity | Est. savings |
-|---|-------------|----------|--------------|
-| 1 | **Commit `agents/` as build output only** — today ~255 SKILL.md files are regenerated from `skills/` via `render-agent-bundle.py` but checked in; drift guarded by `test-agent-bundle-composer-parity.sh` (P1) | High | ~15k LOC git churn / review noise |
-| 2 | **`hooks/hooks.json` Bash ↔ `exec_command` duplicate blocks** — 5 matcher pairs repeat identical hook lists (phase-archive, completion-audit, ci-status, record-skill, dev-cycle-check) | Medium | ~200 JSON lines; fewer edit sites |
-| 3 | **Plugin package mirror** — `plugins/silver-bullet/{docs,hooks,scripts}` symlinked; `templates/` + `skill-source/` rsynced (~94 templates + 85 SILVER_SOURCE); full tree duplicated in git index | High | Packaging complexity; single sync entrypoint exists (`sync-codex-package.sh`) but human mental model is 2× |
-| 4 | **GSD legacy surface** — `hooks/lib/legacy-skill-alias.sh` (sunset 2026-09-01), 20 `tests/skill-scenarios/gsd-*.md`, large `docs/superpowers/` + `docs/internal/*gsd*` corpora | Medium | Remove after sunset |
-| 5 | **Review skill fan-out** — 12 `review-*` + `silver-review` + `artifact-reviewer` + `progressive-review-loop` + triage/stats/request + `silver-domain-audit` | Medium | Orchestration overlap; `artifact-reviewer` is the intended hub |
-| 6 | **Instruction surfaces** — `silver-bullet.md` (736 lines live) ↔ `templates/silver-bullet.md.base` (~981 lines); plus `CLAUDE.md` (113), `AGENTS.md` (29), `hooks/core-rules.md` (48), `site/help/` (27 HTML) | Medium | Doc drift risk; partially tested (`test-instruction-flow-parity.sh`, `test-site-content-freshness.sh`) |
-| 7 | **Enforcement triple-stack** — same rules in hooks (`completion-audit.sh` 1108 LOC, `stop-check.sh` 602), `silver-bullet.md` §enforcement, and composer SKILL pre/post queues (`test-composition-triple-alignment.sh`) | Low–Med | Intentional defense-in-depth; consolidate *wording* not gates |
-| 8 | **Test tier overlap** — `tests/hooks/`, `tests/integration/`, `tests/live/`, `tests/e2e-live/` cover similar enforcement paths; `test-semantic-compress.sh` + `test-semantic-compress-hook.sh`; Kay/Codex isolation duplicated in `tests/live/lib/` and `tests/scripts/` | Medium | ~130 test scripts; some scenarios repeated across tiers |
-| 9 | **`.planning/` audit sprawl** — 200+ phase/quick/review markdown files overlap with `docs/audits/`, `SENTINEL-*`, `.planning/052-FORENSICS-AUDIT.md`, release audits | Low | Archive or index; not runtime redundancy |
-| 10 | **`plugins/silver-bullet/commands/*.md`** — 36 thin (~7-line) slash-command stubs duplicating skill frontmatter/routing | Low | Generate from `skills/` names at sync time |
+Silver Bullet has a deliberate **canonical + derived** architecture: `skills/` and `hooks/` are source of truth; `agents/{claude,codex,cursor}/` and `plugins/silver-bullet/skill-source/` are rendered distribution layers; `plugins/silver-bullet/{hooks,scripts,docs}` are symlinks to root. Redundancy is **concentrated in skill content** (~57k lines across five copies of 85 skills) and **instruction-doc sync** (`silver-bullet.md` ↔ templates). Runtime enforcement (hooks) is comparatively well-factored into `hooks/lib/` (29 modules).
+
+**Redundancy density:** HIGH in skills/agents/plugin-skill-source; MED in templates/docs/site/help parallel surfaces; LOW in hooks (shared libs) and symlinked plugin mirror.
+
+### Top 10 Consolidation Opportunities
+
+| # | Opportunity | Severity | Approx. impact |
+|---|-------------|----------|----------------|
+| 1 | Treat `skills/` as sole SKILL source; generate `agents/*` + `skill-source/` in CI/release | HIGH | ~45k duplicate lines |
+| 2 | Enforce `silver-bullet.md` ↔ `templates/silver-bullet.md.base` sync gate (currently 96.9% similar, ~21-line drift) | HIGH | 1k lines × N projects |
+| 3 | ~~Sunset `gsd-*` aliases after 2026-09-01; retire 19 `tests/skill-scenarios/gsd-*` scenarios~~ **FIXED 2026-06-22** | MED | Removed from runtime |
+| 4 | Resolve `silver-orient` vs `silver-scan` naming collision | MED | Partial — orient deprecated, gsd alias removed |
+| 5 | Extract shared hook test fixtures from 61 `tests/hooks/test-*.sh` into `tests/hooks/helpers/` | MED | ~46 inline `mktemp` setups |
+| 6 | Centralize jq-gate pattern — 11 top-level hooks bypass `hooks/lib/jq-gate.sh` | MED | ~20 hooks |
+| 7 | Align `templates/` ↔ `plugins/silver-bullet/templates/` physical copies (3 files drift on active branches) | MED | 47 files |
+| 8 | Reduce `site/help/` duplication of `docs/composable-flows-contracts.md` concepts | MED | 30 HTML pages |
+| 9 | Expand `plugins/silver-bullet/commands/` (36 stubs) or document that 49 skills are Skill-tool-only | LOW | UX clarity |
+| 10 | Collapse `CLAUDE.md` (165 lines dogfood) vs `templates/CLAUDE.md.base` (17 lines downstream) divergence | LOW | Onboarding friction |
 
 ---
 
 ## 2. High-Level Redundancy Map
 
-| Area | What duplicates what | Severity | Notes |
-|------|---------------------|----------|-------|
-| **Skills ↔ Agents ↔ Plugin skill-source** | `skills/` → `agents/{claude,codex,cursor}/` (render) → `plugins/.../skill-source/` (codex, renamed `SILVER_SOURCE`) | **Intentional** (P1-guarded) | Canonical: `skills/` only |
-| **Hooks ↔ Plugin hooks** | `hooks/*` ↔ `plugins/silver-bullet/hooks/*` (symlink via sync) | **Intentional** | `validate-plugin-mirror.sh` |
-| **Templates** | `templates/` rsync → `plugins/silver-bullet/templates/` | **Intentional** | 47 orchestrator-worker templates ×2 on disk |
-| **Docs** | `docs/` (~95 files) ↔ `plugins/silver-bullet/docs/` (symlink) | **Intentional** | Identical line counts on spot-check |
-| **CHANGELOG/README** | Root ↔ `plugins/silver-bullet/` (1595 / 418 lines) | **Intentional** | Shipped artifact |
-| **Composable flows** | `skills/silver-{feature,ui,devops,bugfix,research,release}` + `docs/composable-flows-contracts.md` + `templates/orchestrator-workers/*.md` + `hooks/lib/orchestrator-state.sh` + `workflow-chain-guard.sh` | **Med** | Guarded by `test-composition-triple-alignment.sh` |
-| **silver-debug vs silver-bugfix** | `silver-debug` = atomic FLOW 15; `silver-bugfix` = composer routing to debug/forensics + full chain | **Low** | Compositional, not duplicate |
-| **silver-review vs review-*** | `silver-review` = code review; `review-*` = artifact-type reviewers; `artifact-reviewer` dispatches | **Med** | 12 artifact reviewers + domain packs |
-| **silver-release vs silver-create-release vs silver-ship** | Milestone composer vs GitHub release artifact vs phase PR | **Low** | Explicit separation in SKILL headers |
-| **silver-rem vs silver-remove** | Knowledge capture vs issue removal | **None** | Names collide historically; distinct |
-| **silver-completion-audit (skill) vs completion-audit.sh (hook)** | Agent procedure vs PreToolUse/PostToolUse/Stop gate | **Med** | Skill educates; hook enforces |
-| **CLAUDE.md vs silver-bullet.md** | Dogfood repo: CLAUDE = contributor shell; silver-bullet = enforcement SoT | **Low** | `AGENTS.md` says CLAUDE is not SB SoT |
-| **site/help vs docs** | 27 static HTML workflows/concepts vs `docs/workflows/`, contracts, guidelines | **Med** | `test-site-content-freshness.sh` guards version/stale refs |
-| **docs/knowledge vs docs/learnings vs .planning** | By design per `docs/specs/2026-04-13-knowledge-learnings-split-design.md` | **Low** | `.planning/` = active workflow state, not portable knowledge |
-| **GSD/Superpowers** | Legacy aliases, external skill catalog in `test-skill-refs.sh`, absorbed docs | **Med** (decaying) | Sunset 2026-09-01 |
-| **forge/** | 2 files — cursor marketplace stub only | **None** | Minimal |
-| **Test: gsd skill-scenarios** | 20 legacy scenario files parallel SB-owned scenarios | **Med** | Keep until alias sunset |
+### 2.1 Skill / workflow definition triplication (×5)
+
+| Layer | Path | Files | Lines | Role |
+|-------|------|------:|------:|------|
+| Canonical | `skills/*/SKILL.md` | 85 | 11,336 | Source of truth |
+| Claude bundle | `agents/claude/*/SKILL.md` | 85 | 11,336 | Host-rendered |
+| Codex bundle | `agents/codex/*/SKILL.md` | 85 | 11,420 | Host-rendered (`silver:` frontmatter) |
+| Cursor bundle | `agents/cursor/*/SKILL.md` | 85 | 11,336 | Host-rendered |
+| Plugin source | `plugins/silver-bullet/skill-source/*/SILVER_SOURCE` | 85 | 11,420 | Codex-aligned install artifact |
+| **Total skill surface** | | **425** | **~56,848** | |
+
+**Renderer:** `scripts/render-agent-bundle.py` — transforms canonical → host bundles. Body parity vs canonical: claude/cursor 72/85 identical, codex 74/85 (frontmatter deltas dominate).
+
+**Severity:** HIGH — largest measurable duplication in the repo.
+
+**Also duplicated ×3:** `silver-init/references/*`, `silver-init/scripts/*`, `artifact-reviewer/rules/*`, `silver-feature/references/supervision-loop.md`, `progressive-review-loop/agents/openai.yaml`.
+
+### 2.2 Composable flow definitions (parallel surfaces)
+
+| Surface | Path | Notes |
+|---------|------|-------|
+| Contracts (authoritative) | `docs/composable-flows-contracts.md` | FLOW 1–18, artifact names, queue tokens |
+| Composer skills | `skills/silver-{feature,ui,devops,bugfix,research,release}/SKILL.md` | Thin orchestrators referencing contracts |
+| Orchestrator state | `hooks/lib/orchestrator-state.sh` | Queue CSV, flow labels, composer defaults |
+| Workflow tracker | `scripts/workflows.sh` + `.planning/workflows/<id>.md` | Runtime Flow Log CSV |
+| User help | `site/help/workflows/*.html`, `site/help/concepts/*.html` | Parallel FLOW vocabulary |
+| E2E checklist | `tests/e2e-smoke-test.md` | Manual verification mirror |
+| Plugin commands | `plugins/silver-bullet/commands/*.md` | 36 thin stubs vs 85 skills |
+
+**Severity:** MED — intentional layering, but FLOW vocabulary must stay synchronized across 6 surfaces.
+
+### 2.3 Instruction surfaces
+
+| File | Lines | Audience | Overlap |
+|------|------:|----------|---------|
+| `silver-bullet.md` | 1,003 | Dogfood + canonical SB rules | — |
+| `templates/silver-bullet.md.base` | 982 | Downstream install stamp | 96.9% similar to live |
+| `CLAUDE.md` | 165 | Repo contributor guide | Architecture overlap with template |
+| `templates/CLAUDE.md.base` | 17 | Downstream stamp | HIGH divergence from dogfood CLAUDE |
+| `AGENTS.md` | 41 | Repo ops only | Explicitly not SB source of truth |
+| `site/help/` | 30 HTML | End-user help | Parallel to `docs/` + contracts |
+
+**Severity:** HIGH for `silver-bullet.md` ↔ template; MED for site/docs parallel.
+
+### 2.4 Overlapping skills (intentional vs confusing)
+
+| Pair | Relationship | Severity |
+|------|-------------|----------|
+| `silver-debug` vs `silver-bugfix` | Debug = atomic FLOW 15; bugfix = composable A/B/C orchestrator | LOW (complementary) |
+| `silver-orient` vs `silver-scan` | Orient = 15-line legacy alias (`gsd-scan` → orient); scan = retrospective session scanner | **MED** (naming collision) |
+| `silver-review` vs `review-*` (11 skills) | Code review vs artifact reviewers via `artifact-reviewer` framework | LOW (layered) |
+| `silver-quality-gates` vs `devops-quality-gates` | App vs IaC quality dimensions | LOW (domain split) |
+| `silver-bootstrap-milestone` vs `silver-bootstrap-project` | Milestone vs greenfield bootstrap | LOW |
+
+### 2.5 Plugin mirror vs repo root
+
+| Path | Mechanism | Drift risk |
+|------|-----------|------------|
+| `plugins/silver-bullet/hooks/` | Symlink → `../../hooks` | LOW |
+| `plugins/silver-bullet/scripts/` | Symlink | LOW |
+| `plugins/silver-bullet/docs/` | Symlink | LOW |
+| `plugins/silver-bullet/templates/` | Physical copy (47 files) | MED |
+| `plugins/silver-bullet/skill-source/` | Physical copy (85 SILVER_SOURCE) | HIGH |
+| `plugins/silver-bullet/cursor-hooks.json` | Physical (separate from `hooks/hooks.json`) | MED |
+| `plugins/silver-bullet/commands/` | Plugin-only (36 files) | LOW |
+
+**Validator:** `scripts/validate-plugin-mirror.sh` — hooks symlink parity + thinned composer `SILVER_SOURCE` vs `agents/codex/`.
+
+### 2.6 Agent bundle triplication
+
+```
+skills/ ──render-agent-bundle.py──► agents/claude/
+                                 ├──► agents/codex/
+                                 └──► agents/cursor/
+                                          │
+                                          ▼
+                              plugins/silver-bullet/skill-source/
+```
+
+**Severity:** HIGH — 283 agent files, 2.2M on disk.
+
+### 2.7 Legacy third-party paths (GSD sunset complete)
+
+| Pattern | Location | Status |
+|---------|----------|--------|
+| ~~`gsd-*` → `silver-*` aliases~~ | ~~`hooks/lib/legacy-skill-alias.sh`~~ | **REMOVED** — `silver:*` normalization only |
+| ~~Reverse-compat gsd aliases in required-skills~~ | `hooks/lib/required-skills.sh` | **REMOVED** — prefix-based legacy filter via hex prefix |
+| ~~`gsd-*` skill scenarios~~ | ~~`tests/skill-scenarios/gsd-*`~~ | **DELETED** (19 files) |
+| `silver:*` vs `silver-*` dual naming | Hooks normalize at boundary; Codex uses `silver:` frontmatter | Ongoing |
+| Superpowers references | Absorbed into SB-owned skills; `supervision-loop.md` remains | LOW |
+
+**Severity:** ~~MED~~ **RESOLVED** for GSD runtime debt.
+
+### 2.8 docs/ vs docs/knowledge/ vs docs/learnings/ vs .planning/
+
+| Area | Purpose | Overlap |
+|------|---------|---------|
+| `docs/` | Published reference, contracts, audits | — |
+| `docs/knowledge/` | Project-scoped monthly insights | Distinct from learnings |
+| `docs/learnings/` | Portable cross-project insights | Distinct from knowledge |
+| `.planning/` | Active workflow state, phases, archives | Ephemeral vs durable docs |
+
+**Severity:** LOW — boundaries are documented; risk is stale phase docs referencing retired flows.
+
+### 2.9 Test duplication
+
+| Suite | Count | Pattern |
+|-------|------:|---------|
+| `tests/hooks/` | 61 | Per-file `mktemp` fixtures; 16 inline `SILVER_BULLET_STATE_FILE` |
+| `tests/integration/` | 22 | Shared `helpers/common.sh` (561 lines) |
+| `tests/skill-scenarios/` | 107 | Third parallel layer (~~19 legacy `gsd-*`~~ retired) |
+| `tests/scripts/` | 49+ | Includes P1 parity/contract tests |
+| Cross-use | 0 | Hook tests do not source integration helpers |
+
+**Severity:** MED for fixture duplication.
 
 ---
 
 ## 3. Low-Level Redundancy Map
 
-| Area | Finding | Severity |
-|------|---------|----------|
-| **hooks/lib/** | 28 shared libs; good extraction. Residual duplication: `count_flow_log_rows` centralized in `workflow-utils.sh` (used by completion-audit, dev-cycle-check, compliance-status) | Low (healthy) |
-| **hooks/semantic-compress.sh** | 18-line wrapper → `scripts/semantic-compress.sh` (238 lines) | **Intentional** thin hook |
-| **scripts/ vs hooks/** | `semantic-compress`, `workflows.sh`, `verify-tests.sh`, `tfidf-rank.sh`, `extract-phase-goal.sh` called from hooks/skills | **Intentional** separation |
-| **plugins/silver-bullet/scripts/** | Symlink to root `scripts/` (39 `.sh` files) | **Intentional** |
-| **hooks.json matchers** | `Bash` and `exec_command` duplicate 5 hook groups | **Med** — consolidate matchers |
-| **Stop / SubagentStop** | Identical 3-hook blocks duplicated | Low |
-| **legacy-skill-alias.sh** | 15 gsd→silver mappings duplicated in spirit across hooks, tests, docs | **Med** until sunset |
-| **render-agent-bundle.py** | 80+ string replacements for Codex/Cursor | **Intentional** — agent-neutral authoring |
-| **test-no-agent-leaks.sh** | Bans agent literals in canonical roots | Prevents *new* redundancy |
-| **Orchestrator templates** | 13-line stubs × 30+ worker types in `templates/orchestrator-workers/` | Low — pointer docs, not logic |
-| **commands/*.md** | Frontmatter + one paragraph → skill invoke | Low — generate at sync |
-| **Stale aliases** | `silver-bootstrap-project` marked legacy alias for `silver-init` | Low — documented in SKILL |
-| **tdd vs verify-tests** | `tdd` skill + `verify-tests` skill + `scripts/verify-tests.sh` | Low — different layers |
-| **doc-scheme** | `docs/doc-scheme.md` + `.json` + `templates/doc-scheme.*.base` | **Intentional** template pair |
+### 3.1 Hook bash duplication
+
+| Pattern | Occurrences | Consolidation |
+|---------|------------:|---------------|
+| `trap 'exit 0' ERR` | ~31 hooks | Convention — keep |
+| `command -v jq` inline gate | 11 hooks | → `hooks/lib/jq-gate.sh` (9 already use it) |
+| `SILVER_BULLET_STATE_FILE` resolution | 11 hooks | Partial centralization possible |
+| Stdin JSON parsing via `jq -r` | 31 hooks | Acceptable variance |
+| `hooks/lib/` modules | 29 files | Good extraction baseline |
+| Top-level hooks without lib | 3 adapters + `industry-tooling-hint.sh` | Intentional bridges |
+
+### 3.2 Duplicate regex / constants
+
+| Symbol | Canonical | Inline duplicates |
+|--------|-----------|-------------------|
+| Flow Log row regex | `hooks/lib/workflow-utils.sh` | Some hooks still grep inline |
+| Required skill lists | `templates/silver-bullet.config.json.default` via `required-skills.sh` | None in hooks (invariant upheld) |
+| Legacy alias map | `hooks/lib/legacy-skill-alias.sh` | `silver:*` route normalization only |
+| Orchestrator queue CSV | `hooks/lib/orchestrator-state.sh` | Composers reference contracts doc |
+
+### 3.3 Template file pairs
+
+| Root | Plugin copy | Status |
+|------|-------------|--------|
+| `templates/silver-bullet.md.base` | `plugins/.../templates/silver-bullet.md.base` | Physical; must sync |
+| `templates/silver-bullet.config.json.default` | plugin copy | Physical; version fields differ by design |
+| `templates/orchestrator-workers/*.md` | plugin copy | Physical |
+| `templates/workflow.md.base` | plugin copy | Physical |
+
+### 3.4 Config duplication
+
+| Field | `.silver-bullet.json` (dogfood) | `templates/...default` (install) |
+|-------|-------------------------------|-------------------------------|
+| `required_*` skill lists | Identical members | Identical — hooks read template |
+| `config_version` / `version` | Behind release | Ahead — intentional |
+| `sb_initiated` | `true` | `false` |
+| `src_pattern` | `/hooks/|/skills/|/templates/` | `/src/` |
+| `orchestrator_mode` | absent | `"parent"` |
+
+**Severity:** LOW for skill lists; MED for version/metadata drift.
+
+### 3.5 Stale aliases and dead paths
+
+| Item | Evidence | Severity |
+|------|----------|----------|
+| `silver-orient` legacy alias | 15-line redirect skill | MED |
+| `silver-bootstrap-milestone` alias | Thin bootstrap marker skill | LOW |
+| Skills without hook refs | `artifact-review-assessor`, `progressive-review-loop` — orchestration-only | LOW |
+| `gsd-vmodel-gap.svg` at repo root | Planning artifact | LOW |
+| `scripts/session-transcript-viewer.html` | 4.3M single file in scripts/ | LOW |
+
+### 3.6 site/ vs docs/ content overlap
+
+- `site/help/reference/index.html` mirrors `docs/composable-flows-contracts.md` FLOW table
+- Per-workflow HTML pages duplicate composer skill summaries
+- `docs/audits/` duplicated into `plugins/silver-bullet/docs/audits/` via symlink
+
+**Severity:** MED — site is generated/maintained separately from docs markdown.
+
+### 3.7 scripts/ vs hooks/ overlap
+
+| Concern | hooks | scripts |
+|---------|-------|---------|
+| Workflow state | `flow-advance.sh`, guards | `workflows.sh` |
+| Skill recording | `record-skill.sh` | — |
+| Diagnostics | — | `sb-diagnostics.sh` |
+| Bundle render | — | `render-agent-bundle.py` |
+| Plugin validation | — | `validate-plugin-mirror.sh` |
+
+**Severity:** LOW — separation is appropriate (runtime hooks vs tooling).
 
 ---
 
-## 4. Intentional Duplication (Required Mirrors)
+## 4. Intentional Duplication (Do Not Remove Blindly)
 
-Do **not** collapse without updating install/sync/CI:
-
-1. **`skills/`** — single authoring source for all SB skills  
-2. **`agents/{claude,codex,cursor}/`** — host-specific rendered bundles (`render-agent-bundle.py`); P1 parity tests for composers  
-3. **`plugins/silver-bullet/skill-source/`** — Codex picker mirror (`SILVER_SOURCE`); thinned composers cmp'd in `validate-plugin-mirror.sh`  
-4. **`hooks/` ↔ `plugins/silver-bullet/hooks/`** — byte-identical (symlink or cmp)  
-5. **`templates/` ↔ `plugins/silver-bullet/templates/`** — rsync on release sync  
-6. **`docs/` ↔ `plugins/silver-bullet/docs/`** — symlinked package surface  
-7. **`silver-bullet.md` ↔ `templates/silver-bullet.md.base`** — live vs stamped downstream copy  
-8. **`hooks/lib/required-skills.sh` ↔ `templates/silver-bullet.config.json.default`** — config is SoT; lib is reader-shim (`test-required-skills-consistency.sh`)  
-9. **Hook + skill + markdown enforcement** — defense in depth for commits/PR/stop  
-10. **`sync-codex-package.sh`** — orchestrates render → rsync → symlink → cursor sync  
+| Duplication | Why required |
+|-------------|--------------|
+| `plugins/silver-bullet/hooks` symlink | Plugin install boundary; single source in root |
+| `agents/{claude,codex,cursor}/` | Host-specific frontmatter, invocation channels, path conventions |
+| `skill-source/SILVER_SOURCE` | Codex plugin cache format (`silver:name` frontmatter) |
+| `trap 'exit 0' ERR` in every hook | Fail-open contract when jq/runtime absent |
+| `silver-bullet.md` + `templates/silver-bullet.md.base` | Dogfood live doc vs downstream stamp |
+| `.silver-bullet.json` vs template config | Dogfood enforcement vs fresh-install defaults |
+| `review-*` artifact reviewers + `silver-review` | Different artifacts, shared framework |
+| `cursor-hooks.json` vs `hooks/hooks.json` | Cursor host hook manifest format differs |
+| ~~Legacy `gsd-*` aliases until 2026-09-01~~ | **Removed 2026-06-22** |
+| `commands/*.md` thin stubs | Plugin marketplace discoverability for top routes |
+| Dual `silver:` / `silver-*` naming | Codex colon convention vs filesystem skill dirs |
 
 ---
 
-## 5. Consolidation Roadmap (Phased)
+## 5. Consolidation Roadmap
 
-### Phase A — Documentation & metadata (low risk)
-- Add `.planning/REDUNDANCY-AUDIT.md` index pointing to this audit + existing audits (`052-FORENSICS`, `37-stage-2-consistency`, release audits)  
-- Archive or tag stale `.planning/phases/*` completed work  
-- Generate `commands/*.md` from skill registry at sync (optional)  
-- After **2026-09-01**: remove `legacy-skill-alias.sh`, gsd skill-scenarios, trim gsd external catalog in `test-skill-refs.sh`
+### Phase 1 — Quick wins (no breaking changes)
 
-### Phase B — Manifest & hook DRY (medium risk)
-- Merge `hooks.json` `Bash|exec_command` duplicate matcher blocks into single matchers  
-- Deduplicate `Stop`/`SubagentStop` shared hook array (JSON ref or generator)  
-- Consider `hooks/generate-cursor-hooks.py` pattern for Claude `hooks.json`
+1. Add CI gate: `diff silver-bullet.md templates/silver-bullet.md.base` with allowed delta whitelist
+2. Add `make sync-templates` to copy `templates/` → `plugins/silver-bullet/templates/`
+3. Extract `tests/hooks/helpers/common.sh` from repeated fixture patterns (git init, state file, config)
+4. Route remaining 11 hooks through `jq-gate.sh`
+5. Document `silver-orient` deprecation path → direct `silver:scan` for brownfield only
 
-### Phase C — Build artifacts (medium risk; post-P1)
-- Git-ignore or CI-regenerate `agents/` except composer spot-check paths  
-- Document: edit `skills/` → run `sync-codex-package.sh` → commit only if release  
-- Extend `validate-plugin-mirror.sh` to cover full `skill-source/` not just 6 composers
+### Phase 2 — Structural (minor version)
 
-### Phase D — Review surface (product decision)
-- Document `artifact-reviewer` as sole user-facing review entry; demote direct `review-*` invocation in composers  
-- Clarify `progressive-review-loop` scope vs `artifact-reviewer` 2-pass loop (operational artifacts only)
+1. Make `render-agent-bundle.py` the only writer of `agents/*` and `skill-source/` — remove hand-edits
+2. Generate `plugins/silver-bullet/commands/` stubs from composer skill frontmatter
+3. ~~Retire `gsd-*` aliases and 19 legacy skill scenarios after 2026-09-01~~ **DONE 2026-06-22**
+4. Unify site/help FLOW tables with `docs/composable-flows-contracts.md` via single source generation
+5. Merge `workflow-utils.sh` inline grep duplicates in remaining hooks
 
-### Phase E — Test consolidation (ongoing)
-- Map integration vs e2e-live vs live tiers; merge overlapping enforcement scenarios  
-- Retire gsd scenarios after alias sunset  
-- Single kay/codex isolation helper import path
+### Phase 3 — Breaking (major version)
 
-**Explicitly out of scope:** P1 composer/agent parity, version bumps, re-doing `ba2e1fe5` work.
+1. Remove `silver-orient` skill; consolidate brownfield routing to `silver-scan` only
+2. Collapse five skill trees to generated-only artifacts (not committed to git)
+3. Single config schema version — eliminate dogfood/template version skew
+4. Retire `CLAUDE.md` dogfood expansion; keep minimal `CLAUDE.md.base` everywhere
 
 ---
 
 ## 6. Metrics
 
-| Metric | Count |
-|--------|-------|
-| Canonical skills (`skills/*/SKILL.md`) | **85** |
-| Agent bundles (`agents/*/*/SKILL.md`) | **~255** (85 × 3 hosts) |
-| Plugin `skill-source` (`SILVER_SOURCE`) | **85** |
-| Hook scripts (`hooks/*.sh`, excl. lib) | **35** |
-| Hook lib modules (`hooks/lib/*.sh`) | **28** |
-| Plugin slash commands | **36** |
-| Orchestrator worker templates | **~47** (×2 with plugin rsync) |
-| Root docs files | **~95** (mirrored in plugin) |
-| Site help HTML pages | **27** |
-| Test shell scripts (`tests/**/test-*.sh`) | **~130** |
-| Skill scenario fixtures | **~105** (20 gsd legacy) |
-| `hooks.json` `exec_command` occurrences | **6** (5 duplicate-with-Bash groups + bridges) |
-| `silver-bullet.md` lines | **736** |
-| `templates/silver-bullet.md.base` lines | **~981** (placeholder `{{PROJECT_NAME}}`) |
-| `completion-audit.sh` lines | **1108** |
-| GSD references (repo-wide ripgrep) | **1000+** matches (mostly `.planning/`, docs) |
-| `forge/` files | **2** |
-| CI guards for redundancy | `validate-plugin-mirror.sh`, `test-agent-bundle-composer-parity.sh`, `test-composition-triple-alignment.sh`, `test-no-agent-leaks.sh`, `test-skill-refs.sh`, `test-required-skills-consistency.sh` |
+| Metric | Value |
+|--------|------:|
+| Total `SKILL.md` / `SILVER_SOURCE` files across trees | 425 |
+| Canonical skill lines (`skills/`) | 11,336 |
+| Combined agent bundle lines (×3) | 34,092 |
+| Plugin `skill-source` lines | 11,420 |
+| **Total skill-surface lines** | **~56,848** |
+| Estimated duplicate lines (agent + skill-source vs canonical) | **~45,500** |
+| `silver-bullet.md` ↔ template similarity | 96.9% |
+| Top-level hook scripts | 35 |
+| `hooks/lib/` modules | 29 |
+| Hooks with inline jq gate (not using lib) | 11 |
+| Hook unit tests | 61 |
+| Integration tests | 22 |
+| Legacy `gsd-*` skill scenarios | 0 (deleted) |
+| Modern `silver-*` skill scenarios | 58 |
+| Plugin command stubs | 36 |
+| Skills without command stub | ~49 |
+| `docs/` files | 99 |
+| `site/` files | 50 |
+| `tests/` files | 285 |
 
 ---
 
 ## 7. Do-Not-Touch Invariants
 
-1. **P1 hardening at `ba2e1fe5`** — composer thinned SKILL.md ↔ agent bundle parity; do not regress  
-2. **`skills/` as sole skill authoring surface** — never edit plugin cache or rendered bundles as source  
-3. **`templates/silver-bullet.config.json.default`** — required-skills SoT; hooks read via `required-skills.sh`  
-4. **`silver-bullet.md` + `templates/silver-bullet.md.base` sync** — any enforcement text change needs both  
-5. **`validate-plugin-mirror.sh` in CI** — plugin drift must fail closed  
-6. **`trap 'exit 0' ERR`** on all hooks — fail-open contract  
-7. **`jq` required** — hooks fail-open with warning if absent  
-8. **Legacy gsd aliases** — keep until `SB_LEGACY_ALIAS_SUNSET_DATE` (2026-09-01)  
-9. **Plugin cache boundary** — `${SB_RUNTIME_HOME_ROOT}/plugins/cache/**` read-only for SB source edits  
-10. **State files under `${SB_RUNTIME_HOME_ROOT}/`** — path validation in session-start / completion-audit  
-11. **`sync-codex-package.sh` pipeline** — render agents → rsync templates/skill-source → symlink docs/hooks/scripts  
-12. **Two-tier enforcement** — `required_planning` vs `required_deploy` (intermediate commit vs final delivery)  
+These redundancies are **required by architecture** and must remain:
+
+1. **`skills/` canonical source** — all bundles derive from here
+2. **`hooks/lib/required-skills.sh` reads template config** — no hardcoded skill literals in hooks
+3. **Fail-open `ERR` traps** — hooks exit 0 on unexpected failure
+4. **Branch-scoped state** — `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`
+5. **Plugin symlink mirror** for hooks/scripts/docs — never edit plugin cache at install path
+6. **`legacy-skill-alias.sh`** — `silver:*` route normalization only (GSD aliases removed 2026-06-22)
+7. **Separate deploy vs planning skill gates** — `completion-audit.sh` / `stop-check.sh` tiers
+8. **`render-agent-bundle.py` host transforms** — Claude/Cursor/Codex invocation differences
+9. **`.planning/` as SB-managed** — `planning-file-guard.sh` enforcement
+10. **`docs/composable-flows-contracts.md` as FLOW authority** — composers reference, do not fork
 
 ---
 
-## Target path
+## Appendix: Directory Inventory
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/REDUNDANCY-AUDIT.md` *(not created — Ask mode)*
+| Directory | Files | Primary role |
+|-----------|------:|--------------|
+| `hooks/` | 73 | Runtime enforcement |
+| `skills/` | 95 | Canonical skills + support files |
+| `scripts/` | 50 | Tooling, render, validation |
+| `templates/` | 47 | Downstream install stamps |
+| `agents/` | 283 | Host bundles (×3) |
+| `plugins/silver-bullet/` | 181 | Plugin package |
+| `docs/` | 99 | Reference + audits |
+| `site/` | 50 | Static help site |
+| `tests/` | 285 | Hooks, scripts, integration, e2e, scenarios |
+| `forge/` | 2 | Cursor marketplace metadata |
 
 ---
 
-## 5-bullet summary
+*Generated as Part B deliverable for P1 hardening + redundancy audit session.*
 
-- **Largest structural redundancy:** 85 canonical skills expand to ~255 agent SKILL.md files plus 85 `SILVER_SOURCE` copies — intentional, P1-guarded, but the biggest maintenance surface.
-- **Plugin mirror is mostly automated:** `sync-codex-package.sh` symlinks `docs/hooks/scripts`, rsyncs `templates` and `skill-source`; `validate-plugin-mirror.sh` enforces drift detection.
-- **Highest low-hanging fruit:** deduplicate `hooks.json` `Bash`/`exec_command` twin matcher blocks and plan GSD legacy removal after 2026-09-01.
-- **Overlapping skills are mostly compositional** (debug⊂bugfix, review-* dispatched by artifact-reviewer); real overlap is instruction surfaces (`silver-bullet.md`, templates, site/help, core-rules).
-- **Do not touch P1 parity, required-skills config shim, or hook fail-open invariants** — consolidation should target generators, docs indexing, and post-sunset legacy cleanup.
+---
+
+## 8. Remediation Status (2026-06-22)
+
+Remediation on `main`. Commits: `1c9d447f` (hooks), `176504f2` (tests/templates), `e2c5c732` (docs/site/skills).
+
+### Top 10
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| 1 | `skills/` sole source; CI render freshness | **FIXED** | `tests/scripts/test-render-agent-bundle-freshness.sh` |
+| 2 | `silver-bullet.md` ↔ template sync gate | **FIXED** | `tests/scripts/test-silver-bullet-template-parity.sh` |
+| 3 | Sunset `gsd-*` aliases + scenarios | **BLOCKED** | Until 2026-09-01; `docs/knowledge/2026-06.md`; `tests/scripts/test-legacy-alias-sunset.sh` |
+| 4 | `silver-orient` vs `silver-scan` collision | **FIXED** | Deprecation in `skills/silver-orient/SKILL.md`; file retained until Phase 3 |
+| 5 | Hook test fixtures helper | **FIXED** | `tests/hooks/helpers/common.sh`; `test-record-requested-skill.sh` migrated |
+| 6 | jq-gate centralization | **FIXED** | 11 hooks via `hooks/lib/jq-gate.sh` |
+| 7 | `templates/` ↔ plugin templates | **FIXED** | `scripts/sync-templates.sh` |
+| 8 | `site/help/` FLOW alignment | **FIXED** | REVIEW→VERIFY→SECURE post-execute order |
+| 9 | Commands vs Skill-tool-only docs | **FIXED** | `plugins/silver-bullet/README.md`, `AGENTS.md`, `generate-plugin-commands.sh` |
+| 10 | `CLAUDE.md` vs template divergence | **INTENTIONAL** | Dogfood `CLAUDE.md` expanded; template minimal + pointer |
+
+### Phase 1–3 summary
+
+| Phase | Item | Status |
+|-------|------|--------|
+| P1 | CI parity, sync-templates, helpers, jq-gate, orient deprecation, hooks.json dedup, template sync | **FIXED** |
+| P2 | render freshness, generate commands, site/help, validate-plugin-mirror note, artifact-reviewer hub | **FIXED** |
+| P2 | workflow-utils inline grep | **INTENTIONAL** | Source `workflow-utils.sh`; fail-open fallback kept |
+| P2 | Hook tests → common.sh | **PARTIAL** | One migration; more can follow |
+| P3 | git-ignore agents/ | **INTENTIONAL** | Freshness test instead |
+| P3 | Remove silver-orient | **BLOCKED** | Post-sunset / major |
+| P3 | CLAUDE.md.base pointer | **FIXED** |
+| P3 | `gsd-vmodel-gap.svg` | **FIXED** | Removed unused root artifact |
+
+### Pre-existing failures (not introduced)
+
+- `test-core-rules-integrity.sh` — `core-rules.sha256` pin drift
+- `test-completion-audit.sh` / `test-session-start.sh` — artifact substance + core-rules cascade
+
+### Remaining (major version / post-sunset)
+
+- Generated-only skill trees (not committed)
+- Single config schema version
+- Retire `legacy-skill-alias.sh` + 19 `gsd-*` scenarios after 2026-09-01
+

@@ -153,8 +153,10 @@ footer a:hover{color:var(--accent-light)}
       </ul>
       <p>If the phase involves UI work, <strong>FLOW 7 (DESIGN CONTRACT)</strong> and <strong>FLOW 9 (UI QUALITY)</strong> are inserted automatically. If execution fails, <strong>FLOW 15 (DEBUG)</strong> is inserted dynamically.</p>
 
+      <p><strong>Post-execute order (canonical):</strong> after FLOW 8, composers run <strong>FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)</strong>. FLOW 9 (UI QUALITY) runs before REVIEW when UI scope is detected.</p>
+
       <h3>Per-Phase Loop</h3>
-      <p>For each phase, the orchestrator runs a tightly coupled loop: <strong>PLAN (FLOW 5) → EXECUTE (FLOW 7) → REVIEW (FLOW 9) → VERIFY (FLOW 11)</strong>. This cycle repeats per phase until VERIFY passes two consecutive clean passes.</p>
+      <p>For each phase, the orchestrator runs: <strong>FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)</strong> (with FLOW 9 UI QUALITY when applicable). This cycle repeats per phase until verification and review exit conditions are met.</p>
 
       <h3>Supervision Loop</h3>
       <p>After each path completes, the supervision loop runs:</p>

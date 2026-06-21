@@ -1,8 +1,8 @@
 ---
 name: "silver:feature"
 title: "Feature"
-description: Build a feature with Silver Bullet
+description: >
 argument-hint: <feature description>
 ---
 
-Invoke the Silver Bullet `silver-feature` workflow for the requested feature. Follow the SB feature flow, including the required dependency workflows and quality gates.
+Invoke the Silver Bullet `silver-feature` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.

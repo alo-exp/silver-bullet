@@ -1,8 +1,8 @@
 ---
 name: "silver:devops"
-title: "DevOps"
-description: Run infrastructure or DevOps work through Silver Bullet
-argument-hint: <infra or ops task>
+title: "Devops"
+description: >
+argument-hint: <infrastructure or CI/CD change description>
 ---
 
-Invoke the Silver Bullet `silver-devops` workflow for the described infrastructure or DevOps task. Use the SB DevOps flow and the required dependency skills as the workflow requires.
+Invoke the Silver Bullet `silver-devops` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.
