@@ -29,6 +29,7 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
 11. **ROADMAP freshness gate** (PreToolUse/Bash) — blocks git commit if SUMMARY.md staged but ROADMAP.md checkbox not ticked
 12. **Redundant instructions** (project instruction file + workflow file) — same rules enforced across multiple surfaces
+13. **Graphify retrieval gate** (PreToolUse/Edit|Write|Bash + PostToolUse/Bash recorder) — when the user opted in via `recommended_tools.graphify.enabled_by_user: true` and enforcement is not suspended, blocks substantive edits and delivery commands until `graphify-out/graph.json` exists and a fresh `graphify query` is recorded; native search is not an acceptable substitute. When opted out, consent pending, or enforcement suspended (install failed), Graphify is advisory only.
 
 ## Active Workflow (Section 2)
 
@@ -36,7 +37,7 @@ Read `docs/workflows/full-dev-cycle.md` before starting any non-trivial task. If
 
 Silver Bullet owns the agentic loop in SB-activated projects. On every non-trivial user goal, wait for SB route/workflow guidance first, then invoke only the SB-owned or optional extension skills that guidance selects. When an SB-launched workflow step completes, return control to the active SB workflow and let it choose the next step until the user goal is achieved or user feedback is required.
 
-Before planning, editing, debugging, reviewing, or shipping, read the relevant project knowledge and learnings that could affect the action. Prefer Graphify when available (`graphify query "<task context with concrete files/features>" --graph graphify-out/graph.json` from the project root); inspect the returned nodes for relevance before acting. If the graph is missing, run `graphify update . --no-cluster` as the no-LLM code-index refresh path. If Graphify is unavailable or still has no useful index, read `docs/knowledge/INDEX.md`, current `docs/knowledge/YYYY-MM.md`, current `docs/learnings/YYYY-MM.md`, and any directly referenced docs.
+Before planning, editing, debugging, reviewing, or shipping, read the relevant project knowledge and learnings that could affect the action. When Graphify is **opted in** (`recommended_tools.graphify.enabled_by_user: true`) and **not suspended**, run `graphify query "<task context with concrete files/features>" --graph graphify-out/graph.json --budget 2000` from the project root; inspect returned nodes before acting. If the graph is missing, run `graphify update . --no-cluster` first — hooks block substantive work until the index exists and a fresh query is recorded. After CLI install, follow upstream platform order: pre-index skill (`graphify install --project` on Claude, `graphify install --project --platform codex` on Codex), build index, then post-index always-on (`graphify claude install --project`, `graphify codex install --project`, or `graphify cursor install` on Cursor). When Graphify is **opted out**, consent is **pending**, or **enforcement is suspended** (install failed), prefer Graphify when already installed but fall back to `docs/knowledge/INDEX.md`, current `docs/knowledge/YYYY-MM.md`, current `docs/learnings/YYYY-MM.md`, and referenced docs without hook enforcement.
 
 ## Review Loop (Section 3a)
 
@@ -65,3 +66,4 @@ These are invalid excuses:
 - "This step is not applicable" — requires explicit user approval
 - "It's a simple change" — the hooks decide what's trivial, not you
 - "I've already covered this" — a supported skill invocation is required, not just the work
+- "I'll use grep instead of Graphify" — when Graphify is opted in and installed, hooks require a fresh `graphify query` before substantive edits

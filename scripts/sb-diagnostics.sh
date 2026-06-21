@@ -113,11 +113,61 @@ main() {
     record warn "hooks" "no SB hook config detected — enforcement may not fire"
   fi
 
+  if [[ -f "${REPO_ROOT}/hooks/lib/recommended-tools.sh" ]]; then
+    # shellcheck source=../hooks/lib/recommended-tools.sh
+    source "${REPO_ROOT}/hooks/lib/recommended-tools.sh"
+  fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/graphify-gate.sh" ]]; then
+    # shellcheck source=../hooks/lib/graphify-gate.sh
+    source "${REPO_ROOT}/hooks/lib/graphify-gate.sh"
+  fi
+
+  local sb_config="${REPO_ROOT}/.silver-bullet.json"
+  local graphify_consent="pending"
+  local graphify_suspended="false"
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
+    graphify_consent="$(sb_recommended_tool_consent "$sb_config" "graphify")"
+  fi
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_enforcement_suspended >/dev/null 2>&1; then
+    if sb_recommended_tool_enforcement_suspended "$sb_config" "graphify"; then
+      graphify_suspended="true"
+    fi
+  fi
+
   if command -v graphify >/dev/null 2>&1 || [[ -x "${HOME}/.local/bin/graphify" ]]; then
     graphify="yes"
-    record pass "graphify" "CLI available"
+    if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" != "true" ]]; then
+      record pass "graphify-cli" "CLI available (opted in)"
+      graph_path="${REPO_ROOT}/graphify-out/graph.json"
+      if [[ -f "$sb_config" ]] && declare -f sb_graphify_abs_graph_path >/dev/null 2>&1; then
+        graph_path="$(sb_graphify_abs_graph_path "$REPO_ROOT" "$sb_config")"
+      fi
+      if [[ -f "$graph_path" && ! -L "$graph_path" ]]; then
+        record pass "graphify-index" "index present at ${graph_path#${REPO_ROOT}/}"
+      else
+        record fail "graphify-index" "index missing — run: graphify update . --no-cluster"
+      fi
+      if declare -f sb_runtime_host >/dev/null 2>&1 && declare -f sb_graphify_platform_artifact_present >/dev/null 2>&1; then
+        local gf_host artifact_path
+        gf_host="$(sb_runtime_host)"
+        artifact_path="$(sb_graphify_platform_artifact_path "$REPO_ROOT" "$gf_host")"
+        if sb_graphify_platform_artifact_present "$REPO_ROOT" "$gf_host"; then
+          record pass "graphify-platform" "platform artifact present (${artifact_path#${REPO_ROOT}/}, host=${gf_host})"
+        else
+          record warn "graphify-platform" "platform artifact missing for ${gf_host} — run post-index install (see docs/GRAPHIFY.md)"
+        fi
+      fi
+    else
+      record pass "graphify-cli" "CLI available (consent: ${graphify_consent})"
+    fi
   else
-    record warn "graphify" "not on PATH — tier-1 code intelligence unavailable"
+    if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" == "true" ]]; then
+      record warn "graphify" "opted in but install failed — enforcement suspended; retry on /silver:update"
+    elif [[ "$graphify_consent" == "enabled" ]]; then
+      record fail "graphify-cli" "not on PATH — user opted in; install: uv tool install graphifyy"
+    else
+      record warn "graphify" "not on PATH — tier-1 code intelligence unavailable (consent: ${graphify_consent})"
+    fi
   fi
 
   if [[ -f "${REPO_ROOT}/.codex-plugin/plugin.json" ]]; then
