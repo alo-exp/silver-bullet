@@ -186,3 +186,33 @@ Installed via the active host's package manager / marketplace (silver-bullet@alo
 
 [View full changelog](https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md)
 ```
+
+### Step 8: Recommended-tools consent and install retry (project-level)
+
+After the plugin update succeeds, check the **project's** `.silver-bullet.json` (if present)
+for Graphify consent and suspension state. This mirrors Phase 1.1a of `/silver:init`.
+
+```bash
+test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enabled_by_user // "null"' .silver-bullet.json
+test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null` (consent pending):** run the same AskQuestion consent flow
+as fresh init — present benefits, ask Yes/No, write choice to `.silver-bullet.json`.
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry Graphify install
+without re-asking:
+1. `uv tool install graphifyy` or `pip install graphifyy`
+2. `graphify update . --no-cluster`
+3. On Cursor: `graphify cursor install`
+
+On success, clear suspension:
+```bash
+jq '.recommended_tools.graphify.enforcement_suspended = false
+  | .recommended_tools.graphify.install_status = "ok"
+  | .recommended_tools.graphify.install_failure_reason = null' .silver-bullet.json
+```
+
+On failure, keep suspension and update `install_failure_reason`. Do not block the update.
+
+**If `enabled_by_user` is `false`:** no action needed.

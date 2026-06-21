@@ -25,12 +25,16 @@ EOF
 
 write_consent() {
   local val="$1"
+  local suspended="${2:-false}"
   cat >"$TMP/.silver-bullet.json" <<EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
   "sb_initiated": true,
   "recommended_tools": {
-    "graphify": { "enabled_by_user": ${val} }
+    "graphify": {
+      "enabled_by_user": ${val},
+      "enforcement_suspended": ${suspended}
+    }
   },
   "skills": { "required_planning": ["silver-quality-gates"] },
   "state": {
@@ -66,6 +70,15 @@ out="$(run_session)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
 # enabled + no CLI should mention install
 printf '%s' "$ctx" | grep -qi 'graphify' && pass "enabled consent injects graphify status" || fail "enabled consent injects graphify status"
+
+write_consent true true
+out="$(run_session)"
+ctx="$(printf '%s' "$out" | extract_ctx)"
+printf '%s' "$ctx" | grep -q 'enforcement suspended' && pass "suspended opt-in injects suspension note" || fail "suspended opt-in injects suspension note"
+
+# Fresh init template always defaults enabled_by_user to null (pending)
+template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$template_null" == "null" ]] && pass "fresh init template defaults to null pending" || fail "fresh init template defaults to null pending"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

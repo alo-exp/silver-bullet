@@ -11,6 +11,9 @@ permission at `/silver:init` and session start. Consent is stored in `.silver-bu
 "recommended_tools": {
   "graphify": {
     "enabled_by_user": null,
+    "enforcement_suspended": false,
+    "install_status": null,
+    "install_failure_reason": null,
     "required_when_enabled": true
   }
 }
@@ -18,9 +21,16 @@ permission at `/silver:init` and session start. Consent is stored in `.silver-bu
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts; no hook enforcement |
+| `null` | Consent pending — SB prompts at init, update, and session start; no hook enforcement |
 | `true` | Mandatory — hooks block substantive edits until index + fresh query |
 | `false` | Opted out — advisory/docs fallback only |
+
+**Install failure after opt-in:** when the user opts in but CLI install or index build fails,
+SB sets `enforcement_suspended: true` and `install_status: "failed"` (with `install_failure_reason`).
+Init/update is not blocked. Hooks treat suspended Graphify like opted-out while preserving
+`enabled_by_user: true`. Session-start notes the suspension. On the next `/silver:init` (update
+mode) or `/silver:update`, SB retries install; success clears suspension and re-enables mandatory
+enforcement.
 
 The same `recommended_tools` pattern applies to future SB-suggested tooling (see `hooks/lib/recommended-tools.sh`).
 
