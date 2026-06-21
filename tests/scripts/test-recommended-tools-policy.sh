@@ -44,9 +44,67 @@ template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 [[ "$template_null" == "null" ]] && pass "template enabled_by_user is null" || fail "template enabled_by_user is null"
 
+assert_grep "silver-init hook install optional" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "graphify hook install"
+
+assert_grep "template platform_install_commands cursor" \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" \
+  '"cursor"'
+
+jq -e '.recommended_tools.graphify.platform_install_commands.cursor.post_index[0] == "graphify cursor install"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template cursor post_index command" || fail "template cursor post_index command"
+
+jq -e '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0] == "graphify install --project"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template claude pre_index command" || fail "template claude pre_index command"
+
+jq -e '.recommended_tools.graphify.install_commands | index("pipx install graphifyy") != null' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template uses pipx not plain pip" || fail "template uses pipx not plain pip"
+
 template_suspended="$(jq -r '.recommended_tools.graphify.enforcement_suspended' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 [[ "$template_suspended" == "false" ]] && pass "template enforcement_suspended defaults false" || fail "template enforcement_suspended defaults false"
+
+cursor_cmd="$(jq -r '.recommended_tools.graphify.platform_install_commands.cursor.post_index[0]' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$cursor_cmd" == "graphify cursor install" ]] && pass "template cursor platform install" || fail "template cursor platform install"
+
+claude_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0]' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+claude_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.claude.post_index[0]' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$claude_pre" == "graphify install --project" && "$claude_post" == "graphify claude install --project" ]] \
+  && pass "template claude platform install" || fail "template claude platform install"
+
+codex_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex.pre_index[0]' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+codex_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex.post_index[0]' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$codex_pre" == "graphify install --project --platform codex" && "$codex_post" == "graphify codex install --project" ]] \
+  && pass "template codex platform install" || fail "template codex platform install"
+
+assert_grep "silver-init documents cursor platform install" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "graphify cursor install"
+
+assert_grep "silver-init documents claude platform install" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "graphify claude install --project"
+
+assert_grep "silver-init documents codex platform install" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "graphify codex install --project"
+
+assert_grep "silver-init host detection" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "CURSOR_PLUGIN_ROOT"
+
+assert_grep "GRAPHIFY.md platform table" \
+  "$REPO_ROOT/docs/GRAPHIFY.md" \
+  "graphify cursor install"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

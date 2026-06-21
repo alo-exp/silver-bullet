@@ -174,13 +174,25 @@ sb_graphify_edit_path_is_exempt() {
 }
 
 sb_graphify_block_message_no_cli() {
-  cat <<'EOF'
+  local config_file="${1:-}"
+  local host install_lines
+  host="$(sb_runtime_host)"
+  install_lines="$(sb_recommended_tool_full_install_lines "$config_file" graphify "$host" 2>/dev/null || true)"
+  if [[ -z "$install_lines" ]]; then
+    install_lines=$'uv tool install graphifyy\npipx install graphifyy'
+    local pre post
+    pre="$(sb_recommended_tool_platform_pre_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
+    post="$(sb_recommended_tool_platform_post_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
+    [[ -n "$pre" ]] && install_lines="${install_lines}"$'\n'"${pre}"
+    install_lines="${install_lines}"$'\n'"graphify update . --no-cluster"
+    [[ -n "$post" ]] && install_lines="${install_lines}"$'\n'"${post}"
+  fi
+  cat <<EOF
 🚫 GRAPHIFY REQUIRED — CLI not installed (user opted in).
 
-Silver Bullet mandates Graphify for tier-1 project-memory retrieval in this project. Install before substantive work:
+Silver Bullet mandates Graphify for tier-1 project-memory retrieval in this project. Install before substantive work (host: ${host}):
 
-  uv tool install graphifyy
-  # or: pip install graphifyy
+${install_lines}
 
 Then run: graphify update . --no-cluster
 

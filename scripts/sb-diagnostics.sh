@@ -147,6 +147,16 @@ main() {
       else
         record fail "graphify-index" "index missing — run: graphify update . --no-cluster"
       fi
+      if declare -f sb_runtime_host >/dev/null 2>&1 && declare -f sb_graphify_platform_artifact_present >/dev/null 2>&1; then
+        local gf_host artifact_path
+        gf_host="$(sb_runtime_host)"
+        artifact_path="$(sb_graphify_platform_artifact_path "$REPO_ROOT" "$gf_host")"
+        if sb_graphify_platform_artifact_present "$REPO_ROOT" "$gf_host"; then
+          record pass "graphify-platform" "platform artifact present (${artifact_path#${REPO_ROOT}/}, host=${gf_host})"
+        else
+          record warn "graphify-platform" "platform artifact missing for ${gf_host} — run post-index install (see docs/GRAPHIFY.md)"
+        fi
+      fi
     else
       record pass "graphify-cli" "CLI available (consent: ${graphify_consent})"
     fi

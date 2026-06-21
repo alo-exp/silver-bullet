@@ -98,14 +98,145 @@ sb_recommended_tool_install_commands() {
   jq -r --arg id "$tool_id" '.recommended_tools[$id].install_commands[]? // empty' "$config_file" 2>/dev/null || true
 }
 
+# Host detection — mirrors hooks/lib/runtime-paths.sh (claude | codex | cursor).
+sb_runtime_host() {
+  if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
+    case "$SILVER_BULLET_RUNTIME" in
+      claude|codex|cursor) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
+    esac
+  fi
+  if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
+    printf 'codex'
+    return 0
+  fi
+  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
+    printf 'cursor'
+    return 0
+  fi
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+    case "$CLAUDE_PLUGIN_ROOT" in
+      */.codex/*) printf 'codex'; return 0 ;;
+      */.cursor/*) printf 'cursor'; return 0 ;;
+    esac
+  fi
+  printf 'claude'
+}
+
+sb_recommended_tool_platform_install_commands() {
+  local config_file="${1:-}" tool_id="${2:-}" host="${3:-}"
+  local pre post
+  host="${host:-$(sb_runtime_host)}"
+  pre="$(sb_recommended_tool_platform_pre_index_commands "$config_file" "$tool_id" "$host")"
+  post="$(sb_recommended_tool_platform_post_index_commands "$config_file" "$tool_id" "$host")"
+  if [[ -n "$pre" ]]; then
+    printf '%s' "$pre"
+  fi
+  if [[ -n "$post" ]]; then
+    [[ -n "$pre" ]] && printf '\n'
+    printf '%s' "$post"
+  fi
+}
+
+# Upstream order: skill registration (graphify install) before index; always-on after index.
+sb_recommended_tool_platform_pre_index_commands() {
+  local config_file="${1:-}" tool_id="${2:-}" host="${3:-}"
+  local cmds
+  host="${host:-$(sb_runtime_host)}"
+  cmds="$(jq -r --arg id "$tool_id" --arg host "$host" \
+    '.recommended_tools[$id].platform_install_commands[$host].pre_index[]? // empty' \
+    "$config_file" 2>/dev/null || true)"
+  if [[ -n "$cmds" ]]; then
+    printf '%s' "$cmds"
+    return 0
+  fi
+  if [[ "$tool_id" == "graphify" ]]; then
+    case "$host" in
+      claude) printf '%s\n' 'graphify install --project' ;;
+      codex) printf '%s\n' 'graphify install --project --platform codex' ;;
+    esac
+  fi
+}
+
+sb_recommended_tool_platform_post_index_commands() {
+  local config_file="${1:-}" tool_id="${2:-}" host="${3:-}"
+  local cmds legacy
+  host="${host:-$(sb_runtime_host)}"
+  cmds="$(jq -r --arg id "$tool_id" --arg host "$host" \
+    '.recommended_tools[$id].platform_install_commands[$host].post_index[]? // empty' \
+    "$config_file" 2>/dev/null || true)"
+  if [[ -n "$cmds" ]]; then
+    printf '%s' "$cmds"
+    return 0
+  fi
+  # Legacy flat-array config: cursor = post-only; claude/codex = second command post-index.
+  legacy="$(jq -r --arg id "$tool_id" --arg host "$host" \
+    '.recommended_tools[$id].platform_install_commands[$host][]? // empty' \
+    "$config_file" 2>/dev/null || true)"
+  if [[ -n "$legacy" ]]; then
+    case "$host" in
+      cursor) printf '%s' "$legacy"; return 0 ;;
+      claude|codex)
+        printf '%s' "$legacy" | tail -n 1
+        return 0
+        ;;
+    esac
+  fi
+  if [[ "$tool_id" == "graphify" ]]; then
+    case "$host" in
+      cursor) printf '%s\n' 'graphify cursor install' ;;
+      claude) printf '%s\n' 'graphify claude install --project' ;;
+      codex) printf '%s\n' 'graphify codex install --project' ;;
+    esac
+  fi
+}
+
+sb_graphify_platform_artifact_path() {
+  local project_root="${1:-$PWD}" host="${2:-}"
+  host="${host:-$(sb_runtime_host)}"
+  case "$host" in
+    cursor) printf '%s/.cursor/rules/graphify.mdc' "${project_root%/}" ;;
+    codex) printf '%s/.codex/hooks.json' "${project_root%/}" ;;
+    *) printf '%s/.claude/settings.json' "${project_root%/}" ;;
+  esac
+}
+
+sb_graphify_platform_artifact_present() {
+  local project_root="${1:-$PWD}" host="${2:-}"
+  local artifact
+  host="${host:-$(sb_runtime_host)}"
+  artifact="$(sb_graphify_platform_artifact_path "$project_root" "$host")"
+  [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
+  case "$host" in
+    cursor) grep -q 'graphify' "$artifact" 2>/dev/null ;;
+    codex) grep -q 'graphify' "$artifact" 2>/dev/null ;;
+    *) grep -q 'graphify' "$artifact" 2>/dev/null ;;
+  esac
+}
+
+sb_recommended_tool_full_install_lines() {
+  local config_file="${1:-}" tool_id="${2:-}" host="${3:-}"
+  local cli_lines platform_lines
+  host="${host:-$(sb_runtime_host)}"
+  cli_lines="$(sb_recommended_tool_install_commands "$config_file" "$tool_id")"
+  if [[ -z "$cli_lines" && "$tool_id" == "graphify" ]]; then
+    cli_lines=$'uv tool install graphifyy\npipx install graphifyy'
+  fi
+  platform_lines="$(sb_recommended_tool_platform_install_commands "$config_file" "$tool_id" "$host")"
+  if [[ -n "$cli_lines" ]]; then
+    printf '%s' "$cli_lines"
+  fi
+  if [[ -n "$platform_lines" ]]; then
+    [[ -n "$cli_lines" ]] && printf '\n'
+    printf '%s' "$platform_lines"
+  fi
+}
+
 sb_recommended_tool_consent_prompt_block() {
   local config_file="${1:-}" tool_id="${2:-}"
-  local benefits install_lines
+  local benefits install_lines host
   benefits="$(sb_recommended_tool_benefits "$config_file" "$tool_id")"
-  install_lines="$(sb_recommended_tool_install_commands "$config_file" "$tool_id")"
-  if [[ -z "$install_lines" && "$tool_id" == "graphify" ]]; then
-    install_lines=$'uv tool install graphifyy\npip install graphifyy'
-  fi
+  host="$(sb_runtime_host)"
+  install_lines="$(sb_recommended_tool_full_install_lines "$config_file" "$tool_id" "$host")"
 
   case "$(sb_recommended_tool_consent "$config_file" "$tool_id")" in
     pending)
@@ -143,12 +274,13 @@ EOF
       elif [[ "$tool_id" == "graphify" ]] && declare -f sb_graphify_cli_available >/dev/null 2>&1; then
         if ! sb_graphify_cli_available; then
           cat <<EOF
-Graphify enabled but CLI missing — install before substantive work:
+Graphify enabled but CLI missing — install before substantive work (host: ${host}):
 
 ${install_lines}
 
 Then: graphify update . --no-cluster
-Hooks block substantive edits until CLI, index, and a fresh query are present.
+Run the platform commands above from the project root after the CLI is on PATH.
+Hooks block substantive edits until CLI, index, platform registration, and a fresh query are present.
 EOF
         elif declare -f sb_graphify_index_exists >/dev/null 2>&1; then
           local project_root graph_rel

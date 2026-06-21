@@ -323,7 +323,12 @@ lifts hook blocks until the next init/update retry succeeds.
    Do not substitute native search when Graphify is available.
 2. If Graphify is installed but has no graph yet, run `graphify update . --no-cluster` —
    substantive work is blocked until the index exists.
-3. On Cursor hosts, run `graphify cursor install` once per machine when opted in.
+3. After CLI install, run platform registration from the project root in upstream order (detect host via
+   `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars):
+   - **Pre-index skill:** Claude `graphify install --project`; Codex `graphify install --project --platform codex`; Cursor skip
+   - **Index:** `graphify update . --no-cluster`
+   - **Post-index always-on:** Claude `graphify claude install --project`; Codex `graphify codex install --project`; Cursor `graphify cursor install` (writes `.cursor/rules/graphify.mdc`)
+   - **Optional:** `graphify hook install` for auto-rebuild on commit
 
 **When opted out or consent pending:**
 

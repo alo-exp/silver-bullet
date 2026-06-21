@@ -65,5 +65,26 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" graphify)"
 [[ -n "$benefits" ]] && pass "benefits summary non-empty" || fail "benefits summary non-empty"
 
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"platform_install_commands\":{\"cursor\":{\"post_index\":[\"graphify cursor install\"]},\"claude\":{\"pre_index\":[\"graphify install --project\"],\"post_index\":[\"graphify claude install --project\"]}}}}}"
+[[ "$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify cursor install" ]] && pass "cursor platform post_index from config" || fail "cursor platform post_index from config"
+claude_cmds="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
+printf '%s' "$claude_cmds" | grep -q 'graphify install --project' && pass "claude platform install from config" || fail "claude platform install from config"
+printf '%s' "$claude_cmds" | grep -q 'graphify claude install --project' && pass "claude always-on install from config" || fail "claude always-on install from config"
+[[ "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify install --project" ]] && pass "claude pre_index from nested config" || fail "claude pre_index from nested config"
+
+[[ "$(SILVER_BULLET_RUNTIME=cursor sb_runtime_host)" == "cursor" ]] && pass "sb_runtime_host cursor" || fail "sb_runtime_host cursor"
+[[ "$(SILVER_BULLET_RUNTIME=codex sb_runtime_host)" == "codex" ]] && pass "sb_runtime_host codex" || fail "sb_runtime_host codex"
+[[ "$(SILVER_BULLET_RUNTIME=claude sb_runtime_host)" == "claude" ]] && pass "sb_runtime_host claude" || fail "sb_runtime_host claude"
+[[ "$(CURSOR_PLUGIN_ROOT=/x/.cursor/plugins sb_runtime_host)" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
+
+full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
+printf '%s' "$full" | grep -q 'uv tool install graphifyy' && pass "full install includes CLI" || fail "full install includes CLI"
+printf '%s' "$full" | grep -q 'graphify cursor install' && pass "full install includes cursor platform cmd" || fail "full install includes cursor platform cmd"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\"}"
+fallback="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
+printf '%s' "$fallback" | grep -q 'graphify install --project --platform codex' && pass "codex fallback platform install" || fail "codex fallback platform install"
+printf '%s' "$fallback" | grep -q 'graphify codex install --project' && pass "codex fallback always-on install" || fail "codex fallback always-on install"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

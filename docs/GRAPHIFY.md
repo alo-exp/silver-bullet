@@ -36,7 +36,10 @@ The same `recommended_tools` pattern applies to future SB-suggested tooling (see
 
 ## Local Setup
 
-Graphify requires Python 3.10+. If the system `python3` is older, install it with a newer Python or a tool runtime:
+Graphify requires Python 3.10+. Install the CLI, then register the platform-specific skill
+per [upstream Pick your platform](https://github.com/safishamsi/graphify#pick-your-platform).
+
+### Step 1 — CLI package
 
 ```bash
 uv tool install graphifyy
@@ -45,18 +48,36 @@ uv tool install graphifyy
 or:
 
 ```bash
-python3.12 -m pip install graphifyy
+pipx install graphifyy
 ```
 
 Optional surfaces:
 
 ```bash
-python3.12 -m pip install watchdog psycopg[binary] 'graphifyy[mcp]'
+uv tool install "graphifyy[mcp]"
+python3.12 -m pip install watchdog psycopg[binary]
 ```
 
 `watchdog` enables `graphify watch`. `psycopg` enables `graphify extract --postgres`. `graphifyy[mcp]` enables `graphify-mcp --transport http`.
 
-## Refresh
+### Step 2 — Platform registration (SB-supported hosts)
+
+Run from the project root after the CLI is on PATH. SB stores these in
+`recommended_tools.graphify.platform_install_commands` in `.silver-bullet.json`.
+
+| Host | Pre-index (skill) | Post-index (always-on) | Artifact |
+|------|-------------------|------------------------|----------|
+| Claude Code | `graphify install --project` | `graphify claude install --project` | `.claude/settings.json` |
+| Codex | `graphify install --project --platform codex` | `graphify codex install --project` | `.codex/hooks.json` |
+| Cursor | *(none)* | `graphify cursor install` | `.cursor/rules/graphify.mdc` ([issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
+
+Codex also needs `multi_agent = true` under `[features]` in `~/.codex/config.toml` for parallel extraction (upstream note).
+
+SB detects the active host via `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars
+(same logic as `hooks/lib/runtime-paths.sh`). `/silver:init` and `/silver:update` run pre-index
+commands, build the index, then run post-index commands when the user opts in.
+
+### Step 3 — Index
 
 For normal SB work without LLM keys:
 
@@ -65,6 +86,16 @@ graphify update . --no-cluster
 ```
 
 This refreshes code extraction only and works in docs-heavy SB repos. Full semantic extraction over docs, Markdown, HTML, PDFs, or images requires one of Graphify's supported LLM API keys.
+
+Use `/graphify .` inside the agent session or `graphify update .` from the shell for incremental refresh. After upgrading graphify, re-run platform install commands and optionally `graphify hook install` to refresh embedded interpreter paths (upstream git-hooks note).
+
+### Step 4 — Optional git hooks
+
+```bash
+graphify hook install
+```
+
+Auto-rebuilds the graph on git commit (AST only, no API cost) and sets up a merge driver for `graph.json`.
 
 ## Query Pattern
 
