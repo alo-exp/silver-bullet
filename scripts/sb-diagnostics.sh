@@ -113,11 +113,43 @@ main() {
     record warn "hooks" "no SB hook config detected — enforcement may not fire"
   fi
 
+  if [[ -f "${REPO_ROOT}/hooks/lib/recommended-tools.sh" ]]; then
+    # shellcheck source=../hooks/lib/recommended-tools.sh
+    source "${REPO_ROOT}/hooks/lib/recommended-tools.sh"
+  fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/graphify-gate.sh" ]]; then
+    # shellcheck source=../hooks/lib/graphify-gate.sh
+    source "${REPO_ROOT}/hooks/lib/graphify-gate.sh"
+  fi
+
+  local sb_config="${REPO_ROOT}/.silver-bullet.json"
+  local graphify_consent="pending"
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
+    graphify_consent="$(sb_recommended_tool_consent "$sb_config" "graphify")"
+  fi
+
   if command -v graphify >/dev/null 2>&1 || [[ -x "${HOME}/.local/bin/graphify" ]]; then
     graphify="yes"
-    record pass "graphify" "CLI available"
+    if [[ "$graphify_consent" == "enabled" ]]; then
+      record pass "graphify-cli" "CLI available (opted in)"
+      graph_path="${REPO_ROOT}/graphify-out/graph.json"
+      if [[ -f "$sb_config" ]] && declare -f sb_graphify_abs_graph_path >/dev/null 2>&1; then
+        graph_path="$(sb_graphify_abs_graph_path "$REPO_ROOT" "$sb_config")"
+      fi
+      if [[ -f "$graph_path" && ! -L "$graph_path" ]]; then
+        record pass "graphify-index" "index present at ${graph_path#${REPO_ROOT}/}"
+      else
+        record fail "graphify-index" "index missing — run: graphify update . --no-cluster"
+      fi
+    else
+      record pass "graphify-cli" "CLI available (consent: ${graphify_consent})"
+    fi
   else
-    record warn "graphify" "not on PATH — tier-1 code intelligence unavailable"
+    if [[ "$graphify_consent" == "enabled" ]]; then
+      record fail "graphify-cli" "not on PATH — user opted in; install: uv tool install graphifyy"
+    else
+      record warn "graphify" "not on PATH — tier-1 code intelligence unavailable (consent: ${graphify_consent})"
+    fi
   fi
 
   if [[ -f "${REPO_ROOT}/.codex-plugin/plugin.json" ]]; then

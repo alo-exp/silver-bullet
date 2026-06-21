@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Tests for hooks/lib/recommended-tools.sh — consent and enforcement gating
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+LIB="$REPO_ROOT/hooks/lib/recommended-tools.sh"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+PASS=0
+FAIL=0
+
+# shellcheck source=hooks/lib/recommended-tools.sh
+source "$LIB"
+
+pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
+fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+write_cfg() {
+  local body="$1"
+  printf '%s' "$body" >"$TMP/.silver-bullet.json"
+}
+
+echo "=== recommended-tools.sh tests ==="
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":null}}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" graphify)" == "pending" ]] && pass "null consent -> pending" || fail "null consent -> pending"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true}}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" graphify)" == "enabled" ]] && pass "true consent -> enabled" || fail "true consent -> enabled"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":false}}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" graphify)" == "disabled" ]] && pass "false consent -> disabled" || fail "false consent -> disabled"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"graphify\":{\"required\":false}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" graphify)" == "disabled" ]] && pass "legacy graphify.required false -> disabled" || fail "legacy graphify.required false"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"graphify\":{\"required\":true}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" graphify)" == "enabled" ]] && pass "legacy graphify.required true -> enabled" || fail "legacy graphify.required true"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true,\"required_when_enabled\":false}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && fail "required_when_enabled false should not enforce" || pass "required_when_enabled false skips enforcement"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && pass "enabled + required_when_enabled default enforces" || fail "enabled enforces"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":null}}}"
+block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
+printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "pending prompt block" || fail "pending prompt block"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":false}}}"
+block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
+printf '%s' "$block" | grep -q 'opted out' && pass "disabled prompt block" || fail "disabled prompt block"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":false}}}"
+benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" graphify)"
+[[ -n "$benefits" ]] && pass "benefits summary non-empty" || fail "benefits summary non-empty"
+
+echo "Results: ${PASS} passed, ${FAIL} failed"
+[[ "$FAIL" -eq 0 ]] || exit 1
