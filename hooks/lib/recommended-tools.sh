@@ -87,6 +87,9 @@ sb_recommended_tool_benefits() {
     graphify)
       printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.'
       ;;
+    agentmemory)
+      printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
+      ;;
     *)
       printf '%s' 'Improves SB workflow quality when enabled.'
       ;;
@@ -154,6 +157,13 @@ sb_recommended_tool_platform_pre_index_commands() {
       claude) printf '%s\n' 'graphify install --project' ;;
       codex) printf '%s\n' 'graphify install --project --platform codex' ;;
     esac
+  elif [[ "$tool_id" == "agentmemory" ]]; then
+    case "$host" in
+      codex)
+        printf '%s\n' 'codex plugin marketplace add rohitg00/agentmemory'
+        printf '%s\n' 'codex plugin add agentmemory@agentmemory'
+        ;;
+    esac
   fi
 }
 
@@ -186,6 +196,11 @@ sb_recommended_tool_platform_post_index_commands() {
       cursor) printf '%s\n' 'graphify cursor install' ;;
       claude) printf '%s\n' 'graphify claude install --project' ;;
       codex) printf '%s\n' 'graphify codex install --project' ;;
+    esac
+  elif [[ "$tool_id" == "agentmemory" ]]; then
+    case "$host" in
+      claude) printf '%s\n' 'agentmemory connect claude-code' ;;
+      codex) printf '%s\n' 'agentmemory connect codex --with-hooks' ;;
     esac
   fi
 }
@@ -220,6 +235,9 @@ sb_recommended_tool_full_install_lines() {
   cli_lines="$(sb_recommended_tool_install_commands "$config_file" "$tool_id")"
   if [[ -z "$cli_lines" && "$tool_id" == "graphify" ]]; then
     cli_lines=$'uv tool install graphifyy\npipx install graphifyy'
+  fi
+  if [[ -z "$cli_lines" && "$tool_id" == "agentmemory" ]]; then
+    cli_lines='npm install -g @agentmemory/agentmemory'
   fi
   platform_lines="$(sb_recommended_tool_platform_install_commands "$config_file" "$tool_id" "$host")"
   if [[ -n "$cli_lines" ]]; then
@@ -267,8 +285,8 @@ EOF
         local fail_reason
         fail_reason="$(sb_recommended_tool_install_failure_reason "$config_file" "$tool_id")"
         cat <<EOF
-Graphify opted in but install failed — enforcement suspended until upgrade; retry on /silver:update.
-User consent preserved (enabled_by_user=true). Hooks treat Graphify as advisory until install succeeds.
+${tool_id} opted in but install failed — enforcement suspended until upgrade; retry on /silver:update.
+User consent preserved (enabled_by_user=true). Hooks treat ${tool_id} as advisory until install succeeds.
 ${fail_reason:+Failure reason: ${fail_reason}}
 EOF
       elif [[ "$tool_id" == "graphify" ]] && declare -f sb_graphify_cli_available >/dev/null 2>&1; then
@@ -288,6 +306,26 @@ EOF
           graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
           if ! sb_graphify_index_exists "$project_root" "$config_file"; then
             printf '%s\n' "Graphify enabled — index missing. Run: graphify update . --no-cluster (expected ${graph_rel}). Hooks block substantive edits until built."
+          fi
+        fi
+      elif [[ "$tool_id" == "agentmemory" ]] && declare -f sb_agentmemory_cli_available >/dev/null 2>&1; then
+        if ! sb_agentmemory_cli_available; then
+          cat <<EOF
+agentmemory enabled but CLI missing — install before substantive work (host: ${host}):
+
+${install_lines}
+
+Then start server: nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
+Run platform connect commands above. Hooks block substantive edits until CLI, server, MCP, and export root are ready.
+EOF
+        elif ! sb_agentmemory_server_healthy "$config_file" 2>/dev/null; then
+          printf '%s\n' "agentmemory enabled — server not healthy. Start: nohup agentmemory > ~/.agentmemory/server.log 2>&1 &"
+        elif declare -f sb_agentmemory_export_exists >/dev/null 2>&1; then
+          local project_root export_rel
+          project_root="$(dirname "$config_file")"
+          export_rel="$(sb_agentmemory_export_rel_path "$config_file")"
+          if ! sb_agentmemory_export_exists "$project_root" "$config_file"; then
+            printf '%s\n' "agentmemory enabled — export root missing. Run: mkdir -p ${export_rel}/memory ${export_rel}/snapshots"
           fi
         fi
       fi

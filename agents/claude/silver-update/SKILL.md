@@ -226,3 +226,29 @@ jq '.recommended_tools.graphify.enforcement_suspended = false
 On failure, keep suspension and update `install_failure_reason`. Do not block the update.
 
 **If `enabled_by_user` is `false`:** no action needed.
+
+### Step 8b: agentmemory consent and install retry
+
+After Step 8 (Graphify), check `.silver-bullet.json` for agentmemory consent and suspension:
+
+```bash
+test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enabled_by_user // "null"' .silver-bullet.json
+test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null`:** run the same AskQuestion consent flow as `/silver:init` §1.1b.
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry install without re-asking:
+
+1. `npm install -g @agentmemory/agentmemory`
+2. Start server: `nohup agentmemory > ~/.agentmemory/server.log 2>&1 &`
+3. Pre-index (Codex): `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory`
+4. Post-index MCP connect:
+   - **Claude:** `agentmemory connect claude-code`
+   - **Codex:** `agentmemory connect codex --with-hooks`
+   - **Cursor:** merge MCP block in `$HOME/.claude/mcp.json` (see `docs/AGENTMEMORY.md`)
+5. Scaffold: `mkdir -p .agentmemory/memory .agentmemory/snapshots`
+
+On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
+
+**If `enabled_by_user` is `false`:** no action needed.
