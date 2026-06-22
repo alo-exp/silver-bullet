@@ -405,6 +405,20 @@ ${graphify_line}"
   fi
 fi
 
+# agentmemory opt-in status
+if [[ -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/agentmemory-gate.sh
+  source "$_lib_dir/agentmemory-gate.sh"
+  agentmemory_line="$(sb_agentmemory_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+  if [[ -n "$agentmemory_line" ]]; then
+    msg="${msg}
+
+---
+
+${agentmemory_line}"
+  fi
+fi
+
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0

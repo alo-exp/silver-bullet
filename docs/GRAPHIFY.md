@@ -135,3 +135,13 @@ Observed constraints:
 - `graphify extract --postgres` needs `psycopg` and a reachable database.
 - `graphify-mcp --transport http` needs the MCP extra (`graphifyy[mcp]`).
 - `graphify label` can exit successfully with placeholder labels when no backend key is available.
+
+## agentmemory Synergy
+
+When both Graphify and agentmemory are opted in:
+
+1. **Capture** — agentmemory records sessions and exports markdown to `.agentmemory/memory/` and `.agentmemory/snapshots/`.
+2. **Index** — `graphify update . --no-cluster` indexes `.agentmemory/` alongside code and docs.
+3. **Retrieve** — use `graphify query` for structural + memory context; hooks treat a fresh Graphify query as satisfying the agentmemory usage gate.
+
+See `docs/AGENTMEMORY.md` for install, MCP wiring, and git-backed auto-save bridge setup.

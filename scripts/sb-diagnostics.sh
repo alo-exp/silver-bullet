@@ -121,10 +121,17 @@ main() {
     # shellcheck source=../hooks/lib/graphify-gate.sh
     source "${REPO_ROOT}/hooks/lib/graphify-gate.sh"
   fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh" ]]; then
+    # shellcheck source=../hooks/lib/agentmemory-gate.sh
+    source "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh"
+  fi
 
   local sb_config="${REPO_ROOT}/.silver-bullet.json"
   local graphify_consent="pending"
   local graphify_suspended="false"
+  local agentmemory="no"
+  local agentmemory_consent="pending"
+  local agentmemory_suspended="false"
   if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
     graphify_consent="$(sb_recommended_tool_consent "$sb_config" "graphify")"
   fi
@@ -170,6 +177,56 @@ main() {
     fi
   fi
 
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
+    agentmemory_consent="$(sb_recommended_tool_consent "$sb_config" "agentmemory")"
+  fi
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_enforcement_suspended >/dev/null 2>&1; then
+    if sb_recommended_tool_enforcement_suspended "$sb_config" "agentmemory"; then
+      agentmemory_suspended="true"
+    fi
+  fi
+
+  if command -v agentmemory >/dev/null 2>&1; then
+    agentmemory="yes"
+    if [[ "$agentmemory_consent" == "enabled" && "$agentmemory_suspended" != "true" ]]; then
+      record pass "agentmemory-cli" "CLI available (opted in)"
+      if declare -f sb_agentmemory_server_healthy >/dev/null 2>&1; then
+        if sb_agentmemory_server_healthy "$sb_config"; then
+          record pass "agentmemory-server" "health check OK"
+        else
+          record fail "agentmemory-server" "server not healthy — start: nohup agentmemory > ~/.agentmemory/server.log 2>&1 &"
+        fi
+      fi
+      if declare -f sb_agentmemory_export_exists >/dev/null 2>&1; then
+        if sb_agentmemory_export_exists "$REPO_ROOT" "$sb_config"; then
+          record pass "agentmemory-export" ".agentmemory/ export root present"
+        else
+          record fail "agentmemory-export" "export root missing — mkdir -p .agentmemory/memory"
+        fi
+      fi
+      if declare -f sb_runtime_host >/dev/null 2>&1 && declare -f sb_agentmemory_platform_artifact_present >/dev/null 2>&1; then
+        local am_host am_artifact
+        am_host="$(sb_runtime_host)"
+        am_artifact="$(sb_agentmemory_platform_artifact_path "$REPO_ROOT" "$am_host")"
+        if sb_agentmemory_platform_artifact_present "$REPO_ROOT" "$am_host"; then
+          record pass "agentmemory-platform" "MCP wired (${am_artifact}, host=${am_host})"
+        else
+          record warn "agentmemory-platform" "MCP not wired for ${am_host} — see docs/AGENTMEMORY.md"
+        fi
+      fi
+    else
+      record pass "agentmemory-cli" "CLI available (consent: ${agentmemory_consent})"
+    fi
+  else
+    if [[ "$agentmemory_consent" == "enabled" && "$agentmemory_suspended" == "true" ]]; then
+      record warn "agentmemory" "opted in but install failed — enforcement suspended; retry on /silver:update"
+    elif [[ "$agentmemory_consent" == "enabled" ]]; then
+      record fail "agentmemory-cli" "not on PATH — user opted in; install: npm install -g @agentmemory/agentmemory"
+    else
+      record warn "agentmemory" "not on PATH — session capture unavailable (consent: ${agentmemory_consent})"
+    fi
+  fi
+
   if [[ -f "${REPO_ROOT}/.codex-plugin/plugin.json" ]]; then
     sb_version="$(jq -r '.version // "unknown"' "${REPO_ROOT}/.codex-plugin/plugin.json" 2>/dev/null || echo unknown)"
   elif [[ -f "${REPO_ROOT}/plugins/silver-bullet/.codex-plugin/plugin.json" ]]; then
@@ -192,6 +249,7 @@ main() {
       --arg jq_ok "$jq_ok" \
       --arg hooks "$hooks_present" \
       --arg graphify "$graphify" \
+      --arg agentmemory "$agentmemory" \
       --arg version "$sb_version" \
       --arg tier "$capability_tier" \
       --arg runtime_home "$runtime_home" \
@@ -199,7 +257,7 @@ main() {
       --argjson fail "$FAIL" \
       --argjson warn "$WARN" \
       --argjson pass "$PASS" \
-      '{jq:$jq_ok, hooks:$hooks, graphify:$graphify, package_version:$version, capability_tier:$tier, runtime_home:$runtime_home, state_dir:$state_dir, passed:$pass, failures:$fail, warnings:$warn}'
+      '{jq:$jq_ok, hooks:$hooks, graphify:$graphify, agentmemory:$agentmemory, package_version:$version, capability_tier:$tier, runtime_home:$runtime_home, state_dir:$state_dir, passed:$pass, failures:$fail, warnings:$warn}'
     exit "$([[ "$FAIL" -gt 0 ]] && echo 1 || echo 0)"
   fi
 
