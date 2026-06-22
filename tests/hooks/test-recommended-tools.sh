@@ -75,7 +75,10 @@ printf '%s' "$claude_cmds" | grep -q 'graphify claude install --project' && pass
 [[ "$(SILVER_BULLET_RUNTIME=cursor sb_runtime_host)" == "cursor" ]] && pass "sb_runtime_host cursor" || fail "sb_runtime_host cursor"
 [[ "$(SILVER_BULLET_RUNTIME=codex sb_runtime_host)" == "codex" ]] && pass "sb_runtime_host codex" || fail "sb_runtime_host codex"
 [[ "$(SILVER_BULLET_RUNTIME=claude sb_runtime_host)" == "claude" ]] && pass "sb_runtime_host claude" || fail "sb_runtime_host claude"
-[[ "$( ( unset SILVER_BULLET_RUNTIME; CURSOR_PLUGIN_ROOT=/x/.cursor/plugins sb_runtime_host ) )" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
+host="$(
+  env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE     CURSOR_PLUGIN_ROOT=/x/.cursor/plugins bash -c "source '$LIB'; sb_runtime_host"
+)"
+[[ "$host" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
 
 full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
 printf '%s' "$full" | grep -q 'uv tool install graphifyy' && pass "full install includes CLI" || fail "full install includes CLI"
