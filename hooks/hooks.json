@@ -120,6 +120,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/graphify-gate.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agentmemory-gate.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -280,6 +286,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-graphify-query.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh\"",
             "async": false,
             "timeout": 10
           }
