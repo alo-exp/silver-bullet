@@ -176,6 +176,7 @@ sb_agentmemory_graphify_synergy_active() {
   if ! declare -f sb_graphify_query_is_fresh >/dev/null 2>&1; then
     local _gf_lib
     _gf_lib="$(dirname "${BASH_SOURCE[0]}")/graphify-gate.sh"
+    # shellcheck disable=SC1090
     [[ -f "$_gf_lib" ]] && source "$_gf_lib"
   fi
   if ! declare -f sb_graphify_required >/dev/null 2>&1; then
