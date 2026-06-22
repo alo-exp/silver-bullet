@@ -323,7 +323,7 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 |------|-----------|------------|
 | `claude` | *(none)* | `agentmemory connect claude-code` |
 | `codex` | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
-| `cursor` | *(none)* | Merge MCP into `$HOME/.claude/mcp.json` (see `docs/AGENTMEMORY.md`) |
+| `cursor` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (Cursor MCP config) |
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
 

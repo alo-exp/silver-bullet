@@ -247,7 +247,7 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement
 4. Post-index MCP connect:
    - **Claude:** `agentmemory connect claude-code`
    - **Codex:** `agentmemory connect codex --with-hooks`
-   - **Cursor:** merge MCP block in `$HOME/.codex/mcp.json` (see `docs/AGENTMEMORY.md`)
+   - **Cursor:** merge MCP block per `docs/AGENTMEMORY.md` (Cursor MCP config)
 5. Scaffold: `mkdir -p .agentmemory/memory .agentmemory/snapshots`
 
 On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
