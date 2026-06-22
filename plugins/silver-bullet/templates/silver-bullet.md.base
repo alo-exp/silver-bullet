@@ -344,6 +344,12 @@ lifts hook blocks until the next init/update retry succeeds.
 
 See `docs/GRAPHIFY.md` for install commands and query patterns.
 
+**agentmemory (opt-in, separate consent):** SB also recommends agentmemory for session capture
+and git-backed memory export (`recommended_tools.agentmemory.enabled_by_user`). When opted in and
+not suspended, hooks require CLI, running server, MCP wiring, and `.agentmemory/` export root.
+When both agentmemory and Graphify are enabled: **save via agentmemory, retrieve via Graphify**.
+See `docs/AGENTMEMORY.md`.
+
 ---
 
 ### 2h. SB Orchestrated Workflows

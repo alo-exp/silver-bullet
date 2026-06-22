@@ -106,5 +106,21 @@ assert_grep "GRAPHIFY.md platform table" \
   "$REPO_ROOT/docs/GRAPHIFY.md" \
   "graphify cursor install"
 
+am_template_null="$(jq -r '.recommended_tools.agentmemory.enabled_by_user' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$am_template_null" == "null" ]] && pass "template agentmemory enabled_by_user is null" || fail "template agentmemory enabled_by_user is null"
+
+assert_grep "silver-init agentmemory opt-in section" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "### 1.1b agentmemory"
+
+assert_grep "silver-update agentmemory retry" \
+  "$REPO_ROOT/skills/silver-update/SKILL.md" \
+  "Step 8b: agentmemory"
+
+assert_grep "AGENTMEMORY.md exists" \
+  "$REPO_ROOT/docs/AGENTMEMORY.md" \
+  "Graphify Synergy"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
