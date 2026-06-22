@@ -74,7 +74,7 @@ Then use the host-supported context compaction mechanism before proceeding.
    ```
    test -f .silver-bullet.json && echo "EXISTS" || echo "NOT_FOUND"
    ```
-2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 (except §1.1a Graphify consent/retry) and Phase 2. Run §1.1a, then go directly to Phase 3 in **update mode**.
+2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 (except §1.1a Graphify and §1.1b agentmemory consent/retry) and Phase 2. Run §1.1a, §1.1b, then go directly to Phase 3 in **update mode**.
 3. If `NOT_FOUND` → this is a **fresh setup**. Proceed to Phase 1.
 
 ---
@@ -260,7 +260,91 @@ If consent is already `true` or `false` in an existing config, respect it withou
 
 When `true`, not suspended, and CLI missing: surface install instructions (Step 3).
 
-### 1.1b Install diagnostics (advisory)
+### 1.1b agentmemory (recommended tool — opt-in)
+
+agentmemory powers SB session capture and git-backed memory export. It pairs with Graphify:
+**save via agentmemory, retrieve via Graphify**. SB asks for explicit permission before
+enabling mandatory enforcement. Consent is stored in `.silver-bullet.json` under
+`recommended_tools.agentmemory.enabled_by_user` (`null` = pending, `true` = opted in, `false` = opted out).
+
+**Benefits (present concisely when asking):**
+- Session capture with proactive context injection
+- Git-backed memory export to `.agentmemory/` for team sharing
+- Synergy with Graphify: temporal capture + structural retrieval
+
+#### Step 1 — Read current consent
+
+```bash
+jq -r '.recommended_tools.agentmemory.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
+jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false
+```
+
+Store as `agentmemory_consent` and `agentmemory_suspended`.
+
+#### Step 2 — Ask when consent is pending
+
+If `agentmemory_consent` is `null`, ask the user (do **not** auto-install):
+
+- Question: "Silver Bullet recommends **agentmemory** for session capture and git-backed memory.\n\nBenefits: proactive context injection; `.agentmemory/` export for team sharing; pairs with Graphify for retrieval.\n\nEnable agentmemory for this project? Hooks will require CLI, server, and MCP wiring when enabled."
+- Options:
+  - "A. Yes — enable agentmemory (install + mandatory enforcement)"
+  - "B. No — skip agentmemory"
+
+If **A**: set `agentmemory_consent=true`. If **B**: set `agentmemory_consent=false`.
+
+#### Step 3 — Install and wire (when opted in or retrying suspended install)
+
+Run when `agentmemory_consent` is `true` AND (fresh opt-in OR `agentmemory_suspended` is `true`).
+
+**Step 3a — CLI:**
+```bash
+npm install -g @agentmemory/agentmemory
+command -v agentmemory
+```
+
+**Step 3b — Server config and start:**
+```bash
+mkdir -p ~/.agentmemory
+# Write cost-minimized ~/.agentmemory/.env per docs/AGENTMEMORY.md
+nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
+curl -sf http://localhost:3111/agentmemory/health
+```
+
+**Step 3c — Project export root:**
+```bash
+mkdir -p .agentmemory/memory .agentmemory/snapshots
+```
+
+Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
+
+**Step 3d — Platform MCP wiring** (detect `SB_HOST` same as Graphify):
+
+| Host | Pre-index | Post-index |
+|------|-----------|------------|
+| `claude` | *(none)* | `agentmemory connect claude-code` |
+| `codex` | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
+| `cursor` | *(none)* | Merge MCP into `$HOME/.claude/mcp.json` (see `docs/AGENTMEMORY.md`) |
+
+Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
+
+**On full success**, clear suspension:
+```bash
+jq '.recommended_tools.agentmemory.enforcement_suspended = false
+  | .recommended_tools.agentmemory.install_status = "ok"
+  | .recommended_tools.agentmemory.install_failure_reason = null' .silver-bullet.json
+```
+
+**On failure** — suspend enforcement, preserve consent (same pattern as Graphify Step 3).
+
+#### Step 4 — Opted out
+
+If `agentmemory_consent` is `false`: output "agentmemory opted out — enforcements disabled." Continue init.
+
+#### Step 5 — Already consented
+
+Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspended; surface install when `true` and CLI missing.
+
+### 1.1c Install diagnostics (advisory)
 
 After core dependencies are confirmed, run the SB diagnostics probe when the
 script is available in the plugin or repo:
@@ -273,7 +357,7 @@ bash "${PLUGIN_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || \
 Surface WARN/FAIL lines to the user. Capability tier and hook presence are
 documented in `docs/RUNTIME-COMPATIBILITY.md`.
 
-### 1.1c Host runtime install (advisory)
+### 1.1d Host runtime install (advisory)
 
 Confirm Silver Bullet is installed for the active host before project init:
 
@@ -692,7 +776,7 @@ This creates `.planning/interface/STATE.md` from
 it thereafter.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
-- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, always write `enabled_by_user` from the user's Phase 1.1a choice — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields (`enforcement_suspended`, `install_status`, `install_failure_reason`) from Phase 1.1a Step 3 outcome when applicable.
+- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify` and `recommended_tools.agentmemory`, always write `enabled_by_user` from the user's Phase 1.1a/1.1b choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1a/1.1b Step 3 outcomes when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.

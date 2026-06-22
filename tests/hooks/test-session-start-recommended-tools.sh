@@ -86,7 +86,34 @@ printf '%s' "$ctx" | grep -q 'enforcement suspended' && pass "suspended opt-in i
 
 # Fresh init template always defaults enabled_by_user to null (pending)
 template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
-[[ "$template_null" == "null" ]] && pass "fresh init template defaults to null pending" || fail "fresh init template defaults to null pending"
+[[ "$template_null" == "null" ]] && pass "fresh init template defaults graphify to null pending" || fail "fresh init template defaults graphify to null pending"
+
+am_template_null="$(jq -r '.recommended_tools.agentmemory.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$am_template_null" == "null" ]] && pass "fresh init template defaults agentmemory to null pending" || fail "fresh init template defaults agentmemory to null pending"
+
+write_consent_agentmemory() {
+  local val="$1"
+  cat >"$TMP/.silver-bullet.json" <<EOF
+{
+  "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
+  "recommended_tools": {
+    "graphify": { "enabled_by_user": false },
+    "agentmemory": { "enabled_by_user": ${val} }
+  },
+  "skills": { "required_planning": ["silver-quality-gates"] },
+  "state": {
+    "state_file": "${STATE_FILE}",
+    "trivial_file": "${TRIVIAL_FILE}"
+  }
+}
+EOF
+}
+
+write_consent_agentmemory null
+out="$(run_session)"
+ctx="$(printf '%s' "$out" | extract_ctx)"
+printf '%s' "$ctx" | grep -q 'agentmemory' && pass "agentmemory pending consent injects prompt" || fail "agentmemory pending consent injects prompt"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

@@ -89,5 +89,14 @@ fallback="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_install_com
 printf '%s' "$fallback" | grep -q 'graphify install --project --platform codex' && pass "codex fallback platform install" || fail "codex fallback platform install"
 printf '%s' "$fallback" | grep -q 'graphify codex install --project' && pass "codex fallback always-on install" || fail "codex fallback always-on install"
 
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":null}}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" agentmemory)" == "pending" ]] && pass "agentmemory null consent -> pending" || fail "agentmemory null consent"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" agentmemory && pass "agentmemory enabled enforces" || fail "agentmemory enabled enforces"
+
+am_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"
+printf '%s' "$am_benefits" | grep -q 'Graphify' && pass "agentmemory benefits from config" || fail "agentmemory benefits from config"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
