@@ -177,7 +177,7 @@
       "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
-      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query"
     }
   },
   "hooks": {
@@ -196,8 +196,8 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
-    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
+    "state_file": "$HOME/.codex/.silver-bullet/state",
+    "trivial_file": "$HOME/.codex/.silver-bullet/trivial"
   },
   "issue_tracker": "local",
   "release": {
@@ -205,7 +205,7 @@
     "profile": "generic",
     "require_plugin_runtime_matrix": true,
     "require_pre_release_quality_gate": true,
-    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+    "quality_gate_state_file": "$HOME/.codex/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {
