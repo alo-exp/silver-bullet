@@ -258,6 +258,21 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   else
     rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
   fi
+  if [[ -f "$_lib_dir/agentmemory-gate.sh" ]]; then
+    # shellcheck source=lib/agentmemory-gate.sh
+    source "$_lib_dir/agentmemory-gate.sh"
+    _am_cfg=""
+    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+      _am_cfg="${sb_project_root}/.silver-bullet.json"
+    fi
+    if [[ -n "$_am_cfg" ]]; then
+      sb_agentmemory_clear_usage_state "$_am_cfg" 2>/dev/null || true
+    else
+      rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
+    fi
+  else
+    rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
+  fi
   sb_guard_nofollow "$branch_file"
   printf '%s\n' "$current_branch" > "$branch_file"
   if [[ ! -s "$branch_file" ]]; then
@@ -456,16 +471,22 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
     # shellcheck source=lib/graphify-gate.sh
     source "$_lib_dir/graphify-gate.sh"
   fi
+  if [[ -f "$_lib_dir/agentmemory-gate.sh" ]]; then
+    # shellcheck source=lib/agentmemory-gate.sh
+    source "$_lib_dir/agentmemory-gate.sh"
+  fi
   _rt_cfg="${sb_project_root}/.silver-bullet.json"
   if [[ -f "$_rt_cfg" ]]; then
-    _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "graphify" 2>/dev/null || true)"
-    if [[ -n "$_rt_ctx" ]]; then
-      combined="${combined:+$combined
+    for _rt_tool in graphify agentmemory; do
+      _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "$_rt_tool" 2>/dev/null || true)"
+      if [[ -n "$_rt_ctx" ]]; then
+        combined="${combined:+$combined
 
 ---
 
 }${_rt_ctx}"
-    fi
+      fi
+    done
   fi
 fi
 

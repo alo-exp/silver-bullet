@@ -178,6 +178,42 @@
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+    },
+    "agentmemory": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "npm install -g @agentmemory/agentmemory"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect claude-code"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "codex plugin marketplace add rohitg00/agentmemory",
+            "codex plugin add agentmemory@agentmemory"
+          ],
+          "post_index": [
+            "agentmemory connect codex --with-hooks"
+          ]
+        },
+        "cursor": {
+          "pre_index": [],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
+      "health_url": "http://localhost:3111/agentmemory/health",
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
+      "export_root": ".agentmemory"
     }
   },
   "hooks": {
