@@ -156,8 +156,10 @@ export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST"
 
 setup
 write_cfg true false
+install_mock_graphify
+touch "${TMPDIR_TEST}/graphify-out/graph.json"
 out="$(run_edit)"
-assert_allow "sb_initiated false bypasses gate" "$out"
+assert_deny "config present enforces gate regardless of sb_initiated" "$out"
 
 setup
 write_cfg false true
