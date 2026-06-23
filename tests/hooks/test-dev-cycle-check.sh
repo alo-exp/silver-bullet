@@ -6,6 +6,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/dev-cycle-check.sh"
 WORKFLOWS_SCRIPT="$REPO_ROOT/scripts/workflows.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"

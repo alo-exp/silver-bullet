@@ -4,6 +4,14 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/prompt-reminder.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"

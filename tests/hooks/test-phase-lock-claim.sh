@@ -13,6 +13,18 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK_HELPERS="$(cd "$(dirname "$0")" && pwd)/helpers/common.sh"
+if [[ -f "$HOOK_HELPERS" ]]; then
+  # shellcheck source=helpers/common.sh
+  source "$HOOK_HELPERS"
+fi
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -40,6 +52,7 @@ trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
+  hook_test_stamp_sb_scaffold "$TMPDIR_TEST"
   cd "$TMPDIR_TEST"
   git init -q
   git config user.email t@t

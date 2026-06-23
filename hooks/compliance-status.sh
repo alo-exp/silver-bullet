@@ -36,6 +36,10 @@ if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1091
   source "$_lib_dir/required-skills.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
 DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
 DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
 
@@ -131,6 +135,12 @@ fi
 
 # No config → silent exit (project not set up)
 [[ -z "$config_file" ]] && exit 0
+
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || exit 0
+fi
 
 # --- Read config values (single jq call for performance) ---
 config_vals=$(jq -r '[

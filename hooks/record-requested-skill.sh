@@ -69,6 +69,18 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 
+if [[ -n "$config_file" && -f "$config_file" ]]; then
+  if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+    # shellcheck source=lib/sb-project-gate.sh
+    source "$_lib_dir/sb-project-gate.sh"
+  fi
+  if declare -f sb_project_active >/dev/null 2>&1; then
+    sb_project_active "$config_file" || finish_noop
+  elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+    sb_project_is_initiated "$config_file" || finish_noop
+  fi
+fi
+
 # ── Resolve state file path ─────────────────────────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true

@@ -28,6 +28,11 @@ fi
 if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
   sb_jq_enforcement_warn "phase-lock-release"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
 
 # ── Source nofollow-guard ───────────────────────────────────────────────────
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then

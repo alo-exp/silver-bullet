@@ -75,6 +75,16 @@ if [[ -z "$project_root" ]]; then
 fi
 [[ -z "$project_root" ]] && exit 0
 
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$project_root/.silver-bullet.json" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$project_root/.silver-bullet.json" || exit 0
+fi
+
 # Allow sessions dir override for testing
 sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
 mkdir -p "$sessions_dir"

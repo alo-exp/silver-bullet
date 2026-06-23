@@ -4,6 +4,20 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
+HOOK_HELPERS="$(cd "$(dirname "$0")" && pwd)/helpers/common.sh"
+if [[ -f "$HOOK_HELPERS" ]]; then
+  # shellcheck source=helpers/common.sh
+  source "$HOOK_HELPERS"
+fi
+
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/pr-traceability.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0
@@ -27,6 +41,7 @@ trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
+  hook_test_stamp_sb_scaffold "$TMPDIR_TEST"
   # Remove any leftover spec-session from prior tests
   rm -f "$SPEC_SESSION_FILE"
 }

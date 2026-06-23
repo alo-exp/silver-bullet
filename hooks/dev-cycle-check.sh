@@ -366,6 +366,14 @@ To reset workflow state intentionally, run in your terminal:
     done
   fi
 
+  if [[ -n "$config_file" ]]; then
+    if declare -f sb_project_active >/dev/null 2>&1; then
+      sb_project_active "$config_file" || exit 0
+    elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+      sb_project_is_initiated "$config_file" || exit 0
+    fi
+  fi
+
   # --- Read config values with defaults ---
   src_pattern="/src/"
   src_exclude_pattern='__tests__|\.test\.'
