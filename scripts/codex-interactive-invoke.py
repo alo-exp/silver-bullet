@@ -245,6 +245,15 @@ def main() -> int:
                     text_buffer = ""
                     continue
 
+                if (
+                    "choosehowyou'dlike" in compact_buffer
+                    or "choosehowyouwouldlike" in compact_buffer
+                    or "trynewmodel" in compact_buffer
+                ) and "useexistingmodel" in compact_buffer:
+                    os.write(master_fd, b"\x1b[B\r")
+                    text_buffer = ""
+                    continue
+
                 if "doyoutrustthecontentsofthisdirectory?" in compact_buffer:
                     if auto_trust_hooks == "1":
                         os.write(master_fd, b"\r")

@@ -189,6 +189,67 @@ agent_invoke() {
     printf '%s' "$(cat "$prompt_seed_file")" | bash "${SB_ROOT}/hooks/record-requested-skill.sh" >/dev/null 2>&1 || true
   fi
 
+  if [[ "${SB_LIVE_CODEX_USE_EXEC:-0}" == "1" ]]; then
+    local -a exec_args=()
+    exec_args=(
+      exec
+      --cd "$WORK_DIR"
+      --sandbox danger-full-access
+      --color never
+    )
+    if [[ "$mode" == "permissive" ]]; then
+      exec_args+=(--dangerously-bypass-approvals-and-sandbox)
+    fi
+    if [[ "$hook_trust_bypass" == "1" ]]; then
+      exec_args+=(--dangerously-bypass-hook-trust)
+    fi
+    if [[ -n "$codex_model" ]]; then
+      exec_args+=(--model "$codex_model")
+    fi
+    if [[ -n "$codex_model_provider" ]]; then
+      exec_args+=(--config "model_provider=${codex_model_provider}")
+    fi
+    if [[ -n "$codex_reasoning_effort" ]]; then
+      exec_args+=(--config "model_reasoning_effort=${codex_reasoning_effort}")
+    fi
+    exec_args+=("$codex_prompt")
+    output="$(
+      cd "$WORK_DIR" && \
+        CODEX_EXEC_CLI="$cli" \
+        CODEX_EXEC_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}" \
+        python3 - "${exec_args[@]}" <<'PY'
+import os
+import subprocess
+import sys
+
+cli = os.environ["CODEX_EXEC_CLI"]
+timeout = int(os.environ.get("CODEX_EXEC_TIMEOUT") or "300")
+args = [cli, *sys.argv[1:]]
+
+try:
+    result = subprocess.run(
+        args,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout,
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    sys.exit(result.returncode)
+except subprocess.TimeoutExpired as exc:
+    if exc.stdout:
+        sys.stdout.write(exc.stdout if isinstance(exc.stdout, str) else exc.stdout.decode(errors="replace"))
+    sys.stdout.write(f"\nERROR: timed out waiting for codex exec after {timeout}s\n")
+    sys.exit(124)
+PY
+    )" || true
+    rm -f -- "$last_message_file" "$prompt_file" "$prompt_seed_file" "$transcript_file"
+    printf '%s' "$output"
+    return 0
+  fi
+
   output=$(
     cd "$SB_ROOT" && \
       TERM="xterm-256color" \

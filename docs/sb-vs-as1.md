@@ -61,7 +61,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
 | Backlog/deferred work | `silver:add`, `silver:remove`, domain-audit backlog decisions | GitHub/local issue ID | Superset when configured with GitHub project |
 | Incident workflow | `silver:incident`, `silver:forensics`, `silver:canary` | `.planning/INCIDENT.md` | Covered by new SB route |
 | Provider/task benchmark | `silver:benchmark` | `.planning/BENCHMARK.md` | Covered by new SB route |
-| Agent self-quality benchmark | `silver:benchmark`, `progressive-review-loop` | BENCHMARK / review loop evidence | Covered |
+| Agent self-quality benchmark | `silver:benchmark`, `silver:review-fix-ladder` | BENCHMARK / review loop evidence | Covered |
 | Knowledge store/project memory | docs/knowledge, docs/learnings, Graphify retrieval, session logs | monthly knowledge/learnings and graph evidence | Superset: SB separates project knowledge from portable learnings |
 | Session recovery | `silver:handoff`, workflow tracker, session logs, `silver:forensics` | handoff and `.planning/workflows/` state | Superset: recovery tied to workflow evidence |
 | Cross-provider adversarial review | `silver:review`, optional external enrichment, `silver:benchmark` | REVIEW / BENCHMARK | Superset when optional providers are installed; SB review remains authoritative |

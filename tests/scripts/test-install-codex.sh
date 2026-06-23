@@ -538,7 +538,7 @@ BIN_DIR="$TMP/bin"
 mkdir -p \
   "$HOME_DIR/.codex" \
   "$HOME_DIR/.codex/skills/silver-feature" \
-  "$HOME_DIR/.codex/skills/progressive-review-loop" \
+  "$HOME_DIR/.codex/skills/silver-review-fix-ladder" \
   "$HOME_DIR/.codex/skills/unrelated-native" \
   "$HOME_DIR/.codex/skills/writing-plans" \
   "$HOME_DIR/.agents/skills/silver-feature" \
@@ -564,10 +564,10 @@ title: "Silver Bullet: Silver: Feature"
 ---
 EOF
 
-cat > "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md" <<'EOF'
+cat > "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md" <<'EOF'
 ---
-name: progressive-review-loop
-title: External Progressive Review Loop
+name: silver-review-fix-ladder
+title: External Review Fix Ladder
 ---
 EOF
 
@@ -1029,9 +1029,9 @@ assert_contains "Codex native SB mirror uses bare silver namespace title" "title
 assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
 assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_file_exists "Codex native SB mirror exposes progressive review loop helper" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
-assert_file_exists "Codex native SB mirror marks progressive review loop as managed" "$HOME_DIR/.codex/skills/progressive-review-loop/.silver-bullet-managed"
-assert_contains "Codex native progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$HOME_DIR/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes review fix ladder helper" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
+assert_file_exists "Codex native SB mirror marks review fix ladder as managed" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/.silver-bullet-managed"
+assert_contains "Codex native review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes verify-tests gate" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
 assert_file_exists "Codex native SB mirror marks verify-tests gate as managed" "$HOME_DIR/.codex/skills/verify-tests/.silver-bullet-managed"
 assert_contains "Codex native verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
@@ -1186,10 +1186,10 @@ assert_file_exists "SB ensure-docs skill source synced into source bundle" "$(sb
 assert_file_exists "SB feature skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-feature)"
 assert_file_exists "SB router skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver)"
 assert_file_exists "SB handoff skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-handoff)"
-assert_file_exists "Progressive review loop skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" progressive-review-loop)"
-assert_file_exists "Installed progressive review loop skill source synced" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" progressive-review-loop)"
-assert_file_exists "Current cache progressive review loop skill source synced" "$(sb_internal_skill "$FAKE_CACHE_ROOT" progressive-review-loop)"
-assert_file_exists "Current alias progressive review loop skill source synced" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" progressive-review-loop)"
+assert_file_exists "Review fix ladder skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
+assert_file_exists "Installed review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-review-fix-ladder)"
+assert_file_exists "Current cache review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_CACHE_ROOT" silver-review-fix-ladder)"
+assert_file_exists "Current alias review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" silver-review-fix-ladder)"
 assert_not_symlink "SB skill-source surface is materialized in the source bundle" "$REPO_ROOT/plugins/silver-bullet/skill-source"
 assert_not_symlink "SB skill-source surface is materialized in the marketplace snapshot" "$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet/skill-source"
 assert_not_symlink "Installed SB skill-source surface is materialized in the package root" "$FAKE_SB_PACKAGE_ROOT/skill-source"
@@ -1237,8 +1237,8 @@ assert_contains "SB ensure-docs skill avoids placeholder doc keys" "using real g
 assert_contains "SB feature skill uses silver prefix" "name: \"silver:feature\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-feature)"
 assert_contains "SB router skill uses silver name" "name: silver" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver)"
 assert_contains "SB handoff skill uses silver prefix" "name: \"silver:handoff\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-handoff)"
-assert_contains "Progressive review loop keeps canonical skill name in source bundle" "name: progressive-review-loop" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" progressive-review-loop)"
-assert_contains "Progressive review loop picker title uses Silver prefix in source bundle" "title: \"Silver: Progressive Review Loop\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" progressive-review-loop)"
+assert_contains "Review fix ladder keeps canonical skill name in source bundle" "name: \"silver:review-fix-ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
+assert_contains "Review fix ladder picker title uses Silver prefix in source bundle" "title: \"Review Fix Ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
 assert_contains "TDD skill hidden from picker in source bundle" "user-invocable: false" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
 assert_contains "TDD skill is SB-owned in source bundle" "SB owns this TDD" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
 assert_not_contains "TDD skill does not delegate to Superpowers in source bundle" "superpowers:test-driven-development" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
@@ -1446,13 +1446,13 @@ assert_no_packaged_skill_md "public-release cache contains no picker-discoverabl
 assert_command_succeeds "public-release cache alias created" test -L "$PUBLIC_STALE_ALIAS"
 assert_file_absent "public-release cache alias does not expose plugin picker skills surface" "$PUBLIC_STALE_ALIAS/skills"
 assert_file_exists "public-release cache alias exposes internal feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" silver-feature)"
-assert_file_exists "public-release cache alias exposes internal progressive review loop skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" progressive-review-loop)"
+assert_file_exists "public-release cache alias exposes internal review fix ladder skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" silver-review-fix-ladder)"
 assert_file_exists "public-release cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" modularity)"
 assert_file_exists "public-release cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" testability)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
 assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
-assert_file_exists "public-release native SB mirror exposes progressive review loop helper" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
-assert_contains "public-release progressive review loop uses Silver picker prefix" "title: \"Silver: Progressive Review Loop\"" "$PUBLIC_STALE_HOME/.codex/skills/progressive-review-loop/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes review fix ladder helper" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
+assert_contains "public-release review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes verify-tests gate" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
 assert_contains "public-release verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes security gate" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"

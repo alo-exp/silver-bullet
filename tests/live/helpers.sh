@@ -15,6 +15,7 @@ TEST_RUN_ID="$$"
 if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
   case "${SB_LIVE_AGENT:-${SB_LIVE_RUNTIME:-claude}}" in
     kay|codex) SILVER_BULLET_RUNTIME="codex" ;;
+    cursor) SILVER_BULLET_RUNTIME="cursor" ;;
     *) SILVER_BULLET_RUNTIME="claude" ;;
   esac
 fi
@@ -43,6 +44,11 @@ case "$LIVE_AGENT" in
   kay)
     # shellcheck source=tests/live/agents/kay/agent.sh
     source "$AGENT_DIR/kay/agent.sh"
+    ;;
+  cursor)
+    SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-cursor}"
+    # shellcheck source=tests/live/agents/cursor/agent.sh
+    source "$AGENT_DIR/cursor/agent.sh"
     ;;
   *)
     printf 'ERROR: unsupported live agent: %s\n' "$LIVE_AGENT" >&2

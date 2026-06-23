@@ -412,6 +412,15 @@ seed_native_codex_cli_shims() {
     latest_dir="$(find "${CODEX_HOME}/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1 || true)"
     target_path="${latest_dir}/scripts/silver-bullet"
   fi
+  if [[ ! -f "$target_path" ]]; then
+    target_path="${CODEX_HOME}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet"
+  fi
+  if [[ ! -f "$target_path" ]]; then
+    target_path="${SB_ROOT}/plugins/silver-bullet/scripts/silver-bullet"
+  fi
+  if [[ ! -f "$target_path" ]]; then
+    target_path="${SB_ROOT}/scripts/silver-bullet"
+  fi
 
   [[ -f "$target_path" ]] || return 0
 
@@ -524,6 +533,7 @@ PY
     *) export PATH="${CODEX_HOME}/bin:${PATH:-}" ;;
   esac
   seed_native_codex_runtime_config
+  mkdir -p "$isolated_command_cache_root"
   export SB_LIVE_COMMAND_VERSION_BASE="${SB_LIVE_COMMAND_VERSION_BASE:-$(mktemp -d "${isolated_command_cache_root}/sb-live-version.XXXXXX")}"
   export SB_LIVE_COMMAND_VERSION_BASE="$(normalize_codex_path "$SB_LIVE_COMMAND_VERSION_BASE")"
   export SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT="${SB_LIVE_COMMAND_PACKAGE_VERSION_ROOT:-$SB_LIVE_COMMAND_VERSION_BASE}"
