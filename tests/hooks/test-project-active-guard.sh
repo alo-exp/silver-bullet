@@ -92,12 +92,13 @@ assert_has_enforcement_context() {
 
 run_session_start() {
   local workdir="$1"
+  local hook="${REPO_ROOT}/hooks/session-start"
   (
     cd "$workdir" || exit 1
     SILVER_BULLET_SESSION_SOURCE=startup \
       SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state-init" \
       SILVER_BULLET_BRANCH_FILE="$SB_RUNTIME_STATE_DIR/branch-init" \
-      bash "$SESSION_HOOK" 2>/dev/null <<< '{"source":"startup"}'
+      bash "$hook" 2>/dev/null <<< '{"source":"startup"}'
   ) || true
 }
 
@@ -113,9 +114,20 @@ setup_repo() {
   if [[ "$with_config" == "1" ]]; then
     local cv
     cv="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
-    jq -n --arg cv "$cv" \
-      '{config_version:$cv, project:{src_pattern:"/src/",active_workflow:"full-dev-cycle"}, skills:{required_planning:["silver-quality-gates"], required_deploy:["silver-quality-gates"]}, state:{state_file:"'"$SB_RUNTIME_STATE_DIR/state"'", trivial_file:"'"$SB_RUNTIME_STATE_DIR/trivial"'"}}' \
-      >"$WORK/.silver-bullet.json"
+    cat >"$WORK/.silver-bullet.json" <<EOF
+{
+  "config_version": "${cv}",
+  "project": { "src_pattern": "/src/", "active_workflow": "full-dev-cycle" },
+  "skills": {
+    "required_planning": ["silver-quality-gates"],
+    "required_deploy": ["silver-quality-gates"]
+  },
+  "state": {
+    "state_file": "${SB_RUNTIME_STATE_DIR}/state",
+    "trivial_file": "${SB_RUNTIME_STATE_DIR}/trivial"
+  }
+}
+EOF
   fi
 }
 
