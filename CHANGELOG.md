@@ -2,7 +2,16 @@
 
 ## [0.47.1] — 2026-06-24
 
-Hook activation guard for non-initiated projects and sentinel manifest fix.
+Hook activation guard for non-initiated projects, sentinel manifest fix, and opt-in agentmemory with Graphify synergy.
+
+## Features
+- `feat(recommended-tools): add opt-in agentmemory with Graphify synergy` (`06b621aa`, `5f996695`) — explicit consent via `recommended_tools.agentmemory` in `.silver-bullet.json`; **save via agentmemory, retrieve via Graphify** when both tools are enabled
+- New hooks: `hooks/agentmemory-gate.sh`, `hooks/record-agentmemory-usage.sh`, shared `hooks/lib/agentmemory-gate.sh` — CLI, server, MCP, and export-root gates when opted in
+- `/silver:init` (§1.1b) and `/silver:update` (Step 8b) consent, install, and enforcement-suspend retry flows
+- Follow-ups: `fix(skills): drop host-specific paths from agentmemory init/update copy` (`ed5ae8ff`); `fix(hooks): silence ShellCheck SC1090 on graphify lazy source` (`925577b9`); `fix(gitignore): un-ignore agentmemory memory files` (`141afb3b`); `chore(setup): record agentmemory/graphify stack` (`b42e49d1`); `test(scripts): tolerate sb-diagnostics non-zero exit` (`ddc09e24`)
+
+## Documentation
+- `docs/AGENTMEMORY.md` — opt-in policy, local setup, hook enforcement, and Graphify pairing
 
 ## Bug Fixes
 - `fix(hooks): skip enforcement when SB not initiated in project` (`8ca25258`) — hooks only engage when `.silver-bullet.json` and `silver-bullet.md` exist; non-initiated workspaces no longer receive enforcement
