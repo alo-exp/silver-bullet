@@ -71,6 +71,7 @@ sync_plugin_tree_from_checkout() {
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
   if [[ -d "${source_root}/agents/cursor" ]]; then
+    mkdir -p "${dest}/agents/cursor"
     rsync -a --delete "${source_root}/agents/cursor/" "${dest}/agents/cursor/"
   fi
   python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
