@@ -37,7 +37,7 @@ if ! grep -q 'silver-bullet' "${CURSOR_HOME}/hooks.json"; then
 fi
 
 printf '[cursor-smoke] Running sb-diagnostics (cursor path)\n'
-SILVER_BULLET_RUNTIME=cursor HOME="$HOME" bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null
+SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=cursor HOME="$HOME" bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null
 
 printf '[cursor-smoke] Running cursor hook unit tests\n'
 for test_script in \
