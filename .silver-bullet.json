@@ -170,5 +170,81 @@
     "debug": false
   },
   "issue_tracker": "github",
-  "sb_enforcement_tier": 2
+  "sb_enforcement_tier": 2,
+  "recommended_tools": {
+    "graphify": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": "installed",
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "uv tool install graphifyy",
+        "pipx install graphifyy"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "graphify install --project"
+          ],
+          "post_index": [
+            "graphify claude install --project"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "graphify install --project --platform codex"
+          ],
+          "post_index": [
+            "graphify codex install --project"
+          ]
+        },
+        "cursor": {
+          "post_index": [
+            "graphify cursor install"
+          ]
+        }
+      },
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
+      "graph_path": "graphify-out/graph.json",
+      "query_ttl_seconds": 1800,
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+    },
+    "agentmemory": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": "installed",
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "npm install -g @agentmemory/agentmemory"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect claude-code"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "codex plugin marketplace add rohitg00/agentmemory",
+            "codex plugin add agentmemory@agentmemory"
+          ],
+          "post_index": [
+            "agentmemory connect codex --with-hooks"
+          ]
+        },
+        "cursor": {
+          "pre_index": [],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
+      "health_url": "http://localhost:3111/agentmemory/health",
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
+      "export_root": ".agentmemory"
+    }
+  }
 }
