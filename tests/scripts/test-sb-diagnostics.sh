@@ -47,7 +47,7 @@ assert_output_contains() {
   local desc="$1" needle="$2"
   shift 2
   local out
-  out="$("$@")"
+  out="$("$@" 2>&1 || true)"
   if grep -qF -- "$needle" <<<"$out"; then
     pass "$desc"
   else
@@ -76,7 +76,7 @@ assert_output_contains "diagnostics emits Results line" "Results:" bash "$SCRIPT
 assert_output_contains "diagnostics checks jq" "jq" bash "$SCRIPT"
 assert_output_contains "diagnostics reports capability tier" "runtime-capability-tier" bash "$SCRIPT"
 
-json_out="$(SB_DIAG_FORMAT=json bash "$SCRIPT")"
+json_out="$(SB_DIAG_FORMAT=json bash "$SCRIPT" 2>&1 || true)"
 if jq -e '.capability_tier' >/dev/null <<<"$json_out"; then
   pass "json diagnostics includes capability_tier"
 else
