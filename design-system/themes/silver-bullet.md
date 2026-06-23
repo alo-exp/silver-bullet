@@ -1,6 +1,6 @@
 # Theme: Silver Bullet
 
-The reference theme for all Ālo Labs product sites. Two modes: dark (default) and light. Supplies actual values for every token slot defined in [`../tokens.md`](../tokens.md).
+The reference theme for all Ālo Labs product sites. Two modes: light (default) and dark. Supplies actual values for every token slot defined in [`../tokens.md`](../tokens.md).
 
 ---
 
