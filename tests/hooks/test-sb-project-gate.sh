@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for sb_initiated project gate (Wave 0.1).
+# Tests for SB project boundary gate (project config discovery).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -54,15 +54,15 @@ echo '# x' >"$WORK/silver-bullet.md"
 cd "$WORK"
 cfg="$(sb_find_project_config)"
 assert_true "finds config" test -n "$cfg"
-assert_false "not initiated when absent" sb_project_is_initiated "$cfg"
+assert_true "active when config file exists" sb_project_is_initiated "$cfg"
 
 jq '.config_version = "0.40.0"' "$WORK/.silver-bullet.json" >"$WORK/.silver-bullet.json.tmp" && mv "$WORK/.silver-bullet.json.tmp" "$WORK/.silver-bullet.json"
 cfg="$(sb_find_project_config)"
-assert_false "not initiated when only config_version (no grandfather)" sb_project_is_initiated "$cfg"
+assert_true "active when only config_version present" sb_project_is_initiated "$cfg"
 
 jq '.sb_initiated = true' "$WORK/.silver-bullet.json" >"$WORK/.silver-bullet.json.tmp" && mv "$WORK/.silver-bullet.json.tmp" "$WORK/.silver-bullet.json"
 cfg="$(sb_find_project_config)"
-assert_true "initiated when true" sb_project_is_initiated "$cfg"
+assert_true "active when sb_initiated true" sb_project_is_initiated "$cfg"
 
 # Cached project root resolves when CWD is outside the tree (#232)
 sb_project_root_cache_write "$WORK"

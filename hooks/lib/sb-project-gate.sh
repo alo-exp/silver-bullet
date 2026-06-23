@@ -1,8 +1,8 @@
 # shellcheck shell=bash
-# SB-initiated project gate — enforcement hooks exit 0 unless sb_initiated is true.
+# SB project boundary gate — discover .silver-bullet.json at project root.
 #
-# Set only by silver:init (Wave 0.1). Prevents SB activation in arbitrary repos
-# that happen to contain .silver-bullet.json without running init.
+# Enforcement hooks stay inert until both .silver-bullet.json and silver-bullet.md
+# are present (project boundary). Activation is file-presence based via project-active.sh.
 
 _gate_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$_gate_lib_dir/runtime-paths.sh" ]]; then

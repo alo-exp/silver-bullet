@@ -114,15 +114,11 @@ while true; do
 done
 [[ -z "$sb_project_root" ]] && exit 0
 
-# SB-initiated gate (Wave 0.1): only activate enforcement in projects
-# where silver:init set sb_initiated: true.
+# Cache project root for CWD-independent hook resolution (#232).
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
   sb_project_root_cache_write "$sb_project_root" 2>/dev/null || true
-  if ! sb_project_is_initiated "$sb_project_root/.silver-bullet.json"; then
-    exit 0
-  fi
 fi
 
 # Prerequisite probe (Wave 0.2): jq + plugin cache; attempt repair or block.
