@@ -11,6 +11,11 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
 if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
@@ -85,6 +90,12 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 [[ -z "$config_file" ]] && exit 0
+
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || exit 0
+fi
 
 # ── CI-red override bypass ────────────────────────────────────────────────────
 # Separate from trivial-session bypass — allows commits when CI is red so the

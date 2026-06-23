@@ -57,6 +57,16 @@ config_file=""
 config_file=$(resolve_repo_config 2>/dev/null || true)
 [[ -n "$config_file" ]] || exit 0
 
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || exit 0
+fi
+
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
 trivial_file=$(jq -r --arg dt "$sb_default_trivial" '.state.trivial_file // $dt' "$config_file" 2>/dev/null || printf '%s' "$sb_default_trivial")

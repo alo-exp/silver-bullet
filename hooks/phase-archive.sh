@@ -50,6 +50,12 @@ if ! printf '%s' "$cmd" | grep -qE 'phases\s+clear'; then
   exit 0
 fi
 
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
+
 # Locate PROJECT.md to read the current milestone slug
 PROJECT_MD=".planning/PROJECT.md"
 if [[ ! -f "$PROJECT_MD" ]]; then

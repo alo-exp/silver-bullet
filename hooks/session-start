@@ -121,13 +121,6 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   source "$_lib_dir/sb-project-gate.sh"
   sb_project_root_cache_write "$sb_project_root" 2>/dev/null || true
   if ! sb_project_is_initiated "$sb_project_root/.silver-bullet.json"; then
-    _init_banner='⚠️ Silver Bullet NOT ACTIVATED — `sb_initiated` is false or absent in `.silver-bullet.json`. Enforcement hooks are inert until you run `/silver:init` or `/silver:migrate`. Copying config files alone does not activate gates.'
-    if command -v jq >/dev/null 2>&1; then
-      ctx=$(printf '%s' "$_init_banner" | jq -Rs '.')
-      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$ctx"
-    else
-      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"Silver Bullet not activated — run /silver:init or /silver:migrate"}}'
-    fi
     exit 0
   fi
 fi

@@ -2,6 +2,14 @@
 # Tests for hooks/flow-advance.sh — orchestrator workflow start + advance (Wave 0.3/0.8).
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/flow-advance.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LIB="${REPO_ROOT}/hooks/lib/orchestrator-state.sh"

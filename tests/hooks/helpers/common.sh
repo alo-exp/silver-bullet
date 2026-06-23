@@ -69,6 +69,18 @@ hook_test_teardown() {
   unset SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE TMPCFG TMPSTATE TMPDIR_TEST
 }
 
+# Minimal SB project boundary files for hook tests (sb_initiated optional via env).
+hook_test_stamp_sb_scaffold() {
+  local dir="${1:-}"
+  [[ -n "$dir" && -d "$dir" ]] || return 0
+  if [[ ! -f "$dir/silver-bullet.md" ]]; then
+    printf '# Silver Bullet\n' >"$dir/silver-bullet.md"
+  fi
+  if [[ ! -f "$dir/.silver-bullet.json" ]]; then
+    printf '{"project":{}}\n' >"$dir/.silver-bullet.json"
+  fi
+}
+
 hook_test_write_minimal_config() {
   local workflow="${1:-full-dev-cycle}"
   local config_version

@@ -51,9 +51,17 @@ repo_root="$(resolve_repo_root 2>/dev/null || true)"
 [[ -n "$repo_root" ]] || exit 0
 repo_root="$(normalize_path "$repo_root")"
 
-# Only enforce inside an active SB project. If Silver Bullet has not been
-# initialized yet, or the project is not SB-managed, this hook stays inert.
-[[ -f "$repo_root/silver-bullet.md" || -f "$repo_root/.silver-bullet.json" ]] || exit 0
+# Only enforce inside an SB-initiated project.
+[[ -f "$repo_root/.silver-bullet.json" ]] || exit 0
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$repo_root/.silver-bullet.json" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$repo_root/.silver-bullet.json" || exit 0
+fi
 
 deny_root_instruction_creation() {
   local target_path="$1"

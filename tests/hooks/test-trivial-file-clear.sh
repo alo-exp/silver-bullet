@@ -4,6 +4,14 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/trivial-file-clear.sh"
 PASS=0
 FAIL=0
@@ -23,6 +31,8 @@ setup() {
   export SILVER_BULLET_RUNTIME="codex"
   TMPSTATE="${HOME}/.codex/.silver-bullet"
   mkdir -p "$TMPSTATE"
+  printf '# Silver Bullet\n' >"$TMPHOME/silver-bullet.md"
+  printf '{"project":{}}\n' >"$TMPHOME/.silver-bullet.json"
 }
 
 run_hook() {
