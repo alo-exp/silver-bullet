@@ -42,6 +42,10 @@ if [[ -f "$_lib_dir/quality-gates-mode.sh" ]]; then
   # shellcheck source=lib/quality-gates-mode.sh
   source "$_lib_dir/quality-gates-mode.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
@@ -245,6 +249,14 @@ while true; do
   fi
   search_dir=$(dirname "$search_dir")
 done
+
+if [[ -n "$config_file" ]]; then
+  if declare -f sb_project_active >/dev/null 2>&1; then
+    sb_project_active "$config_file" || exit 0
+  elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+    sb_project_is_initiated "$config_file" || exit 0
+  fi
+fi
 
 # --- State file (env var override first, then config, then default) ---
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"

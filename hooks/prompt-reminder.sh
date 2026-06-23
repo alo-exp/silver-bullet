@@ -92,8 +92,19 @@ while true; do
   search_dir=$(dirname "$search_dir")
 done
 
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+
 # No config → project not set up with Silver Bullet — return a no-op payload
 [[ -z "$config_file" ]] && finish_noop
+
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || finish_noop
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || finish_noop
+fi
 
 # ── Read config values (single jq call for speed) ────────────────────────────
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"

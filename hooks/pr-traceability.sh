@@ -27,6 +27,11 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then

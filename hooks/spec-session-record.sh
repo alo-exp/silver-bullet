@@ -15,6 +15,11 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
 
 # Source symlink-write guard (SEC-02)
 if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then

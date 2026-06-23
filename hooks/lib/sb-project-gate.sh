@@ -4,6 +4,12 @@
 # Set only by silver:init (Wave 0.1). Prevents SB activation in arbitrary repos
 # that happen to contain .silver-bullet.json without running init.
 
+_gate_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_gate_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=runtime-paths.sh
+  source "$_gate_lib_dir/runtime-paths.sh"
+fi
+
 SB_PROJECT_ROOT_CACHE_FILE="${SB_RUNTIME_STATE_DIR}/project-root"
 
 # Persist a validated project root for CWD-independent hook resolution (#232).
@@ -76,30 +82,8 @@ sb_find_project_root() {
   dirname "$cfg"
 }
 
-# Returns 0 when SB enforcement should activate for this project.
-# - sb_initiated: true  → initiated
-# - sb_initiated: false or absent → not initiated (run /silver:init or /silver:migrate)
-sb_project_is_initiated() {
-  local config_file="${1:-}"
-  [[ -n "$config_file" && -f "$config_file" ]] || return 1
-
-  if command -v jq >/dev/null 2>&1 && printf '{}' | jq . >/dev/null 2>&1; then
-    local flag
-    flag=$(jq -r 'if has("sb_initiated") then (.sb_initiated | tostring) else "absent" end' "$config_file" 2>/dev/null || echo "absent")
-    case "$flag" in
-      true) return 0 ;;
-      false|absent) return 1 ;;
-      *) return 1 ;;
-    esac
-  fi
-
-  grep -qE '"sb_initiated"[[:space:]]*:[[:space:]]*true' "$config_file" 2>/dev/null
-}
-
-# Exit 0 (inert) when project is absent or not SB-initiated.
-sb_project_gate_or_exit() {
-  local config_file
-  config_file="$(sb_find_project_config 2>/dev/null || true)"
-  [[ -n "$config_file" ]] || exit 0
-  sb_project_is_initiated "$config_file" || exit 0
-}
+_pa_lib="$(dirname "${BASH_SOURCE[0]}")/project-active.sh"
+if [[ -f "$_pa_lib" ]] && ! declare -f sb_project_active >/dev/null 2>&1; then
+  # shellcheck source=project-active.sh
+  source "$_pa_lib"
+fi

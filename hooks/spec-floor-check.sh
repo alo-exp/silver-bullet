@@ -20,6 +20,11 @@ if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
   source "$_lib_dir/jq-gate.sh"
 fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_active_or_exit
+fi
 if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
   sb_jq_enforcement_warn "spec-floor-check"
 fi

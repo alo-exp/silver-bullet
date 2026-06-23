@@ -128,6 +128,12 @@ while true; do
 done
 [[ -z "$config_file" ]] && exit 0
 
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || exit 0
+fi
+
 # ── Verify the file being edited is under THIS project's root (WR-05) ─────────
 # Prevents enforcement firing on a different project's .planning/ when Claude is
 # running in a multi-repo or worktree setup where absolute paths are passed.

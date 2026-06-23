@@ -3,6 +3,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LIB="${REPO_ROOT}/hooks/lib/core-rules-integrity.sh"
 HOOKS_DIR="${REPO_ROOT}/hooks"
 CORE_RULES="${HOOKS_DIR}/core-rules.md"
