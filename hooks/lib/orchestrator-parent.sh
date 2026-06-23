@@ -49,7 +49,9 @@ sb_orchestrator_is_worker_session() {
     spawn_epoch="$(date -d "$spawned_at" +%s 2>/dev/null || echo 0)"
   fi
   [[ "$spawn_epoch" -gt 0 ]] || return 1
-  (( now_epoch - spawn_epoch < ttl )) && return 0
+  if (( now_epoch - spawn_epoch < ttl )); then
+    return 0
+  fi
   return 1
 }
 
