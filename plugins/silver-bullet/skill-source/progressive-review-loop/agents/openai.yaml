@@ -1,4 +1,0 @@
-interface:
-  display_name: "Progressive Review Loop"
-  short_description: "Escalate review/fix loops by model level"
-  default_prompt: "Use $progressive-review-loop to run an audit/fix/verify loop that escalates through model and reasoning levels until two consecutive clean passes."

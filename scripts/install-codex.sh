@@ -713,7 +713,7 @@ def is_user_invocable(frontmatter: dict[str, str]) -> bool:
 
 
 def is_silver_bullet_helper_picker_skill(dirname: str, skill_name: str) -> bool:
-    helper_picker_skills = {"devops-quality-gates", "progressive-review-loop", "security", "verify-tests"}
+    helper_picker_skills = {"devops-quality-gates", "silver-review-fix-ladder", "security", "verify-tests"}
     return dirname in helper_picker_skills or skill_name in helper_picker_skills
 
 
