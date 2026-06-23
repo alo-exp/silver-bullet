@@ -284,6 +284,7 @@ if [[ "$sb_should_mutate" == true ]]; then
     for wf in "$wf_dir"/*.md; do
       [[ -f "$wf" && ! -L "$wf" ]] || continue
       wf_mtime=$(stat -f %m "$wf" 2>/dev/null || stat -c %Y "$wf" 2>/dev/null || echo 0)
+      wf_mtime="${wf_mtime:-0}"
       age=$((now_epoch - wf_mtime))
       if [[ "$age" -gt "$stale_ttl" ]]; then
         mkdir -p "$wf_dir/.archive" 2>/dev/null || true
@@ -482,6 +483,9 @@ fi
 # If nothing found, silent no-op
 [[ -z "$combined" ]] && exit 0
 
-# Escape for JSON and output
-content=$(printf '%s' "$combined" | jq -Rs .)
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"
+# Escape for JSON and output (fail-soft: ERR trap must not swallow context after build)
+content=""
+content=$(printf '%s' "$combined" | jq -Rs . 2>/dev/null || true)
+if [[ -n "$content" ]]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"
+fi

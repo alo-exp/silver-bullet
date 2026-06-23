@@ -3,11 +3,15 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
 # shellcheck source=../../hooks/lib/runtime-paths.sh
 source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
-export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/project-active-guard-test-$$"
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 mkdir -p "$SB_RUNTIME_STATE_DIR"
+# Prerequisite probe (session-start) requires a silver-bullet plugin cache directory.
+mkdir -p "${SB_RUNTIME_PLUGIN_CACHE_ROOT}/alo-labs/silver-bullet/test"
 
 PASS=0
 FAIL=0
@@ -75,6 +79,28 @@ assert_has_context() {
   fi
 }
 
+assert_has_enforcement_context() {
+  local name="$1" out="$2"
+  if printf '%s' "$out" | grep -q 'Core Enforcement Rules'; then
+    echo "PASS: $name"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $name (expected core-rules context injection)"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+run_session_start() {
+  local workdir="$1"
+  (
+    cd "$workdir" || exit 1
+    SILVER_BULLET_SESSION_SOURCE=startup \
+      SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state-init" \
+      SILVER_BULLET_BRANCH_FILE="$SB_RUNTIME_STATE_DIR/branch-init" \
+      bash "$SESSION_HOOK" 2>/dev/null <<< '{"source":"startup"}'
+  ) || true
+}
+
 # with_config=1 writes .silver-bullet.json (no sb_initiated field — presence is sufficient).
 setup_repo() {
   local with_config="${1:-0}"
@@ -132,7 +158,7 @@ assert_no_block "prompt-reminder noop without config" "$out"
 out="$(printf '{}' | jq -c '{hook_event_name:"Stop"}' | SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state" bash "$STOP_HOOK" 2>/dev/null || true)"
 assert_no_block "stop-check noop without config" "$out"
 
-out="$(SILVER_BULLET_SESSION_SOURCE=startup bash "$SESSION_HOOK" </dev/null 2>/dev/null || true)"
+out="$(SILVER_BULLET_SESSION_SOURCE=startup bash "$SESSION_HOOK" 2>/dev/null <<< '{"source":"startup"}' || true)"
 if [[ -z "$out" ]]; then
   echo "PASS: session-start silent without config"
   PASS=$((PASS + 1))
@@ -150,13 +176,10 @@ setup_repo 1
 cd "$WORK"
 mkdir -p "$WORK/.planning/workflows"
 printf '| Step | Skill | Status |\n| 1 | silver-quality-gates | pending |\n' >"$WORK/.planning/workflows/full-dev-cycle.md"
-PLUGIN_CACHE="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
-mkdir -p "${PLUGIN_CACHE}/alo-labs/silver-bullet/test"
-out="$(SILVER_BULLET_SESSION_SOURCE=startup \
-  SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/state-init" \
-  SILVER_BULLET_BRANCH_FILE="$SB_RUNTIME_STATE_DIR/branch-init" \
-  bash "$SESSION_HOOK" </dev/null 2>/dev/null || true)"
+rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
+out="$(run_session_start "$WORK")"
 assert_has_context "session-start injects context when config present" "$out"
+assert_has_enforcement_context "session-start injects core rules when config present" "$out"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
