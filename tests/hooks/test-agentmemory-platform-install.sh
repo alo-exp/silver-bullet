@@ -54,7 +54,7 @@ install_cmds="$(jq -r '.recommended_tools.agentmemory.install_commands[]' "$TEMP
 printf '%s' "$install_cmds" | grep -q 'npm install -g @agentmemory/agentmemory' && pass "template npm install" || fail "template npm install"
 
 write_cfg() { printf '%s' "$1" >"$TMP/.silver-bullet.json"; }
-write_cfg "{\"config_version\":\"0.47.0\"}"
+write_cfg "{\"config_version\":\"0.47.1\"}"
 
 post="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" agentmemory)"
 [[ "$post" == "agentmemory connect claude-code" ]] && pass "claude post_index fallback" || fail "claude post_index fallback"

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.47.1] — 2026-06-24
+
+Hook activation guard for non-initiated projects and sentinel manifest fix.
+
+## Bug Fixes
+- `fix(hooks): skip enforcement when SB not initiated in project` (`8ca25258`) — hooks only engage when `.silver-bullet.json` and `silver-bullet.md` exist; non-initiated workspaces no longer receive enforcement
+- `fix(hooks): gate on .silver-bullet.json presence only` (`fe05b7d9`) — simplified activation check
+
+## Tests
+- `test: fix sentinel manifest for silver-review-fix-ladder` (`47b66330`)
+
+## Chores
+- `chore(sync): align plugin templates with root templates` (`a2412af7`)
+
+---
+
 ## [0.47.0] — 2026-06-22
 
 Recommended-tools opt-in for Graphify, GSD lifecycle namespace removal, atomic-flow composition hardening, and hook/test parity gates.
