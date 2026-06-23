@@ -323,7 +323,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "Silver Bullet command reference",
-    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:domain-audit, /silver:test, /silver:refactor, /silver:worktree, /silver:deploy, /silver:canary, /silver:incident, /silver:retro, /silver:benchmark, /silver:content, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, /silver:spike, /silver:phase, /silver:undo, /silver:thread, progressive-review-loop, and more."
+    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:domain-audit, /silver:test, /silver:refactor, /silver:worktree, /silver:deploy, /silver:canary, /silver:incident, /silver:retro, /silver:benchmark, /silver:content, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, /silver:spike, /silver:phase, /silver:undo, /silver:thread, /silver:review-fix-ladder, and more."
   },
   {
     "page": "Reference",

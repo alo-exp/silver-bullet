@@ -271,7 +271,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
-          <tr><td>/progressive-review-loop</td><td>High-confidence review</td><td>Runs iterative audit/fix/verify loops over bounded artifact sets until the required clean-pass threshold is reached.</td></tr>
+          <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung.</td></tr>
         </tbody>
       </table>
 
