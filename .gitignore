@@ -55,3 +55,13 @@ branch_structure.json
 # Rebuild with: graphify update . --no-cluster
 graphify-out/
 raw/
+
+# === agentmemory managed block ===
+# Most contents are gitignored, specific files committed
+.agentmemory/*
+!.agentmemory/memory/
+!.agentmemory/memory/**
+!.agentmemory/snapshots/
+!.agentmemory/snapshots/**
+!.agentmemory/profile.md
+# === end agentmemory managed block ===
