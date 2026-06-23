@@ -98,20 +98,6 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
-    "skill": "progressive-review-loop",
-    "path": "skills/progressive-review-loop/SKILL.md",
-    "sentinel_version": "2.3.0",
-    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-progressive-review-loop.md",
-    "status": "clean",
-    "verdict": "Deploy with monitoring",
-    "audited_at": "2026-06-20",
-    "release_tag": "v0.45.0",
-    "findings_open": 0,
-    "agent_bundles_parity": "verified",
-    "content_sha256": "c10ae78f91246bb685a9138dfd912921b9bb5c4ae8e62d7f2af7f3035cf7b16c",
-    "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
-  },
-  {
     "skill": "reliability",
     "path": "skills/reliability/SKILL.md",
     "sentinel_version": "2.3.0",
@@ -852,6 +838,20 @@
     "agent_bundles_parity": "verified",
     "content_sha256": "ae7639943f7971eddfa111a47b3b18daf2967634478a9c0f6618dfb5bdf9a077",
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
+  },
+  {
+    "skill": "silver-review-fix-ladder",
+    "path": "skills/silver-review-fix-ladder/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-review-fix-ladder.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-06-23",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "969267224965e5e334e6d646328ec03af1c1d868b0ffe9c1279343a9347d848e",
+    "evidence_note": "Greenfield replacement for retired progressive-review-loop skill."
   },
   {
     "skill": "silver-review-request",
