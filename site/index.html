@@ -1697,7 +1697,7 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(22)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(20)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(27)</span></button>
     </div>
 
@@ -1715,7 +1715,7 @@ img{max-width:100%;height:auto}
         </thead>
         <tbody>
           <tr>
-            <td><code>/silver</code></td>
+            <td><a href="help/workflows/silver-router.html" style="color:var(--accent-light);text-decoration:none">/silver</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"/silver", "route"</td>
             <td><code>ROUTE</code> → <span style="font-size:.85rem;color:var(--text-dim)">(composes feature or fast)</span></td>
           </tr>
@@ -1750,12 +1750,12 @@ img{max-width:100%;height:auto}
             <td><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td>
           </tr>
           <tr>
-            <td><code>/silver:deploy</code></td>
+            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"deploy"</td>
             <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><code>/silver:canary</code></td>
+            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"canary"</td>
             <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td>
           </tr>
@@ -1765,63 +1765,53 @@ img{max-width:100%;height:auto}
             <td><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code> <span style="font-size:.85rem;color:var(--text-dim)">(escalates to feature composition when scope expands)</span></td>
           </tr>
           <tr>
-            <td><code>/silver:test</code></td>
+            <td><a href="help/workflows/silver-test.html" style="color:var(--accent-light);text-decoration:none">/silver:test</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"test", "test hardening"</td>
             <td><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code></td>
           </tr>
           <tr>
-            <td><code>/silver:refactor</code></td>
+            <td><a href="help/workflows/silver-refactor.html" style="color:var(--accent-light);text-decoration:none">/silver:refactor</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"refactor"</td>
             <td><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><code>/silver:benchmark</code></td>
+            <td><a href="help/workflows/silver-benchmark.html" style="color:var(--accent-light);text-decoration:none">/silver:benchmark</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"benchmark"</td>
             <td><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><code>/silver:content</code></td>
+            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs"</td>
             <td><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><code>/silver:incident</code></td>
+            <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"incident"</td>
             <td><code>BLAST_RADIUS</code> → <code>DEBUG</code> → <code>SECURE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><code>/silver:retro</code></td>
+            <td><a href="help/workflows/silver-retro.html" style="color:var(--accent-light);text-decoration:none">/silver:retro</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"retro"</td>
             <td><code>ORIENT</code> → <code>DOCUMENT</code> → <code>DECIDE</code></td>
           </tr>
           <tr>
-            <td><code>/silver:forensics</code></td>
+            <td><a href="help/workflows/silver-forensics.html" style="color:var(--accent-light);text-decoration:none">/silver:forensics</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"forensics"</td>
             <td><code>DEBUG</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
           </tr>
           <tr>
-            <td><code>/silver:process-maintenance</code></td>
+            <td><a href="help/workflows/silver-process-maintenance.html" style="color:var(--accent-light);text-decoration:none">/silver:process-maintenance</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"phase", "thread", "backlog", "migration"</td>
             <td><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
           </tr>
           <tr>
-            <td><code>WF-POST-EXEC-GATES</code></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"after_execute" <span style="opacity:.7">(reusable component)</span></td>
-            <td><code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><code>WF-VALIDATE-SUBSTEP</code></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"gap_analysis" <span style="opacity:.7">(reusable component)</span></td>
-            <td><code>VALIDATE</code></td>
-          </tr>
-          <tr>
-            <td><code>WF-REVIEW-TRIAD</code></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"legacy FLOW 10" <span style="opacity:.7">(reusable component)</span></td>
+            <td><a href="help/workflows/review-triad.html" style="color:var(--accent-light);text-decoration:none">WF-REVIEW-TRIAD</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"review_request", "review", "triage" <span style="opacity:.7">(reusable component)</span></td>
             <td><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></td>
           </tr>
           <tr>
-            <td><code>WF-SHIP-READINESS</code></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"legacy FLOW 14" <span style="opacity:.7">(reusable component)</span></td>
+            <td><a href="help/workflows/ship-readiness.html" style="color:var(--accent-light);text-decoration:none">WF-SHIP-READINESS</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"branch_finish", "completion_audit", "ship" <span style="opacity:.7">(reusable component)</span></td>
             <td><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
         </tbody>
