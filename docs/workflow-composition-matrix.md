@@ -1,0 +1,28 @@
+# Workflow Composition Matrix
+
+> Generated from `docs/apo-catalog.json`; workflow trees are catalog-owned.
+
+| Workflow | Type | Reusable | Composition | Dynamic Ops |
+|----------|------|----------|-------------|-------------|
+| `WF-SILVER-ROUTER` | `dynamic_route` | false | `atomic_flow:AF-ROUTE`<br>`workflow:WF-SILVER-FEATURE`<br>`workflow:WF-SILVER-FAST` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-FEATURE` | `precomposed` | false | `atomic_flow:AF-BOOTSTRAP`<br>`atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-CLARIFY`<br>`atomic_flow:AF-DECIDE`<br>`atomic_flow:AF-SPECIFY`<br>`atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-PLAN`<br>`atomic_flow:AF-DESIGN-CONTRACT`<br>`atomic_flow:AF-EXECUTE`<br>`workflow:WF-POST-EXEC-GATES` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-POST-EXEC-GATES` | `reusable_component` | true | `atomic_flow:AF-UI-QUALITY`<br>`atomic_flow:AF-REVIEW-REQUEST`<br>`atomic_flow:AF-REVIEW`<br>`atomic_flow:AF-REVIEW-TRIAGE`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-SECURE`<br>`atomic_flow:AF-VALIDATE`<br>`atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-BRANCH-FINISH`<br>`atomic_flow:AF-COMPLETION-AUDIT`<br>`atomic_flow:AF-SHIP` | `insert`, `parallelize`, `loop` |
+| `WF-VALIDATE-SUBSTEP` | `reusable_component` | true | `atomic_flow:AF-VALIDATE` | `loop` |
+| `WF-REVIEW-TRIAD` | `reusable_component` | true | `atomic_flow:AF-REVIEW-REQUEST`<br>`atomic_flow:AF-REVIEW`<br>`atomic_flow:AF-REVIEW-TRIAGE` | `loop` |
+| `WF-SHIP-READINESS` | `reusable_component` | true | `atomic_flow:AF-BRANCH-FINISH`<br>`atomic_flow:AF-COMPLETION-AUDIT`<br>`atomic_flow:AF-SHIP` | `loop` |
+| `WF-SILVER-UI` | `precomposed` | false | `atomic_flow:AF-BOOTSTRAP`<br>`atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-CLARIFY`<br>`atomic_flow:AF-DECIDE`<br>`atomic_flow:AF-SPECIFY`<br>`atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-PLAN`<br>`atomic_flow:AF-DESIGN-CONTRACT`<br>`atomic_flow:AF-EXECUTE`<br>`workflow:WF-POST-EXEC-GATES` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-DEVOPS` | `precomposed` | false | `atomic_flow:AF-BLAST-RADIUS`<br>`atomic_flow:AF-DEVOPS-ROUTE`<br>`atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-SECURE`<br>`atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-PLAN`<br>`atomic_flow:AF-VALIDATE`<br>`atomic_flow:AF-EXECUTE`<br>`workflow:WF-POST-EXEC-GATES` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-BUGFIX` | `precomposed` | false | `atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-DEBUG`<br>`atomic_flow:AF-PLAN`<br>`atomic_flow:AF-EXECUTE`<br>`workflow:WF-POST-EXEC-GATES` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-RESEARCH` | `precomposed` | false | `atomic_flow:AF-CLARIFY`<br>`atomic_flow:AF-DECIDE`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-VALIDATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-FAST` | `precomposed` | false | `atomic_flow:AF-FAST-PATH`<br>`atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-PLAN`<br>`atomic_flow:AF-VALIDATE`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-RELEASE` | `precomposed` | false | `atomic_flow:AF-QUALITY-GATE`<br>`atomic_flow:AF-REVIEW-REQUEST`<br>`atomic_flow:AF-REVIEW`<br>`atomic_flow:AF-REVIEW-TRIAGE`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-SECURE`<br>`atomic_flow:AF-VALIDATE`<br>`atomic_flow:AF-BRANCH-FINISH`<br>`atomic_flow:AF-COMPLETION-AUDIT`<br>`atomic_flow:AF-SHIP`<br>`atomic_flow:AF-RELEASE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-DEPLOY` | `specialized` | false | `atomic_flow:AF-BLAST-RADIUS`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-SECURE`<br>`atomic_flow:AF-SHIP` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-CANARY` | `specialized` | false | `atomic_flow:AF-BLAST-RADIUS`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-SHIP` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-INCIDENT` | `specialized` | false | `atomic_flow:AF-BLAST-RADIUS`<br>`atomic_flow:AF-DEBUG`<br>`atomic_flow:AF-SECURE`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-DOCUMENT` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-CONTENT` | `specialized` | false | `atomic_flow:AF-CLARIFY`<br>`atomic_flow:AF-SPECIFY`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-DOCUMENT` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-RETRO` | `specialized` | false | `atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-DECIDE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-BENCHMARK` | `specialized` | false | `atomic_flow:AF-ORIENT`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY`<br>`atomic_flow:AF-DOCUMENT` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-REFACTOR` | `specialized` | false | `atomic_flow:AF-PLAN`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY`<br>`workflow:WF-POST-EXEC-GATES` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-TEST` | `specialized` | false | `atomic_flow:AF-PLAN`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-SILVER-FORENSICS` | `specialized` | false | `atomic_flow:AF-DEBUG`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-VALIDATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-PROCESS-MAINTENANCE` | `specialized` | false | `atomic_flow:AF-PHASE-MANAGE`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-VALIDATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |

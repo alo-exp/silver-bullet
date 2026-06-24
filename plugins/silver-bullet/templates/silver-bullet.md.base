@@ -83,6 +83,15 @@ one of SB's supported runtime-native invocation channels (see `docs/RUNTIME-COMP
 
 Reading `SKILL.md`, editing state files, or manually appending markers never counts.
 
+**APO catalog authority**: Silver Bullet is an Agentic Process Orchestrator.
+The APO catalog at `docs/apo-catalog.json` is the sole source of truth for
+Process > Workflow > Atomic Flow > Flow Step/Skill composition, per-flow
+V-loops, per-step V-loops, evidence records, intent ledger rollups, runtime
+queue token mappings, and process-pack overrides. Generated views such as
+`docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`,
+and `docs/generated/atomic-flow-index.json` must match the catalog; do not
+hand-author workflow composition outside the APO catalog.
+
 **SB lifecycle visibility**: SB lifecycle skills (`/silver:context`, etc.)
 are tracked via supported runtime-native invocations and recorded as SB-owned
 markers in the state file. The compliance status shows lifecycle progress.

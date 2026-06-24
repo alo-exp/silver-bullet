@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.48.0] — 2026-06-24
+
+Atomic-flow APO redesign.
+
+## Features
+- Added `docs/apo-catalog.json` as the authoritative Agentic Process Orchestrator catalog for processes, workflows, atomic flows, flow steps, V-loops, evidence records, intent ledgers, process packs, dynamic composition rules, and runtime token mappings.
+- Replaced the legacy FLOW 1-18 mirror with 27 canonical non-redundant `AF-*` atomic flows, 22 catalog-backed workflows, and 85 skill-backed flow steps with local V-loops.
+- Added generated catalog views: `docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, and `docs/generated/atomic-flow-index.json`.
+
+## Tests
+- Added blocking APO gates for catalog schema/SOT, atomic-flow deduplication, per-flow and per-step V-loops, composition SOT, evidence/intent models, subagent execution metadata, runtime alignment, worker parity, tool policies, router coverage, and site/doc freshness.
+
+## Documentation
+- Updated `silver-bullet.md`, `templates/silver-bullet.md.base`, and workflow help docs to describe the APO catalog authority and atomic-flow execution model.
+
+---
+
 ## [0.47.1] — 2026-06-24
 
 Hook activation guard for non-initiated projects, sentinel manifest fix, and opt-in agentmemory with Graphify synergy.
