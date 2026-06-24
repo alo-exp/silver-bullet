@@ -8,7 +8,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "what-is-sb",
     "title": "What Silver Bullet does",
-    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. It owns the default lifecycle engine: routing, context, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
+    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. docs/apo-catalog.json is the source of truth for 27 AF-* atomic flows, 22 WF-* workflows, and 85 flow steps. SB owns routing, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
   },
   {
     "page": "Getting Started",
@@ -22,21 +22,21 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "first-run",
     "title": "First workflow run",
-    "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then runs context, planning, execution, verification, review, and ship gates."
+    "text": "Start with /silver and a natural-language request. SB classifies intent via AF-ROUTE, composes the smallest safe WF-* workflow from the APO catalog, then runs orient, planning, execution, verification, review, and ship gates with V-loop evidence."
   },
   {
     "page": "Help Center",
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Help Center landing page for Silver Bullet v0.48.1 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+    "text": "Silver Bullet v0.48.1 Help Center — APO catalog docs/apo-catalog.json, Process Workflow Atomic Flow Flow Step hierarchy, 27 AF-* atomic flows, 22 workflows, 85 flow steps, three-host install, dev and DevOps workflow guides, command reference, troubleshooting, and search."
   },
   {
     "page": "Reference",
     "url": "/help/reference/#migration-notes",
     "anchor": "migration-notes",
     "title": "v0.48 APO migration",
-    "text": "v0.48 migrates Silver Bullet from the older FLOW 1-18 mental model to the APO catalog source of truth: docs/apo-catalog.json, 27 AF-* atomic flows, reusable WF-* workflows, V-loop rollups, subagent execution, opted-in tool governance, and generated catalog views."
+    "text": "v0.48.1 APO catalog migration: docs/apo-catalog.json replaces the legacy FLOW 1-18 mental model. Authoritative hierarchy Process Workflow Atomic Flow Flow Step with 27 AF-* atomic flows, 22 workflows, 85 flow steps, V-loop rollups, subagent execution, opted-in tool governance, and generated catalog views."
   },
   {
     "page": "Core Concepts",
@@ -120,7 +120,7 @@ var IDX = [
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
-    "text": "Silver Bullet replaces fixed pipelines with a canonical atomic-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens in hooks/lib/orchestrator-state.sh."
+    "text": "Silver Bullet replaces fixed pipelines with the APO catalog composable architecture. /silver classifies the request, selects WF-* workflow chains from docs/apo-catalog.json, supervises each AF-* atomic flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens mapped to catalog entities in hooks/lib/orchestrator-state.sh."
   },
   {
     "page": "Core Concepts",
@@ -155,7 +155,7 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog: 27 canonical AF-* atomic flows, 22 workflows, V-loop contracts, runtime queue tokens mapped to catalog entities, composer workflows for /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:research, /silver:release, /silver:fast, plus /silver:spec, /silver:ingest, /silver:validate. Post-execute gates use WF-POST-EXEC-GATES: review request, review, triage, verify, secure, validate, quality gate, branch finish, completion audit, and ship."
+    "text": "Workflow catalog from docs/apo-catalog.json: 27 AF-* atomic flows, 22 WF-* workflows, 85 flow steps, V-loop contracts, composer routes /silver:feature /silver:bugfix /silver:ui /silver:devops /silver:research /silver:release /silver:fast plus /silver:spec /silver:ingest /silver:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
   },
   {
     "page": "Workflows",
@@ -316,14 +316,14 @@ var IDX = [
     "url": "/help/dev-workflow/",
     "anchor": "overview",
     "title": "Software engineering workflow",
-    "text": "Application workflow routes intent, clarifies or specs when needed, builds SB context and plans, executes in waves, verifies, reviews, runs /verify-tests, updates docs, checks CI, ships, and releases."
+    "text": "WF-SILVER-FEATURE application workflow: AF-ROUTE intent, AF-CLARIFY or AF-SPECIFY when needed, AF-ORIENT and AF-PLAN, AF-EXECUTE in waves, AF-VERIFY AF-REVIEW AF-SECURE from WF-POST-EXEC-GATES, /verify-tests, docs, CI, AF-SHIP, and WF-SILVER-RELEASE milestone publishing."
   },
   {
     "page": "DevOps Workflow",
     "url": "/help/devops-workflow/",
     "anchor": "overview",
     "title": "DevOps and IaC workflow",
-    "text": "Infrastructure workflow requires blast radius and IaC quality gates, skips TDD, applies changes through lower environments first, promotes dev to staging to production, verifies drift and rollback, then ships and releases."
+    "text": "WF-SILVER-DEVOPS infrastructure workflow: AF-BLAST-RADIUS and AF-DEVOPS-ROUTE before plan, AF-QUALITY-GATE with 7 IaC-adapted dimensions, AF-PLAN and AF-EXECUTE without TDD, environment promotion dev staging production, drift and rollback verification, AF-SHIP and WF-SILVER-RELEASE."
   },
   {
     "page": "Reference",
@@ -372,7 +372,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.48.1, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json version 0.48.1 includes project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, recommended_tools Graphify agentmemory opt-in, and state paths under SB_RUNTIME_HOME_ROOT."
   },
   {
     "page": "Reference",
@@ -386,7 +386,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "hooks",
     "title": "Hook failures",
-    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, Cursor hooks.json merge, sb-diagnostics capability tier, stale compliance state, and initialization issues. Run /silver:init to refresh project setup."
+    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.48.1 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, stale compliance state, and /silver:init initialization issues."
   },
   {
     "page": "Troubleshooting",

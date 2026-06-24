@@ -142,7 +142,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What is the Artifact Review Assessor?</h2>
-      <p>The <strong>artifact-review-assessor</strong> is a skill that reads the findings produced by a reviewer skill and triages each finding into one of three verdicts: <span class="verdict verdict-must">MUST-FIX</span>, <span class="verdict verdict-nice">NICE-TO-HAVE</span>, or <span class="verdict verdict-dismiss">DISMISS</span>.</p>
+      <p>The <strong>artifact-review-assessor</strong> skill triages reviewer findings into <span class="verdict verdict-must">MUST-FIX</span>, <span class="verdict verdict-nice">NICE-TO-HAVE</span>, or <span class="verdict verdict-dismiss">DISMISS</span>. It runs inside catalog atoms <code>AF-REVIEW</code> and <code>AF-REVIEW-TRIAGE</code> — the governance layer that prevents over-zealous reviews from blocking delivery without evidence.</p>
       <p>The assessor does not re-review the artifact. It reads the reviewer's findings and judges each one against the artifact's contract — the specific requirements and quality dimensions that the reviewer is authorised to enforce for that artifact type. Subjective quality preferences that fall outside the contract are dismissed.</p>
 
       <div class="callout callout-info">

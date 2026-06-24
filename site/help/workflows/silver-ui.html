@@ -99,13 +99,13 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <ul class="sidebar-nav">
         <li class="sidebar-section">On this page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#ui-paths">UI-specific paths (6 &amp; 8)</a></li>
+        <li><a href="#composition">Catalog composition</a></li>
+        <li><a href="#ui-paths">UI-specific atomic flows</a></li>
         <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#workflow-steps">Flow execution</a></li>
         <li><a href="#design-contract">Design contract</a></li>
-        <li><a href="#ui-visual-audit">UI visual audit</a></li>
+        <li><a href="#ui-visual-audit">UI quality</a></li>
         <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
-        <li><a href="#step-16">Step 16: Milestone completion</a></li>
         <li><a href="#example">Example invocation</a></li>
         <li class="sidebar-section">See also</li>
         <li><a href="./index.html">All workflows</a></li>
@@ -116,33 +116,40 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It uses <strong>composable flows architecture</strong> — the core path chain from <code>silver:feature</code> plus two UI-specific paths inserted automatically when UI context is detected.</p>
-      <p><strong>It keeps UI work inside the SB lifecycle.</strong> Design contract creation, component implementation, visual audit, and accessibility review are coordinated by lifecycle skills. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical AF-* catalog.</p>
+      <p><code>/silver:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It maps to catalog entity <code>WF-SILVER-UI</code> and composes the same pre-execution chain as <code>/silver:feature</code>, with <code>AF-DESIGN-CONTRACT</code> always included and <code>AF-UI-QUALITY</code> in the post-execute tail.</p>
+      <p><strong>It keeps UI work inside the SB lifecycle.</strong> Design contract creation, component implementation, visual audit, and accessibility review are coordinated through catalog atomic flows — not ad hoc prompts. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical <code>AF-*</code> catalog.</p>
 
       <div class="divider"></div>
 
-      <h2 id="ui-paths">UI-Specific Path Composition</h2>
+      <h2 id="composition">Catalog composition (<code>WF-SILVER-UI</code>)</h2>
+      <p>The default composition chain from <code>docs/apo-catalog.json</code>:</p>
+      <div class="code-block">/silver:init (when .planning/ missing) → Orient → Clarify → Decide → Specify
+→ Quality gate (pre-plan) → Plan → Design contract → Execute
+→ WF-POST-EXEC-GATES</div>
+      <p>Conditional atoms prune when context does not require them — for example Bootstrap when <code>.planning/</code> already exists, Clarify when intent is already decision-ready, or Specify when <code>SPEC.md</code> is current. <code>AF-DESIGN-CONTRACT</code> is <strong>not</strong> optional in this workflow.</p>
 
-      <h3>FLOW 7: DESIGN CONTRACT</h3>
-      <p><strong>Trigger:</strong> Phase involves UI — detected via intent keywords, UI file types in scope, or DESIGN.md existence.</p>
-      <p><strong>Steps:</strong></p>
-      <ul>
-        <li><code>silver:ui-contract</code> — component tokens, user-facing text, component API, layout rules, and accessibility requirements</li>
-        <li><code>silver:quality-gates</code> — usability, accessibility, testability, and security checks before planning</li>
-      </ul>
-      <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan (FLOW 7) is built on top of this contract — implementation must match the spec.</p>
+      <div class="divider"></div>
 
-      <h3>FLOW 9: UI QUALITY</h3>
-      <p><strong>Trigger:</strong> FLOW 7 was in the composition, OR SUMMARY.md references UI file types after execution.</p>
-      <p><strong>Steps:</strong></p>
-      <ul>
-        <li><code>silver:ui-review</code> — 6-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance)</li>
-        <li><code>silver:quality-gates</code> — final usability, accessibility, and testability enforcement</li>
-      </ul>
-      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>silver:execute --gaps-only</code> for targeted fixes.</p>
+      <h2 id="ui-paths">UI-specific atomic flows</h2>
 
-      <h3>Full composition for UI work</h3>
-      <p>A typical <code>silver:ui</code> composition: FLOW 1 → FLOW 2 → FLOW 3 (if fuzzy) → FLOW 4 → FLOW 5 → FLOW 6 → <strong>FLOW 7 (DESIGN CONTRACT)</strong> → FLOW 8 (EXECUTE) → <strong>FLOW 9 (UI QUALITY)</strong> → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (pre-ship QUALITY GATE) → FLOW 14 (SHIP). Flow numbers are stable IDs; runtime order follows REVIEW → VERIFY → SECURE after UI quality.</p>
+      <h3><code>AF-DESIGN-CONTRACT</code> — Design contract</h3>
+      <p><strong>When:</strong> Always in <code>WF-SILVER-UI</code> (mandatory, not conditional).</p>
+      <p><strong>User-facing route:</strong> <code>/silver:ui-contract</code> — component tokens, user-facing copy, component API, layout rules, and accessibility requirements. Pre-plan quality gates run usability, accessibility, testability, and security checks before planning continues.</p>
+      <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan is built on top of this contract — implementation must match the spec.</p>
+
+      <h3><code>AF-UI-QUALITY</code> — UI quality</h3>
+      <p><strong>When:</strong> First step inside <code>WF-POST-EXEC-GATES</code> for UI work — after Execute, before the review triad.</p>
+      <p><strong>User-facing route:</strong> <code>/silver:ui-review</code> — six-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance). Pre-ship quality gates enforce final usability, accessibility, and testability.</p>
+      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>/silver:execute --gaps-only</code> for targeted fixes.</p>
+
+      <h3>Post-execute order</h3>
+      <p>After <code>AF-EXECUTE</code>, <code>WF-POST-EXEC-GATES</code> runs:</p>
+      <div class="code-block">AF-UI-QUALITY
+  → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
+  → AF-VERIFY → AF-SECURE → AF-VALIDATE
+  → AF-QUALITY-GATE (pre-ship)
+  → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP</div>
+      <p><code>AF-DOCUMENT</code> inserts when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -165,23 +172,22 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="workflow-steps">Flow execution</h2>
-      <p>FLOW 7 (DESIGN CONTRACT) and FLOW 9 (UI QUALITY) are <strong>always</strong> included in this composer.</p>
+      <p><code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code> are <strong>always</strong> included in this composer — they are what distinguish <code>/silver:ui</code> from <code>/silver:feature</code>.</p>
 
       <h3>Standard composition chain</h3>
-      <div class="code-block">FLOW 1 (BOOTSTRAP) [skip if .planning/] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY)
-→ FLOW 4 (DECIDE) [if design tradeoff] → FLOW 5 (SPECIFY) [if no SPEC.md]
-→ FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT)
-→ FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)
-→ FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)</div>
+      <div class="code-block">AF-BOOTSTRAP [skip if .planning/] → AF-ORIENT → AF-CLARIFY [if fuzzy]
+→ AF-DECIDE [if design tradeoff] → AF-SPECIFY [if no SPEC.md]
+→ AF-QUALITY-GATE (pre-plan) → AF-PLAN → AF-DESIGN-CONTRACT
+→ AF-EXECUTE → WF-POST-EXEC-GATES</div>
 
-      <h3 id="design-contract">FLOW 7 — Design contract</h3>
-      <p><code>silver:ui-contract</code> produces <code>UI-SPEC.md</code> — component API, layout rules, interaction spec. This is the key differentiator from <code>silver:feature</code>.</p>
+      <h3 id="design-contract">Design contract (<code>AF-DESIGN-CONTRACT</code>)</h3>
+      <p><code>/silver:ui-contract</code> produces <code>UI-SPEC.md</code> — component API, layout rules, interaction spec. This is the key differentiator from <code>/silver:feature</code>, where design contract is conditional on UI scope.</p>
 
-      <h3 id="ui-visual-audit">FLOW 9 — UI quality</h3>
-      <p><code>silver:ui-review</code> runs <strong>before</strong> FLOW 10 REVIEW in post-execute order. Six-pillar audit: layout fidelity, accessibility (WCAG 2.1 AA), responsiveness, interaction quality, visual consistency, performance.</p>
+      <h3 id="ui-visual-audit">UI quality (<code>AF-UI-QUALITY</code>)</h3>
+      <p><code>/silver:ui-review</code> runs <strong>before</strong> the review triad (<code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code>) in post-execute order. Six-pillar audit: layout fidelity, accessibility (WCAG 2.1 AA), responsiveness, interaction quality, visual consistency, performance.</p>
 
-      <h3>Post-execution chain</h3>
-      <p>After FLOW 8: <strong>FLOW 9 → FLOW 10 → FLOW 12 → FLOW 11 → FLOW 13 pre-ship → FLOW 14</strong>. FLOW 17 DOCUMENT when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
+      <h3>Per-phase loop</h3>
+      <p>For multi-phase UI work: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> (with <code>AF-UI-QUALITY</code>) repeats per ROADMAP phase until verification and review exit conditions pass.</p>
 
       <div class="divider"></div>
 
@@ -191,10 +197,10 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>security</code> and <code>silver:secure</code> (FLOW 11)</li>
-            <li><code>/silver:quality-gates</code> pre-ship (FLOW 13)</li>
-            <li><code>silver:verify</code> (FLOW 12)</li>
-            <li><code>silver:ui-contract</code> (FLOW 7) and <code>silver:ui-review</code> (FLOW 9)</li>
+            <li><code>/silver:secure</code> (<code>AF-SECURE</code>)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/silver:verify</code> (<code>AF-VERIFY</code>)</li>
+            <li><code>/silver:ui-contract</code> (<code>AF-DESIGN-CONTRACT</code>) and <code>/silver:ui-review</code> (<code>AF-UI-QUALITY</code>)</li>
           </ul>
         </div>
       </div>
@@ -203,7 +209,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
-      <p>Silver Bullet routes to the UI workflow. After orientation and clarification when needed, <code>silver:ui-contract</code> creates a UI-SPEC.md with component API and layout rules. Execution implements against the spec. <code>silver:ui-review</code> audits for layout fidelity, accessibility, and responsiveness. Ship.</p>
+      <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation and <code>AF-CLARIFY</code> when needed, <code>/silver:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/silver:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

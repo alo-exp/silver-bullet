@@ -21,7 +21,7 @@
 <div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On this page</li><li><a href="#overview">Overview</a></li><li><a href="#sources">Supported sources</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow steps</a></li><li><a href="#failure-handling">Failure handling</a></li><li><a href="#handoff">Spec handoff</a></li><li class="sidebar-section">See also</li><li><a href="./index.html">All workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
 <article class="doc-content">
 <h2 id="overview">Overview</h2>
-<p><code>/silver:ingest</code> imports external product and design context into Silver Bullet's planning artifacts. It never calls APIs directly; all external data access is delegated to configured MCP connectors.</p>
+<p><code>/silver:ingest</code> supports <code>AF-SPECIFY</code> by importing external product and design context into Silver Bullet planning artifacts. It never calls APIs directly; all external data access is delegated to configured MCP connectors.</p>
 <p>The workflow is resumable through <code>.planning/INGESTION_MANIFEST.md</code>. Successful artifacts are skipped on later runs, while failed artifacts remain visible and actionable.</p>
 <div class="callout"><div class="callout-body"><strong>Core value:</strong> ingestion prevents the agent from inventing requirements when upstream context is missing. Missing or inaccessible sources are recorded explicitly at the point where their content was expected.</div></div>
 <div class="divider"></div>

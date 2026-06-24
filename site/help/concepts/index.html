@@ -150,7 +150,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Core Concepts</h1>
-    <p>The mental models that make Silver Bullet understandable: APO routing, lifecycle skills, hooks, quality gates, optional extension plugins, and enforced delivery evidence.</p>
+    <p>The mental models behind Silver Bullet v0.48.1 APO: Process → Workflow → Atomic Flow → Flow Step, lifecycle skills, hooks, quality gates, process packs, and enforced delivery evidence.</p>
   </div>
 </div>
 
@@ -331,7 +331,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.40.0 describes twelve independent enforcement layers. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.48.1 layers twelve independent enforcement surfaces on top of the APO catalog. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
@@ -576,12 +576,12 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
 
       <h3>Where It Runs</h3>
-      <p>The cross-artifact reviewer fires at two points: after UAT generation in <code>silver:feature</code> (FLOW 12, before milestone audit) and in <code>silver:release</code> (FLOW 18, before <code>silver:ship</code>) so blocking alignment findings are resolved before ship or milestone archival.</p>
+      <p>The cross-artifact reviewer fires at two points: after UAT generation in <code>WF-SILVER-FEATURE</code> (<code>AF-VERIFY</code>, before completion audit) and in <code>WF-SILVER-RELEASE</code> (<code>AF-RELEASE</code>, before ship readiness) so blocking alignment findings are resolved before ship or milestone archival.</p>
 
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of canonical AF-* atomic flows. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
+      <p>Silver Bullet v0.48.1 is an Agentic Process Orchestrator (APO): <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. The canonical <code>AF-*</code> catalog in <code>docs/apo-catalog.json</code> replaces fixed pipelines. When you invoke <code>/silver</code>, it classifies context, selects a <code>WF-*</code> workflow, and composes catalog-backed atoms — with the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> recording V-loop evidence and composition state in real time.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
@@ -632,7 +632,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="verification">Verification Before Completion</h2>
-      <p><code>silver:verify</code> is a non-skippable gate that runs before any workflow completes. It is a section 3 rule — it cannot be waived via preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
+      <p><code>AF-VERIFY</code> (Verify) is the catalog atom behind <code>silver:verify</code> — a non-skippable gate before any delivery workflow completes. It is a section 3 rule: it cannot be waived via preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="check-circle-2"></i></div>

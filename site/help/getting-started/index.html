@@ -151,7 +151,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Getting Started</h1>
-    <p>Everything you need to go from zero to running your first enforced workflow session — even if you're new to AI-assisted development.</p>
+    <p>Install Silver Bullet from a public marketplace, initialize your repo with <code>/silver:init</code>, and run your first APO-composed workflow on Claude Code, Codex, or Cursor.</p>
   </div>
 </div>
 
@@ -197,7 +197,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
-      <p>Silver Bullet is a <strong>host coding-agent plugin</strong> for Claude Code and Codex that provides composable workflow orchestration, enforcement hooks, spec-to-PR traceability, artifact review governance, DevOps risk controls, and guided recovery when a workflow stalls. Silver Bullet covers the core planning, execution, verification, review, ship, and release lifecycle; optional plugins extend specialized domains.</p>
+      <p>Silver Bullet is an <strong>Agentic Process Orchestrator (APO)</strong> plugin for Claude Code, Codex, and Cursor. It owns the default software-engineering and DevOps lifecycle: routing, planning, execution, verification, review, ship, and release — enforced by hooks and recorded in catalog-backed workflow state.</p>
+      <p>The process model is defined in <code>docs/apo-catalog.json</code>: <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. Silver Bullet ships 27 canonical <code>AF-*</code> atomic flows, 22 <code>WF-*</code> workflows, and 85 flow steps. Legacy <code>FLOW 1–18</code> names remain migration aliases only; new work should use catalog IDs.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
         <div class="prereq-card">
@@ -228,7 +229,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="bot"></i></div>
           <div>
             <h4>Host Coding Agent <span class="tag tag-required">Required</span></h4>
-            <p>The AI coding assistant that Silver Bullet runs inside. Claude Code and Codex are the supported hosts for the current public SB plugin surface.</p>
+            <p>The AI coding assistant Silver Bullet runs inside. Claude Code, Codex, and Cursor are the supported hosts for the current public marketplace packages.</p>
             <div class="install-cmd">Install your supported host runtime first</div>
           </div>
         </div>
@@ -266,7 +267,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Silver Bullet supports Claude Code, Codex, and Cursor host runtimes. The project setup command is the same once the plugin is available: run <code>/silver:init</code> in the repo you want SB to manage. As of v0.40.0, Codex installs Silver Bullet skills as internal <code>skill-source/</code> files and mirrors only the native <code>/silver:</code> picker surface; Cursor merges hooks into <code>~/.cursor/hooks.json</code> with state under <code>~/.cursor/.silver-bullet/</code>.</p>
+      <p>Silver Bullet supports Claude Code, Codex, and Cursor. Install from the public marketplace for your host, then run <code>/silver:init</code> in the repo you want SB to manage. Codex keeps internal <code>skill-source/</code> files and exposes the native <code>/silver:</code> picker; Cursor merges hooks into <code>~/.cursor/hooks.json</code> with state under <code>~/.cursor/.silver-bullet/</code>.</p>
+
+      <h3>Adoption path (all hosts)</h3>
+      <ol>
+        <li>Install the Silver Bullet package from your host marketplace (see per-host steps below).</li>
+        <li>Run <code>bash scripts/sb-bootstrap.sh</code> (checkout) or <code>bash scripts/sb-diagnostics.sh</code> to confirm hook delivery.</li>
+        <li>Open your project and run <code>/silver:init</code> — this stamps <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, docs scaffold, and activates enforcement.</li>
+        <li>Start work with <code>/silver &lt;your request&gt;</code> so SB classifies intent and composes the smallest safe <code>WF-*</code> workflow.</li>
+      </ol>
 
       <h3>First-time orientation</h3>
       <p>From a Silver Bullet checkout or after cloning the repo for contributor setup, run the onboarding probe before marketplace install:</p>
@@ -382,14 +391,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="step-num">2</div>
           <div class="step-body">
             <h4>Start with /silver</h4>
-            <p>Describe what you want to build. Silver Bullet classifies the request and routes to the smallest safe workflow: clarify, spec, feature, bugfix, UI, DevOps, release, research, or fast path.</p>
+            <p>Describe what you want to build. Silver Bullet classifies the request and composes the smallest safe <code>WF-*</code> workflow — clarify, spec, <code>WF-SILVER-FEATURE</code>, bugfix, UI, DevOps, research, release, or fast path.</p>
           </div>
         </li>
         <li>
           <div class="step-num">3</div>
           <div class="step-body">
             <h4>Let SB Compose the Pre-Plan Path</h4>
-            <p>For formal work, SB may run <code>/silver:spec</code>, <code>/silver:ingest</code>, <code>/silver:validate</code>, clarification, and quality gates before SB planning. Product work uses 8 core quality dimensions plus conditional gates where applicable; infrastructure work uses the 7 IaC-adapted gate.</p>
+            <p>For formal work, SB may run <code>AF-SPECIFY</code>, <code>AF-VALIDATE</code>, <code>AF-CLARIFY</code>, and <code>AF-QUALITY-GATE</code> before <code>AF-PLAN</code>. Product work uses 8 core quality dimensions plus conditional gates; infrastructure work uses blast radius and the 7 IaC-adapted gate.</p>
           </div>
         </li>
         <li>
