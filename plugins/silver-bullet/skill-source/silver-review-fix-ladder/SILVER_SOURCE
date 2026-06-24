@@ -1,7 +1,7 @@
 ---
 name: "silver:review-fix-ladder"
 title: "Review Fix Ladder"
-description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through a host-aware model/reasoning ladder until two consecutive clean passes are achieved at each rung. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
+description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder, requiring two consecutive clean passes at each rung before advancing. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
 user-invocable: false
 ---
 
@@ -92,12 +92,13 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 
 **On failure:** STOP. Report the violation. Fix the process, skill, or orchestrator prompt. Resume **only** after the fix is in place — re-run the failed phase on the **same** rung, not the next rung.
 
-### No Full-Ladder Obligation
+### Full-Ladder Requirement
 
-- **Default:** Escalate to the next rung **only while charter goals still have confirmed gaps** after a fully compliant rung.
-- **User may stop early** after charter is satisfied at the current rung — do not force escalation through all resolver rungs.
+- **Default:** Execute **every resolved rung** in order. A clean rung is not a completion condition; it is the gate that permits advancement to the next rung.
+- **Two consecutive clean rounds per rung:** For each rung, `verify_1` and `verify_2` must both be clean, and the orchestrator verification signals after each pass must also be clean.
+- **Advance after clean rung:** After two consecutive clean rounds and clean orchestrator signals, the orchestrator MUST advance to rung N+1 unless N is the final resolved rung.
 - **Stop after first compliance failure** — never "push through" remaining rungs while the process is broken.
-- A smoke demonstration (rung 1 only: audit-fix + verify_1 + verify_2 + orchestrator grep) is sufficient to prove compliance; do not continue to rung 2+ unless findings remain and compliance checks pass.
+- A smoke demonstration may be run only when the user explicitly asks for a smoke test; otherwise the ladder must continue through the final resolved rung.
 
 ### STOP Conditions (immediate halt)
 
@@ -110,7 +111,7 @@ STOP and do **not** advance when any of the following is true:
 5. **Scope violation** — any command or edit outside locked paths
 6. **Parallel rungs** — multiple rung phases launched in one turn or overlapping
 7. **Verify subagent edited files** — verify pass was not readonly
-8. **Charter satisfied** — all goals met with orchestrator evidence at current rung (success stop — report and close out)
+8. **Final rung complete** — the last resolved rung completed `audit_fix` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
 9. **User stop** — user directs halt or scope change
 
 ### Recovery Procedure (before resuming)
@@ -121,7 +122,7 @@ When STOP triggers for compliance (items 1–7):
 2. **Fix root cause** — update orchestrator behavior, subagent prompt, or skill/process gap (not "try again blindly")
 3. **Re-anchor state** — document current state machine position (`rung_N_verify_1`, etc.)
 4. **Re-run failed phase** — on the **same** rung, from the first failed state (usually re-run verify or re-run audit-fix if verify found gaps)
-5. **Re-run compliance gate** — only after a clean re-run may you advance or close out
+5. **Re-run compliance gate** — only after a clean re-run may you advance, or close out if the final resolved rung is complete
 6. **Do not skip ahead** — never compensate for a compliance failure by jumping to a higher rung
 
 ### Explicit States Per Rung
@@ -132,7 +133,7 @@ For rung N, the orchestrator MUST traverse these states in order:
 rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2 → [orchestrator grep] → rung_N+1_audit_fix
 ```
 
-**STOP** if tempted to skip any state, combine verify passes, or advance without orchestrator evidence.
+**STOP** if tempted to skip any state, combine verify passes, stop early because the charter is satisfied, or advance without orchestrator evidence.
 
 ### Anti-Skip Rules (MUST / FORBIDDEN)
 
@@ -142,7 +143,7 @@ rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2
    - (a) audit+fix subagent
    - (b) verify-only subagent pass 1 — if clean, proceed; if fail, return to (a) on **same** rung
    - (c) verify-only subagent pass 2 — only if pass 1 was clean
-   - Advance to rung N+1 **only** if **both** verify passes are clean.
+   - Advance to rung N+1 **only** if **both** verify passes are clean; after they are clean, advancement is mandatory unless N is the final resolved rung.
    - **FORBIDDEN** to combine passes into one subagent prompt (e.g. "do 2 passes" in a single Task).
    - **FORBIDDEN** to advance after only one clean verify pass.
 
@@ -169,7 +170,7 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 | 3 | — | Orchestrator runs each charter verification signal; log pass/fail |
 | 4 | `rung_N_verify_2` | If step 3 clean: launch **one** verify-only subagent pass 2 (`readonly: true`) |
 | 5 | — | Orchestrator runs charter signals again; log pass/fail |
-| 6 | advance | Only if steps 3 **and** 5 are clean; else return to step 1 |
+| 6 | advance | If steps 3 **and** 5 are clean, advance to rung N+1 unless N is the final resolved rung; else return to step 1 |
 
 ### Repo-wide mode (only after user confirms)
 
@@ -187,13 +188,13 @@ Report:
 - Charter coverage matrix (goal → evidence / status)
 - Residual risks
 - Files touched (scoped paths only)
-- Final rung reached and **why stopped** (charter satisfied, compliance failure, or user stop)
+- Final rung reached and **why stopped** (final resolved rung complete, compliance failure, or user stop)
 
 ## Host Delegation Notes
 
 | Host | Delegation |
 |------|------------|
-| **Cursor** | `Task` subagent with `model` set to the Cursor slug from the resolver (`composer-2.5` for Composer; `gpt-5.4-medium`, `gpt-5.5-high`, etc. for GPT tiers). Verify passes: `readonly: true`. |
+| **Cursor** | `Task` subagent with `model` set to the **composite slug** from `cursor_task_slug()` in `scripts/review-fix-ladder.py` (reasoning effort is encoded in the slug — there is no separate Task reasoning parameter). Ladder order: Composer low → medium → high → xhigh, then GPT-5.5 low → medium → high → extra-high. Composer maps to `composer-2.5` (low) and `composer-2.5-fast` (medium/high/xhigh — Cursor exposes no finer Composer effort slugs). GPT-5.5 maps to `gpt-5.5`, `gpt-5.5-medium`, `gpt-5.5-high`, `gpt-5.5-extra-high` (not `gpt-5.5-xhigh`). Verify passes: `readonly: true`. **Note:** host model picker pinning may filter the Task enum; if a slug is rejected, document the rejection and apply model-lock substitution per rung. |
 | **Claude Code** | Subagent with model `claude-sonnet-4-6`, `claude-opus-4-7`, or `claude-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Codex** | `codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
 
@@ -264,5 +265,5 @@ After each verify-only subagent returns, the orchestrator MUST:
 
 1. Run every charter verification signal (grep, line count, pattern checks).
 2. Record command + output + pass/fail.
-3. Only proceed to the next verify pass or next rung if signals are clean.
+3. Only proceed to the next verify pass if signals are clean; after `verify_2`, proceed to the next rung if signals are clean and another resolved rung remains.
 4. **IGNORE** subagent VERIFY_PASS if orchestrator signals fail.

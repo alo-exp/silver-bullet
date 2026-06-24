@@ -8,7 +8,7 @@
 <title>Command Reference — Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet command reference: lifecycle commands, composable atomic flows, .silver-bullet.json config options, file structure, and session log format.">
 <meta property="og:title" content="Command Reference — Silver Bullet Help">
-<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.47.1.">
+<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.48.0.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/reference/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -521,7 +521,7 @@ footer a:hover{color:var(--accent-light)}
         <li><code>silver:branch-finish</code>, <code>silver:completion-audit</code> → FLOW 14/12 sub-steps</li>
       </ul>
 
-      <h3 id="hook-activation">Hook Activation (v0.47.1)</h3>
+      <h3 id="hook-activation">Hook Activation (v0.48.0)</h3>
       <p>Hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Non-initiated workspaces receive no enforcement until <code>/silver:init</code> runs.</p>
 
       <h3 id="recommended-tools">Recommended Tools (opt-in)</h3>
@@ -534,7 +534,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.47.1"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.48.0"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,

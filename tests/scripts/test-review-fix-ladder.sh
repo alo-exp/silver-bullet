@@ -121,10 +121,10 @@ assert_jq_true "Claude fallback model chain" '
 
 cursor_json="$(python3 "$RESOLVER" --host cursor --json)"
 cursor_rungs="$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["rungs"]))' <<<"$cursor_json")"
-if [[ "$cursor_rungs" == "10" ]]; then
-  pass "Cursor fixed ladder has 10 rungs"
+if [[ "$cursor_rungs" == "8" ]]; then
+  pass "Cursor fixed ladder has 8 rungs"
 else
-  fail "Cursor fixed ladder has 10 rungs — got $cursor_rungs"
+  fail "Cursor fixed ladder has 8 rungs — got $cursor_rungs"
 fi
 assert_jq_true "Cursor fixed starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$cursor_json"
 assert_jq_true "Cursor fixed ends gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh"}' "$cursor_json"

@@ -199,6 +199,7 @@ fi
 missing_markers=()
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+catalog_index="$repo_root/docs/generated/atomic-flow-index.json"
 for marker in "${required_markers[@]}"; do
   if [[ "$marker" == "silver-quality-gates" ]] && declare -f sb_qg_preplan_marker_recorded >/dev/null 2>&1; then
     sb_qg_preplan_marker_recorded "$state_contents" && continue
@@ -208,6 +209,16 @@ for marker in "${required_markers[@]}"; do
     sb_required_skill_is_recorded "$state_contents" "$marker" && continue
   elif grep -Fqx -- "$marker" "$state_file" 2>/dev/null; then
     continue
+  fi
+  if [[ -f "$catalog_index" ]]; then
+    catalog_entity="$(jq -r --arg marker "$marker" '.runtime_queue_tokens[$marker] // ""' "$catalog_index" 2>/dev/null || true)"
+    if [[ -n "$catalog_entity" ]]; then
+      if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+        sb_required_skill_is_recorded "$state_contents" "$catalog_entity" && continue
+      elif grep -Fqx -- "$catalog_entity" "$state_file" 2>/dev/null; then
+        continue
+      fi
+    fi
   fi
   missing_markers+=("$marker")
 done
