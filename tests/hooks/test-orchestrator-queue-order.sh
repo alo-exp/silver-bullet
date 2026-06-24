@@ -171,8 +171,8 @@ else
 fi
 
 research_q="$(sb_orchestrator_default_queue_for_composer silver-research)"
-if [[ "$research_q" == "silver-clarify,silver-research" ]]; then
-  echo "PASS: silver-research clarify → research queue"
+if [[ "$research_q" == "silver-clarify,silver-research,silver-ensure-docs,silver-validate" ]]; then
+  echo "PASS: silver-research clarify → research → document → validate queue"
   PASS=$((PASS + 1))
 else
   echo "FAIL: silver-research queue incorrect (got: $research_q)"
@@ -184,6 +184,13 @@ if printf '%s' "$research_q" | grep -q 'silver-execute'; then
 else
   echo "PASS: silver-research excludes execute atom"
   PASS=$((PASS + 1))
+fi
+if sb_orchestrator_is_flow_atom silver-research && sb_orchestrator_is_flow_atom silver-ensure-docs; then
+  echo "PASS: silver-research and silver-ensure-docs are flow atoms"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: orchestrator flow_atom missing research or ensure-docs"
+  FAIL=$((FAIL + 1))
 fi
 
 if printf '%s' "$release_q" | grep -q 'silver-execute'; then

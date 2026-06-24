@@ -236,10 +236,35 @@ def site_doc_freshness(catalog: dict) -> list[tuple[str, str, str]]:
     silver = (REPO_ROOT / "silver-bullet.md").read_text(encoding="utf-8")
     template = (REPO_ROOT / "templates" / "silver-bullet.md.base").read_text(encoding="utf-8")
     site = (REPO_ROOT / "site" / "help" / "workflows" / "index.html").read_text(encoding="utf-8")
+    public_paths = [
+        REPO_ROOT / "README.md",
+        REPO_ROOT / "silver-bullet.md",
+        REPO_ROOT / "templates" / "silver-bullet.md.base",
+        *sorted((REPO_ROOT / "docs").glob("*.md")),
+        *sorted((REPO_ROOT / "site").rglob("*.html")),
+        REPO_ROOT / "site" / "help" / "search.js",
+    ]
+    stale_phrases = (
+        "18 atomic flows",
+        "18-flow catalog",
+        "18-flow architecture",
+        "18-flow composable",
+        "full 18-flow",
+        "catalog of 18 named paths",
+    )
+    stale_mentions = []
+    for path in public_paths:
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8").lower()
+        hits = [phrase for phrase in stale_phrases if phrase in text]
+        if hits:
+            stale_mentions.append(f"{path.relative_to(REPO_ROOT)}:{','.join(hits)}")
     return [
         check("silver-bullet docs mention APO catalog", "APO catalog" in silver and "docs/apo-catalog.json" in silver, ""),
         check("template docs mention APO catalog", "APO catalog" in template and "docs/apo-catalog.json" in template, ""),
         check("workflow help site mentions atomic flows", "atomic flow" in site.lower() and "apo" in site.lower(), ""),
+        check("public docs avoid stale 18-flow atomic-flow count", not stale_mentions, "; ".join(stale_mentions)),
     ]
 
 

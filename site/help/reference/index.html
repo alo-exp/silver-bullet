@@ -8,7 +8,7 @@
 <title>Command Reference — Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet command reference: lifecycle commands, composable atomic flows, .silver-bullet.json config options, file structure, and session log format.">
 <meta property="og:title" content="Command Reference — Silver Bullet Help">
-<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.48.0.">
+<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.48.1.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/reference/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -157,7 +157,7 @@ footer a:hover{color:var(--accent-light)}
         <li><a href="#orchestration-workflows">Orchestration Workflows</a></li>
         <li><a href="#core-lifecycle-skills">Core Lifecycle Skills</a></li>
         <li><a href="#devops-skills">DevOps Skills</a></li>
-        <li><a href="#composable-flows">Composable Flows</a></li>
+        <li><a href="#composable-flows">APO Catalog</a></li>
         <li class="sidebar-section">Configuration</li>
         <li><a href="#config">silver-bullet.json</a></li>
         <li><a href="#session-log">Session Log Format</a></li>
@@ -465,67 +465,77 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
-      <!-- COMPOSABLE PATHS ARTIFACTS -->
-      <h2 id="composable-flows">Composable Flows &amp; New Artifacts</h2>
-      <p>Silver Bullet uses composable flows architecture. Three new artifacts and reference concepts are introduced.</p>
+      <!-- APO CATALOG ARTIFACTS -->
+      <h2 id="composable-flows">APO Catalog, Generated Views &amp; Migration</h2>
+      <p>v0.48 makes <code>docs/apo-catalog.json</code> the sole authority for the Silver Bullet process model. It defines Process → Workflow → Atomic Flow → Flow Step/Skill, including 27 canonical atomic flows, 22 workflows, 85 flow steps, V-loops, evidence records, intent ledgers, composition logs, tool policies, and runtime mappings.</p>
 
-      <h3 id="artifact-review-assessor">artifact-review-assessor</h3>
-      <p><strong>Skill name:</strong> <code>artifact-review-assessor</code></p>
-      <p><strong>Purpose:</strong> Triage reviewer findings from any review cycle (plan-checker, code-reviewer, security-auditor, etc.) into three actionable categories:</p>
+      <h3 id="catalog-generated-views">Catalog source of truth</h3>
       <ul>
-        <li><strong>MUST-FIX</strong> — finding blocks completion; must be resolved before exit condition is met</li>
-        <li><strong>NICE-TO-HAVE</strong> — improvement worth making if time allows; does not block</li>
-        <li><strong>DISMISS</strong> — finding is not applicable, already addressed, or out of scope</li>
+        <li><code>docs/apo-catalog.json</code> — authoritative APO catalog.</li>
+        <li><code>docs/composable-flows-contracts.md</code> — generated human-readable contract reference.</li>
+        <li><code>docs/workflow-composition-matrix.md</code> — generated workflow tree/matrix view.</li>
+        <li><code>docs/generated/atomic-flow-index.json</code> — generated runtime/test index.</li>
       </ul>
-      <p><strong>When it runs:</strong> Inside <strong>FLOW 10 (REVIEW)</strong> after each reviewer pass. Also runs in FLOW 5 (SPECIFY), FLOW 6 (PLAN), and FLOW 12 (VERIFY) after artifact reviewers complete. Produces a triage report that the orchestrator uses to decide whether exit condition is met.</p>
-      <p><strong>Review cycle pattern:</strong> Artifact → reviewer → artifact-review-assessor → fix → 2-pass. Two consecutive clean passes (no MUST-FIX findings) satisfy the exit condition.</p>
+      <p>Do not hand-maintain workflow trees in prose. Change the catalog, regenerate the views, then run freshness tests.</p>
 
-      <div class="divider"></div>
+      <h3 id="vloop-subagents">V-loops and subagents</h3>
+      <p>Every atomic flow executes as exactly one subagent work package. Each flow step/skill has a local V-loop; step V-loops roll up into the atomic-flow V-gate, atomic-flow V-gates roll up into workflow gates, and final completion validates material user intent against evidence.</p>
 
-      <h3 id="workflow-md">Per-instance workflow tracker</h3>
-      <p><strong>Artifact purpose:</strong> Real-time composition state tracking. The active record lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It captures what has been decided, what paths have run, what has been inserted dynamically, and what comes next. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
-      <p><strong>Key fields:</strong></p>
+      <h3 id="migration-notes">v0.48 migration notes</h3>
       <ul>
-        <li><code>path_log</code> — ordered list of paths completed with timestamps and exit conditions met</li>
-        <li><code>phase_iterations</code> — how many times the per-phase loop (PLAN → EXECUTE → REVIEW → VERIFY) has run</li>
-        <li><code>dynamic_insertions</code> — paths inserted mid-composition (e.g., FLOW 15 DEBUG on failure, FLOW 7 DESIGN CONTRACT on UI detection)</li>
-        <li><code>autonomous_decisions</code> — decisions the orchestrator made without user input (logged for transparency)</li>
-        <li><code>deferred_improvements</code> — NICE-TO-HAVE findings from assessor that were deferred</li>
-        <li><code>next_path</code> — the path scheduled to run next</li>
+        <li>Legacy <code>FLOW 1-18</code> names are compatibility aliases only. New docs, workflows, and tests should use <code>AF-*</code> or <code>WF-*</code> catalog IDs.</li>
+        <li>Older <code>WORKFLOW.md</code> state is legacy; active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code>.</li>
+        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with v0.48.</li>
+        <li>If stale generated docs are detected, run <code>python3 scripts/generate-apo-artifacts.py</code> and the APO freshness tests before release.</li>
       </ul>
-      <p><strong>Where created:</strong> <strong>FLOW 1 (BOOTSTRAP)</strong> on first run, or via <code>silver:migrate</code> when upgrading from pre-composable-flows versions. Updated by the supervision loop after each path completes.</p>
 
-      <div class="divider"></div>
-
-      <h3 id="path-contracts">Path Contracts</h3>
-      <p><strong>Reference:</strong> <code>docs/composable-flows-contracts.md</code> — the authoritative contract reference for all 18 flows.</p>
-      <p>Each path contract defines 7 required fields:</p>
-      <ul>
-        <li><strong>Prerequisites</strong> — artifacts that MUST exist before the path runs</li>
-        <li><strong>Trigger</strong> — context signals that cause <code>/silver</code> to include this path in the composition</li>
-        <li><strong>Steps</strong> — ordered skill invocations (mandatory vs. as-needed)</li>
-        <li><strong>Produces</strong> — artifacts created or modified by this path</li>
-        <li><strong>Review Cycle</strong> — artifact → reviewer → artifact-review-assessor → fix → 2-pass (or "None")</li>
-        <li><strong>SB State Impact</strong> — which SB state fields or planning artifacts are read/written</li>
-        <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
-      </ul>
-      <p>The 18 flows are: FLOW 1 BOOTSTRAP · FLOW 2 ORIENT · FLOW 3 CLARIFY · FLOW 4 DECIDE · FLOW 5 SPECIFY · FLOW 6 PLAN · FLOW 7 DESIGN CONTRACT · FLOW 8 EXECUTE · FLOW 9 UI QUALITY · FLOW 10 REVIEW · FLOW 11 SECURE · FLOW 12 VERIFY · FLOW 13 QUALITY GATE · FLOW 14 SHIP · FLOW 15 DEBUG · FLOW 16 DESIGN HANDOFF · FLOW 17 DOCUMENT · FLOW 18 RELEASE.</p>
-      <p><strong>Post-execute order:</strong> For delivery compositions, runtime order after EXECUTE is REVIEW (10) → VERIFY (12) → SECURE (11) → VALIDATE → QUALITY GATE pre-ship (13) → SHIP (14). Flow numbers are stable catalog IDs; see <code>docs/composable-flows-contracts.md</code>.</p>
+      <h3 id="atomic-flow-list">Canonical atomic flows</h3>
+      <table class="ref-table">
+        <thead><tr><th>Atomic flow</th><th>Slug</th><th>Capability class</th><th>Primary skills</th><th>Legacy alias</th></tr></thead>
+        <tbody>
+          <tr><td><code>AF-ROUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ROUTE</td><td style="font-family:inherit;font-size:.875rem">route intent</td><td style="font-family:inherit;font-size:.875rem"><code>silver</code>, <code>silver-orchestrator</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-BOOTSTRAP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td><td style="font-family:inherit;font-size:.875rem">project bootstrap</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:init</code> project setup</td><td style="font-family:inherit;font-size:.875rem">FLOW 1</td></tr>
+          <tr><td><code>AF-ORIENT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td><td style="font-family:inherit;font-size:.875rem">context orientation</td><td style="font-family:inherit;font-size:.875rem"><code>silver-context</code>, <code>silver-orient</code>, <code>silver-review-stats</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 2</td></tr>
+          <tr><td><code>AF-CLARIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">CLARIFY</td><td style="font-family:inherit;font-size:.875rem">scope clarification</td><td style="font-family:inherit;font-size:.875rem"><code>silver-clarify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 3</td></tr>
+          <tr><td><code>AF-DECIDE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DECIDE</td><td style="font-family:inherit;font-size:.875rem">decision research</td><td style="font-family:inherit;font-size:.875rem"><code>review-research</code>, <code>silver-research</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 4</td></tr>
+          <tr><td><code>AF-SPECIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td><td style="font-family:inherit;font-size:.875rem">requirements specification</td><td style="font-family:inherit;font-size:.875rem"><code>review-ingestion-manifest</code>, <code>review-requirements</code>, <code>review-spec</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 5</td></tr>
+          <tr><td><code>AF-PLAN</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td><td style="font-family:inherit;font-size:.875rem">execution planning</td><td style="font-family:inherit;font-size:.875rem"><code>review-context</code>, <code>review-plan</code>, <code>silver-plan</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 6</td></tr>
+          <tr><td><code>AF-DESIGN-CONTRACT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN_CONTRACT</td><td style="font-family:inherit;font-size:.875rem">design contract</td><td style="font-family:inherit;font-size:.875rem"><code>review-design</code>, <code>silver-ui-contract</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 7</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem"><code>silver-execute</code>, <code>silver-refactor</code>, <code>silver-spike</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 8</td></tr>
+          <tr><td><code>AF-UI-QUALITY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem"><code>silver-ui</code>, <code>silver-ui-review</code>, <code>usability</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 9</td></tr>
+          <tr><td><code>AF-REVIEW-REQUEST</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW_REQUEST</td><td style="font-family:inherit;font-size:.875rem">review request</td><td style="font-family:inherit;font-size:.875rem"><code>silver-review-request</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-REVIEW</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td><td style="font-family:inherit;font-size:.875rem">artifact and code review</td><td style="font-family:inherit;font-size:.875rem"><code>artifact-reviewer</code>, <code>artifact-review-assessor</code>, <code>review-cross-artifact</code> …</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-REVIEW-TRIAGE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW_TRIAGE</td><td style="font-family:inherit;font-size:.875rem">review triage and fix</td><td style="font-family:inherit;font-size:.875rem"><code>silver-review-fix-ladder</code>, <code>silver-review-triage</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem"><code>review-verification</code>, <code>silver-test</code>, <code>silver-verify</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 12</td></tr>
+          <tr><td><code>AF-SECURE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td><td style="font-family:inherit;font-size:.875rem">security and llm safety</td><td style="font-family:inherit;font-size:.875rem"><code>ai-llm-safety</code>, <code>security</code>, <code>silver-secure</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 11</td></tr>
+          <tr><td><code>AF-QUALITY-GATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem"><code>devops-quality-gates</code>, <code>extensibility</code>, <code>modularity</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 13</td></tr>
+          <tr><td><code>AF-SHIP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td><td style="font-family:inherit;font-size:.875rem">ship readiness</td><td style="font-family:inherit;font-size:.875rem"><code>silver-canary</code>, <code>silver-deploy</code>, <code>silver-ship</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BRANCH_FINISH</td><td style="font-family:inherit;font-size:.875rem">branch hygiene</td><td style="font-family:inherit;font-size:.875rem"><code>silver-branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">COMPLETION_AUDIT</td><td style="font-family:inherit;font-size:.875rem">completion audit</td><td style="font-family:inherit;font-size:.875rem"><code>silver-completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-DEBUG</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>silver-bugfix</code>, <code>silver-debug</code>, <code>silver-forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>silver-content</code>, <code>silver-ensure-docs</code>, <code>silver-handoff</code> …</td><td style="font-family:inherit;font-size:.875rem">FLOW 16/17</td></tr>
+          <tr><td><code>AF-RELEASE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td><td style="font-family:inherit;font-size:.875rem">release management</td><td style="font-family:inherit;font-size:.875rem"><code>silver-create-release</code>, <code>silver-release</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 18</td></tr>
+          <tr><td><code>AF-BLAST-RADIUS</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BLAST_RADIUS</td><td style="font-family:inherit;font-size:.875rem">blast radius assessment</td><td style="font-family:inherit;font-size:.875rem"><code>silver-blast-radius</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-DEVOPS-ROUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEVOPS_ROUTE</td><td style="font-family:inherit;font-size:.875rem">devops toolchain routing</td><td style="font-family:inherit;font-size:.875rem"><code>devops-skill-router</code>, <code>silver-devops</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-VALIDATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VALIDATE</td><td style="font-family:inherit;font-size:.875rem">gap validation</td><td style="font-family:inherit;font-size:.875rem"><code>silver-validate</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-PHASE-MANAGE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PHASE_MANAGE</td><td style="font-family:inherit;font-size:.875rem">phase and state management</td><td style="font-family:inherit;font-size:.875rem"><code>silver-add</code>, <code>silver-migrate</code>, <code>silver-phase</code> …</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-FAST-PATH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem"><code>silver-benchmark</code>, <code>silver-fast</code>, <code>silver-feature</code> …</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+        </tbody>
+      </table>
 
       <h3 id="runtime-queue-tokens">Runtime Queue Tokens</h3>
-      <p>The orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) enforces via queue tokens that map to flows or sub-steps:</p>
+      <p>The orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) still uses some compatibility queue tokens. They map to catalog entities and sub-steps; they are not separate workflow authorities:</p>
       <ul>
-        <li><code>FLOW-QUALITY-GATE</code>, <code>FLOW-QUALITY-GATE-PRESHIP</code>, <code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code> → FLOW 13</li>
-        <li><code>silver:blast-radius</code>, <code>devops-skill-router</code> → FLOW 6 DevOps extensions</li>
-        <li><code>silver:validate</code> → FLOW 5/6/11 gap analysis</li>
-        <li><code>silver:branch-finish</code>, <code>silver:completion-audit</code> → FLOW 14/12 sub-steps</li>
+        <li><code>FLOW-QUALITY-GATE</code>, <code>FLOW-QUALITY-GATE-PRESHIP</code>, <code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code> → <code>AF-QUALITY-GATE</code></li>
+        <li><code>silver:blast-radius</code> → <code>AF-BLAST-RADIUS</code></li>
+        <li><code>devops-skill-router</code> → <code>AF-DEVOPS-ROUTE</code></li>
+        <li><code>silver:validate</code> → <code>AF-VALIDATE</code></li>
+        <li><code>silver:branch-finish</code> → <code>AF-BRANCH-FINISH</code></li>
+        <li><code>silver:completion-audit</code> → <code>AF-COMPLETION-AUDIT</code></li>
       </ul>
 
-      <h3 id="hook-activation">Hook Activation (v0.48.0)</h3>
-      <p>Hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Non-initiated workspaces receive no enforcement until <code>/silver:init</code> runs.</p>
-
       <h3 id="recommended-tools">Recommended Tools (opt-in)</h3>
-      <p><code>recommended_tools.graphify.enabled_by_user</code> and <code>recommended_tools.agentmemory.enabled_by_user</code> in <code>.silver-bullet.json</code>. When both are enabled: <strong>save via agentmemory, retrieve via Graphify</strong>. Consent flows via <code>/silver:init</code> and <code>/silver:update</code>.</p>
+      <p><code>recommended_tools.graphify.enabled_by_user</code> and <code>recommended_tools.agentmemory.enabled_by_user</code> live in <code>.silver-bullet.json</code>. Once opted in, a tool is mandatory when the selected catalog flow declares it relevant and must either produce evidence or record a catalog-backed failure/skip reason.</p>
 
       <div class="divider"></div>
 
@@ -534,7 +544,7 @@ footer a:hover{color:var(--accent-light)}
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"version"</span>: <span class="str">"0.48.0"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.48.1"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,

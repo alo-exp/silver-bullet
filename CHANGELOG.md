@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.48.1] — 2026-06-24
+
+Post-release APO runtime alignment, orchestrator queue fixes, and help-center refresh for the v0.48 catalog model.
+
+## Bug Fixes
+- Fixed `silver-devops` orchestrator post-exec queue token (`FLOW-QUALITY-GATE-PRESHIP` instead of stale `FLOW-DEVOPS-QUALITY-GATE-PRESHIP`).
+- Registered `silver-research` and `silver-ensure-docs` as flow atoms and extended the `silver-research` default queue with documentation and validation steps.
+
+## Tests
+- Added orchestrator queue-order and worker-template parity coverage for research and devops flows.
+- Tightened APO schema test for subagent-only `dispatch_mode` and composition triple alignment gates.
+- Added stale 18-flow phrase guard across public docs in `check-apo-invariants.py`.
+
+## Documentation
+- Refreshed README, help center, OG card, and workflow pages for the canonical `AF-*` catalog (27 atomic flows, not legacy 18-flow wording).
+- Added AGENTS.md rule requiring Composer 2.5 subagents for website and help-center authoring.
+
+---
+
 ## [0.48.0] — 2026-06-24
 
 Atomic-flow APO redesign.
@@ -13,7 +32,7 @@ Atomic-flow APO redesign.
 - Added blocking APO gates for catalog schema/SOT, atomic-flow deduplication, per-flow and per-step V-loops, composition SOT, evidence/intent models, subagent execution metadata, runtime alignment, worker parity, tool policies, router coverage, and site/doc freshness.
 
 ## Documentation
-- Updated `silver-bullet.md`, `templates/silver-bullet.md.base`, and workflow help docs to describe the APO catalog authority and atomic-flow execution model.
+- Updated `silver-bullet.md`, `templates/silver-bullet.md.base`, README/help/reference/workflow docs, and search metadata to describe the APO catalog authority, migration from FLOW 1-18 aliases, V-loop rollups, subagent execution, opted-in tool governance, and generated-view freshness model.
 
 ---
 

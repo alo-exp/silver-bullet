@@ -177,7 +177,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
     AS1 demands evidence for claims. SB ties evidence back to accepted requirements, validation, UAT, review, and release artifacts.
 
 15. **Pipeline is less composable than SB's flow catalog.**
-    AS1's full pipeline is easy to understand, but SB's 18-flow catalog can shape different paths for feature, bugfix, UI, DevOps, research, release, fast path, debug, docs, and forensics.
+    AS1's full pipeline is easy to understand, but SB's canonical AF-* catalog can shape different paths for feature, bugfix, UI, DevOps, research, release, fast path, debug, docs, and forensics.
 
 16. **Domain fix automation can be risky.**
     Audit-to-fix flows need strong safety tiers and rollback. SB's stricter execute/verify/review/ship cycle is slower but safer for shared codebases.
@@ -197,7 +197,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
    SB connects clarification, specs, requirements, validation, planning, execution, review, security, verification, UAT, docs, ship, and release.
 
 3. **Composable workflow model.**
-   SB's 18-flow catalog lets the orchestrator assemble only the flows required for the task.
+   SB's canonical AF-* catalog lets the orchestrator assemble only the flows required for the task.
 
 4. **Release governance is deeper.**
    SB owns milestone audit, UAT audit, release gap closure, docs gates, ship readiness, milestone archive, changelog, tag, and GitHub Release creation.

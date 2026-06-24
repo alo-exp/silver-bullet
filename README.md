@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.47.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.47.1)
+[![version](https://img.shields.io/badge/version-v0.48.1-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.48.1)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
@@ -34,7 +34,7 @@ engineering lifecycle.
 | Area | Silver Bullet owns |
 |------|--------------------|
 | Entry point | `/silver` routes freeform work into a task-shaped workflow |
-| Workflow shape | Dynamic composition from 18 atomic flows |
+| Workflow shape | Dynamic composition from the canonical AF-* catalog |
 | Process discipline | Hook-enforced, state-tracked lifecycle evidence |
 | Quality | Product, security, DevOps, docs, UAT, CI, and release gates |
 | Delivery safety | Mechanical blocks on unsafe edits, PRs, deploys, and releases |
@@ -86,16 +86,13 @@ chain needed for the task:
 | `full-dev-cycle` | Applications, APIs, CLIs, libraries, plugin work | Clarify, specify, plan, execute, review, secure, verify, document, ship, release |
 | `devops-cycle` | Terraform, Kubernetes, Helm, CI/CD, cloud, ops | Incident path, blast radius, IaC quality, environment promotion, deploy/rollback, release |
 
-The canonical flow catalog lives in
-[docs/composable-flows-contracts.md](docs/composable-flows-contracts.md). It
-contains 18 atomic flows:
-
-```text
-BOOTSTRAP -> ORIENT -> CLARIFY -> DECIDE -> SPECIFY -> PLAN
--> DESIGN CONTRACT -> EXECUTE -> UI QUALITY -> REVIEW -> SECURE
--> VERIFY -> QUALITY GATE -> SHIP -> DEBUG -> DESIGN HANDOFF
--> DOCUMENT -> RELEASE
-```
+The authoritative APO catalog lives in
+[docs/apo-catalog.json](docs/apo-catalog.json), with generated views in
+[docs/composable-flows-contracts.md](docs/composable-flows-contracts.md) and
+[docs/workflow-composition-matrix.md](docs/workflow-composition-matrix.md).
+It defines 27 canonical `AF-*` atomic flows, 22 catalog-backed workflows,
+85 flow-step V-loops, evidence records, and runtime token mappings. Legacy
+FLOW 1-18 labels are migration aliases only.
 
 `/silver` includes only the flows whose prerequisites and triggers apply. For
 example, a UI bugfix can include DEBUG, DESIGN CONTRACT, EXECUTE, UI QUALITY,

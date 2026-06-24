@@ -36,7 +36,7 @@ Independent review of Silver Bullet against stated goals: autonomous orchestrati
 
 **Strengths**
 
-- Rich 18-flow composable catalog (`docs/composable-flows-contracts.md`) with clear contracts.
+- Historical pre-v0.48 note: the then-current 18 FLOW alias catalog (`docs/composable-flows-contracts.md`) had clear contracts for its era.
 - Two-tier commit vs delivery model is sound (`completion-audit.sh`).
 - Post-v0.29 workflow tracker fixes stale `WORKFLOW.md` bypass; strict gate on `SB_WORKFLOW_ID` at delivery.
 - Artifact existence checks at delivery partially close the invocation gap (VERIFICATION, REVIEW, SECURITY, VALIDATION).
@@ -109,7 +109,7 @@ What exists instead:
 
 ### Flow taxonomy completeness
 
-18 flows in `docs/composable-flows-contracts.md` are **conceptually complete** for software delivery. Gaps:
+Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as conceptually complete for software delivery. Gaps later informed the v0.48 APO redesign:
 
 - No atomic **PER-PROMPT SCOPING** or **INTENT CHECKLIST** flow
 - **DEBUG** dynamic insertion depends on agent supervision loop — not hook-driven
@@ -194,7 +194,7 @@ What exists instead:
 
 | | |
 |--|--|
-| **Intended** | Full 18-flow composition with supervision loop |
+| **Intended** | Historical full FLOW 1-18 composition with supervision loop |
 | **Actual** | Pre-chain hook-enforced; post-chain skill-instruction only until PR |
 | **Issues** | Can skip VERIFY, SPECIFY, CLARIFY based on stale artifacts; `workflows.sh` manual |
 | **Missing** | Hook enforcement of post-execute chain before further edits |

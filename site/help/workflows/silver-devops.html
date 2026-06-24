@@ -124,13 +124,12 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:devops</code> is the Silver Bullet orchestrator for infrastructure, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.</p>
-      <p><code>silver:devops</code> uses <strong>composable flows architecture</strong>. Standard composition chain:</p>
-      <div class="code-block">FLOW 1 (BOOTSTRAP) [skip if .planning/] → FLOW 2 (ORIENT)
-→ FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if tooling choice]
-→ BLAST-RADIUS + DEVOPS-SKILL-ROUTER (FLOW 6 DevOps extensions)
-→ FLOW 13 (QUALITY GATE, DevOps pre-plan) → FLOW 11 (SECURE, pre-plan)
-→ FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → post-execution chain</div>
-      <p>Never includes FLOW 7 or FLOW 9. Post-execution order matches <code>silver:feature</code> after FLOW 8. See <a href="./index.html#composer-workflows">Workflow catalog</a> and <a href="../concepts/composable-workflow.html">Composable Flows</a>.</p>
+      <p><code>silver:devops</code> uses the <strong>v0.48 APO catalog</strong>. Standard composition chain:</p>
+      <div class="code-block">WF-SILVER-DEVOPS
+  → AF-BLAST-RADIUS → AF-DEVOPS-ROUTE → AF-QUALITY-GATE → AF-SECURE
+  → AF-ORIENT → AF-PLAN → AF-VALIDATE → AF-EXECUTE
+  → WF-POST-EXEC-GATES</div>
+      <p>It does not include <code>AF-DESIGN-CONTRACT</code> or <code>AF-UI-QUALITY</code> unless runtime evidence shows the infrastructure task also has UI deliverables. See <a href="./index.html#composer-workflows">Workflow catalog</a> and <a href="../concepts/composable-workflow.html">Composable Flows</a>.</p>
       <p><strong>Key design principles:</strong></p>
       <ul>
         <li><strong>Blast-radius first</strong> — infrastructure scope is assessed via <code>silver:blast-radius</code> and <code>devops-skill-router</code> (runtime queue tokens) before PLAN</li>
@@ -151,7 +150,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="iac-quality-dims">7 IaC quality dimensions</h2>
-      <p>These replace the standard product/software quality gate for all infra work. Applied at FLOW 13 pre-plan and pre-ship gates:</p>
+      <p>These replace the standard product/software quality gate for all infra work. Applied at <code>AF-QUALITY-GATE</code> pre-plan and pre-ship gates:</p>
       <ul>
         <li><strong>Reliability</strong> — failure modes, retry logic, health checks</li>
         <li><strong>Security</strong> — secrets handling, IAM boundaries, network exposure</li>
@@ -169,16 +168,16 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h3>Pre-execution chain</h3>
       <ul>
         <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
-        <li><strong>FLOW 2 ORIENT</strong> — <code>silver:scan</code> / <code>silver:context</code> for infra topology</li>
+        <li><strong><code>AF-ORIENT</code></strong> — <code>silver:scan</code> / <code>silver:context</code> for infra topology</li>
         <li><strong>BLAST-RADIUS</strong> (queue token) — <code>silver:blast-radius</code>; LOW/MEDIUM/HIGH/CRITICAL rating</li>
         <li><strong>DEVOPS-SKILL-ROUTER</strong> (queue token) — IaC/cloud toolchain routing</li>
-        <li><strong>FLOW 13 pre-plan</strong> — <code>devops-quality-gates</code> (7 IaC dimensions); security dimension mandatory before PLAN</li>
-        <li><strong>FLOW 6 PLAN</strong> — <code>silver:context</code>, <code>silver:plan</code></li>
-        <li><strong>FLOW 8 EXECUTE</strong> — <code>silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
+        <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>devops-quality-gates</code> (7 IaC dimensions); security dimension mandatory before PLAN</li>
+        <li><strong><code>AF-PLAN</code></strong> — <code>silver:context</code>, <code>silver:plan</code></li>
+        <li><strong><code>AF-EXECUTE</code></strong> — <code>silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
       </ul>
 
       <h3>Post-execution chain (canonical)</h3>
-      <p>FLOW 10 REVIEW → FLOW 12 VERIFY → FLOW 11 SECURE → FLOW 13 pre-ship (<code>devops-quality-gates</code>) → FLOW 14 SHIP. Optional <code>silver:deploy</code> / <code>silver:canary</code> inside FLOW 14 when live rollout is in scope.</p>
+      <p><code>WF-POST-EXEC-GATES</code>: <code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code> → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> pre-ship → <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code>. Optional <code>silver:deploy</code> / <code>silver:canary</code> run through ship-readiness when live rollout is in scope.</p>
 
       <div class="divider"></div>
 
@@ -219,9 +218,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li>Security dimension inside <code>/devops-quality-gates</code> (FLOW 13 pre-plan)</li>
-            <li><code>/devops-quality-gates</code> pre-ship (FLOW 13)</li>
-            <li><code>silver:verify</code> (FLOW 12)</li>
+            <li>Security dimension inside <code>/devops-quality-gates</code> (<code>AF-QUALITY-GATE</code> pre-plan)</li>
+            <li><code>/devops-quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>silver:verify</code> (<code>AF-VERIFY</code>)</li>
           </ul>
         </div>
       </div>
@@ -230,7 +229,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:devops Add GitHub Actions CI pipeline for automated testing</div>
-      <p>Silver Bullet routes to devops workflow: FLOW 2 orient → blast-radius (likely LOW/MEDIUM) → devops-skill-router → FLOW 13 DevOps quality gates → FLOW 6 plan → FLOW 8 execute (no TDD) → post-execution chain → ship.</p>
+      <p>Silver Bullet routes to <code>WF-SILVER-DEVOPS</code>: <code>AF-BLAST-RADIUS</code> (likely LOW/MEDIUM) → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> (no TDD) → <code>WF-POST-EXEC-GATES</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

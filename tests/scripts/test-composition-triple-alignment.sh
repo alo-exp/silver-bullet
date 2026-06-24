@@ -135,6 +135,12 @@ parse_orchestrator_pre_exec() {
       to_sorted_csv "$(printf '%s' "$queue" | cut -d, -f1)"
       return
       ;;
+    silver-research)
+      # Research has no implementation execute atom. The chain guard only gates
+      # the pre-artifact clarify/decide portion so the documentation atom can edit.
+      to_sorted_csv silver-clarify silver-research
+      return
+      ;;
   esac
 
   IFS=',' read -ra parts <<< "$queue"

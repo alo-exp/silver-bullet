@@ -99,7 +99,7 @@ This report counts only the behaviors SB adds or enforces beyond plain GSD.
 | Primary role | Planning and execution engine | Orchestration and enforcement layer around GSD |
 | User entry point | `gsd:*` commands and `gsd:do` freeform delegation | `/silver` classifies intent and composes the appropriate SB/GSD workflow chain |
 | Process discipline | Instructional and artifact-driven | Hook-enforced and state-tracked |
-| Workflow shape | GSD lifecycle commands | Dynamic composition from 18 flows |
+| Workflow shape | GSD lifecycle commands | Dynamic composition from the canonical APO catalog (27 AF-* atomic flows plus reusable workflows) |
 | Spec and acceptance lifecycle | Requirements and phase plans live in GSD artifacts | SB adds `SPEC.md`, ingestion manifests, pre-build validation findings, UAT gates, and PR traceability |
 | Artifact review | GSD has reviewers for its own planning/execution artifacts | SB adds a general artifact-review framework for specs, requirements, design, roadmap, context, research, ingestion, UAT, and cross-artifact sets |
 | Quality gates | GSD verification and review artifacts | Product, DevOps, security, review, test, docs, and release gates |
@@ -167,26 +167,7 @@ A feature, UI change, bugfix, DevOps task, research task, and release are not id
 
 ### Silver Bullet addition
 
-SB provides `/silver`, which classifies the task and composes a workflow from 18 atomic flows:
-
-- BOOTSTRAP
-- ORIENT
-- CLARIFY
-- DECIDE
-- SPECIFY
-- PLAN
-- DESIGN CONTRACT
-- EXECUTE
-- UI QUALITY
-- REVIEW
-- SECURE
-- VERIFY
-- QUALITY GATE
-- SHIP
-- DEBUG
-- DESIGN HANDOFF
-- DOCUMENT
-- RELEASE
+SB provides `/silver`, which classifies the task and composes a workflow from the canonical AF-* catalog in `docs/apo-catalog.json`. The catalog is the source of truth for atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings; generated docs render that model for humans.
 
 SB then chooses the relevant chain for the current task:
 

@@ -14,6 +14,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 LIB_OS="$REPO_ROOT/hooks/lib/orchestrator-state.sh"
 LIB_PARENT="$REPO_ROOT/hooks/lib/orchestrator-parent.sh"
 TEMPLATES="$REPO_ROOT/templates/orchestrator-workers"
+CATALOG_INDEX="$REPO_ROOT/docs/generated/atomic-flow-index.json"
 PASS=0
 FAIL=0
 
@@ -53,12 +54,29 @@ collect_queue_skills() {
   done < <(sb_orchestrator_queue_for_composer "$composer" "$repo_root" | tr ',' '\n')
 }
 
+assert_queue_matches_catalog() {
+  local composer="$1"
+  local expected actual
+  expected="$(jq -r --arg composer "$composer" '.workflow_enforcement_queues[$composer] // [] | join(",")' "$CATALOG_INDEX")"
+  actual="$(sb_orchestrator_default_queue_for_composer "$composer")"
+  if [[ "$expected" == "$actual" ]]; then
+    echo "PASS: $composer default queue matches catalog index"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $composer default queue drift"
+    echo "  expected: $expected"
+    echo "  actual:   $actual"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # shellcheck source=hooks/lib/orchestrator-directive.sh
 source "$REPO_ROOT/hooks/lib/orchestrator-directive.sh"
 
 echo "=== orchestrator worker template coverage ==="
 
 for composer in silver-feature silver-ui silver-devops silver-bugfix silver-research silver-fast silver-release; do
+  assert_queue_matches_catalog "$composer"
   echo "--- $composer queue ---"
   while IFS= read -r skill; do
     [[ -n "$skill" ]] || continue

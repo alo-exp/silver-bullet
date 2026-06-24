@@ -129,7 +129,7 @@ footer a:hover{color:var(--accent-light)}
       <p><code>/silver:bugfix</code> is the Silver Bullet orchestrator for bugs, regressions, crashes, errors, and failing tests. It enforces triage-first discipline: classify the failure type before any investigation begins.</p>
       <p><strong>It never implements fixes directly — it orchestrates only.</strong> Investigation, planning, execution, review, and verification are all delegated to specialist skills.</p>
       <p>The key design insight: three very different failure categories require three different starting points. Applying the wrong investigation technique wastes time and produces incomplete diagnoses. Triage first, investigate second.</p>
-      <p><code>silver:bugfix</code> uses <strong>composable flows architecture</strong> — it composes paths from the 18-flow catalog tailored to bug context. A typical composition: <strong>FLOW 1 (BOOTSTRAP)</strong> → <strong>FLOW 2 (ORIENT)</strong> → <strong>FLOW 15 (DEBUG)</strong> → <strong>FLOW 6 (PLAN)</strong> → <strong>FLOW 8 (EXECUTE)</strong> → <strong>FLOW 12 (VERIFY)</strong> → <strong>FLOW 14 (SHIP)</strong>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>silver:bugfix</code> uses the <strong>v0.48 APO catalog</strong> — it composes canonical atomic flows tailored to bug context. A typical composition: <code>AF-ORIENT</code> → <code>AF-DEBUG</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="divider"></div>
 
@@ -151,7 +151,7 @@ footer a:hover{color:var(--accent-light)}
       <h3>Pre-flight</h3>
       <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
 
-      <h3>FLOW 15 triage — classify failure type</h3>
+      <h3><code>AF-DEBUG</code> triage — classify failure type</h3>
       <p>Before any investigation, Silver Bullet presents a classification question:</p>
       <div class="code-block">What best describes this failure?
 

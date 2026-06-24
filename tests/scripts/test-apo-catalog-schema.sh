@@ -141,6 +141,13 @@ else
   fail "atomic_flows not using subagent dispatch: $inline_atoms"
 fi
 
+schema_dispatch_modes=$(jq -r '.["$defs"].execution.properties.dispatch_mode.enum[]?' "$SCHEMA" | paste -sd, -)
+if [[ "$schema_dispatch_modes" == "subagent" ]]; then
+  pass "schema only permits subagent dispatch_mode for atomic flows"
+else
+  fail "schema permits non-subagent atomic-flow dispatch modes: $schema_dispatch_modes"
+fi
+
 # Schema file documents workflow composition_tree (no nesting entity in $defs properties).
 if grep -q '"composition_tree"' "$SCHEMA" && ! grep -q '"nesting"' "$SCHEMA"; then
   pass "schema defines composition_tree without nesting entity type"
