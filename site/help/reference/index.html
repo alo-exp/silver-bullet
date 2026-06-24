@@ -195,7 +195,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- CAPABILITY MATRIX -->
       <h2 id="capability-matrix">Capability Matrix</h2>
-      <p>SB-owned routes and evidence artifacts cover the specialized quality, test, deploy, backlog, and recovery families that broad quality-layer tools advertise. Findings use <code>docs/evidence-schema.md</code> (BLOCK/WARN/INFO) — not unified numeric grades.</p>
+      <p>Workflow routes and evidence artifacts cover the specialized quality, test, deploy, backlog, and recovery families that broad quality-layer tools advertise. Findings use <code>docs/evidence-schema.md</code> (BLOCK/WARN/INFO) — not unified numeric grades.</p>
 
       <table class="ref-table">
         <thead><tr><th>Capability family</th><th>SB route</th><th>Key evidence</th></tr></thead>
@@ -257,12 +257,12 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
           <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
           <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety and domain packs are added only when the phase scope requires them. Failing dimensions become hard requirements.</td></tr>
-          <tr><td>/silver:domain-audit</td><td>Specialized quality</td><td>Runs SB-owned domain contract packs for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident/retro, and benchmark evidence.</td></tr>
+          <tr><td>/silver:domain-audit</td><td>Specialized quality</td><td>Runs domain contract packs for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident/retro, and benchmark evidence.</td></tr>
           <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
           <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for SB planning or SB gates.</td></tr>
           <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, stalled, or unclear SB sessions and workflow artifacts.</td></tr>
-          <tr><td>/silver:test</td><td>Testing</td><td>SB-owned test engineering for test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge workflows.</td></tr>
+          <tr><td>/silver:test</td><td>Testing</td><td>Test engineering for test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge workflows.</td></tr>
           <tr><td>/silver:refactor</td><td>Refactor</td><td>Behavior-preserving refactor workflow with baseline tests, structure/code-health packs, and proof of no regression.</td></tr>
           <tr><td>/silver:worktree</td><td>Git isolation</td><td>Creates or finishes isolated git worktrees with branch state, verification, merge/PR, and cleanup safety.</td></tr>
           <tr><td>/silver:content</td><td>Content/search</td><td>Public content, docs, migration, SEO/AI-search, optimization, article, metadata, link, and render workflow.</td></tr>
@@ -320,7 +320,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- QUALITY AND REVIEW SKILLS -->
       <h2 id="quality-review-skills">Quality &amp; Review Skills</h2>
-      <p>These SB-owned skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are source-owned SB skills and are included in the skill inventory.</p>
+      <p>These quality gates and domain audit skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are included in the skill inventory.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Role</th><th>Description</th></tr></thead>
@@ -353,7 +353,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Named workflows that <code>/silver</code> can compose after intent classification. They run through SB-owned lifecycle skills, with optional external research/provider skills used only at explicit enrichment boundaries where installed.</p>
+      <p>Named workflows that <code>/silver</code> can compose after intent classification. They run through Silver Bullet's lifecycle skills, with optional external research/provider skills used only at explicit enrichment boundaries where installed.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
@@ -409,15 +409,15 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- CORE LIFECYCLE SKILLS -->
       <h2 id="core-lifecycle-skills">Core Lifecycle Skills</h2>
-      <p>SB-owned commands and markers cover the core software-engineering lifecycle from problem framing through final delivery.</p>
+      <p>Silver Bullet commands and markers cover the core software-engineering lifecycle from problem framing through final delivery.</p>
 
       <table class="ref-table">
-        <thead><tr><th>Lifecycle concern</th><th>SB-owned command</th><th>Description</th></tr></thead>
+        <thead><tr><th>Lifecycle concern</th><th><code>/silver:</code> command</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>Problem framing / scope clarification</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
           <tr><td>Spec writing</td><td><code>silver:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>
           <tr><td>Plan writing / phase discussion</td><td><code>silver:context</code>, <code>silver:plan</code></td><td>Context packets, assumptions, task plans, dependency analysis, and verification strategy.</td></tr>
-          <tr><td>TDD discipline</td><td><code>tdd</code> / <code>silver-tdd</code></td><td>SB-owned red/green/refactor policy for behavior-changing software work.</td></tr>
+          <tr><td>TDD discipline</td><td><code>tdd</code> / <code>silver-tdd</code></td><td>Red/green/refactor policy for behavior-changing software work.</td></tr>
           <tr><td>Review request / triage</td><td><code>silver:review-request</code>, <code>silver:review-triage</code></td><td>Review framing, finding triage, and fix-loop control.</td></tr>
           <tr><td>Completion verification</td><td><code>silver:completion-audit</code>, <code>silver:verify</code></td><td>Fresh evidence before completion claims.</td></tr>
           <tr><td>Branch finishing / ship</td><td><code>silver:branch-finish</code>, <code>silver:ship</code></td><td>Branch hygiene, PR readiness, CI, and traceability.</td></tr>
