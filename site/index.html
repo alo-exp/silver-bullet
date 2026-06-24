@@ -1641,7 +1641,7 @@ img{max-width:100%;height:auto}
           <tr>
             <td>Workflow entry</td>
             <td>Session-start auto-routing; large skill menus</td>
-            <td>Explicit <code>/silver</code> router; 7 public workflow routes plus 36 marketplace command stubs behind one entry point</td>
+            <td>Explicit <code>/silver</code> router; 10 pre-composed workflow routes plus 36 marketplace command stubs behind one entry point</td>
           </tr>
           <tr>
             <td>Enforcement</td>
@@ -1696,12 +1696,11 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Public Routes <span style="opacity:.6">(10)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(10)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(27)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('tokens')">Runtime Queue Tokens</button>
     </div>
 
-    <p class="section-desc centered" style="margin-top:12px;font-size:.9rem">Catalog authority: <code>docs/apo-catalog.json</code> · 22 <code>WF-*</code> workflows · 85 flow-step contracts with local V-loops · subagent execution metadata · generated views kept fresh by CI</p>
+    <p class="section-desc centered" style="margin-top:12px;font-size:.9rem">Catalog authority: <code>docs/apo-catalog.json</code> · 27 atomic flows · 22 workflows · 85 flow-step contracts with local V-loops · subagent execution metadata · generated views kept fresh by CI</p>
 
     <div id="workflow-orch" class="workflow-panel active" style="overflow-x:auto">
       <table class="workflow-table fade-in">
@@ -1710,69 +1709,58 @@ img{max-width:100%;height:auto}
             <th>Workflow</th>
             <th>Entry signals</th>
             <th>Key steps</th>
-            <th>Non-skippable gates</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
-            <td><code>WF-SILVER-FEATURE</code>: <code>AF-BOOTSTRAP</code> → <code>AF-ORIENT</code> → <code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-SPECIFY</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-DESIGN-CONTRACT</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">silver:secure</span></td>
+            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
-            <td><code>WF-SILVER-BUGFIX</code>: <code>AF-ORIENT</code> → <code>AF-DEBUG</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">review loop</span></td>
+            <td><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
-            <td><code>WF-SILVER-UI</code>: <code>AF-BOOTSTRAP</code> → <code>AF-ORIENT</code> → <code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-SPECIFY</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-DESIGN-CONTRACT</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td>
-            <td><span class="step-required">silver:ui-contract</span> <span class="step-required">silver:ui-review</span> <span class="step-required">/silver:quality-gates</span></td>
+            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
-            <td><code>WF-SILVER-DEVOPS</code>: <code>AF-BLAST-RADIUS</code> → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-SECURE</code> → <code>AF-ORIENT</code> → <code>AF-PLAN</code> → <code>AF-VALIDATE</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td>
-            <td><span class="step-required">/silver:blast-radius</span> <span class="step-required">IaC quality gates</span> <span class="step-required">silver:verify</span></td>
+            <td><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"how should we", "compare X vs Y", "spike", "which technology"</td>
-            <td><code>WF-SILVER-RESEARCH</code>: <code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-DOCUMENT</code> → <code>AF-VALIDATE</code></td>
-            <td><em style="color:var(--text-dim)">No code changes; artifact quality and handoff discipline apply</em></td>
+            <td><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td><code>WF-SILVER-RELEASE</code>: <code>AF-QUALITY-GATE</code> → <code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code> → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code> → <code>AF-RELEASE</code></td>
-            <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">silver:ship</span></td>
+            <td><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Typos, config tweaks, bounded small changes, dependency bumps</td>
-            <td>Tier 1 → direct safe edit; Tier 2 → bounded SB lifecycle slice; Tier 3 → /silver:feature</td>
-            <td><span class="step-required">scope expansion check</span> <span class="step-required">SB verification</span></td>
+            <td><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code> <span style="font-size:.85rem;color:var(--text-dim)">(escalates to feature composition when scope expands)</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-spec.html" style="color:var(--accent-light);text-decoration:none">/silver:spec</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"write a spec", "clarify requirements", no SPEC.md exists</td>
-            <td>context → Socratic elicitation → SPEC.md → REQUIREMENTS.md → artifact review</td>
-            <td><span class="step-required">SPEC review</span> <span class="step-required">requirements review</span></td>
+            <td><code>ORIENT</code> → <code>CLARIFY</code> → <code>SPECIFY</code> → SPEC.md → REQUIREMENTS.md → artifact review</td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ingest.html" style="color:var(--accent-light);text-decoration:none">/silver:ingest</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">JIRA, Figma, Google Doc, Confluence, cross-repo spec</td>
-            <td>connector check → artifact extraction → SPEC/DESIGN draft → manifest → review</td>
-            <td><span class="step-required">manifest review</span></td>
+            <td><code>SPECIFY</code> (ingestion) → connector check → artifact extraction → SPEC/DESIGN draft → manifest → review</td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-validate.html" style="color:var(--accent-light);text-decoration:none">/silver:validate</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Before implementation; check SPEC coverage against PLAN.md</td>
-            <td>parse SPEC → scan plans → BLOCK/WARN/INFO gap analysis → assumption awareness → VALIDATION.md</td>
-            <td><span class="step-required">BLOCK findings stop implementation</span></td>
+            <td><code>VALIDATE</code> → parse SPEC → scan plans → BLOCK/WARN/INFO gap analysis → VALIDATION.md</td>
           </tr>
         </tbody>
       </table>
@@ -1786,71 +1774,43 @@ img{max-width:100%;height:auto}
       <table class="workflow-table fade-in">
         <thead>
           <tr>
-            <th>Atomic flow</th>
             <th>Slug</th>
-            <th>Primary skills</th>
             <th>Role</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td><code>AF-ROUTE</code></td><td>ROUTE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>/silver</code></td><td style="font-size:.85rem;color:var(--text-secondary)">intent classification and workflow composition</td></tr>
-          <tr><td><code>AF-BOOTSTRAP</code></td><td>BOOTSTRAP</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>/silver:init</code></td><td style="font-size:.85rem;color:var(--text-secondary)">project bootstrap and enforcement activation</td></tr>
-          <tr><td><code>AF-ORIENT</code></td><td>ORIENT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:context</code>, <code>silver:orient</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">codebase and planning context orientation</td></tr>
-          <tr><td><code>AF-CLARIFY</code></td><td>CLARIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:clarify</code></td><td style="font-size:.85rem;color:var(--text-secondary)">scope clarification and assumption lock</td></tr>
-          <tr><td><code>AF-DECIDE</code></td><td>DECIDE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:research</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
-          <tr><td><code>AF-SPECIFY</code></td><td>SPECIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:spec</code>, <code>silver:ingest</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">requirements specification and ingestion</td></tr>
-          <tr><td><code>AF-PLAN</code></td><td>PLAN</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:plan</code></td><td style="font-size:.85rem;color:var(--text-secondary)">execution planning with phase coverage</td></tr>
-          <tr><td><code>AF-DESIGN-CONTRACT</code></td><td>DESIGN_CONTRACT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ui-contract</code></td><td style="font-size:.85rem;color:var(--text-secondary)">design contract and interface expectations</td></tr>
-          <tr><td><code>AF-EXECUTE</code></td><td>EXECUTE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:execute</code>, <code>silver:refactor</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
-          <tr><td><code>AF-UI-QUALITY</code></td><td>UI_QUALITY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ui</code>, <code>silver:ui-review</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">UI quality, accessibility, and design review</td></tr>
-          <tr><td><code>AF-REVIEW-REQUEST</code></td><td>REVIEW_REQUEST</td><td style="font-size:.85rem;color:var(--text-secondary)">review loop (request phase)</td><td style="font-size:.85rem;color:var(--text-secondary)">structured review request and scope framing</td></tr>
-          <tr><td><code>AF-REVIEW</code></td><td>REVIEW</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:review</code></td><td style="font-size:.85rem;color:var(--text-secondary)">artifact and code review with evidence</td></tr>
-          <tr><td><code>AF-REVIEW-TRIAGE</code></td><td>REVIEW_TRIAGE</td><td style="font-size:.85rem;color:var(--text-secondary)">review loop (triage phase)</td><td style="font-size:.85rem;color:var(--text-secondary)">finding triage, fix ladder, and clean-pass tracking</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td>VERIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:verify</code>, <code>silver:test</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
-          <tr><td><code>AF-SECURE</code></td><td>SECURE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:secure</code></td><td style="font-size:.85rem;color:var(--text-secondary)">security and LLM safety review</td></tr>
-          <tr><td><code>AF-QUALITY-GATE</code></td><td>QUALITY_GATE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:quality-gates</code>, DevOps variant …</td><td style="font-size:.85rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
-          <tr><td><code>AF-SHIP</code></td><td>SHIP</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ship</code>, <code>silver:deploy</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">ship readiness and promotion evidence</td></tr>
-          <tr><td><code>AF-BRANCH-FINISH</code></td><td>BRANCH_FINISH</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:branch-finish</code></td><td style="font-size:.85rem;color:var(--text-secondary)">branch hygiene before ship</td></tr>
-          <tr><td><code>AF-COMPLETION-AUDIT</code></td><td>COMPLETION_AUDIT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:completion-audit</code></td><td style="font-size:.85rem;color:var(--text-secondary)">completion evidence before delivery</td></tr>
-          <tr><td><code>AF-DEBUG</code></td><td>DEBUG</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:bugfix</code>, <code>silver:debug</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td>DOCUMENT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:content</code>, <code>silver:ensure-docs</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">durable documentation and release notes</td></tr>
-          <tr><td><code>AF-RELEASE</code></td><td>RELEASE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:release</code>, <code>silver:create-release</code></td><td style="font-size:.85rem;color:var(--text-secondary)">versioned release and changelog publication</td></tr>
-          <tr><td><code>AF-BLAST-RADIUS</code></td><td>BLAST_RADIUS</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:blast-radius</code></td><td style="font-size:.85rem;color:var(--text-secondary)">blast-radius assessment for infra changes</td></tr>
-          <tr><td><code>AF-DEVOPS-ROUTE</code></td><td>DEVOPS_ROUTE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:devops</code> enrichment router</td><td style="font-size:.85rem;color:var(--text-secondary)">IaC toolchain and provider routing</td></tr>
-          <tr><td><code>AF-VALIDATE</code></td><td>VALIDATE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:validate</code></td><td style="font-size:.85rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
-          <tr><td><code>AF-PHASE-MANAGE</code></td><td>PHASE_MANAGE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:add</code>, <code>silver:migrate</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">phase and workflow state management</td></tr>
-          <tr><td><code>AF-FAST-PATH</code></td><td>FAST_PATH</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:fast</code>, <code>silver:benchmark</code> …</td><td style="font-size:.85rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
+          <tr><td><code>ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">intent classification and workflow composition</td></tr>
+          <tr><td><code>BOOTSTRAP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">project bootstrap and enforcement activation</td></tr>
+          <tr><td><code>ORIENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">codebase and planning context orientation</td></tr>
+          <tr><td><code>CLARIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">scope clarification and assumption lock</td></tr>
+          <tr><td><code>DECIDE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
+          <tr><td><code>SPECIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">requirements specification and ingestion</td></tr>
+          <tr><td><code>PLAN</code></td><td style="font-size:.85rem;color:var(--text-secondary)">execution planning with phase coverage</td></tr>
+          <tr><td><code>DESIGN_CONTRACT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">design contract and interface expectations</td></tr>
+          <tr><td><code>EXECUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
+          <tr><td><code>UI_QUALITY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">UI quality, accessibility, and design review</td></tr>
+          <tr><td><code>REVIEW_REQUEST</code></td><td style="font-size:.85rem;color:var(--text-secondary)">structured review request and scope framing</td></tr>
+          <tr><td><code>REVIEW</code></td><td style="font-size:.85rem;color:var(--text-secondary)">artifact and code review with evidence</td></tr>
+          <tr><td><code>REVIEW_TRIAGE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">finding triage, fix ladder, and clean-pass tracking</td></tr>
+          <tr><td><code>VERIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
+          <tr><td><code>SECURE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">security and LLM safety review</td></tr>
+          <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
+          <tr><td><code>SHIP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">ship readiness and promotion evidence</td></tr>
+          <tr><td><code>BRANCH_FINISH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">branch hygiene before ship</td></tr>
+          <tr><td><code>COMPLETION_AUDIT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">completion evidence before delivery</td></tr>
+          <tr><td><code>DEBUG</code></td><td style="font-size:.85rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
+          <tr><td><code>DOCUMENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">durable documentation and release notes</td></tr>
+          <tr><td><code>RELEASE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">versioned release and changelog publication</td></tr>
+          <tr><td><code>BLAST_RADIUS</code></td><td style="font-size:.85rem;color:var(--text-secondary)">blast-radius assessment for infra changes</td></tr>
+          <tr><td><code>DEVOPS_ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">IaC toolchain and provider routing</td></tr>
+          <tr><td><code>VALIDATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
+          <tr><td><code>PHASE_MANAGE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">phase and workflow state management</td></tr>
+          <tr><td><code>FAST_PATH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
         </tbody>
       </table>
       <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
-        Pre-v0.48 FLOW 1&ndash;18 labels exist only as migration aliases in runtime token maps — not as the current mental model. Post-execution delivery chains through <code>WF-POST-EXEC-GATES</code>: review request → review → triage → verify → secure → validate → quality gate → branch finish → completion audit → ship.
+        Canonical slugs from <code>docs/apo-catalog.json</code>. Pre-v0.48 <code>FLOW 1&ndash;18</code> labels remain migration aliases only. Post-execution delivery expands inline: <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code>.
         &nbsp;<a href="help/workflows/#post-execution" style="color:var(--accent-light)">Full sequencing &rarr;</a>
-      </p>
-    </div>
-
-    <div id="workflow-tokens" class="workflow-panel" style="overflow-x:auto">
-      <table class="workflow-table fade-in visible">
-        <thead>
-          <tr>
-            <th>Queue token</th>
-            <th>Maps to</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><code>FLOW-QUALITY-GATE</code></td><td><code>AF-QUALITY-GATE</code> (pre-plan)</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:quality-gates</code> (product) or DevOps variant</td></tr>
-          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (pre-ship)</td><td style="font-size:.85rem;color:var(--text-secondary)">Product pre-ship quality gate</td></tr>
-          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (DevOps pre-ship)</td><td style="font-size:.85rem;color:var(--text-secondary)">IaC pre-ship quality gate (<code>silver:devops</code>)</td></tr>
-          <tr><td><code>silver:blast-radius</code></td><td><code>AF-BLAST-RADIUS</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Pre-plan blast-radius assessment</td></tr>
-          <tr><td><code>AF-DEVOPS-ROUTE</code></td><td><code>AF-DEVOPS-ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">IaC toolchain routing inside <code>silver:devops</code></td></tr>
-          <tr><td><code>silver:validate</code></td><td><code>AF-VALIDATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Gap analysis</td></tr>
-          <tr><td><code>silver:branch-finish</code></td><td><code>AF-BRANCH-FINISH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Branch hygiene before ship</td></tr>
-          <tr><td><code>silver:completion-audit</code></td><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Completion evidence before ship/release</td></tr>
-          <tr><td><code>ROUTER</code></td><td><code>/silver</code> router</td><td style="font-size:.85rem;color:var(--text-secondary)">Intent classification</td></tr>
-        </tbody>
-      </table>
-      <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
-        Runtime queue tokens map public routes and legacy aliases to <code>AF-*</code> atoms. Enforced by orchestrator state; composers declare full chains while the queue omits optional pre-execution atoms by default.
       </p>
     </div>
   </div>
@@ -1965,7 +1925,7 @@ document.querySelectorAll('.nav-links a').forEach(a => {
 function switchWorkflow(mode) {
   document.querySelectorAll('.workflow-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.workflow-panel').forEach(p => p.classList.remove('active'));
-  const tabIndex = mode === 'flows' ? 1 : mode === 'tokens' ? 2 : 0;
+  const tabIndex = mode === 'flows' ? 1 : 0;
   document.querySelectorAll('.workflow-tab')[tabIndex].classList.add('active');
   document.getElementById('workflow-' + mode).classList.add('active');
 }

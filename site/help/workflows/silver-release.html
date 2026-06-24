@@ -172,7 +172,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to <code>AF-QUALITY-GATE</code> pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
 
       <h3>Delivery tail (orchestrator parent mode)</h3>
-      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the autonomous queue runs the catalog delivery tail only (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the catalog delivery tail runs automatically (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
 
       <div class="divider"></div>
 
