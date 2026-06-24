@@ -6,9 +6,9 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Orchestration Workflows — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet v0.47.1 workflow catalog: 18 atomic flows, runtime queue tokens, composer composition chains, and post-execution sequencing for /silver routing.">
+<meta name="description" content="Silver Bullet APO workflow catalog: canonical atomic flows, runtime queue tokens, catalog-backed composition chains, V-loops, and /silver routing.">
 <meta property="og:title" content="Orchestration Workflows — Silver Bullet Help">
-<meta property="og:description" content="18 atomic flows + runtime extensions: composer chains, queue tokens, and post-execute sequencing for /silver routing.">
+<meta property="og:description" content="APO atomic flows + runtime extensions: catalog-backed composer chains, queue tokens, V-loops, and /silver routing.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/workflows/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -123,8 +123,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
 <div class="page-hero">
   <div class="container">
-    <h1>Orchestration Workflows <span style="font-size:.55em;font-weight:700;color:var(--accent-light);vertical-align:middle">v0.47.1</span></h1>
-    <p>Silver Bullet composes work from <strong>18 atomic flows</strong> (FLOW 1–18). Composer skills declare <strong>composition chains</strong>; the autonomous orchestrator enforces them via <strong>runtime queue tokens</strong> and hook markers. Canonical contracts: <code>docs/composable-flows-contracts.md</code>.</p>
+    <h1>Orchestration Workflows <span style="font-size:.55em;font-weight:700;color:var(--accent-light);vertical-align:middle">APO</span></h1>
+    <p>Silver Bullet is an <strong>Agentic Process Orchestrator (APO)</strong>. It composes work from canonical <strong>atomic flow</strong> definitions in <code>docs/apo-catalog.json</code>; generated references such as <code>docs/composable-flows-contracts.md</code> and <code>docs/workflow-composition-matrix.md</code> are catalog views, not separate authorities.</p>
   </div>
 </div>
 
@@ -148,7 +148,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> classifies intent and routes to a composer skill (<code>silver:feature</code>, <code>silver:ui</code>, …) or a utility skill (<code>silver:spec</code>, <code>silver:validate</code>, …). Composers <strong>orchestrate only</strong> — they declare which atomic flows run and in what order. Implementation, review, verification, and ship work always flow through Silver Bullet's lifecycle skills.</p>
+      <p><code>/silver</code> classifies intent and routes to a catalog-backed workflow (<code>silver:feature</code>, <code>silver:ui</code>, …) or a dynamic route. Workflows compose canonical atomic flow IDs and reusable workflow components from the APO catalog. Each atomic flow is one subagent work package with its own V-loop; each flow step/skill has a local V-loop that rolls up before the parent flow gate can pass.</p>
       <p>Active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code> (Flow Log CSV rows). The retired single-file <code>WORKFLOW.md</code> model is legacy only. SB is the lifecycle authority — no external workflow delegation.</p>
 
       <div class="callout callout-info">
@@ -296,8 +296,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.47.1)</h2>
-      <p>As of v0.47.1, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
+      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.48.0)</h2>
+      <p>As of v0.48.0, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
       <p><strong>Recommended tools (opt-in):</strong></p>
       <ul>
         <li><strong>Graphify</strong> — <code>recommended_tools.graphify.enabled_by_user</code> in <code>.silver-bullet.json</code>; preferred retrieval before planning, editing, review, and release</li>

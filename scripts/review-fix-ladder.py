@@ -19,13 +19,24 @@ CURSOR_FIXED_RUNGS: list[tuple[str, str]] = [
     ("composer-2.5", "medium"),
     ("composer-2.5", "high"),
     ("composer-2.5", "xhigh"),
-    ("gpt-5.4", "medium"),
-    ("gpt-5.4", "high"),
-    ("gpt-5.4", "xhigh"),
+    ("gpt-5.5", "low"),
     ("gpt-5.5", "medium"),
     ("gpt-5.5", "high"),
     ("gpt-5.5", "xhigh"),
 ]
+
+# Composite slugs for Cursor Task `model` — reasoning effort is encoded in the slug,
+# not a separate Task parameter. Keys are (ladder_model, reasoning_effort).
+CURSOR_TASK_SLUG_MAP: dict[tuple[str, str], str] = {
+    ("composer-2.5", "low"): "composer-2.5",
+    ("composer-2.5", "medium"): "composer-2.5-fast",
+    ("composer-2.5", "high"): "composer-2.5-fast",
+    ("composer-2.5", "xhigh"): "composer-2.5-fast",
+    ("gpt-5.5", "low"): "gpt-5.5",
+    ("gpt-5.5", "medium"): "gpt-5.5-medium",
+    ("gpt-5.5", "high"): "gpt-5.5-high",
+    ("gpt-5.5", "xhigh"): "gpt-5.5-extra-high",
+}
 
 CLAUDE_FALLBACK_MODELS = (
     "claude-sonnet-4-6",
@@ -83,10 +94,13 @@ def expand_model_rungs(models: list[str], reasoning_levels: list[str]) -> list[d
 
 
 def cursor_task_slug(model: str, reasoning: str) -> str:
-    if model == "composer-2.5":
-        return model
+    key = (model, reasoning)
+    if key in CURSOR_TASK_SLUG_MAP:
+        return CURSOR_TASK_SLUG_MAP[key]
     if reasoning in {"", "low"}:
         return model
+    if reasoning == "xhigh":
+        return f"{model}-extra-high"
     return f"{model}-{reasoning}"
 
 
