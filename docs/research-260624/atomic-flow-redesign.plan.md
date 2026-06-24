@@ -62,7 +62,7 @@ flowchart LR
 
 
 
-The current 18 flows in `[docs/composable-flows-contracts.md](docs/composable-flows-contracts.md)` are too coarse: they are an SDLC spine, not the distilled basis of software-engineering and DevOps work. We will replace them with a minimal atomic-flow basis, then rebuild every composer, specialized workflow, runtime queue, and dynamic route from that basis.
+The pre-v0.48 18 FLOW aliases in `[docs/composable-flows-contracts.md](docs/composable-flows-contracts.md)` were too coarse: they were an SDLC spine, not the distilled basis of software-engineering and DevOps work. We will replace them with a minimal atomic-flow basis, then rebuild every composer, specialized workflow, runtime queue, and dynamic route from that basis.
 
 SB’s conceptual hierarchy is:
 

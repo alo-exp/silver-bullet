@@ -126,37 +126,27 @@ footer a:hover{color:var(--accent-light)}
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the 18-flow catalog, and proposes a composition chain tailored to the request.</p>
+      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the canonical AF-* catalog, and proposes a composition chain tailored to the request.</p>
       <p><strong>It never implements features directly — it orchestrates only.</strong> Implementation runs through Silver Bullet's lifecycle skills for context, plan, execution, review, verification, and ship. Optional helper plugins are called only at explicit extension boundaries selected by the active workflow.</p>
-      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full 18-flow catalog.</p>
+      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical AF-* catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="composition">Composable Flow Chain</h2>
 
       <h3>Composition Proposal</h3>
-      <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a path chain. For a typical feature request the proposed composition looks like:</p>
+      <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a catalog-backed workflow. The default catalog entity is <code>WF-SILVER-FEATURE</code>, which composes canonical atomic flows and the reusable <code>WF-POST-EXEC-GATES</code> tail:</p>
       <ul>
-        <li><strong>FLOW 1 (BOOTSTRAP)</strong> — orient in project state, resume from prior milestone if needed</li>
-        <li><strong>FLOW 2 (ORIENT)</strong> — codebase and project-state orientation</li>
-        <li><strong>FLOW 3 (CLARIFY)</strong> — scope clarification when intent is fuzzy</li>
-        <li><strong>FLOW 4 (DECIDE)</strong> — clarify, architecture decision, system design</li>
-        <li><strong>FLOW 5 (SPECIFY)</strong> — SPEC.md + REQUIREMENTS.md via silver:spec/silver:validate</li>
-        <li><strong>FLOW 6 (PLAN)</strong> — discuss phase, analyze dependencies, plan phase</li>
-        <li><strong>FLOW 8 (EXECUTE)</strong> — wave-based execution with atomic commits</li>
-        <li><strong>FLOW 10 (REVIEW)</strong> — multi-layer code review sequence</li>
-        <li><strong>FLOW 11 (SECURE)</strong> — security audit, threat mitigation verification</li>
-        <li><strong>FLOW 12 (VERIFY)</strong> — goal-backward verification, UAT</li>
-        <li><strong>FLOW 13 (QUALITY GATE)</strong> — 8 core quality dimensions plus conditional gates (pre-plan and pre-ship)</li>
-        <li><strong>FLOW 14 (SHIP)</strong> — PR creation, CI green</li>
-        <li><strong>FLOW 17 (DOCUMENT)</strong> — docs update, episodic memory</li>
+        <li><code>AF-BOOTSTRAP</code>, <code>AF-ORIENT</code>, <code>AF-CLARIFY</code>, <code>AF-DECIDE</code>, and <code>AF-SPECIFY</code> run only when their prerequisites or context signals require them.</li>
+        <li><code>AF-QUALITY-GATE</code> (pre-plan), <code>AF-PLAN</code>, <code>AF-DESIGN-CONTRACT</code> (if UI), and <code>AF-EXECUTE</code> create the implementation path.</li>
+        <li><code>WF-POST-EXEC-GATES</code> then runs UI quality when needed, review request, review, triage, verify, secure, validate, pre-ship quality gate, branch finish, completion audit, and ship.</li>
       </ul>
-      <p>If the phase involves UI work, <strong>FLOW 7 (DESIGN CONTRACT)</strong> and <strong>FLOW 9 (UI QUALITY)</strong> are inserted automatically. If execution fails, <strong>FLOW 15 (DEBUG)</strong> is inserted dynamically.</p>
+      <p>If the phase involves UI work, <code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code> are kept in the composition. If execution fails, <code>AF-DEBUG</code> can be inserted dynamically with a catalog-backed reason.</p>
 
-      <p><strong>Post-execute order (canonical):</strong> after FLOW 8, composers run <strong>FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)</strong>. FLOW 9 (UI QUALITY) runs before REVIEW when UI scope is detected.</p>
+      <p><strong>Post-execute order:</strong> <code>WF-POST-EXEC-GATES</code> runs <code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code> → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> (pre-ship) → <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code>.</p>
 
       <h3>Per-Phase Loop</h3>
-      <p>For each phase, the orchestrator runs: <strong>FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)</strong> (with FLOW 9 UI QUALITY when applicable). This cycle repeats per phase until verification and review exit conditions are met.</p>
+      <p>For each phase, the orchestrator runs: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> (with <code>AF-UI-QUALITY</code> when applicable). This cycle repeats per phase until verification and review exit conditions are met.</p>
 
       <h3>Supervision Loop</h3>
       <p>After each path completes, the supervision loop runs:</p>
@@ -215,29 +205,25 @@ footer a:hover{color:var(--accent-light)}
       <p>Composer skills declare a <strong>composition chain</strong> — not inline numbered steps. The orchestrator runs atomic flows in FLOW order; hooks enforce mandatory skill markers via the runtime queue.</p>
 
       <h3>Standard composition chain</h3>
-      <div class="code-block">FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE)
-→ FLOW 5 (SPECIFY) → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN)
-→ FLOW 7 (DESIGN CONTRACT) [if UI] → FLOW 8 (EXECUTE)
-→ FLOW 9 (UI QUALITY) [if UI] → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)
-→ FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)</div>
+      <div class="code-block">AF-BOOTSTRAP → AF-ORIENT → AF-CLARIFY → AF-DECIDE → AF-SPECIFY → AF-QUALITY-GATE → AF-PLAN → AF-DESIGN-CONTRACT → AF-EXECUTE → WF-POST-EXEC-GATES</div>
 
       <h3>Pre-execution (conditional)</h3>
       <ul>
         <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
         <li><strong>Complexity triage</strong> — trivial → route to <code>silver:fast</code>; fuzzy → FLOW 3 CLARIFY first</li>
-        <li><strong>FLOW 2 ORIENT</strong> — <code>silver:scan</code> / <code>silver:context</code> for brownfield orientation</li>
-        <li><strong>FLOW 5 SPECIFY</strong> — when no <code>.planning/SPEC.md</code> (enforced by workflow-chain-guard)</li>
-        <li><strong>FLOW 13 pre-plan</strong> — <code>silver:quality-gates</code> before planning</li>
-        <li><strong>FLOW 6 PLAN</strong> — <code>silver:context</code>, <code>silver:plan</code>, optional <code>silver:validate</code></li>
-        <li><strong>FLOW 7</strong> — <code>silver:ui-contract</code> when UI scope detected</li>
+        <li><strong><code>AF-ORIENT</code></strong> — <code>silver:scan</code> / <code>silver:context</code> for brownfield orientation</li>
+        <li><strong><code>AF-SPECIFY</code></strong> — when no <code>.planning/SPEC.md</code> (enforced by workflow-chain-guard)</li>
+        <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>silver:quality-gates</code> before planning</li>
+        <li><strong><code>AF-PLAN</code></strong> — <code>silver:context</code>, <code>silver:plan</code>, optional <code>silver:validate</code></li>
+        <li><strong><code>AF-DESIGN-CONTRACT</code></strong> — <code>silver:ui-contract</code> when UI scope detected</li>
       </ul>
 
-      <h3>FLOW 8 EXECUTE</h3>
-      <p><code>tdd</code> gate for behavior-changing code, then <code>silver:execute</code>. Per-phase loop: FLOW 6 → FLOW 8 → post-execution chain for each ROADMAP phase.</p>
+      <h3><code>AF-EXECUTE</code></h3>
+      <p><code>tdd</code> gate for behavior-changing code, then <code>silver:execute</code>. Per-phase loop: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> for each ROADMAP phase.</p>
 
       <h3>Post-execution chain (canonical order)</h3>
-      <p>After FLOW 8: <strong>FLOW 9 (if UI) → FLOW 10 REVIEW → FLOW 12 VERIFY → FLOW 11 SECURE → FLOW 13 pre-ship → FLOW 14 SHIP</strong> (<code>silver:branch-finish</code> → <code>silver:completion-audit</code> → <code>silver:ship</code>).</p>
-      <p>FLOW 15 DEBUG inserts dynamically on execution, test, or CI failure. FLOW 17 DOCUMENT runs when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
+      <p>After <code>AF-EXECUTE</code>: <code>WF-POST-EXEC-GATES</code> runs review, verification, security, validation, pre-ship quality, branch finish, completion audit, and ship.</p>
+      <p><code>AF-DEBUG</code> inserts dynamically on execution, test, or CI failure. <code>AF-DOCUMENT</code> runs when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
       <p>Per-flow skill steps and exit conditions: <code>docs/composable-flows-contracts.md</code>.</p>
 
       <div class="divider"></div>
@@ -248,9 +234,9 @@ footer a:hover{color:var(--accent-light)}
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:secure</code> (FLOW 11)</li>
-            <li><code>/silver:quality-gates</code> pre-ship (FLOW 13)</li>
-            <li><code>silver:verify</code> (FLOW 12)</li>
+            <li><code>silver:secure</code> (<code>AF-SECURE</code>)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>silver:verify</code> (<code>AF-VERIFY</code>)</li>
           </ul>
         </div>
       </div>

@@ -214,7 +214,7 @@
       "properties": {
         "dispatch_mode": {
           "type": "string",
-          "enum": ["subagent", "inline_policy_only"]
+          "enum": ["subagent"]
         },
         "worker_template": { "type": "string" },
         "parallelizable": { "type": "boolean" },

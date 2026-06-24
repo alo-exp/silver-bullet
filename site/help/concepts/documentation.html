@@ -336,19 +336,19 @@ graphify query "task context plus relevant files" --graph graphify-out/graph.jso
 
       <div class="divider"></div>
 
-      <h2 id="composable-flows-context">FLOW 17 DOCUMENT and the workflow tracker</h2>
-      <p>In Silver Bullet's <a href="composable-workflow.html">composable flows architecture</a>, documentation maps to two distinct artifacts and one dedicated path:</p>
+      <h2 id="composable-flows-context"><code>AF-DOCUMENT</code> and the workflow tracker</h2>
+      <p>In Silver Bullet's <a href="composable-workflow.html">v0.48 APO architecture</a>, documentation maps to catalog atomic flows, durable project docs, and the per-instance workflow tracker:</p>
       <ul>
-        <li><strong>FLOW 17 DOCUMENT</strong> — runs post-ship. Steps include <code>silver:ensure-docs</code>, technical debt capture when needed, SB milestone summary when needed, conversation memory capture when available, and SB session reporting when needed. Produces updated <code>docs/</code> and session log. This is what triggers the Documentation Scheme described on this page.</li>
-        <li><strong>Per-instance workflow tracker</strong> — the real-time state tracking artifact for an active composition. Created when a composition begins, updated after every path completes. Records the active path, completed paths, deferred improvements, dynamic insertions, and the full composition plan. Unlike the three-layer documentation scheme (which is project-level and durable), <code>.planning/workflows/&lt;id&gt;.md</code> is composition-level and ephemeral — it exists for the duration of the current chain. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</li>
+        <li><strong><code>AF-DOCUMENT</code></strong> — runs when durable documentation, handoff, content, retro, or knowledge-capture evidence is required. Steps include <code>silver:ensure-docs</code>, technical debt capture when needed, SB milestone summary when needed, conversation memory capture when available, and SB session reporting when needed.</li>
+        <li><strong>Per-instance workflow tracker</strong> — the real-time state tracking artifact for an active composition. Created when a composition begins, updated after every path completes. Records selected catalog atoms, completed paths, deferred improvements, dynamic insertions, V-loop/evidence status, and the full composition plan. Unlike the three-layer documentation scheme (which is project-level and durable), <code>.planning/workflows/&lt;id&gt;.md</code> is composition-level and ephemeral — it exists for the duration of the current chain. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</li>
       </ul>
-      <p>FLOW 16 is what populates the project-level docs described in this page. The per-instance workflow tracker is what gives visibility into the ongoing composition before FLOW 16 runs.</p>
+      <p><code>AF-DOCUMENT</code> is what populates the project-level docs described in this page. The per-instance workflow tracker gives visibility into the ongoing composition before durable docs are updated.</p>
 
       <div class="divider"></div>
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> &mdash; FLOW 17 DOCUMENT in the full 18-flow catalog and the per-instance workflow tracker</li>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> &mdash; <code>AF-DOCUMENT</code> in the canonical APO catalog and the per-instance workflow tracker</li>
         <li><a href="./">Core Concepts</a> &mdash; skills, hooks, enforcement layers, and the full mental model</li>
         <li><a href="verification.html">Verification Before Completion</a> &mdash; how silver:verify enforces quality gates</li>
         <li><a href="../dev-workflow/">Dev Workflow</a> &mdash; the full development cycle, including the Documentation finalization step</li>
