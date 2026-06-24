@@ -150,7 +150,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Core Concepts</h1>
-    <p>The mental models that make Silver Bullet understandable: APO routing, SB-owned lifecycle skills, hooks, quality gates, optional extension plugins, and enforced delivery evidence.</p>
+    <p>The mental models that make Silver Bullet understandable: APO routing, lifecycle skills, hooks, quality gates, optional extension plugins, and enforced delivery evidence.</p>
   </div>
 </div>
 
@@ -262,7 +262,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </ul>
 
       <h3>SB Lifecycle Commands</h3>
-      <p>SB-owned lifecycle commands are invoked through the host's supported skill or command channel:</p>
+      <p>Lifecycle commands are invoked through the host's supported skill or command channel:</p>
       <div class="code-block"><span class="cmd">/silver:context</span>       <span class="comment"># Capture phase context and assumptions</span>
 <span class="cmd">/silver:plan</span>          <span class="comment"># Create task-level plan</span>
 <span class="cmd">/silver:execute</span>       <span class="comment"># Execute the active plan</span>
@@ -271,11 +271,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <span class="cmd">/silver:ship</span>          <span class="comment"># Phase-level ship readiness</span>
 <span class="cmd">/silver:debug</span>         <span class="comment"># Systematic debugging for active bugs</span></div>
 
-      <p>Ordinary lifecycle requests route to SB-owned skills by default. Optional plugins are used only when the selected workflow needs a specialized extension.</p>
+      <p>Ordinary lifecycle requests route to Silver Bullet skills by default. Optional plugins are used only when the selected workflow needs a specialized extension.</p>
 
       <h3>Review And Completion Discipline</h3>
       <ul>
-        <li><strong><code>tdd</code> / <code>silver-tdd</code></strong> — SB-owned red/green/refactor policy before behavior-changing implementation</li>
+        <li><strong><code>tdd</code> / <code>silver-tdd</code></strong> — red/green/refactor policy before behavior-changing implementation</li>
         <li><strong><code>/silver:review-request</code></strong> — Frames review scope, files, risks, and blockers</li>
         <li><strong><code>/silver:review-triage</code></strong> — Triage all feedback with accept/reject rationale before fixing</li>
         <li><strong><code>/silver:completion-audit</code></strong> — Completion-claim verification gate</li>

@@ -140,7 +140,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="what-it-means">What Efficiency Means in v0.40.0</h2>
-      <p>Silver Bullet is an orchestration and enforcement engine with SB-owned lifecycle workflows. Its efficiency comes from routing work to the right workflow composition, keeping state in <code>.planning/workflows/&lt;id&gt;.md</code>, and adding only the gates that the task actually needs.</p>
+      <p>Silver Bullet is an orchestration and enforcement engine with lifecycle workflows. Its efficiency comes from routing work to the right workflow composition, keeping state in <code>.planning/workflows/&lt;id&gt;.md</code>, and adding only the gates that the task actually needs.</p>
       <p>That matters because the expensive failure mode in agentic development is not only token cost. It is doing the wrong amount of process: under-reviewing a risky change, over-processing a typo, losing traceability between spec and PR, or discovering after implementation that the plan never covered an acceptance criterion.</p>
 
       <div class="callout callout-info">
@@ -151,7 +151,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="workflow-fit">Workflow Fit Table</h2>
-      <p><code>/silver</code> composes from the SB-owned lifecycle workflows and optional extension plugins instead of forcing every request through one fixed pipeline.</p>
+      <p><code>/silver</code> composes from lifecycle workflows and optional extension plugins instead of forcing every request through one fixed pipeline.</p>
       <table class="ref-table">
         <thead>
           <tr><th>Work Type</th><th>Likely Route</th><th>Efficiency Gain</th></tr>
