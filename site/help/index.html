@@ -124,7 +124,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="container">
     <div class="badge"><i data-lucide="book-open"></i> Help Center</div>
     <h1>How Can We Help You?</h1>
-    <p>Silver Bullet v0.48.1 documentation for Claude Code, Codex, and Cursor — APO catalog, canonical AF-* atomic flows, V-loop evidence, hook-enforced workflows, and the full SB command reference.</p>
+    <p>Silver Bullet v0.48.1 documentation for Claude Code, Codex, and Cursor — the APO catalog (<code>docs/apo-catalog.json</code>) defines Process → Workflow → Atomic Flow → Flow Step, with 27 AF-* atomic flows, 22 workflows, 85 flow steps, V-loop evidence, and hook-enforced delivery.</p>
     <div class="search-wrap">
       <span class="search-icon"><i data-lucide="search"></i></span>
       <input type="text" placeholder="Search topics, commands, concepts…" id="search-input" autocomplete="off">
@@ -173,13 +173,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="rocket"></i></div>
         <span class="card-badge" style="background:var(--green-warn-a12);color:var(--green)">Start here</span>
         <h3>Getting Started</h3>
-        <p>New to Silver Bullet or AI-assisted development? Start here to go from zero to your first enforced workflow session.</p>
+        <p>New to Silver Bullet? Install from a public marketplace, run <code>/silver:init</code>, then compose your first catalog-backed workflow with <code>/silver</code>.</p>
         <ul class="card-topics">
           <li>What AI-driven development is (and isn't)</li>
-          <li>Prerequisites: host coding agent and Silver Bullet; optional extension plugins only when a workflow needs their domain capability</li>
-          <li>Installing Silver Bullet</li>
-          <li>Running your first session</li>
-          <li>Choosing Interactive vs Autonomous mode</li>
+          <li>Prerequisites: host agent, jq, Graphify; optional domain plugins when a workflow needs them</li>
+          <li>Three-host install: Claude, Codex, and Cursor marketplace packages</li>
+          <li><code>/silver:init</code> adoption path and hook activation</li>
+          <li>First <code>/silver</code> run and session mode selection</li>
         </ul>
         <div class="card-cta">Read guide →</div>
       </a>
@@ -203,13 +203,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="settings"></i></div>
         <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Workflow</span>
         <h3>Software Engineering Workflow</h3>
-        <p>The composed application delivery path, from intent routing and SB planning through release.</p>
+        <p>The <code>WF-SILVER-FEATURE</code> application path — composed from AF-* atomic flows from orient through post-execute gates to ship and release.</p>
         <ul class="card-topics">
-          <li>Project initialization with SB</li>
-          <li>Context -> Quality Gates -> Plan -> Execute</li>
-          <li>Verify, Code Review, and acceptance loop</li>
-          <li>Finalization, CI/CD, and deployment</li>
-          <li>Ship and Release steps</li>
+          <li>When to use feature vs fast vs clarify workflows</li>
+          <li>AF-ORIENT → AF-QUALITY-GATE → AF-PLAN → AF-EXECUTE</li>
+          <li>Post-execute: AF-VERIFY, AF-REVIEW, AF-SECURE, AF-SHIP</li>
+          <li>Phase-level ship vs milestone <code>/silver:release</code></li>
+          <li>Hook-enforced step order and two-tier delivery gates</li>
         </ul>
         <div class="card-cta">Read workflow →</div>
       </a>
@@ -218,13 +218,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="hard-hat"></i></div>
         <span class="card-badge" style="background:var(--cyan-discuss-a12);color:var(--cyan)">DevOps</span>
         <h3>DevOps &amp; IaC Workflow</h3>
-        <p>The composed infrastructure workflow with Incident Fast Path, Blast Radius assessment, and Environment Promotion.</p>
+        <p>The <code>WF-SILVER-DEVOPS</code> infrastructure path — AF-BLAST-RADIUS, AF-DEVOPS-ROUTE, IaC quality gates, environment promotion, and incident fast path.</p>
         <ul class="card-topics">
-          <li>Incident Fast Path for emergencies</li>
-          <li>Blast Radius assessment (LOW → CRITICAL)</li>
-          <li>IaC-adapted quality gates</li>
+          <li>When to route to <code>/silver:devops</code> vs application workflows</li>
+          <li>AF-BLAST-RADIUS ratings (LOW → CRITICAL)</li>
+          <li>AF-QUALITY-GATE with 7 IaC-adapted dimensions</li>
           <li>Environment promotion: dev → staging → prod</li>
-          <li>DevOps plugin ecosystem integration</li>
+          <li>Optional DevOps plugin enrichment (not enforcement gates)</li>
         </ul>
         <div class="card-cta">Read workflow →</div>
       </a>
@@ -233,27 +233,27 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="clipboard-list"></i></div>
         <span class="card-badge" style="background:var(--amber-a12);color:var(--amber)">Reference</span>
         <h3>Command Reference</h3>
-        <p>Every key Silver Bullet command, config option, workflow, and file location — all in one place.</p>
+        <p>Authoritative lookup for commands, <code>.silver-bullet.json</code>, the APO catalog, AF-* alias table, and planning artifacts.</p>
         <ul class="card-topics">
-          <li>Runtime install for Claude, Codex, and Cursor</li>
-          <li>Capability matrix and parity scripts</li>
-          <li>SB lifecycle commands and config options</li>
-          <li>Session log and planning file formats</li>
+          <li>Three-host marketplace install and capability matrix</li>
+          <li>27 AF-* atomic flows with legacy FLOW alias column</li>
+          <li>22 workflows and 85 catalog flow steps</li>
+          <li>Config sample at version 0.48.1 and session log format</li>
         </ul>
         <div class="card-cta">Open reference →</div>
       </a>
 
-      <a href="workflows/" class="help-card" data-keywords="workflows orchestration atomic flows runtime queue tokens FLOW composition silver clarify feature bugfix ui devops research release fast spec ingest validate routing">
+      <a href="workflows/" class="help-card" data-keywords="workflows orchestration atomic flows APO catalog WF-SILVER composition silver clarify feature bugfix ui devops research release fast spec ingest validate routing">
         <div class="card-icon"><i data-lucide="git-branch-plus"></i></div>
         <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.48.1</span>
         <h3>Orchestration Workflows</h3>
-        <p>canonical AF-* atomic flows, runtime queue tokens, and composer composition chains — the v0.48.1 workflow model.</p>
+        <p>Named WF-* workflows that <code>/silver</code> composes from the APO catalog — feature, UI, DevOps, bugfix, research, release, fast, and spec pipeline routes.</p>
         <ul class="card-topics">
-          <li>27 canonical AF-* atomic flows plus legacy FLOW alias map</li>
-          <li>Runtime queue tokens mapped to catalog entities</li>
-          <li>Catalog-backed workflows: feature, ui, devops, bugfix, release</li>
-          <li>Post-execute: REVIEW → VERIFY → SECURE → ship</li>
-          <li>Hook activation guard + recommended tools</li>
+          <li>27 AF-* atomic flows; legacy FLOW 1–18 aliases for migration only</li>
+          <li>22 workflows and 85 flow steps in <code>docs/apo-catalog.json</code></li>
+          <li>WF-POST-EXEC-GATES: review, verify, secure, validate, ship</li>
+          <li>V-loop rollups and subagent execution contracts</li>
+          <li>Hook activation guard + recommended tools opt-in</li>
         </ul>
         <div class="card-cta">View workflows →</div>
       </a>

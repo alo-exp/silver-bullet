@@ -51,6 +51,7 @@ CI enforces `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`te
 ## Working Rules
 
 - **Website and help-center work** (copywriting, `site/` HTML, help pages, `site/help/search.js`, OG cards, and other public-facing docs under `site/`) MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` tool with `model=composer-2.5`), not by the parent agent alone or other models.
+- **Site/help publish policy** — content under `site/` is publishable as direct commits to `main` without a patch release, version bump, git tag, or GitHub release. Do not bump `package.json` / plugin manifests or run release automation for site/help-only publishes unless the user explicitly requests a release. Before pushing, run the site freshness tests (`bash tests/scripts/test-site-doc-freshness.sh`, `bash tests/scripts/test-site-content-freshness.sh`); do not block on the full `bash tests/run-all-tests.sh` suite for site-only work. **Publish path:** commit + push to `main` only; GitHub Pages deploys automatically via `.github/workflows/pages.yml` (path-filtered to `site/**`). Note: `.github/workflows/ci.yml` still runs on every push (no site-only path filter), but site-only publishes do not require waiting for CI green or cutting a release.
 - Keep `silver-bullet.md` and `templates/silver-bullet.md.base` in sync whenever live instruction text changes.
 - Treat `.planning/` as authoritative for active workflow state.
 - Prefer targeted tests before the full suite when iterating locally.

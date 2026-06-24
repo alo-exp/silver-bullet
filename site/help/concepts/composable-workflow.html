@@ -128,7 +128,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> replaces fixed pipelines with dynamic path composition — classifying context, selecting catalog-backed atomic flows, and supervising execution via the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
+    <p>How <code>/silver</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>AF-ROUTE</code>, selects <code>WF-*</code> workflows, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
   </div>
 </div>
 
@@ -139,6 +139,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
         <li><a href="#atomic-flow-catalog">Atomic Flow Catalog</a></li>
+        <li><a href="#legacy-alias-map">Legacy Alias Map</a></li>
         <li><a href="#runtime-tokens">Runtime Queue Tokens</a></li>
         <li><a href="#post-execution">Post-Execution Order</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
@@ -151,7 +152,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What are Composable Flows?</h2>
-      <p>Silver Bullet v0.48 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request, selects a catalog-backed workflow, and composes canonical <code>AF-*</code> atomic flows plus reusable workflow components from <code>docs/apo-catalog.json</code>.</p>
+      <p>Silver Bullet v0.48.1 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>AF-ROUTE</code>, selects a catalog-backed <code>WF-*</code> workflow, and composes canonical <code>AF-*</code> atomic flows plus reusable workflow components from <code>docs/apo-catalog.json</code>.</p>
+      <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
       <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
 
       <div class="callout callout-info">
@@ -163,7 +165,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="atomic-flow-catalog">Atomic Flow Catalog</h2>
       <p>The source of truth is <code>docs/apo-catalog.json</code>. Generated views such as <code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>, and <code>docs/generated/atomic-flow-index.json</code> are rendered from that catalog and checked for freshness. They are not hand-maintained workflow authorities.</p>
-      <p>v0.48 defines <strong>27 canonical atomic flows</strong>, <strong>22 workflows</strong>, and <strong>85 flow-step contracts</strong>. Legacy <code>FLOW 1-18</code> labels remain only as migration aliases for older docs, runtime tokens, and user memory.</p>
+      <p>v0.48.1 defines <strong>27 canonical atomic flows</strong>, <strong>22 workflows</strong>, and <strong>85 flow-step contracts</strong>. Each flow step carries a local V-loop; evidence rolls up through atomic-flow gates to workflow intent gates. Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation.</p>
 
       <table class="ref-table">
         <thead>
@@ -200,10 +202,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </tbody>
       </table>
 
-      <h3>Legacy alias map</h3>
-      <p>Use this only when translating older FLOW references. New docs and workflow composition should use the catalog entity IDs.</p>
+      <h3 id="legacy-alias-map">Legacy alias map (migration reference only)</h3>
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Secondary reference.</strong> The primary catalog is the table above. Use this map only when translating older docs, runtime queue tokens, or team runbooks that still say <code>FLOW N</code>. New compositions, help docs, and process packs must use <code>AF-*</code> / <code>WF-*</code> IDs.</div>
+      </div>
+      <p>Legacy label → canonical entity:</p>
       <table class="ref-table">
-        <thead><tr><th>Legacy label</th><th>Canonical entity</th></tr></thead>
+        <thead><tr><th>Legacy alias</th><th>Canonical catalog ID</th></tr></thead>
         <tbody>
           <tr><td><code>FLOW 1</code></td><td><code>AF-BOOTSTRAP</code></td></tr>
           <tr><td><code>FLOW 2</code></td><td><code>AF-ORIENT</code></td></tr>
