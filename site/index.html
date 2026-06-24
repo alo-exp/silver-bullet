@@ -1713,6 +1713,7 @@ img{max-width:100%;height:auto}
             <th>Key steps</th>
           </tr>
         </thead>
+        <!-- SDLC order: entry → planning/delivery → fast paths → infra/ops → post-incident → reusable components -->
         <tbody>
           <tr>
             <td><a href="help/workflows/silver-router.html" style="color:var(--accent-light);text-decoration:none">/silver</a></td>
@@ -1720,8 +1721,18 @@ img{max-width:100%;height:auto}
             <td><code>ROUTE</code> → <span style="font-size:.85rem;color:var(--text-dim)">(composes feature or fast)</span></td>
           </tr>
           <tr>
+            <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"research", "decide"</td>
+            <td><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
+          </tr>
+          <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"feature", "implement", "build feature"</td>
+            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
             <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
@@ -1730,34 +1741,9 @@ img{max-width:100%;height:auto}
             <td><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
-            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"research", "decide"</td>
-            <td><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra"</td>
-            <td><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"release"</td>
-            <td><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"deploy"</td>
-            <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"canary"</td>
-            <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td>
+            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs"</td>
+            <td><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
@@ -1780,9 +1766,24 @@ img{max-width:100%;height:auto}
             <td><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs"</td>
-            <td><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
+            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra"</td>
+            <td><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"deploy"</td>
+            <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"canary"</td>
+            <td><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"release"</td>
+            <td><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
