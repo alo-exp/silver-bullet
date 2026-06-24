@@ -22,7 +22,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "first-run",
     "title": "First workflow run",
-    "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then runs SB-owned context, planning, execution, verification, review, and ship gates."
+    "text": "Start with /silver and a natural-language request. SB classifies intent, composes the smallest safe workflow, then runs context, planning, execution, verification, review, and ship gates."
   },
   {
     "page": "Help Center",
@@ -36,7 +36,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "skills",
     "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB uses host-native invocation receipts where available and /silver is the APO router that classifies complexity and composes SB-owned lifecycle flows plus optional extension-plugin paths."
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB uses host-native invocation receipts where available and /silver is the APO router that classifies complexity and composes lifecycle flows plus optional extension-plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -344,7 +344,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "quality-review-skills",
     "title": "Quality and review skills",
-    "text": "SB-owned quality and review skills include modularity, reusability, scalability, security, reliability, usability, testability, extensibility, ai-llm-safety, silver-domain-audit, artifact-reviewer, artifact-review-assessor, and review-spec, review-requirements, review-roadmap, review-uat, review-design, review-research, review-context, review-ingestion-manifest, and review-cross-artifact."
+    "text": "Quality gates and review skills include modularity, reusability, scalability, security, reliability, usability, testability, extensibility, ai-llm-safety, silver-domain-audit, artifact-reviewer, artifact-review-assessor, and review-spec, review-requirements, review-roadmap, review-uat, review-design, review-research, review-context, review-ingestion-manifest, and review-cross-artifact."
   },
   {
     "page": "Reference",
