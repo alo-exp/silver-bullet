@@ -363,7 +363,7 @@ See `docs/AGENTMEMORY.md`.
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from a catalog of 18 atomic flows (FLOW 1-18). Each flow is a self-contained building block with defined prerequisites, trigger conditions, steps, and exit conditions. The `/silver` orchestrator classifies context and composes an ordered chain of flows tailored to the task.
+Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.json`: canonical `AF-*` atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings. Legacy FLOW 1-18 labels are migration aliases only. The `/silver` orchestrator classifies context and composes an ordered chain of catalog-backed atoms tailored to the task.
 
 **Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`silver:feature`, `silver:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 

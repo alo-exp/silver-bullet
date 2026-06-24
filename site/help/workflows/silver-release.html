@@ -119,7 +119,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <h2 id="overview">Overview</h2>
       <p><code>/silver:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
       <p><strong>It never publishes directly — it orchestrates only.</strong> This workflow operates at the milestone level — it closes out a complete milestone, not a single phase.</p>
-      <p><code>silver:release</code> uses <strong>composable flows architecture</strong> — it maps to <strong>FLOW 18 (RELEASE)</strong> in the 18-flow catalog. A key insertion point: <strong>FLOW 16 (DESIGN HANDOFF)</strong> is inserted inside FLOW 18 between the milestone audit and gap closure steps when the milestone contains UI phases. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>silver:release</code> uses the <strong>v0.48 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="divider"></div>
 
@@ -149,33 +149,30 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Flow execution (FLOW 18)</h2>
+      <h2 id="workflow-steps">Catalog execution (<code>WF-SILVER-RELEASE</code>)</h2>
 
       <h3>Standard composition chain</h3>
-      <div class="code-block">FLOW 13 (QUALITY GATE, release) → FLOW 12 (UAT audit evidence)
-→ FLOW 18 (milestone audit + gap closure) → FLOW 11 (SECURE)
-→ [FLOW 8 + FLOW 15 gap closure, max 2×] → FLOW 16 (DESIGN HANDOFF) [if UI]
-→ FLOW 17 (DOCUMENT) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY + verify-tests)
-→ FLOW 14 (SHIP) → deploy/canary [if live rollout]
-→ FLOW 18 (milestone archive) → silver:create-release (last)</div>
+      <div class="code-block">WF-SILVER-RELEASE
+  → AF-QUALITY-GATE → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
+  → AF-VERIFY → AF-SECURE → AF-VALIDATE
+  → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP
+  → AF-RELEASE → silver:create-release (last)</div>
 
-      <h3>FLOW 18 sub-steps</h3>
+      <h3><code>AF-RELEASE</code> sub-steps</h3>
       <ul>
-        <li><strong>Pre-release quality gate</strong> (FLOW 13) — <code>silver:quality-gates</code> + domain audit</li>
-        <li><strong>UAT audit</strong> (FLOW 12) — cross-phase evidence → <code>.planning/RELEASE-UAT-AUDIT.md</code></li>
-        <li><strong>Milestone audit</strong> (FLOW 18) — scope vs evidence → <code>.planning/RELEASE-MILESTONE-AUDIT.md</code></li>
-        <li><strong>Gap closure</strong> (FLOW 8 + FLOW 15) — max 2 iterations via nested <code>silver:feature</code> / <code>silver:bugfix</code></li>
-        <li><strong>Design handoff</strong> (FLOW 16) — when UI phases exist</li>
-        <li><strong>Document</strong> (FLOW 17) — <code>silver:ensure-docs</code>, milestone summary</li>
-        <li><strong>Ship prep</strong> (FLOW 14) — <code>silver:branch-finish</code> → <code>silver:completion-audit</code> → <code>silver:ship</code></li>
-        <li><strong>Create release</strong> (FLOW 18) — <code>silver:create-release</code> always last</li>
+        <li><strong>Pre-release quality gate</strong> — <code>AF-QUALITY-GATE</code> plus domain audit evidence.</li>
+        <li><strong>UAT and milestone audits</strong> — <code>AF-VERIFY</code> checks cross-phase evidence and release readiness artifacts.</li>
+        <li><strong>Gap closure</strong> — dynamic insertion of <code>AF-PLAN</code>, <code>AF-EXECUTE</code>, and <code>AF-DEBUG</code> repair atoms when the release V-gate finds missing work.</li>
+        <li><strong>Documentation and handoff</strong> — <code>AF-DOCUMENT</code> updates durable docs and release handoff evidence.</li>
+        <li><strong>Ship prep</strong> — <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code>.</li>
+        <li><strong>Create release</strong> — <code>silver:create-release</code> runs after release V-loop evidence and milestone archival are complete.</li>
       </ul>
 
       <h3 id="gap-closure">Gap-closure loop (max 2 iterations)</h3>
-      <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to FLOW 13 pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
+      <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to <code>AF-QUALITY-GATE</code> pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
 
       <h3>Delivery tail (orchestrator parent mode)</h3>
-      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the autonomous queue runs the delivery tail only (FLOW 13 → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the autonomous queue runs the catalog delivery tail only (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
 
       <div class="divider"></div>
 
@@ -185,11 +182,11 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>/silver:quality-gates</code> pre-release (FLOW 13)</li>
-            <li><code>/verify-tests</code> fresh release-session test run (FLOW 12)</li>
-            <li><code>security</code> (FLOW 11) is mandatory for every release</li>
-            <li><code>silver:ship</code> (FLOW 14) must succeed before milestone archival</li>
-            <li><code>/silver:create-release</code> runs only after milestone archival (FLOW 18)</li>
+            <li><code>/silver:quality-gates</code> pre-release (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/verify-tests</code> fresh release-session test run (<code>AF-VERIFY</code>)</li>
+            <li><code>security</code> (<code>AF-SECURE</code>) is mandatory for every release</li>
+            <li><code>silver:ship</code> (<code>AF-SHIP</code>) must succeed before milestone archival</li>
+            <li><code>/silver:create-release</code> runs only after <code>AF-RELEASE</code> evidence and milestone archival</li>
           </ul>
         </div>
       </div>

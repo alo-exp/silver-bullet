@@ -29,7 +29,14 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Help Center landing page for Silver Bullet v0.48.0 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+    "text": "Help Center landing page for Silver Bullet v0.48.1 concepts, getting started, three-host install, capability matrix, software workflow, DevOps workflow, command reference, named workflows, troubleshooting, and search."
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/#migration-notes",
+    "anchor": "migration-notes",
+    "title": "v0.48 APO migration",
+    "text": "v0.48 migrates Silver Bullet from the older FLOW 1-18 mental model to the APO catalog source of truth: docs/apo-catalog.json, 27 AF-* atomic flows, reusable WF-* workflows, V-loop rollups, subagent execution, opted-in tool governance, and generated catalog views."
   },
   {
     "page": "Core Concepts",
@@ -113,7 +120,7 @@ var IDX = [
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
-    "text": "Silver Bullet replaces fixed pipelines with an 18-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens in hooks/lib/orchestrator-state.sh."
+    "text": "Silver Bullet replaces fixed pipelines with a canonical atomic-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens in hooks/lib/orchestrator-state.sh."
   },
   {
     "page": "Core Concepts",
@@ -148,7 +155,7 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog: 18 atomic flows FLOW 1-18, runtime queue tokens (FLOW-QUALITY-GATE, silver:blast-radius, devops-skill-router, silver:validate, silver:branch-finish, silver:completion-audit), composer composition chains for /silver:clarify, /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:research, /silver:release, /silver:fast, plus /silver:spec, /silver:ingest, /silver:validate. Post-execute order: REVIEW then VERIFY then SECURE then pre-ship quality gate then ship."
+    "text": "Workflow catalog: 27 canonical AF-* atomic flows, 22 workflows, V-loop contracts, runtime queue tokens mapped to catalog entities, composer workflows for /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:research, /silver:release, /silver:fast, plus /silver:spec, /silver:ingest, /silver:validate. Post-execute gates use WF-POST-EXEC-GATES: review request, review, triage, verify, secure, validate, quality gate, branch finish, completion audit, and ship."
   },
   {
     "page": "Workflows",
@@ -161,7 +168,7 @@ var IDX = [
     "page": "Getting Started",
     "url": "/help/getting-started/",
     "anchor": "hook-activation",
-    "title": "Hook activation guard v0.48.0",
+    "title": "Hook activation guard v0.48.1",
     "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify and agentmemory are opt-in via recommended_tools in config."
   },
   {
@@ -357,7 +364,7 @@ var IDX = [
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "runtime-parity",
-    "title": "Runtime parity scripts v0.48.0",
+    "title": "Runtime parity scripts v0.48.1",
     "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
@@ -365,7 +372,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json includes version 0.48.0, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
+    "text": "Current .silver-bullet.json includes version 0.48.1, project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, and state paths."
   },
   {
     "page": "Reference",

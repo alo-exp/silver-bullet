@@ -8,7 +8,7 @@
 <title>Core Concepts — Silver Bullet Help</title>
 <meta name="description" content="Understand Silver Bullet's core concepts: composable atomic flows, skills, hooks, lifecycle workflows, quality gates, and enforcement layers.">
 <meta property="og:title" content="Core Concepts — Silver Bullet Help">
-<meta property="og:description" content="Composable atomic flows, hook enforcement, lifecycle skills, quality gates, and spec-to-release traceability — core Silver Bullet concepts for v0.48.0.">
+<meta property="og:description" content="Composable atomic flows, hook enforcement, lifecycle skills, quality gates, and spec-to-release traceability — core Silver Bullet concepts for v0.48.1.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/concepts/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -581,12 +581,12 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of 18 atomic flows. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
+      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of canonical AF-* atomic flows. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
           <h4><a href="composable-workflow.html" style="color:var(--accent-light);text-decoration:none">Composable Workflow Orchestration →</a></h4>
-          <p>The full 18-flow catalog, how composition works, the active per-instance tracker, and the per-path supervision loop.</p>
+          <p>The full canonical AF-* catalog, how composition works, the active per-instance tracker, and the per-path supervision loop.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="users"></i></div>

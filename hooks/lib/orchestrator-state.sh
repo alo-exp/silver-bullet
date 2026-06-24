@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-research|silver-ensure-docs|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security)
       return 0
       ;;
     *)
@@ -54,7 +54,7 @@ sb_orchestrator_default_queue_for_composer() {
       printf '%s' "FLOW-QUALITY-GATE,silver-context,silver-plan,silver-ui-contract,silver-validate,silver-execute,silver-ui-review,${post_exec}"
       ;;
     silver-devops)
-      post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-DEVOPS-QUALITY-GATE-PRESHIP')"
+      post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
       printf '%s' "silver-blast-radius,devops-skill-router,devops-quality-gates,security,silver-context,silver-plan,silver-validate,silver-execute,${post_exec}"
       ;;
     silver-bugfix)
@@ -62,7 +62,7 @@ sb_orchestrator_default_queue_for_composer() {
       printf '%s' "silver-debug,silver-plan,silver-execute,${post_exec}"
       ;;
     silver-research)
-      printf '%s' 'silver-clarify,silver-research'
+      printf '%s' 'silver-clarify,silver-research,silver-ensure-docs,silver-validate'
       ;;
     silver-fast)
       printf '%s' 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'
