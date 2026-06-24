@@ -312,6 +312,97 @@ var IDX = [
     "text": "Validate workflow performs read-only gap analysis across SPEC and PLAN artifacts, emits BLOCK/WARN/INFO findings, and writes VALIDATION.md."
   },
   {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-router.html",
+    "anchor": "overview",
+    "title": "/silver",
+    "text": "/silver dynamic router WF-SILVER-ROUTER v0.48.1 APO catalog. AF-ROUTE classifies intent and composes WF-SILVER-FEATURE or WF-SILVER-FAST. Entry point for mixed or ambiguous work when the specialized route is unclear."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-deploy.html",
+    "anchor": "overview",
+    "title": "/silver:deploy",
+    "text": "/silver:deploy WF-SILVER-DEPLOY v0.48.1 APO catalog. Blast-radius-first live rollout: AF-BLAST-RADIUS AF-VERIFY AF-SECURE AF-SHIP. Platform detection, deploy safety, artifact identity, health checks, rollback readiness, hands runtime watches to /silver:canary."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-canary.html",
+    "anchor": "overview",
+    "title": "/silver:canary",
+    "text": "/silver:canary WF-SILVER-CANARY v0.48.1 APO catalog. Post-deploy partial rollout watch: AF-BLAST-RADIUS AF-VERIFY AF-SHIP. HTTP browser logs metrics rollback checks, .planning/CANARY.md evidence, blocks repeated runtime failures."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-test.html",
+    "anchor": "overview",
+    "title": "/silver:test",
+    "text": "/silver:test WF-SILVER-TEST v0.48.1 APO catalog. Test hardening composition AF-PLAN AF-EXECUTE AF-VERIFY. Test writing E2E route discovery repair audit performance mutation challenge with verify-tests freshness evidence."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-refactor.html",
+    "anchor": "overview",
+    "title": "/silver:refactor",
+    "text": "/silver:refactor WF-SILVER-REFACTOR v0.48.1 APO catalog. Behavior-preserving structural changes AF-PLAN AF-EXECUTE AF-VERIFY plus WF-POST-EXEC-GATES review verify secure validate quality gate ship readiness."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-benchmark.html",
+    "anchor": "overview",
+    "title": "/silver:benchmark",
+    "text": "/silver:benchmark WF-SILVER-BENCHMARK v0.48.1 APO catalog. Agent model provider prompt benchmark: AF-ORIENT AF-EXECUTE AF-VERIFY AF-DOCUMENT. Repeatable fixture rubric cost latency evidence quality benchmark-eval pack."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-content.html",
+    "anchor": "overview",
+    "title": "/silver:content",
+    "text": "/silver:content WF-SILVER-CONTENT v0.48.1 APO catalog. Docs copy public content workflow AF-CLARIFY AF-SPECIFY AF-EXECUTE AF-VERIFY AF-DOCUMENT. Search-readiness migration optimization metadata links render build verification."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-incident.html",
+    "anchor": "overview",
+    "title": "/silver:incident",
+    "text": "/silver:incident WF-SILVER-INCIDENT v0.48.1 APO catalog. Production incident response AF-BLAST-RADIUS AF-DEBUG AF-SECURE AF-VERIFY AF-DOCUMENT. Impact timeline mitigation root cause recovery verification corrective actions via /silver:add."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-retro.html",
+    "anchor": "overview",
+    "title": "/silver:retro",
+    "text": "/silver:retro WF-SILVER-RETRO v0.48.1 APO catalog. Engineering retrospective AF-ORIENT AF-DOCUMENT AF-DECIDE. Release git CI issue review domain-audit session evidence, .planning/RETRO.md, actionable improvements via /silver:add."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-forensics.html",
+    "anchor": "overview",
+    "title": "/silver:forensics",
+    "text": "/silver:forensics WF-SILVER-FORENSICS v0.48.1 APO catalog. Session and post-mortem reconstruction AF-DEBUG AF-DOCUMENT AF-VALIDATE. Failure classification investigation path docs/silver:forensics report, distinct from live AF-DEBUG and WF-SILVER-INCIDENT."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-process-maintenance.html",
+    "anchor": "overview",
+    "title": "/silver:process-maintenance",
+    "text": "/silver:process-maintenance WF-PROCESS-MAINTENANCE v0.48.1 APO catalog. Phase thread backlog migration maintenance AF-PHASE-MANAGE AF-DOCUMENT AF-VALIDATE. /silver:phase /silver:add ROADMAP STATE.md workflow archives planning integrity."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/review-triad.html",
+    "anchor": "overview",
+    "title": "WF-REVIEW-TRIAD",
+    "text": "WF-REVIEW-TRIAD reusable workflow component v0.48.1 APO catalog. Not a composer route. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/ship-readiness.html",
+    "anchor": "overview",
+    "title": "WF-SHIP-READINESS",
+    "text": "WF-SHIP-READINESS reusable workflow component v0.48.1 APO catalog. Not a composer route. BRANCH_FINISH COMPLETION_AUDIT SHIP atomic flows /silver:branch-finish /silver:completion-audit /silver:ship. Final delivery gate after pre-ship QUALITY_GATE in WF-POST-EXEC-GATES."
+  },
+  {
     "page": "Dev Workflow",
     "url": "/help/dev-workflow/",
     "anchor": "overview",
