@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>WF-SHIP-READINESS — Ship Readiness Component — Silver Bullet Help</title>
-<meta name="description" content="APO reusable workflow component: branch finish → completion audit → ship. Final delivery gate chain composed inside delivery workflows.">
+<title>/silver:ship-readiness — Ship Readiness — Silver Bullet Help</title>
+<meta name="description" content="/silver:ship-readiness documents WF-SHIP-READINESS — reusable ship gate chain: branch finish → completion audit → ship. Final delivery gate composed inside delivery workflows.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -106,9 +106,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
 <div class="page-hero">
   <div class="container">
-    <p class="hero-id">WF-SHIP-READINESS · reusable component</p>
-    <h1>Ship Readiness</h1>
-    <p>Catalog-backed reusable workflow component for the final delivery gate — branch hygiene, completion audit, and ship authorization. Composed at the end of delivery workflows after quality gates pass.</p>
+    <h1>/silver:ship-readiness</h1>
+    <p>Catalog-backed reusable workflow component (<code>WF-SHIP-READINESS</code>) for the final delivery gate — branch hygiene, completion audit, and ship authorization. Composed at the end of delivery workflows after quality gates pass.</p>
   </div>
 </div>
 
@@ -124,7 +123,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><a href="#workflow-steps">Atomic flows</a></li>
         <li><a href="#enforcement">Hook enforcement</a></li>
         <li class="sidebar-section">See also</li>
-        <li><a href="./review-triad.html">WF-REVIEW-TRIAD</a></li>
+        <li><a href="./silver-review-triad.html">/silver:review-triad</a></li>
         <li><a href="./index.html">All workflows</a></li>
       </ul>
     </aside>
@@ -132,7 +131,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>WF-SHIP-READINESS</code> is a <strong>reusable workflow component</strong> in the v0.48.1 APO catalog — not a standalone composer route. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
+      <p><code>/silver:ship-readiness</code> documents <code>WF-SHIP-READINESS</code>, a <strong>reusable workflow component</strong> in the v0.48.1 APO catalog. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
       <p>Catalog slug: <code>ship-readiness</code>. Type: <code>reusable_component</code>. Allowed dynamic operations: <code>loop</code> (re-audit after fixes before ship authorization).</p>
       <div class="code-block">BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
       <p>Individual atomic flows are invokable via <code>/silver:branch-finish</code>, <code>/silver:completion-audit</code>, and <code>/silver:ship</code>, but the ship-readiness chain only runs as an ordered composition inside parent workflows.</p>
@@ -140,7 +139,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Not a composer route:</strong> There is no <code>/silver:ship-readiness</code> command. SB composes <code>WF-SHIP-READINESS</code> after pre-ship <code>QUALITY_GATE</code> passes. Reference catalog entity IDs and atomic flow slugs — not legacy FLOW numbers.
+          <strong>Reusable component:</strong> Unlike top-level composer workflows such as <code>/silver:feature</code>, this chain is composed automatically after pre-ship <code>QUALITY_GATE</code> passes. Individual atomic flows remain invokable directly via their own routes.
         </div>
       </div>
 
@@ -203,9 +202,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       </div>
 
       <div class="page-nav-bottom">
-        <a href="./review-triad.html">
+        <a href="./silver-review-triad.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">WF-REVIEW-TRIAD</span>
+          <span class="pnb-title">/silver:review-triad</span>
         </a>
         <a href="./index.html">
           <span class="pnb-label">Next →</span>

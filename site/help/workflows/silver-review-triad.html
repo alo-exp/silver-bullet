@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>WF-REVIEW-TRIAD — Review Triad Component — Silver Bullet Help</title>
-<meta name="description" content="APO reusable workflow component: review request → artifact review → review triage. Composed inside delivery workflows after EXECUTE.">
+<title>/silver:review-triad — Review Triad — Silver Bullet Help</title>
+<meta name="description" content="/silver:review-triad documents WF-REVIEW-TRIAD — reusable review chain: review request → artifact review → review triage. Composed inside delivery workflows after EXECUTE.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -105,9 +105,8 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
 <div class="page-hero">
   <div class="container">
-    <p class="hero-id">WF-REVIEW-TRIAD · reusable component</p>
-    <h1>Review Triad</h1>
-    <p>Catalog-backed reusable workflow component for structured code and artifact review — request scope, run review, triage findings. Composed inside delivery workflows immediately after <code>EXECUTE</code>.</p>
+    <h1>/silver:review-triad</h1>
+    <p>Catalog-backed reusable workflow component (<code>WF-REVIEW-TRIAD</code>) for structured code and artifact review — request scope, run review, triage findings. Composed inside delivery workflows immediately after <code>EXECUTE</code>.</p>
   </div>
 </div>
 
@@ -123,7 +122,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <li><a href="#workflow-steps">Atomic flows</a></li>
         <li><a href="#v-loop">V-loop behavior</a></li>
         <li class="sidebar-section">See also</li>
-        <li><a href="./ship-readiness.html">WF-SHIP-READINESS</a></li>
+        <li><a href="./silver-ship-readiness.html">/silver:ship-readiness</a></li>
         <li><a href="./index.html">All workflows</a></li>
       </ul>
     </aside>
@@ -131,7 +130,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>WF-REVIEW-TRIAD</code> is a <strong>reusable workflow component</strong> in the v0.48.1 APO catalog — not a standalone composer route. It encapsulates the three-step review chain that every delivery workflow runs after implementation completes.</p>
+      <p><code>/silver:review-triad</code> documents <code>WF-REVIEW-TRIAD</code>, a <strong>reusable workflow component</strong> in the v0.48.1 APO catalog. It encapsulates the three-step review chain that every delivery workflow runs after implementation completes.</p>
       <p>Catalog slug: <code>review-triad</code>. Type: <code>reusable_component</code>. Allowed dynamic operations: <code>loop</code> (re-run triage until findings are resolved or explicitly accepted).</p>
       <div class="code-block">REVIEW_REQUEST → REVIEW → REVIEW_TRIAGE</div>
       <p>Individual atomic flows are invokable directly via their public routes (<code>/silver:review-request</code>, <code>/silver:review</code>, <code>/silver:review-triage</code>), but the triad only runs as an ordered composition inside parent workflows.</p>
@@ -139,7 +138,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Not a composer route:</strong> There is no <code>/silver:review-triad</code> command. SB inserts <code>WF-REVIEW-TRIAD</code> into the composition tree when a delivery workflow reaches post-execution review. Reference the catalog entity ID and atomic flow slugs — not legacy FLOW numbers.
+          <strong>Reusable component:</strong> Unlike top-level composer workflows such as <code>/silver:feature</code>, this chain is composed automatically inside delivery workflows when post-execution review begins. Individual atomic flows remain invokable directly via their own routes.
         </div>
       </div>
 
@@ -198,9 +197,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
           <span class="pnb-label">← Previous</span>
           <span class="pnb-title">/silver:process-maintenance</span>
         </a>
-        <a href="./ship-readiness.html">
+        <a href="./silver-ship-readiness.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">WF-SHIP-READINESS</span>
+          <span class="pnb-title">/silver:ship-readiness</span>
         </a>
       </div>
 
