@@ -120,7 +120,7 @@ var IDX = [
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
-    "text": "Silver Bullet replaces fixed pipelines with the APO catalog composable architecture. /silver classifies the request, selects WF-* workflow chains from docs/apo-catalog.json, supervises each AF-* atomic flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens mapped to catalog entities in hooks/lib/orchestrator-state.sh."
+    "text": "Silver Bullet replaces fixed pipelines with the APO catalog composable architecture. /silver classifies the request, selects WF-* workflow chains from docs/apo-catalog.json, supervises each AF-* atomic flow as a subagent work package, updates .planning/workflows/<id>.md after every completion, and enforces delivery through lifecycle hooks and V-loop evidence rollups."
   },
   {
     "page": "Core Concepts",
@@ -160,9 +160,9 @@ var IDX = [
   {
     "page": "Workflows",
     "url": "/help/workflows/",
-    "anchor": "runtime-tokens",
-    "title": "Runtime queue tokens",
-    "text": "Orchestrator enforcement queue tokens: FLOW-QUALITY-GATE, FLOW-QUALITY-GATE-PRESHIP, FLOW-DEVOPS-QUALITY-GATE-PRESHIP, silver:blast-radius, devops-skill-router, silver:validate, silver:branch-finish, silver:completion-audit, ROUTER. Seeded by hooks/lib/orchestrator-state.sh."
+    "anchor": "atomic-flows",
+    "title": "APO atomic flow catalog",
+    "text": "docs/apo-catalog.json defines 27 AF-* atomic flows, 22 WF-* workflows, and 85 flow steps. Process Workflow Atomic Flow Flow Step hierarchy with V-loop contracts, composition trees, WF-POST-EXEC-GATES, and legacy FLOW 1-18 migration aliases only."
   },
   {
     "page": "Getting Started",

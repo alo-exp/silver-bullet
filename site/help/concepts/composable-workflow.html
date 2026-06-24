@@ -8,7 +8,7 @@
 <title>Composable Workflow Orchestration — Silver Bullet Help</title>
 <meta name="description" content="How Silver Bullet's canonical atomic-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
 <meta property="og:title" content="Composable Workflow Orchestration — Silver Bullet Help">
-<meta property="og:description" content="How Silver Bullet's canonical AF-* atomic flows work: /silver classifies context, selects catalog-backed flows, and supervises execution via the active per-instance workflow tracker.">
+<meta property="og:description" content="How Silver Bullet's canonical atomic flows work: /silver classifies context, selects catalog-backed flows, and supervises execution via the active per-instance workflow tracker.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/concepts/composable-workflow.html">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -128,7 +128,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>AF-ROUTE</code>, selects <code>WF-*</code> workflows, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
+    <p>How <code>/silver</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>ROUTE</code>, selects a catalog workflow, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
   </div>
 </div>
 
@@ -140,7 +140,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#overview">Overview</a></li>
         <li><a href="#atomic-flow-catalog">Atomic Flow Catalog</a></li>
         <li><a href="#legacy-alias-map">Legacy Alias Map</a></li>
-        <li><a href="#runtime-tokens">Runtime Queue Tokens</a></li>
         <li><a href="#post-execution">Post-Execution Order</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
         <li><a href="#workflow-tracking">Workflow Tracker</a></li>
@@ -152,7 +151,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What are Composable Flows?</h2>
-      <p>Silver Bullet v0.48.1 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>AF-ROUTE</code>, selects a catalog-backed <code>WF-*</code> workflow, and composes canonical <code>AF-*</code> atomic flows plus reusable workflow components from <code>docs/apo-catalog.json</code>.</p>
+      <p>Silver Bullet v0.48.1 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
       <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
       <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
 
@@ -205,7 +204,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3 id="legacy-alias-map">Legacy alias map (migration reference only)</h3>
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Secondary reference.</strong> The primary catalog is the table above. Use this map only when translating older docs, runtime queue tokens, or team runbooks that still say <code>FLOW N</code>. New compositions, help docs, and process packs must use <code>AF-*</code> / <code>WF-*</code> IDs.</div>
+        <div class="callout-body"><strong>Secondary reference.</strong> The primary catalog is the table above. Use this map only when translating older docs, runtime queue tokens, or team runbooks that still say <code>FLOW N</code>. New compositions, help docs, and process packs must use atomic flow slugs from <code>docs/apo-catalog.json</code>.</div>
       </div>
       <p>Legacy label → canonical entity:</p>
       <table class="ref-table">
@@ -234,30 +233,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="runtime-tokens">Runtime Queue Tokens</h2>
-      <p>The autonomous orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) seeds enforcement queues with skill tokens and synthetic labels. These map to atomic flows or sub-steps — not separate catalog flows.</p>
-      <table class="ref-table">
-        <thead><tr><th>Token</th><th>Maps to</th><th>Role</th></tr></thead>
-        <tbody>
-          <tr><td><code>FLOW-QUALITY-GATE</code></td><td><code>AF-QUALITY-GATE</code> (pre-plan)</td><td style="font-family:inherit;font-size:.875rem"><code>silver:quality-gates</code> or <code>devops-quality-gates</code></td></tr>
-          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (pre-ship)</td><td style="font-family:inherit;font-size:.875rem">Product pre-ship quality gate</td></tr>
-          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (DevOps pre-ship)</td><td style="font-family:inherit;font-size:.875rem">IaC pre-ship quality gate</td></tr>
-          <tr><td><code>silver:blast-radius</code></td><td><code>AF-BLAST-RADIUS</code></td><td style="font-family:inherit;font-size:.875rem">Pre-plan blast-radius assessment for DevOps risk</td></tr>
-          <tr><td><code>devops-skill-router</code></td><td><code>AF-DEVOPS-ROUTE</code></td><td style="font-family:inherit;font-size:.875rem">IaC toolchain routing</td></tr>
-          <tr><td><code>silver:validate</code></td><td><code>AF-VALIDATE</code></td><td style="font-family:inherit;font-size:.875rem">Gap analysis atomic flow or sub-step</td></tr>
-          <tr><td><code>silver:branch-finish</code></td><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-size:.875rem">Branch hygiene before ship</td></tr>
-          <tr><td><code>silver:completion-audit</code></td><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-size:.875rem">Completion evidence before ship/release</td></tr>
-          <tr><td><code>ROUTER</code></td><td><code>/silver</code></td><td style="font-family:inherit;font-size:.875rem">Intent classification</td></tr>
-        </tbody>
-      </table>
-
       <h2 id="post-execution">Post-Execution Sequencing</h2>
-      <p>Runtime order is defined by catalog workflow composition and orchestrator queues, not by legacy FLOW numbering. For delivery composers, the reusable post-execution workflow is <code>WF-POST-EXEC-GATES</code>:</p>
+      <p>Runtime order is defined by catalog workflow composition and orchestrator queues, not by legacy FLOW numbering. For delivery composers, the reusable post-execution chain after <code>EXECUTE</code> is:</p>
       <ol>
-        <li><code>AF-UI-QUALITY</code> when UI scope applies</li>
-        <li><code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code></li>
-        <li><code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code></li>
-        <li><code>AF-QUALITY-GATE</code> pre-ship → <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code></li>
+        <li><code>UI_QUALITY</code> when UI scope applies</li>
+        <li><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></li>
+        <li><code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code></li>
+        <li><code>QUALITY_GATE</code> pre-ship → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></li>
       </ol>
       <p>Each child atomic flow must pass its own V-gate before the parent workflow can roll up to final user-intent validation.</p>
 
@@ -266,16 +248,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="how-composition-works">How Composition Works</h2>
       <p>When you invoke <code>/silver</code>, composition happens in five catalog-backed steps:</p>
       <ol>
-        <li><strong>Intent classification</strong> — <code>AF-ROUTE</code> maps the request, project state, and active artifacts to a workflow such as <code>WF-SILVER-FEATURE</code>, <code>WF-SILVER-BUGFIX</code>, or a dynamic route.</li>
-        <li><strong>Catalog selection</strong> — the workflow contributes canonical <code>AF-*</code> nodes and reusable workflow components. No workflow tree is authored outside <code>docs/apo-catalog.json</code>.</li>
-        <li><strong>Dynamic prune/insert/substitute</strong> — runtime context may omit already-satisfied atoms, insert missing preconditions such as <code>AF-DEBUG</code>, or substitute a smaller reusable workflow when catalog rules allow it.</li>
+        <li><strong>Intent classification</strong> — <code>ROUTE</code> maps the request, project state, and active artifacts to a workflow such as <code>silver-feature</code>, <code>silver-bugfix</code>, or a dynamic route.</li>
+        <li><strong>Catalog selection</strong> — the workflow contributes atomic flow slugs and reusable workflow components. No workflow tree is authored outside <code>docs/apo-catalog.json</code>.</li>
+        <li><strong>Dynamic prune/insert/substitute</strong> — runtime context may omit already-satisfied atoms, insert missing preconditions such as <code>DEBUG</code>, or substitute a smaller reusable workflow when catalog rules allow it.</li>
         <li><strong>Subagent scheduling</strong> — each ready atomic flow becomes exactly one subagent work package; independent atoms can run in parallel, while conflicting mutation scopes serialize.</li>
         <li><strong>V-loop rollup</strong> — flow-step V-loops roll into atomic-flow V-gates, atomic-flow V-gates roll into workflow gates, and the final gate validates material user intent.</li>
       </ol>
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Example feature composition:</strong> <code>WF-SILVER-FEATURE</code> starts with bootstrap/orientation/spec/planning atoms, executes <code>AF-EXECUTE</code>, then joins <code>WF-POST-EXEC-GATES</code>. A failing test or CI run can dynamically insert <code>AF-DEBUG</code>; a UI scope keeps <code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code>.</div>
+        <div class="callout-body"><strong>Example feature composition:</strong> <code>silver-feature</code> starts with <code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>SPECIFY</code> → <code>PLAN</code> atoms, executes <code>EXECUTE</code>, then joins post-execution gates (<code>REVIEW_REQUEST</code> → … → <code>SHIP</code>). A failing test or CI run can dynamically insert <code>DEBUG</code>; a UI scope keeps <code>DESIGN_CONTRACT</code> and <code>UI_QUALITY</code>.</div>
       </div>
 
       <div class="divider"></div>
@@ -288,7 +270,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Active path</strong> — which path is currently executing</li>
         <li><strong>Completed paths</strong> — log of paths that have exited successfully, with timestamps</li>
         <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
-        <li><strong>Dynamic insertions</strong> — catalog atoms inserted at runtime (e.g. <code>AF-DEBUG</code> after a failure)</li>
+        <li><strong>Dynamic insertions</strong> — catalog atoms inserted at runtime (e.g. <code>DEBUG</code> after a failure)</li>
         <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
       </ul>
 
@@ -310,7 +292,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong><code>AF-VERIFY</code> is non-skippable for delivery.</strong> The workflow cannot complete until verification evidence is fresh and rolled up. Even if the user asks to skip it, delivery hooks block premature PR, deploy, release, or completion claims.</div>
+        <div class="callout-body"><strong><code>VERIFY</code> is non-skippable for delivery.</strong> The workflow cannot complete until verification evidence is fresh and rolled up. Even if the user asks to skip it, delivery hooks block premature PR, deploy, release, or completion claims.</div>
       </div>
 
       <div class="divider"></div>
@@ -318,9 +300,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="see-also">See Also</h2>
       <ul>
         <li><a href="routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a path chain</li>
-        <li><a href="verification.html">Verification Before Completion</a> — <code>AF-VERIFY</code> and dual-mode quality gates in detail</li>
-        <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how <code>AF-REVIEW</code> and <code>AF-REVIEW-TRIAGE</code> handle findings</li>
-        <li><a href="documentation.html">Documentation Scheme</a> — <code>AF-DOCUMENT</code> and the per-instance workflow tracker as project artifacts</li>
+        <li><a href="verification.html">Verification Before Completion</a> — <code>VERIFY</code> and dual-mode quality gates in detail</li>
+        <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how <code>REVIEW</code> and <code>REVIEW_TRIAGE</code> handle findings</li>
+        <li><a href="documentation.html">Documentation Scheme</a> — <code>DOCUMENT</code> and the per-instance workflow tracker as project artifacts</li>
       </ul>
 
       <div class="page-nav-bottom">

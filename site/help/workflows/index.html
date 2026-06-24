@@ -6,9 +6,9 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Orchestration Workflows — Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet APO workflow catalog: canonical atomic flows, runtime queue tokens, catalog-backed composition chains, V-loops, and /silver routing.">
+<meta name="description" content="Silver Bullet APO workflow catalog: canonical atomic flows, catalog-backed composition chains, V-loops, and /silver routing.">
 <meta property="og:title" content="Orchestration Workflows — Silver Bullet Help">
-<meta property="og:description" content="APO atomic flows + runtime extensions: catalog-backed composer chains, queue tokens, V-loops, and /silver routing.">
+<meta property="og:description" content="APO atomic flows: catalog-backed composer chains, V-loops, and /silver routing.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/workflows/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -136,7 +136,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#overview">Overview</a></li>
         <li><a href="#composer-workflows">Composer Workflows</a></li>
         <li><a href="#atomic-flows">Atomic Flow Catalog</a></li>
-        <li><a href="#runtime-tokens">Runtime Queue Tokens</a></li>
         <li><a href="#post-execution">Post-Execution Order</a></li>
         <li><a href="#composition-vs-enforcement">Composition vs Enforcement</a></li>
         <li><a href="#activation">Hook Activation</a></li>
@@ -153,31 +152,31 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.48.1 runtime order is defined by canonical <code>AF-*</code> entities, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
+        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.48.1 runtime order is defined by canonical atomic flow slugs, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="composer-workflows">Composer Workflows</h2>
-      <p>Composer workflows are catalog-backed <code>workflow</code> entities. They reference <code>AF-*</code> atomic flows and reusable workflow components; conditional insertions are recorded through catalog dynamic rules and composition logs.</p>
+      <p>Composer workflows are catalog-backed <code>workflow</code> entities. They compose atomic flow slugs and reusable workflow components; conditional insertions are recorded through catalog dynamic rules and composition logs.</p>
 
       <table class="ref-table">
         <thead>
           <tr><th>Composer</th><th>Entry signals</th><th>Catalog composition</th></tr>
         </thead>
         <tbody>
-          <tr><td>/silver</td><td style="font-family:inherit;font-size:.875rem">freeform intent, unclear route, mixed work</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-ROUTER</code><br><code>AF-ROUTE</code> → <code>WF-SILVER-FEATURE</code> → <code>WF-SILVER-FAST</code></td></tr>
-          <tr><td>/silver:feature</td><td style="font-family:inherit;font-size:.875rem">add, build, implement, new feature, enhance</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-FEATURE</code><br><code>AF-BOOTSTRAP</code> → <code>AF-ORIENT</code> → <code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-SPECIFY</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-DESIGN-CONTRACT</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td></tr>
-          <tr><td>/silver:bugfix</td><td style="font-family:inherit;font-size:.875rem">bug, broken, crash, error, regression</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-BUGFIX</code><br><code>AF-ORIENT</code> → <code>AF-DEBUG</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td></tr>
-          <tr><td>/silver:ui</td><td style="font-family:inherit;font-size:.875rem">UI, frontend, component, screen, design</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-UI</code><br><code>AF-BOOTSTRAP</code> → <code>AF-ORIENT</code> → <code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-SPECIFY</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-DESIGN-CONTRACT</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td></tr>
-          <tr><td>/silver:devops</td><td style="font-family:inherit;font-size:.875rem">infra, CI/CD, terraform, IaC, cloud</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-DEVOPS</code><br><code>AF-BLAST-RADIUS</code> → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-SECURE</code> → <code>AF-ORIENT</code> → <code>AF-PLAN</code> → <code>AF-VALIDATE</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code></td></tr>
-          <tr><td>/silver:research</td><td style="font-family:inherit;font-size:.875rem">compare X vs Y, spike, technology decision</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-RESEARCH</code><br><code>AF-CLARIFY</code> → <code>AF-DECIDE</code> → <code>AF-DOCUMENT</code> → <code>AF-VALIDATE</code></td></tr>
-          <tr><td>/silver:release</td><td style="font-family:inherit;font-size:.875rem">release, publish, version, tag v</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-RELEASE</code><br><code>AF-QUALITY-GATE</code> → <code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code> → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code> → <code>AF-RELEASE</code></td></tr>
-          <tr><td>/silver:fast</td><td style="font-family:inherit;font-size:.875rem">trivial, typo, bounded small change</td><td style="font-family:inherit;font-size:.875rem"><code>WF-SILVER-FAST</code><br><code>AF-FAST-PATH</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-VALIDATE</code> → <code>AF-EXECUTE</code> → <code>AF-VERIFY</code></td></tr>
+          <tr><td>/silver</td><td style="font-family:inherit;font-size:.875rem">freeform intent, unclear route, mixed work</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → feature: <code>BOOTSTRAP</code> → … → <code>EXECUTE</code> → post-exec gates<br><code>ROUTE</code> → fast: <code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
+          <tr><td>/silver:feature</td><td style="font-family:inherit;font-size:.875rem">add, build, implement, new feature, enhance</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
+          <tr><td>/silver:bugfix</td><td style="font-family:inherit;font-size:.875rem">bug, broken, crash, error, regression</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
+          <tr><td>/silver:ui</td><td style="font-family:inherit;font-size:.875rem">UI, frontend, component, screen, design</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
+          <tr><td>/silver:devops</td><td style="font-family:inherit;font-size:.875rem">infra, CI/CD, terraform, IaC, cloud</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
+          <tr><td>/silver:research</td><td style="font-family:inherit;font-size:.875rem">compare X vs Y, spike, technology decision</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td>/silver:release</td><td style="font-family:inherit;font-size:.875rem">release, publish, version, tag v</td><td style="font-family:inherit;font-size:.875rem"><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td></tr>
+          <tr><td>/silver:fast</td><td style="font-family:inherit;font-size:.875rem">trivial, typo, bounded small change</td><td style="font-family:inherit;font-size:.875rem"><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
         </tbody>
       </table>
 
-      <p>Utility skills map to catalog entities directly: <a href="silver-spec.html"><code>/silver:spec</code></a> supports <code>AF-SPECIFY</code>; <a href="silver-ingest.html"><code>/silver:ingest</code></a> is a specify step; <a href="silver-validate.html"><code>/silver:validate</code></a> supports <code>AF-VALIDATE</code>.</p>
+      <p>Utility skills map to catalog slugs directly: <a href="silver-spec.html"><code>/silver:spec</code></a> supports <code>SPECIFY</code>; <a href="silver-ingest.html"><code>/silver:ingest</code></a> is a specify step; <a href="silver-validate.html"><code>/silver:validate</code></a> supports <code>VALIDATE</code>.</p>
 
       <div class="divider"></div>
 
@@ -221,46 +220,22 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="runtime-tokens">Runtime Queue Tokens</h2>
-      <p>The autonomous orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) seeds enforcement queues with skill tokens and synthetic labels. These map to atomic flows or sub-steps — they are <strong>not</strong> separate catalog flows.</p>
-
-      <table class="ref-table">
-        <thead>
-          <tr><th>Queue token</th><th>Maps to</th><th>Role</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>FLOW-QUALITY-GATE</code></td><td><code>AF-QUALITY-GATE</code> (pre-plan)</td><td style="font-family:inherit;font-size:.875rem">Orchestrator label → <code>silver:quality-gates</code> or <code>devops-quality-gates</code></td></tr>
-          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (pre-ship)</td><td style="font-family:inherit;font-size:.875rem">Product pre-ship quality gate</td></tr>
-          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td><code>AF-QUALITY-GATE</code> (pre-ship, DevOps)</td><td style="font-family:inherit;font-size:.875rem">IaC pre-ship quality gate</td></tr>
-          <tr><td><code>silver:blast-radius</code></td><td><code>AF-BLAST-RADIUS</code></td><td style="font-family:inherit;font-size:.875rem">Pre-plan blast-radius assessment</td></tr>
-          <tr><td><code>devops-skill-router</code></td><td><code>AF-DEVOPS-ROUTE</code></td><td style="font-family:inherit;font-size:.875rem">IaC toolchain routing before PLAN</td></tr>
-          <tr><td><code>silver:validate</code></td><td><code>AF-VALIDATE</code></td><td style="font-family:inherit;font-size:.875rem">Pre-build or pre-ship gap analysis</td></tr>
-          <tr><td><code>silver:branch-finish</code></td><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-size:.875rem">Branch hygiene before ship</td></tr>
-          <tr><td><code>silver:completion-audit</code></td><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-size:.875rem">Completion evidence before ship/release claim</td></tr>
-          <tr><td><code>ROUTER</code></td><td><code>/silver</code> router skill</td><td style="font-family:inherit;font-size:.875rem">Intent classification (worker template only)</td></tr>
-        </tbody>
-      </table>
-
-      <p><strong>Release workflow:</strong> <code>WF-SILVER-RELEASE</code> composes quality, review, verification, security, validation, branch-finish, completion-audit, ship, and <code>AF-RELEASE</code>. <code>silver:create-release</code> runs last as the publication step.</p>
-
-      <div class="divider"></div>
-
       <h2 id="post-execution">Post-Execution Sequencing</h2>
-      <p>For <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, and <code>silver:bugfix</code>, the reusable post-execution component is <code>WF-POST-EXEC-GATES</code>:</p>
+      <p>For <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, and <code>silver:bugfix</code>, the reusable post-execution component expands after <code>EXECUTE</code>:</p>
 
-      <div class="code-block">AF-EXECUTE
-  → [AF-UI-QUALITY if UI]
-  → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
-  → AF-VERIFY → AF-SECURE → AF-VALIDATE
-  → AF-QUALITY-GATE (pre-ship)
-  → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP</div>
+      <div class="code-block">EXECUTE
+  → [UI_QUALITY if UI]
+  → REVIEW_REQUEST → REVIEW → REVIEW_TRIAGE
+  → VERIFY → SECURE → VALIDATE
+  → QUALITY_GATE (pre-ship)
+  → BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
 
       <p>Each atomic flow joins only after every owned flow-step V-loop passes and rolls up into the parent atomic-flow V-gate.</p>
 
       <div class="divider"></div>
 
       <h2 id="composition-vs-enforcement">Composition vs Enforcement</h2>
-      <p>Composer skills declare catalog-backed <strong>workflow compositions</strong> using canonical <code>AF-*</code> entities and reusable workflow references. The orchestrator <strong>enforcement queue</strong> contains the runtime markers needed to prove selected atoms ran; optional atoms are inserted only when context and catalog dynamic rules require them.</p>
+      <p>Composer skills declare catalog-backed <strong>workflow compositions</strong> using atomic flow slugs and reusable workflow components. The orchestrator <strong>enforcement queue</strong> in <code>hooks/lib/orchestrator-state.sh</code> contains runtime markers needed to prove selected atoms ran; optional atoms are inserted only when context and catalog dynamic rules require them.</p>
       <p>Worker templates under <code>templates/orchestrator-workers/</code> implement catalog atomic-flow work packages. Flow-step V-loops, work products, evidence, and exit conditions live in <code>docs/apo-catalog.json</code> and its generated views — not in hand-authored composer prose.</p>
 
       <div class="divider"></div>
@@ -278,16 +253,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="workflow-pages">Individual Workflow Pages</h2>
       <div class="workflow-grid">
-        <a href="silver-clarify.html" class="workflow-card"><h4>/silver:clarify</h4><p>Fuzzy-intent intake and decision-ready brief (<code>AF-CLARIFY</code>)</p></a>
+        <a href="silver-clarify.html" class="workflow-card"><h4>/silver:clarify</h4><p>Fuzzy-intent intake and decision-ready brief (<code>CLARIFY</code>)</p></a>
         <a href="silver-feature.html" class="workflow-card"><h4>/silver:feature</h4><p>Full feature development composition chain</p></a>
         <a href="silver-bugfix.html" class="workflow-card"><h4>/silver:bugfix</h4><p>Triage-first debug → plan → execute → ship</p></a>
         <a href="silver-ui.html" class="workflow-card"><h4>/silver:ui</h4><p>UI design contract + UI quality gate</p></a>
         <a href="silver-devops.html" class="workflow-card"><h4>/silver:devops</h4><p>Blast-radius, IaC gates, no application TDD</p></a>
-        <a href="silver-research.html" class="workflow-card"><h4>/silver:research</h4><p>Evidence-based decisions (<code>AF-CLARIFY</code> → <code>AF-DECIDE</code>)</p></a>
+        <a href="silver-research.html" class="workflow-card"><h4>/silver:research</h4><p>Evidence-based decisions (<code>CLARIFY</code> → <code>DECIDE</code>)</p></a>
         <a href="silver-release.html" class="workflow-card"><h4>/silver:release</h4><p>Milestone audit, gap closure, GitHub Release</p></a>
         <a href="silver-fast.html" class="workflow-card"><h4>/silver:fast</h4><p>Tiered fast path for bounded small changes</p></a>
-        <a href="silver-spec.html" class="workflow-card"><h4>/silver:spec</h4><p>SPEC.md and REQUIREMENTS.md (<code>AF-SPECIFY</code>)</p></a>
-        <a href="silver-ingest.html" class="workflow-card"><h4>/silver:ingest</h4><p>External artifact ingestion for <code>AF-SPECIFY</code></p></a>
+        <a href="silver-spec.html" class="workflow-card"><h4>/silver:spec</h4><p>SPEC.md and REQUIREMENTS.md (<code>SPECIFY</code>)</p></a>
+        <a href="silver-ingest.html" class="workflow-card"><h4>/silver:ingest</h4><p>External artifact ingestion for <code>SPECIFY</code></p></a>
         <a href="silver-validate.html" class="workflow-card"><h4>/silver:validate</h4><p>Gap analysis BLOCK/WARN/INFO</p></a>
       </div>
 
