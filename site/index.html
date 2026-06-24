@@ -8,17 +8,17 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="shortcut icon" href="favicon.ico">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
-<meta name="description" content="Silver Bullet is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: SB-owned lifecycle workflows, spec/UAT/PR traceability, artifact review governance, DevOps risk controls, documentation governance, and hook-enforced delivery gates.">
-<meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps">
-<meta property="og:description" content="Silver Bullet owns the AI-native software engineering lifecycle: dynamic /silver workflows, spec-first traceability, artifact review governance, DevOps blast-radius controls, docs governance, and hard delivery gates.">
+<meta name="description" content="Silver Bullet is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: composable atomic flows, SB-owned SDLC orchestration, spec/UAT/PR traceability, artifact review governance, and hook-enforced delivery gates.">
+<meta property="og:title" content="Silver Bullet — Composable Atomic Flows for SB-owned SDLC">
+<meta property="og:description" content="18 atomic flows + runtime extensions. /silver composes hook-enforced chains from spec to release — traceability, review, verify, and ship gates for Claude Code, Codex, and Cursor.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native SE &amp; DevOps">
-<meta name="twitter:description" content="The Agentic Process Orchestrator for SB-owned /silver workflows, spec and UAT gates, artifact review governance, DevOps risk controls, docs governance, and hard delivery gates."  >
+<meta name="twitter:title" content="Silver Bullet — Composable Atomic Flows for SB-owned SDLC">
+<meta name="twitter:description" content="18 atomic flows + runtime extensions. /silver composes hook-enforced chains from spec to release for Claude Code, Codex, and Cursor.">
 <meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1696,9 +1696,9 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composed Workflows <span style="opacity:.6">(10+)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('dev')">Software Delivery Loop <span style="opacity:.6">(20)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('devops')">DevOps / IaC Loop <span style="opacity:.6">(24)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Composer Workflows <span style="opacity:.6">(8)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(18)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('tokens')">Runtime Queue Tokens</button>
     </div>
 
     <div id="workflow-orch" class="workflow-panel active" style="overflow-x:auto">
@@ -1715,25 +1715,25 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"add X", "build X", "implement X", "new feature"</td>
-            <td>orient → clarify/decide if needed → spec/validate as needed → quality gates → silver context/plan/execute/verify → review/secure → ship</td>
+            <td>FLOW 1–5 (conditional) → FLOW 13 pre-plan → FLOW 6 → [FLOW 7] → FLOW 8 → post-execute: REVIEW → VERIFY → SECURE → QG → SHIP</td>
             <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">silver:secure</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "broken", "crash", "error", "regression"</td>
-            <td>triage → systematic debugging or forensics → regression coverage → SB fix path → review → verify → quality gates → ship</td>
+            <td>FLOW 15 DEBUG → FLOW 6 PLAN → FLOW 8 EXECUTE → post-execute chain</td>
             <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">silver:verify</span> <span class="step-required">review loop</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"UI", "frontend", "component", "design", "layout"</td>
-            <td>orient → clarify if needed → UI design contract → silver execute → UI quality review → verify → quality gates → ship</td>
+            <td>FLOW 1–6 (conditional) → FLOW 7 DESIGN CONTRACT → FLOW 8 → FLOW 9 UI QUALITY → post-execute chain</td>
             <td><span class="step-required">silver:ui-contract</span> <span class="step-required">silver:ui-review</span> <span class="step-required">/silver:quality-gates</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"infra", "CI/CD", "deploy", "terraform", "kubernetes"</td>
-            <td>orient → blast radius → DevOps skill routing → IaC quality gates → silver plan/execute/verify → promote → ship</td>
+            <td>FLOW 2 → blast-radius + devops-skill-router → FLOW 13 (DevOps) → FLOW 6 → FLOW 8 → post-execute chain</td>
             <td><span class="step-required">/silver:blast-radius</span> <span class="step-required">/devops-quality-gates</span> <span class="step-required">silver:verify</span></td>
           </tr>
           <tr>
@@ -1745,7 +1745,7 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release", "publish", "version", "go live", "changelog"</td>
-            <td>quality gates → UAT audit → milestone audit → security hard gate → docs/review/fresh tests → silver ship → /silver:create-release</td>
+            <td>FLOW 13 → FLOW 12 UAT audit → FLOW 18 milestone + gap closure → FLOW 16–17 → delivery tail → silver:create-release</td>
             <td><span class="step-required">/silver:quality-gates</span> <span class="step-required">/verify-tests</span> <span class="step-required">silver:ship</span></td>
           </tr>
           <tr>
@@ -1780,93 +1780,67 @@ img{max-width:100%;height:auto}
       </p>
     </div>
 
-    <div id="workflow-dev" class="workflow-panel" style="overflow-x:auto">
+    <div id="workflow-flows" class="workflow-panel" style="overflow-x:auto">
       <table class="workflow-table fade-in">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Phase</th>
-            <th>Step</th>
-            <th>Source</th>
-            <th>Required</th>
+            <th>Flow</th>
+            <th>Name</th>
+            <th>Primary skills</th>
+            <th>Trigger</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>1</td><td><span class="phase-badge phase-init">INIT</span></td><td>Worktree decision</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#8635; Per-phase loop &mdash; repeat for each phase in ROADMAP.md</td></tr>
-          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context architecture checks</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>3b</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:ui-contract (if UI)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>4</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/silver:quality-gates</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>5</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>5a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>tdd (before writing behavior-changing code)</td><td>Silver Bullet wrapper</td><td><span class="step-required">As needed</span></td></tr>
-          <tr><td>6</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>7</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:verify</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>7a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:debug (on failure)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver-review-request</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver-review-triage</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>11</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan (revision)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>12</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute (revision)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>13</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:secure</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>14</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:validate</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>15</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver-branch-finish</td><td>Silver Bullet</td><td>Branches only</td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/silver:ship</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>18</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
+          <tr><td>FLOW 1</td><td>BOOTSTRAP</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:init</code>, <code>silver:context</code></td><td style="font-size:.85rem;color:var(--text-secondary)">No <code>.planning/</code></td></tr>
+          <tr><td>FLOW 2</td><td>ORIENT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:scan</code>, <code>silver:context</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Non-trivial work</td></tr>
+          <tr><td>FLOW 3</td><td>CLARIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:clarify</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Fuzzy intent</td></tr>
+          <tr><td>FLOW 4</td><td>DECIDE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:research</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Architecture / stack choice</td></tr>
+          <tr><td>FLOW 5</td><td>SPECIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:spec</code>, <code>silver:validate</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Missing SPEC.md</td></tr>
+          <tr><td>FLOW 6</td><td>PLAN</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:plan</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Before execution</td></tr>
+          <tr><td>FLOW 7</td><td>DESIGN CONTRACT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ui-contract</code></td><td style="font-size:.85rem;color:var(--text-secondary)">UI scope</td></tr>
+          <tr><td>FLOW 8</td><td>EXECUTE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>tdd</code>, <code>silver:execute</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Always</td></tr>
+          <tr><td>FLOW 9</td><td>UI QUALITY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ui-review</code></td><td style="font-size:.85rem;color:var(--text-secondary)">UI deliverables</td></tr>
+          <tr><td>FLOW 10</td><td>REVIEW</td><td style="font-size:.85rem;color:var(--text-secondary)">review-request → review → triage</td><td style="font-size:.85rem;color:var(--text-secondary)">After EXECUTE</td></tr>
+          <tr><td>FLOW 11</td><td>SECURE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>security</code>, <code>silver:secure</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Always</td></tr>
+          <tr><td>FLOW 12</td><td>VERIFY</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:verify</code>, <code>verify-tests</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Non-skippable</td></tr>
+          <tr><td>FLOW 13</td><td>QUALITY GATE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:quality-gates</code> / <code>devops-quality-gates</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Pre-plan + pre-ship</td></tr>
+          <tr><td>FLOW 14</td><td>SHIP</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:branch-finish</code>, <code>silver:ship</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Phase PR/CI</td></tr>
+          <tr><td>FLOW 15</td><td>DEBUG</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:debug</code>, <code>silver:forensics</code></td><td style="font-size:.85rem;color:var(--text-secondary)">On failure</td></tr>
+          <tr><td>FLOW 16</td><td>DESIGN HANDOFF</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:handoff</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Inside RELEASE</td></tr>
+          <tr><td>FLOW 17</td><td>DOCUMENT</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:ensure-docs</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Post-ship</td></tr>
+          <tr><td>FLOW 18</td><td>RELEASE</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:release</code>, <code>silver:create-release</code></td><td style="font-size:.85rem;color:var(--text-secondary)">Milestone complete</td></tr>
         </tbody>
       </table>
+      <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
+        Post-execute order after FLOW 8: <strong>9 → 10 REVIEW → 12 VERIFY → 11 SECURE → 13 pre-ship → 14 SHIP</strong>.
+        &nbsp;<a href="help/workflows/#post-execution" style="color:var(--accent-light)">Full sequencing &rarr;</a>
+      </p>
     </div>
 
-    <div id="workflow-devops" class="workflow-panel" style="overflow-x:auto">
+    <div id="workflow-tokens" class="workflow-panel" style="overflow-x:auto">
       <table class="workflow-table fade-in visible">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Phase</th>
-            <th>Step</th>
-            <th>Source</th>
-            <th>Required</th>
+            <th>Queue token</th>
+            <th>Maps to</th>
+            <th>Role</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#9888;&#65039; Incident fast path &mdash; for emergency production changes only</td></tr>
-          <tr><td>0</td><td><span class="phase-badge phase-incident">INCIDENT</span></td><td>Incident fast path (skip to hotfix)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Standard flow</td></tr>
-          <tr><td>1</td><td><span class="phase-badge phase-init">INIT</span></td><td>Worktree decision</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>2</td><td><span class="phase-badge phase-init">INIT</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&#8635; Per-phase loop &mdash; repeat for each phase in ROADMAP.md</td></tr>
-          <tr><td>3</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>/silver:context</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>3a</td><td><span class="phase-badge phase-discuss">DISCUSS</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>4</td><td><span class="phase-badge phase-blast">BLAST RADIUS</span></td><td>/silver:blast-radius</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>5</td><td><span class="phase-badge phase-planning">QUALITY</span></td><td>/devops-quality-gates (7 dimensions)</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>6</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>6a</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>7</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>7a</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>8</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>/silver:verify</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>8a</td><td><span class="phase-badge phase-verify">VERIFY</span></td><td>Contextual enrichment (skill router)</td><td>DevOps Plugins</td><td></td></tr>
-          <tr><td>9</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review-request (review framing helper)</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>10</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review (authoritative REVIEW.md)</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>11</td><td><span class="phase-badge phase-review">REVIEW</span></td><td>/silver:review-triage</td><td>SB-required helper</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>12</td><td><span class="phase-badge phase-planning">PLAN</span></td><td>/silver:plan (revision)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td>13</td><td><span class="phase-badge phase-execution">EXECUTE</span></td><td>/silver:execute (revision)</td><td>Silver Bullet</td><td></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Environment promotion &mdash; dev &rarr; staging &rarr; prod</td></tr>
-          <tr><td>14</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Promote to next environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>15</td><td><span class="phase-badge phase-promotion">PROMOTION</span></td><td>Verify promoted environment</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td colspan="5" style="font-size:.75rem;color:var(--text-dim);padding:8px 16px;font-family:var(--font-sans);font-style:italic">&darr; Finalization &mdash; once all phases complete</td></tr>
-          <tr><td>16</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:secure</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>17</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:validate</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>18</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/verify-tests</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>19</td><td><span class="phase-badge phase-finalization">FINALIZATION</span></td><td>/silver:branch-finish</td><td>SB-required helper</td><td>Branches only</td></tr>
-          <tr><td>20</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>CI/CD pipeline</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>21</td><td><span class="phase-badge phase-deployment">DEPLOYMENT</span></td><td>Production apply</td><td></td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>22</td><td><span class="phase-badge phase-ship">SHIP</span></td><td>/silver:ship</td><td>Silver Bullet</td><td><span class="step-required">Required</span></td></tr>
-          <tr><td>23</td><td><span class="phase-badge phase-ship">RELEASE</span></td><td>/silver:release</td><td>Silver Bullet</td><td><span class="step-required">Releases only</span></td></tr>
+          <tr><td><code>FLOW-QUALITY-GATE</code></td><td>FLOW 13 (pre-plan)</td><td style="font-size:.85rem;color:var(--text-secondary)"><code>silver:quality-gates</code> or <code>devops-quality-gates</code></td></tr>
+          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (pre-ship)</td><td style="font-size:.85rem;color:var(--text-secondary)">Product pre-ship quality gate</td></tr>
+          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (DevOps pre-ship)</td><td style="font-size:.85rem;color:var(--text-secondary)">IaC pre-ship quality gate</td></tr>
+          <tr><td><code>silver:blast-radius</code></td><td>FLOW 6 extension</td><td style="font-size:.85rem;color:var(--text-secondary)">Pre-plan blast-radius (DevOps)</td></tr>
+          <tr><td><code>devops-skill-router</code></td><td>FLOW 6 extension</td><td style="font-size:.85rem;color:var(--text-secondary)">IaC toolchain routing</td></tr>
+          <tr><td><code>silver:validate</code></td><td>FLOW 5/6/11 sub-step</td><td style="font-size:.85rem;color:var(--text-secondary)">Gap analysis</td></tr>
+          <tr><td><code>silver:branch-finish</code></td><td>FLOW 14 sub-step</td><td style="font-size:.85rem;color:var(--text-secondary)">Branch hygiene before ship</td></tr>
+          <tr><td><code>silver:completion-audit</code></td><td>FLOW 12 sub-step</td><td style="font-size:.85rem;color:var(--text-secondary)">Completion evidence before ship/release</td></tr>
+          <tr><td><code>ROUTER</code></td><td><code>/silver</code> router</td><td style="font-size:.85rem;color:var(--text-secondary)">Intent classification</td></tr>
         </tbody>
       </table>
+      <p style="text-align:center;margin-top:16px;font-size:.85rem;color:var(--text-secondary)">
+        Enforced by <code>hooks/lib/orchestrator-state.sh</code>. Composers declare full chains; the queue omits optional pre-execution atoms by default.
+      </p>
     </div>
   </div>
 </section>
@@ -1980,7 +1954,7 @@ document.querySelectorAll('.nav-links a').forEach(a => {
 function switchWorkflow(mode) {
   document.querySelectorAll('.workflow-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.workflow-panel').forEach(p => p.classList.remove('active'));
-  const tabIndex = mode === 'dev' ? 1 : mode === 'devops' ? 2 : 0;
+  const tabIndex = mode === 'flows' ? 1 : mode === 'tokens' ? 2 : 0;
   document.querySelectorAll('.workflow-tab')[tabIndex].classList.add('active');
   document.getElementById('workflow-' + mode).classList.add('active');
 }

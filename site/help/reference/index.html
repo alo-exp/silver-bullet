@@ -405,7 +405,7 @@ footer a:hover{color:var(--accent-light)}
       <table class="ref-table">
         <thead><tr><th>Lifecycle concern</th><th>SB-owned command</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>Brainstorming / product framing</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
+          <tr><td>Problem framing / scope clarification</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
           <tr><td>Spec writing</td><td><code>silver:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>
           <tr><td>Plan writing / phase discussion</td><td><code>silver:context</code>, <code>silver:plan</code></td><td>Context packets, assumptions, task plans, dependency analysis, and verification strategy.</td></tr>
           <tr><td>TDD discipline</td><td><code>tdd</code> / <code>silver-tdd</code></td><td>SB-owned red/green/refactor policy for behavior-changing software work.</td></tr>
@@ -501,7 +501,22 @@ footer a:hover{color:var(--accent-light)}
         <li><strong>Exit Condition</strong> — what makes this path "complete"</li>
       </ul>
       <p>The 18 flows are: FLOW 1 BOOTSTRAP · FLOW 2 ORIENT · FLOW 3 CLARIFY · FLOW 4 DECIDE · FLOW 5 SPECIFY · FLOW 6 PLAN · FLOW 7 DESIGN CONTRACT · FLOW 8 EXECUTE · FLOW 9 UI QUALITY · FLOW 10 REVIEW · FLOW 11 SECURE · FLOW 12 VERIFY · FLOW 13 QUALITY GATE · FLOW 14 SHIP · FLOW 15 DEBUG · FLOW 16 DESIGN HANDOFF · FLOW 17 DOCUMENT · FLOW 18 RELEASE.</p>
-      <p><strong>Post-execute order:</strong> For delivery compositions, runtime order after EXECUTE is REVIEW (10) → VERIFY (12) → SECURE (11) → QUALITY GATE pre-ship (13) → SHIP (14). Flow numbers are stable catalog IDs; see <code>docs/composable-flows-contracts.md</code>.</p>
+      <p><strong>Post-execute order:</strong> For delivery compositions, runtime order after EXECUTE is REVIEW (10) → VERIFY (12) → SECURE (11) → VALIDATE → QUALITY GATE pre-ship (13) → SHIP (14). Flow numbers are stable catalog IDs; see <code>docs/composable-flows-contracts.md</code>.</p>
+
+      <h3 id="runtime-queue-tokens">Runtime Queue Tokens</h3>
+      <p>The orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) enforces via queue tokens that map to flows or sub-steps:</p>
+      <ul>
+        <li><code>FLOW-QUALITY-GATE</code>, <code>FLOW-QUALITY-GATE-PRESHIP</code>, <code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code> → FLOW 13</li>
+        <li><code>silver:blast-radius</code>, <code>devops-skill-router</code> → FLOW 6 DevOps extensions</li>
+        <li><code>silver:validate</code> → FLOW 5/6/11 gap analysis</li>
+        <li><code>silver:branch-finish</code>, <code>silver:completion-audit</code> → FLOW 14/12 sub-steps</li>
+      </ul>
+
+      <h3 id="hook-activation">Hook Activation (v0.47.1)</h3>
+      <p>Hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Non-initiated workspaces receive no enforcement until <code>/silver:init</code> runs.</p>
+
+      <h3 id="recommended-tools">Recommended Tools (opt-in)</h3>
+      <p><code>recommended_tools.graphify.enabled_by_user</code> and <code>recommended_tools.agentmemory.enabled_by_user</code> in <code>.silver-bullet.json</code>. When both are enabled: <strong>save via agentmemory, retrieve via Graphify</strong>. Consent flows via <code>/silver:init</code> and <code>/silver:update</code>.</p>
 
       <div class="divider"></div>
 

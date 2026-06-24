@@ -78,7 +78,7 @@ var IDX = [
     "url": "/help/concepts/routing-logic.html",
     "anchor": "complexity-triage",
     "title": "Complexity triage",
-    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify merges product framing and brainstorming before handing off to SB planning."
+    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify frames scope and hands off to SB planning."
   },
   {
     "page": "Core Concepts",
@@ -113,7 +113,7 @@ var IDX = [
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
-    "text": "Silver Bullet replaces fixed pipelines with an 18-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each path, updates .planning/workflows/<id>.md after every completion, and returns control to SB until the user goal is achieved or feedback is required."
+    "text": "Silver Bullet replaces fixed pipelines with an 18-flow composable architecture. /silver classifies the request, selects the right flow chain, supervises each flow, updates .planning/workflows/<id>.md after every completion, and enforces via runtime queue tokens in hooks/lib/orchestrator-state.sh."
   },
   {
     "page": "Core Concepts",
@@ -148,7 +148,21 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog includes /silver:clarify, /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:deploy, /silver:canary, /silver:test, /silver:refactor, /silver:worktree, /silver:content, /silver:benchmark, /silver:incident, /silver:retro, /silver:research, /silver:release, /silver:fast, /silver:spec, /silver:ingest, and /silver:validate."
+    "text": "Workflow catalog: 18 atomic flows FLOW 1-18, runtime queue tokens (FLOW-QUALITY-GATE, silver:blast-radius, devops-skill-router, silver:validate, silver:branch-finish, silver:completion-audit), composer composition chains for /silver:clarify, /silver:feature, /silver:bugfix, /silver:ui, /silver:devops, /silver:research, /silver:release, /silver:fast, plus /silver:spec, /silver:ingest, /silver:validate. Post-execute order: REVIEW then VERIFY then SECURE then pre-ship quality gate then ship."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/",
+    "anchor": "runtime-tokens",
+    "title": "Runtime queue tokens",
+    "text": "Orchestrator enforcement queue tokens: FLOW-QUALITY-GATE, FLOW-QUALITY-GATE-PRESHIP, FLOW-DEVOPS-QUALITY-GATE-PRESHIP, silver:blast-radius, devops-skill-router, silver:validate, silver:branch-finish, silver:completion-audit, ROUTER. Seeded by hooks/lib/orchestrator-state.sh."
+  },
+  {
+    "page": "Getting Started",
+    "url": "/help/getting-started/",
+    "anchor": "hook-activation",
+    "title": "Hook activation guard v0.47.1",
+    "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify and agentmemory are opt-in via recommended_tools in config."
   },
   {
     "page": "Workflows",
