@@ -202,7 +202,7 @@ footer a:hover{color:var(--accent-light)}
         <thead><tr><th>Column</th><th>What it means</th></tr></thead>
         <tbody>
           <tr><td>Workflow</td><td>Which workflow the skip applies to (e.g., <code>silver:fast</code>, all workflows)</td></tr>
-          <tr><td>Step skipped</td><td>The step name or skill (e.g., <code>/brainstorming</code>)</td></tr>
+          <tr><td>Step skipped</td><td>The step name or skill (e.g., <code>silver:clarify</code>)</td></tr>
           <tr><td>Condition</td><td>When the skip applies (e.g., "always", "when no UI changes")</td></tr>
           <tr><td>Since</td><td>Date recorded</td></tr>
         </tbody>
@@ -223,7 +223,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>Since</td><td>Date recorded</td></tr>
         </tbody>
       </table>
-      <p>Example: you may prefer <code>/silver:research</code> over <code>/brainstorming</code> for technology spikes. Recording this preference means Silver Bullet routes all research decision points to <code>silver:research</code> automatically.</p>
+      <p>Example: you may prefer <code>/silver:research</code> over ad-hoc research spikes for technology decisions. Recording this preference means Silver Bullet routes all research decision points to <code>silver:research</code> automatically.</p>
 
       <h2 id="research-review-tools">§10d — Research/Review Tool Preferences</h2>
       <p>Some workflows can call optional research or review providers, including multi-AI tools when installed. §10d records when those tools should be offered, auto-run, or skipped for a given trigger. <code>silver:research</code> is stricter: it uses direct research by default and only uses MultAI when the current user request explicitly asks for multi-AI, second-opinion, or cross-model perspectives.</p>

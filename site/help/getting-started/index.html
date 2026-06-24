@@ -309,6 +309,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB workflow path for the work.</div>
       </div>
 
+      <h3 id="hook-activation">Hook activation (v0.47.1)</h3>
+      <p>Enforcement hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Workspaces without <code>/silver:init</code> receive no hook enforcement — this prevents accidental gates on unrelated repositories.</p>
+
+      <h3 id="recommended-tools">Recommended tools (opt-in)</h3>
+      <p>Graphify and agentmemory are <strong>opt-in</strong> via <code>recommended_tools</code> in <code>.silver-bullet.json</code>. <code>/silver:init</code> and <code>/silver:update</code> handle consent, install probes, and enforcement-suspend retry. When both Graphify and agentmemory are enabled: <strong>save via agentmemory, retrieve via Graphify</strong>.</p>
+
       <div class="divider"></div>
 
       <h2 id="first-project">Your First Project</h2>

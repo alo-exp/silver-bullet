@@ -124,10 +124,16 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="overview">Overview</h2>
       <p><code>/silver:devops</code> is the Silver Bullet orchestrator for infrastructure, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.</p>
-      <p><code>silver:devops</code> uses <strong>composable flows architecture</strong> — it selects from the 18-flow catalog and composes a chain suited to infrastructure work. Typical paths: <strong>FLOW 1 (BOOTSTRAP)</strong> → <strong>FLOW 2 (ORIENT)</strong> → <strong>FLOW 6 (PLAN)</strong> → <strong>FLOW 8 (EXECUTE)</strong> → <strong>FLOW 10 (REVIEW)</strong> → <strong>FLOW 11 (SECURE)</strong> → <strong>FLOW 12 (VERIFY)</strong> → <strong>FLOW 13 (QUALITY GATE)</strong> → <strong>FLOW 14 (SHIP)</strong>. Blast-radius analysis is inserted between ORIENT and PLAN instead of brainstorming paths. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>silver:devops</code> uses <strong>composable flows architecture</strong>. Standard composition chain:</p>
+      <div class="code-block">FLOW 1 (BOOTSTRAP) [skip if .planning/] → FLOW 2 (ORIENT)
+→ FLOW 3 (CLARIFY) [if scope unclear] → FLOW 4 (DECIDE) [if tooling choice]
+→ BLAST-RADIUS + DEVOPS-SKILL-ROUTER (FLOW 6 DevOps extensions)
+→ FLOW 13 (QUALITY GATE, DevOps pre-plan) → FLOW 11 (SECURE, pre-plan)
+→ FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → post-execution chain</div>
+      <p>Never includes FLOW 7 or FLOW 9. Post-execution order matches <code>silver:feature</code> after FLOW 8. See <a href="./index.html#composer-workflows">Workflow catalog</a> and <a href="../concepts/composable-workflow.html">Composable Flows</a>.</p>
       <p><strong>Key design principles:</strong></p>
       <ul>
-        <li><strong>No brainstorming phase</strong> — infrastructure changes are driven by operational requirements established upstream (in <code>silver:feature</code> or <code>silver:research</code>). Blast-radius analysis replaces the product/engineering brainstorm.</li>
+        <li><strong>Blast-radius first</strong> — infrastructure scope is assessed via <code>silver:blast-radius</code> and <code>devops-skill-router</code> (runtime queue tokens) before PLAN</li>
         <li><strong>7 IaC quality dimensions</strong> instead of the product 8 core dimensions plus conditional gates — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
         <li><strong>TDD explicitly skipped</strong> — infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources.</li>
       </ul>
@@ -145,7 +151,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
       <div class="divider"></div>
 
       <h2 id="iac-quality-dims">7 IaC quality dimensions</h2>
-      <p>These replace the standard product/software quality gate for all infra work. Applied at both pre-plan (Step 3) and pre-ship (Step 10) gates:</p>
+      <p>These replace the standard product/software quality gate for all infra work. Applied at FLOW 13 pre-plan and pre-ship gates:</p>
       <ul>
         <li><strong>Reliability</strong> — failure modes, retry logic, health checks</li>
         <li><strong>Security</strong> — secrets handling, IAM boundaries, network exposure</li>
@@ -158,55 +164,26 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Workflow steps</h2>
+      <h2 id="workflow-steps">Flow execution</h2>
 
-      <h3>Pre-flight</h3>
-      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+      <h3>Pre-execution chain</h3>
+      <ul>
+        <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
+        <li><strong>FLOW 2 ORIENT</strong> — <code>silver:scan</code> / <code>silver:context</code> for infra topology</li>
+        <li><strong>BLAST-RADIUS</strong> (queue token) — <code>silver:blast-radius</code>; LOW/MEDIUM/HIGH/CRITICAL rating</li>
+        <li><strong>DEVOPS-SKILL-ROUTER</strong> (queue token) — IaC/cloud toolchain routing</li>
+        <li><strong>FLOW 13 pre-plan</strong> — <code>devops-quality-gates</code> (7 IaC dimensions); security dimension mandatory before PLAN</li>
+        <li><strong>FLOW 6 PLAN</strong> — <code>silver:context</code>, <code>silver:plan</code></li>
+        <li><strong>FLOW 8 EXECUTE</strong> — <code>silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
+      </ul>
 
-      <h3>Step 0 — Codebase and infrastructure orientation</h3>
-      <p>Invoke <code>silver:scan</code> to understand current infra topology before blast-radius analysis. If deeper mapping is needed, invoke <code>silver:context</code>.</p>
-
-      <h3>Step 1 — Blast radius analysis</h3>
-      <p>Invoke <code>/silver:blast-radius</code>. Purpose: map change scope, downstream dependencies, failure modes, and rollback plan. <strong>This step replaces the product/engineering brainstorm for devops workflows.</strong> Produces a LOW/MEDIUM/HIGH/CRITICAL rating (see table below).</p>
-
-      <h3>Step 2 — DevOps skill router</h3>
-      <p>Invoke <code>/devops-skill-router</code>. Purpose: route to the right IaC/cloud skill — Terraform, Pulumi, AWS CDK, k8s, or other tooling appropriate for the change.</p>
-
-      <h3>Step 3 — Pre-plan DevOps quality gates (7 IaC dimensions)</h3>
-      <p>Invoke <code>/devops-quality-gates</code>. All 7 IaC-adapted dimensions run as the pre-plan gate. <strong>Not</strong> the standard product/software <code>/silver:quality-gates</code> — the devops workflow uses <code>/devops-quality-gates</code> exclusively at both quality gate positions.</p>
-
-      <h3>Step 3b — Infrastructure security (mandatory, non-skippable)</h3>
-      <p>Review the security findings from <code>/devops-quality-gates</code> before planning. Secrets, IAM permissions, network exposure, and data handling must be addressed as design requirements before <code>silver:plan</code> runs.</p>
-
-      <h3>Step 4 — Context phase</h3>
-      <p>Invoke <code>silver:context</code>. DevOps phase context → <code>CONTEXT.md</code> with locked decisions for the planner.</p>
-
-      <h3>Step 5 — Plan phase</h3>
-      <p>Invoke <code>silver:plan</code>. Produces <code>PLAN.md</code> for the infrastructure change.</p>
-
-      <h3>Step 6 — Execute phase (TDD skipped)</h3>
-      <p>Invoke <code>silver:execute</code> (Interactive) or the SB autonomous path when §10e allows it.</p>
-      <p><strong>TDD is explicitly skipped for infra plans — not applicable.</strong> Infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources. No <code>tdd</code> invocation.</p>
-
-      <h3>Step 7 — Code review (IaC review)</h3>
-      <p>Run review sequence: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant infra: expanded <code>silver:review</code>].</p>
-
-      <h3>Step 8 — IaC security and secrets verification</h3>
-      <p>Invoke <code>silver:secure</code>. Confirms no credentials in code, correct IAM boundaries, secure defaults.</p>
-
-      <h3>Step 9 — Deployment verification</h3>
-      <p>Invoke <code>silver:verify</code>. Deployment verification and UAT. <strong>Non-skippable gate.</strong></p>
-
-      <h3>Step 10 — Pre-ship DevOps quality gates (7 IaC dimensions)</h3>
-      <p>Invoke <code>/devops-quality-gates</code> again. Final 7-dimension sweep before deploy — same gate as Step 3, applied post-implementation. <strong>Non-skippable gate.</strong></p>
-
-      <h3>Step 11 — Ship / deploy</h3>
-      <p>Invoke <code>silver:ship</code>. Push branch, deploy, create PR.</p>
+      <h3>Post-execution chain (canonical)</h3>
+      <p>FLOW 10 REVIEW → FLOW 12 VERIFY → FLOW 11 SECURE → FLOW 13 pre-ship (<code>devops-quality-gates</code>) → FLOW 14 SHIP. Optional <code>silver:deploy</code> / <code>silver:canary</code> inside FLOW 14 when live rollout is in scope.</p>
 
       <div class="divider"></div>
 
       <h2 id="blast-radius-levels">Blast radius levels</h2>
-      <p>The blast radius assessment in Step 1 produces one of four ratings. The rating informs the scope of change-safety review and approval requirements:</p>
+      <p>The blast radius assessment produces one of four ratings. The rating informs the scope of change-safety review and approval requirements:</p>
 
       <table class="ref-table">
         <thead><tr><th>Level</th><th>Description</th><th>Typical examples</th></tr></thead>
@@ -242,9 +219,9 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li>Security dimension inside <code>/devops-quality-gates</code> (Step 3b)</li>
-            <li><code>/devops-quality-gates</code> pre-ship (Step 10)</li>
-            <li><code>silver:verify</code> (Step 9)</li>
+            <li>Security dimension inside <code>/devops-quality-gates</code> (FLOW 13 pre-plan)</li>
+            <li><code>/devops-quality-gates</code> pre-ship (FLOW 13)</li>
+            <li><code>silver:verify</code> (FLOW 12)</li>
           </ul>
         </div>
       </div>
@@ -253,7 +230,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="example">Example invocation</h2>
       <div class="code-block">/silver:devops Add GitHub Actions CI pipeline for automated testing</div>
-      <p>Silver Bullet routes to devops workflow. Intel → blast-radius (likely LOW/MEDIUM) → devops-skill-router selects GitHub Actions tooling → 7 IaC quality gates → discuss → plan → execute (no TDD) → IaC code review → secrets verification → deployment verification → pre-ship quality gates → ship.</p>
+      <p>Silver Bullet routes to devops workflow: FLOW 2 orient → blast-radius (likely LOW/MEDIUM) → devops-skill-router → FLOW 13 DevOps quality gates → FLOW 6 plan → FLOW 8 execute (no TDD) → post-execution chain → ship.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

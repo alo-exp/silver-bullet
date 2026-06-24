@@ -567,12 +567,12 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <p>The DESIGN check (QC-3) is fully conditional — it is skipped with an <code>XART-I01 INFO</code> notice when no <code>DESIGN.md</code> is present. Misalignment findings block completion until resolved.</p>
 
       <h3>Where It Runs</h3>
-      <p>The cross-artifact reviewer fires at two points: <strong>Step 17.0b</strong> in <code>silver:feature</code> (after UAT generation/review, before milestone audit) and <strong>Step 6</strong> in <code>silver:release</code> (before <code>silver:ship</code>, so blocking alignment findings are resolved before ship or milestone archival).</p>
+      <p>The cross-artifact reviewer fires at two points: after UAT generation in <code>silver:feature</code> (FLOW 12, before milestone audit) and in <code>silver:release</code> (FLOW 18, before <code>silver:ship</code>) so blocking alignment findings are resolved before ship or milestone archival.</p>
 
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of 18 named paths. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
+      <p>Silver Bullet's composable flows architecture replaces fixed pipelines with a catalog of 18 atomic flows. When you invoke <code>/silver</code>, it classifies context and dynamically composes a chain of flows appropriate to the work — with the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> providing real-time tracking of every active composition.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>

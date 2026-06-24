@@ -129,7 +129,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#the-18-flows">The 18 Paths</a></li>
+        <li><a href="#the-18-flows">The 18 Atomic Flows</a></li>
+        <li><a href="#runtime-tokens">Runtime Queue Tokens</a></li>
+        <li><a href="#post-execution">Post-Execution Order</a></li>
         <li><a href="#how-composition-works">How Composition Works</a></li>
         <li><a href="#workflow-tracking">Workflow Tracker</a></li>
         <li><a href="#supervision-loop">Supervision Loop</a></li>
@@ -150,12 +152,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="the-18-flows">The 18 Paths</h2>
-      <p>Every path has a number, a name, and a one-line description. The trigger column describes what causes <code>/silver</code> to include this path in a composition.</p>
+      <h2 id="the-18-flows">The 18 Atomic Flows</h2>
+      <p>Every flow has a number, a name, and a one-line description. The trigger column describes what causes <code>/silver</code> to include this flow in a composition. Full contracts: <code>docs/composable-flows-contracts.md</code>.</p>
 
       <table class="ref-table">
         <thead>
-          <tr><th>Path</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
+          <tr><th>Flow</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -271,14 +273,41 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
+      <h2 id="runtime-tokens">Runtime Queue Tokens</h2>
+      <p>The autonomous orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) seeds enforcement queues with skill tokens and synthetic labels. These map to atomic flows or sub-steps — not separate catalog flows.</p>
+      <table class="ref-table">
+        <thead><tr><th>Token</th><th>Maps to</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>FLOW-QUALITY-GATE</code></td><td>FLOW 13 (pre-plan)</td><td style="font-family:inherit;font-size:.875rem"><code>silver:quality-gates</code> or <code>devops-quality-gates</code></td></tr>
+          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (pre-ship)</td><td style="font-family:inherit;font-size:.875rem">Product pre-ship quality gate</td></tr>
+          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (DevOps pre-ship)</td><td style="font-family:inherit;font-size:.875rem">IaC pre-ship quality gate</td></tr>
+          <tr><td><code>silver:blast-radius</code></td><td>FLOW 6 extension</td><td style="font-family:inherit;font-size:.875rem">Pre-plan blast-radius (DevOps)</td></tr>
+          <tr><td><code>devops-skill-router</code></td><td>FLOW 6 extension</td><td style="font-family:inherit;font-size:.875rem">IaC toolchain routing</td></tr>
+          <tr><td><code>silver:validate</code></td><td>FLOW 5/6/11</td><td style="font-family:inherit;font-size:.875rem">Gap analysis sub-step</td></tr>
+          <tr><td><code>silver:branch-finish</code></td><td>FLOW 14</td><td style="font-family:inherit;font-size:.875rem">Branch hygiene before ship</td></tr>
+          <tr><td><code>silver:completion-audit</code></td><td>FLOW 12</td><td style="font-family:inherit;font-size:.875rem">Completion evidence before ship/release</td></tr>
+          <tr><td><code>ROUTER</code></td><td><code>/silver</code></td><td style="font-family:inherit;font-size:.875rem">Intent classification</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="post-execution">Post-Execution Sequencing</h2>
+      <p>Flow numbers are stable catalog IDs — not always runtime order. For delivery composers, after <strong>FLOW 8 (EXECUTE)</strong> the mandatory order is:</p>
+      <ol>
+        <li>FLOW 9 (UI QUALITY) — always for <code>silver:ui</code>; for <code>silver:feature</code> when UI scope detected</li>
+        <li>FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (pre-ship) → FLOW 14 (SHIP)</li>
+      </ol>
+      <p>Composer skills and <code>hooks/lib/orchestrator-state.sh</code> use this order. Delivery hooks enforce artifact and marker presence regardless of flow numbering.</p>
+
+      <div class="divider"></div>
+
       <h2 id="how-composition-works">How Composition Works</h2>
       <p>When you invoke <code>/silver</code>, composition happens in four steps:</p>
 
       <ol>
         <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
-        <li><strong>Path selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 flows apply. Always-included paths (FLOW 8 EXECUTE, FLOW 12 VERIFY, FLOW 13 QUALITY GATE, FLOW 14 SHIP) are anchors. Context-dependent paths (FLOW 3 CLARIFY, FLOW 4 DECIDE, FLOW 7 DESIGN CONTRACT, FLOW 9 UI QUALITY, FLOW 15 DEBUG) are added based on signals.</li>
-        <li><strong>Chain ordering</strong> — Paths are ordered by their dependency graph. FLOW 1 before FLOW 2 before FLOW 6 before FLOW 8, etc. Dynamic insertions (e.g. FLOW 15 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
-        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which paths are included and why, before execution begins.</li>
+        <li><strong>Flow selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 flows apply. Implementation anchors such as FLOW 8 EXECUTE, FLOW 12 VERIFY, FLOW 13 QUALITY GATE, and FLOW 14 SHIP apply to delivery compositions; context-dependent flows such as FLOW 3 CLARIFY, FLOW 4 DECIDE, FLOW 7 DESIGN CONTRACT, FLOW 9 UI QUALITY, and FLOW 15 DEBUG are added based on signals.</li>
+        <li><strong>Chain ordering</strong> — Flows are ordered by their dependency graph. Dynamic insertions (e.g. FLOW 15 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
+        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which flows are included and why, before execution begins.</li>
       </ol>
 
       <div class="callout callout-tip">
