@@ -390,17 +390,17 @@ var IDX = [
   },
   {
     "page": "Workflows",
-    "url": "/help/workflows/review-triad.html",
+    "url": "/help/workflows/silver-review-triad.html",
     "anchor": "overview",
-    "title": "WF-REVIEW-TRIAD",
-    "text": "WF-REVIEW-TRIAD reusable workflow component v0.48.1 APO catalog. Not a composer route. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
+    "title": "/silver:review-triad",
+    "text": "/silver:review-triad WF-REVIEW-TRIAD reusable workflow component v0.48.1 APO catalog. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
   },
   {
     "page": "Workflows",
-    "url": "/help/workflows/ship-readiness.html",
+    "url": "/help/workflows/silver-ship-readiness.html",
     "anchor": "overview",
-    "title": "WF-SHIP-READINESS",
-    "text": "WF-SHIP-READINESS reusable workflow component v0.48.1 APO catalog. Not a composer route. BRANCH_FINISH COMPLETION_AUDIT SHIP atomic flows /silver:branch-finish /silver:completion-audit /silver:ship. Final delivery gate after pre-ship QUALITY_GATE in WF-POST-EXEC-GATES."
+    "title": "/silver:ship-readiness",
+    "text": "/silver:ship-readiness WF-SHIP-READINESS reusable workflow component v0.48.1 APO catalog. BRANCH_FINISH COMPLETION_AUDIT SHIP atomic flows /silver:branch-finish /silver:completion-audit /silver:ship. Final delivery gate after pre-ship QUALITY_GATE in WF-POST-EXEC-GATES."
   },
   {
     "page": "Dev Workflow",
