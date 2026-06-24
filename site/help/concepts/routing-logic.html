@@ -312,6 +312,16 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
         </thead>
         <tbody>
           <tr>
+            <td><a href="../workflows/silver-router.html" style="color:var(--accent-light)">/silver</a></td>
+            <td style="font-family:inherit;font-size:.875rem">freeform intent, route, classify</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-research.html" style="color:var(--accent-light)">/silver:research</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision"</td>
+            <td style="font-family:inherit;font-size:.875rem">silver:clarify → direct research by default → optional multi-AI only when explicitly requested → research artifact → handoff</td>
+          </tr>
+          <tr>
             <td><a href="../workflows/silver-clarify.html" style="color:var(--accent-light)">/silver:clarify</a></td>
             <td style="font-family:inherit;font-size:.875rem">"I want to build", "I'm thinking of", "here's my idea", "what if we", "concept:" — when no SPEC.md exists</td>
             <td style="font-family:inherit;font-size:.875rem">silver:clarify → silver:context</td>
@@ -332,24 +342,19 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
             <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:clarify → silver:ui-contract</td>
           </tr>
           <tr>
+            <td><a href="../workflows/silver-fast.html" style="color:var(--accent-light)">/silver:fast</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"trivial", "quick fix", "typo", "one-liner", "config value", bounded dependency or small logic update</td>
+            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>silver:fast</code> or <code>silver:feature</code></td>
+          </tr>
+          <tr>
             <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/silver:devops</a></td>
             <td style="font-family:inherit;font-size:.875rem">"infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "cloud", "ops"</td>
             <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:blast-radius → optional DevOps skill router</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-research.html" style="color:var(--accent-light)">/silver:research</a></td>
-            <td style="font-family:inherit;font-size:.875rem">"how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:clarify → direct research by default → optional multi-AI only when explicitly requested → research artifact → handoff</td>
-          </tr>
-          <tr>
             <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>
             <td style="font-family:inherit;font-size:.875rem">"release", "publish", "version", "go live", "cut a release", "tag v", "ship to users"</td>
             <td style="font-family:inherit;font-size:.875rem">silver:quality-gates → SB UAT audit → SB milestone audit</td>
-          </tr>
-          <tr>
-            <td><a href="../workflows/silver-fast.html" style="color:var(--accent-light)">/silver:fast</a></td>
-            <td style="font-family:inherit;font-size:.875rem">"trivial", "quick fix", "typo", "one-liner", "config value", bounded dependency or small logic update</td>
-            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>silver:fast</code> or <code>silver:feature</code></td>
           </tr>
         </tbody>
       </table>

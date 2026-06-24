@@ -1713,7 +1713,7 @@ img{max-width:100%;height:auto}
             <th>Key steps</th>
           </tr>
         </thead>
-        <!-- SDLC order: entry → planning/delivery → fast paths → infra/ops → post-incident → reusable components -->
+        <!-- SDLC order: entry → discovery → primary delivery → fast/specialized → infra → ship → reusable gates → ops/learning -->
         <tbody>
           <tr>
             <td><a href="help/workflows/silver-router.html" style="color:var(--accent-light);text-decoration:none">/silver</a></td>
@@ -1731,19 +1731,14 @@ img{max-width:100%;height:auto}
             <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
-            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
-          </tr>
-          <tr>
             <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "fix", "debug"</td>
             <td><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs"</td>
-            <td><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
+            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
+            <td><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
@@ -1766,6 +1761,11 @@ img{max-width:100%;height:auto}
             <td><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
           </tr>
           <tr>
+            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs"</td>
+            <td><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
             <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra"</td>
             <td><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
@@ -1784,6 +1784,16 @@ img{max-width:100%;height:auto}
             <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"release"</td>
             <td><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-review-triad.html" style="color:var(--accent-light);text-decoration:none">/silver:review-triad</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"review_request", "review", "triage" <span style="opacity:.7">(<code>WF-REVIEW-TRIAD</code>)</span></td>
+            <td><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-ship-readiness.html" style="color:var(--accent-light);text-decoration:none">/silver:ship-readiness</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"branch_finish", "completion_audit", "ship" <span style="opacity:.7">(<code>WF-SHIP-READINESS</code>)</span></td>
+            <td><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
@@ -1805,16 +1815,6 @@ img{max-width:100%;height:auto}
             <td style="font-size:.9rem;color:var(--text-secondary)">"phase", "thread", "backlog", "migration"</td>
             <td><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
           </tr>
-          <tr>
-            <td><a href="help/workflows/silver-review-triad.html" style="color:var(--accent-light);text-decoration:none">/silver:review-triad</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"review_request", "review", "triage" <span style="opacity:.7">(<code>WF-REVIEW-TRIAD</code>)</span></td>
-            <td><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-ship-readiness.html" style="color:var(--accent-light);text-decoration:none">/silver:ship-readiness</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"branch_finish", "completion_audit", "ship" <span style="opacity:.7">(<code>WF-SHIP-READINESS</code>)</span></td>
-            <td><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td>
-          </tr>
         </tbody>
       </table>
     </div>
@@ -1827,34 +1827,35 @@ img{max-width:100%;height:auto}
             <th>Role</th>
           </tr>
         </thead>
+        <!-- SDLC order: orient → plan/specify → research → execute → verify → review → ship → document/process -->
         <tbody>
           <tr><td><code>ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">intent classification and workflow composition</td></tr>
           <tr><td><code>BOOTSTRAP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">project bootstrap and enforcement activation</td></tr>
           <tr><td><code>ORIENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">codebase and planning context orientation</td></tr>
           <tr><td><code>CLARIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">scope clarification and assumption lock</td></tr>
-          <tr><td><code>DECIDE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
           <tr><td><code>SPECIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">requirements specification and ingestion</td></tr>
           <tr><td><code>PLAN</code></td><td style="font-size:.85rem;color:var(--text-secondary)">execution planning with phase coverage</td></tr>
           <tr><td><code>DESIGN_CONTRACT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">design contract and interface expectations</td></tr>
+          <tr><td><code>VALIDATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
+          <tr><td><code>DECIDE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
+          <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
+          <tr><td><code>FAST_PATH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
           <tr><td><code>EXECUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
+          <tr><td><code>DEBUG</code></td><td style="font-size:.85rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
           <tr><td><code>UI_QUALITY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">UI quality, accessibility, and design review</td></tr>
+          <tr><td><code>VERIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
+          <tr><td><code>SECURE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">security and LLM safety review</td></tr>
           <tr><td><code>REVIEW_REQUEST</code></td><td style="font-size:.85rem;color:var(--text-secondary)">structured review request and scope framing</td></tr>
           <tr><td><code>REVIEW</code></td><td style="font-size:.85rem;color:var(--text-secondary)">artifact and code review with evidence</td></tr>
           <tr><td><code>REVIEW_TRIAGE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">finding triage, fix ladder, and clean-pass tracking</td></tr>
-          <tr><td><code>VERIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
-          <tr><td><code>SECURE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">security and LLM safety review</td></tr>
-          <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
-          <tr><td><code>SHIP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">ship readiness and promotion evidence</td></tr>
-          <tr><td><code>BRANCH_FINISH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">branch hygiene before ship</td></tr>
-          <tr><td><code>COMPLETION_AUDIT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">completion evidence before delivery</td></tr>
-          <tr><td><code>DEBUG</code></td><td style="font-size:.85rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
-          <tr><td><code>DOCUMENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">durable documentation and release notes</td></tr>
-          <tr><td><code>RELEASE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">versioned release and changelog publication</td></tr>
           <tr><td><code>BLAST_RADIUS</code></td><td style="font-size:.85rem;color:var(--text-secondary)">blast-radius assessment for infra changes</td></tr>
           <tr><td><code>DEVOPS_ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">IaC toolchain and provider routing</td></tr>
-          <tr><td><code>VALIDATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
+          <tr><td><code>BRANCH_FINISH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">branch hygiene before ship</td></tr>
+          <tr><td><code>COMPLETION_AUDIT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">completion evidence before delivery</td></tr>
+          <tr><td><code>SHIP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">ship readiness and promotion evidence</td></tr>
+          <tr><td><code>RELEASE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">versioned release and changelog publication</td></tr>
+          <tr><td><code>DOCUMENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">durable documentation and release notes</td></tr>
           <tr><td><code>PHASE_MANAGE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">phase and workflow state management</td></tr>
-          <tr><td><code>FAST_PATH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
         </tbody>
       </table>
     </div>
