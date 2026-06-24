@@ -149,64 +149,33 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Workflow steps</h2>
+      <h2 id="workflow-steps">Flow execution (FLOW 18)</h2>
 
-      <h3>Pre-flight</h3>
-      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes.</p>
+      <h3>Standard composition chain</h3>
+      <div class="code-block">FLOW 13 (QUALITY GATE, release) → FLOW 12 (UAT audit evidence)
+→ FLOW 18 (milestone audit + gap closure) → FLOW 11 (SECURE)
+→ [FLOW 8 + FLOW 15 gap closure, max 2×] → FLOW 16 (DESIGN HANDOFF) [if UI]
+→ FLOW 17 (DOCUMENT) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY + verify-tests)
+→ FLOW 14 (SHIP) → deploy/canary [if live rollout]
+→ FLOW 18 (milestone archive) → silver:create-release (last)</div>
 
-      <h3>Step 0 — Pre-release quality gates (8 core dimensions + conditional gates)</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. 8 core dimensions plus conditional gates before any release audit begins — reliability, security, scalability, usability, testability, modularity, reusability, and extensibility, with AI/LLM safety only when applicable. <strong>Non-skippable gate.</strong></p>
-
-      <h3>Step 1 — Cross-phase UAT</h3>
-      <p>Run the SB cross-phase UAT audit. Purpose: surface all outstanding gaps before release. Gives a complete picture of milestone state before deciding whether to ship.</p>
-
-      <h3>Step 2 — Milestone completion audit</h3>
-      <p>Run the SB milestone completion audit. Purpose: compare milestone completion vs original intent — are all committed features shipped?</p>
-
-      <h3>Step 2a — Security hard gate</h3>
-      <p>Invoke <code>security</code>. Purpose: independent pre-release security review after the milestone audit so it covers the full release scope. This is mandatory regardless of §10 preferences.</p>
-
-      <h3 id="gap-closure">Step 2b — Gap-closure loop (conditional, max 2 iterations)</h3>
-      <p>Only if gaps found in Step 2. Track iteration count. After 2 iterations with remaining gaps, SB presents:</p>
+      <h3>FLOW 18 sub-steps</h3>
       <ul>
-        <li><strong>A.</strong> Release anyway — document gaps as known issues, proceed</li>
-        <li><strong>B.</strong> Extend milestone — defer release, continue work</li>
-        <li><strong>C.</strong> Abort release — requires manual decision to resume</li>
+        <li><strong>Pre-release quality gate</strong> (FLOW 13) — <code>silver:quality-gates</code> + domain audit</li>
+        <li><strong>UAT audit</strong> (FLOW 12) — cross-phase evidence → <code>.planning/RELEASE-UAT-AUDIT.md</code></li>
+        <li><strong>Milestone audit</strong> (FLOW 18) — scope vs evidence → <code>.planning/RELEASE-MILESTONE-AUDIT.md</code></li>
+        <li><strong>Gap closure</strong> (FLOW 8 + FLOW 15) — max 2 iterations via nested <code>silver:feature</code> / <code>silver:bugfix</code></li>
+        <li><strong>Design handoff</strong> (FLOW 16) — when UI phases exist</li>
+        <li><strong>Document</strong> (FLOW 17) — <code>silver:ensure-docs</code>, milestone summary</li>
+        <li><strong>Ship prep</strong> (FLOW 14) — <code>silver:branch-finish</code> → <code>silver:completion-audit</code> → <code>silver:ship</code></li>
+        <li><strong>Create release</strong> (FLOW 18) — <code>silver:create-release</code> always last</li>
       </ul>
-      <p>Each iteration: invoke <code>silver:plan</code> for gap phases → invoke <code>/silver:feature</code> for each gap phase → return to Step 0 (full quality gate sweep).</p>
 
-      <h3>Step 3a — Verify existing documentation</h3>
-      <p>Invoke <code>silver:ensure-docs --release</code>. Purpose: verify all existing docs are accurate against current codebase before generating new docs.</p>
+      <h3 id="gap-closure">Gap-closure loop (max 2 iterations)</h3>
+      <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to FLOW 13 pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
 
-      <h3>Step 3b — Generate/update documentation</h3>
-      <p>After <code>silver:ensure-docs</code> completes, update README, user docs, Help Center content, and project pages on a verified foundation.</p>
-
-      <h3>Step 4 — Milestone summary</h3>
-      <p>Generate the SB milestone summary. It provides the release-note narrative and records any known gaps or follow-ups.</p>
-
-      <h3>Step 5 — PR branch (optional)</h3>
-      <p>SB asks: "Would you like a clean PR branch (strips .planning/ commits)?" A. Yes / B. No / C. Save as permanent preference. If A: prepare the clean PR branch through the SB branch workflow.</p>
-
-      <h3>Step 6 — Cross-artifact consistency review</h3>
-      <p>If <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> exist, run the cross-artifact reviewer against SPEC, REQUIREMENTS, ROADMAP, and DESIGN when present. Do not proceed to ship until blocking alignment findings are resolved.</p>
-
-      <h3>Step 6b — Pre-ship deployment checklist</h3>
-      <p>Invoke the DevOps readiness checks when the release includes deployment. They verify deployment conditions, rollback plan, monitoring, and release readiness before <code>silver:ship</code> executes.</p>
-
-      <h3>Step 6c — Mandatory fresh test run</h3>
-      <p>Invoke <code>/verify-tests</code> after pre-release quality gates and before any ship or release step. This writes the freshness marker consumed by SB hooks, so the release is based on current test evidence.</p>
-
-      <h3>Step 7 — Ship: deploy and CI green</h3>
-      <p>Invoke <code>silver:ship</code>. Deploy, ensure CI is green, and push the release branch. <strong>This MUST succeed before milestone archival.</strong></p>
-
-      <h3>Step 8 — Complete milestone</h3>
-      <p>Only after Step 7 confirms success: run the SB milestone archival step. It archives the milestone and prepares the next version. These archival commits must land before the release tag is created.</p>
-
-      <h3>Step 9 — Create release</h3>
-      <p>Only after milestone archival: invoke <code>/silver:create-release</code>. It updates release notes/changelog surfaces, creates the final version tag, and publishes the GitHub Release. Tagging happens last so the release captures the completed milestone state.</p>
-
-      <h3>Step 9b — Post-release items summary</h3>
-      <p>After the release tag is published, generate a consolidated summary of items filed and knowledge/learnings recorded during the milestone. The summary uses session logs and the previous release tag window to surface follow-ups, backlog items, learnings, and knowledge entries created during the release window.</p>
+      <h3>Delivery tail (orchestrator parent mode)</h3>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the autonomous queue runs the delivery tail only (FLOW 13 → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
 
       <div class="divider"></div>
 
@@ -216,11 +185,11 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>/silver:quality-gates</code> pre-release (Step 0)</li>
-            <li><code>/verify-tests</code> fresh release-session test run (Step 6c)</li>
-            <li><code>security</code> (Step 2a) is mandatory for every release</li>
-            <li><code>silver:ship</code> (Step 7) must succeed before milestone archival (Step 8)</li>
-            <li><code>/silver:create-release</code> (Step 9) runs only after milestone archival</li>
+            <li><code>/silver:quality-gates</code> pre-release (FLOW 13)</li>
+            <li><code>/verify-tests</code> fresh release-session test run (FLOW 12)</li>
+            <li><code>security</code> (FLOW 11) is mandatory for every release</li>
+            <li><code>silver:ship</code> (FLOW 14) must succeed before milestone archival</li>
+            <li><code>/silver:create-release</code> runs only after milestone archival (FLOW 18)</li>
           </ul>
         </div>
       </div>

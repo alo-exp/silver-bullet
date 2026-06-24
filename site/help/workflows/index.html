@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>Composable Workflow Orchestration — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet's 18-flow composable orchestration works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
+<title>Orchestration Workflows — Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet v0.47.1 workflow catalog: 18 atomic flows, runtime queue tokens, composer composition chains, and post-execution sequencing for /silver routing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -30,11 +30,8 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .page-hero{background:var(--bg-hero);padding:120px 24px 64px;position:relative;overflow:hidden}
 .page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .page-hero .container{position:relative;z-index:1}
-.breadcrumb-nav{font-size:.9rem;color:var(--text-dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
-.breadcrumb-nav a{color:var(--text-dim);text-decoration:none}
-.breadcrumb-nav a:hover{color:var(--accent-light)}
 .page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
-.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:640px;line-height:1.7}
 .doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
 @media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
 .doc-sidebar{position:sticky;top:88px;height:fit-content}
@@ -60,17 +57,18 @@ nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;ju
 .callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
 .callout-body strong{color:var(--text-primary)}
 .divider{height:1px;background:var(--border);margin:40px 0}
-/* REFERENCE TABLE */
 .ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
 .ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
 .ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
 .ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
 .ref-table tr:last-child td{border-bottom:none}
 .ref-table tr:hover td{background:var(--slate-a02)}
-/* CODE BLOCK */
-.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
-.code-block .comment{color:var(--text-dim)}
-/* PAGE NAV BOTTOM */
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.9rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.workflow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.workflow-card{border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;text-decoration:none;color:inherit;transition:border-color .2s,background .2s}
+.workflow-card:hover{border-color:var(--accent);background:var(--slate-a02)}
+.workflow-card h4{font-size:.95rem;font-weight:700;color:var(--accent-light);margin-bottom:6px}
+.workflow-card p{font-size:.85rem;color:var(--text-secondary);margin:0;line-height:1.6}
 .page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
 .page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
 .pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
@@ -80,8 +78,6 @@ footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);f
 footer a{color:var(--text-secondary);text-decoration:none}
 footer a:hover{color:var(--accent-light)}
 .footer-links{display:flex;gap:24px}
-@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
-/* NAV SEARCH */
 .nav-search-wrap{position:relative}
 .nav-search-input{width:180px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-code);color:var(--text-primary);font-size:.9rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,width .2s}
 .nav-search-input:focus{border-color:var(--accent);width:240px}
@@ -104,7 +100,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:16px">
       <a href="../../" class="nav-logo">Silver Bullet</a>
-      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span> Composable Workflow Orchestration</span>
+      <span class="nav-breadcrumb"><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span> Workflows</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
       <div class="nav-search-wrap">
@@ -118,8 +114,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
 <div class="page-hero">
   <div class="container">
-    <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> replaces fixed pipelines with dynamic workflow composition — classifying context, selecting from 18 flows, and supervising execution via the active per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
+    <h1>Orchestration Workflows <span style="font-size:.55em;font-weight:700;color:var(--accent-light);vertical-align:middle">v0.47.1</span></h1>
+    <p>Silver Bullet composes work from <strong>18 atomic flows</strong> (FLOW 1–18). Composer skills declare <strong>composition chains</strong>; the autonomous orchestrator enforces them via <strong>runtime queue tokens</strong> and hook markers. Canonical contracts: <code>docs/composable-flows-contracts.md</code>.</p>
   </div>
 </div>
 
@@ -129,206 +125,203 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#the-18-paths">The 18 Canonical Software Engineering Flows</a></li>
-        <li><a href="#how-composition-works">How Composition Works</a></li>
-        <li><a href="#workflow-tracking">Workflow Tracker</a></li>
-        <li><a href="#supervision-loop">Supervision Loop</a></li>
+        <li><a href="#composer-workflows">Composer Workflows</a></li>
+        <li><a href="#atomic-flows">Atomic Flow Catalog</a></li>
+        <li><a href="#runtime-tokens">Runtime Queue Tokens</a></li>
+        <li><a href="#post-execution">Post-Execution Order</a></li>
+        <li><a href="#composition-vs-enforcement">Composition vs Enforcement</a></li>
+        <li><a href="#activation">Hook Activation</a></li>
+        <li><a href="#workflow-pages">Workflow Pages</a></li>
         <li><a href="#see-also">See Also</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
-      <h2 id="overview">What is Composable Workflow Orchestration?</h2>
-      <p>Silver Bullet's composable workflow orchestration replaces fixed step-by-step pipelines with a catalog of 18 canonical software engineering flows. When you invoke <code>/silver</code>, it classifies your context and dynamically composes a chain of flows appropriate to the work — no two compositions need be identical.</p>
-      <p>Each flow is a discrete unit with a contract: prerequisites, trigger signals, steps, produced artifacts, review cycle, SB state impact, and exit condition. Flows compose into chains. Chains execute under supervision.</p>
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver</code> classifies intent and routes to a composer skill (<code>silver:feature</code>, <code>silver:ui</code>, …) or a utility skill (<code>silver:spec</code>, <code>silver:validate</code>, …). Composers <strong>orchestrate only</strong> — they declare which atomic flows run and in what order. Implementation, review, verification, and ship work always flow through SB-owned lifecycle skills.</p>
+      <p>Active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code> (Flow Log CSV rows). The retired single-file <code>WORKFLOW.md</code> model is legacy only. SB is the lifecycle authority — no external workflow delegation.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, VERIFY, REVIEW, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable workflow orchestration can.</div>
+        <div class="callout-body"><strong>Flow numbers are stable catalog IDs.</strong> Post-execution gate order (REVIEW → VERIFY → SECURE) does not always match flow numbering. Runtime order is defined in composer skills and <code>hooks/lib/orchestrator-state.sh</code>.</div>
       </div>
 
       <div class="divider"></div>
 
-      <h2 id="the-18-paths">The 18 Canonical Software Engineering Flows</h2>
-      <p>Every flow has a one-indexed number, a name, and a one-line description. The catalog contains 18 flows total: <code>FLOW 1</code> through <code>FLOW 18</code>. The trigger column describes what causes <code>/silver</code> to include the flow in a composition.</p>
+      <h2 id="composer-workflows">Composer Workflows</h2>
+      <p>Each composer declares a <strong>standard composition chain</strong> using FLOW vocabulary. Conditional flows (BOOTSTRAP, CLARIFY, DECIDE, SPECIFY, DEBUG) insert when context signals require them.</p>
 
       <table class="ref-table">
         <thead>
-          <tr><th>Flow</th><th>Name</th><th>Description</th><th>Trigger</th></tr>
+          <tr><th>Composer</th><th>Entry signals</th><th>Standard composition chain</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td>FLOW 1</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td>
-            <td style="font-family:inherit;font-size:.875rem">Initialize project, milestone, or resume prior session</td>
-            <td style="font-family:inherit;font-size:.875rem">No .planning/ exists, prior milestone complete, or user says "new project"</td>
+            <td><a href="silver-clarify.html" style="color:inherit;text-decoration:none">/silver:clarify</a></td>
+            <td style="font-family:inherit;font-size:.875rem">idea, concept, fuzzy requirement, no SPEC.md</td>
+            <td style="font-family:inherit;font-size:.875rem"><strong>FLOW 3 (CLARIFY)</strong> → handoff to <code>silver:feature</code> / <code>silver:devops</code> / <code>silver:research</code></td>
           </tr>
           <tr>
-            <td>FLOW 2</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td>
-            <td style="font-family:inherit;font-size:.875rem">Orient on codebase, project state, and current workflow position</td>
-            <td style="font-family:inherit;font-size:.875rem">Always included for non-trivial work</td>
+            <td><a href="silver-feature.html" style="color:inherit;text-decoration:none">/silver:feature</a></td>
+            <td style="font-family:inherit;font-size:.875rem">add, build, implement, new feature, enhance</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 1–5 (conditional) → FLOW 13 (pre-plan) → FLOW 6 → [FLOW 7 if UI] → FLOW 8 → <em>post-execution chain</em></td>
           </tr>
           <tr>
-            <td>FLOW 3</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">CLARIFY</td>
-            <td style="font-family:inherit;font-size:.875rem">Clarify scope, assumptions, boundaries, and decision-ready handoff</td>
-            <td style="font-family:inherit;font-size:.875rem">Fuzzy intent, unclear scope, or user uncertainty</td>
+            <td><a href="silver-bugfix.html" style="color:inherit;text-decoration:none">/silver:bugfix</a></td>
+            <td style="font-family:inherit;font-size:.875rem">bug, broken, crash, error, regression</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 2 (optional) → <strong>FLOW 15 (DEBUG)</strong> → FLOW 6 → FLOW 8 → <em>post-execution chain</em></td>
           </tr>
           <tr>
-            <td>FLOW 4</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DECIDE</td>
-            <td style="font-family:inherit;font-size:.875rem">Architecture, product, or technical decision artifact</td>
-            <td style="font-family:inherit;font-size:.875rem">Architecture choice, stack selection, major tradeoff, API/data-model impact</td>
+            <td><a href="silver-ui.html" style="color:inherit;text-decoration:none">/silver:ui</a></td>
+            <td style="font-family:inherit;font-size:.875rem">UI, frontend, component, screen, design</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 1–6 (conditional) → <strong>FLOW 7</strong> → FLOW 8 → <strong>FLOW 9</strong> → <em>post-execution chain</em></td>
           </tr>
           <tr>
-            <td>FLOW 5</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td>
-            <td style="font-family:inherit;font-size:.875rem">Produce SPEC.md and REQUIREMENTS.md via silver-spec</td>
-            <td style="font-family:inherit;font-size:.875rem">No SPEC.md exists, spec refresh needed, or external artifacts to ingest</td>
+            <td><a href="silver-devops.html" style="color:inherit;text-decoration:none">/silver:devops</a></td>
+            <td style="font-family:inherit;font-size:.875rem">infra, CI/CD, terraform, IaC, cloud</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 2 → [3–4] → <strong>blast-radius + devops-skill-router</strong> → FLOW 13 (DevOps) → FLOW 6 → FLOW 8 → <em>post-execution chain</em></td>
           </tr>
           <tr>
-            <td>FLOW 6</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td>
-            <td style="font-family:inherit;font-size:.875rem">Produce CONTEXT.md, RESEARCH.md, PLAN.md</td>
-            <td style="font-family:inherit;font-size:.875rem">Always for every phase</td>
+            <td><a href="silver-research.html" style="color:inherit;text-decoration:none">/silver:research</a></td>
+            <td style="font-family:inherit;font-size:.875rem">compare X vs Y, spike, which technology</td>
+            <td style="font-family:inherit;font-size:.875rem"><strong>FLOW 3 → FLOW 4</strong> → [FLOW 5] → handoff to feature/devops or stop</td>
           </tr>
           <tr>
-            <td>FLOW 7</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN CONTRACT</td>
-            <td style="font-family:inherit;font-size:.875rem">Produce UI-SPEC.md via silver:ui-contract</td>
-            <td style="font-family:inherit;font-size:.875rem">Phase involves UI (keywords, file types, DESIGN.md presence)</td>
+            <td><a href="silver-release.html" style="color:inherit;text-decoration:none">/silver:release</a></td>
+            <td style="font-family:inherit;font-size:.875rem">release, publish, version, tag v</td>
+            <td style="font-family:inherit;font-size:.875rem">FLOW 13 → FLOW 12 (UAT audit) → <strong>FLOW 18</strong> (milestone + gap closure) → FLOW 16–17 → delivery tail → <code>silver:create-release</code></td>
           </tr>
           <tr>
-            <td>FLOW 8</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td>
-            <td style="font-family:inherit;font-size:.875rem">Wave-based execution via silver:execute</td>
-            <td style="font-family:inherit;font-size:.875rem">Always</td>
+            <td><a href="silver-fast.html" style="color:inherit;text-decoration:none">/silver:fast</a></td>
+            <td style="font-family:inherit;font-size:.875rem">trivial, typo, bounded small change</td>
+            <td style="font-family:inherit;font-size:.875rem">Tier 1 direct edit; Tier 2 lightweight FLOW 6/8/12 slice; Tier 3 escalate to <code>silver:feature</code></td>
           </tr>
-          <tr>
-            <td>FLOW 9</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI QUALITY</td>
-            <td style="font-family:inherit;font-size:.875rem">Design critique, 6-pillar UI audit, accessibility review</td>
-            <td style="font-family:inherit;font-size:.875rem">FLOW 7 was in composition, or SUMMARY.md contains UI file types</td>
-          </tr>
-          <tr>
-            <td>FLOW 10</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td>
-            <td style="font-family:inherit;font-size:.875rem">SB review stack: request → review → triage, with optional external second opinion</td>
-            <td style="font-family:inherit;font-size:.875rem">Always for implementation work after FLOW 8</td>
-          </tr>
-          <tr>
-            <td>FLOW 11</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td>
-            <td style="font-family:inherit;font-size:.875rem">Security audit, validation, LLM safety checks</td>
-            <td style="font-family:inherit;font-size:.875rem">Always — scope varies by project type</td>
-          </tr>
-          <tr>
-            <td>FLOW 12</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td>
-            <td style="font-family:inherit;font-size:.875rem">Non-skippable verification gate — silver:verify</td>
-            <td style="font-family:inherit;font-size:.875rem">Always — NON-SKIPPABLE</td>
-          </tr>
-          <tr>
-            <td>FLOW 13</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY GATE</td>
-            <td style="font-family:inherit;font-size:.875rem">Dual-mode: design-time checklist pre-plan + adversarial audit pre-ship</td>
-            <td style="font-family:inherit;font-size:.875rem">Always — appears TWICE in every composition</td>
-          </tr>
-          <tr>
-            <td>FLOW 14</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td>
-            <td style="font-family:inherit;font-size:.875rem">Create PR via silver:ship</td>
-            <td style="font-family:inherit;font-size:.875rem">Always</td>
-          </tr>
-          <tr>
-            <td>FLOW 15</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td>
-            <td style="font-family:inherit;font-size:.875rem">Systematic debugging, forensics, incident response</td>
-            <td style="font-family:inherit;font-size:.875rem">Execution failure, CI red, verification failure — inserted dynamically</td>
-          </tr>
-          <tr>
-            <td>FLOW 16</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN HANDOFF</td>
-            <td style="font-family:inherit;font-size:.875rem">Produce design handoff package for milestone UI phases</td>
-            <td style="font-family:inherit;font-size:.875rem">Milestone has UI phases AND in release flow — runs inside FLOW 18 only</td>
-          </tr>
-          <tr>
-            <td>FLOW 17</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td>
-            <td style="font-family:inherit;font-size:.875rem">Update docs/, session log, tech debt, milestone summary</td>
-            <td style="font-family:inherit;font-size:.875rem">Always post-ship</td>
-          </tr>
-          <tr>
-            <td>FLOW 18</td>
-            <td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td>
-            <td style="font-family:inherit;font-size:.875rem">Milestone audit, gap closure, GitHub Release creation</td>
-            <td style="font-family:inherit;font-size:.875rem">User signals milestone complete, or last phase shipped</td>
-          </tr>
+        </tbody>
+      </table>
+
+      <p>Utility skills map to atomic flows directly: <a href="silver-spec.html"><code>/silver:spec</code></a> → FLOW 5 (SPECIFY); <a href="silver-ingest.html"><code>/silver:ingest</code></a> → FLOW 5 sub-step; <a href="silver-validate.html"><code>/silver:validate</code></a> → gap analysis sub-step in FLOW 5/6/11.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="atomic-flows">Atomic Flow Catalog (FLOW 1–18)</h2>
+      <p>Every flow has prerequisites, triggers, skill steps, produces, review cycle, state impact, and exit condition. Full contracts: <code>docs/composable-flows-contracts.md</code>.</p>
+
+      <table class="ref-table">
+        <thead>
+          <tr><th>Flow</th><th>Name</th><th>Primary skills</th><th>Trigger</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>FLOW 1</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td><td style="font-family:inherit;font-size:.875rem"><code>silver:init</code>, <code>silver:context</code>, <code>silver:plan</code></td><td style="font-family:inherit;font-size:.875rem">No <code>.planning/</code>; new project or milestone</td></tr>
+          <tr><td>FLOW 2</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td><td style="font-family:inherit;font-size:.875rem"><code>silver:scan</code>, <code>silver:context</code>, <code>silver:review-stats</code></td><td style="font-family:inherit;font-size:.875rem">Non-trivial work; brownfield orientation</td></tr>
+          <tr><td>FLOW 3</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">CLARIFY</td><td style="font-family:inherit;font-size:.875rem"><code>silver:clarify</code></td><td style="font-family:inherit;font-size:.875rem">Fuzzy intent, unclear scope, user uncertainty</td></tr>
+          <tr><td>FLOW 4</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DECIDE</td><td style="font-family:inherit;font-size:.875rem"><code>silver:research</code>, <code>silver:context</code></td><td style="font-family:inherit;font-size:.875rem">Architecture choice, stack selection, major tradeoff</td></tr>
+          <tr><td>FLOW 5</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td><td style="font-family:inherit;font-size:.875rem"><code>silver:ingest</code>, <code>silver:spec</code>, <code>silver:validate</code></td><td style="font-family:inherit;font-size:.875rem">Missing/stale SPEC.md or external artifacts</td></tr>
+          <tr><td>FLOW 6</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td><td style="font-family:inherit;font-size:.875rem"><code>silver:context</code>, <code>silver:plan</code>, <code>silver:validate</code></td><td style="font-family:inherit;font-size:.875rem">Always before execution for non-trivial work</td></tr>
+          <tr><td>FLOW 7</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN CONTRACT</td><td style="font-family:inherit;font-size:.875rem"><code>silver:ui-contract</code></td><td style="font-family:inherit;font-size:.875rem">UI/frontend/design scope detected</td></tr>
+          <tr><td>FLOW 8</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td><td style="font-family:inherit;font-size:.875rem"><code>tdd</code>, <code>silver:execute</code></td><td style="font-family:inherit;font-size:.875rem">Always for implementation</td></tr>
+          <tr><td>FLOW 9</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI QUALITY</td><td style="font-family:inherit;font-size:.875rem"><code>silver:ui-review</code></td><td style="font-family:inherit;font-size:.875rem">UI scope; always for <code>silver:ui</code></td></tr>
+          <tr><td>FLOW 10</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td><td style="font-family:inherit;font-size:.875rem"><code>silver:review-request</code> → <code>silver:review</code> → <code>silver:review-triage</code></td><td style="font-family:inherit;font-size:.875rem">Always after FLOW 8 for delivery work</td></tr>
+          <tr><td>FLOW 11</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td><td style="font-family:inherit;font-size:.875rem"><code>security</code>, <code>silver:secure</code>, <code>silver:validate</code>, <code>silver:ai-llm-safety</code></td><td style="font-family:inherit;font-size:.875rem">Always for software changes</td></tr>
+          <tr><td>FLOW 12</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td><td style="font-family:inherit;font-size:.875rem"><code>silver:verify</code>, <code>verify-tests</code>, <code>silver:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">Non-skippable</td></tr>
+          <tr><td>FLOW 13</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY GATE</td><td style="font-family:inherit;font-size:.875rem"><code>silver:quality-gates</code> or <code>devops-quality-gates</code></td><td style="font-family:inherit;font-size:.875rem">Pre-plan and pre-ship (appears twice)</td></tr>
+          <tr><td>FLOW 14</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td><td style="font-family:inherit;font-size:.875rem"><code>silver:branch-finish</code>, <code>silver:ship</code></td><td style="font-family:inherit;font-size:.875rem">Phase-level PR/CI</td></tr>
+          <tr><td>FLOW 15</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td><td style="font-family:inherit;font-size:.875rem"><code>silver:debug</code>, <code>silver:forensics</code></td><td style="font-family:inherit;font-size:.875rem">Dynamic insertion on failure</td></tr>
+          <tr><td>FLOW 16</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN HANDOFF</td><td style="font-family:inherit;font-size:.875rem">optional design connector, <code>silver:handoff</code></td><td style="font-family:inherit;font-size:.875rem">Inside FLOW 18 when UI phases exist</td></tr>
+          <tr><td>FLOW 17</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td><td style="font-family:inherit;font-size:.875rem"><code>silver:ensure-docs</code>, <code>silver:handoff</code>, <code>silver:scan</code></td><td style="font-family:inherit;font-size:.875rem">Post-ship, pre-release, docs drift</td></tr>
+          <tr><td>FLOW 18</td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td><td style="font-family:inherit;font-size:.875rem"><code>silver:release</code>, FLOW 16–17, <code>silver:create-release</code></td><td style="font-family:inherit;font-size:.875rem">Milestone complete, version intent</td></tr>
         </tbody>
       </table>
 
       <div class="divider"></div>
 
-      <h2 id="how-composition-works">How Composition Works</h2>
-      <p>When you invoke <code>/silver</code>, composition happens in four steps:</p>
+      <h2 id="runtime-tokens">Runtime Queue Tokens</h2>
+      <p>The autonomous orchestrator (<code>hooks/lib/orchestrator-state.sh</code>) seeds enforcement queues with skill tokens and synthetic labels. These map to atomic flows or sub-steps — they are <strong>not</strong> separate catalog flows.</p>
 
-      <ol>
-        <li><strong>Context classification</strong> — <code>/silver</code> reads the request, current STATE.md position, and file context to determine workflow type (feature, bugfix, UI, devops, research, release, trivial).</li>
-        <li><strong>Flow selection</strong> — Based on classification, <code>/silver</code> selects which of the 18 flows apply. Implementation anchors such as FLOW 8 EXECUTE, FLOW 12 VERIFY, FLOW 13 QUALITY GATE, and FLOW 14 SHIP apply to delivery compositions; context-dependent flows such as FLOW 3 CLARIFY, FLOW 4 DECIDE, FLOW 7 DESIGN CONTRACT, FLOW 9 UI QUALITY, and FLOW 15 DEBUG are added based on signals.</li>
-        <li><strong>Chain ordering</strong> — Flows are ordered by their dependency graph. FLOW 1 before FLOW 2 before FLOW 6 before FLOW 8, etc. Dynamic insertions (e.g. FLOW 15 DEBUG on failure) are injected at the appropriate point in the running chain.</li>
-        <li><strong>Proposal</strong> — <code>/silver</code> proposes the composed chain to the user, explaining which flows are included and why, before execution begins.</li>
-      </ol>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Queue token</th><th>Maps to</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>FLOW-QUALITY-GATE</code></td><td>FLOW 13 (pre-plan)</td><td style="font-family:inherit;font-size:.875rem">Orchestrator label → <code>silver:quality-gates</code> or <code>devops-quality-gates</code></td></tr>
+          <tr><td><code>FLOW-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (pre-ship)</td><td style="font-family:inherit;font-size:.875rem">Product pre-ship quality gate</td></tr>
+          <tr><td><code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code></td><td>FLOW 13 (pre-ship, DevOps)</td><td style="font-family:inherit;font-size:.875rem">IaC pre-ship quality gate</td></tr>
+          <tr><td><code>silver:blast-radius</code></td><td>FLOW 6 extension (DevOps)</td><td style="font-family:inherit;font-size:.875rem">Pre-plan blast-radius assessment</td></tr>
+          <tr><td><code>devops-skill-router</code></td><td>FLOW 6 extension (DevOps)</td><td style="font-family:inherit;font-size:.875rem">IaC toolchain routing before PLAN</td></tr>
+          <tr><td><code>silver:validate</code></td><td>FLOW 5 / 6 / 11 sub-step</td><td style="font-family:inherit;font-size:.875rem">Pre-build or pre-ship gap analysis</td></tr>
+          <tr><td><code>silver:branch-finish</code></td><td>FLOW 14 sub-step</td><td style="font-family:inherit;font-size:.875rem">Branch hygiene before ship</td></tr>
+          <tr><td><code>silver:completion-audit</code></td><td>FLOW 12 sub-step</td><td style="font-family:inherit;font-size:.875rem">Completion evidence before ship/release claim</td></tr>
+          <tr><td><code>ROUTER</code></td><td><code>/silver</code> router skill</td><td style="font-family:inherit;font-size:.875rem">Intent classification (worker template only)</td></tr>
+        </tbody>
+      </table>
 
-      <div class="callout callout-tip">
-        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
-        <div class="callout-body"><strong>Example composition for a feature request:</strong> FLOW 2 (ORIENT) → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 8 (EXECUTE) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY) → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP) → FLOW 17 (DOCUMENT). FLOW 15 (DEBUG) is available to insert dynamically if FLOW 8 fails.</div>
-      </div>
+      <p><strong>FLOW 18 release sub-steps:</strong> pre-release quality gate (FLOW 13) · UAT audit (FLOW 12) · milestone audit (FLOW 18) · gap closure (FLOW 8 + FLOW 15, max 2×) · design handoff (FLOW 16) · document (FLOW 17) · ship prep (FLOW 14: branch-finish → completion-audit → ship) · <code>silver:create-release</code> (always last).</p>
 
       <div class="divider"></div>
 
-      <h2 id="workflow-tracking">Per-instance Workflow Tracker</h2>
-      <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every flow completes.</p>
+      <h2 id="post-execution">Post-Execution Sequencing</h2>
+      <p>For <code>silver:feature</code>, <code>silver:ui</code>, <code>silver:devops</code>, and <code>silver:bugfix</code>, the mandatory order <strong>after FLOW 8 (EXECUTE)</strong> is:</p>
 
-      <h3>What the workflow tracker contains</h3>
+      <ol>
+        <li><strong>FLOW 9 (UI QUALITY)</strong> — always for <code>silver:ui</code>; for <code>silver:feature</code> only when UI scope is detected</li>
+        <li><strong>FLOW 10 (REVIEW)</strong> — <code>silver:review-request</code> → <code>silver:review</code> → <code>silver:review-triage</code></li>
+        <li><strong>FLOW 12 (VERIFY)</strong> — <code>silver:verify</code> + <code>verify-tests</code></li>
+        <li><strong>FLOW 11 (SECURE)</strong> — <code>security</code> + <code>silver:secure</code>, with <code>silver:validate</code> as needed</li>
+        <li><strong>FLOW 13 (QUALITY GATE, pre-ship)</strong></li>
+        <li><strong>FLOW 14 (SHIP)</strong> — <code>silver:branch-finish</code> → <code>silver:completion-audit</code> → <code>silver:ship</code></li>
+      </ol>
+
+      <div class="code-block">FLOW 8 EXECUTE
+  → [FLOW 9 UI QUALITY if UI]
+  → FLOW 10 REVIEW
+  → FLOW 12 VERIFY
+  → FLOW 11 SECURE (+ silver:validate as needed)
+  → FLOW 13 QUALITY GATE (pre-ship)
+  → FLOW 14 SHIP</div>
+
+      <div class="divider"></div>
+
+      <h2 id="composition-vs-enforcement">Composition vs Enforcement</h2>
+      <p>Composer skills declare full FLOW 1–18 <strong>composition chains</strong> (including conditional FLOW 1–5 orientation/clarify/decide atoms). The orchestrator <strong>enforcement queue</strong> omits optional pre-execution atoms by default — hooks block edits on mandatory pre-execution skill markers only. Parent orchestrators insert skipped flows when context scan flags require them.</p>
+      <p>Worker templates under <code>templates/orchestrator-workers/</code> implement one catalog flow each. Per-flow skill steps, produces, and exit conditions live in <code>docs/composable-flows-contracts.md</code> — not in composer <code>SKILL.md</code> files.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.47.1)</h2>
+      <p>As of v0.47.1, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
+      <p><strong>Recommended tools (opt-in):</strong></p>
       <ul>
-        <li><strong>Active flow</strong> — which workflow flow is currently executing</li>
-        <li><strong>Completed flows</strong> — log of flows that have exited successfully, with timestamps</li>
-        <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
-        <li><strong>Dynamic insertions</strong> — flows inserted at runtime (e.g. FLOW 15 DEBUG after a failure)</li>
-        <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
+        <li><strong>Graphify</strong> — <code>recommended_tools.graphify.enabled_by_user</code> in <code>.silver-bullet.json</code>; preferred retrieval before planning, editing, review, and release</li>
+        <li><strong>agentmemory</strong> — <code>recommended_tools.agentmemory.enabled_by_user</code>; session capture and git-backed memory export. When both are enabled: <strong>save via agentmemory, retrieve via Graphify</strong></li>
       </ul>
-
-      <h3>Why the workflow tracker matters</h3>
-      <p>The per-instance tracker gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, <code>.planning/workflows/&lt;id&gt;.md</code> allows the next session to resume from the correct point in the chain without re-running completed flows. It also provides an audit trail for post-hoc review. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
+      <p>Consent, install, and enforcement-suspend flows run through <code>/silver:init</code> and <code>/silver:update</code>.</p>
 
       <div class="divider"></div>
 
-      <h2 id="supervision-loop">Supervision Loop</h2>
-      <p>Each flow in a composition runs under a supervision loop:</p>
-
-      <ol>
-        <li><strong>Pre-flow check</strong> — Prerequisites are verified before the flow begins. If prerequisites are missing, the flow is blocked and the user is notified.</li>
-        <li><strong>Flow execution</strong> — The flow's actions execute in order, with mandatory actions always running and as-needed actions gated on context signals.</li>
-        <li><strong>Exit verification</strong> — The flow's exit condition is checked. If not met, the supervision loop either retries or inserts a corrective flow (e.g. FLOW 15 DEBUG on execution failure).</li>
-        <li><strong>Stall detection</strong> — If a flow makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
-        <li><strong>Progress reporting</strong> — On every tool use, the compliance status hook shows the current flow and overall chain progress.</li>
-      </ol>
-
-      <div class="callout callout-info">
-        <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>FLOW 12 VERIFY is NON-SKIPPABLE for delivery compositions.</strong> The supervision loop cannot mark a delivery chain complete before FLOW 12 satisfies its exit condition. Intermediate commits follow SB's planning-floor rules, while final PR, deploy, and release actions require the full delivery evidence.</div>
+      <h2 id="workflow-pages">Individual Workflow Pages</h2>
+      <div class="workflow-grid">
+        <a href="silver-clarify.html" class="workflow-card"><h4>/silver:clarify</h4><p>Fuzzy-intent intake and decision-ready brief (FLOW 3)</p></a>
+        <a href="silver-feature.html" class="workflow-card"><h4>/silver:feature</h4><p>Full feature development composition chain</p></a>
+        <a href="silver-bugfix.html" class="workflow-card"><h4>/silver:bugfix</h4><p>Triage-first debug → plan → execute → ship</p></a>
+        <a href="silver-ui.html" class="workflow-card"><h4>/silver:ui</h4><p>UI design contract + UI quality gate</p></a>
+        <a href="silver-devops.html" class="workflow-card"><h4>/silver:devops</h4><p>Blast-radius, IaC gates, no application TDD</p></a>
+        <a href="silver-research.html" class="workflow-card"><h4>/silver:research</h4><p>Evidence-based technology decisions (FLOW 3–4)</p></a>
+        <a href="silver-release.html" class="workflow-card"><h4>/silver:release</h4><p>Milestone audit, gap closure, GitHub Release</p></a>
+        <a href="silver-fast.html" class="workflow-card"><h4>/silver:fast</h4><p>Tiered fast path for bounded small changes</p></a>
+        <a href="silver-spec.html" class="workflow-card"><h4>/silver:spec</h4><p>SPEC.md and REQUIREMENTS.md (FLOW 5)</p></a>
+        <a href="silver-ingest.html" class="workflow-card"><h4>/silver:ingest</h4><p>External artifact ingestion (FLOW 5)</p></a>
+        <a href="silver-validate.html" class="workflow-card"><h4>/silver:validate</h4><p>Gap analysis BLOCK/WARN/INFO</p></a>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="../concepts/routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a workflow chain</li>
-        <li><a href="../concepts/verification.html">Verification Before Completion</a> — FLOW 12 VERIFY and dual-mode quality gates in detail</li>
-        <li><a href="../concepts/artifact-review-assessor.html">Artifact Review Assessor</a> — how FLOW 10 REVIEW triages findings via the assessor</li>
-        <li><a href="../concepts/documentation.html">Documentation Scheme</a> — FLOW 17 DOCUMENT and the per-instance workflow tracker as project artifacts</li>
+        <li><a href="../concepts/composable-workflow.html">Composable Workflow Orchestration</a> — supervision loop and workflow tracker</li>
+        <li><a href="../concepts/routing-logic.html">Routing Logic</a> — complexity triage and intent classification</li>
+        <li><a href="../reference/#composable-flows">Command Reference — Composable Flows</a></li>
+        <li><a href="../dev-workflow/">Software Delivery Workflow</a> — skill-level phase map for <code>full-dev-cycle</code></li>
+        <li><a href="../devops-workflow/">DevOps &amp; IaC Workflow</a> — blast radius and environment promotion</li>
       </ul>
 
       <div class="page-nav-bottom">
@@ -336,9 +329,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <span class="pnb-label">← Back to</span>
           <span class="pnb-title">Help Center</span>
         </a>
-        <a href="../concepts/">
-          <span class="pnb-label">See also</span>
-          <span class="pnb-title">Core Concepts</span>
+        <a href="../concepts/composable-workflow.html">
+          <span class="pnb-label">Deep dive →</span>
+          <span class="pnb-title">Composable Flows</span>
         </a>
       </div>
 

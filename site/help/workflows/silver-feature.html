@@ -211,90 +211,34 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Workflow steps</h2>
+      <h2 id="workflow-steps">Flow execution</h2>
+      <p>Composer skills declare a <strong>composition chain</strong> — not inline numbered steps. The orchestrator runs atomic flows in FLOW order; hooks enforce mandatory skill markers via the runtime queue.</p>
 
-      <h3>Pre-flight</h3>
-      <p>Silver Bullet reads <code>silver-bullet.md §10</code> to load user workflow preferences before any step executes. Stored routing, skip, research-tool, and mode preferences are silently applied throughout the workflow.</p>
+      <h3>Standard composition chain</h3>
+      <div class="code-block">FLOW 1 (BOOTSTRAP) → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) → FLOW 4 (DECIDE)
+→ FLOW 5 (SPECIFY) → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN)
+→ FLOW 7 (DESIGN CONTRACT) [if UI] → FLOW 8 (EXECUTE)
+→ FLOW 9 (UI QUALITY) [if UI] → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)
+→ FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)</div>
 
-      <h3>Step 0 — Complexity triage</h3>
-      <p>Classify the request (see table above). If trivial: invoke <code>silver:fast</code> and exit. If fuzzy: proceed to Step 1b. If simple or complex: proceed to Step 1a.</p>
+      <h3>Pre-execution (conditional)</h3>
+      <ul>
+        <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
+        <li><strong>Complexity triage</strong> — trivial → route to <code>silver:fast</code>; fuzzy → FLOW 3 CLARIFY first</li>
+        <li><strong>FLOW 2 ORIENT</strong> — <code>silver:scan</code> / <code>silver:context</code> for brownfield orientation</li>
+        <li><strong>FLOW 5 SPECIFY</strong> — when no <code>.planning/SPEC.md</code> (enforced by workflow-chain-guard)</li>
+        <li><strong>FLOW 13 pre-plan</strong> — <code>silver:quality-gates</code> before planning</li>
+        <li><strong>FLOW 6 PLAN</strong> — <code>silver:context</code>, <code>silver:plan</code>, optional <code>silver:validate</code></li>
+        <li><strong>FLOW 7</strong> — <code>silver:ui-contract</code> when UI scope detected</li>
+      </ul>
 
-      <h3>Step 1a — Codebase orientation</h3>
-      <p>Invoke <code>silver:scan</code> for rapid SB orientation. If this is a brownfield project or deeper structure mapping is needed, invoke <code>silver:context</code> for SB-managed codebase mapping.</p>
+      <h3>FLOW 8 EXECUTE</h3>
+      <p><code>tdd</code> gate for behavior-changing code, then <code>silver:execute</code>. Per-phase loop: FLOW 6 → FLOW 8 → post-execution chain for each ROADMAP phase.</p>
 
-      <h3>Step 1b — Fuzzy scope clarification (conditional)</h3>
-      <p>Only if complexity triage found fuzzy intent or arguments are empty: invoke <code>silver:clarify</code> through the active host's supported skill channel for Socratic framing, option comparison, and decision-ready handoff before structured planning.</p>
-
-      <h3>Step 1c — Optional research review (conditional)</h3>
-      <p>Offered automatically when the change is architecturally significant (choosing between 2+ architectures, selecting a tech stack from scratch, domain is novel, change affects public API or data model). SB asks:</p>
-      <div class="code-block">This appears to be an architecturally significant change. Would you like the optional research/review path to run before locking the spec?
-
-A. Yes — run the optional multi-AI/research review path
-B. No — proceed with spec as-is</div>
-      <p><strong>Note:</strong> this step informs the spec PRE-implementation. The optional cross-AI review inside Step 9 reviews completed code POST-execution. Both steps are independent.</p>
-
-      <h3>Step 2 — Testing strategy</h3>
-      <p>Invoke <code>/testing-strategy</code>. This MUST run after spec approval and before writing plans so test requirements are baked into the implementation plan.</p>
-
-      <h3>Step 2.5 — Writing plans</h3>
-      <p>Invoke <code>silver:plan</code> when SB needs a structured implementation plan. For complex scope, the planning pass includes SB plan-shaping checks before execution begins.</p>
-
-      <h3>Step 2.7 — Pre-build validation</h3>
-      <p>When a SPEC/PLAN coverage check is needed before implementation, invoke <code>silver:validate</code>. BLOCK findings stop the workflow before quality gates or planning continue; WARN findings must be tracked explicitly.</p>
-
-      <h3>Step 3 — Pre-plan quality gates (8 core dimensions + conditional gates)</h3>
-      <p>Invoke <code>/silver:quality-gates</code>. All applicable dimensions run, including the security dimension. If the feature touches infrastructure, route those infra concerns through the DevOps quality gate as well.</p>
-
-      <h3>Step 4 — Context phase</h3>
-      <p>Invoke <code>silver:context</code>. Adaptive questioning produces <code>CONTEXT.md</code> with locked decisions for the planner.</p>
-
-      <h3>Step 5 — Analyze dependencies</h3>
-      <p>Analyze phase dependencies inside the SB planning pass before the plan is finalized.</p>
-
-      <h3>Step 6 — Plan phase</h3>
-      <p>Invoke <code>silver:plan</code>. Produces <code>PLAN.md</code> with a verification loop.</p>
-
-      <h3>Step 7 — Execute phase</h3>
-      <p>In Interactive mode (default): invoke <code>silver:execute --tdd</code> for implementation plans, or <code>silver:execute</code> without <code>--tdd</code> for config-only, docs-only, or infra-only plans. In Autonomous mode (§10e), continue only when the SB TDD boundary is satisfied. For behavior-changing code, the <code>tdd</code> gate runs before the execution wave starts.</p>
-
-      <h3>Step 8 — Verify work</h3>
-      <p>Invoke <code>silver:verify</code>. UAT, must-haves, artifact checks. Phase is NOT complete until this passes. <strong>Non-skippable gate.</strong></p>
-
-      <h3>Step 8b — Test gap fill (conditional)</h3>
-      <p>Only if <code>silver:verify</code> surfaces coverage gaps: invoke <code>silver:add-tests</code> or the local test-generation path to generate tests from UAT criteria.</p>
-
-      <h3>Steps 9a–9d — Code review sequence</h3>
-      <p>Run in order: <code>silver:review-request</code> → <code>silver:review</code> → [if issues: <code>silver:review-triage</code>] → [for architecture-significant changes: expanded <code>silver:review</code>] → <code>silver:review-triage</code>. SB owns review framing and triage at this boundary.</p>
-
-      <h3>Step 9e — Backlog capture from review</h3>
-      <p>Capture accepted-but-deferred review findings with <code>/silver:add</code> so they are tracked instead of disappearing after review completion.</p>
-
-      <h3>Step 10 — Security review</h3>
-      <p>Invoke <code>security</code>. This is the independent security review gate and is non-skippable regardless of §10 preferences.</p>
-
-      <h3>Step 11 — Secure phase</h3>
-      <p>Invoke <code>silver:secure</code>. It verifies threat mitigations, secrets handling, and security-sensitive behavior for the completed phase.</p>
-
-      <h3>Step 12 — Validate phase</h3>
-      <p>Invoke <code>silver:validate</code> for validation gap filling.</p>
-
-      <h3>Step 12b — Tech debt review</h3>
-      <p>Invoke <code>tech-debt</code> when available. Any shortcuts or deferred refactors that cannot be fixed immediately must be captured through <code>/silver:add</code>.</p>
-
-      <h3>Step 13 — Pre-ship quality gates</h3>
-      <p>Invoke <code>/silver:quality-gates</code> again for the full 8-core-dimension sweep plus conditional AI/LLM and DevOps gates. Pre-ship quality gates are <strong>non-skippable</strong>.</p>
-
-      <h3>Step 13b — Doc-scheme compliance (conditional)</h3>
-      <p>If <code>docs/doc-scheme.md</code> exists, verify documentation freshness before PR/ship: update the changelog, current-month knowledge and learnings files, any affected durable docs, and <code>docs/task-doc-checklist.json</code>. If the scheme is missing or incomplete, recover it with <code>/silver:ensure-docs --recover-scheme</code> before proceeding.</p>
-
-      <h3>Steps 14–15 — Finishing branch and ship</h3>
-      <p>Invoke <code>silver:branch-finish</code> → optionally prepare a clean PR branch → <code>silver:ship</code>. This is phase-level merge — not milestone-level publish (that is <code>silver:release</code>).</p>
-
-      <h3>Step 16 — Episodic memory</h3>
-      <p>Invoke <code>episodic-memory:remembering-conversations</code> to record key decisions and learnings from this feature.</p>
-
-      <h3>Step 17 — Milestone completion (last phase only)</h3>
-      <p>If this is the last phase of the milestone: run <code>silver:release</code> so the SB release workflow performs UAT audit, milestone audit, gap closure, archival, and versioned release steps.</p>
+      <h3>Post-execution chain (canonical order)</h3>
+      <p>After FLOW 8: <strong>FLOW 9 (if UI) → FLOW 10 REVIEW → FLOW 12 VERIFY → FLOW 11 SECURE → FLOW 13 pre-ship → FLOW 14 SHIP</strong> (<code>silver:branch-finish</code> → <code>silver:completion-audit</code> → <code>silver:ship</code>).</p>
+      <p>FLOW 15 DEBUG inserts dynamically on execution, test, or CI failure. FLOW 17 DOCUMENT runs when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
+      <p>Per-flow skill steps and exit conditions: <code>docs/composable-flows-contracts.md</code>.</p>
 
       <div class="divider"></div>
 
@@ -304,9 +248,9 @@ B. No — proceed with spec as-is</div>
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>silver:secure</code> (Step 10)</li>
-            <li><code>/silver:quality-gates</code> pre-ship (Step 13)</li>
-            <li><code>silver:verify</code> (Step 8)</li>
+            <li><code>silver:secure</code> (FLOW 11)</li>
+            <li><code>/silver:quality-gates</code> pre-ship (FLOW 13)</li>
+            <li><code>silver:verify</code> (FLOW 12)</li>
           </ul>
         </div>
       </div>
