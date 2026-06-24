@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  # Latest site push wins; avoids serial deploys when main gets rapid site/** commits.
+  cancel-in-progress: true
 
 jobs:
   deploy:
