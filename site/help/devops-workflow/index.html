@@ -143,7 +143,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>DevOps &amp; IaC Workflow</h1>
-    <p>The composed infrastructure workflow with Incident Fast Path, Blast Radius assessment, IaC-adapted quality gates, environment promotion, rollback checks, and production deployment.</p>
+    <p>The <code>WF-SILVER-DEVOPS</code> infrastructure cycle — <code>AF-BLAST-RADIUS</code>, <code>AF-DEVOPS-ROUTE</code>, IaC quality gates, environment promotion, rollback checks, and production deployment.</p>
   </div>
 </div>
 
@@ -184,13 +184,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h2 id="overview">How the DevOps Workflow Differs From Dev</h2>
-      <p>The DevOps workflow follows the same overall structure as the software engineering workflow, but with three important additions:</p>
+      <p>This guide walks <code>WF-SILVER-DEVOPS</code> from <code>docs/apo-catalog.json</code>. It shares the same per-phase skeleton as application work but inserts infrastructure-specific atomic flows up front and requires environment promotion after all phases complete in the lowest tier.</p>
+      <p>Choose this path when the task touches IaC, CI/CD pipelines, cloud resources, or operational runbooks — not for ordinary application feature work (<code>WF-SILVER-FEATURE</code>).</p>
+      <p>Three additions distinguish DevOps from the application workflow:</p>
       <ul>
-        <li><strong>Incident Fast Path</strong> — An emergency shortcut for active production incidents</li>
-        <li><strong>Blast Radius assessment</strong> — Required before planning any infra change (replaces the application-level quality gate as the first gate)</li>
-        <li><strong>Environment Promotion</strong> — After all phases complete in dev, the workflow must be re-run for staging, then again for production</li>
+        <li><strong>Incident Fast Path</strong> — Emergency shortcut for active production incidents (still requires <code>AF-BLAST-RADIUS</code>)</li>
+        <li><strong><code>AF-BLAST-RADIUS</code></strong> — Required before planning any infra change (replaces application quality gate as the first risk gate)</li>
+        <li><strong>Environment Promotion</strong> — After all phases complete in dev, re-run execute/verify for staging, then production</li>
       </ul>
-      <p>The per-phase loop order also differs: <strong>Discuss → Blast Radius → DevOps Quality Gates → Plan → Execute → Verify → Code Review</strong>.</p>
+      <p>The per-phase loop order: <strong>Discuss (<code>AF-ORIENT</code>) → Blast Radius (<code>AF-BLAST-RADIUS</code>) → DevOps Quality Gates (<code>AF-QUALITY-GATE</code>) → Plan (<code>AF-PLAN</code>) → Execute (<code>AF-EXECUTE</code>) → Verify (<code>AF-VERIFY</code>) → Code Review (<code>AF-REVIEW</code> chain)</strong>.</p>
 
       <div class="callout callout-warn" id="yaml-rule">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>

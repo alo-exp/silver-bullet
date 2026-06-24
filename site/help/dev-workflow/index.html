@@ -135,7 +135,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Software Engineering Workflow</h1>
-    <p>The complete SB-composed application development cycle: route intent, clarify/spec when needed, plan and execute with SB, verify, review, run fresh tests, update docs, ship, and release.</p>
+    <p>The <code>WF-SILVER-FEATURE</code> application delivery cycle — composed from APO catalog atomic flows from bootstrap through post-execute gates to ship and release.</p>
   </div>
 </div>
 
@@ -176,14 +176,16 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h2 id="overview">How the Workflow Loop Works</h2>
-      <p>The Silver Bullet software engineering workflow is a composed path with three recurring sections:</p>
+      <p>This guide walks the <strong>software engineering</strong> path documented as <code>WF-SILVER-FEATURE</code> in <code>docs/apo-catalog.json</code>. Silver Bullet composes it from canonical <code>AF-*</code> atomic flows — for example <code>AF-ORIENT</code>, <code>AF-QUALITY-GATE</code>, <code>AF-PLAN</code>, <code>AF-EXECUTE</code>, then the <code>WF-POST-EXEC-GATES</code> chain (<code>AF-REVIEW</code>, <code>AF-VERIFY</code>, <code>AF-SECURE</code>, <code>AF-SHIP</code>).</p>
+      <p>Use this page when you need the full application lifecycle. For bounded or trivial work, route through <code>/silver:fast</code> (<code>AF-FAST-PATH</code>). For infrastructure, use the <a href="../devops-workflow/">DevOps workflow</a> (<code>WF-SILVER-DEVOPS</code>) instead.</p>
+      <p>The loop has three recurring sections:</p>
       <ol>
         <li><strong>Project initialization</strong> — runs once per project to produce requirements and a roadmap</li>
         <li><strong>Per-phase loop</strong> — repeats for every phase in the roadmap (Steps 3–12)</li>
         <li><strong>Finalization, deployment, and release</strong> — runs once after all phases are complete</li>
       </ol>
 
-      <p>Within the per-phase loop, every phase follows the same sequence: <strong>Discuss → Quality Gates → Plan → Execute → Verify → Code Review</strong>. The order is a hard constraint enforced by hooks — you cannot start Planning before Quality Gates passes.</p>
+      <p>Within the per-phase loop, every phase follows the same sequence: <strong>Discuss (<code>AF-ORIENT</code>) → Quality Gates (<code>AF-QUALITY-GATE</code>) → Plan (<code>AF-PLAN</code>) → Execute (<code>AF-EXECUTE</code>) → Verify (<code>AF-VERIFY</code>) → Code Review (<code>AF-REVIEW</code> chain)</strong>. Hooks enforce this order — planning cannot start before quality gates pass.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>

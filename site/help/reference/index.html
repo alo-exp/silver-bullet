@@ -136,7 +136,7 @@ footer a:hover{color:var(--accent-light)}
 <div class="page-hero">
   <div class="container">
     <h1>Command Reference</h1>
-    <p>Every Silver Bullet command, config option, and planning file — all in one place for quick lookup.</p>
+    <p>Authoritative lookup for Silver Bullet v0.48.1 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 27 AF-* atomic flows, 22 workflows, and planning artifacts.</p>
   </div>
 </div>
 
@@ -174,8 +174,8 @@ footer a:hover{color:var(--accent-light)}
     <article class="doc-content">
 
       <!-- THREE-HOST INSTALL -->
-      <h2 id="runtime-install">Three-Host Runtime Install (v0.40.0)</h2>
-      <p>Silver Bullet ships the same workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project setup is always <code>/silver:init</code> after the host has the plugin. Run <code>bash scripts/sb-bootstrap.sh</code> for first-time orientation or <code>bash scripts/sb-diagnostics.sh</code> to read capability tier 0&ndash;3 for the active host.</p>
+      <h2 id="runtime-install">Three-Host Runtime Install (v0.48.1)</h2>
+      <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. Run <code>bash scripts/sb-bootstrap.sh</code> for first-time orientation or <code>bash scripts/sb-diagnostics.sh</code> to read capability tier 0&ndash;3 for the active host.</p>
 
       <table class="ref-table">
         <thead><tr><th>Host</th><th>Public marketplace</th><th>Checkout installer</th><th>State root</th></tr></thead>
@@ -248,7 +248,7 @@ footer a:hover{color:var(--accent-light)}
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names. Claude Code uses slash commands; Codex v0.40.0+ exposes the native picker as <code>/silver:</code> entries and keeps packaged <code>skill-source/</code> files hidden from duplicate plugin picker listings. Cursor uses the Skill tool with merged hooks.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code uses slash commands; Codex exposes the native <code>/silver:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -353,7 +353,7 @@ footer a:hover{color:var(--accent-light)}
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Named workflows that <code>/silver</code> can compose after intent classification. They run through Silver Bullet's lifecycle skills, with optional external research/provider skills used only at explicit enrichment boundaries where installed.</p>
+      <p>Named <code>WF-*</code> workflows that <code>/silver</code> composes after intent classification. Each workflow is a composition tree of <code>AF-*</code> atomic flows from <code>docs/apo-catalog.json</code>; optional extension skills enrich domains only at explicit boundaries.</p>
 
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
@@ -426,9 +426,9 @@ footer a:hover{color:var(--accent-light)}
 
       <div class="divider"></div>
 
-      <!-- RUNTIME PARITY (v0.40.0) -->
-      <h2 id="runtime-parity">Runtime Parity Scripts (v0.40.0)</h2>
-      <p>Phase 056 closes the gap between documented structural parity contracts and hook-enforced runtime behavior.</p>
+      <!-- RUNTIME PARITY (v0.48.1) -->
+      <h2 id="runtime-parity">Runtime Parity Scripts (v0.48.1)</h2>
+      <p>Structural parity scripts align documented evidence contracts with hook-enforced runtime behavior across all three hosts.</p>
 
       <table class="ref-table">
         <thead><tr><th>Script / gate</th><th>Purpose</th></tr></thead>
