@@ -42,7 +42,7 @@ assert_file_contains() {
   local label="$1"
   local path="$2"
   local pattern="$3"
-  if grep -Eq "$pattern" "$path"; then
+  if grep -Eq -- "$pattern" "$path"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -55,7 +55,7 @@ assert_text_contains() {
   local label="$1"
   local text="$2"
   local pattern="$3"
-  if grep -Eq "$pattern" <<<"$text"; then
+  if grep -Eq -- "$pattern" <<<"$text"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -68,7 +68,7 @@ assert_text_not_contains() {
   local label="$1"
   local text="$2"
   local pattern="$3"
-  if grep -Eq "$pattern" <<<"$text"; then
+  if grep -Eq -- "$pattern" <<<"$text"; then
     echo "FAIL: $label"
     FAIL=$((FAIL + 1))
   else
@@ -105,7 +105,7 @@ assert_file_contains "Claude matrix auth helper exists" "${REPO_ROOT}/scripts/li
 assert_file_contains "Claude matrix auth exports settings env" "${REPO_ROOT}/scripts/lib/claude-matrix-auth.sh" 'claude_matrix_export_settings_env'
 assert_file_contains "Claude live agent avoids login shell for clean env" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'bash -c'
 assert_file_contains "Claude interactive harness dismisses splash screen" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'dismiss_claude_splash'
-assert_file_contains "Claude interactive harness passes settings for api_key auth" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" '--settings $settings_file'
+assert_file_contains "Claude interactive harness passes settings for api_key auth" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" '--settings \$settings_file'
 assert_file_contains "enterprise matrix row 1 accepts routing state fallback" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 'verify_row_routing_state_delta'
 assert_file_contains "live doc scheme uses Claude-native Bash wording" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'Use the Bash tool to run exactly'
 assert_file_contains "live doc scheme has deterministic script fallback" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'bash "\./\.live-doc-step\.sh"'
