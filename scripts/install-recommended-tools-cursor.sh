@@ -24,5 +24,15 @@ install_rule graphify.mdc
 install_rule agentmemory.mdc
 install_rule recommended-tools.mdc
 
+if [[ -f "${RULES_DIR}/context-mode.mdc" ]]; then
+  install_rule context-mode.mdc
+elif command -v context-mode >/dev/null 2>&1; then
+  cm_pkg="$(npm root -g 2>/dev/null)/context-mode"
+  if [[ -f "${cm_pkg}/configs/cursor/context-mode.mdc" ]]; then
+    cp "${cm_pkg}/configs/cursor/context-mode.mdc" "${RULES_DIR}/context-mode.mdc"
+    install_rule context-mode.mdc
+  fi
+fi
+
 printf '\nCursor recommended-tool rules installed under %s\n' "$RULES_DIR"
 printf 'Verify agentmemory MCP in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)\n'
