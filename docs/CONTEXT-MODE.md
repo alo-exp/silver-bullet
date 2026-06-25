@@ -57,11 +57,16 @@ claude plugin install context-mode@context-mode
 
 ## Platform Wiring
 
-| Host | Steps | Artifacts |
-|------|-------|-----------|
-| Claude Code | Plugin install (above) | `~/.claude/plugins/context-mode` |
-| Cursor | Copy `context-mode.mdc` to `.cursor/rules/`; merge MCP + hooks per [upstream Cursor docs](https://github.com/mksglu/context-mode#cursor) | `~/.cursor/mcp.json`, `~/.cursor/hooks.json` |
-| Codex | Merge `config.toml` + `hooks.json` blocks; copy `configs/codex/AGENTS.md` | `~/.codex/config.toml`, `~/.codex/hooks.json` |
+| Host | Steps | Artifacts | Status |
+|------|-------|-----------|--------|
+| Claude Code | Plugin install (above) | `~/.claude/plugins/context-mode` | Supported |
+| Cursor | Merge MCP + hooks per [upstream Cursor docs](https://github.com/mksglu/context-mode#cursor) | `~/.cursor/mcp.json`, `~/.cursor/hooks.json`, `~/.cursor/rules/` | Supported |
+| Codex | Merge `config.toml` + `hooks.json` blocks | `~/.codex/config.toml`, `~/.codex/hooks.json` | Supported |
+| OpenCode | Plugin + MCP in `opencode.json`; copy `AGENTS.md` | `~/.config/opencode/` | Supported |
+| Hermes | MCP YAML merge only (no official adapter) | `~/.hermes/config.yaml` | Partial |
+| Goose | — | — | **Unsupported** |
+
+**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host>` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 SB runs `/silver:init` scaffold steps to inject the instruction fragment into `silver-bullet.md` and `CLAUDE.md` (idempotent sentinel block from `templates/context-mode-hint.md.base`).
 
@@ -80,18 +85,17 @@ bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
 
 ## Optimization checklist (research-backed)
 
-Run `bash scripts/optimize-rtk-context-mode.sh` after install when Context Mode is opted in:
+Run `bash scripts/optimize-rtk-context-mode.sh` after install:
 
-| Step | Cursor | Claude | Codex |
-|------|--------|--------|-------|
-| CLI / plugin | `npm install -g context-mode` | `claude plugin install context-mode@context-mode` | `npm install -g context-mode` + merge `config.toml` |
-| MCP | Merge `configs/cursor/mcp.json` → `~/.cursor/mcp.json` | Plugin auto-registers | `[mcp_servers.context-mode]` in `config.toml` |
-| Hooks (full set) | `preToolUse`, `postToolUse`, `sessionStart`, `stop`, `afterAgentResponse` | Plugin manifest (incl. `PreCompact`) | 6 events in `hooks.json` |
-| Rules | `context-mode.mdc` + `token-compression-enforcement.mdc` in `~/.cursor/rules/` **and** project `.cursor/rules/` | Plugin rules | `configs/codex/AGENTS.md` |
-| Global rules install | `bash scripts/install-recommended-tools-cursor.sh --global` | — | — |
-| Instruction fragment | `templates/context-mode-hint.md.base` in project docs | same | same |
-| Doctor | `CONTEXT_MODE_PLATFORM=cursor context-mode doctor` | `/context-mode:ctx-doctor` | `context-mode doctor` |
-| Restart agent | Required after plugin/MCP/hook changes | Required | Required |
+| Step | Cursor | Claude | Codex | OpenCode | Hermes | Goose |
+|------|--------|--------|-------|----------|--------|-------|
+| CLI / plugin | `npm install -g context-mode` | `claude plugin install context-mode@context-mode` | `npm install -g context-mode` | plugin in `opencode.json` | MCP YAML | SKIP |
+| MCP | `~/.cursor/mcp.json` | Plugin auto-registers | `[mcp_servers.context-mode]` | `mcp.context-mode` | `mcp_servers` in yaml | — |
+| Hooks | pre/post/session/stop/afterAgentResponse | Plugin manifest | 6 events in hooks.json | TS plugin events | none official | — |
+| Rules | `~/.cursor/rules/*.mdc` | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | — | — |
+| Doctor | `CONTEXT_MODE_PLATFORM=cursor` | `/context-mode:ctx-doctor` | `=codex` | `=opencode` | SKIP | SKIP |
+
+Verification: [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 **Hook ordering:** Place context-mode `preToolUse` **after** RTK `preToolUse` for Shell — RTK rewrites first; CM routes/denies WebFetch and large Read analysis.
 
@@ -114,7 +118,9 @@ context-mode doctor       # terminal
 
 - Cursor Context Mode wiring is partly manual (plugin path or MCP + hooks merge)
 - Codex PreToolUse lacks `updatedInput` — capture works; live rewrites limited
-- Goose / Pi: thinner upstream docs — see RTK.md for Pi RTK path
+- Goose: **no upstream RTK or Context Mode integration** — see [docs/rtk-cm/verification/goose-verify-graphify-am.md](rtk-cm/verification/goose-verify-graphify-am.md)
+- Hermes: Context Mode MCP merge only (partial) — see [docs/rtk-cm/verification/hermes-verify-graphify-am.md](rtk-cm/verification/hermes-verify-graphify-am.md)
+- Pi: RTK via `rtk init --agent pi`; CM via OpenCode-family adapters where applicable
 - Insight dashboard (`context-mode.com/insight`) is optional paid SaaS — out of SB scope
 
 ## Complementary Tools
