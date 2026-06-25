@@ -256,6 +256,8 @@
       "install_failure_reason": null,
       "required_when_enabled": true,
       "min_version": "0.42.0",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
       "install_commands": [
         "brew tap rtk-ai/rtk && brew install rtk",
         "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
@@ -271,7 +273,9 @@
           "pre_index": [
             "rtk init -g --agent cursor"
           ],
-          "post_index": []
+          "post_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ]
         },
         "codex": {
           "pre_index": [
@@ -289,6 +293,8 @@
       "install_failure_reason": null,
       "required_when_enabled": true,
       "min_node_version": "22.5",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
       "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license",
       "install_commands": [
         "npm install -g context-mode"
@@ -305,9 +311,12 @@
         },
         "cursor": {
           "pre_index": [
-            "Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md"
+            "npm install -g context-mode",
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
           ],
-          "post_index": []
+          "post_index": [
+            "Restart Cursor after MCP/hook merge"
+          ]
         },
         "codex": {
           "pre_index": [

@@ -268,7 +268,8 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 1. Install RTK CLI per `docs/RTK.md` (verify `rtk gain --help`)
 2. Run host `rtk init` command from `platform_install_commands`
-3. `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+3. `bash scripts/optimize-rtk-context-mode.sh --host auto`
+4. `bash scripts/enable-rtk-context-mode.sh --tool rtk`
 
 On success, clear suspension. On failure, keep suspension.
 
@@ -289,9 +290,10 @@ jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-b
 
 1. Verify Node >= 22.5
 2. `npm install -g context-mode` and/or Claude plugin steps per `docs/CONTEXT-MODE.md`
-3. Re-scaffold instruction fragment (`templates/context-mode-hint.md.base`)
-4. Remind user to restart agent
-5. `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+3. `bash scripts/optimize-rtk-context-mode.sh --host auto`
+4. Re-scaffold instruction fragment (`templates/context-mode-hint.md.base`)
+5. Remind user to restart agent
+6. `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
 
 On success, clear suspension.
 
