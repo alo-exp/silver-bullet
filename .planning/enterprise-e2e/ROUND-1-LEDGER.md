@@ -296,3 +296,35 @@ Follow-up from [Commit harness fix, run row 1](e14313d7-45a2-4cce-861c-c7190b693
 1. **Claude CLI auth 401** — `claude --print` fails on host; matrix cannot generate tokens until `claude login` / valid API key or claude.ai OAuth is restored.
 2. Full row 1 evidence file (`.planning/workflows/router-session.md`) still optional — routing-only pass criteria ready once auth works.
 3. Pre-existing 3 Codex package test failures still block round gate green.
+
+---
+
+## Interactive TUI validation follow-up (Auth wrapper subagent, 2026-06-26)
+
+Follow-up from [Fix matrix prompt, rerun row 1](b7b598d8-4cd3-48bc-8ddc-dfd89bf500fd). Harness HEAD `3b6aa2c3` + auth wrapper commit pending.
+
+| Step | Pass/Fail | Notes |
+|------|-----------|-------|
+| Root cause: `~/.claude/settings.json` `env.ANTHROPIC_API_KEY` | **Pass** | Shell `unset` / `env -i` insufficient — Claude injects keys from settings; conflict banner when combined with claude.ai OAuth |
+| `claude-matrix-auth.sh` (conflict-only strip + restore) | **Pass** | Strips API-key env only when `authMethod==claude.ai` **and** `apiKeySource==ANTHROPIC_API_KEY`; skips strip for API-key-only hosts |
+| Agent: conditional `env -i` | **Pass** | OAuth conflict path uses `env -i`; API-key-only uses inherited env + `unset` shell keys |
+| Matrix script: `unset ANTHROPIC_API_KEY` | **Pass** | Top-level shell key cleared before matrix rows |
+| `d9ca5aaa` splash/auth agent | **N/A** | Commit not present on SB `main`; splash handlers already in `55411814` / expect harness |
+| Matrix row 1 attempt 6 (unconditional strip) | **Fail** | `Not logged in` in TUI; log: `.e2e-row1-attempt6.log` |
+| Matrix row 1 attempt 7 (API key restored, conflict-only logic pending) | **Fail** | Same `Not logged in`; `/silver` slash requires claude.ai session — MiniMax API-key TUI shows billing but cannot route |
+| `claude auth status` (post-restore) | **Partial** | `authMethod: api_key` from settings; claude.ai OAuth session lost after `/logout` probe — needs `claude auth login` |
+| `claude --print "say OK"` | **Pass** | Simple prompts work with API key |
+| `claude --print "/silver …"` | **Fail** | `Not logged in · Please run /login` — SB slash routing needs claude.ai OAuth, not settings API key alone |
+| `bash tests/e2e-live/test-e2e-live-suite.sh` | **Pass** | 94 passed after auth wrapper assertions |
+| `bash tests/run-all-tests.sh` | **Partial** | 4301 passed, 1 failed (prior run); re-run in progress |
+
+**Row 1 interactive matrix: FAIL** — harness auth wrapper ready; host needs `claude auth login` (claude.ai) and settings.json API-key env removed or conflict-resolved before `/silver` TUI can authenticate.
+
+**Evidence paths:**
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt6.log`
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt7.log`
+
+**Operator action required:**
+1. `jq 'del(.env.ANTHROPIC_API_KEY, .env.ANTHROPIC_BASE_URL)' ~/.claude/settings.json` (or keep keys — harness strips temporarily on oauth conflict only)
+2. `claude auth login` (claude.ai subscription) in a real terminal
+3. Re-run: `SB_E2E_MATRIX_FORCE=1 bash scripts/run-enterprise-e2e-matrix.sh 1`
