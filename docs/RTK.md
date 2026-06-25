@@ -73,7 +73,26 @@ Codex limitation: PreToolUse on Codex supports deny rules only — RTK savings o
 
 ```bash
 bash scripts/enable-rtk-context-mode.sh --tool rtk
+bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
 ```
+
+## Optimization checklist (research-backed)
+
+Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** Cursor/Claude/Codex wiring. Run after `/silver:init` or `/silver:update` when RTK is opted in:
+
+| Step | Cursor | Claude | Codex |
+|------|--------|--------|-------|
+| RTK hook | `rtk init -g --agent cursor` | `rtk init -g` | `rtk init -g --codex` (AGENTS.md) |
+| Verify binary | `rtk gain --help` (not Rust Type Kit) | same | same |
+| Allow-list | Merge `scripts/lib/cursor-cli-allowlist.json` → `~/.cursor/cli-config.json` `permissions.allow` | N/A | N/A |
+| Hook rewrite test | `echo '{"tool_name":"Shell","tool_input":{"command":"git status"}}' \| rtk hook cursor` → `updated_input` | `rtk hook claude` | prompt-only |
+| RTK before CM | RTK `preToolUse` matcher `Shell` should run **before** context-mode pretooluse in hook order | plugin order | N/A |
+
+**Critical Cursor coupling:** `rtk hook cursor` only rewrites commands matching `permissions.allow` in `~/.cursor/cli-config.json`. Missing entries return `{}` and run uncompressed — this is the #1 misconfiguration.
+
+**Known pitfall:** `reachingforthejack/rtk` (Rust Type Kit) shares the `rtk` name. Verify with `rtk gain --help`.
+
+**Known pitfall:** Older RTK Cursor hooks treated `rtk rewrite` exit code 3 as failure ([#1112](https://github.com/rtk-ai/rtk/issues/1112)); use RTK >= 0.42.0 with native `rtk hook cursor`.
 
 Manual checks:
 

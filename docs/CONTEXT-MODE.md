@@ -74,7 +74,30 @@ Tool name placeholders vary by host (Claude plugin-qualified names vs Cursor MCP
 
 ```bash
 bash scripts/enable-rtk-context-mode.sh --tool context_mode
+bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
 ```
+
+## Optimization checklist (research-backed)
+
+Run `bash scripts/optimize-rtk-context-mode.sh` after install when Context Mode is opted in:
+
+| Step | Cursor | Claude | Codex |
+|------|--------|--------|-------|
+| CLI / plugin | `npm install -g context-mode` | `claude plugin install context-mode@context-mode` | `npm install -g context-mode` + merge `config.toml` |
+| MCP | Merge `configs/cursor/mcp.json` → `~/.cursor/mcp.json` | Plugin auto-registers | `[mcp_servers.context-mode]` in `config.toml` |
+| Hooks (full set) | `preToolUse`, `postToolUse`, `sessionStart`, `stop`, `afterAgentResponse` | Plugin manifest (incl. `PreCompact`) | 6 events in `hooks.json` |
+| Rules | `context-mode.mdc` + `token-compression-enforcement.mdc` in `~/.cursor/rules/` **and** project `.cursor/rules/` | Plugin rules | `configs/codex/AGENTS.md` |
+| Instruction fragment | `templates/context-mode-hint.md.base` in project docs | same | same |
+| Doctor | `CONTEXT_MODE_PLATFORM=cursor context-mode doctor` | `/context-mode:ctx-doctor` | `context-mode doctor` |
+| Restart agent | Required after plugin/MCP/hook changes | Required | Required |
+
+**Hook ordering:** Place context-mode `preToolUse` **after** RTK `preToolUse` for Shell — RTK rewrites first; CM routes/denies WebFetch and large Read analysis.
+
+**Read deny gap:** Upstream has no `permission: deny` on Read by file size. Enforcement is **cooperative** via `.mdc` rules + SB `context-mode-gate.sh` usage tracking — not a hard hook deny.
+
+**Cursor `additional_context` bug:** Hooks accept `additional_context` but Cursor does not surface it to the model ([#155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). Routing must use `.mdc` rules and MCP tool descriptions, not hook-injected context.
+
+**Duplicate hooks:** If both plugin and manual `hooks.json` entries exist, `context-mode doctor` warns — remove one source.
 
 Manual (requires restarted agent):
 
