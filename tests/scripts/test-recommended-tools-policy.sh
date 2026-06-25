@@ -138,9 +138,17 @@ assert_grep "silver-update RTK retry" \
   "$REPO_ROOT/skills/silver-update/SKILL.md" \
   "Step 8c: RTK"
 
+assert_grep "silver-init stack optimize step" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "sb-optimize-stack.sh --apply"
+
+assert_grep "silver-update stack optimize step" \
+  "$REPO_ROOT/skills/silver-update/SKILL.md" \
+  "Step 8d: Optimize Graphify + agentmemory stack"
+
 assert_grep "silver-update Context Mode retry" \
   "$REPO_ROOT/skills/silver-update/SKILL.md" \
-  "Step 8d: Context Mode"
+  "Step 8e: Context Mode"
 
 assert_grep "RTK.md exists" \
   "$REPO_ROOT/docs/RTK.md" \

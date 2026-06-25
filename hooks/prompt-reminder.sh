@@ -461,6 +461,20 @@ CODE INTELLIGENCE: save via agentmemory, retrieve via Graphify — every session
   fi
 fi
 
+# Stack optimization status when score below threshold
+if [[ -f "$_lib_dir/stack-optimizer.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/stack-optimizer.sh
+  source "$_lib_dir/stack-optimizer.sh"
+  stack_opt_line="$(sb_stack_optimization_prompt_line "$PWD" "$config_file" 2>/dev/null || true)"
+  if [[ -n "$stack_opt_line" ]]; then
+    msg="${msg}
+
+---
+
+${stack_opt_line}"
+  fi
+fi
+
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0
