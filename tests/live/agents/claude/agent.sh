@@ -85,8 +85,10 @@ agent_invoke() {
         CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}" \
         expect "$expect_script" 2>&1
     }
-    if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-${SB_E2E_ENTERPRISE_MATRIX:-}}" == "1" ]]; then
-      # env -i + bash -c (not -lc) avoids login-shell profile re-exporting keys.
+    if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-0}" == "1" ]]; then
+      # Opt-in env -i + bash -c (not -lc) for OAuth/key-conflict isolation only.
+      # Default (SB_E2E_MATRIX_CLEAN_ENV=0) inherits caller auth — env -i strips
+      # keychain/HOME credentials and often yields "Not logged in" in interactive TUI.
       # Also strip ~/.claude/settings.json env keys — Claude reads API keys there
       # even when the shell env is empty, which conflicts with claude.ai OAuth.
       # shellcheck source=scripts/lib/claude-matrix-auth.sh

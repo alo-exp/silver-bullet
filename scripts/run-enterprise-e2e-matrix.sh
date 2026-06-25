@@ -13,15 +13,21 @@ MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
 export CLAUDE_USE_INTERACTIVE=1
-# Avoid shell-level API key env conflicting with claude.ai OAuth in matrix sessions.
-unset ANTHROPIC_API_KEY OPENAI_API_KEY 2>/dev/null || true
+# SB_E2E_MATRIX_CLEAN_ENV=1 (env -i) is opt-in for claude.ai OAuth users whose shell
+# ANTHROPIC_API_KEY conflicts with stored credentials. It strips most env vars and can
+# leave interactive TUI at "Not logged in" when keychain / ~/.claude/ auth is required.
+# Default 0 inherits the caller's working auth (HOME, keychain, ~/.claude/).
+export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
+if [[ "${SB_E2E_MATRIX_CLEAN_ENV}" == "1" ]]; then
+  # Only strip conflicting shell keys in clean-env mode.
+  unset ANTHROPIC_API_KEY OPENAI_API_KEY 2>/dev/null || true
+fi
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
-export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-1}"
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
@@ -69,7 +75,7 @@ Ledger:  ${LEDGER_FILE}
 Environment:
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
-  SB_E2E_MATRIX_CLEAN_ENV=1    Use env -i for Claude sessions (default 1; set 0 to inherit shell)
+  SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
