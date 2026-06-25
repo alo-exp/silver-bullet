@@ -248,6 +248,7 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement
    - **Codex:** `agentmemory connect codex --with-hooks`
    - **Cursor:** merge MCP block per `docs/AGENTMEMORY.md` (Cursor MCP config)
 5. Scaffold: `mkdir -p .agentmemory/memory .agentmemory/snapshots`
+6. **gitleaks:** `command -v gitleaks || brew install gitleaks` (macOS); verify with `gitleaks version`. Required for bridge second-line secret scan — SB optimizer also installs via `sb-optimize-stack.sh --apply`.
 
 On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
 

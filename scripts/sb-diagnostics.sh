@@ -278,6 +278,15 @@ main() {
         else
           record warn "optimize-agentmemory-bridge" "bridge not running"
         fi
+        if declare -f sb_stack_gitleaks_required >/dev/null 2>&1 \
+          && sb_stack_gitleaks_required "$sb_config" \
+          && declare -f sb_stack_gitleaks_path >/dev/null 2>&1; then
+          if sb_stack_gitleaks_path >/dev/null; then
+            record pass "optimize-gitleaks" "gitleaks installed ($(sb_stack_gitleaks_path))"
+          else
+            record warn "optimize-gitleaks" "gitleaks required but missing — brew install gitleaks"
+          fi
+        fi
       fi
       if [[ "$graphify_consent" == "enabled" && "$agentmemory_consent" == "enabled" ]]; then
         if declare -f sb_stack_graph_has_agentmemory_refs >/dev/null 2>&1 && sb_stack_graph_has_agentmemory_refs "$REPO_ROOT" "$sb_config"; then
