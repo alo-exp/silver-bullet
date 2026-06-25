@@ -49,7 +49,7 @@ sb_alumnium_platform_artifact_present() {
   mcp_name="$(sb_alumnium_mcp_server_name "${project_root}/.silver-bullet.json")"
   artifact="$(sb_alumnium_platform_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
-  grep -qi 'alumnium' "$artifact" 2>/dev/null
+  grep -qiE "alumnium|${mcp_name}" "$artifact" 2>/dev/null
 }
 
 sb_alumnium_edit_path_is_exempt() {
