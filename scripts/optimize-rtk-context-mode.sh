@@ -133,7 +133,7 @@ optimize_context_mode_cursor() {
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
   [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
   run_cmd "${merge_args[@]}"
-  bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" 2>/dev/null || true
+  bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
 }
 
 optimize_context_mode_codex() {

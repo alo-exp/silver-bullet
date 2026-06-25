@@ -14,6 +14,7 @@ Context Mode is **ELv2** — not OSI-open. Acceptable for personal/internal use.
     "enabled_by_user": null,
     "enforcement_suspended": false,
     "min_node_version": "22.5",
+    "read_deny_bytes": 5120,
     "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license"
   }
 }
@@ -87,6 +88,7 @@ Run `bash scripts/optimize-rtk-context-mode.sh` after install when Context Mode 
 | MCP | Merge `configs/cursor/mcp.json` → `~/.cursor/mcp.json` | Plugin auto-registers | `[mcp_servers.context-mode]` in `config.toml` |
 | Hooks (full set) | `preToolUse`, `postToolUse`, `sessionStart`, `stop`, `afterAgentResponse` | Plugin manifest (incl. `PreCompact`) | 6 events in `hooks.json` |
 | Rules | `context-mode.mdc` + `token-compression-enforcement.mdc` in `~/.cursor/rules/` **and** project `.cursor/rules/` | Plugin rules | `configs/codex/AGENTS.md` |
+| Global rules install | `bash scripts/install-recommended-tools-cursor.sh --global` | — | — |
 | Instruction fragment | `templates/context-mode-hint.md.base` in project docs | same | same |
 | Doctor | `CONTEXT_MODE_PLATFORM=cursor context-mode doctor` | `/context-mode:ctx-doctor` | `context-mode doctor` |
 | Restart agent | Required after plugin/MCP/hook changes | Required | Required |
@@ -98,6 +100,8 @@ Run `bash scripts/optimize-rtk-context-mode.sh` after install when Context Mode 
 **Cursor `additional_context` bug:** Hooks accept `additional_context` but Cursor does not surface it to the model ([#155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). Routing must use `.mdc` rules and MCP tool descriptions, not hook-injected context.
 
 **Duplicate hooks:** If both plugin and manual `hooks.json` entries exist, `context-mode doctor` warns — remove one source.
+
+**Project `hooks.json` trap:** Do not add `.cursor/hooks.json` inside a repo unless you intend team-shared hooks. Cursor (and `context-mode doctor` when cwd is that repo) prefers the workspace file over `~/.cursor/hooks.json`, which breaks global RTK/CM verification. Use global `~/.cursor/hooks.json` for personal wiring; SB plugin hooks merge there via `/silver:init`.
 
 Manual (requires restarted agent):
 
