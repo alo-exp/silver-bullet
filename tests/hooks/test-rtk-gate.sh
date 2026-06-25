@@ -3,25 +3,45 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ORIG_HOME="${HOME:-}"
+ORIG_RTK_HOME="${RTK_HOME:-}"
+ORIG_XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-}"
+ORIG_XDG_STATE_HOME="${XDG_STATE_HOME:-}"
+SB_TEST_HOME_ROOT="$(mktemp -d)"
+export HOME="$SB_TEST_HOME_ROOT"
+export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
+export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
+export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 
-ORIG_HOME="${HOME:-}"
-
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
 GATE_HOOK="$REPO_ROOT/hooks/rtk-gate.sh"
-CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+CONFIG_TEMPLATE="$REPO_ROOT/plugins/silver-bullet/templates/silver-bullet.config.json.default"
+CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$CONFIG_TEMPLATE")"
 PASS=0
 FAIL=0
 MOCK_BIN=""
 TEST_HOME=""
+TMPDIR_TEST=""
+TEST_RUN_ID=""
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${SB_RUNTIME_STATE_DIR}/test-state-${TEST_RUN_ID}" \
-    "${SB_RUNTIME_STATE_DIR}/trivial-test-${TEST_RUN_ID}" "$MOCK_BIN" "$TEST_HOME"
+  [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST"
+  if [[ -n "${SB_RUNTIME_STATE_DIR:-}" && -n "${TEST_RUN_ID:-}" ]]; then
+    rm -rf "${SB_RUNTIME_STATE_DIR}/test-state-${TEST_RUN_ID}" \
+      "${SB_RUNTIME_STATE_DIR}/trivial-test-${TEST_RUN_ID}"
+  fi
+  [[ -n "${MOCK_BIN:-}" ]] && rm -rf "$MOCK_BIN"
+  [[ -n "${TEST_HOME:-}" ]] && rm -rf "$TEST_HOME"
+  rm -rf "$SB_TEST_HOME_ROOT"
+  if [[ -n "$ORIG_HOME" ]]; then export HOME="$ORIG_HOME"; else unset HOME; fi
+  if [[ -n "$ORIG_RTK_HOME" ]]; then export RTK_HOME="$ORIG_RTK_HOME"; else unset RTK_HOME; fi
+  if [[ -n "$ORIG_XDG_CONFIG_HOME" ]]; then export XDG_CONFIG_HOME="$ORIG_XDG_CONFIG_HOME"; else unset XDG_CONFIG_HOME; fi
+  if [[ -n "$ORIG_XDG_STATE_HOME" ]]; then export XDG_STATE_HOME="$ORIG_XDG_STATE_HOME"; else unset XDG_STATE_HOME; fi
 }
 trap cleanup_all EXIT
 
@@ -67,6 +87,9 @@ EOF
 isolate_home() {
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  export RTK_HOME="$TEST_HOME/.rtk"
+  export XDG_CONFIG_HOME="$TEST_HOME/.config"
+  export XDG_STATE_HOME="$TEST_HOME/.local/state"
 }
 
 wire_hook() {
@@ -101,15 +124,27 @@ EOF
 }
 
 setup() {
+  if [[ -n "$TMPDIR_TEST" ]]; then
+    rm -rf "$TMPDIR_TEST"
+  fi
   TMPDIR_TEST="$(mktemp -d)"
   TEST_RUN_ID="$$"
   TMPSTATE="${SB_RUNTIME_STATE_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
+  if [[ -n "$MOCK_BIN" ]]; then
+    rm -rf "$MOCK_BIN"
+  fi
   MOCK_BIN=""
+  if [[ -n "$TEST_HOME" ]]; then
+    rm -rf "$TEST_HOME"
+  fi
   TEST_HOME=""
   export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-  export HOME="$ORIG_HOME"
+  export HOME="$SB_TEST_HOME_ROOT"
+  export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
+  export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
+  export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
   unset SILVER_BULLET_RUNTIME SB_RTK_HOOK_ARTIFACT 2>/dev/null || true
   mkdir -p "$(dirname "$TMPFILE")"
   touch "$TMPFILE"
