@@ -63,7 +63,9 @@ Unlike Claude Code, `rtk hook cursor` only rewrites commands that match **global
 
 To verify: `echo '{"tool_name":"Shell","tool_input":{"command":"git status"}}' | rtk hook cursor` should return `updated_input` with `rtk git status` when `Shell(git *)` (or broader) is in the allow list.
 
-`rtk gain` may still warn "No hook installed" on Cursor — it tracks Claude `settings.json` hooks; Cursor wiring is separate.
+**Recommended global allow-list** (`~/.cursor/cli-config.json` → `permissions.allow`): cover common read-heavy dev commands — `git`, `gh`, `npm`/`pnpm`/`yarn`/`bun`, `cargo`/`go`/`rustc`, `kubectl`/`docker`/`helm`/`terraform`/`pulumi`, `aws`/`gcloud`/`az`, `pytest`/`vitest`/`jest`/`mocha`/`tap`, `rg`/`grep`/`cat`/`head`/`tail`/`find`/`ls`, `jq`, `node`/`python`/`ruby`, file ops (`cp`/`mv`/`rm`/`mkdir`/`chmod`), and shell wrappers (`bash`/`sh`/`zsh`). Commands **not** allow-listed return `{}` from `rtk hook cursor` and run uncompressed. Some allow-listed commands (e.g. `yarn`, `bun`) may still return `{}` when RTK has no compressor for that binary — that is upstream RTK behavior, not an allow-list gap.
+
+`rtk gain` may still warn "No hook installed" on Cursor — it tracks Claude `settings.json` hooks; Cursor wiring is separate and savings still accrue when the hook rewrites commands.
 
 Codex limitation: PreToolUse on Codex supports deny rules only — RTK savings on Codex are primarily via `AGENTS.md` awareness ([openai/codex#18491](https://github.com/openai/codex/issues/18491)).
 
