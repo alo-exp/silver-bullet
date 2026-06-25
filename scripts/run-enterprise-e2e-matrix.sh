@@ -18,6 +18,7 @@ export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
+export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
 export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-1}"
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
@@ -67,7 +68,8 @@ Environment:
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
   SB_E2E_MATRIX_CLEAN_ENV=1    Use env -i for Claude sessions (default 1; set 0 to inherit shell)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
-  CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 180)
+  CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
+  CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for TUI ready before submit (default 60)
 EOF
 }
 
