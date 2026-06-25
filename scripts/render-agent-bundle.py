@@ -36,6 +36,7 @@ CURSOR_REPLACEMENTS = [
 ]
 
 CODEX_REPLACEMENTS = [
+    ("`context compaction`", "context compaction"),
     ("PostToolUse/Skill or Codex `silver-bullet invoke-skill`", "Claude Skill event or Codex `silver-bullet invoke-skill`"),
     ("`PostToolUse/Skill` does not fire", "No supported skill invocation event/receipt is observed"),
     ("Manually record skills in agent-mode sessions", "Use supported skill invocation channels in agent-mode sessions"),
@@ -252,8 +253,6 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
                 (f"$HOME/.{opposite}", f"$HOME/.{agent}"),
                 (f"${{HOME}}/.{opposite}/", f"${{HOME}}/.{agent}/"),
                 (f"${{HOME}}/.{opposite}", f"${{HOME}}/.{agent}"),
-                (f".{opposite}/", f".{agent}/"),
-                (f".{opposite}", f".{agent}"),
             ]
         )
     return pairs
@@ -287,6 +286,10 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
         updated = _unmask_protected_runtime_subs(updated, protected_masks)
+        if agent == "codex":
+            home = os.path.expanduser("~")
+            if home:
+                updated = updated.replace(f"{home}/.codex", "$HOME/.codex")
     if agent == "codex":
         updated = sanitize_codex_text(updated)
     elif agent == "cursor":

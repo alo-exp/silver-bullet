@@ -406,7 +406,7 @@ Same pattern as Graphify §1.1a Steps 4–5.
 
 ### 1.1f Context Mode (recommended tool — opt-in)
 
-Context Mode compacts MCP results and recovers session state across `/compact`. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
+Context Mode compacts MCP results and recovers session state across host-supported context compaction. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
 
 **License disclosure (required at consent):** ELv2 — not OSI-open; commercial bundling requires upstream license (`license_note` in config).
 

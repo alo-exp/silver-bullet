@@ -27,7 +27,7 @@ Ask the user to run this in their terminal and paste the output:
 which rtk && rtk --version
 ```
 
-**Expected output:** A path to the `rtk` binary (e.g., `/Users/shafqat/.local/bin/rtk`) and the version string (e.g., `rtk 0.42.4`).
+**Expected output:** A path to the `rtk` binary (e.g., `$HOME/.local/bin/rtk`) and the version string (e.g., `rtk 0.42.4`).
 
 **Pass criteria:** The output contains a path under `/Users/...`, `/usr/local/...`, or `/opt/homebrew/...` and a version `0.42` or newer. Cursor wiring requires **RTK >= 0.42.0** (older versions mishandle `rtk rewrite` exit code 3 — see [rtk-ai/rtk#1112](https://github.com/rtk-ai/rtk/issues/1112)).
 
@@ -156,10 +156,10 @@ CONTEXT_MODE_PLATFORM=cursor context-mode doctor
 
 **Expected output:** A multi-section report showing:
 
-- `◇ Native hook config: PASS — Loaded /Users/shafqat/.cursor/hooks.json`
+- `◇ Native hook config: PASS — Loaded $HOME/.cursor/hooks.json`
 - `◆ preToolUse: PASS — preToolUse hook configured`
 - `◆ postToolUse: PASS — postToolUse hook configured`
-- `◆ Plugin enabled: PASS — context-mode found in /Users/shafqat/.cursor/mcp.json`
+- `◆ Plugin enabled: PASS — context-mode found in $HOME/.cursor/mcp.json`
 - `◆ FTS5 / SQLite: PASS — native module works`
 - `◆ npm (MCP): PASS — v1.0.x`
 
