@@ -24,7 +24,55 @@ proc dismiss_claude_splash {} {
   after 500
 }
 
+proc load_claude_settings_env {} {
+  # Interactive TUI does not always inherit ~/.claude/settings.json env like
+  # `claude --print`. Inject API-key env before spawn when not in clean-env mode
+  # and when claude.ai OAuth is not already active (avoid auth conflicts).
+  set matrix_clean_env [env_or_default SB_E2E_MATRIX_CLEAN_ENV "0"]
+  if {$matrix_clean_env eq "1"} {
+    return
+  }
+  set home [env_or_default HOME ""]
+  if {$home eq ""} {
+    return
+  }
+  set settings "$home/.claude/settings.json"
+  if {![file exists $settings]} {
+    return
+  }
+  set cli [env_or_default CLAUDE_BIN "/Users/shafqat/.local/bin/claude"]
+  if {![catch {exec $cli auth status} auth_json]} {
+    if {![catch {exec jq -e {(.authMethod == "claude.ai") and ((.apiKeySource? // "") == "ANTHROPIC_API_KEY")} <<< $auth_json}]} {
+      return
+    }
+  }
+  if {[catch {exec jq -e {(.env.ANTHROPIC_API_KEY? // "") != "" or (.env.ANTHROPIC_BASE_URL? // "") != ""} $settings}]} {
+    return
+  }
+  if {[catch {exec jq -r {.env // {} | to_entries[] | "\(.key)=\(.value)"} $settings} lines]} {
+    return
+  }
+  foreach line [split $lines \n] {
+    if {$line eq ""} {
+      continue
+    }
+    if {![regexp {^([^=]+)=(.*)$} $line -> key value]} {
+      continue
+    }
+    if {$key eq ""} {
+      continue
+    }
+    if {![info exists env($key)] || $env($key) eq ""} {
+      set env($key) $value
+    }
+  }
+}
+
 proc submit_prompt {command_name prompt_body} {
+  global saw_not_logged_in
+  if {$saw_not_logged_in} {
+    return 0
+  }
   if {$command_name ne ""} {
     send -- "/$command_name"
     if {[string length $prompt_body] > 0} {
@@ -84,6 +132,8 @@ set matrix_clean_env [env_or_default SB_E2E_MATRIX_CLEAN_ENV "0"]
 if {$matrix_clean_env eq "1"} {
   catch {unset env(ANTHROPIC_API_KEY)}
   catch {unset env(OPENAI_API_KEY)}
+} else {
+  load_claude_settings_env
 }
 
 if {$debug_log ne ""} {
@@ -94,6 +144,14 @@ if {$debug_trace eq "1"} {
 }
 
 set args [list --model $model --effort $effort --permission-mode $permission_mode --verbose]
+set home [env_or_default HOME ""]
+set settings_file [env_or_default CLAUDE_SETTINGS_FILE ""]
+if {$settings_file eq "" && $home ne ""} {
+  set settings_file "$home/.claude/settings.json"
+}
+if {$matrix_clean_env ne "1" && $settings_file ne "" && [file exists $settings_file]} {
+  lappend args --settings $settings_file
+}
 if {$continue_flag eq "1"} {
   lappend args --continue
 }
@@ -115,6 +173,7 @@ set prompt_submitted 0
 set saw_prompt 0
 set final_marker_seen 0
 set require_final_marker 0
+set saw_not_logged_in 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -146,8 +205,16 @@ expect {
     dismiss_claude_splash
     exp_continue
   }
-  -re {(?s)bypass.*permissions.*on} {
+  -re {Not logged in|Please run /login} {
+    set saw_not_logged_in 1
     if {$prompt_submitted == 0} {
+      after 5000
+      exp_continue
+    }
+    exp_continue
+  }
+  -re {(?s)bypass.*permissions.*on} {
+    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
       if {[submit_prompt $command_name $prompt_body]} {
         set prompt_submitted 1
         set timeout $quiet_timeout
@@ -233,12 +300,13 @@ expect {
     exp_continue
   }
   -re {[1-9][0-9]*[^0-9].*tokens} {
+    set saw_not_logged_in 0
     # Claude is actively generating; extend the quiet window.
     set timeout $quiet_timeout
     exp_continue
   }
   -re {accept.*edits.*on} {
-    if {$prompt_submitted == 0} {
+    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
       if {[submit_prompt $command_name $prompt_body]} {
         set prompt_submitted 1
         set timeout $quiet_timeout
@@ -247,7 +315,7 @@ expect {
     exp_continue
   }
   -re {[0-9]+[^0-9]{0,40}tokens} {
-    if {$prompt_submitted == 0} {
+    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
       if {[submit_prompt $command_name $prompt_body]} {
         set prompt_submitted 1
         set timeout $quiet_timeout
@@ -259,7 +327,7 @@ expect {
     if {$require_final_marker == 1 && $final_marker_seen == 0} {
       exp_continue
     }
-    if {$prompt_submitted == 0} {
+    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
       if {[submit_prompt $command_name $prompt_body]} {
         set prompt_submitted 1
         set timeout $quiet_timeout

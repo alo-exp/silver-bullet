@@ -31,6 +31,10 @@ export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
+# shellcheck source=scripts/lib/claude-matrix-auth.sh
+source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
+claude_matrix_export_settings_env
+
 # shellcheck source=tests/e2e-live/helpers.sh
 source "${SB_ROOT}/tests/e2e-live/helpers.sh"
 # shellcheck source=tests/e2e-live/lib/skill-prompt.sh
