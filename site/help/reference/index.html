@@ -527,7 +527,7 @@ footer a:hover{color:var(--accent-light)}
       </table>
 
       <h3 id="recommended-tools">Recommended Tools (opt-in)</h3>
-      <p><code>recommended_tools.graphify.enabled_by_user</code> and <code>recommended_tools.agentmemory.enabled_by_user</code> live in <code>.silver-bullet.json</code>. Once opted in, a tool is mandatory when the selected catalog flow declares it relevant and must either produce evidence or record a catalog-backed failure/skip reason.</p>
+      <p><code>recommended_tools.graphify.enabled_by_user</code>, <code>recommended_tools.agentmemory.enabled_by_user</code>, <code>recommended_tools.rtk.enabled_by_user</code>, and <code>recommended_tools.context_mode.enabled_by_user</code> live in <code>.silver-bullet.json</code>. Once opted in, a tool is mandatory when the selected catalog flow declares it relevant and must either produce evidence or record a catalog-backed failure/skip reason. RTK and Context Mode gates verify install/wiring only; usage rules are in <code>silver-bullet.md</code> §2g-ii.</p>
 
       <div class="divider"></div>
 

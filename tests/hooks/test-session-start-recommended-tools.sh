@@ -123,5 +123,34 @@ out="$(run_session)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
 printf '%s' "$ctx" | grep -q 'agentmemory' && pass "agentmemory pending consent injects prompt" || fail "agentmemory pending consent injects prompt"
 
+rtk_template_null="$(jq -r '.recommended_tools.rtk.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$rtk_template_null" == "null" ]] && pass "template rtk defaults null pending" || fail "template rtk defaults null pending"
+
+cm_template_null="$(jq -r '.recommended_tools.context_mode.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$cm_template_null" == "null" ]] && pass "template context_mode defaults null pending" || fail "template context_mode defaults null pending"
+
+write_consent_rtk() {
+  cat >"$TMP/.silver-bullet.json" <<EOF
+{
+  "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
+  "recommended_tools": {
+    "graphify": { "enabled_by_user": false },
+    "rtk": { "enabled_by_user": ${1} }
+  },
+  "skills": { "required_planning": ["silver-quality-gates"] },
+  "state": {
+    "state_file": "${STATE_FILE}",
+    "trivial_file": "${TRIVIAL_FILE}"
+  }
+}
+EOF
+}
+
+write_consent_rtk null
+out="$(run_session)"
+ctx="$(printf '%s' "$out" | extract_ctx)"
+printf '%s' "$ctx" | grep -qi 'rtk' && pass "rtk pending consent injects prompt" || fail "rtk pending consent injects prompt"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

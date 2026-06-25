@@ -152,7 +152,19 @@ Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write back
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`. For `recommended_tools.graphify`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1a records an explicit user choice; include suspension fields when install was attempted.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`. For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice; include suspension fields when install was attempted.
+
+### 3.4.1 Context Mode instruction fragment (when opted in)
+
+When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`CLAUDE.md` or `AGENTS.md`):
+
+1. If sentinel `<!-- BEGIN context-mode hint (do not edit) -->` exists, replace the block idempotently (drop old block, append fresh template).
+2. Otherwise append the template block to each file.
+3. Copy upstream `context-mode.mdc` to `.cursor/rules/context-mode.mdc` on Cursor hosts (see `docs/CONTEXT-MODE.md`).
+
+### 3.4.2 RTK awareness (Codex / optional)
+
+On Codex hosts when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
 
 ### 3.5 Copy workflow files
 

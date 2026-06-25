@@ -118,9 +118,41 @@ assert_grep "silver-update agentmemory retry" \
   "$REPO_ROOT/skills/silver-update/SKILL.md" \
   "Step 8b: agentmemory"
 
-assert_grep "AGENTMEMORY.md exists" \
-  "$REPO_ROOT/docs/AGENTMEMORY.md" \
-  "Graphify Synergy"
+rtk_template_null="$(jq -r '.recommended_tools.rtk.enabled_by_user' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$rtk_template_null" == "null" ]] && pass "template rtk enabled_by_user is null" || fail "template rtk enabled_by_user is null"
+
+cm_template_null="$(jq -r '.recommended_tools.context_mode.enabled_by_user' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$cm_template_null" == "null" ]] && pass "template context_mode enabled_by_user is null" || fail "template context_mode enabled_by_user is null"
+
+assert_grep "silver-init RTK opt-in section" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "### 1.1e RTK"
+
+assert_grep "silver-init Context Mode opt-in section" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "### 1.1f Context Mode"
+
+assert_grep "silver-update RTK retry" \
+  "$REPO_ROOT/skills/silver-update/SKILL.md" \
+  "Step 8c: RTK"
+
+assert_grep "silver-update Context Mode retry" \
+  "$REPO_ROOT/skills/silver-update/SKILL.md" \
+  "Step 8d: Context Mode"
+
+assert_grep "RTK.md exists" \
+  "$REPO_ROOT/docs/RTK.md" \
+  "rtk-ai/rtk"
+
+assert_grep "CONTEXT-MODE.md exists" \
+  "$REPO_ROOT/docs/CONTEXT-MODE.md" \
+  "ELv2"
+
+assert_grep "silver-bullet 2g-ii token compression" \
+  "$REPO_ROOT/templates/silver-bullet.md.base" \
+  "### 2g-ii. Token Compression"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

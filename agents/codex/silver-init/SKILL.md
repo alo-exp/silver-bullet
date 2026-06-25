@@ -75,7 +75,7 @@ Then use the host-supported context compaction mechanism before proceeding.
    ```
    test -f .silver-bullet.json && echo "EXISTS" || echo "NOT_FOUND"
    ```
-2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 (except §1.1a Graphify and §1.1b agentmemory consent/retry) and Phase 2. Run §1.1a, §1.1b, then go directly to Phase 3 in **update mode**.
+2. If `EXISTS` → this is a **re-run/update**. Skip Phase 1 (except §1.1a Graphify, §1.1b agentmemory, §1.1e RTK, and §1.1f Context Mode consent/retry) and Phase 2. Run §1.1a–§1.1f as needed, then go directly to Phase 3 in **update mode**.
 3. If `NOT_FOUND` → this is a **fresh setup**. Proceed to Phase 1.
 
 ---
@@ -344,6 +344,81 @@ If `agentmemory_consent` is `false`: output "agentmemory opted out — enforceme
 #### Step 5 — Already consented
 
 Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspended; surface install when `true` and CLI missing.
+
+### 1.1e RTK (recommended tool — opt-in)
+
+RTK (`rtk-ai/rtk`) compresses shell output via upstream PreToolUse hooks. Separate consent from Context Mode. Config key: `recommended_tools.rtk.enabled_by_user`.
+
+**Benefits:** 60–99% shell output savings on ~75 commands once wired; automatic after `rtk init`.
+
+**Wrong-binary warning:** `reachingforthejack/rtk` (Rust Type Kit) shares the `rtk` name — verify `rtk gain --help` after install.
+
+#### Step 1 — Read consent
+
+```bash
+jq -r '.recommended_tools.rtk.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
+jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false
+```
+
+#### Step 2 — Ask when `null`
+
+Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** Codex uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
+
+- **Yes** → `enabled_by_user: true`
+- **No** → `enabled_by_user: false`
+
+#### Step 3 — Install when opted in or retrying suspended
+
+**OS gate:** On native Windows, set `enforcement_suspended: true`, `install_failure_reason: "Windows requires WSL"`, skip install.
+
+1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
+2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
+3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g --agent cursor`, or `rtk init -g --codex`)
+4. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
+5. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+
+On success: `install_status: "ok"`, `enforcement_suspended: false`. On failure: suspend, preserve consent.
+
+#### Step 4 — Opted out / already consented
+
+Same pattern as Graphify §1.1a Steps 4–5.
+
+### 1.1f Context Mode (recommended tool — opt-in)
+
+Context Mode compacts MCP results and recovers session state across `context compaction`. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
+
+**License disclosure (required at consent):** ELv2 — not OSI-open; commercial bundling requires upstream license (`license_note` in config).
+
+**MCP note:** Highest value when several MCP servers are loaded (Playwright, GitHub MCP, etc.).
+
+#### Step 1 — Read consent
+
+```bash
+jq -r '.recommended_tools.context_mode.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
+jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false
+```
+
+#### Step 2 — Ask when `null`
+
+Include ELv2 license disclosure and MCP-value note in the question.
+
+#### Step 3 — Install when opted in or retrying suspended
+
+**OS gate:** Native Windows → suspend with `Windows requires WSL`.
+
+1. **Node >= 22.5** check first
+2. `npm install -g context-mode` (or Claude plugin path per host — see `docs/CONTEXT-MODE.md`)
+3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
+4. **Scaffold instruction fragment** into `silver-bullet.md` and `CLAUDE.md` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
+5. **Cursor:** copy `context-mode.mdc` to `.cursor/rules/` per upstream
+6. Remind user to **restart agent** after plugin install
+7. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+
+On success/failure: same jq pattern as Graphify/agentmemory.
+
+#### Step 4 — Opted out / already consented
+
+Same pattern as Graphify §1.1a Steps 4–5.
 
 ### 1.1c Install diagnostics (advisory)
 
@@ -777,7 +852,7 @@ This creates `.planning/interface/STATE.md` from
 it thereafter.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
-- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify` and `recommended_tools.agentmemory`, always write `enabled_by_user` from the user's Phase 1.1a/1.1b choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1a/1.1b Step 3 outcomes when applicable.
+- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.

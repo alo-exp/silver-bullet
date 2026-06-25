@@ -1,0 +1,37 @@
+---
+description: SB recommended tools — full enforcement in Cursor
+alwaysApply: true
+---
+
+# Silver Bullet recommended tools — maximum use in Cursor
+
+All work in this project MUST use SB recommended tools to their fullest extent when opted in (`recommended_tools.*.enabled_by_user: true` in `.silver-bullet.json`).
+
+## Canonical tool set
+
+| Tool | Role |
+|------|------|
+| **Graphify** | Retrieve — `graphify query` / `path` / `explain` before exploration |
+| **agentmemory** | Save — MCP capture of decisions, defects, session evidence |
+| **Aluminum** | Token compression (when `install_status: installed`) |
+| **RTK** | Token compression (when `install_status: installed`) |
+| **Context Mode** | Token compression (when `install_status: installed`) |
+
+## Non-negotiable rules
+
+1. **Graphify first** — see `.cursor/rules/graphify.mdc`; never skip for "already known" context.
+2. **agentmemory always** — see `.cursor/rules/agentmemory.mdc`; save every meaningful chunk of work.
+3. **Synergy** — save via agentmemory, retrieve via Graphify.
+4. **After code edits** — `graphify update .`
+5. **Token compression** — when aluminum/rtk/context_mode are installed, invoke their CLIs before large context commits (`git commit`, `gh pr create`).
+6. **Subagents** — include graphify + agentmemory requirements in every Task/subagent prompt.
+7. **E2E / ladder runs** — all recommended tools opted in; ledger records graphify query + agentmemory export refs.
+
+## Hook enforcement
+
+SB hooks (`graphify-gate`, `agentmemory-gate`, `token-compression-tools-gate`) block substantive edits when tools are stale or missing. Do not bypass — fix the tool state.
+
+## References
+
+- `silver-bullet.md` §2g-i
+- `docs/GRAPHIFY.md`, `docs/AGENTMEMORY.md`, `docs/code-intelligence-contract.md`

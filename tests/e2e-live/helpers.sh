@@ -18,6 +18,7 @@ DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/todo-app"
 FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
 AGENT_DIR="${SB_ROOT}/tests/live/agents"
 LIB_DIR="${E2E_ROOT}/lib"
+RECOMMENDED_TOOLS_E2E_LIB="${LIB_DIR}/recommended-tools-e2e.sh"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
 CODEX_HOOK_TRANSPLANT_HELPER="${SB_ROOT}/tests/live/lib/codex-hook-transplant.sh"
 
@@ -496,6 +497,21 @@ PY
   if [[ "$E2E_RUNTIME" == "claude" ]]; then
     CLAUDE_PROMPT_COUNT=0
     bootstrap_claude_dependencies
+  fi
+}
+
+ensure_e2e_recommended_tools_opt_in() {
+  [[ -n "${WORK_DIR:-}" && -f "${WORK_DIR}/.silver-bullet.json" ]] || return 0
+  [[ -f "$RECOMMENDED_TOOLS_E2E_LIB" ]] || return 0
+  # shellcheck source=tests/e2e-live/lib/recommended-tools-e2e.sh
+  source "$RECOMMENDED_TOOLS_E2E_LIB"
+  sb_e2e_enable_all_recommended_tools "${WORK_DIR}/.silver-bullet.json"
+  if sb_e2e_assert_all_recommended_tools_enabled "${WORK_DIR}/.silver-bullet.json"; then
+    echo "PASS: E2E workspace has all recommended tools opted in"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: E2E workspace missing full recommended_tools opt-in after init"
+    FAIL=$((FAIL + 1))
   fi
 }
 
