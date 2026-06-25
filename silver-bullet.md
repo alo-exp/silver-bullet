@@ -359,6 +359,11 @@ not suspended, hooks require CLI, running server, MCP wiring, and `.agentmemory/
 When both agentmemory and Graphify are enabled: **save via agentmemory, retrieve via Graphify**.
 See `docs/AGENTMEMORY.md`.
 
+**Stack optimization (after opt-in):** When Graphify and/or agentmemory are enabled, SB runs
+`bash scripts/sb-optimize-stack.sh --apply` at init and update to apply the `synergy_max` profile
+(hooks, `.env`, bridge persistence, post-export re-index). Verify with
+`bash scripts/sb-optimize-stack.sh --verify` or `bash scripts/sb-diagnostics.sh`. See `docs/STACK-OPTIMIZATION.md`.
+
 **Alumnium (opt-in, separate consent):** SB recommends [Alumnium](https://alumnium.ai/) for browser and visual testing (`recommended_tools.alumnium.enabled_by_user`). When opted in and not suspended, hooks verify the npm package and MCP wiring. Prefer Alumnium `do` / `check` / `get` / `wait` for `silver:clarify`, `silver:ui-review`, and `silver:verify`; fallback hierarchy in §8.1. See `docs/ALUMNIUM.md`.
 
 ### 2g-ii. Token Compression (Opt-In)

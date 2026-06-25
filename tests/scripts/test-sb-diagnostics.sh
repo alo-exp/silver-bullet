@@ -76,6 +76,9 @@ assert_output_contains "diagnostics emits Results line" "Results:" bash "$SCRIPT
 assert_output_contains "diagnostics checks jq" "jq" bash "$SCRIPT"
 assert_output_contains "diagnostics reports capability tier" "runtime-capability-tier" bash "$SCRIPT"
 
+grep -q 'optimize-score' "$SCRIPT" && pass "diagnostics includes optimize-score" || fail "diagnostics optimize-score"
+grep -q 'stack-optimizer' "$SCRIPT" && pass "diagnostics sources stack-optimizer" || fail "diagnostics stack-optimizer"
+
 json_out="$(SB_DIAG_FORMAT=json bash "$SCRIPT" 2>&1 || true)"
 if jq -e '.capability_tier' >/dev/null <<<"$json_out"; then
   pass "json diagnostics includes capability_tier"
