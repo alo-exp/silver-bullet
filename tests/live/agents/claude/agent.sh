@@ -22,6 +22,23 @@ agent_preflight() {
   fi
 }
 
+claude_should_use_interactive() {
+  local prompt="$1"
+  if [[ "${CLAUDE_USE_INTERACTIVE:-}" == "1" ]]; then
+    return 0
+  fi
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+    return 0
+  fi
+  if [[ "$prompt" =~ ^/(silver|review-triad|ship-readiness) ]]; then
+    return 0
+  fi
+  if [[ "$prompt" =~ \[\$silver\]|\[silver\] ]]; then
+    return 0
+  fi
+  return 1
+}
+
 agent_invoke() {
   local mode="$1"
   local prompt="$2"
@@ -30,9 +47,12 @@ agent_invoke() {
   local permission_mode
   local continue_flag
   local timeout_seconds
+  local prompt_file
+  local expect_script
+  local sb_root
 
   cli="$(agent_cli_path)"
-  permission_mode="${CLAUDE_PERMISSION_MODE:-default}"
+  permission_mode="${CLAUDE_PERMISSION_MODE:-acceptEdits}"
   timeout_seconds="${CLAUDE_INTERACTIVE_TIMEOUT:-${CODEX_INTERACTIVE_TIMEOUT:-300}}"
   : "${CLAUDE_PROMPT_COUNT:=0}"
   if [[ "$mode" == "permissive" ]]; then
@@ -42,6 +62,32 @@ agent_invoke() {
   continue_flag=0
   if [[ "${CLAUDE_PROMPT_COUNT:-0}" -gt 0 ]]; then
     continue_flag=1
+  fi
+
+  sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+  expect_script="${sb_root}/scripts/claude-interactive-invoke.expect"
+
+  if claude_should_use_interactive "$prompt" && [[ -x "$expect_script" ]] && command -v expect >/dev/null 2>&1; then
+    prompt_file="$(mktemp "${TMPDIR:-/tmp}/claude-live-prompt.XXXXXX")"
+    printf '%s' "$prompt" >"$prompt_file"
+    output=$(
+      cd "$WORK_DIR" && \
+        TERM="${TERM:-xterm-256color}" \
+        CLAUDE_BIN="$cli" \
+        CLAUDE_WORK_DIR="$WORK_DIR" \
+        CLAUDE_PROMPT_FILE="$prompt_file" \
+        CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
+        CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
+        CLAUDE_PERMISSION_MODE="$permission_mode" \
+        CLAUDE_CONTINUE="$continue_flag" \
+        CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
+        CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
+        expect "$expect_script" 2>&1
+    ) || true
+    rm -f -- "$prompt_file"
+    printf '%s' "$output"
+    CLAUDE_PROMPT_COUNT=$((CLAUDE_PROMPT_COUNT + 1))
+    return 0
   fi
 
   output=$(
