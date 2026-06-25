@@ -344,6 +344,20 @@ If `agentmemory_consent` is `false`: output "agentmemory opted out — enforceme
 
 Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspended; surface install when `true` and CLI missing.
 
+#### Step 3f — Optimize Graphify + agentmemory stack
+
+When **either** Graphify or agentmemory is opted in (`enabled_by_user: true`), run the synergy optimizer after install steps complete:
+
+```bash
+bash scripts/sb-optimize-stack.sh --apply
+bash scripts/sb-optimize-stack.sh --verify
+```
+
+- Default profile: `synergy_max` (see `optimization_profiles` in config template)
+- On success: records `optimization.last_applied_at` and `optimization.score` in `.silver-bullet.json`
+- On partial failure: do **not** block init — surface score and warnings; user can retry via `/silver:update`
+- See `docs/STACK-OPTIMIZATION.md` and `docs/research/graphify-agentmemory-optimization.md`
+
 ### 1.1e RTK (recommended tool — opt-in)
 
 RTK (`rtk-ai/rtk`) compresses shell output via upstream PreToolUse hooks. Separate consent from Context Mode. Config key: `recommended_tools.rtk.enabled_by_user`.

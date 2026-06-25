@@ -275,7 +275,18 @@ On success, clear suspension. On failure, keep suspension.
 
 **If `enabled_by_user` is `false`:** no action needed.
 
-### Step 8d: Context Mode consent and install retry
+### Step 8d: Optimize Graphify + agentmemory stack
+
+After Steps 8 (Graphify) and 8b (agentmemory), when either tool is opted in, re-apply the synergy optimizer (idempotent — safe on every update):
+
+```bash
+bash scripts/sb-optimize-stack.sh --apply
+bash scripts/sb-optimize-stack.sh --verify
+```
+
+Runs on upgrade, version bump, or when retrying `enforcement_suspended` installs. Records `optimization.last_applied_at` / `optimization.score`. See `docs/STACK-OPTIMIZATION.md`.
+
+### Step 8e: Context Mode consent and install retry
 
 Check `.silver-bullet.json` for Context Mode consent and suspension:
 
