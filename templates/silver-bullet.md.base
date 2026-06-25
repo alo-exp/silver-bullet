@@ -359,11 +359,11 @@ not suspended, hooks require CLI, running server, MCP wiring, and `.agentmemory/
 When both agentmemory and Graphify are enabled: **save via agentmemory, retrieve via Graphify**.
 See `docs/AGENTMEMORY.md`.
 
+**Alumnium (opt-in, separate consent):** SB recommends [Alumnium](https://alumnium.ai/) for browser and visual testing (`recommended_tools.alumnium.enabled_by_user`). When opted in and not suspended, hooks verify the npm package and MCP wiring. Prefer Alumnium `do` / `check` / `get` / `wait` for `silver:clarify`, `silver:ui-review`, and `silver:verify`; fallback hierarchy in §8.1. See `docs/ALUMNIUM.md`.
+
 ### 2g-ii. Token Compression (Opt-In)
 
 SB recommends **RTK** and **Context Mode** as **separate** opt-in tools (`recommended_tools.rtk` and `recommended_tools.context_mode`). They complement Graphify (retrieval) and agentmemory (capture) — no evidence-tier conflict; see `docs/code-intelligence-contract.md`.
-
-**Aluminum (`recommended_tools.aluminum`):** When opted in and `install_status: installed`, hooks require fresh CLI usage before substantive commits (see token-compression-tools gate).
 
 **RTK (`recommended_tools.rtk`):** When opted in and not suspended, hooks verify rtk-ai/rtk CLI (v0.4x, `rtk gain --help`) and host PreToolUse wiring. Shell compression is **automatic** once wired — SB does not rewrite Bash. Wrong binary (`reachingforthejack/rtk`) is rejected. Codex relies on AGENTS.md awareness; live rewrite requires upstream `updatedInput` support.
 

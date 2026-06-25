@@ -359,17 +359,31 @@ not suspended, hooks require CLI, running server, MCP wiring, and `.agentmemory/
 When both agentmemory and Graphify are enabled: **save via agentmemory, retrieve via Graphify**.
 See `docs/AGENTMEMORY.md`.
 
+**Alumnium (opt-in, separate consent):** SB recommends [Alumnium](https://alumnium.ai/) for browser and visual testing (`recommended_tools.alumnium.enabled_by_user`). When opted in and not suspended, hooks verify the npm package and MCP wiring. Prefer Alumnium `do` / `check` / `get` / `wait` for `silver:clarify`, `silver:ui-review`, and `silver:verify`; fallback hierarchy in §8.1. See `docs/ALUMNIUM.md`.
+
 ### 2g-ii. Token Compression (Opt-In)
 
 SB recommends **RTK** and **Context Mode** as **separate** opt-in tools (`recommended_tools.rtk` and `recommended_tools.context_mode`). They complement Graphify (retrieval) and agentmemory (capture) — no evidence-tier conflict; see `docs/code-intelligence-contract.md`.
-
-**Aluminum (`recommended_tools.aluminum`):** When opted in and `install_status: installed`, hooks require fresh CLI usage before substantive commits (see token-compression-tools gate).
 
 **RTK (`recommended_tools.rtk`):** When opted in and not suspended, hooks verify rtk-ai/rtk CLI (v0.4x, `rtk gain --help`) and host PreToolUse wiring. Shell compression is **automatic** once wired — SB does not rewrite Bash. Wrong binary (`reachingforthejack/rtk`) is rejected. Codex relies on AGENTS.md awareness; live rewrite requires upstream `updatedInput` support.
 
 **Context Mode (`recommended_tools.context_mode`):** When opted in and not suspended, hooks verify Node >= 22.5, CLI/plugin install, MCP/hooks wiring, and the instruction fragment in project docs. The agent **must** follow the scaffolded hint for files > 5 KB and MCP-heavy results — this is **instructionally mandatory**, not Read-size hook blocking. ELv2 license applies — see `recommended_tools.context_mode.license_note`. **Restart the agent** after plugin/MCP changes.
 
 Install and wiring: `docs/RTK.md`, `docs/CONTEXT-MODE.md`. Verification: `bash scripts/enable-rtk-context-mode.sh`. Cursor always-on rules: `.cursor/rules/recommended-tools.mdc`.
+
+<!-- BEGIN context-mode hint (do not edit) -->
+## Context Mode usage
+
+When reading large files, MCP results, or web fetches:
+
+- For files > 5 KB: use Context Mode index + search tools (`ctx_index` / `ctx_search` or host-qualified MCP names) instead of reading the whole file.
+- For Playwright snapshots, web fetches, and other MCP tool results: use `ctx_execute` to run a sandboxed script that processes the result and only returns relevant `console.log` lines.
+- For batch reads (5+ files): use `ctx_batch_execute` instead of N separate reads.
+
+If a call returns "tool not found", run Context Mode doctor in a live session to confirm the exact tool prefix for your host, or use slash commands where available (`/ctx-index`, `/ctx-search` on Claude Code).
+
+For everything else, use your normal tools. RTK handles shell command output automatically when RTK is opted in and wired.
+<!-- END context-mode hint (do not edit) -->
 
 ---
 

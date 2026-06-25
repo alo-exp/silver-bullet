@@ -11,7 +11,8 @@ which tier supplied the evidence.
 | 0 | Shell discovery | `rg`, `grep`, `find`, `git log`, file reads, test output | Always available; default fallback |
 | 1 | Graphify retrieval | semantic search, related-file retrieval, session graph queries | When user opted in (`recommended_tools.graphify.enabled_by_user: true`) and Graphify is installed/indexed |
 | 1b | agentmemory capture | session memory, proactive injection, `.agentmemory/` export | When user opted in (`recommended_tools.agentmemory.enabled_by_user: true`) and server/MCP are wired; pairs with tier 1 for save/retrieve synergy |
-| 1c | Token compression (opt-in) | Aluminum CLI usage; RTK shell wiring; Context Mode MCP/fragment | Aluminum: fresh CLI usage before commits when installed. RTK/Context Mode: install+wiring gates only — usage via `silver-bullet.md` §2g-ii (no Read-size blocking) |
+| 1c | Token compression (opt-in) | RTK shell wiring; Context Mode MCP/fragment | RTK: install+wiring gates; fresh CLI usage before commits when installed. Context Mode: install+wiring gates — usage via `silver-bullet.md` §2g-ii |
+| 1d | Browser/visual testing (opt-in) | Alumnium MCP wiring | Alumnium: MCP present when opted in; skill routing per §8.1 |
 | 2 | Structural graph | call chains, dependency edges, module boundaries, duplicate hotspots | When graph queries return structural evidence |
 | 3 | Live runtime | browser traces, HTTP probes, Playwright, deploy smoke | When a runnable app or environment exists |
 

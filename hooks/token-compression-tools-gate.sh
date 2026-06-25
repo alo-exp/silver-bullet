@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse — token-compression recommended tools (aluminum, rtk, context_mode).
+# PreToolUse — RTK usage freshness before substantive commits (opt-in).
 
 umask 0077
 
@@ -83,7 +83,7 @@ if [[ -n "$command_str" ]]; then
 fi
 
 tool_id=""
-for tool_id in aluminum; do
+for tool_id in rtk; do
   sb_token_tool_enforced "$config_file" "$tool_id" || continue
   if ! sb_token_tool_cli_available "$config_file" "$tool_id"; then
     emit_block "$(sb_token_tool_block_message "$config_file" "$tool_id")"

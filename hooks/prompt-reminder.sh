@@ -432,11 +432,11 @@ ${agentmemory_line}"
   fi
 fi
 
-# Token-compression tools (aluminum, rtk, context_mode)
+# Token-compression tools (rtk, context_mode)
 if [[ -f "$_lib_dir/token-compression-tools-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/token-compression-tools-gate.sh
   source "$_lib_dir/token-compression-tools-gate.sh"
-  for _tc_tool in aluminum rtk context_mode; do
+  for _tc_tool in rtk context_mode; do
     _tc_line="$(sb_token_tool_prompt_reminder_line "$config_file" "$_tc_tool" 2>/dev/null || true)"
     if [[ -n "$_tc_line" ]]; then
       msg="${msg}
