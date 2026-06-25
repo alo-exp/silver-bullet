@@ -80,5 +80,9 @@ grep -q "AGENTMEMORY_EXPORT_ROOT=.*/.agentmemory" "$TMP/amhome/.env" && pass "en
 
 grep -q 'sb-optimize-stack' "$REPO_ROOT/docs/STACK-OPTIMIZATION.md" && pass "STACK-OPTIMIZATION.md exists" || fail "STACK-OPTIMIZATION.md"
 
+grep -q '\-\-host HOST' "$SCRIPT" && pass "script supports --host" || fail "script supports --host"
+SILVER_BULLET_RUNTIME=hermes bash "$SCRIPT" --apply --dry-run --host hermes >/dev/null 2>&1 \
+  && pass "dry-run --host hermes" || fail "dry-run --host hermes"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

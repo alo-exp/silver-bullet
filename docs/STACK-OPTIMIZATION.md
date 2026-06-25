@@ -1,8 +1,30 @@
 # Stack Optimization (Graphify + agentmemory)
 
-Silver Bullet applies a **post-install optimization layer** when users opt into Graphify and/or agentmemory. Default profile: **`synergy_max`**.
+Default profile: **`synergy_max`**.
 
-## When it runs
+## Global setup (SB-independent — primary for Claude, Codex, OpenCode, Goose, Hermes)
+
+Machine-level wiring does **not** require Silver Bullet, `/silver:init`, `.silver-bullet.json`, or SB hooks:
+
+```bash
+bash scripts/graphify-am-global-setup.sh --host claude --apply
+bash scripts/graphify-am-global-setup.sh --host codex --verify
+bash scripts/graphify-am-global-setup.sh --host all --verify    # detected hosts only
+bash scripts/graphify-am-global-setup.sh --host claude --apply --repo /path/to/project
+```
+
+| Deliverable | Path |
+|-------------|------|
+| Global setup script | `scripts/graphify-am-global-setup.sh` |
+| Implementation lib | `hooks/lib/graphify-am-global.sh` |
+| Platform matrix | `docs/graphify-am/PLATFORM-MATRIX.md` |
+| Per-agent verification | `docs/graphify-am/verification/<host>-verify-graphify-am.md` |
+
+Without `--repo`, `AGENTMEMORY_EXPORT_ROOT` defaults to `~/.agentmemory/default-export`. Pass `--repo` for per-project export, bridge launchd, and optional `graphify update`.
+
+Silver Bullet **may delegate** to global setup during `/silver:init` Step 3f, then run project-level `sb-optimize-stack.sh` when the user has opted in.
+
+## When SB optimization runs
 
 | Trigger | Command |
 |---------|---------|
@@ -50,11 +72,18 @@ Warnings (non-blocking): missing git hooks, bridge, gitleaks, launchd.
 
 ## Platform matrix
 
-| Host | Graphify | agentmemory |
-|------|----------|-------------|
-| Cursor | `graphify cursor install` → `.cursor/rules/graphify.mdc` | MCP in `~/.cursor/mcp.json` |
-| Claude | `graphify install --project` + `graphify claude install --project` | `agentmemory connect claude-code` |
-| Codex | `graphify install --project --platform codex` + `graphify codex install --project` | `agentmemory connect codex --with-hooks` |
+| Host | Graphify | agentmemory | Artifact paths |
+|------|----------|-------------|----------------|
+| Cursor | `graphify cursor install` → `.cursor/rules/graphify.mdc` | MCP in `~/.cursor/mcp.json` | Full `connect` support |
+| Claude | `graphify install --project` + `graphify claude install --project` | `agentmemory connect claude-code` | `~/.claude.json` |
+| Codex | `graphify install --project --platform codex` + `graphify codex install --project` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
+| OpenCode | `graphify install --project --platform opencode` | **Manual MCP** in `~/.config/opencode/opencode.json` | No `connect opencode` subcommand |
+| Goose (Pi) | `graphify install --project --platform pi` | **Manual** `agentmemory connect pi` (TS extension) | `~/.config/goose/config.yaml`, `.pi/agent/` |
+| Hermes | `graphify install --project --platform hermes` | **Manual** `agentmemory connect hermes` (YAML merge) | `~/.hermes/config.yaml`, `AGENTS.md` rules |
+
+Apply per host: `SILVER_BULLET_RUNTIME=<host> bash scripts/sb-optimize-stack.sh --apply --host <host>`
+
+Verification addenda: `docs/graphify-am/verification/<host>-verify-graphify-am.md`
 
 ## Verification addendum mapping
 

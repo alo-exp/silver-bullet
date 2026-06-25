@@ -80,9 +80,12 @@ printf '%s' "$claude_cmds" | grep -q 'graphify install --project' && pass "claud
 printf '%s' "$claude_cmds" | grep -q 'graphify claude install --project' && pass "claude always-on install from config" || fail "claude always-on install from config"
 [[ "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify install --project" ]] && pass "claude pre_index from nested config" || fail "claude pre_index from nested config"
 
-[[ "$(SILVER_BULLET_RUNTIME=cursor sb_runtime_host)" == "cursor" ]] && pass "sb_runtime_host cursor" || fail "sb_runtime_host cursor"
 [[ "$(SILVER_BULLET_RUNTIME=codex sb_runtime_host)" == "codex" ]] && pass "sb_runtime_host codex" || fail "sb_runtime_host codex"
 [[ "$(SILVER_BULLET_RUNTIME=claude sb_runtime_host)" == "claude" ]] && pass "sb_runtime_host claude" || fail "sb_runtime_host claude"
+[[ "$(SILVER_BULLET_RUNTIME=opencode sb_runtime_host)" == "opencode" ]] && pass "sb_runtime_host opencode" || fail "sb_runtime_host opencode"
+[[ "$(SILVER_BULLET_RUNTIME=goose sb_runtime_host)" == "goose" ]] && pass "sb_runtime_host goose" || fail "sb_runtime_host goose"
+[[ "$(SILVER_BULLET_RUNTIME=hermes sb_runtime_host)" == "hermes" ]] && pass "sb_runtime_host hermes" || fail "sb_runtime_host hermes"
+[[ "$(SILVER_BULLET_RUNTIME=goose sb_graphify_upstream_platform)" == "pi" ]] && pass "goose maps to pi upstream" || fail "goose maps to pi upstream"
 host="$(
   env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE     CURSOR_PLUGIN_ROOT=/x/.cursor/plugins bash -c "source '$LIB'; sb_runtime_host"
 )"

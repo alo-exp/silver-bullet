@@ -18,7 +18,7 @@ if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
 fi
 
 case "$SILVER_BULLET_RUNTIME" in
-  claude|codex|cursor) ;;
+  claude|codex|cursor|opencode|goose|hermes) ;;
   *) SILVER_BULLET_RUNTIME="claude" ;;
 esac
 
@@ -27,7 +27,12 @@ _sb_runtime_base_home="${HOME}"
 if [[ "$SB_RUNTIME_NAME" == "codex" && -n "${KAY_HOME:-}" ]]; then
   _sb_runtime_base_home="${KAY_HOME}"
 fi
-SB_RUNTIME_HOME_ROOT="${_sb_runtime_base_home}/.${SB_RUNTIME_NAME}"
+case "$SB_RUNTIME_NAME" in
+  opencode) SB_RUNTIME_HOME_ROOT="${HOME}/.config/opencode" ;;
+  goose) SB_RUNTIME_HOME_ROOT="${HOME}/.config/goose" ;;
+  hermes) SB_RUNTIME_HOME_ROOT="${HOME}/.hermes" ;;
+  *) SB_RUNTIME_HOME_ROOT="${_sb_runtime_base_home}/.${SB_RUNTIME_NAME}" ;;
+esac
 # Tests/hooks may pin state dir via SB_RUNTIME_STATE_DIR when SB_RUNTIME_PRESERVE_STATE_DIR=1.
 if [[ "${SB_RUNTIME_PRESERVE_STATE_DIR:-}" == "1" && -n "${SB_RUNTIME_STATE_DIR:-}" ]]; then
   :
