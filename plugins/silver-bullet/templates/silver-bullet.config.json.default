@@ -1,5 +1,5 @@
 {
-  "config_version": "0.48.1",
+  "config_version": "0.48.2",
   "version": "0.46.0",
   "sb_initiated": false,
   "sb_enforcement_tier": null,
@@ -177,7 +177,14 @@
       "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
-      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query"
+      "query_budget": 2000,
+      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": null,
+        "last_verified_at": null,
+        "score": null
+      }
     },
     "agentmemory": {
       "enabled_by_user": null,
@@ -206,14 +213,134 @@
         },
         "cursor": {
           "pre_index": [],
-          "post_index": []
+          "post_index": [
+            "Verify agentmemory MCP is configured in $HOME/.codex/mcp.json (see docs/AGENTMEMORY.md)"
+          ]
         }
       },
       "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
       "health_url": "http://localhost:3111/agentmemory/health",
       "usage_ttl_seconds": 1800,
       "usage_state_file": "$HOME/.codex/.silver-bullet/agentmemory-usage",
-      "export_root": ".agentmemory"
+      "export_root": ".agentmemory",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": null,
+        "last_verified_at": null,
+        "score": null
+      }
+    },
+    "alumnium": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "mcp_server_name": "alumnium",
+      "install_commands": [
+        "npm install -g alumnium"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "Merge alumnium MCP into $HOME/.codex/mcp.json per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "Merge [mcp_servers.alumnium] into ~/.codex/config.toml per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
+    },
+    "rtk": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "min_version": "0.42.0",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
+      "install_commands": [
+        "brew tap rtk-ai/rtk && brew install rtk",
+        "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "rtk init -g"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "rtk init -g --agent cursor"
+          ],
+          "post_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "rtk init -g --codex"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "60\u201399% shell output savings via PreToolUse rewrite \u2014 automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
+    },
+    "context_mode": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "read_deny_bytes": 5120,
+      "min_node_version": "22.5",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
+      "license_note": "ELv2 \u2014 not OSI-open; commercial bundling requires upstream license",
+      "install_commands": [
+        "npm install -g context-mode"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude plugin marketplace add mksglu/context-mode",
+            "claude plugin install context-mode@context-mode"
+          ],
+          "post_index": [
+            "Restart Claude Code after plugin install (hooks load on restart)"
+          ]
+        },
+        "cursor": {
+          "pre_index": [
+            "npm install -g context-mode",
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ],
+          "post_index": [
+            "Restart Cursor after MCP/hook merge"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md",
+            "Copy configs/codex/AGENTS.md routing template to ~/.codex/AGENTS.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license \u2014 see license_note)."
     }
   },
   "hooks": {
@@ -251,6 +378,42 @@
     "chunk_size_bytes": 1024,
     "top_chunks_per_file": 3,
     "debug": false
+  },
+  "optimization_profiles": {
+    "synergy_max": {
+      "graphify": {
+        "query_budget": 2000,
+        "query_ttl_seconds": 1800,
+        "install_git_hooks": true,
+        "reindex_after_agentmemory_export": true,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": true,
+        "auto_compress": false,
+        "obsidian_export": true,
+        "bridge_enabled": true,
+        "gitleaks_recommended": true,
+        "server_persistence": "launchd"
+      },
+      "synergy": {
+        "post_export_graphify_update": true,
+        "verify_graph_refs_agentmemory": true
+      }
+    },
+    "cost_minimized": {
+      "_comment": "Future profile — not applied by optimizer yet",
+      "graphify": {
+        "install_git_hooks": false,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": false,
+        "auto_compress": false,
+        "bridge_enabled": false,
+        "server_persistence": "nohup"
+      }
+    }
   },
   "multi_agent": {
     "identity_tags": [

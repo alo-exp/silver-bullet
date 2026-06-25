@@ -54,6 +54,25 @@ Required env flags for Graphify synergy:
 
 Restart the server after editing `.env` — agentmemory does not hot-reload config.
 
+### synergy_max `.env` template (SB-managed block)
+
+When stack optimization runs, SB merges this block into `~/.agentmemory/.env` (backup `.env.bak`, chmod 600):
+
+```bash
+AGENTMEMORY_INJECT_CONTEXT=true
+AGENTMEMORY_AUTO_COMPRESS=false
+CONSOLIDATION_ENABLED=false
+OBSIDIAN_AUTO_EXPORT=true
+CLAUDE_MEMORY_BRIDGE=true
+AGENTMEMORY_EXPORT_ROOT=/absolute/path/to/project/.agentmemory
+```
+
+**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists.
+
+**Injection tradeoff:** `INJECT_CONTEXT=true` improves recall but increases token cost. Use future `cost_minimized` profile to disable.
+
+See `docs/STACK-OPTIMIZATION.md`.
+
 ### Step 3 — Project export root
 
 From the project root:

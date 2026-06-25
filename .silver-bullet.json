@@ -208,7 +208,12 @@
       "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
-      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
+      "optimization": {
+        "last_applied_at": "2026-06-25T08:42:30Z",
+        "score": 95,
+        "last_verified_at": "2026-06-25T08:42:30Z"
+      }
     },
     "agentmemory": {
       "enabled_by_user": true,
@@ -237,14 +242,129 @@
         },
         "cursor": {
           "pre_index": [],
-          "post_index": []
+          "post_index": [
+            "Verify agentmemory MCP is configured in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)"
+          ]
         }
       },
       "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
       "health_url": "http://localhost:3111/agentmemory/health",
       "usage_ttl_seconds": 1800,
       "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
-      "export_root": ".agentmemory"
+      "export_root": ".agentmemory",
+      "optimization": {
+        "last_applied_at": "2026-06-25T08:42:30Z",
+        "score": 95,
+        "last_verified_at": "2026-06-25T08:42:30Z"
+      }
+    },
+    "rtk": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": "installed",
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "cli_command": "rtk",
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/rtk-usage",
+      "install_commands": [
+        "brew tap rtk-ai/rtk && brew install rtk",
+        "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "rtk init -g"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "rtk init -g --agent cursor"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "rtk init -g --codex"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk).",
+      "min_version": "0.42.0"
+    },
+    "context_mode": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": "installed",
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "cli_command": "context-mode",
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/context-mode-usage",
+      "install_commands": [
+        "npm install -g context-mode"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude plugin marketplace add mksglu/context-mode",
+            "claude plugin install context-mode@context-mode"
+          ],
+          "post_index": [
+            "Restart Claude Code after plugin install (hooks load on restart)"
+          ]
+        },
+        "cursor": {
+          "pre_index": [
+            "Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md",
+            "Copy configs/codex/AGENTS.md routing template to ~/.codex/AGENTS.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note).",
+      "min_node_version": "22.5",
+      "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license"
+    },
+    "alumnium": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": "installed",
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "mcp_server_name": "alumnium",
+      "install_commands": [
+        "npm install -g alumnium"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "Merge alumnium MCP into ~/.cursor/mcp.json per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "Merge [mcp_servers.alumnium] into ~/.codex/config.toml per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
     }
   }
 }

@@ -509,6 +509,7 @@ recover_silver_fast_cleanup() {
 init_prompt="$(skill_prompt 'silver:init' 'Initialize Silver Bullet on this todo-app project from scratch. Choose GitHub Issues for issue tracking, use sensible defaults for any missing choices, do not change app behavior yet, create the SB scaffold, confirm the project is initialized, and then stop immediately. Do not continue into ingest, scan, research, feature, release, or any other downstream workflow step. Do not create AGENTS.md or CLAUDE.md if no project instruction file already exists.')"
 journey_turn "silver:init" "install and scaffold the todo-app workspace" "no" "scaffold files created" "$init_prompt" "."
 wait_for_state_contains "silver:init recorded in workflow state" "silver:init"
+ensure_e2e_recommended_tools_opt_in
 
 # The dedicated hook preflights already verify that missing planning state
 # blocks Codex/Kay correctly. Seed the full canonical planning floor here so

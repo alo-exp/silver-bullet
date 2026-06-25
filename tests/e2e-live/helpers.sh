@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Shared helpers for the live todo-app E2E suite.
+# Shared helpers for the live enterprise E2E suite.
 #
 # The suite runs Claude and Codex against an isolated copy of the standalone
-# sibling todo-app repo, then resets the workspace after each scenario.
+# sibling enterprise-grade-test-app repo, then resets the workspace after each scenario.
 # The real SB state files are backed up and restored around each scenario so
 # the suite can run repeatedly without cross-talk. Claude keeps using
 # the active host runtime state root; Kay uses the temp-root .codex/.silver-bullet tree.
@@ -14,10 +14,12 @@ export PATH
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB_ROOT="$(cd "${E2E_ROOT}/../.." && pwd)"
-DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/todo-app"
-FIXTURE_DIR="${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}"
+DEFAULT_TEST_ENTERPRISE_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app"
+FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_ENTERPRISE_APP_ROOT}}}"
+E2E_PROBE_SOURCE_FILE="${E2E_PROBE_SOURCE_FILE:-api/src/health.js}"
 AGENT_DIR="${SB_ROOT}/tests/live/agents"
 LIB_DIR="${E2E_ROOT}/lib"
+RECOMMENDED_TOOLS_E2E_LIB="${LIB_DIR}/recommended-tools-e2e.sh"
 CLAUDE_INSTALL_SCRIPT="${SB_ROOT}/scripts/install-claude.sh"
 CODEX_HOOK_TRANSPLANT_HELPER="${SB_ROOT}/tests/live/lib/codex-hook-transplant.sh"
 
@@ -77,7 +79,7 @@ PASS=0
 FAIL=0
 
 if [[ ! -d "$FIXTURE_DIR" ]]; then
-  printf 'ERROR: todo-app fixture repo not found at %s\n' "$FIXTURE_DIR" >&2
+  printf 'ERROR: enterprise-grade-test-app fixture repo not found at %s\n' "$FIXTURE_DIR" >&2
   exit 1
 fi
 
@@ -457,7 +459,7 @@ PY
   git -C "$WORK_DIR" config user.email "e2e-live@silver-bullet.test"
   git -C "$WORK_DIR" config user.name "E2E Live"
   git -C "$WORK_DIR" add -A
-  git -C "$WORK_DIR" commit -q -m "initial: todo app baseline" 2>/dev/null || true
+  git -C "$WORK_DIR" commit -q -m "initial: enterprise test app baseline" 2>/dev/null || true
   git -C "$WORK_DIR" checkout -q -b feature/e2e-live 2>/dev/null || true
   trust_runtime_workspace
 
@@ -497,6 +499,25 @@ PY
     CLAUDE_PROMPT_COUNT=0
     bootstrap_claude_dependencies
   fi
+
+  if [[ -f "${WORK_DIR}/.silver-bullet.json" ]]; then
+    ensure_e2e_recommended_tools_opt_in
+  fi
+}
+
+ensure_e2e_recommended_tools_opt_in() {
+  [[ -n "${WORK_DIR:-}" && -f "${WORK_DIR}/.silver-bullet.json" ]] || return 0
+  [[ -f "$RECOMMENDED_TOOLS_E2E_LIB" ]] || return 0
+  # shellcheck source=tests/e2e-live/lib/recommended-tools-e2e.sh
+  source "$RECOMMENDED_TOOLS_E2E_LIB"
+  sb_e2e_enable_all_recommended_tools "${WORK_DIR}/.silver-bullet.json"
+  if sb_e2e_assert_all_recommended_tools_enabled "${WORK_DIR}/.silver-bullet.json"; then
+    echo "PASS: E2E workspace has all recommended tools opted in"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: E2E workspace missing full recommended_tools opt-in after init"
+    FAIL=$((FAIL + 1))
+  fi
 }
 
 cleanup_workspace() {
@@ -535,6 +556,10 @@ cleanup_workspace() {
 trap cleanup_workspace EXIT
 
 start_app_server() {
+  if [[ ! -f "${WORK_DIR}/src/server.js" ]]; then
+    echo "INFO: no src/server.js in fixture; skipping app server start" >&2
+    return 0
+  fi
   local ready=0
   local requested_port="$APP_PORT"
   if ! port_is_available "$requested_port"; then
@@ -1019,12 +1044,12 @@ verify_runtime_hook_delivery() {
   enable_hook_audit
   clear_hook_audit_log
 
-  target_file="${WORK_DIR}/src/routes/todos.js"
+  target_file="${WORK_DIR}/${E2E_PROBE_SOURCE_FILE}"
   rm -rf "${WORK_DIR}/.planning/workflows"
   : > "$STATE_FILE"
   digest_before="$(capture_digest "$target_file")"
 
-  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null || true
+  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null || true
 
   digest_after="$(capture_digest "$target_file")"
   if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
@@ -1035,7 +1060,7 @@ verify_runtime_hook_delivery() {
     echo "PASS: hook-delivery preflight keeps source unchanged before planning"
     PASS=$((PASS + 1))
   elif [[ "${HOOK_AUDIT_LAST_WAIT_PASSED:-0}" == "1" ]]; then
-    git -C "$WORK_DIR" checkout -- src/routes/todos.js >/dev/null 2>&1 || true
+    git -C "$WORK_DIR" checkout -- "$E2E_PROBE_SOURCE_FILE" >/dev/null 2>&1 || true
     echo "WARN: Kay mutated the file despite dev-cycle deny; restored baseline and accepted hook audit evidence"
     echo "PASS: hook-delivery preflight keeps source unchanged before planning"
     PASS=$((PASS + 1))
