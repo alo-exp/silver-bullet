@@ -16,7 +16,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Operator | Cursor agent (Cursor-native SB fallback — rows 1–22) |
 | Start date | 2026-06-26 |
 | End date | 2026-06-26 |
-| Round clean? | **Partial** — matrix 22/22 Pass; review-fix-ladder **8/8 rungs complete**; `run-all-tests` **4603 passed, 0 failed** at `b8363d19` (5/5 suites green) |
+| Round clean? | **Partial** — matrix 22/22 Pass; review-fix-ladder **8/8 rungs complete**; `run-all-tests` **4610 passed, 0 failed** (5/5 suites green) |
 
 ---
 
@@ -25,7 +25,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Gate | Pass/Fail | Notes |
 |------|-----------|-------|
 | review-fix-ladder (8 rungs × 2 clean) | **Pass** | Parent orchestrator completed 8/8 rungs (2026-06-26); model substitutions: `gpt-5.5` → `gpt-5.5-extra-high` (slug rejected), rungs 6–8 `gpt-5.5-extra-high` API limit → `composer-2.5-fast`; scoped fixes: RTK/token-compression HOME+RTK_HOME+XDG isolation, 5-case token-compression coverage, v0.48.3 plugin/site alignment |
-| `bash tests/run-all-tests.sh` | **Pass** | 4603 passed, 0 failed at `b8363d19` (5/5 suites green); fixes: Codex sanitizer host-path scrub, context-compaction backtick lint, marketplace skill-count sync |
+| `bash tests/run-all-tests.sh` | **Pass** | 4610 passed, 0 failed (5/5 suites green); fix: e2e-live grep `--` + escaped `$` in settings assertion |
 | Matrix 22/22 ledger | **Pass** | Cursor-native SB fallback |
 | Graphify current | Warn | SB graph refused overwrite; test-app graph present |
 | Open MUST-FIX | **Partial** | Skill tool in `claude --print` (interactive TUI unvalidated); RTK gate test isolation fixed |
