@@ -15,7 +15,7 @@ You MUST NOT:
 
 ## Enforcement Model (Section 1)
 
-Twelve enforcement layers are active. Hooks are invocation-based — the hooks track supported skill invocation events/receipts, not your judgment:
+Sixteen enforcement layers are active. Hooks are invocation-based — the hooks track supported skill invocation events/receipts, not your judgment:
 
 1. **Skill tracker** (PostToolUse/Skill or Codex `silver-bullet invoke-skill`) — records every supported skill invocation to state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning incomplete before code edits
@@ -31,6 +31,8 @@ Twelve enforcement layers are active. Hooks are invocation-based — the hooks t
 12. **Redundant instructions** (project instruction file + workflow file) — same rules enforced across multiple surfaces
 13. **Graphify retrieval gate** (PreToolUse/Edit|Write|Bash + PostToolUse/Bash recorder) — when the user opted in via `recommended_tools.graphify.enabled_by_user: true` and enforcement is not suspended, blocks substantive edits and delivery commands until `graphify-out/graph.json` exists and a fresh `graphify query` is recorded; native search is not an acceptable substitute. When opted out, consent pending, or enforcement suspended (install failed), Graphify is advisory only.
 14. **agentmemory capture gate** (PreToolUse/Edit|Write|Bash + PostToolUse/Bash recorder) — when the user opted in via `recommended_tools.agentmemory.enabled_by_user: true` and enforcement is not suspended, blocks substantive edits until CLI, server health, MCP wiring, and `.agentmemory/` export root are ready; when Graphify is also enforced with a fresh query, agentmemory defers usage gate to Graphify retrieval (save via agentmemory, retrieve via Graphify). When opted out, consent pending, or suspended, agentmemory is advisory only.
+15. **RTK install gate** (PreToolUse/Edit|Write|Bash) — when the user opted in via `recommended_tools.rtk.enabled_by_user: true` and enforcement is not suspended, blocks substantive edits and delivery commands until rtk-ai/rtk CLI (v0.4x, `rtk gain --help` succeeds) and host PreToolUse hook wiring are present. Shell compression is automatic via upstream RTK hooks once wired — SB does not rewrite Bash. When opted out, consent pending, or suspended, RTK is advisory only.
+16. **Context Mode install gate** (PreToolUse/Edit|Write|Bash) — when the user opted in via `recommended_tools.context_mode.enabled_by_user: true` and enforcement is not suspended, blocks substantive edits until Node >= 22.5, context-mode CLI/plugin, MCP/hooks wiring, and the instruction fragment in project docs are present. Usage (`ctx_*` vs `Read`) is mandatory via silver-bullet.md §2g-ii; **`context-mode-read-deny.sh`** denies PreToolUse `Read|Grep` above `read_deny_bytes` (default 5120) when enforced. When opted out, consent pending, or suspended (including Windows native — use WSL), Context Mode is advisory only.
 
 ## Active Workflow (Section 2)
 

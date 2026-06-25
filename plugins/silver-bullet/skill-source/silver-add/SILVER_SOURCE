@@ -320,13 +320,14 @@ gh project item-edit \
 
 Set `FILED_ID` to `"#${ISSUE_NUM}"`.
 
-### Inline todo-app journey tagging
+### Enterprise E2E journey tagging
 
-When the filing originated from the inline todo-app full-surface E2E journey,
-the GitHub issue must carry the `todo-app` label in addition to the normal
+When the filing originated from the enterprise-grade-test-app live E2E journey
+(Claude supervised matrix or Kay inline diagnostic),
+the GitHub issue must carry the `enterprise-test-app` label in addition to the normal
 Silver Bullet filing labels. Keep that label attached on any later edit path so
 the live run can find the issue again. The journey files these items into the
-Silver Bullet repo and uses `todo-app` as the search/tag handle for later
+Silver Bullet repo and uses `enterprise-test-app` as the search/tag handle for later
 review.
 
 ---
