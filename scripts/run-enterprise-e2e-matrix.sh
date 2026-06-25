@@ -13,10 +13,11 @@ MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
 export CLAUDE_USE_INTERACTIVE=1
-export CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}"
+export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-180}"
+export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-1}"
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
@@ -63,6 +64,8 @@ Ledger:  ${LEDGER_FILE}
 Environment:
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
+  SB_E2E_MATRIX_CLEAN_ENV=1    Use env -i for Claude sessions (default 1; set 0 to inherit shell)
+  CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 180)
 EOF
 }
@@ -90,7 +93,8 @@ graphify_query_ref() {
 build_matrix_prompt() {
   local route="$1"
   local prompt_card="$2"
-  skill_prompt "$route" "Enterprise E2E matrix validation. ${prompt_card} Use the Silver Bullet orchestrator; parent must not implement product code inline. Create workflow evidence at the matrix evidence path. Stop when the workflow is complete."
+  local evidence_path="$3"
+  matrix_route_prompt "$route" "$prompt_card" "$evidence_path" ""
 }
 
 verify_row_evidence() {
@@ -154,7 +158,7 @@ run_matrix_row() {
     (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" >/dev/null 2>&1) || true
   fi
 
-  prompt="$(build_matrix_prompt "$route" "$prompt_card")"
+  prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path")"
   echo "  launching interactive Claude session..."
   output="$(run_prompt "$prompt" 2>&1 || true)"
   if [[ -n "$output" ]]; then
