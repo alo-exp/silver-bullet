@@ -3,6 +3,14 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+fi
+
+export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 RECORD_HOOK="$REPO_ROOT/hooks/record-graphify-query.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
 PASS=0
@@ -37,9 +45,11 @@ EOF
   "config_version": "${CURRENT_CONFIG_VERSION}",
   "sb_initiated": true,
   "project": { "active_workflow": "full-dev-cycle" },
-  "graphify": {
-    "required": true,
-    "query_state_file": "${GRAPHIFY_STATE}"
+  "recommended_tools": {
+    "graphify": {
+      "enabled_by_user": true,
+      "query_state_file": "${GRAPHIFY_STATE}"
+    }
   },
   "state": { "state_file": "${SB_TEST_DIR}/state-${TEST_RUN_ID}" }
 }
@@ -88,14 +98,14 @@ cat >"$TMPDIR_TEST/.silver-bullet.json" <<EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",
   "sb_initiated": true,
-  "graphify": { "required": false }
+  "recommended_tools": { "graphify": { "enabled_by_user": false } }
 }
 EOF
 run_bash_hook 'graphify query "x" --graph graphify-out/graph.json' 0
 if [[ ! -f "$GRAPHIFY_STATE" ]]; then
-  pass "graphify.required false skips recording"
+  pass "enabled_by_user false skips recording"
 else
-  fail "graphify.required false skips recording"
+  fail "enabled_by_user false skips recording"
 fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

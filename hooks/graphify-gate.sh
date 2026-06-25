@@ -2,9 +2,8 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse hook — mandatory Graphify retrieval gate before substantive work.
-# Blocks Edit|Write|MultiEdit|apply_patch and substantive Bash when Graphify is
-# installed, the index exists, and no fresh query is recorded.
+# PreToolUse hook — Graphify retrieval gate before substantive work (opt-in enforced).
+# Active only when recommended_tools.graphify.enabled_by_user is true.
 
 umask 0077
 
@@ -13,6 +12,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 [[ -f "$_lib_dir/trivial-bypass.sh" ]] && source "$_lib_dir/trivial-bypass.sh"
 [[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
+[[ -f "$_lib_dir/recommended-tools.sh" ]] && source "$_lib_dir/recommended-tools.sh"
 [[ -f "$_lib_dir/graphify-gate.sh" ]] && source "$_lib_dir/graphify-gate.sh"
 [[ -f "$_lib_dir/hook-audit.sh" ]] && source "$_lib_dir/hook-audit.sh"
 
@@ -30,11 +30,6 @@ emit_block() {
   else
     printf '{"decision":"block","reason":%s,"hookSpecificOutput":{"message":%s}}' "$json_reason" "$json_reason"
   fi
-}
-
-emit_warn() {
-  local msg="$1"
-  printf '{"hookSpecificOutput":{"message":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 }
 
 command -v jq >/dev/null 2>&1 || exit 0
@@ -98,9 +93,7 @@ elif [[ -n "$command_str" ]]; then
   if sb_graphify_command_is_exempt "$command_str"; then
     exit 0
   fi
-  # Delivery commands always require fresh graphify when enforced.
   if ! printf '%s' "$command_str" | grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b'; then
-    # Non-delivery bash without write signals — allow (tests, status, etc.).
     if ! printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
       exit 0
     fi
@@ -110,11 +103,10 @@ else
 fi
 
 if ! sb_graphify_cli_available; then
-  emit_warn "$(sb_graphify_block_message_no_cli)"
+  emit_block "$(sb_graphify_block_message_no_cli "$config_file")"
   exit 0
 fi
 
-graph_path="$(sb_graphify_abs_graph_path "$project_root" "$config_file")"
 graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
 
 if ! sb_graphify_index_exists "$project_root" "$config_file"; then
