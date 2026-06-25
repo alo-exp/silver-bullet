@@ -57,6 +57,14 @@ Run from project root after CLI install. SB stores commands in `recommended_tool
 | Cursor | `rtk init -g --agent cursor` | `~/.cursor/hooks.json` (`rtk hook cursor`) |
 | Codex | `rtk init -g --codex` | `~/.codex/AGENTS.md` (awareness layer; no live PreToolUse rewrite on Codex yet) |
 
+### Cursor allow-list coupling
+
+Unlike Claude Code, `rtk hook cursor` only rewrites commands that match **global** allow rules in `~/.cursor/cli-config.json` (`permissions.allow` entries like `Shell(git *)`). If a command is not allow-listed, the hook returns `{}` and the raw command runs — this is upstream RTK behavior (subset of Cursor's trust model).
+
+To verify: `echo '{"tool_name":"Shell","tool_input":{"command":"git status"}}' | rtk hook cursor` should return `updated_input` with `rtk git status` when `Shell(git *)` (or broader) is in the allow list.
+
+`rtk gain` may still warn "No hook installed" on Cursor — it tracks Claude `settings.json` hooks; Cursor wiring is separate.
+
 Codex limitation: PreToolUse on Codex supports deny rules only — RTK savings on Codex are primarily via `AGENTS.md` awareness ([openai/codex#18491](https://github.com/openai/codex/issues/18491)).
 
 ## Verification
