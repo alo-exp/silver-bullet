@@ -82,6 +82,7 @@ agent_invoke() {
         CLAUDE_CONTINUE="$continue_flag" \
         CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
         CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
+        CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}" \
         expect "$expect_script" 2>&1
     }
     if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-${SB_E2E_ENTERPRISE_MATRIX:-}}" == "1" ]]; then
@@ -97,12 +98,13 @@ agent_invoke() {
           CLAUDE_BIN="$cli" \
           CLAUDE_WORK_DIR="$WORK_DIR" \
           CLAUDE_PROMPT_FILE="$prompt_file" \
-          CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
+          CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}" \
           CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
           CLAUDE_PERMISSION_MODE="$permission_mode" \
           CLAUDE_CONTINUE="$continue_flag" \
           CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
           CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
+          CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}" \
           bash -lc "cd \"\$CLAUDE_WORK_DIR\" && expect \"$expect_script\" 2>&1"
       ) || true
     else
