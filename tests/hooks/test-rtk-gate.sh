@@ -64,11 +64,15 @@ EOF
   export PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
-wire_hook() {
+isolate_home() {
   TEST_HOME="$(mktemp -d)"
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+}
+
+wire_hook() {
+  isolate_home
   mkdir -p "$TEST_HOME/.cursor"
   printf '{"hooks":[{"command":"rtk hook cursor"}]}\n' >"$TEST_HOME/.cursor/hooks.json"
-  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
 }
 
 write_cfg() {
@@ -133,12 +137,14 @@ assert_allow "opted out allows edit" "$out"
 
 setup
 write_cfg true
+isolate_home
 out="$(run_edit)"
 assert_deny "opted in without CLI denies" "$out"
 
 setup
 write_cfg true
 install_mock_rtk
+isolate_home
 out="$(run_edit)"
 assert_deny "opted in without hook denies" "$out"
 
