@@ -69,7 +69,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback; interactive matrix row 1 **Fail** (harness fixed; Claude CLI 401 auth on host — attempts 4–5) | `ceaee970`–`55411814` + harness fix | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback + **interactive matrix row 1 Pass** (routing-only; `--settings` harness `02a33659`; validated attempt 12) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 2 | `silver-research` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 3 | `silver-feature` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; post-exec-gates in workflow md | | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 4 | `silver-bugfix` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; validate-substep in workflow md | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
@@ -364,10 +364,11 @@ Follow-up from [Fix harness auth passthrough](cad529ac-3ea1-401d-beba-97992bf192
 | Quick interactive probe (`PROBE_NO_LOGIN`) | **Pass** | No `Not logged in`; response received with unset shell keys |
 | `bash tests/scripts/test-claude-matrix-auth.sh` | **Pass** | 5 passed |
 | `bash tests/e2e-live/test-e2e-live-suite.sh` | **Pass** | 96 passed |
-| Matrix row 1 attempt 10 (`SB_E2E_MATRIX_FORCE=1`, `CLEAN_ENV=0`) | **Pass** | Routing skill recorded in `~/.claude/.silver-bullet/state`; log: `.e2e-row1-attempt10.log` |
+| Matrix row 1 attempt 10 (`SB_E2E_MATRIX_FORCE=1`, `CLEAN_ENV=0`) | **Fail** | 323s; TUI `Not logged in`; log: `.e2e-row1-attempt10.log` |
+| Matrix row 1 attempt 12 (`SB_E2E_MATRIX_FORCE=1`, `CLEAN_ENV=0`, `--settings` spawn) | **Pass** | ~47m; 84534 tokens; routing skill in `~/.claude/.silver-bullet/state`; log: `.e2e-row1-attempt12.log` |
 | TUI status line during row 1 | **Partial** | Status bar may still flash `Not logged in` (claude.ai OAuth UI string) while API-key routing proceeds |
 
 **Row 1 interactive matrix: PASS** (routing-only criterion via state delta).
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt10.log`
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt12.log`
