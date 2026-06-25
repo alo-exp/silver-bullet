@@ -47,7 +47,7 @@ Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:
 | **Persistence** | macOS launchd `com.agentmemory.server` + `com.agentmemory.bridge`; Linux systemd user units when available |
 | **Project** | `.agentmemory/memory/**` scaffold, gitignore `/**` negation fix |
 | **Synergy** | Obsidian export trigger + post-export `graphify update`; verify graph contains `.agentmemory` refs |
-| **Advisory** | `brew install gitleaks` when missing |
+| **gitleaks** | Required with bridge — `brew install gitleaks` (macOS) or apt on Linux; `GITLEAKS_PATH` in bridge launchd plist |
 
 ## Consent and safety
 
@@ -68,7 +68,7 @@ Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:
 
 Critical failures (exit non-zero on `--verify` when opted in): missing CLI, index, server health, synergy graph refs.
 
-Warnings (non-blocking): missing git hooks, bridge, gitleaks, launchd.
+Warnings (non-blocking): missing git hooks, bridge, gitleaks (when required), launchd.
 
 ## Platform matrix
 

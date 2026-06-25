@@ -32,6 +32,7 @@ cat >"$TMP/.silver-bullet.json" <<'EOF'
         "inject_context": true,
         "obsidian_export": true,
         "bridge_enabled": true,
+        "gitleaks_required": true,
         "server_persistence": "launchd"
       }
     }
@@ -61,6 +62,25 @@ SB_STACK_SKIP_HOST_HOOKS=1 SB_STACK_OPTIMIZER_DRY_RUN=1 \
   && pass "optimize_agentmemory dry-run" || fail "optimize_agentmemory dry-run"
 
 [[ -d "$TMP/.agentmemory/memory" ]] && pass "scaffold memory dir" || fail "scaffold memory dir"
+
+sb_stack_gitleaks_required "$TMP/.silver-bullet.json" synergy_max \
+  && pass "gitleaks required for synergy_max" || fail "gitleaks required knob"
+
+if sb_stack_gitleaks_path >/dev/null 2>&1; then
+  sb_stack_ensure_gitleaks "$TMP/.silver-bullet.json" synergy_max && pass "ensure_gitleaks when installed"
+else
+  if SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_ensure_gitleaks "$TMP/.silver-bullet.json" synergy_max 2>&1 | grep -q 'DRY-RUN.*gitleaks'; then
+    pass "ensure_gitleaks dry-run"
+  else
+    fail "ensure_gitleaks dry-run"
+  fi
+fi
+
+if SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_launchd_bridge_plist "$TMP" 2>&1 | grep -q 'DRY-RUN'; then
+  pass "bridge plist dry-run mentions write"
+else
+  pass "bridge plist dry-run optional"
+fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

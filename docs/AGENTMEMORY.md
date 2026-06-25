@@ -67,7 +67,19 @@ CLAUDE_MEMORY_BRIDGE=true
 AGENTMEMORY_EXPORT_ROOT=/absolute/path/to/project/.agentmemory
 ```
 
-**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists.
+**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
+
+### gitleaks (required with bridge)
+
+The bridge scans exports with regex first, then **gitleaks** as a second line (catches JWTs and other patterns the regex list deliberately skips). Install before or during stack optimization:
+
+```bash
+brew install gitleaks          # macOS
+gitleaks version
+# Linux: apt install gitleaks or GitHub releases — see docs/STACK-OPTIMIZATION.md
+```
+
+When agentmemory is opted in, `sb-optimize-stack.sh --apply` and `graphify-am-global-setup.sh --apply` attempt install, verify `which gitleaks`, and write `GITLEAKS_PATH` into `com.agentmemory.bridge` launchd env. Diagnostics warn when gitleaks is missing.
 
 **Injection tradeoff:** `INJECT_CONTEXT=true` improves recall but increases token cost. Use future `cost_minimized` profile to disable.
 
